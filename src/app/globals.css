@@ -1,22 +1,55 @@
+/* app/globals.css */
 @import "tailwindcss";
+
+@theme {
+  /* Primary */
+  --color-primary: #1C2351;
+  --color-primary-hover: #2A336B;
+  --color-primary-pressed: #13183B;
+  --color-primary-light: #DDE2F5;
+  --color-primary-lighter: #F3F5FC;
+  --color-primary-sidebar: #2A336B;
+
+  /* Secondary */
+  --color-secondary: #4B3391;
+  --color-secondary-hover: #8A56D6;
+  --color-secondary-light: #EEE4FC;
+
+  /* Text */
+  --color-text-primary: #111827;
+  --color-text-secondary: #475467;
+  --color-text-mute: #9CA3AF;
+  --color-text-inverse: #292D32;
+
+  /* Border / Background */
+  --color-border: #E5E7EB;
+  --color-bg-page-gray: #F9FAFB;
+  --color-bg-page-white: #FFFFFF;
+
+  /* Status */
+  --color-success: #15803D;
+  --color-success-bg: #C3E4D5;
+  --color-error: #B91C1C;
+  --color-error-bg: #ECCBCB;
+  --color-warning: #F59E0B;
+  --color-warning-bg: #EDE5C6;
+
+  /* Typography scale */
+  --font-size-h1: 2.25rem;   /* 36px */
+  --font-size-h2: 1.875rem;  /* 30px */
+  --font-size-h3: 1.5rem;    /* 24px */
+  --font-size-h4: 1.25rem;   /* 20px */
+
+  --font-size-body-lg: 1.125rem; /* 18px */
+  --font-size-body-md: 1rem;      /* 16px */
+  --font-size-body-sm: 0.875rem;  /* 14px */
+  --font-size-body-caption: 0.8125rem; /* 13px */
+  --font-size-body-tiny: 0.75rem; /* 12px */
+}
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
