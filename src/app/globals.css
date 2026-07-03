@@ -12,7 +12,7 @@
 
   /* Secondary */
   --color-secondary: #4B3391;
-  --color-secondary-hgit over: #8A56D6;
+  --color-secondary-hover: #8A56D6;
   --color-secondary-light: #EEE4FC;
 
   /* Text */
@@ -56,4 +56,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.sidebar {
+  overflow: hidden;
 }
