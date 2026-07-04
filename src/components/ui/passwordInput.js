@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Lock, Eye, EyeOff } from "lucide-react";
 
-export default function passwordInput({ label, ...props }) {
+export default function PasswordInput({ label, ...props }) {
   const [show, setShow] = useState(false);
 
   return (
@@ -23,7 +23,7 @@ export default function passwordInput({ label, ...props }) {
           onClick={() => setShow(!show)}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
         >
-          {show ? <EyeOff size={18} /> : <Eye size={18} />}
+          {show ? <Eye size={18} /> : <EyeOff size={18} />}
         </button>
       </div>
     </div>
