@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
-import OtpInput from "@/components/ui/OtpInput";
+import OtpInput from "@/components/ui/otpInput";
 
 export default function VerifyOtpPage() {
   const router = useRouter();
