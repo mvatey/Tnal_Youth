@@ -18,7 +18,7 @@ import {
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'ផ្ទាំងគ្រប់គ្រង', href: '/dashboard', icon: 'dashboard', roles: ['admin', 'secretary', 'branch_leader'] },
   {id: 'branches',   label: 'សាខា',             href: '/branches',   icon: 'building',  roles: ['admin']},
-  { id: 'members',   label: 'សមាជិក',           href: '/members',   icon: 'users',     roles: ['admin', 'secretary'] },
+  { id: 'members',   label: 'សមាជិក',           href: '/member',   icon: 'users',     roles: ['admin', 'secretary'] },
   { id: 'activities',  label: 'កម្មវិធី',          href: '/activities',  icon: 'calendar',  roles: ['admin', 'secretary', 'branch_leader', 'member'] },
   { id: 'donations', label: 'វិភាគទាន',          href: '/donations', icon: 'donation',  roles: ['admin', 'secretary', 'branch_leader', 'member'] },
   { id: 'documents', label: 'ឯកសារ',             href: '/documents', icon: 'file',      roles: ['admin', 'secretary', 'branch_leader', 'member'] },
