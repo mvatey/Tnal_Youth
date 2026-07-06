@@ -21,7 +21,7 @@ export default function AuthLayout({ children }) {
           <h2 className="text-4xl font-bold leading-snug mb-6">
             សមាជិក · សកម្មភាព · វិភាគទាន
           </h2>
-          <p className="text-slate-300 text-base leading-relaxed max-w-md mb-6">
+            <p className="text-slate-300 text-base leading-relaxed mb-6">
             គ្រប់គ្រងទិន្នន័យសមាជិក ការបង់វិភាគទាន និងសកម្មភាពទាំងនៅទីនេះដោយពួកគេ
           </p>
           <div className="w-16 h-px bg-white/60" />

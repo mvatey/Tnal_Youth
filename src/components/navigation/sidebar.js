@@ -1,66 +1,108 @@
+// components/navigation/Sidebar.jsx
 'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { FaChevronDown, FaChartBar, FaUsers, FaCalendar, FaHandshake, FaFile } from 'react-icons/fa';
+import {
+  FaChevronDown,
+  FaBuilding,
+  FaChartBar,
+  FaUsers,
+  FaCalendarAlt,
+  FaHandHoldingHeart,
+  FaFileAlt,
+  FaUserCircle,
+} from 'react-icons/fa';
 
-export default function Sidebar() {
+const NAV_ITEMS = [
+  { id: 'dashboard', label: 'ផ្ទាំងគ្រប់គ្រង', href: '/dashboard', icon: 'dashboard', roles: ['admin', 'secretary', 'branch_leader'] },
+  {id: 'branches',   label: 'សាខា',             href: '/branches',   icon: 'building',  roles: ['admin']},
+  { id: 'members',   label: 'សមាជិក',           href: '/members',   icon: 'users',     roles: ['admin', 'secretary'] },
+  { id: 'activities',  label: 'កម្មវិធី',          href: '/activities',  icon: 'calendar',  roles: ['admin', 'secretary', 'branch_leader', 'member'] },
+  { id: 'donations', label: 'វិភាគទាន',          href: '/donations', icon: 'donation',  roles: ['admin', 'secretary', 'branch_leader', 'member'] },
+  { id: 'documents', label: 'ឯកសារ',             href: '/documents', icon: 'file',      roles: ['admin', 'secretary', 'branch_leader', 'member'] },
+  { id: 'profile',   label: 'ប្រវត្តិរូប',        href: '/profile',   icon: 'profile',   roles: ['admin', 'secretary', 'branch_leader', 'member'] },
+  {id: 'variables',  label: 'ការកំណត់អថេរ',   href: '/variables',  icon: 'settings',  roles: ['admin']},
+];
+
+const ICON_MAP = {
+  dashboard: FaChartBar,
+  users: FaUsers,
+  calendar: FaCalendarAlt,
+  donation: FaHandHoldingHeart,
+  file: FaFileAlt,
+  profile: FaUserCircle,
+};
+
+export default function Sidebar({ role = 'secretary', userName = 'ផាន វិទ្ធី', userTitle = 'លេខាធិការ', userAvatar }) {
   const pathname = usePathname();
-
-  const navItems = [
-    { id: 'dashboard', label: 'ជ្រើសរើសសាខា', href: '/', icon: FaChevronDown },
-    { id: 'members', label: 'ផ្ទាំងគ្រប់គ្រង', href: '/members', icon: FaChartBar },
-    { id: 'donation', label: 'សមាជិក', href: '/donation', icon: FaUsers },
-    { id: 'reports', label: 'កម្មវិធី', href: '/reports', icon: FaCalendar },
-    { id: 'settings', label: 'វិភាគទាន', href: '/settings', icon: FaHandshake },
-    { id: 'document', label: 'ឯកសារ', href: '/document', icon: FaFile },
-    { id: 'profile', label: 'ប្រវត្តិរូប', href: '/profile', icon: FaUsers },
-  ];
+  const visibleItems = NAV_ITEMS.filter((item) => item.roles.includes(role));
 
   return (
-    <aside className="w-64 bg-[#1f2340] text-white min-h-screen flex flex-col justify-between">
+    <aside className="w-72 bg-primary-sidebar text-white min-h-screen flex flex-col justify-between">
       <div>
-        <div className="px-6 pt-6 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
-              <Image 
-                src="/logo.jpg" 
-                alt="Logo" 
-                width={48} 
-                height={48}
-                className="w-12 h-12 rounded-full object-cover"
-              />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold">សមាគមថ្នាលយុវជនកម្ពុជា</h3>
-              <p className="text-xs text-white/70">ការគ្រប់គ្រងប្រព័ន្ធយុវជន</p>
-            </div>
+        {/* Header — stacked, centered */}
+        <div className="px-6 pt-6 pb-5 flex flex-col items-center text-center">
+          <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center overflow-hidden mb-3">
+            <Image src="/logo.png" alt="Logo" width={56} height={56} className="object-cover" />
           </div>
+          <h3 className="text-sm font-bold leading-snug">សមាគមថ្នាលយុវជនកម្ពុជា</h3>
+          <p className="text-xs text-white/60 mt-1">ការគ្រប់គ្រងប្រព័ន្ធយុវជន</p>
         </div>
 
-        <nav className="mt-6">
-          {navItems.map((item) => {
-            const IconComponent = item.icon;
+        {/* Branch selector — match nav item sizing */}
+        <div className="px-3 mb-2">
+          <button className="w-full flex items-center justify-between gap-2 bg-white/10 hover:bg-white/15 transition rounded-lg px-4 py-2.5 text-sm font-medium">
+            <span className="flex items-center gap-3">
+              <FaBuilding size={16} />
+              ជ្រើសរើសសាខា
+            </span>
+            <FaChevronDown size={12} className="text-white/60" />
+          </button>
+        </div>
+
+        {/* Nav items */}
+        <nav className="px-3 space-y-1">
+          {visibleItems.map((item) => {
+            const Icon = ICON_MAP[item.icon];
             const active = pathname === item.href || pathname?.startsWith(item.href + '/');
             return (
-              <Link key={item.id} href={item.href} className={`flex items-center gap-3 px-6 py-3 hover:bg-white/5 transition ${active ? 'bg-white/5 border-l-4 border-purple-500' : ''}`}>
-                <IconComponent className="w-5 h-5" />
-                <div className="text-sm font-medium">{item.label}</div>
+              <Link
+                key={item.id}
+                href={item.href}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
+                  active ? 'bg-white/15 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                <Icon size={16} />
+                {item.label}
               </Link>
             );
           })}
         </nav>
       </div>
 
-      <div className="p-6 border-t border-white/5">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">👤</div>
-          <div>
-            <div className="text-sm font-medium">ផាន់ រិទ្ធី</div>
-            <div className="text-xs text-white/60">លេខាធិការ</div>
+            {/* User footer */}
+      <div className="px-4 py-4 border-t border-white/10">
+        <button className="w-full flex items-center justify-between gap-2 hover:bg-white/5 rounded-lg px-2 py-2 transition">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+              <Image
+                src={userAvatar || "secretary.jpg"}
+                alt={userName}
+                width={36}
+                height={36}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="text-left">
+              <div className="text-sm font-medium">{userName}</div>
+              <div className="text-xs text-white/50">{userTitle}</div>
+            </div>
           </div>
-        </div>
+          <FaChevronDown size={12} className="text-white/50" />
+        </button>
       </div>
     </aside>
   );

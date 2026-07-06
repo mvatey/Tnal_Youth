@@ -42,7 +42,7 @@ export default function VerifyOtpPage() {
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-slate-800 mb-2 text-center">
+      <h2 className="text-xl font-bold text-text-primary mb-2 text-center">
         ផ្ទៀងផ្ទាត់លេខកូដ
       </h2>
       <p className="text-sm text-slate-500 mb-8 text-center">
@@ -59,7 +59,7 @@ export default function VerifyOtpPage() {
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="w-full bg-slate-900 text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-slate-800 transition disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full bg-primary text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-slate-800 transition disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <ShieldCheck size={18} />
           {loading ? "..." : "ផ្ទៀងផ្ទាត់"}
