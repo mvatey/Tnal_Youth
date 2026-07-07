@@ -1,0 +1,8 @@
+  {
+    "total_members":    { "value": 250,  "change_percent": 12 },
+    "total_branches":   { "value": 2,    "change_percent": 12 },
+    "total_activities": { "value": 180,  "change_percent": 12 },
+    "total_donations": {
+      "usd": { "value": 2500,    "change_percent": 12 }
+    }
+   }

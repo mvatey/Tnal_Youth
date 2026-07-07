@@ -1,0 +1,52 @@
+[
+    {
+      "id": "1",
+      "title": "កម្មវិធីដាំដើមឈើ",
+      "type": "external",
+      "status": "completed",
+      "date": "25 មករា, 2026",
+      "time": null,
+      "attendeeCount": 200,
+      "image": "/activities/1.jpg"
+    },
+    {
+      "id": "2",
+      "title": "កម្មវិធីបរិច្ចាគសៀវភៅ",
+      "type": "external",
+      "status": "completed",
+      "date": "25 មករា, 2026",
+      "time": null,
+      "attendeeCount": 200,
+      "image": "/activities/2.jpg"
+    },
+    {
+      "id": "3",
+      "title": "កម្មវិធីជប់លៀង",
+      "type": "internal",
+      "status": "completed",
+      "date": "25 មករា, 2026",
+      "time": null,
+      "attendeeCount": 200,
+      "image": "/activities/3.jpg"
+    },
+    {
+      "id": "4",
+      "title": "កម្មវិធីជួបជុំសមាជិក",
+      "type": "external",
+      "status": "upcoming",
+      "date": "06 កុម្ភៈ, 2026",
+      "time": "9:00 ព្រឹក",
+      "attendeeCount": null,
+      "image": null
+    },
+    {
+      "id": "5",
+      "title": "កិច្ចប្រជុំក្រុមប្រឹក្សា",
+      "type": "internal",
+      "status": "upcoming",
+      "date": "06 កុម្ភៈ, 2026",
+      "time": "9:00 ព្រឹក",
+      "attendeeCount": null,
+      "image": null
+    }
+  ]
