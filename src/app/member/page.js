@@ -1,16 +1,58 @@
+// app/dashboard/members/page.jsx
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { Users, UserCheck, Search, ChevronDown, Trash2, Eye } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Users, UserCheck, Plus, Search, Pencil, Trash2, EyeDashedIcon, EyeIcon } from "lucide-react";
 import StatCard from "@/components/dashboard/statCard";
-import DataTable from "@/components/table/DataTable";
-import Pagination from "@/components/forms/download";
-import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal";
-import CreateMemberModal from "@/components/popup/CreateMemberModal";
 import users from "@/data/members.json";
 import { AiOutlineWoman } from "react-icons/ai";
-import { RiAddCircleLine } from "react-icons/ri";
+
+const KHMER_MONTHS = {
+  "មករា": 0, "កុម្ភៈ": 1, "កុម្ភះ": 1, "មីនា": 2, "មេសា": 3, "ឧសភា": 4, "មិថុនា": 5,
+  "កក្កដា": 6, "សីហា": 7, "កញ្ញា": 8, "តុលា": 9, "វិច្ឆិកា": 10, "ធ្នូ": 11,
+};
+
+function parseKhmerDate(str) {
+  if (typeof str !== 'string') {
+    console.error("Expected a string for date parsing, got:", str);
+    return null;
+  }
+  // Expected format: "25 មករា, 2026"
+  const match = str.match(/(\d+)\s+([^\s,]+),?\s*(\d+)/);
+  if (!match) {
+    console.error("Date string did not match expected format:", str);
+    return null;
+  }
+  const [, day, monthName, year] = match;
+  const month = KHMER_MONTHS[monthName];
+  if (month === undefined) {
+    console.error("Invalid month name:", monthName);
+    return null;
+  }
+  return new Date(Number(year), month, Number(day));
+}
+
+function calcGrowth(members, filterFn) {
+  const today = new Date();
+  const oneMonthAgo = new Date(today);
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+  const countUpTo = (cutoff) =>
+    members.filter((m) => {
+      if (!m.joinedAt) {
+        console.error("Member joinedAt is undefined for member:", m);
+        return false;
+      }
+      const joined = parseKhmerDate(m.joinedAt);
+      return joined && joined <= cutoff && filterFn(m);
+    }).length;
+
+  const currentCount = countUpTo(today);
+  const previousCount = countUpTo(oneMonthAgo);
+
+  if (previousCount === 0) return currentCount > 0 ? 100 : 0;
+  return Math.round(((currentCount - previousCount) / previousCount) * 100);
+}
 
 const ROLE_LABELS = {
   admin: "អ្នកគ្រប់គ្រង",
@@ -26,242 +68,183 @@ const ROLE_BADGE_STYLES = {
   member: "bg-gray-100 text-text-secondary",
 };
 
-const STATUS_BADGE_STYLES = {
-  សកម្ម: "bg-success-bg text-success",
-  អសកម្ម: "bg-error-bg text-error",
-};
-
-const PAGE_SIZE = 10;
-
 export default function MembersPage() {
-  const router = useRouter();
-
   const [query, setQuery] = useState("");
   const [branchFilter, setBranchFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  const [members, setMembers] = useState(() =>
-    users.map(({ password, ...rest }) => rest),
-  );
+  // Never expose password in the UI — strip it right away
+  const members = useMemo(() => users.map(({ password, ...rest }) => rest), []);
 
-  const branches = useMemo(
-    () => [...new Set(members.map((m) => m.branch))],
-    [members],
-  );
+  const branches = useMemo(() => [...new Set(members.map((m) => m.branch))], [members]);
 
   const stats = useMemo(() => {
     const total = members.length;
     const active = members.filter((m) => m.status === "សកម្ម").length;
     const female = members.filter((m) => m.gender === "ស្រី").length;
-    return { total, active, female };
+
+    const totalGrowth = calcGrowth(members, () => true);
+    const activeGrowth = calcGrowth(members, (m) => m.status === "សកម្ម");
+    const femaleGrowth = calcGrowth(members, (m) => m.gender === "ស្រី");
+
+    return { total, active, female, totalGrowth, activeGrowth, femaleGrowth };
   }, [members]);
 
   const filtered = useMemo(() => {
     return members.filter((m) => {
       const matchesQuery =
-        m.name.toLowerCase().includes(query.toLowerCase()) ||
-        m.phone.includes(query);
+        m.name.toLowerCase().includes(query.toLowerCase()) || m.phone.includes(query);
       const matchesBranch = !branchFilter || m.branch === branchFilter;
       const matchesStatus = !statusFilter || m.status === statusFilter;
       return matchesQuery && matchesBranch && matchesStatus;
     });
   }, [members, query, branchFilter, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [query, branchFilter, statusFilter]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
-
-  const paginated = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return filtered.slice(start, start + PAGE_SIZE);
-  }, [filtered, currentPage]);
-
-  const handleConfirmDelete = () => {
-    if (!deleteTarget) return;
-    setMembers((prev) => prev.filter((m) => m.id !== deleteTarget.id));
-    setDeleteTarget(null);
-  };
-
-  const handleCreateMember = (form) => {
-    const newMember = {
-      id: String(Date.now()),
-      name: form.nameKh,
-      nameEn: form.nameEn,
-      gender: form.gender,
-      status: form.status,
-      phone: form.phone,
-      email: form.email,
-      branch: form.branch,
-      role: form.role,
-      dob: form.dob,
-      joinedAt: form.joinedAt,
-    };
-    setMembers((prev) => [newMember, ...prev]);
-    setIsCreateOpen(false);
-  };
-
-  // Column definitions — this is what makes DataTable reusable per page
-  const columns = useMemo(
-    () => [
-      {
-        key: "index",
-        header: "ល.រ",
-        width: "5rem",
-        render: (_row, i) => (currentPage - 1) * PAGE_SIZE + i + 1,
-      },
-      {
-        key: "name",
-        header: "សមាជិក",
-        render: (m) => (
-          <span className="text-text-primary font-medium">{m.name}</span>
-        ),
-      },
-      { key: "gender", header: "ភេទ" },
-      { key: "branch", header: "សាខា" },
-      {
-        key: "role",
-        header: "តួនាទី",
-        render: (m) => (
-          <span
-            className={`inline-block px-3 py-1 rounded-full text-xs ${
-              ROLE_BADGE_STYLES[m.role] || "bg-gray-100 text-text-secondary"
-            }`}
-          >
-            {ROLE_LABELS[m.role] || m.role}
-          </span>
-        ),
-      },
-      {
-        key: "status",
-        header: "ស្ថានភាព",
-        render: (m) => (
-          <span
-            className={`inline-block px-3 py-1 rounded-full text-xs ${
-              STATUS_BADGE_STYLES[m.status] || "bg-gray-100 text-text-secondary"
-            }`}
-          >
-            {m.status}
-          </span>
-        ),
-      },
-      { key: "joinedAt", header: "ថ្ងៃចូលរួម" },
-      {
-        key: "actions",
-        header: "សកម្មភាព",
-        render: (m) => (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => router.push(`/member/memberInfo/${m.id}`)}
-              className="flex items-center gap-1 bg-secondary text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:opacity-90 transition"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              មើលលម្អិត
-            </button>
-            <button
-              onClick={() => setDeleteTarget(m)}
-              className="text-red-500 hover:text-red-600 p-1.5"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        ),
-      },
-    ],
-    [currentPage, router],
-  );
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-4">
-        <StatCard icon={Users} label="ចំនួនសមាជិកសរុប" value={stats.total} iconColor="text-primary" iconBg="bg-primary-light" />
-        <StatCard icon={UserCheck} label="ចំនួនសមាជិកសកម្ម" value={stats.active} iconColor="text-success" iconBg="bg-success-bg" />
-        <StatCard icon={AiOutlineWoman} label="ចំនួនភេទស្រី" value={stats.female} iconColor="text-warning" iconBg="bg-warning-bg" />
+        <StatCard
+          icon={Users}
+          label="ចំនួនសមាជិកសរុប"
+          value={String(stats.total)}
+          growth={String(stats.totalGrowth)}
+          iconColor="text-primary"
+          iconBg="bg-primary-light"
+        />
+        <StatCard
+          icon={UserCheck}
+          label="ចំនួនសមាជិកសកម្ម"
+          value={String(stats.active)}
+          growth={String(stats.activeGrowth)}
+          iconColor="text-success"
+          iconBg="bg-success-bg"
+        />
+        <StatCard
+          icon={AiOutlineWoman}
+          label="ចំនួនភេទស្រី"
+          value={String(stats.female)}
+          growth={String(stats.femaleGrowth)}
+          iconColor="text-warning"
+          iconBg="bg-warning-bg"
+        />
       </div>
 
-      {/* Members table card */}
-      <div className="bg-white rounded-xl p-5 shadow-sm">
-        <h3 className="font-semibold text-text-primary mb-3 text-lg">
-          បញ្ជីសមាជិក
-        </h3>
+      {/* Members table */}
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <h3 className="font-semibold text-text-primary mb-4 text-lg">បញ្ជីសមាជិក</h3>
 
         {/* Toolbar */}
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div className="flex flex-1 items-center gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="ស្វែងរកតាមរយៈឈ្មោះ ឬលេខទូរស័ព្ទ..."
-                className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-
-            <div className="relative w-48">
-              <select
-                value={branchFilter}
-                onChange={(e) => setBranchFilter(e.target.value)}
-                className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="">សាខា</option>
-                {branches.map((b) => (
-                  <option key={b} value={b}>{b}</option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-            </div>
-
-            <div className="relative w-32">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="">ស្ថានភាព</option>
-                <option value="សកម្ម">សកម្ម</option>
-                <option value="អសកម្ម">អសកម្ម</option>
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-            </div>
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="ស្វែងរកតាមរយៈឈ្មោះ ឬលេខទូរស័ព្ទ..."
+              className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
           </div>
 
-          <button
-            onClick={() => setIsCreateOpen(true)}
-            className="flex shrink-0 items-center gap-2 rounded-lg bg-success px-5 py-2.5 text-sm font-medium text-white hover:opacity-90"
+          <select
+            value={branchFilter}
+            onChange={(e) => setBranchFilter(e.target.value)}
+            className="px-3 py-2 rounded-lg border border-gray-200 text-sm text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
-            <RiAddCircleLine className="w-4 h-4" />
+            <option value="">សាខា</option>
+            {branches.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 rounded-lg border border-gray-200 text-sm text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="">ស្ថានភាព</option>
+            <option value="សកម្ម">សកម្ម</option>
+            <option value="អសកម្ម">អសកម្ម</option>
+          </select>
+
+          <button className="ml-auto flex items-center gap-2 bg-success text-white text-sm font-medium px-4 py-2 rounded-lg hover:opacity-90 transition">
+            <Plus className="w-4 h-4" />
             បន្ថែមសមាជិកថ្មី
           </button>
         </div>
 
-        {/* Generic table, driven by columns config */}
-        <DataTable columns={columns} data={paginated} rowKey="id" />
-
-        {/* Pagination */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          data={filtered}
-          filename="members.csv"
-        />
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm table-fixed">
+            <colgroup>
+              <col className="w-[60px]" />
+              <col />
+              <col className="w-[80px]" />
+              <col />
+              <col className="w-[130px]" />
+              <col className="w-[100px]" />
+              <col className="w-[150px]" />
+              <col className="w-[160px]" />
+            </colgroup>
+            <thead>
+              <tr className="text-left text-text-secondary border-b border-gray-100">
+                <th className="py-3 px-2 font-medium text-center">ល.រ</th>
+                <th className="py-3 px-2 font-medium">សមាជិក</th>
+                <th className="py-3 px-2 font-medium text-center">ភេទ</th>
+                <th className="py-3 px-2 font-medium">សាខា</th>
+                <th className="py-3 px-2 font-medium text-center">តួនាទី</th>
+                <th className="py-3 px-2 font-medium text-center">ស្ថានភាព</th>
+                <th className="py-3 px-2 font-medium">ថ្ងៃចូលរួម</th>
+                <th className="py-3 px-2 text-center">សកម្មភាព</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((m, i) => (
+                <tr key={m.id} className="border-b border-gray-50 hover:bg-bg-page-gray/50">
+                  <td className="py-3 px-2 text-text-secondary text-center">{i + 1}</td>
+                  <td className="py-3 px-2 text-text-primary font-medium truncate">{m.name}</td>
+                  <td className="py-3 px-2 text-text-secondary text-center">{m.gender}</td>
+                  <td className="py-3 px-2 text-text-secondary truncate">{m.branch}</td>
+                  <td className="py-3 px-2 text-center">
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-xs ${ROLE_BADGE_STYLES[m.role] || "bg-gray-100 text-text-secondary"}`}
+                    >
+                      {ROLE_LABELS[m.role] || m.role}
+                    </span>
+                  </td>
+                  <td className="py-3 px-2 text-center">
+                    <span className="inline-block px-3 py-1 rounded-full text-xs bg-success-bg text-success">
+                      {m.status}
+                    </span>
+                  </td>
+                  <td className="py-3 px-2 text-text-secondary truncate">{m.joinedAt}</td>
+                  <td className="py-3 px-2">
+                    <div className="flex items-center justify-center gap-2">
+                      <button className="flex items-center gap-1 bg-secondary text-white text-xs font-medium px-3 py-1.5 rounded-lg hover:opacity-90 transition">
+                        <EyeIcon className="w-3.5 h-3.5" />
+                        មើលលម្អិត
+                      </button>
+                      <button className="text-red-500 hover:text-red-600 p-1.5">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-text-secondary">
+                    មិនមានទិន្នន័យត្រូវនឹងលក្ខខណ្ឌស្វែងរកទេ
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      <ConfirmDeleteModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleConfirmDelete} />
-      <CreateMemberModal open={isCreateOpen} onClose={() => setIsCreateOpen(false)} onSave={handleCreateMember} branches={branches} />
     </div>
   );
 }

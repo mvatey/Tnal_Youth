@@ -19,6 +19,49 @@ const STATUS_BADGE_STYLES = {
   មិនបានចូលរួម: "bg-error-bg text-error",
 };
 
+function DataTable({ columns, data, rowKey, emptyMessage }) {
+  if (!data?.length) {
+    return <div className="text-sm text-text-secondary">{emptyMessage}</div>;
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full text-sm">
+        <thead className="bg-gray-50">
+          <tr>
+            {columns.map((column) => (
+              <th
+                key={column.key}
+                className="px-3 py-3 text-left font-medium text-text-secondary"
+                style={column.width ? { width: column.width } : undefined}
+              >
+                {column.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((row, rowIndex) => (
+            <tr key={rowKey ? rowKey(row, rowIndex) : rowIndex} className="border-t border-gray-100">
+              {columns.map((column) => {
+                const content = column.render
+                  ? column.render(row, rowIndex)
+                  : row[column.key];
+
+                return (
+                  <td key={`${rowIndex}-${column.key}`} className="px-3 py-3 align-top">
+                    {content}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function ParticipationPage() {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
