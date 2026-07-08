@@ -6,28 +6,20 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   FaChevronDown,
-  FaBuilding,
-  FaChartBar,
+  FaUniversity,
   FaUsers,
   FaCalendarAlt,
   FaHandHoldingHeart,
   FaFileAlt,
   FaUserCircle,
 } from 'react-icons/fa';
-
-const NAV_ITEMS = [
-  { id: 'dashboard', label: 'ផ្ទាំងគ្រប់គ្រង', href: '/dashboard', icon: 'dashboard', roles: ['admin', 'secretary', 'branch_leader'] },
-  {id: 'branches',   label: 'សាខា',             href: '/branches',   icon: 'building',  roles: ['admin']},
-  { id: 'members',   label: 'សមាជិក',           href: '/members',   icon: 'users',     roles: ['admin', 'secretary'] },
-  { id: 'activities',  label: 'កម្មវិធី',          href: '/activities',  icon: 'calendar',  roles: ['admin', 'secretary', 'branch_leader', 'member'] },
-  { id: 'donations', label: 'វិភាគទាន',          href: '/donations', icon: 'donation',  roles: ['admin', 'secretary', 'branch_leader', 'member'] },
-  { id: 'documents', label: 'ឯកសារ',             href: '/documents', icon: 'file',      roles: ['admin', 'secretary', 'branch_leader', 'member'] },
-  { id: 'profile',   label: 'ប្រវត្តិរូប',        href: '/profile',   icon: 'profile',   roles: ['admin', 'secretary', 'branch_leader', 'member'] },
-  {id: 'variables',  label: 'ការកំណត់អថេរ',   href: '/variables',  icon: 'settings',  roles: ['admin']},
-];
+import { BarChart2 } from "lucide-react";
+import { NAV_ITEMS } from '@/lib/navigation';
+import ChartIcon from "@/components/ui/icons/chartIcon";
 
 const ICON_MAP = {
-  dashboard: FaChartBar,
+  dashboard: ChartIcon,
+  building: FaUniversity,
   users: FaUsers,
   calendar: FaCalendarAlt,
   donation: FaHandHoldingHeart,
@@ -54,12 +46,12 @@ export default function Sidebar({ role = 'secretary', userName = 'ផាន វ�
         {/* Branch selector — match nav item sizing */}
         <div className="px-3 mb-2">
           <button className="w-full flex items-center justify-between gap-2 bg-white/10 hover:bg-white/15 transition rounded-lg px-4 py-2.5 text-sm font-medium">
-            <span className="flex items-center gap-3">
-              <FaBuilding size={16} />
-              ជ្រើសរើសសាខា
-            </span>
-            <FaChevronDown size={12} className="text-white/60" />
-          </button>
+          <span className="flex items-center gap-3">
+            <FaUniversity size={16} />
+            ជ្រើសរើសសាខា
+          </span>
+          <FaChevronDown size={12} className="text-white/60" />
+        </button>
         </div>
 
         {/* Nav items */}
@@ -89,7 +81,7 @@ export default function Sidebar({ role = 'secretary', userName = 'ផាន វ�
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
               <Image
-                src={userAvatar || "secretary.jpg"}
+                src={userAvatar || "/secretary.jpg"}
                 alt={userName}
                 width={36}
                 height={36}

@@ -9,5 +9,6 @@ export default function DonationPage() {
       <DonationCards />
       <DonationTable />
     </div>
+
   );
 }
