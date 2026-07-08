@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import DonationTabs from "@/components/dashboard/DonationTabs";
-import DonationCards from "@/components/dashboard/DonationCards";
+import DonationTabs from "@/components/donations/DonationTabs";
+import DonationCards from "@/components/donations/DonationCards";
 import { donationRows } from "@/data/donationData";
 
 export default function AddDonationPage() {

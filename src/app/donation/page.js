@@ -1,6 +1,6 @@
-import DonationTabs from "@/components/dashboard/DonationTabs";
-import DonationCards from "@/components/dashboard/DonationCards";
-import DonationTable from "@/components/dashboard/DonationTable";
+import DonationTabs from "@/components/donations/DonationTabs";
+import DonationCards from "@/components/donations/DonationCards";
+import DonationTable from "@/components/donations/DonationTable";
 
 export default function DonationPage() {
   return (
