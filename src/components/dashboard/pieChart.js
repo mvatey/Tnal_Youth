@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { PieChart, Pie, Cell } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { ChevronDown } from "lucide-react";
 
 const MONTHS_KM = [
@@ -49,20 +49,28 @@ async function fetchActivityBreakdown(month) {
 }
 // --------------------------------------------------------------------
 
+// Legend dot colors (solid).
 const COLORS = {
-  internal: "#5B6FE8",
-  external: "#3FC97A",
+  internal: "#4B5FD9",
+  external: "#22C55E",
 };
 
+// Gradient stops for the donut slices — subtle vertical gradient,
+// dark at top fading to a lighter tint at the bottom, per reference image.
 const GRADIENT_IDS = {
   internal: "activityInternalGradient",
   external: "activityExternalGradient",
 };
+const GRADIENT_STOPS = {
+  internal: { from: "#3B4FC7", to: "#A5B4E8" },
+  external: { from: "#22C55E", to: "#6EE0A0" },
+};
 
-// Donut pixel size — bumped up from 115 to fill the taller card.
+// Donut pixel size — kept large to fill the taller card.
 const DONUT_SIZE = 190;
-const DONUT_INNER_RADIUS = 58;
-const DONUT_OUTER_RADIUS = 92;
+const DONUT_INNER_RADIUS = 60;
+const DONUT_OUTER_RADIUS = 90;
+
 
 function MonthDropdown({ value, onChange }) {
   return (
@@ -107,31 +115,16 @@ function MonthDropdown({ value, onChange }) {
 
 function LegendRow({ color, label, count, isLoading }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+    <div
+      className="flex items-center gap-2 text-sm text-text-secondary"
+      style={{ marginBottom: 12, opacity: isLoading ? 0.4 : 1, transition: "opacity 0.2s" }}
+    >
       <span
-        style={{
-          width: 8,
-          height: 8,
-          borderRadius: "50%",
-          background: color,
-          flexShrink: 0,
-        }}
+        className="w-2.5 h-2.5 rounded-full"
+        style={{ background: color, flexShrink: 0 }}
       />
-      <span style={{ fontSize: 13, color: "#232629" }}>{label}</span>
-      <span style={{ fontSize: 13, color: "#232629", marginLeft: 4 }}>ចំនួន</span>
-      <span
-        style={{
-          fontSize: 13,
-          fontWeight: 600,
-          color: "#232629",
-          marginLeft: 2,
-          minWidth: 28,
-          opacity: isLoading ? 0.3 : 1,
-          transition: "opacity 0.2s",
-        }}
-      >
-        {count}
-      </span>
+      <span>{label}</span>
+      <span className="font-semibold text-text-primary">{count} នាក់</span>
     </div>
   );
 }
@@ -206,48 +199,38 @@ export default function DonutChart() {
           {error}
         </div>
       ) : (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 32,
-            flex: 1,
-          }}
-        >
+        <div className="flex items-center gap-8" style={{ justifyContent: "center", flex: 1 }}>
           <div style={{ position: "relative", width: DONUT_SIZE, height: DONUT_SIZE, flexShrink: 0 }}>
-            <PieChart width={DONUT_SIZE} height={DONUT_SIZE}>
-              <defs>
-                <linearGradient id={GRADIENT_IDS.internal} x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#6E7EEF" />
-                  <stop offset="100%" stopColor="#4A57C7" />
-                </linearGradient>
-                <linearGradient id={GRADIENT_IDS.external} x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#4ADB8C" />
-                  <stop offset="100%" stopColor="#2FB77A" />
-                </linearGradient>
-              </defs>
-              <Pie
-                data={chartData}
-                dataKey="value"
-                innerRadius={DONUT_INNER_RADIUS}
-                outerRadius={DONUT_OUTER_RADIUS}
-                startAngle={90}
-                endAngle={-270}
-                stroke="none"
-                cornerRadius={9}
-                paddingAngle={3}
-                isAnimationActive={!isLoading}
-              >
-                {chartData.map((entry) => (
-                  <Cell
-                    key={entry.key}
-                    fill={isLoading ? "#EDEEF2" : `url(#${GRADIENT_IDS[entry.key]})`}
-                    opacity={isLoading ? 0.6 : 1}
-                  />
-                ))}
-              </Pie>
-            </PieChart>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <defs>
+                  <linearGradient id={GRADIENT_IDS.internal} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={GRADIENT_STOPS.internal.from} />
+                    <stop offset="100%" stopColor={GRADIENT_STOPS.internal.to} />
+                  </linearGradient>
+                  <linearGradient id={GRADIENT_IDS.external} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={GRADIENT_STOPS.external.from} />
+                    <stop offset="100%" stopColor={GRADIENT_STOPS.external.to} />
+                  </linearGradient>
+                </defs>
+                <Pie
+                  data={chartData}
+                  dataKey="value"
+                  innerRadius={DONUT_INNER_RADIUS}
+                  outerRadius={DONUT_OUTER_RADIUS}
+                  paddingAngle={2}
+                  isAnimationActive={!isLoading}
+                >
+                  {chartData.map((entry) => (
+                    <Cell
+                      key={entry.key}
+                      fill={isLoading ? "#EDEEF2" : `url(#${GRADIENT_IDS[entry.key]})`}
+                      opacity={isLoading ? 0.6 : 1}
+                    />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
             {!isLoading && total === 0 && (
               <div
                 style={{
@@ -267,7 +250,7 @@ export default function DonutChart() {
             )}
           </div>
 
-          <div style={{ flexShrink: 0 }}>
+          <div>
             <LegendRow
               color={COLORS.internal}
               label={data ? data.internal.label : "កម្មវិធីខាងក្នុង"}
