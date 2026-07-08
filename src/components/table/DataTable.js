@@ -1,302 +1,183 @@
+// components/dashboard/DataTable.js
 "use client";
-
 import { useState, useMemo, useEffect } from "react";
-import { ChevronDown, Search, CalendarDays } from "lucide-react";
-import participationData from "@/data/participation.json";
-import Pagination from "@/components/forms/download";
+import { Search } from "lucide-react";
+import Pagination from "@/components/forms/download.js";
 
-const PAGE_SIZE = 10;
-
-// Badge styles for the "ប្រភេទ" (type) column
-const TYPE_BADGE_STYLES = {
-  កម្មវិធីផ្ទៃក្នុង: "bg-primary-light text-primary",
-  កម្មវិធីខាងក្រៅ: "bg-success-bg text-success",
-};
-
-// Badge styles for the "សកម្មភាព" (participation status) column
-const STATUS_BADGE_STYLES = {
-  បានចូលរួម: "bg-success-bg text-success",
-  មិនបានចូលរួម: "bg-error-bg text-error",
-};
-
-function DataTable({ columns, data, rowKey, emptyMessage }) {
-  if (!data?.length) {
-    return <div className="text-sm text-text-secondary">{emptyMessage}</div>;
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-sm">
-        <thead className="bg-gray-50">
-          <tr>
-            {columns.map((column) => (
-              <th
-                key={column.key}
-                className="px-3 py-3 text-left font-medium text-text-secondary"
-                style={column.width ? { width: column.width } : undefined}
-              >
-                {column.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((row, rowIndex) => (
-            <tr key={rowKey ? rowKey(row, rowIndex) : rowIndex} className="border-t border-gray-100">
-              {columns.map((column) => {
-                const content = column.render
-                  ? column.render(row, rowIndex)
-                  : row[column.key];
-
-                return (
-                  <td key={`${rowIndex}-${column.key}`} className="px-3 py-3 align-top">
-                    {content}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-export default function ParticipationPage() {
-  const [query, setQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+/**
+ * Reusable DataTable component reflecting your precise layout design
+ * 
+ * @param {string} title - Table header text (e.g., "បញ្ជីសមាជិក")
+ * @param {Array} data - Raw array of objects to display
+ * @param {Array} columns - Array defining your column settings:
+ *    { 
+ *      header: "Title", 
+ *      width: "w-[100px]", 
+ *      align: "center"|"left"|"right",
+ *      render: (item, index) => JSX // optional custom cell styling
+ *      accessor: "keyName" // optional direct key picker if no render fn
+ *    }
+ * @param {Array} filters - Dynamic filters configuration:
+ *    {
+ *      value: selectedValue,
+ *      onChange: (val) => void,
+ *      options: ["Option 1", "Option 2"],
+ *      placeholder: "Select Something"
+ *    }
+ * @param {string} searchPlaceholder - Placeholder for search bar
+ * @param {string} searchQuery - Current search state string
+ * @param {function} onSearchChange - Callback when text changes
+ * @param {ReactNode} actionButton - Top right primary button slot (e.g., "Add Member")
+ * @param {string} emptyMessage - Text to show when no entries found
+ * @param {number} pageSize - Limit of rows per page (default: 10)
+ */
+export default function DataTable({
+  title,
+  data = [],
+  columns = [],
+  filters = [],
+  searchPlaceholder = "ស្វែងរក...",
+  searchQuery = "",
+  onSearchChange,
+  actionButton,
+  emptyMessage = "មិនមានទិន្នន័យត្រូវនឹងលក្ខខណ្ឌស្វែងរកទេ",
+  pageSize = 10,
+}) {
   const [currentPage, setCurrentPage] = useState(1);
 
-  const types = useMemo(
-    () => [...new Set(participationData.map((item) => item.type))],
-    [],
-  );
-
-  const filtered = useMemo(() => {
-    return participationData.filter((item) => {
-      const matchesQuery = item.activity
-        .toLowerCase()
-        .includes(query.toLowerCase());
-      const matchesType = !typeFilter || item.type === typeFilter;
-      const matchesDate = !dateFilter || item.date === dateFilter;
-      return matchesQuery && matchesType && matchesDate;
-    });
-  }, [query, typeFilter, dateFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-
+  // Reset pagination to first page if search queries or filters alter the data array size
   useEffect(() => {
     setCurrentPage(1);
-  }, [query, typeFilter, dateFilter]);
+  }, [data.length, searchQuery]);
 
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
+  const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
 
-  const paginated = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return filtered.slice(start, start + PAGE_SIZE);
-  }, [filtered, currentPage]);
-
-  const handleDownload = () => {
-    const headers = [
-      "ល.រ",
-      "ឈ្មោះកម្មវិធី",
-      "វិស័យ",
-      "ប្រភេទ",
-      "សកម្មភាព",
-      "ទីតាំង",
-      "ថ្ងៃចូលរួម",
-    ];
-
-    const rows = filtered.map((item, i) => [
-      i + 1,
-      item.activity,
-      item.sector,
-      item.type,
-      item.status,
-      `${item.location?.city ?? ""} ${item.location?.district ?? ""}`.trim(),
-      item.date,
-    ]);
-
-    const csvContent = [headers, ...rows]
-      .map((row) =>
-        row
-          .map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`)
-          .join(","),
-      )
-      .join("\n");
-
-    const blob = new Blob(["\uFEFF" + csvContent], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "participation.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleViewDetail = (item) => {
-    // Hook this up to your router / modal as needed
-    console.log("View detail for:", item);
-  };
-
-  const columns = [
-    {
-      key: "index",
-      header: "ល.រ",
-      width: "64px",
-      render: (_row, rowIndex) => (currentPage - 1) * PAGE_SIZE + rowIndex + 1,
-    },
-    {
-      key: "activity",
-      header: "ឈ្មោះកម្មវិធី",
-      cellClassName: "text-text-primary font-medium",
-    },
-    {
-      key: "sector",
-      header: "វិស័យ",
-    },
-    {
-      key: "type",
-      header: "ប្រភេទ",
-      render: (row) => (
-        <span
-          className={`inline-block px-3 py-1 rounded-full text-xs whitespace-nowrap ${
-            TYPE_BADGE_STYLES[row.type] || "bg-gray-100 text-text-secondary"
-          }`}
-        >
-          {row.type}
-        </span>
-      ),
-    },
-    {
-      key: "status",
-      header: "សកម្មភាព",
-      render: (row) => (
-        <span
-          className={`inline-block px-3 py-1 rounded-full text-xs whitespace-nowrap ${
-            STATUS_BADGE_STYLES[row.status] || "bg-gray-100 text-text-secondary"
-          }`}
-        >
-          {row.status}
-        </span>
-      ),
-    },
-    {
-      key: "location",
-      header: "ទីតាំង",
-      render: (row) => (
-        <>
-          <div>{row.location?.city}</div>
-          <div className="text-xs text-text-secondary/70">
-            {row.location?.district}
-          </div>
-        </>
-      ),
-    },
-    {
-      key: "date",
-      header: "ថ្ងៃចូលរួម",
-    },
-    {
-      key: "actions",
-      header: "សកម្មភាព",
-      width: "128px",
-      render: (row) => (
-        <button
-          onClick={() => handleViewDetail(row)}
-          className="flex items-center gap-1 bg-primary text-white text-xs font-medium px-3 py-1.5 rounded-full hover:opacity-90 transition"
-        >
-          លម្អិត
-        </button>
-      ),
-    },
-  ];
+  // Slice down your exact pagination chunk
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return data.slice(start, start + pageSize);
+  }, [data, currentPage, pageSize]);
 
   return (
-    <div className="space-y-4">
-      {/* Page Title */}
-      <div>
-        <h2 className="text-xl font-semibold text-text-primary">
-          ប្រវត្តិការចូលរួមសកម្មភាព
-        </h2>
-        <p className="text-sm text-text-secondary mt-1">
-          បង្ហាញសកម្មភាព និងកិច្ចប្រជុំដែលសមាជិកបានចូលរួម។
-        </p>
-      </div>
+    <div className="bg-white rounded-xl p-6 shadow-sm">
+      {/* Table Header/Title */}
+      {title && (
+        <h3 className="font-semibold text-text-primary mb-4 text-lg">
+          {title}
+        </h3>
+      )}
 
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex flex-1 items-center gap-3">
-          {/* Search */}
-          <div className="relative flex-1">
+      {/* Dynamic Toolbar Layer */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        {/* Universal Search Bar */}
+        {onSearchChange && (
+          <div className="relative flex-1 min-w-[220px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
             <input
               type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="ស្វែងរក..."
-              className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
+        )}
 
-          {/* Type filter */}
-          <div className="relative w-48">
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              <option key="type-placeholder" value="">
-                ប្រភេទ
+        {/* Dynamic Filters Loop */}
+        {filters.map((filter, index) => (
+          <select
+            key={index}
+            value={filter.value}
+            onChange={(e) => filter.onChange(e.target.value)}
+            className="px-3 py-2 rounded-lg border border-gray-200 text-sm text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="">{filter.placeholder}</option>
+            {filter.options.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
               </option>
-              {types.map((t) => (
-                <option key={`type-${t}`} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-          </div>
+            ))}
+          </select>
+        ))}
 
-          {/* Date filter */}
-          <div className="relative w-48">
-            <input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-            <CalendarDays className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-          </div>
-        </div>
+        {/* Dynamic Top Right Action Button Slot */}
+        {actionButton && <div className="ml-auto">{actionButton}</div>}
       </div>
 
-      {/* Table Card */}
-      <div className="bg-white rounded-xl p-5 shadow-sm">
-        <DataTable
-          columns={columns}
-          data={paginated}
-          rowKey={(row, i) => row.id ?? `participation-${i}`}
-          emptyMessage="មិនមានទិន្នន័យត្រូវនឹងលក្ខខណ្ឌស្វែងរកទេ"
-        />
+      {/* Table Shell with explicit fixed sizing setup matching your original layout */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm table-fixed">
+          <colgroup>
+            {columns.map((col, idx) => (
+              <col key={idx} className={col.width || ""} />
+            ))}
+          </colgroup>
+          <thead>
+            <tr className="text-text-secondary border-b border-gray-100">
+              {columns.map((col, idx) => {
+                let alignment = "text-left";
+                if (col.align === "center") alignment = "text-center";
+                if (col.align === "right") alignment = "text-right";
+                
+                return (
+                  <th key={idx} className={`py-3 px-2 font-medium ${alignment}`}>
+                    {col.header}
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedData.map((item, itemIndex) => (
+              <tr
+                key={item.id || itemIndex}
+                className="border-b border-gray-50 hover:bg-bg-page-gray/50"
+              >
+                {columns.map((col, colIdx) => {
+                  let alignment = "text-left";
+                  if (col.align === "center") alignment = "text-center";
+                  if (col.align === "right") alignment = "text-right";
 
-        {/* Pagination */}
+                  // Global row entry sequential indexing rule (ល.រ)
+                  const globalIndex = (currentPage - 1) * pageSize + itemIndex + 1;
+
+                  return (
+                    <td
+                      key={colIdx}
+                      className={`py-3 px-2 text-text-secondary truncate ${alignment}`}
+                    >
+                      {col.render
+                        ? col.render(item, globalIndex)
+                        : item[col.accessor]}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+
+            {/* Empty Array Fallback Screen State */}
+            {data.length === 0 && (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="py-8 text-center text-text-secondary"
+                >
+                  {emptyMessage}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination Integration */}
+      {data.length > 0 && (
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          onDownload={handleDownload}
+          onPageChange={(page) => setCurrentPage(page)}
         />
-      </div>
+      )}
     </div>
   );
 }
