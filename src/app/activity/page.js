@@ -1,5 +1,6 @@
 "use client";
 
+import DataTable from "@/components/table/DataTable";
 import { useMemo, useState } from "react";
 import {
   Activity,
@@ -84,6 +85,67 @@ const stats = [
     accent: "bg-success",
     iconBg: "bg-success-bg",
     iconColor: "text-success",
+  },
+];
+
+const columns = [
+  {
+    key: "index",
+    header: "ល.រ",
+    width: "64px",
+    render: (_row, rowIndex) => rowIndex + 1,
+  },
+  {
+    key: "title",
+    header: "ឈ្មោះកម្មវិធី",
+    cellClassName: "text-text-primary font-medium",
+  },
+  {
+    key: "type",
+    header: "ប្រភេទ",
+    render: (row) => <TypeBadge type={row.type} />,
+  },
+  {
+    key: "category",
+    header: "វិស័យ",
+  },
+  {
+    key: "branch",
+    header: "សាខា",
+  },
+  {
+    key: "leader",
+    header: "អ្នកទទួលបន្ទុក",
+  },
+  {
+    key: "date",
+    header: "កាលបរិច្ឆេទ",
+  },
+  {
+    key: "duration",
+    header: "រយៈពេល",
+  },
+  {
+    key: "participant",
+    header: "អ្នកចូលរួម",
+  },
+  {
+    key: "status",
+    header: "ស្ថានភាព",
+    render: (row) => <StatusBadge status={row.status} />,
+  },
+  {
+    key: "actions",
+    header: "សកម្មភាព",
+    width: "140px",
+    render: (row) => (
+      <button
+        onClick={() => console.log(row)}
+        className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-white"
+      >
+        ព័ត៌មានលម្អិត
+      </button>
+    ),
   },
 ];
 
@@ -193,50 +255,12 @@ export default function ActivityPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1000px] text-sm">
-            <thead>
-              <tr className="border-b border-border text-text-secondary">
-                <th className="px-4 py-3 text-left font-medium">ល.រ</th>
-                <th className="px-4 py-3 text-left font-medium">ឈ្មោះកម្មវិធី</th>
-                <th className="px-4 py-3 text-left font-medium">ប្រភេទ</th>
-                <th className="px-4 py-3 text-left font-medium">វិស័យ</th>
-                <th className="px-4 py-3 text-left font-medium">សាខា</th>
-                <th className="px-4 py-3 text-left font-medium">អ្នកទទួលបន្ទុក</th>
-                <th className="px-4 py-3 text-left font-medium">កាលបរិច្ឆេទ</th>
-                <th className="px-4 py-3 text-left font-medium">រយៈពេល</th>
-                <th className="px-4 py-3 text-left font-medium">អ្នកចូលរួម</th>
-                <th className="px-4 py-3 text-left font-medium">ស្ថានភាព</th>
-                <th className="px-4 py-3 text-left font-medium">សកម្មភាព</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredActivities.map((item, index) => (
-                <tr key={item.id} className="border-b border-border/70 hover:bg-bg-page-gray/50">
-                  <td className="px-4 py-3 text-text-secondary">{index + 1}</td>
-                  <td className="px-4 py-3 font-medium text-text-primary">{item.title}</td>
-                  <td className="px-4 py-3">
-                    <TypeBadge type={item.type} />
-                  </td>
-                  <td className="px-4 py-3 text-text-secondary">{item.category}</td>
-                  <td className="px-4 py-3 text-text-secondary">{item.branch}</td>
-                  <td className="px-4 py-3 text-text-secondary">{item.leader}</td>
-                  <td className="px-4 py-3 text-text-secondary">{item.date}</td>
-                  <td className="px-4 py-3 text-text-secondary">{item.duration}</td>
-                  <td className="px-4 py-3 text-text-secondary">{item.participant}</td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={item.status} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <button className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-white">
-                      <Eye size={14} />
-                      ព័ត៌មានលម្អិត
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable
+            columns={columns}
+            data={filteredActivities}
+            rowKey={(row) => row.id}
+            emptyMessage="មិនមានទិន្នន័យសកម្មភាពទេ"
+            />
         </div>
 
         <div className="flex items-center justify-between pt-4">
