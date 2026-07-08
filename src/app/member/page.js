@@ -4,12 +4,47 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal.js";
 import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
-import DataTable from "@/components/table/DataTable.js"; // Path to our new shared component
+import DataTable from "@/components/table/DataTable.js"; // Shared Component
+import StatCard from "@/components/dashboard/statCard"; // StatCard Component
 
 import { Users, UserCheck, Plus, Trash2, EyeIcon } from "lucide-react";
-import StatCard from "@/components/dashboard/statCard";
 import users from "@/data/members.json";
 import { AiOutlineWoman } from "react-icons/ai";
+
+const KHMER_MONTHS = {
+  មករា: 0, កុម្ភៈ: 1, កុម្ភះ: 1, មីនា: 2, មេសា: 3, ឧសភា: 4, 
+  មិថុនា: 5, កក្កដា: 6, សីហា: 7, កញ្ញា: 8, តុលា: 9, វិច្ឆិកា: 10, ធ្នូ: 11
+};
+
+// Helper utilities for calculating stat growth trends
+function parseKhmerDate(str) {
+  if (typeof str !== "string") return null;
+  const match = str.match(/(\d+)\s+([^\s,]+),?\s*(\d+)/);
+  if (!match) return null;
+  const [, day, monthName, year] = match;
+  const month = KHMER_MONTHS[monthName];
+  if (month === undefined) return null;
+  return new Date(Number(year), month, Number(day));
+}
+
+function calcGrowth(members, filterFn) {
+  const today = new Date();
+  const oneMonthAgo = new Date(today);
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+  const countUpTo = (cutoff) =>
+    members.filter((m) => {
+      if (!m.joinedAt) return false;
+      const joined = parseKhmerDate(m.joinedAt);
+      return joined && joined <= cutoff && filterFn(m);
+    }).length;
+
+  const currentCount = countUpTo(today);
+  const previousCount = countUpTo(oneMonthAgo);
+
+  if (previousCount === 0) return currentCount > 0 ? 100 : 0;
+  return Math.round(((currentCount - previousCount) / previousCount) * 100);
+}
 
 const ROLE_LABELS = { admin: "អ្នកគ្រប់គ្រង", branch_leader: "ប្រធានសាខា", secretary: "លេខាធិការ", member: "សមាជិក" };
 const ROLE_BADGE_STYLES = { admin: "bg-primary-light text-primary", branch_leader: "bg-warning-bg text-warning", secretary: "bg-success-bg text-success", member: "bg-gray-100 text-text-secondary" };
@@ -24,17 +59,34 @@ export default function MembersPage() {
   const [deletedIds, setDeletedIds] = useState([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  // Clean data array mutations
+  // 1. Raw base array excluding locally deleted profiles
+  const activeMembersList = useMemo(
+    () => users.filter((u) => !deletedIds.includes(u.id)),
+    [deletedIds]
+  );
+
+  // 2. Generate Real-time Card Statistics
+  const stats = useMemo(() => {
+    const total = activeMembersList.length;
+    const active = activeMembersList.filter((m) => m.status === "សកម្ម").length;
+    const female = activeMembersList.filter((m) => m.gender === "ស្រី").length;
+
+    const totalGrowth = calcGrowth(activeMembersList, () => true);
+    const activeGrowth = calcGrowth(activeMembersList, (m) => m.status === "សកម្ម");
+    const femaleGrowth = calcGrowth(activeMembersList, (m) => m.gender === "ស្រី");
+
+    return { total, active, female, totalGrowth, activeGrowth, femaleGrowth };
+  }, [activeMembersList]);
+
+  // 3. Apply search query inputs and selection dropdowns to pass down to DataTable
   const filteredMembers = useMemo(() => {
-    return users
-      .filter((u) => !deletedIds.includes(u.id))
-      .filter((m) => {
-        const matchesQuery = m.name.toLowerCase().includes(query.toLowerCase()) || m.phone.includes(query);
-        const matchesBranch = !branchFilter || m.branch === branchFilter;
-        const matchesStatus = !statusFilter || m.status === statusFilter;
-        return matchesQuery && matchesBranch && matchesStatus;
-      });
-  }, [deletedIds, query, branchFilter, statusFilter]);
+    return activeMembersList.filter((m) => {
+      const matchesQuery = m.name.toLowerCase().includes(query.toLowerCase()) || m.phone.includes(query);
+      const matchesBranch = !branchFilter || m.branch === branchFilter;
+      const matchesStatus = !statusFilter || m.status === statusFilter;
+      return matchesQuery && matchesBranch && matchesStatus;
+    });
+  }, [activeMembersList, query, branchFilter, statusFilter]);
 
   const branches = useMemo(() => [...new Set(users.map((m) => m.branch))], []);
 
@@ -90,9 +142,35 @@ export default function MembersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Stat Cards can go here... */}
+      {/* Stat cards section */}
+      <div className="grid grid-cols-3 gap-4">
+        <StatCard
+          icon={Users}
+          label="ចំនួនសមាជិកសរុប"
+          value={String(stats.total)}
+          growth={String(stats.totalGrowth)}
+          iconColor="text-primary"
+          iconBg="bg-primary-light"
+        />
+        <StatCard
+          icon={UserCheck}
+          label="ចំនួនសមាជិកសកម្ម"
+          value={String(stats.active)}
+          growth={String(stats.activeGrowth)}
+          iconColor="text-success"
+          iconBg="bg-success-bg"
+        />
+        <StatCard
+          icon={AiOutlineWoman}
+          label="ចំនួនភេទស្រី"
+          value={String(stats.female)}
+          growth={String(stats.femaleGrowth)}
+          iconColor="text-warning"
+          iconBg="bg-warning-bg"
+        />
+      </div>
 
-      {/* Render the unified DataTable component cleanly */}
+      {/* Rendered shared DataTable component layout structure */}
       <DataTable
         title="បញ្ជីសមាជិក"
         data={filteredMembers}
