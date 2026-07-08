@@ -56,20 +56,5 @@ export default function MemberInfoPage({ params }) {
     );
   }
 
-  return (
-    <div className="space-y-4">
-      <HeaderMemberInfo
-        title={
-          member?.name ? `ព័ត៌មានលម្អិត ${member.name}` : "ព័ត៌មានលម្អិតសមាជិក"
-        }
-        breadcrumb={{
-          parent: "បញ្ជីសមាជិក",
-          current: member?.name || "ព័ត៌មានលម្អិតសមាជិក",
-        }}
-        onButtonClick={() => router.back()}
-      />
-
-      <MemberInfoCard member={member} />
-    </div>
-  );
+  
 }

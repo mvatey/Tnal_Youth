@@ -1,4 +1,4 @@
-// components/ui/ConfirmDeleteModal.jsx
+// components/popup/Confirmdeletemodal.jsx
 "use client";
 
 import { Trash2 } from "lucide-react";
