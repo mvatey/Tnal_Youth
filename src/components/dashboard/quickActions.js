@@ -2,10 +2,10 @@
 import { CirclePlus } from "lucide-react";
 
 const ACTIONS = [
-  { id: "program", label: "បន្ថែមកម្មវិធី", color: "text-success", bg: "bg-success-bg" },
-  { id: "member", label: "បន្ថែមសមាជិក", color: "text-primary", bg: "bg-primary-light" },
-  { id: "branch", label: "បន្ថែមសាខារៀន", color: "text-secondary", bg: "bg-secondary-light" },
-  { id: "donation", label: "បន្ថែមចំណូល", color: "text-warning", bg: "bg-warning-bg" },
+  { id: "program", label: "បង្កើតកម្មវិធី", color: "text-success", bg: "bg-success-bg" },
+  { id: "branch", label: "បង្កើតឯកសារ", color: "text-primary", bg: "bg-primary-light" },
+  { id: "activity", label: "ម់ើលវិភាគទាន", color: "text-secondary", bg: "bg-secondary-light" },
+  { id: "member", label: "បង្កើតសមាជិក", color: "text-warning", bg: "bg-warning-bg" },
 ];
 
 export default function QuickActions() {

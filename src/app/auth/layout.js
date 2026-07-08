@@ -6,12 +6,13 @@ export default function AuthLayout({ children }) {
     <div className="min-h-screen flex">
       {/* Left panel — shared across all auth pages */}
       <div className="hidden md:flex w-1/2 relative">
-        <Image src="/hallway.png" alt="" fill className="object-cover" />
+        <Image src="/hallway.png" alt="" fill sizes="50vw" priority className="object-cover" />
         <div
           className="absolute inset-0"
           style={{
             background: "linear-gradient(135deg, rgba(45,53,91,0.95) 0%, rgba(45,53,91,0.60) 100%)",
           }}
+          
         />
         <div className="relative z-10 flex flex-col justify-center px-20 text-white">
           <div className="w-10 h-px bg-white mb-8" />

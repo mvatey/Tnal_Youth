@@ -29,6 +29,7 @@
 
 // app/layout.js
 import { Kantumruy_Pro } from "next/font/google";
+import { ThemeProvider } from "@/components/providers/themeProvider";
 import "./globals.css";
 
 const kantumruyPro = Kantumruy_Pro({
@@ -37,10 +38,13 @@ const kantumruyPro = Kantumruy_Pro({
   variable: "--font-kantumruy",
 });
 
+
 export default function RootLayout({ children }) {
   return (
     <html lang="km" className={kantumruyPro.variable}>
-      <body className={kantumruyPro.className}>{children}</body>
+      <body className={kantumruyPro.className}>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

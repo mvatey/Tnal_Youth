@@ -1,31 +1,38 @@
 import StatsGrid from "@/components/dashboard/statsGrid";
 import ActivitySummaryChart from "@/components/dashboard/pieChart";
 import ParticipationChart from "@/components/dashboard/lineChart";
-import ActivityList from "@/components/dashboard/activityList";
+import { RecentActivities, UpcomingActivities } from "@/components/dashboard/activityList";
 import QuickActions from "@/components/dashboard/quickActions";
 import PerformanceSummary from "@/components/dashboard/performanceSummary";
 
 export default function DashboardPage() {
   return (
-    <div className="flex flex-col gap-5 p-6 bg-bg-page-gray min-h-screen">
+    <div className="flex flex-col gap-4">
       {/* 1. Summary cards */}
       <StatsGrid />
 
-      {/* 2. Donut + trend chart — donut takes 1 share of width, trend chart takes 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <ActivitySummaryChart />
-        <div className="lg:col-span-2">
+      {/* 2. Donut + trend chart — now equal width, equal height */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <div className="h-full">
+          <ActivitySummaryChart />
+        </div>
+        <div className="h-full">
           <ParticipationChart />
         </div>
       </div>
 
-      {/* 3. Recent activities, upcoming activities, quick actions + performance summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <ActivityList type="recent" />
-        <ActivityList type="upcoming" />
-        <div className="flex flex-col gap-5">
-          <QuickActions />
-          <PerformanceSummary />
+      {/* 3. Recent activities, upcoming activities, quick actions + performance
+             summary  */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+        <RecentActivities />
+        <UpcomingActivities />
+        <div className="flex flex-col gap-4 h-full">
+          <div className="flex-1">
+            <QuickActions />
+          </div>
+          <div className="flex-1">
+            <PerformanceSummary />
+          </div>
         </div>
       </div>
     </div>

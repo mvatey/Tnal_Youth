@@ -8,6 +8,7 @@ import {
   YAxis,
   CartesianGrid,
   ResponsiveContainer,
+  Tooltip,
 } from "recharts";
 import { ChevronDown } from "lucide-react";
 
@@ -52,6 +53,27 @@ async function fetchParticipationTrend(year) {
 // --------------------------------------------------------------------
 
 const LINE_COLOR = "#7B6EF6";
+
+function ChartTooltip({ active, payload, label }) {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div
+      style={{
+        background: "#FFFFFF",
+        border: "1px solid #E7E9EE",
+        borderRadius: 8,
+        padding: "8px 12px",
+        boxShadow: "0 2px 8px rgba(16,24,40,0.08)",
+        fontSize: 12,
+      }}
+    >
+      <div style={{ color: "#9AA0A8", marginBottom: 2 }}>{label}</div>
+      <div style={{ color: "#232629", fontWeight: 600 }}>
+        {payload[0].value.toLocaleString()} នាក់
+      </div>
+    </div>
+  );
+}
 
 function YearDropdown({ value, onChange }) {
   return (
@@ -125,20 +147,19 @@ export default function ParticipationChart() {
   return (
     <div
       style={{
-        // Centers the card horizontally within whatever parent width
-        // it's given (e.g. a full-width dashboard column or page body).
-        // Remove maxWidth/margin if this is placed inside a fixed-width
-        // grid cell where centering isn't needed.
-        maxWidth: 600,
-        margin: "0 auto",
+        // Fills the full width/height of whatever grid cell it's placed
+        // in (matches DonutChart's root sizing so both cards stretch
+        // together via the parent grid's `items-stretch`).
         background: "#FFFFFF",
         borderRadius: 14,
         padding: "16px 18px",
         boxShadow: "0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)",
         width: "100%",
         height: "100%",
-        minHeight: 240,
+        minHeight: 340,
         boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       <div
@@ -160,10 +181,11 @@ export default function ParticipationChart() {
           {error}
         </div>
       ) : (
-        <div style={{ position: "relative", height: 210, paddingBottom: 8 }}>
+        <div style={{ position: "relative", flex: 1, minHeight: 0, paddingBottom: 8 }}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 12 }}>
               <CartesianGrid stroke="#F3F4F6" vertical={false} />
+              <Tooltip content={<ChartTooltip />} cursor={{ stroke: "#E4E5EA", strokeWidth: 1 }} />
               <XAxis
                 dataKey="month"
                 tick={{ fontSize: 10, fill: "#9AA0A8" }}

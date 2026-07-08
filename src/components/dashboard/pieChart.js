@@ -59,6 +59,11 @@ const GRADIENT_IDS = {
   external: "activityExternalGradient",
 };
 
+// Donut pixel size — bumped up from 115 to fill the taller card.
+const DONUT_SIZE = 190;
+const DONUT_INNER_RADIUS = 58;
+const DONUT_OUTER_RADIUS = 92;
+
 function MonthDropdown({ value, onChange }) {
   return (
     <div style={{ position: "relative" }}>
@@ -112,8 +117,8 @@ function LegendRow({ color, label, count, isLoading }) {
           flexShrink: 0,
         }}
       />
-      <span style={{ fontSize: 13, color: "#3D4148" }}>{label}</span>
-      <span style={{ fontSize: 13, color: "#9AA0A8", marginLeft: 4 }}>ចំនួន</span>
+      <span style={{ fontSize: 13, color: "#232629" }}>{label}</span>
+      <span style={{ fontSize: 13, color: "#232629", marginLeft: 4 }}>ចំនួន</span>
       <span
         style={{
           fontSize: 13,
@@ -176,7 +181,7 @@ export default function DonutChart() {
         boxShadow: "0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)",
         width: "100%",
         height: "100%",
-        minHeight: 240,
+        minHeight: 340,
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
@@ -201,9 +206,17 @@ export default function DonutChart() {
           {error}
         </div>
       ) : (
-        <div style={{ display: "flex", alignItems: "center", gap: 20, justifyContent: "space-between", flex: 1 }}>
-          <div style={{ position: "relative", width: 115, height: 115, flexShrink: 0 }}>
-            <PieChart width={115} height={115}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 32,
+            flex: 1,
+          }}
+        >
+          <div style={{ position: "relative", width: DONUT_SIZE, height: DONUT_SIZE, flexShrink: 0 }}>
+            <PieChart width={DONUT_SIZE} height={DONUT_SIZE}>
               <defs>
                 <linearGradient id={GRADIENT_IDS.internal} x1="0" y1="0" x2="1" y2="1">
                   <stop offset="0%" stopColor="#6E7EEF" />
@@ -217,12 +230,12 @@ export default function DonutChart() {
               <Pie
                 data={chartData}
                 dataKey="value"
-                innerRadius={34}
-                outerRadius={55}
+                innerRadius={DONUT_INNER_RADIUS}
+                outerRadius={DONUT_OUTER_RADIUS}
                 startAngle={90}
                 endAngle={-270}
                 stroke="none"
-                cornerRadius={7}
+                cornerRadius={9}
                 paddingAngle={3}
                 isAnimationActive={!isLoading}
               >
@@ -243,10 +256,10 @@ export default function DonutChart() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 11,
+                  fontSize: 12,
                   color: "#9AA0A8",
                   textAlign: "center",
-                  padding: "0 20px",
+                  padding: "0 24px",
                 }}
               >
                 មិនទាន់មានទិន្នន័យ
@@ -254,7 +267,7 @@ export default function DonutChart() {
             )}
           </div>
 
-          <div style={{ flex: 1 }}>
+          <div style={{ flexShrink: 0 }}>
             <LegendRow
               color={COLORS.internal}
               label={data ? data.internal.label : "កម្មវិធីខាងក្នុង"}

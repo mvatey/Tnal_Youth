@@ -126,8 +126,8 @@ export default function PerformanceSummary() {
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#232629" }}>
-          សម្ថភពលសរុបរបស់សាខា
+        <h3 style={{ margin: "0 0 16px 0", fontSize: 14, fontWeight: 600, color: "#232629" }}>
+          សមិទ្ធផលសរុបរបស់សាខា
         </h3>
         <BranchDropdown
           branches={PLACEHOLDER_BRANCHES}

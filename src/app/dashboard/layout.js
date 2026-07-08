@@ -4,11 +4,22 @@ import Topbar from "@/components/navigation/topbar";
 
 export default function DashboardLayout({ children }) {
   return (
-    <div className="flex min-h-screen bg-bg-page-gray">
+    // h-screen + overflow-hidden on the outer shell: this element itself
+    // never scrolls. Sidebar and Topbar are pinned; only <main> below
+    // gets its own independent scroll container.
+    <div className="flex h-screen overflow-hidden bg-bg-page-gray">
       <Sidebar role="secretary" userName="ផាន វិទ្ធី" userTitle="លេខាធិការ" userAvatar="/secretary.jpg" />
-      <div className="flex-1 flex flex-col">
+
+      {/* min-h-0 is required here: without it, a flex child won't shrink
+          below its content size, which would silently break the overflow
+          scroll on <main> below (a classic flexbox gotcha). */}
+      <div className="flex-1 flex flex-col min-h-0">
         <Topbar title="ផ្ទាំងគ្រប់គ្រង" />
-        <main className="flex-1 p-6">{children}</main>
+
+        {/* The only scrollable element on the page. flex-1 lets it fill
+            the remaining height below Topbar; overflow-y-auto gives it
+            its own scrollbar instead of scrolling the whole window. */}
+        <main className="flex-1 overflow-y-auto p-4">{children}</main>
       </div>
     </div>
   );

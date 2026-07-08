@@ -13,11 +13,12 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+async function handleSubmit(e) {
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
+  try {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -33,7 +34,12 @@ export default function LoginPage() {
     }
 
     router.push("/dashboard");
+  } catch (err) {
+    setLoading(false);
+    setError("មានបញ្ហាកើតឡើង សូមព្យាយាមម្តងទៀត");
+    console.error("Login error:", err); //
   }
+}
 
   return (
     <div>
@@ -65,7 +71,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-primary text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-slate-800 transition disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full bg-slate-900 text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-slate-800 transition disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <LogIn size={18} />
           {loading ? "..." : "ចូលប្រើប្រាស់"}

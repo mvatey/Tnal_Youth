@@ -47,6 +47,15 @@
   --font-size-body-tiny: 0.75rem; /* 12px */
 }
 
+/* app/globals.css — add near your @theme block */
+.dark {
+  --color-bg-page-gray: #111827;
+  --color-bg-page-white: #1F2937;
+  --color-text-primary: #F9FAFB;
+  --color-text-secondary: #D1D5DB;
+  --color-border: #374151;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
