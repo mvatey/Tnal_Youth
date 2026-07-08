@@ -61,16 +61,22 @@ function StatMiniCard({ label, value, growth, isLoading }) {
   return (
     <div
       style={{
-        flex: 1,
-        minWidth: 130,
         background: "#F7F8FA",
         border: "1px solid #EEF0F3",
         borderRadius: 10,
         padding: "12px 14px",
+        height: "100%",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-        <span style={{ fontSize: 12, color: "#6B7280" }}>{label}</span>
+      <span style={{ fontSize: 12, color: "#6B7280" }}>{label}</span>
+
+      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 20, fontWeight: 700, color: "#1F2329" }}>
+          {isLoading ? "···" : value}
+        </span>
         {!isLoading && (
           <span
             style={{
@@ -83,9 +89,6 @@ function StatMiniCard({ label, value, growth, isLoading }) {
             {isUp ? "↑" : "↓"} {Math.abs(growthNum)}%
           </span>
         )}
-      </div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: "#1F2329" }}>
-        {isLoading ? "···" : value}
       </div>
     </div>
   );
@@ -116,6 +119,10 @@ export default function PerformanceSummary() {
         border: "1px solid #EEF0F3",
         borderRadius: 14,
         padding: "18px 20px",
+        height: "100%",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -134,7 +141,7 @@ export default function PerformanceSummary() {
           {error}
         </div>
       ) : (
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, flex: 1, alignItems: "stretch" }}>
           {(isLoading ? [0, 1, 2] : stats).map((item, i) =>
             isLoading ? (
               <StatMiniCard key={i} label="" value="" growth="0" isLoading />

@@ -5,18 +5,18 @@ import { PieChart, Pie, Cell } from "recharts";
 import { ChevronDown } from "lucide-react";
 
 const MONTHS_KM = [
-  { value: "01", label: "មករា" },
-  { value: "02", label: "កុម្ភៈ" },
-  { value: "03", label: "មីនា" },
-  { value: "04", label: "មេសា" },
-  { value: "05", label: "ឧសភា" },
-  { value: "06", label: "មិថុនា" },
-  { value: "07", label: "កក្កដា" },
-  { value: "08", label: "សីហា" },
-  { value: "09", label: "កញ្ញា" },
-  { value: "10", label: "តុលា" },
-  { value: "11", label: "វិច្ឆិកា" },
-  { value: "12", label: "ធ្នូ" },
+  { value: "01", label: "ខែមករា" },
+  { value: "02", label: "ខែកុម្ភៈ" },
+  { value: "03", label: "ខែមីនា" },
+  { value: "04", label: "ខែមេសា" },
+  { value: "05", label: "ខែឧសភា" },
+  { value: "06", label: "ខែមិថុនា" },
+  { value: "07", label: "ខែកក្កដា" },
+  { value: "08", label: "ខែសីហា" },
+  { value: "09", label: "ខែកញ្ញា" },
+  { value: "10", label: "ខែតុលា" },
+  { value: "11", label: "ខែវិច្ឆិកា" },
+  { value: "12", label: "ខែធ្នូ" },
 ];
 
 // Real "today" — reflects whenever the component actually renders.
@@ -102,7 +102,7 @@ function MonthDropdown({ value, onChange }) {
 
 function LegendRow({ color, label, count, isLoading }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
       <span
         style={{
           width: 8,
@@ -172,16 +172,14 @@ export default function DonutChart() {
       style={{
         background: "#FFFFFF",
         borderRadius: 14,
-        padding: "20px 22px",
+        padding: "16px 18px",
         boxShadow: "0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)",
         width: "100%",
         height: "100%",
-        minHeight: 220,
+        minHeight: 240,
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
-        fontFamily:
-          "'Noto Sans Khmer', 'Khmer OS', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
       <div
@@ -189,7 +187,7 @@ export default function DonutChart() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 18,
+          marginBottom: 12,
         }}
       >
         <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#232629" }}>
@@ -204,8 +202,8 @@ export default function DonutChart() {
         </div>
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 20, justifyContent: "space-between", flex: 1 }}>
-          <div style={{ position: "relative", width: 140, height: 140, flexShrink: 0 }}>
-            <PieChart width={140} height={140}>
+          <div style={{ position: "relative", width: 115, height: 115, flexShrink: 0 }}>
+            <PieChart width={115} height={115}>
               <defs>
                 <linearGradient id={GRADIENT_IDS.internal} x1="0" y1="0" x2="1" y2="1">
                   <stop offset="0%" stopColor="#6E7EEF" />
@@ -219,12 +217,12 @@ export default function DonutChart() {
               <Pie
                 data={chartData}
                 dataKey="value"
-                innerRadius={42}
-                outerRadius={68}
+                innerRadius={34}
+                outerRadius={55}
                 startAngle={90}
                 endAngle={-270}
                 stroke="none"
-                cornerRadius={8}
+                cornerRadius={7}
                 paddingAngle={3}
                 isAnimationActive={!isLoading}
               >

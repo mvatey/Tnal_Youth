@@ -125,16 +125,20 @@ export default function ParticipationChart() {
   return (
     <div
       style={{
+        // Centers the card horizontally within whatever parent width
+        // it's given (e.g. a full-width dashboard column or page body).
+        // Remove maxWidth/margin if this is placed inside a fixed-width
+        // grid cell where centering isn't needed.
+        maxWidth: 600,
+        margin: "0 auto",
         background: "#FFFFFF",
         borderRadius: 14,
-        padding: "20px 22px",
+        padding: "16px 18px",
         boxShadow: "0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)",
         width: "100%",
         height: "100%",
-        minHeight: 220,
+        minHeight: 240,
         boxSizing: "border-box",
-        fontFamily:
-          "'Noto Sans Khmer', 'Khmer OS', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
       <div
@@ -142,7 +146,7 @@ export default function ParticipationChart() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 18,
+          marginBottom: 12,
         }}
       >
         <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#232629" }}>
@@ -156,25 +160,19 @@ export default function ParticipationChart() {
           {error}
         </div>
       ) : (
-        <div style={{ position: "relative", height: "100%", minHeight: 120, paddingBottom: 6 }}>
+        <div style={{ position: "relative", height: 210, paddingBottom: 8 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 8, right: 14, left: 0, bottom: 8 }}>
-              <defs>
-                <linearGradient id="participationGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={LINE_COLOR} stopOpacity={0.35} />
-                  <stop offset="95%" stopColor={LINE_COLOR} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke="#F0F1F4" vertical={false} />
+            <AreaChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 12 }}>
+              <CartesianGrid stroke="#F3F4F6" vertical={false} />
               <XAxis
                 dataKey="month"
                 tick={{ fontSize: 10, fill: "#9AA0A8" }}
-                axisLine={{ stroke: "#EDEEF2" }}
+                axisLine={false}
                 tickLine={false}
                 interval={0}
                 tickFormatter={(m) => m.replace("ខែ", "")}
-                tickMargin={10}
-                padding={{ left: 14, right: 14 }}
+                tickMargin={4}
+                padding={{ left: 16, right: 16 }}
               />
               <YAxis
                 tick={{ fontSize: 11, fill: "#9AA0A8" }}
@@ -186,9 +184,9 @@ export default function ParticipationChart() {
                 type="monotone"
                 dataKey="participant_count"
                 stroke={isLoading ? "#E4E5EA" : LINE_COLOR}
-                strokeWidth={2.5}
+                strokeWidth={1.8}
                 strokeLinecap="round"
-                fill="url(#participationGradient)"
+                fill="none"
                 dot={false}
                 activeDot={{ r: 4, fill: LINE_COLOR, strokeWidth: 0 }}
                 isAnimationActive={!isLoading}

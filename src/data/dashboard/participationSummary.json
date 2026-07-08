@@ -15,5 +15,17 @@
       { "month": "ខែវិច្ឆិកា", "participant_count": 85 },
       { "month": "ខែធ្នូ", "participant_count": 92 }
     ]
+  },
+  {
+    "year": "2026-2027",
+    "data": [
+      { "month": "ខែមករា", "participant_count": 78 },
+      { "month": "ខែកុម្ភៈ", "participant_count": 52 },
+      { "month": "ខែមិនា", "participant_count": 82 },
+      { "month": "ខែមេសា", "participant_count": 65 },
+      { "month": "ខែឧសភា", "participant_count": 90 },
+      { "month": "ខែមិថុនា", "participant_count": 75 },
+      { "month": "ខែកក្កដា", "participant_count": 88 }
+    ]
   }
 ]

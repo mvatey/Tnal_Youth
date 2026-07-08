@@ -1,5 +1,5 @@
 // components/dashboard/quickActions.jsx
-import { Plus } from "lucide-react";
+import { CirclePlus } from "lucide-react";
 
 const ACTIONS = [
   { id: "program", label: "បន្ថែមកម្មវិធី", color: "text-success", bg: "bg-success-bg" },
@@ -10,15 +10,18 @@ const ACTIONS = [
 
 export default function QuickActions() {
   return (
-    <div className="bg-white rounded-xl border border-border p-5">
-      <h3 className="font-semibold text-text-primary text-sm mb-4">មុខងារផ្សេងៗ</h3>
-      <div className="grid grid-cols-2 gap-3">
+    <div
+      className="bg-white rounded-xl border border-border"
+      style={{ padding: "16px", height: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column" }}
+    >
+      <h3 style={{ margin: "0 0 16px 0", fontSize: 14, fontWeight: 600, color: "#232629" }}>មុខងារផ្សេងៗ</h3>
+      <div className="grid grid-cols-2 gap-3" style={{ flex: 1, alignContent: "center" }}>
         {ACTIONS.map((action) => (
           <button
             key={action.id}
-            className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium ${action.bg} ${action.color} hover:opacity-80 transition`}
+            className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-xs font-medium ${action.bg} ${action.color} hover:opacity-80 transition`}
           >
-            <Plus size={16} />
+            <CirclePlus size={16} strokeWidth={2} />
             {action.label}
           </button>
         ))}

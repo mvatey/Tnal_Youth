@@ -60,13 +60,13 @@ const CARD_CONFIG = [
 
 function SkeletonCard() {
   return (
-    <div className="bg-bg-page-white border border-border rounded-2xl overflow-hidden animate-pulse">
-      <div className="h-1 w-full bg-bg-page-gray" />
-      <div className="flex items-center gap-4 p-5">
-        <div className="w-16 h-16 rounded-2xl bg-bg-page-gray shrink-0" />
+    <div className="bg-bg-page-white border border-border rounded-xl overflow-hidden animate-pulse">
+      <div className="h-[3px] w-full bg-bg-page-gray" />
+      <div className="flex items-center gap-3 p-4">
+        <div className="w-12 h-12 rounded-xl bg-bg-page-gray shrink-0" />
         <div className="flex-1">
-          <div className="w-[60%] h-3 rounded bg-bg-page-gray mb-3" />
-          <div className="w-[35%] h-6 rounded bg-bg-page-gray" />
+          <div className="w-[60%] h-2.5 rounded bg-bg-page-gray mb-2.5" />
+          <div className="w-[35%] h-5 rounded bg-bg-page-gray" />
         </div>
       </div>
     </div>
@@ -77,30 +77,30 @@ function SummaryCard({ label, icon: Icon, accent, iconBg, iconColor, value, chan
   const isUp = changePercent >= 0;
 
   return (
-    <div className="relative bg-bg-page-white border border-border rounded-2xl overflow-hidden">
+    <div className="relative bg-bg-page-white border border-border rounded-xl overflow-hidden">
       {/* Thin full-width accent bar across the top edge */}
       <div className={`h-[3px] w-full ${accent}`} />
 
-      <div className="flex items-center gap-4 p-5">
-        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 ${iconBg}`}>
-          <Icon className={`w-7 h-7 ${iconColor}`} />
+      <div className="flex items-center gap-3 p-4">
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
+          <Icon className={`w-5 h-5 ${iconColor}`} />
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="text-base text-text-primary mb-1">{label}</div>
-          <div className="text-xl font-bold text-text-primary">{value}</div>
+          <div className="text-sm text-text-primary mb-0.5">{label}</div>
+          <div className="text-lg font-bold text-text-primary">{value}</div>
         </div>
 
-        <div className="flex flex-col items-end gap-2 shrink-0">
+        <div className="flex flex-col items-end gap-1 shrink-0">
           <div
-            className={`flex items-center gap-1 text-base font-semibold ${
+            className={`flex items-center gap-1 text-sm font-semibold ${
               isUp ? "text-success" : "text-error"
             }`}
           >
             <span>{isUp ? "↑" : "↓"}</span>
             <span>{Math.abs(changePercent)}%</span>
           </div>
-          <span className="text-sm text-text-mute">ក្នុងខែនេះ</span>
+          <span className="text-xs text-text-mute">ក្នុងខែនេះ</span>
         </div>
       </div>
     </div>
