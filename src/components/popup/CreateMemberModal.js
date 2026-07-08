@@ -307,7 +307,7 @@ export default function CreateMemberModal({
               onClick={onClose}
               className="rounded-full bg-gray-100 px-8 py-3 text-sm font-medium text-text-secondary transition hover:bg-gray-200"
             >
-              ពោះបង់
+              បោះបង់បង់
             </button>
             <button
               type="submit"
