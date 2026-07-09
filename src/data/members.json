@@ -25,7 +25,7 @@
     "status": "សកម្ម",
     "joinedAt": "21 ឧសភា, 2026",
     "date_of_birth": "9 មេសា, 1998",
-    "profile_photo":"/branchleader.jpg"
+    "profile_photo":"/branch_leader.jpg"
   },
   {
     "id": "3",
@@ -45,7 +45,7 @@
     "id": "4",
     "phone": "0125556555",
     "email": "member@example.com",
-    "avatar": "/member.png",
+    "avatar": "/member.jpg",
     "password": "12345",
     "name": "ឌី រីយ៉ា",
     "role": "member",
@@ -54,7 +54,7 @@
     "status": "សកម្ម",
     "joinedAt": "12 កុម្ភៈ, 2026",
     "date_of_birth": "22 ធ្នូ, 1978",
-    "profile_photo":"/member.png"
+    "profile_photo":"/member.jpg"
 
   },
   {

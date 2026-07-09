@@ -45,7 +45,7 @@ function TypeBadge({ type }) {
 function ActivityThumbnail({ activity }) {
   return (
     <img
-      src={activity.image || "/dashboard/activity-placeholder.jpg"}
+      src={activity.image || "/activity-placeholder.svg"}
       alt=""
       style={{
         width: 64,
@@ -301,7 +301,7 @@ export default function ActivityList() {
  *     "date": "25 មករា, 2026",
  *     "time": null,             // populated for "upcoming", null for "completed"
  *     "attendeeCount": 200,     // populated for "completed", null for "upcoming"
- *     "image": "/activities/1.jpg"  // null for "upcoming" (no photo exists yet)
+ *     "image": "/tree planning.jpg"  // null for "upcoming" (no photo exists yet)
  *   }
  *
  * IMPORTANT — sorting & limiting responsibility:
@@ -330,6 +330,5 @@ export default function ActivityList() {
  * getting a colored icon box. Since `image` is currently null for
  * upcoming activities (see above), those rows fall back to
  * /dashboard/activity-placeholder.jpg until real per-event photos exist
- * on the backend — swap that fallback path for whatever generic
- * placeholder asset the project uses.
+ * on the backend.
  */

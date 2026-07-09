@@ -84,3 +84,45 @@ input::-webkit-credentials-auto-fill-button {
   visibility: hidden;
   display: none !important;
 }
+
+.small-calendar .react-datepicker {
+  font-size: 12px;
+  border-radius: 12px;
+}
+
+.small-calendar .react-datepicker__month-container {
+  width: 210px;
+}
+
+.small-calendar .react-datepicker__day {
+  width: 24px;
+  line-height: 24px;
+}
+
+.small-calendar .react-datepicker__header {
+  background: white;
+}
+
+.small-calendar .react-datepicker__current-month {
+  font-size: 13px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; 
+  scrollbar-width: none;
+}
+
+
+.react-datepicker__close-icon {
+  right: 28px !important;
+}
+
+.react-datepicker__close-icon::after {
+  width: 14px;
+  height: 14px;
+  font-size: 10px;
+}
