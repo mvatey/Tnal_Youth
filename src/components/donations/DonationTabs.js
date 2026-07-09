@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const tabs = [
   { label: "វិភាគទានប្រចាំខែ", href: "/donation" },
   { label: "វិភាគទានក្នុងកម្មវិធី", href: "/donation/eventdonation" },
-  { label: "ថវិកាឧបត្ថម្ភ", href: "/donation/support" },
+  { label: "ថវិកាឧបត្ថម្ភ", href: "/donation/sponsor" },
 ];
 
 export default function DonationTabs() {
