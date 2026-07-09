@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const tabs = [
   { label: "វិភាគទានប្រចាំខែ", href: "/donation" },
-  { label: "វិភាគទានក្នុងកម្មវិធី", href: "/donation/events" },
+  { label: "វិភាគទានក្នុងកម្មវិធី", href: "/donation/eventdonation" },
   { label: "ថវិកាឧបត្ថម្ភ", href: "/donation/support" },
 ];
 
@@ -17,7 +17,8 @@ export default function DonationTabs() {
       {tabs.map((tab) => {
         const active =
           pathname === tab.href ||
-          (tab.href === "/donation" && pathname === "/donation/add");
+          (tab.href === "/donation" && pathname === "/donation/add") ||
+          (tab.href !== "/donation" && pathname.startsWith(tab.href));
 
         return (
           <Link

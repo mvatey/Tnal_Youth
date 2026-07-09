@@ -6,7 +6,7 @@ import { Bell } from "lucide-react";
 export default function NotificationBell({ unreadCount = 1 }) {
   return (
     <Link
-      href="/notifications"
+      href="/notification"
       className="relative flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white transition hover:bg-bg-page-gray"
       aria-label="ការជូនដំណឹង"
     >

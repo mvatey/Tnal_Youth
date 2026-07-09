@@ -1,10 +1,11 @@
+import { Suspense } from "react";
 import DonationTabs from "@/components/donations/DonationTabs";
 import EventDonationSummaryCard from "@/components/donations/EventDonationSummaryCard";
 import DonorCard from "@/components/donations/DonorCard";
-import EventDonationPanel from "@/components/donations/eventdonation/EventDonationPanel";
+import EventDonationDetailForm from "@/components/donations/eventdonation/EventDonationDetailForm";
 import { donationStats } from "@/data/donationData";
 
-export default function EventDonationPage() {
+export default function AddEventDonationPage() {
   return (
     <div className="space-y-4">
       <DonationTabs />
@@ -12,7 +13,9 @@ export default function EventDonationPage() {
         <EventDonationSummaryCard />
         <DonorCard {...donationStats[1]} />
       </div>
-      <EventDonationPanel />
+      <Suspense fallback={null}>
+        <EventDonationDetailForm />
+      </Suspense>
     </div>
   );
 }
