@@ -1,11 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import FilterBar from "../forms/FilterBar";
+import AddAlert from "../forms/addalert";
 import SaveButton from "../forms/save";
 import Pagination from "../navigation/Pagination";
 import TableRow from "./TableRow";
 import { donationRows } from "@/data/donationData";
+
+const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
+
+const rowHasSavedMoney = (row, savedRows) =>
+  Object.entries(savedRows).some(([key, value]) => {
+    const [branch, month, year] = key.split("|");
+    const matchesDonation =
+      branch === row.branch && month === row.month && year === row.year;
+
+    return (
+      matchesDonation &&
+      (Number(value?.realAmount) > 0 || Number(value?.dollarAmount) > 0)
+    );
+  });
 
 export default function DonationTable() {
   const rowsPerPage = 12;
@@ -24,6 +39,8 @@ export default function DonationTable() {
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [rows, setRows] = useState(donationRows);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showDownloadAlert, setShowDownloadAlert] = useState(false);
+  const [savedRows, setSavedRows] = useState({});
 
   const years = useMemo(() => [...new Set(rows.map((row) => row.year))], [rows]);
   const months = useMemo(() => [...new Set(rows.map((row) => row.month))], [rows]);
@@ -54,8 +71,50 @@ export default function DonationTable() {
     setCurrentPage(1);
   };
 
+  useEffect(() => {
+    const loadSavedRows = () => {
+      const savedValue = window.localStorage.getItem(SAVED_DONATION_ROWS_KEY);
+
+      if (!savedValue) {
+        setSavedRows({});
+        return;
+      }
+
+      try {
+        setSavedRows(JSON.parse(savedValue));
+      } catch {
+        setSavedRows({});
+      }
+    };
+
+    loadSavedRows();
+    window.addEventListener("focus", loadSavedRows);
+    window.addEventListener("pageshow", loadSavedRows);
+
+    return () => {
+      window.removeEventListener("focus", loadSavedRows);
+      window.removeEventListener("pageshow", loadSavedRows);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!showDownloadAlert) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setShowDownloadAlert(false);
+    }, 3000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [showDownloadAlert]);
+
   return (
     <section className="rounded-md border border-border bg-white px-7 py-4 shadow-sm">
+      {showDownloadAlert && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
+          <AddAlert />
+        </div>
+      )}
+
       <FilterBar
         years={years}
         months={months}
@@ -87,6 +146,7 @@ export default function DonationTable() {
                 row={row}
                 rowNumber={(safePage - 1) * rowsPerPage + index + 1}
                 onDelete={handleDelete}
+                hasMoney={rowHasSavedMoney(row, savedRows)}
               />
             ))}
             {filteredRows.length === 0 && (
@@ -106,7 +166,7 @@ export default function DonationTable() {
         onPageChange={setCurrentPage}
       />
         <div className="mr-7 mt-[17px] flex justify-end">
-        <SaveButton onClick={() => console.log("Save")} />
+        <SaveButton onClick={() => setShowDownloadAlert(true)} />
       </div>
     </section>
 

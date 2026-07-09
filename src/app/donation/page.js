@@ -1,3 +1,5 @@
+"use client";
+
 import DonationTabs from "@/components/donations/DonationTabs";
 import DonationCards from "@/components/donations/DonationCards";
 import DonationTable from "@/components/donations/DonationTable";

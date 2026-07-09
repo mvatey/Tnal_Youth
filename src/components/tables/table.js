@@ -14,6 +14,7 @@ export default function Table({
   selectedBranch = "all",
   searchQuery = "",
   onSave,
+  onReceiptSave,
 }) {
   const [rows, setRows] = useState(members);
   const [currentPage, setCurrentPage] = useState(1);
@@ -97,7 +98,13 @@ export default function Table({
       />
 
       {selectedReceiptMember && (
-        <UploadPopup onClose={() => setSelectedReceiptMember(null)} />
+        <UploadPopup
+          onClose={() => setSelectedReceiptMember(null)}
+          onSave={() => {
+            setSelectedReceiptMember(null);
+            onReceiptSave?.();
+          }}
+        />
       )}
     </div>
   );
