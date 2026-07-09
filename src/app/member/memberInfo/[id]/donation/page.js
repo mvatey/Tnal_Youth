@@ -1,178 +1,190 @@
 "use client";
 
-import { HandHeart, CalendarDays, Receipt, DollarSign } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Trash2 } from "lucide-react";
+import DataTable from "@/components/table/DataTable";
 
 const donationData = [
   {
     id: 1,
-    date: "12 មករា 2026",
-    type: "បរិច្ចាគថវិកា",
-    amount: "$50",
-    receipt: "RC-0001",
-    status: "បានទូទាត់",
+    month: "មករា",
+    amount: "$20.00",
+    date: "12 មករា 2025",
+    recordedBy: "ផាន វិទ្ធី",
+    paymentMethod: "Cash",
   },
   {
     id: 2,
-    date: "20 កុម្ភៈ 2026",
-    type: "បរិច្ចាគសម្ភារៈ",
-    amount: "$80",
-    receipt: "RC-0002",
-    status: "បានទូទាត់",
+    month: "កុម្ភៈ",
+    amount: "$10.00",
+    date: "4 កុម្ភៈ 2025",
+    recordedBy: "ផាន វិទ្ធី",
+    paymentMethod: "ABA",
   },
   {
     id: 3,
-    date: "18 មីនា 2026",
-    type: "បរិច្ចាគថវិកា",
-    amount: "$30",
-    receipt: "RC-0003",
-    status: "កំពុងរង់ចាំ",
+    month: "មីនា",
+    amount: "$50.00",
+    date: "4 មីនា 2025",
+    recordedBy: "ផាន វិទ្ធី",
+    paymentMethod: "ACELEDA",
+  },
+  {
+    id: 4,
+    month: "មេសា",
+    amount: "$15.00",
+    date: "10 មេសា 2025",
+    recordedBy: "សុខ ដារ៉ា",
+    paymentMethod: "Cash",
+  },
+  {
+    id: 5,
+    month: "ឧសភា",
+    amount: "$30.00",
+    date: "8 ឧសភា 2025",
+    recordedBy: "សុខ ដារ៉ា",
+    paymentMethod: "ABA",
+  },
+  {
+    id: 6,
+    month: "មិថុនា",
+    amount: "$25.00",
+    date: "15 មិថុនា 2025",
+    recordedBy: "លី សុភា",
+    paymentMethod: "ACELEDA",
+  },
+  {
+    id: 7,
+    month: "កក្កដា",
+    amount: "$40.00",
+    date: "20 កក្កដា 2025",
+    recordedBy: "លី សុភា",
+    paymentMethod: "Cash",
+  },
+  {
+    id: 8,
+    month: "សីហា",
+    amount: "$35.00",
+    date: "6 សីហា 2025",
+    recordedBy: "ចាន់ រតនា",
+    paymentMethod: "ABA",
+  },
+  {
+    id: 9,
+    month: "កញ្ញា",
+    amount: "$18.00",
+    date: "14 កញ្ញា 2025",
+    recordedBy: "ចាន់ រតនា",
+    paymentMethod: "ACELEDA",
+  },
+  {
+    id: 10,
+    month: "តុលា",
+    amount: "$22.00",
+    date: "9 តុលា 2025",
+    recordedBy: "ផាន វិទ្ធី",
+    paymentMethod: "Cash",
   },
 ];
 
 export default function DonationPage() {
-  const totalDonation = donationData.reduce((sum, item) => {
-    return sum + Number(item.amount.replace("$", ""));
-  }, 0);
+  const [query, setQuery] = useState("");
+  const [methodFilter, setMethodFilter] = useState("");
+
+  const paymentMethods = useMemo(() => {
+    return [...new Set(donationData.map((item) => item.paymentMethod))];
+  }, []);
+
+  const filteredData = useMemo(() => {
+    return donationData.filter((item) => {
+      const matchesQuery =
+        item.month.toLowerCase().includes(query.toLowerCase()) ||
+        item.amount.toLowerCase().includes(query.toLowerCase()) ||
+        item.recordedBy.toLowerCase().includes(query.toLowerCase());
+
+      const matchesMethod =
+        !methodFilter || item.paymentMethod === methodFilter;
+
+      return matchesQuery && matchesMethod;
+    });
+  }, [query, methodFilter]);
+
+  const columns = [
+    {
+      header: "ល.រ",
+      width: "w-[6%]",
+      align: "center",
+      render: (_, index) => index,
+    },
+    {
+      header: "ប្រចាំខែ",
+      width: "w-[16%]",
+      align: "left",
+      accessor: "month",
+    },
+    {
+      header: "ចំនួន",
+      width: "w-[14%]",
+      align: "left",
+      accessor: "amount",
+    },
+    {
+      header: "ថ្ងៃបរិច្ឆេទ",
+      width: "w-[18%]",
+      align: "left",
+      accessor: "date",
+    },
+    {
+      header: "កត់ត្រាដោយ",
+      width: "w-[18%]",
+      align: "left",
+      accessor: "recordedBy",
+    },
+    {
+      header: "វិធីសាស្រ្តទូទាត់",
+      width: "w-[18%]",
+      align: "left",
+      accessor: "paymentMethod",
+    },
+    {
+      header: "សកម្មភាព",
+      width: "w-[10%]",
+      align: "center",
+      render: (item) => (
+        <button
+          onClick={() => console.log("delete", item)}
+          className="inline-flex items-center justify-center text-red-500 hover:text-red-600"
+        >
+          <Trash2 className="h-5 w-5" />
+        </button>
+      ),
+    },
+  ];
+
+  const filters = [
+    {
+      value: methodFilter,
+      onChange: setMethodFilter,
+      options: paymentMethods,
+      placeholder: "វិធីសាស្រ្តទូទាត់",
+    },
+  ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
+      <h2 className="text-xl font-bold text-primary">
+        បញ្ជីការធ្វើវិភាគទាន
+      </h2>
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-
-        <div>
-          <h2 className="text-xl font-semibold">
-            ប្រវត្តិការបរិច្ចាគ
-          </h2>
-
-          <p className="text-sm text-gray-500 mt-1">
-            បង្ហាញព័ត៌មានអំពីការបរិច្ចាគរបស់សមាជិក។
-          </p>
-        </div>
-
-        <div className="bg-primary text-white rounded-xl px-5 py-3">
-          <p className="text-xs opacity-80">
-            សរុបការបរិច្ចាគ
-          </p>
-
-          <h3 className="text-2xl font-bold">
-            ${totalDonation}
-          </h3>
-        </div>
-
-      </div>
-
-      {/* Table */}
-
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-
-        <table className="w-full text-sm">
-
-          <thead className="bg-gray-50">
-
-            <tr>
-
-              <th className="px-6 py-4 text-left">ល.រ</th>
-
-              <th className="px-6 py-4 text-left">កាលបរិច្ឆេទ</th>
-
-              <th className="px-6 py-4 text-left">ប្រភេទ</th>
-
-              <th className="px-6 py-4 text-left">ចំនួន</th>
-
-              <th className="px-6 py-4 text-left">បង្កាន់ដៃ</th>
-
-              <th className="px-6 py-4 text-left">ស្ថានភាព</th>
-
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            {donationData.map((item, index) => (
-
-              <tr
-                key={item.id}
-                className="border-t hover:bg-gray-50"
-              >
-
-                <td className="px-6 py-4">
-                  {index + 1}
-                </td>
-
-                <td className="px-6 py-4">
-
-                  <div className="flex items-center gap-2">
-
-                    <CalendarDays className="w-4 h-4 text-primary" />
-
-                    {item.date}
-
-                  </div>
-
-                </td>
-
-                <td className="px-6 py-4">
-
-                  <div className="flex items-center gap-2">
-
-                    <HandHeart className="w-4 h-4 text-primary" />
-
-                    {item.type}
-
-                  </div>
-
-                </td>
-
-                <td className="px-6 py-4 font-semibold">
-
-                  <div className="flex items-center gap-2">
-
-                    <DollarSign className="w-4 h-4 text-success" />
-
-                    {item.amount}
-
-                  </div>
-
-                </td>
-
-                <td className="px-6 py-4">
-
-                  <div className="flex items-center gap-2">
-
-                    <Receipt className="w-4 h-4 text-primary" />
-
-                    {item.receipt}
-
-                  </div>
-
-                </td>
-
-                <td className="px-6 py-4">
-
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      item.status === "បានទូទាត់"
-                        ? "bg-success-bg text-success"
-                        : "bg-warning-bg text-warning"
-                    }`}
-                  >
-                    {item.status}
-                  </span>
-
-                </td>
-
-              </tr>
-
-            ))}
-
-          </tbody>
-
-        </table>
-
-      </div>
-
+      <DataTable
+        data={filteredData}
+        columns={columns}
+        filters={filters}
+        searchQuery={query}
+        onSearchChange={setQuery}
+        searchPlaceholder="ស្វែងរក..."
+        pageSize={10}
+      />
     </div>
   );
 }

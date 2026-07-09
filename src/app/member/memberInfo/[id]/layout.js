@@ -38,7 +38,7 @@ export default function MemberInfoLayout({ children, params }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <HeaderMemberInfo
         title="ព័ត៌មានលម្អិតសមាជិក"

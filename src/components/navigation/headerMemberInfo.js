@@ -12,16 +12,16 @@ export default function HeaderMemberInfo({
   const router = useRouter();
 
   return (
-    <div className="flex items-start justify-between">
+    <div className="flex items-center justify-between">
       {/* Left */}
       <div>
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-text-secondary">
+        <div className="flex items-center gap-1.5 text-xs text-text-secondary">
           <button
             onClick={() => router.back()}
             className="hover:text-primary transition"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="h-3.5 w-3.5" />
           </button>
 
           <span>{breadcrumb.parent}</span>
@@ -34,16 +34,26 @@ export default function HeaderMemberInfo({
         </div>
 
         {/* Title */}
-        <h1 className="mt-3 text-3xl font-bold text-primary">
+        <h1 className="mt-1 text-xl font-bold text-primary">
           {title}
         </h1>
       </div>
 
-      {/* Right Button */}
+
       {buttonText && (
         <button
           onClick={onButtonClick}
-          className="rounded-xl bg-primary px-5 py-2.5 text-white font-medium hover:opacity-90 transition"
+          className="
+            rounded-lg 
+            bg-primary 
+            px-4 
+            py-2 
+            text-sm 
+            font-medium 
+            text-white
+            hover:opacity-90 
+            transition
+          "
         >
           {buttonText}
         </button>

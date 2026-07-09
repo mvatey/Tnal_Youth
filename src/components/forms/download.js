@@ -1,5 +1,6 @@
 import { ArrowLeft, ArrowRight, Download } from "lucide-react";
 
+
 // Builds a compact page list like: 1 2 3 ... 8 9 10
 function getPageNumbers(current, total) {
   const pages = [];

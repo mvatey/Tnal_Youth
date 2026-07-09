@@ -75,3 +75,11 @@ input::-webkit-credentials-auto-fill-button {
   visibility: hidden;
   display: none !important;
 }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; 
+  scrollbar-width: none;
+}

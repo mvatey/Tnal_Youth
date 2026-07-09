@@ -26,7 +26,7 @@ export default function MemberTabNav({ memberId }) {
   ];
 
   return (
-    <div className="bg-white rounded-sm shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
       <div className="grid grid-cols-4">
         {tabs.map((tab) => {
           const active = pathname === tab.href;
@@ -35,14 +35,28 @@ export default function MemberTabNav({ memberId }) {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex h-12 items-center justify-center border-t-4 text-base font-medium transition-all duration-200
+              className={`
+                flex 
+                h-9
+                items-center 
+                justify-center
+                border-t-2
+                px-3
+                text-sm
+                font-medium
+                transition-all
+                duration-200
+
                 ${
                   active
-                    ? "border-secondary bg-secodary-light text-secondary"
-                    : "border-transparent bg-white text-text-primary hover:bg-gray-50"
-                }`}
+                    ? "border-secondary bg-secondary-light text-secondary"
+                    : "border-transparent bg-white text-text-secondary hover:bg-gray-50"
+                }
+              `}
             >
-              {tab.name}
+              <span className="truncate">
+                {tab.name}
+              </span>
             </Link>
           );
         })}
