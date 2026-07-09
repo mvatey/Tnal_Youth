@@ -1,6 +1,8 @@
 import { Check, Eye } from "lucide-react";
 
-export default function SuccessAlert() {
+export default function SuccessAlert({
+  message = "ការទាញយកវិភាគទានប្រចាំខែជោគជ័យ!",
+}) {
   return (
     <div className="h-[42px] w-[461px] rounded-[8px] bg-white px-5 shadow-sm">
       <div className="flex h-full items-center justify-between gap-3">
@@ -10,7 +12,7 @@ export default function SuccessAlert() {
           </div>
 
           <p className="truncate text-[14px] font-medium text-[#6B7280]">
-            ការទាញយកវិភាគទានប្រចាំខែជោគជ័យ!
+            {message}
           </p>
         </div>
 

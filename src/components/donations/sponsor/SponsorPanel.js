@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Edit3, PlusCircle, Search } from "lucide-react";
+import { CalendarDays, PlusCircle, Search, SquarePen } from "lucide-react";
+import { useRouter } from "next/navigation";
 import SponsorTypeSelect from "@/components/forms/sponsorTypeSelect";
 import Pagination from "@/components/navigation/Pagination";
 import SaveButton from "@/components/forms/save";
 import AddAlert from "@/components/forms/addalert";
+import SaveAlert from "@/components/forms/savealert";
+import { sponsorRows as sponsorDataRows } from "@/data/sponsorData";
 
 const rowsPerPage = 12;
 
@@ -55,16 +58,51 @@ function DateFilter({ value, onChange }) {
 }
 
 export default function SponsorPanel() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
+  const [showSaveAlert, setShowSaveAlert] = useState(false);
+  const [savedSponsorEdits, setSavedSponsorEdits] = useState({});
+
+  useEffect(() => {
+    const shouldShowSaveAlert = window.localStorage.getItem(
+      "tnal-youth:sponsor-save-alert",
+    );
+
+    if (shouldShowSaveAlert === "true") {
+      window.localStorage.removeItem("tnal-youth:sponsor-save-alert");
+      setShowSaveAlert(true);
+    }
+
+    const savedValue = window.localStorage.getItem(
+      "tnal-youth:sponsor-donation-edits",
+    );
+
+    if (!savedValue) return;
+
+    try {
+      setSavedSponsorEdits(JSON.parse(savedValue));
+    } catch {
+      setSavedSponsorEdits({});
+    }
+  }, []);
+
+  const rows = useMemo(
+    () =>
+      sponsorDataRows.map((row) => ({
+        ...row,
+        ...savedSponsorEdits[row.id],
+      })),
+    [savedSponsorEdits],
+  );
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return sponsorRows.filter((row) => {
+    return rows.filter((row) => {
       const matchesSearch =
         !query ||
         row.name.toLowerCase().includes(query) ||
@@ -74,7 +112,7 @@ export default function SponsorPanel() {
 
       return matchesSearch && matchesType;
     });
-  }, [searchQuery, selectedType]);
+  }, [rows, searchQuery, selectedType]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
@@ -89,20 +127,27 @@ export default function SponsorPanel() {
   };
 
   useEffect(() => {
-    if (!showDownloadAlert) return undefined;
+    if (!showDownloadAlert && !showSaveAlert) return undefined;
 
     const timeoutId = window.setTimeout(() => {
       setShowDownloadAlert(false);
+      setShowSaveAlert(false);
     }, 3000);
 
     return () => window.clearTimeout(timeoutId);
-  }, [showDownloadAlert]);
+  }, [showDownloadAlert, showSaveAlert]);
 
   return (
     <section className="min-h-[650px] rounded-md border border-border bg-[#fbfcfe] px-7 py-4 shadow-sm">
       {showDownloadAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
-          <AddAlert />
+          <AddAlert message="ការទាញយកថវិការឧបត្ថម្ភជោគជ័យ!" />
+        </div>
+      )}
+
+      {showSaveAlert && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
+          <SaveAlert message="អបអរសាទរ ! ថវិការឧបត្ថម្ភត្រូវបានរក្សាទុកដោយជោគជ័យ" />
         </div>
       )}
 
@@ -137,10 +182,11 @@ export default function SponsorPanel() {
 
           <button
             type="button"
+            onClick={() => router.push("/donation/sponsor/add")}
             className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-success px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
           >
             <PlusCircle size={17} />
-            បន្ថែមអ្នកឧបត្ថម្ភ
+            បន្ថែមវិភាគទាន
           </button>
         </div>
       </div>
@@ -174,10 +220,11 @@ export default function SponsorPanel() {
                 <td className="px-4">
                   <button
                     type="button"
-                    className="inline-flex h-[22px] w-[22px] items-center justify-center text-[#E7A11B] transition hover:text-[#c98510]"
+                    onClick={() => router.push(`/donation/sponsor/edit/${row.id}`)}
+                    className="inline-flex h-[28px] w-[28px] items-center justify-center text-[#D4AF37] transition hover:text-[#b88f1f]"
                     aria-label={`Edit sponsor ${row.id}`}
                   >
-                    <Edit3 size={16} strokeWidth={2.2} />
+                    <SquarePen size={22} strokeWidth={2.6} />
                   </button>
                 </td>
               </tr>
