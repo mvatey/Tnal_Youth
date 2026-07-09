@@ -158,7 +158,7 @@ export default function ParticipationPage() {
         searchQuery={query}
         onSearchChange={setQuery}
         searchPlaceholder="ស្វែងរក..."
-        pageSize={3}
+        pageSize={10}
       />
     </div>
   );

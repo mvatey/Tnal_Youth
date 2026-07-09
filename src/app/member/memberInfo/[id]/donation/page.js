@@ -172,7 +172,7 @@ export default function DonationPage() {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-xl font-bold text-primary">
+      <h2 className="text-lg font-semibold text-text-primary">
         បញ្ជីការធ្វើវិភាគទាន
       </h2>
 

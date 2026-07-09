@@ -192,7 +192,7 @@ export default function MembersPage() {
         <span
           className={`
             inline-flex max-w-full items-center justify-center
-            rounded-full px-2 py-1 text-[11px] font-medium
+            rounded-full px-2 py-1 text-[11px] 
             whitespace-nowrap truncate
             ${STATUS_BADGE_STYLES[m.status] || "bg-gray-100 text-text-secondary"}
           `}
@@ -298,7 +298,7 @@ return (
         searchQuery={query}
         onSearchChange={setQuery}
         searchPlaceholder="ស្វែងរកតាមរយៈឈ្មោះ ឬលេខទូរស័ព្ទ..."
-        pageSize={9}
+        pageSize={10}
         actionButton={
           <button
             onClick={() => setIsCreateOpen(true)}
