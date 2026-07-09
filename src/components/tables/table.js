@@ -5,8 +5,9 @@ import Pagination from "../navigation/Pagination";
 import AddDonationActions from "../donations/AddDonationActions";
 import AddDonationTableHeader from "../donations/AddDonationTableHeader";
 import AddDonationTableRow from "../donations/AddDonationTableRow";
+import UploadPopup from "../forms/popup";
 
-const ROWS_PER_PAGE = 10;
+const ROWS_PER_PAGE = 11;
 
 export default function Table({
   members = [],
@@ -16,6 +17,7 @@ export default function Table({
 }) {
   const [rows, setRows] = useState(members);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedReceiptMember, setSelectedReceiptMember] = useState(null);
 
   useEffect(() => {
     setRows(members);
@@ -27,7 +29,7 @@ export default function Table({
 
     return rows.filter((member) => {
       const matchesBranch =
-        selectedBranch === "all" || member.department === selectedBranch;
+        selectedBranch === "all" || member.branch === selectedBranch;
       const matchesSearch =
         !normalizedQuery ||
         member.name?.toLocaleLowerCase().includes(normalizedQuery);
@@ -53,8 +55,8 @@ export default function Table({
 
   return (
     <div>
-      <div className="overflow-x-auto rounded-md border border-border bg-white">
-        <table className="w-full border-collapse">
+      <div className="overflow-x-auto rounded-sm border border-[#e5eaf0] bg-white">
+        <table className="w-full min-w-[980px] border-collapse">
           <AddDonationTableHeader />
           <tbody>
             {pagedRows.length > 0 ? (
@@ -63,11 +65,12 @@ export default function Table({
                   key={member.id}
                   index={(safePage - 1) * ROWS_PER_PAGE + index}
                   member={member}
-                  onAmountChange={(id, value) => updateRow(id, { newAmount: value })}
+                  onRealAmountChange={(id, value) => updateRow(id, { realAmount: value })}
+                  onDollarAmountChange={(id, value) => updateRow(id, { dollarAmount: value })}
                   onPaymentMethodChange={(id, paymentMethod) =>
                     updateRow(id, { paymentMethod })
                   }
-                  onShowInfo={() => {}}
+                  onShowInfo={setSelectedReceiptMember}
                 />
               ))
             ) : (
@@ -92,6 +95,10 @@ export default function Table({
         onCancel={() => setRows(members)}
         onSave={() => onSave?.(filteredRows)}
       />
+
+      {selectedReceiptMember && (
+        <UploadPopup onClose={() => setSelectedReceiptMember(null)} />
+      )}
     </div>
   );
 }

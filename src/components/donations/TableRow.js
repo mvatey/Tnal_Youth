@@ -6,7 +6,7 @@ export default function TableRow({ row, rowNumber, onDelete }) {
       <td className="px-4 font-normal text-text-secondary">{rowNumber}</td>
       <td className="px-4 font-normal text-text-secondary">{row.month}</td>
       <td className="px-4">{row.year}</td>
-      <td className="px-4">{row.department}</td>
+      <td className="px-4">{row.branch}</td>
       <td className="px-4">{row.monthlyRiel}</td>
       <td className="px-4">{row.monthlyUsd}</td>
       <td className="px-4">{row.total}</td>

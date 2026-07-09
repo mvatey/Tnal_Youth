@@ -1,15 +1,15 @@
 import DonationFilterSelect from "./DonationFilterSelect";
-import DonationSearchInput from "./DonationSearchInput";
+import DonationSearchInput from "../forms/searchBar";
 
 export default function AddDonationFilters({
-  departments,
+  branches,
   months,
   years,
-  selectedDepartment,
+  selectedBranch,
   selectedMonth,
   selectedYear,
   searchQuery,
-  onDepartmentChange,
+  onBranchChange,
   onMonthChange,
   onYearChange,
   onSearchChange,
@@ -18,9 +18,9 @@ export default function AddDonationFilters({
     <div className="mb-6 flex flex-wrap items-end gap-4">
       <DonationFilterSelect
         label="សាខា"
-        value={selectedDepartment}
-        onChange={onDepartmentChange}
-        options={departments}
+        value={selectedBranch}
+        onChange={onBranchChange}
+        options={branches}
         allLabel="ជ្រើសរើសសាខា"
         className="w-[158px]"
         required
@@ -30,7 +30,7 @@ export default function AddDonationFilters({
         value={selectedMonth}
         onChange={onMonthChange}
         options={months}
-        allLabel="ខែទាំងអស់"
+        allLabel="ជ្រើសរើសខែ"
         className="w-[160px]"
         required
       />
@@ -39,7 +39,7 @@ export default function AddDonationFilters({
         value={selectedYear}
         onChange={onYearChange}
         options={years}
-        allLabel="ឆ្នាំទាំងអស់"
+        allLabel="ជ្រើសរើសឆ្នាំ"
         className="w-[160px]"
         required
       />

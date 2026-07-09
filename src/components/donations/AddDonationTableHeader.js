@@ -3,8 +3,8 @@ const HEADERS = [
   "សមាជិក",
   "ភេទ",
   "ថ្ងៃខែឆ្នាំកំណើត",
-  "ចំនួនប្រាក់ចាស់",
-  "ចំនួនប្រាក់ថ្មី",
+  "ចំនួនប្រាក់រៀល",
+  "ចំនួនប្រាក់ដុល្លារ",
   "វិធីសាស្ត្រទូទាត់",
   "វិក្ក័យបត្រ",
 ];
@@ -12,11 +12,11 @@ const HEADERS = [
 export default function AddDonationTableHeader() {
   return (
     <thead>
-      <tr className="h-9 border-b border-gray-200 bg-white text-left text-xs text-gray-500">
+      <tr className="h-11 border-b border-[#e5eaf0] bg-white text-center text-[12px] font-medium text-slate-500">
         {HEADERS.map((header, index) => (
           <th
             key={header}
-            className={`px-3 font-medium ${index === 3 ? "whitespace-nowrap" : ""} ${index === 7 ? "text-center" : ""}`}
+            className={`px-3 ${index === 3 ? "whitespace-nowrap" : ""}`}
           >
             {header}
           </th>

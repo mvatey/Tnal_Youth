@@ -10,7 +10,7 @@ export default function DonationFilterSelect({
 }) {
   const select = (
     <select
-      className={`h-9 ${className} rounded-lg border border-border bg-white px-3 text-xs font-medium text-text-secondary shadow-sm outline-none transition focus:border-secondary`}
+      className={`h-9 ${className} rounded-lg border border-border bg-white px-3 text-[12px] font-medium text-text-secondary shadow-sm outline-none transition focus:border-secondary`}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       aria-label={!showLabel ? label : undefined}
@@ -28,7 +28,7 @@ export default function DonationFilterSelect({
 
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-text-secondary">
+      <span className="mb-1 block text-[12px] font-medium text-text-secondary">
         {label}
         {required && <span className="ml-1 text-error">*</span>}
       </span>

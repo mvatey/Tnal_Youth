@@ -6,15 +6,15 @@ import AddDonationFilters from "./AddDonationFilters";
 import Table from "../tables/table";
 
 export default function AddDonationForm() {
-  const [selectedDepartment, setSelectedDepartment] = useState("all");
+  const [selectedBranch, setSelectedBranch] = useState("all");
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedYear, setSelectedYear] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
-  const branchSelected = selectedDepartment !== "all";
+  const branchSelected = selectedBranch !== "all";
 
-  const departments = useMemo(
-    () => [...new Set(addDonationRows.map((row) => row.department))],
+  const branches = useMemo(
+    () => [...new Set(addDonationRows.map((row) => row.branch))],
     [],
   );
   const months = useMemo(
@@ -36,7 +36,9 @@ export default function AddDonationForm() {
   );
 
   const handleSave = (rows) => {
-    const completed = rows.filter((row) => Number(row.newAmount) > 0);
+    const completed = rows.filter(
+      (row) => Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0,
+    );
     setSavedMessage(
       completed.length > 0
         ? `បានរក្សាទុកវិភាគទាន ${completed.length} នាក់`
@@ -47,7 +49,7 @@ export default function AddDonationForm() {
   return (
     <section className="min-h-[545px] rounded-md border border-border bg-[#fbfbfd] p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-base font-semibold text-secondary">កត់ត្រាវិភាគទានប្រចាំខែ</h1>
+        <h1 className="text-base font-semibold text-secondary">ការកត់ត្រាវិភាគទានប្រចាំខែ</h1>
         {savedMessage && (
           <p className="text-sm font-medium text-success" role="status">
             {savedMessage}
@@ -56,14 +58,14 @@ export default function AddDonationForm() {
       </div>
 
       <AddDonationFilters
-        departments={departments}
+        branches={branches}
         months={months}
         years={years}
-        selectedDepartment={selectedDepartment}
+        selectedBranch={selectedBranch}
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
         searchQuery={searchQuery}
-        onDepartmentChange={setSelectedDepartment}
+        onBranchChange={setSelectedBranch}
         onMonthChange={setSelectedMonth}
         onYearChange={setSelectedYear}
         onSearchChange={setSearchQuery}
@@ -72,7 +74,7 @@ export default function AddDonationForm() {
       {branchSelected && (
         <Table
           members={members}
-          selectedBranch={selectedDepartment}
+          selectedBranch={selectedBranch}
           searchQuery={searchQuery}
           onSave={handleSave}
         />

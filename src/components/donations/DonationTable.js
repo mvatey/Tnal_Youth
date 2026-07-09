@@ -21,13 +21,13 @@ export default function DonationTable() {
   ];
   const [selectedYear, setSelectedYear] = useState("all");
   const [selectedMonth, setSelectedMonth] = useState("all");
-  const [selectedDepartment, setSelectedDepartment] = useState("all");
+  const [selectedBranch, setSelectedBranch] = useState("all");
   const [rows, setRows] = useState(donationRows);
   const [currentPage, setCurrentPage] = useState(1);
 
   const years = useMemo(() => [...new Set(rows.map((row) => row.year))], [rows]);
   const months = useMemo(() => [...new Set(rows.map((row) => row.month))], [rows]);
-  const departments = useMemo(() => [...new Set(rows.map((row) => row.department))], [rows]);
+  const branches = useMemo(() => [...new Set(rows.map((row) => row.branch))], [rows]);
   const handleDelete = (rowId) => {
     setRows((currentRows) => currentRows.filter((row) => row.id !== rowId));
   };
@@ -36,11 +36,11 @@ export default function DonationTable() {
       rows.filter((row) => {
         const matchesYear = selectedYear === "all" || row.year === selectedYear;
         const matchesMonth = selectedMonth === "all" || row.month === selectedMonth;
-        const matchesDepartment = selectedDepartment === "all" || row.department === selectedDepartment;
+        const matchesBranch = selectedBranch === "all" || row.branch === selectedBranch;
 
-        return matchesYear && matchesMonth && matchesDepartment;
+        return matchesYear && matchesMonth && matchesBranch;
       }),
-    [rows, selectedYear, selectedMonth, selectedDepartment],
+    [rows, selectedYear, selectedMonth, selectedBranch],
   );
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
@@ -59,13 +59,13 @@ export default function DonationTable() {
       <FilterBar
         years={years}
         months={months}
-        departments={departments}
+        branches={branches}
         selectedYear={selectedYear}
         selectedMonth={selectedMonth}
-        selectedDepartment={selectedDepartment}
+        selectedBranch={selectedBranch}
         onYearChange={updateFilter(setSelectedYear)}
         onMonthChange={updateFilter(setSelectedMonth)}
-        onDepartmentChange={updateFilter(setSelectedDepartment)}
+        onBranchChange={updateFilter(setSelectedBranch)}
       />
 
       <div className="mt-4 overflow-x-auto">
