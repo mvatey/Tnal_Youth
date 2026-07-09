@@ -4,13 +4,13 @@ import DonationFilterSelect from "../donations/DonationFilterSelect";
 export default function FilterBar({
   years = [],
   months = [],
-  departments = [],
+  branches = [],
   selectedYear,
   selectedMonth,
-  selectedDepartment,
+  selectedBranch,
   onYearChange,
   onMonthChange,
-  onDepartmentChange,
+  onBranchChange,
 }) {
   return (
     <div className="space-y-4">
@@ -19,9 +19,9 @@ export default function FilterBar({
       <div className="flex flex-wrap items-center justify-end gap-5">
         <DonationFilterSelect
           label="សាខា"
-          value={selectedDepartment}
-          onChange={onDepartmentChange}
-          options={departments}
+          value={selectedBranch}
+          onChange={onBranchChange}
+          options={branches}
           allLabel="ជ្រើសរើសសាខា"
           showLabel={false}
         />
