@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Pagination from "../navigation/Pagination";
-import AddDonationActions from "../donations/AddDonationActions";
-import AddDonationTableHeader from "../donations/AddDonationTableHeader";
-import AddDonationTableRow from "../donations/AddDonationTableRow";
+import AddDonationActions from "../donations/monthlydonation/AddDonationActions";
+import AddDonationTableHeader from "../donations/monthlydonation/AddDonationTableHeader";
+import AddDonationTableRow from "../donations/monthlydonation/AddDonationTableRow";
 import UploadPopup from "../forms/popup";
 
 const ROWS_PER_PAGE = 11;
@@ -13,6 +13,8 @@ export default function Table({
   members = [],
   selectedBranch = "all",
   searchQuery = "",
+  onReset,
+  onCancel,
   onSave,
   onReceiptSave,
 }) {
@@ -54,6 +56,25 @@ export default function Table({
     );
   };
 
+  const handleReset = () => {
+    const resetIds = new Set(filteredRows.map((member) => member.id));
+    const resetRows = filteredRows.map((member) => ({
+      ...member,
+      realAmount: "0",
+      dollarAmount: "0",
+    }));
+
+    setRows((current) => {
+      return current.map((member) =>
+        resetIds.has(member.id)
+          ? { ...member, realAmount: "0", dollarAmount: "0" }
+          : member,
+      );
+    });
+
+    onReset?.(resetRows);
+  };
+
   return (
     <div>
       <div className="overflow-x-auto rounded-sm border border-[#e5eaf0] bg-white">
@@ -92,8 +113,8 @@ export default function Table({
       />
 
       <AddDonationActions
-        onReset={() => setRows(members)}
-        onCancel={() => setRows(members)}
+        onReset={handleReset}
+        onCancel={onCancel}
         onSave={() => onSave?.(filteredRows)}
       />
 

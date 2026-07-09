@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Download } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 // Builds a compact page list like: 1 2 3 ... 8 9 10
 function getPageNumbers(current, total) {
@@ -34,6 +34,7 @@ export default function Pagination({
   totalPages = 1,
   onPageChange,
   onDownload,
+  className = "mt-3 space-y-8",
 }) {
   const pageButton =
     "flex h-11 min-w-11 items-center justify-center rounded-lg px-3 text-sm font-medium text-text-secondary transition hover:bg-primary-lighter hover:text-primary";
@@ -46,7 +47,7 @@ export default function Pagination({
   };
 
   return (
-    <div className="mt-3 space-y-8">
+    <div className={className}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <button
           onClick={() => goTo(currentPage - 1)}

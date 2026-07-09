@@ -9,7 +9,7 @@ export default function SaveButton({ onClick }) {
       onClick={onClick}
       className="
         flex items-center justify-center gap-2 px-3
-        w-[110px] h-[34px]
+        h-[34px] w-[110px]
         bg-[#4B2E91]
         text-white
         rounded-[8px]

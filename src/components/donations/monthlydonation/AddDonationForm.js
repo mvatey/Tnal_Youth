@@ -1,11 +1,11 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { addDonationRows } from "@/data/donationData";
 import AddDonationFilters from "./AddDonationFilters";
-import Table from "../tables/table";
-import SaveAlert from "../forms/savealert";
+import Table from "../../tables/table";
+import SaveAlert from "../../forms/savealert";
 
 const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
 
@@ -13,6 +13,7 @@ const getSavedRowKey = (row) =>
   [row.branch, row.month, row.year, row.id].join("|");
 
 export default function AddDonationForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialBranch = searchParams.get("branch") || "all";
   const initialMonth = searchParams.get("month") || "all";
@@ -113,9 +114,34 @@ export default function AddDonationForm() {
     setShowSaveAlert(true);
   };
 
+  const handleReset = (rows) => {
+    setSavedRows((currentRows) => {
+      const nextRows = { ...currentRows };
+
+      rows.forEach((row) => {
+        nextRows[getSavedRowKey(row)] = {
+          realAmount: "0",
+          dollarAmount: "0",
+          paymentMethod: row.paymentMethod || "Cash",
+        };
+      });
+
+      window.localStorage.setItem(
+        SAVED_DONATION_ROWS_KEY,
+        JSON.stringify(nextRows),
+      );
+
+      return nextRows;
+    });
+  };
+
   const handleReceiptSave = () => {
     setSavedMessage("បានរក្សាទុកវិក្ក័យបត្រដោយជោគជ័យ");
     setShowSaveAlert(true);
+  };
+
+  const handleCancel = () => {
+    router.push("/donation");
   };
 
   return (
@@ -155,6 +181,8 @@ export default function AddDonationForm() {
             members={members}
             selectedBranch={selectedBranch}
             searchQuery={searchQuery}
+            onReset={handleReset}
+            onCancel={handleCancel}
             onSave={handleSave}
             onReceiptSave={handleReceiptSave}
           />

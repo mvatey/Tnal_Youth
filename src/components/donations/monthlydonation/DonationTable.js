@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import FilterBar from "../forms/FilterBar";
-import AddAlert from "../forms/addalert";
-import SaveButton from "../forms/save";
-import Pagination from "../navigation/Pagination";
+import FilterBar from "../../forms/FilterBar";
+import AddAlert from "../../forms/addalert";
+import SaveButton from "../../forms/save";
+import Pagination from "../../navigation/Pagination";
 import TableRow from "./TableRow";
 import { donationRows } from "@/data/donationData";
 
@@ -165,7 +165,7 @@ export default function DonationTable() {
         totalPages={totalPages}
         onPageChange={setCurrentPage}
       />
-        <div className="mr-7 mt-[17px] flex justify-end">
+      <div className="mt-10 flex justify-end">
         <SaveButton onClick={() => setShowDownloadAlert(true)} />
       </div>
     </section>

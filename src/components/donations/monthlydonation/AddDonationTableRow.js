@@ -5,6 +5,11 @@ import Image from "next/image";
 const PAYMENT_METHODS = ["Cash", "ABA", "Wing", "Bank Transfer"];
 const RECEIPT_ICON_COLOR = "#4B2E91";
 
+const getAmountFieldClass = (value) =>
+  Number(value) > 0
+    ? "border-[#65686b] bg-[#eef5f3]"
+    : "border-[#65686b] bg-[#e5e7eb]";
+
 function ReceiptIcon({ size = 20 }) {
   return (
     <svg
@@ -81,7 +86,11 @@ export default function AddDonationTableRow({
 
       {/* ចំនួនប្រាក់រៀល (editable) */}
       <td className="px-3">
-        <div className="mx-auto flex h-7 w-[112px] items-center gap-1 rounded-md border border-slate-400 bg-white px-2">
+        <div
+          className={`mx-auto flex h-7 w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(
+            member.realAmount,
+          )}`}
+        >
           <input
             type="text"
             inputMode="decimal"
@@ -96,7 +105,11 @@ export default function AddDonationTableRow({
 
       {/* ចំនួនប្រាក់ដុល្លារ (editable) */}
       <td className="px-3">
-        <div className="mx-auto flex h-7 w-[112px] items-center gap-1 rounded-md border border-slate-400 bg-white px-2">
+        <div
+          className={`mx-auto flex h-7 w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(
+            member.dollarAmount,
+          )}`}
+        >
           <input
             type="text"
             inputMode="decimal"
