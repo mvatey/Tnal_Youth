@@ -2,58 +2,77 @@
 
 import { notFound } from "next/navigation";
 import { useMemo, use } from "react";
+import { usePathname, useRouter } from "next/navigation";
+
 import MemberInfoCard from "@/components/card/memberInfoCard";
 import MemberTabNav from "@/components/navigation/MemberTabNav";
 import HeaderMemberInfo from "@/components/navigation/headerMemberInfo";
 import StatCard from "@/components/dashboard/statCard";
-import {
-  Users,
-  UserCheck,
-  Search,
-  Trash2,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-  Download,
-  Eye,
-  InfoIcon,
-} from "lucide-react";
+
+import { Users, InfoIcon } from "lucide-react";
+import { FaHandHoldingDollar } from "react-icons/fa6";
 
 import users from "@/data/members.json";
 
-import { ClipboardList, HeartHandshake, FileText, GroupIcon, User } from "lucide-react";
-import { info } from "autoprefixer";
-import { FaHandHolding } from "react-icons/fa";
-import { FaHandHoldingDollar } from "react-icons/fa6";
 
 export default function MemberInfoLayout({ children, params }) {
+
+  const router = useRouter();
+
+  const pathname = usePathname();
+
   const { id } = use(params);
 
-  const member = useMemo(() => {
-    return users.find((user) => String(user.id) === String(id));
-  }, [id]);
 
-  if (!member) {
+  const member = useMemo(() => {
+    return users.find(
+      (user)=> String(user.id) === String(id)
+    );
+  },[id]);
+
+
+  if(!member){
     notFound();
   }
 
+
+  // check current page
+  const isDetailPage =
+    pathname.includes("/details");
+
+
+
   return (
+
     <div className="space-y-4">
-      {/* Header */}
+
+
       <HeaderMemberInfo
+
         title="ព័ត៌មានលម្អិតសមាជិក"
+
         breadcrumb={{
-          parent: "បញ្ជីសមាជិក",
-          current: "ព័ត៌មានលម្អិតសមាជិក",
+          parent:"បញ្ជីសមាជិក",
+          current:"ព័ត៌មានលម្អិតសមាជិក",
         }}
+
         buttonText="ព័ត៌មានលម្អិត"
-        onButtonClick={() => {
-          console.log("View Details:", id);
+
+
+        onButtonClick={()=>{
+
+          router.push(
+            `/member/memberInfo/${id}/details/personal`
+          );
+
         }}
+
       />
 
-      {/* Statistics */}
+
+
       <div className="grid grid-cols-3 gap-4">
+
         <StatCard
           icon={Users}
           label="ចំនួនសកម្មភាពចូលរួម"
@@ -62,6 +81,7 @@ export default function MemberInfoLayout({ children, params }) {
           iconColor="text-primary"
           iconBg="bg-secondary-light"
         />
+
 
         <StatCard
           icon={InfoIcon}
@@ -72,6 +92,7 @@ export default function MemberInfoLayout({ children, params }) {
           iconBg="bg-error-bg"
         />
 
+
         <StatCard
           icon={FaHandHoldingDollar}
           label="ចំនួនវិភាគទាន"
@@ -80,15 +101,31 @@ export default function MemberInfoLayout({ children, params }) {
           iconColor="text-warning"
           iconBg="bg-warning-bg"
         />
+
       </div>
-      {/* Profile */}
-      <MemberInfoCard member={member} />
 
-      {/* Navigation Tabs */}
-      <MemberTabNav memberId={member.id} />
 
-      {/* Current Page */}
-      <div>{children}</div>
+
+      <MemberInfoCard member={member}/>
+
+
+
+      {
+        !isDetailPage && (
+          <MemberTabNav memberId={member.id}/>
+        )
+      }
+
+
+
+      <div>
+        {children}
+      </div>
+
+
+
     </div>
+
   );
+
 }

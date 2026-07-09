@@ -8,7 +8,8 @@ import {
   CircleCheck,
   Info,
 } from "lucide-react";
-import { HiSaveAs } from "react-icons/hi";
+
+import SaveButton from "@/components/forms/SaveButton";
 
 export default function PasswordPage() {
   const [showCurrent, setShowCurrent] = useState(false);
@@ -18,7 +19,6 @@ export default function PasswordPage() {
   return (
     <div className="space-y-6">
 
-      {/* Header */}
       <div>
         <h2 className="text-lg font-semibold text-text-primary">
           ផ្លាស់ប្ដូរពាក្យសម្ងាត់
@@ -30,11 +30,9 @@ export default function PasswordPage() {
       </div>
 
 
-      {/* Content */}
       <div className="grid grid-cols-[1fr_360px] gap-8">
 
 
-        {/* Form */}
         <div className="space-y-5">
 
           <PasswordInput
@@ -43,11 +41,13 @@ export default function PasswordPage() {
             setShow={setShowCurrent}
           />
 
+
           <PasswordInput
             label="ពាក្យសម្ងាត់ថ្មី"
             show={showNew}
             setShow={setShowNew}
           />
+
 
           <PasswordInput
             label="បញ្ជាក់ពាក្យសម្ងាត់ថ្មី"
@@ -57,25 +57,27 @@ export default function PasswordPage() {
 
 
           <div className="flex justify-end pt-3">
-
-            <button className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-white shadow-sm transition hover:opacity-90">
-              <HiSaveAs size={16} />
-              រក្សាទុក
-            </button>
-
+            <SaveButton />
           </div>
+
 
         </div>
 
 
 
-        {/* Security Card */}
         <div className="h-fit rounded-xl border border-warning bg-white p-5">
+
 
           <div className="mb-5 flex items-center gap-3">
 
+
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-warning-bg">
-              <Info className="text-warning" size={22} />
+
+              <Info
+                className="text-warning"
+                size={22}
+              />
+
             </div>
 
 
@@ -83,7 +85,9 @@ export default function PasswordPage() {
               គន្លឹះសុវត្ថិភាព
             </h3>
 
+
           </div>
+
 
 
           <div className="space-y-4">
@@ -98,15 +102,16 @@ export default function PasswordPage() {
 
           </div>
 
+
         </div>
 
 
       </div>
 
+
     </div>
   );
 }
-
 
 
 
@@ -122,7 +127,11 @@ function PasswordInput({ label, show, setShow }) {
 
       <div className="relative">
 
-        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+
+        <Lock
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+          size={18}
+        />
 
 
         <input
@@ -138,14 +147,21 @@ function PasswordInput({ label, show, setShow }) {
           className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
         >
 
-          {show ? <EyeOff size={18} /> : <Eye size={18} />}
+          {show ? (
+            <EyeOff size={18}/>
+          ) : (
+            <Eye size={18}/>
+          )}
 
         </button>
 
+
       </div>
+
 
     </div>
   );
+
 }
 
 
@@ -154,10 +170,17 @@ function PasswordInput({ label, show, setShow }) {
 function Rule({ text }) {
 
   return (
+
     <div className="flex items-center gap-3">
 
+
       <div className="flex h-6 w-6 items-center justify-center rounded-full border border-warning">
-        <CircleCheck size={14} className="text-warning" />
+
+        <CircleCheck
+          size={14}
+          className="text-warning"
+        />
+
       </div>
 
 
@@ -165,6 +188,9 @@ function Rule({ text }) {
         {text}
       </p>
 
+
     </div>
+
   );
+
 }
