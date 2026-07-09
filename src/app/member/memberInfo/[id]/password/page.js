@@ -5,9 +5,10 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Save,
-  ShieldCheck,
+  CircleCheck,
+  Info,
 } from "lucide-react";
+import { HiSaveAs } from "react-icons/hi";
 
 export default function PasswordPage() {
   const [showCurrent, setShowCurrent] = useState(false);
@@ -19,160 +20,150 @@ export default function PasswordPage() {
 
       {/* Header */}
       <div>
-        <h2 className="text-xl font-semibold">
+        <h2 className="text-lg font-semibold text-text-primary">
           ផ្លាស់ប្ដូរពាក្យសម្ងាត់
         </h2>
 
-        <p className="text-sm text-gray-500 mt-1">
-          សូមបញ្ចូលពាក្យសម្ងាត់ថ្មី ដើម្បីការពារគណនីរបស់សមាជិក។
+        <p className="mt-2 text-sm text-text-secondary">
+          សូមបញ្ចូលពាក្យសម្ងាត់ថ្មី ដើម្បីការពារគណនីរបស់អ្នក!!!
         </p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-8">
 
-        <div className=" space-y-6">
+      {/* Content */}
+      <div className="grid grid-cols-[1fr_360px] gap-8">
 
-          {/* Current Password */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              ពាក្យសម្ងាត់បច្ចុប្បន្ន
-            </label>
 
-            <div className="relative">
+        {/* Form */}
+        <div className="space-y-5">
 
-              <Lock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+          <PasswordInput
+            label="ពាក្យសម្ងាត់បច្ចុប្បន្ន"
+            show={showCurrent}
+            setShow={setShowCurrent}
+          />
 
-              <input
-                type={showCurrent ? "text" : "password"}
-                placeholder="********"
-                className="w-full border rounded-lg pl-10 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+          <PasswordInput
+            label="ពាក្យសម្ងាត់ថ្មី"
+            show={showNew}
+            setShow={setShowNew}
+          />
 
-              <button
-                type="button"
-                onClick={() => setShowCurrent(!showCurrent)}
-                className="absolute right-3 top-3"
-              >
-                {showCurrent ? (
-                  <EyeOff size={20} />
-                ) : (
-                  <Eye size={20} />
-                )}
-              </button>
+          <PasswordInput
+            label="បញ្ជាក់ពាក្យសម្ងាត់ថ្មី"
+            show={showConfirm}
+            setShow={setShowConfirm}
+          />
 
-            </div>
-          </div>
 
-          {/* New Password */}
-          <div>
+          <div className="flex justify-end pt-3">
 
-            <label className="block text-sm font-medium mb-2">
-              ពាក្យសម្ងាត់ថ្មី
-            </label>
-
-            <div className="relative">
-
-              <Lock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-
-              <input
-                type={showNew ? "text" : "password"}
-                placeholder="********"
-                className="w-full border rounded-lg pl-10 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-
-              <button
-                type="button"
-                onClick={() => setShowNew(!showNew)}
-                className="absolute right-3 top-3"
-              >
-                {showNew ? (
-                  <EyeOff size={20} />
-                ) : (
-                  <Eye size={20} />
-                )}
-              </button>
-
-            </div>
-
-          </div>
-
-          {/* Confirm Password */}
-          <div>
-
-            <label className="block text-sm font-medium mb-2">
-              បញ្ជាក់ពាក្យសម្ងាត់ថ្មី
-            </label>
-
-            <div className="relative">
-
-              <Lock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-
-              <input
-                type={showConfirm ? "text" : "password"}
-                placeholder="********"
-                className="w-full border rounded-lg pl-10 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-
-              <button
-                type="button"
-                onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute right-3 top-3"
-              >
-                {showConfirm ? (
-                  <EyeOff size={20} />
-                ) : (
-                  <Eye size={20} />
-                )}
-              </button>
-
-            </div>
-
-          </div>
-
-          {/* Password Tips */}
-
-          <div className="rounded-lg bg-primary-light p-4">
-
-            <div className="flex gap-3">
-
-              <ShieldCheck className="text-primary mt-1" />
-
-              <div>
-
-                <p className="font-medium">
-                  គន្លឹះសុវត្ថិភាព
-                </p>
-
-                <ul className="text-sm text-gray-600 mt-2 space-y-1 list-disc list-inside">
-                  <li>យ៉ាងហោចណាស់ ៨ តួអក្សរ</li>
-                  <li>មានអក្សរធំ និងអក្សរតូច</li>
-                  <li>មានលេខ និងនិមិត្តសញ្ញា</li>
-                  <li>កុំប្រើពាក្យសម្ងាត់ចាស់</li>
-                </ul>
-
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* Save Button */}
-
-          <div className="flex justify-end">
-
-            <button className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg hover:opacity-90">
-
-              <Save size={18} />
-
+            <button className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-white shadow-sm transition hover:opacity-90">
+              <HiSaveAs size={16} />
               រក្សាទុក
-
             </button>
 
           </div>
 
         </div>
 
+
+
+        {/* Security Card */}
+        <div className="h-fit rounded-xl border border-warning bg-white p-5">
+
+          <div className="mb-5 flex items-center gap-3">
+
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-warning-bg">
+              <Info className="text-warning" size={22} />
+            </div>
+
+
+            <h3 className="text-base font-semibold text-text-primary">
+              គន្លឹះសុវត្ថិភាព
+            </h3>
+
+          </div>
+
+
+          <div className="space-y-4">
+
+            <Rule text="មានអក្សរយ៉ាងហោចណាស់ ៨ តួ" />
+
+            <Rule text="មានតួអក្សរពិសេស (!@#$%^&*)" />
+
+            <Rule text="មានលេខ (0-9)" />
+
+            <Rule text="មានអក្សរធំ និងអក្សរតូច" />
+
+          </div>
+
+        </div>
+
+
       </div>
+
+    </div>
+  );
+}
+
+
+
+
+function PasswordInput({ label, show, setShow }) {
+
+  return (
+    <div>
+
+      <label className="mb-2 block text-sm font-medium text-text-primary">
+        {label}
+      </label>
+
+
+      <div className="relative">
+
+        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+
+
+        <input
+          type={show ? "text" : "password"}
+          placeholder="បញ្ចូលពាក្យសម្ងាត់"
+          className="h-11 w-full rounded-lg border border-gray-200 bg-white pl-11 pr-11 text-sm outline-none transition focus:border-primary"
+        />
+
+
+        <button
+          type="button"
+          onClick={() => setShow(!show)}
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+        >
+
+          {show ? <EyeOff size={18} /> : <Eye size={18} />}
+
+        </button>
+
+      </div>
+
+    </div>
+  );
+}
+
+
+
+
+function Rule({ text }) {
+
+  return (
+    <div className="flex items-center gap-3">
+
+      <div className="flex h-6 w-6 items-center justify-center rounded-full border border-warning">
+        <CircleCheck size={14} className="text-warning" />
+      </div>
+
+
+      <p className="text-sm font-medium text-text-primary">
+        {text}
+      </p>
 
     </div>
   );
