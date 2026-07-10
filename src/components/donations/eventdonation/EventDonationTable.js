@@ -56,7 +56,14 @@ export default function EventDonationTable({
                 <td className="px-4">
                   <div className="flex items-center justify-center gap-[5px]">
                     <Link
-                      href={`/donation/eventdonation/${row.id}`}
+                      href={{
+                        pathname: "/donation/eventdonation/detail",
+                        query: {
+                          id: row.id,
+                          branch: row.branch,
+                          event: row.eventType,
+                        },
+                      }}
                       className="inline-flex h-[18px] min-w-[52px] items-center justify-center gap-[3px] rounded-[8px] bg-[#5636A3] px-2 text-[10px] font-normal leading-none text-white transition hover:bg-[#4b2f91]"
                     >
                       <List size={11} strokeWidth={2.2} />
