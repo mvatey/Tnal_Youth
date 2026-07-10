@@ -1,42 +1,89 @@
 [
-  {
-    "id": 1,
-    "name": "កម្មវិធីដាំកូនឈើ",
-    "type": "កម្មវិធីខាងក្រៅ",
-    "sector": "បរិស្ថាន",
-    "branch": "ភ្នំពេញ",
-    "location": "សាលាបឋមសិក្សា",
-    "date": "06 កក្កដា, 2026",
-    "duration": "4 ម៉ោង",
-    "participants": "80/100",
-    "status": "completed",
+{
+  "id": 1,
+  "name": "កម្មវិធីដាំកូនឈើ",
 
-    "image": "/tree planning.jpg",
+  "income": [
+    {
+      "memberId": 1,
+      "amountRiel": 50000,
+      "paymentMethod": "Cash"
+    },
+    {
+      "memberId": 2,
+      "amountRiel": 20000,
+      "paymentMethod": "ABA"
+    },
+    {
+      "memberId": 3,
+      "amountRiel": 50000,
+      "paymentMethod": "Cash"
+    },
+    {
+      "memberId": 4,
+      "amountRiel": 20000,
+      "paymentMethod": "ABA"
+    },
+    {
+      "memberId": 5,
+      "amountRiel": 50000,
+      "paymentMethod": "Cash"
+    },
+    {
+      "memberId": 6,
+      "amountRiel": 20000,
+      "paymentMethod": "ABA"
+    }
+  ],
+  "type": "កម្មវិធីខាងក្រៅ",
+  "sector": "បរិស្ថាន",
+  "branch": "ភ្នំពេញ",
+  "location": "សាលាបឋមសិក្សា",
 
-    "descriptionBrief": "ដាំដើមឈើសម្រាប់អនាគតបៃតង",
-    "descriptionDetail": "កម្មវិធីដាំដើមឈើត្រូវបានរៀបចំឡើងដើម្បីលើកកម្ពស់ការអភិរក្សបរិស្ថាន និងជំរុញការចូលរួមរបស់សមាជិកក្នុងការបង្កើតសហគមន៍បៃតង និងមាននិរន្តរភាព។",
+  "date": "06 កក្កដា, 2026",
+  "startDate": "06 កក្កដា 2026",
+  "endDate": "06 កក្កដា 2026",
 
-    "leader": "សុខ សុភា",
-    "phone": "0987579686",
+  "startDateISO": "2026-07-06",
+  "endDateISO": "2026-07-06",
 
-    "startDate": "06 កក្កដា 2026",
-    "endDate": "10 កក្កដា 2026",
+  "startTime24": "08:00",
+  "endTime24": "12:00",
 
-    "address": "Koh Dach, Kandal Provin, Cambodia — Near Hoh Dach Pagoda",
-    "mapImage": "/maps/tree-planting-map.jpg",
-    "mapLink": "https://maps.google.com/?q=Koh+Dach+Kandal+Cambodia",
+  "startTime": "8:00 ព្រឹក",
+  "endTime": "12:00 ថ្ងៃ",
 
-    "documents": [
-      {
-        "name": "របាយការណ៍.pdf",
-        "size": "2.4MB"
-      },
-      {
-        "name": "ឯកសារ.docx",
-        "size": "2.4MB"
-      }
-    ]
-  },
+  "duration": "4 ម៉ោង",
+  "participants": "80/100",
+  "status": "completed",
+
+  "image": "/tree planning.jpg",
+
+  "descriptionBrief": "ដាំដើមឈើសម្រាប់អនាគតបៃតង",
+  "descriptionDetail": "កម្មវិធីដាំដើមឈើត្រូវបានរៀបចំឡើងដើម្បីលើកកម្ពស់ការអភិរក្សបរិស្ថាន និងជំរុញការចូលរួមរបស់សមាជិកក្នុងការបង្កើតសហគមន៍បៃតង និងមាននិរន្តរភាព។",
+
+  "leader": "ផាន វិទ្ធី",
+  "phone": "0987579686",
+  "budget": "200$",
+  "donation": "500$",
+
+  "address": "សាលាបឋមសិក្សា, ខណ្ឌដូនពេញ, រាជធានីភ្នំពេញ",
+  "mapImage": "/map.png",
+  "mapLink": "https://maps.google.com/?q=Koh+Dach+Kandal+Cambodia",
+
+  "documents": [
+    {
+      "name": "របាយការណ៍.pdf",
+      "size": "2.4MB",
+      "type": "pdf"
+    },
+    {
+      "name": "ឯកសារ.docx",
+      "size": "2.4MB",
+      "type": "docx"
+    }
+  ]
+},
 
   {
     "id": 2,
@@ -60,16 +107,18 @@
     "phone": "0987579686",
     "budget": "0$",
     "donation": "0$",
-    "mapImage": "/maps/digital-skills-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Phnom+Penh+Cambodia",
     "documents": [
       {
         "name": "ផែនការកម្មវិធី.pdf",
-        "size": "2.4 MB"
+        "size": "2.4 MB",
+        "type": "pdf"
       },
       {
         "name": "កម្មវិធីសិក្សា.docx",
-        "size": "1.8 MB"
+        "size": "1.8 MB",
+        "type": "docx"
       }
     ]
   },
@@ -96,16 +145,18 @@
     "phone": "096333221",
     "budget": "150$",
     "donation": "1000$",
-    "mapImage": "/maps/monthly-meeting-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Phnom+Penh+Cambodia",
     "documents": [
       {
         "name": "កំណត់ហេតុប្រជុំ.pdf",
-        "size": "1.2 MB"
+        "size": "1.2 MB",
+        "type": "pdf"
       },
       {
         "name": "របាយការណ៍សង្ខេប.docx",
-        "size": "0.9 MB"
+        "size": "0.9 MB",
+        "type": "docx"
       }
     ]
   },
@@ -132,16 +183,18 @@
     "phone": "012456789",
     "budget": "700$",
     "donation": "400$",
-    "mapImage": "/maps/volunteer-day-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Kandal+Cambodia",
     "documents": [
       {
         "name": "របាយការណ៍សកម្មភាព.pdf",
-        "size": "2.1 MB"
+        "size": "2.1 MB",
+        "type": "pdf"
       },
       {
         "name": "រូបភាពសកម្មភាព.docx",
-        "size": "1.5 MB"
+        "size": "1.5 MB",
+        "type": "docx"
       }
     ]
   },
@@ -170,17 +223,19 @@
     "endDate": "10 កក្កដា 2026",
 
     "address": "Koh Dach, Kandal Provin, Cambodia — Near Hoh Dach Pagoda",
-    "mapImage": "/maps/tree-planting-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Koh+Dach+Kandal+Cambodia",
 
     "documents": [
       {
         "name": "របាយការណ៍.pdf",
-        "size": "2.4MB"
+        "size": "2.4MB",
+        "type": "pdf"
       },
       {
         "name": "ឯកសារ.docx",
-        "size": "2.4MB"
+        "size": "2.4MB",
+        "type": "docx"
       }
     ]
   },
@@ -207,16 +262,18 @@
     "phone": "0987579686",
     "budget": "0$",
     "donation": "0$",
-    "mapImage": "/maps/digital-skills-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Phnom+Penh+Cambodia",
     "documents": [
       {
         "name": "ផែនការកម្មវិធី.pdf",
-        "size": "2.4 MB"
+        "size": "2.4 MB",
+        "type": "pdf"
       },
       {
         "name": "កម្មវិធីសិក្សា.docx",
-        "size": "1.8 MB"
+        "size": "1.8 MB",
+        "type": "docx"
       }
     ]
   },
@@ -243,16 +300,18 @@
     "phone": "096333221",
     "budget": "150$",
     "donation": "1000$",
-    "mapImage": "/maps/monthly-meeting-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Phnom+Penh+Cambodia",
     "documents": [
       {
         "name": "កំណត់ហេតុប្រជុំ.pdf",
-        "size": "1.2 MB"
+        "size": "1.2 MB",
+        "type": "pdf"
       },
       {
         "name": "របាយការណ៍សង្ខេប.docx",
-        "size": "0.9 MB"
+        "size": "0.9 MB",
+        "type": "docx"
       }
     ]
   },
@@ -279,16 +338,18 @@
     "phone": "012456789",
     "budget": "700$",
     "donation": "400$",
-    "mapImage": "/maps/volunteer-day-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Kandal+Cambodia",
     "documents": [
       {
         "name": "របាយការណ៍សកម្មភាព.pdf",
-        "size": "2.1 MB"
+        "size": "2.1 MB",
+        "type": "pdf"
       },
       {
         "name": "រូបភាពសកម្មភាព.docx",
-        "size": "1.5 MB"
+        "size": "1.5 MB",
+        "type": "docx"
       }
     ]
   },
@@ -317,7 +378,7 @@
     "endDate": "10 កក្កដា 2026",
 
     "address": "Koh Dach, Kandal Provin, Cambodia — Near Hoh Dach Pagoda",
-    "mapImage": "/maps/tree-planting-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Koh+Dach+Kandal+Cambodia",
 
     "documents": [
@@ -354,7 +415,7 @@
     "phone": "0987579686",
     "budget": "0$",
     "donation": "0$",
-    "mapImage": "/maps/digital-skills-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Phnom+Penh+Cambodia",
     "documents": [
       {
@@ -390,7 +451,7 @@
     "phone": "096333221",
     "budget": "150$",
     "donation": "1000$",
-    "mapImage": "/maps/monthly-meeting-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Phnom+Penh+Cambodia",
     "documents": [
       {
@@ -426,7 +487,7 @@
     "phone": "012456789",
     "budget": "700$",
     "donation": "400$",
-    "mapImage": "/maps/volunteer-day-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Kandal+Cambodia",
     "documents": [
       {
@@ -464,7 +525,7 @@
     "endDate": "10 កក្កដា 2026",
 
     "address": "Koh Dach, Kandal Provin, Cambodia — Near Hoh Dach Pagoda",
-    "mapImage": "/maps/tree-planting-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Koh+Dach+Kandal+Cambodia",
 
     "documents": [
@@ -501,7 +562,7 @@
     "phone": "0987579686",
     "budget": "0$",
     "donation": "0$",
-    "mapImage": "/maps/digital-skills-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Phnom+Penh+Cambodia",
     "documents": [
       {
@@ -537,7 +598,7 @@
     "phone": "096333221",
     "budget": "150$",
     "donation": "1000$",
-    "mapImage": "/maps/monthly-meeting-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Phnom+Penh+Cambodia",
     "documents": [
       {
@@ -573,7 +634,7 @@
     "phone": "012456789",
     "budget": "700$",
     "donation": "400$",
-    "mapImage": "/maps/volunteer-day-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Kandal+Cambodia",
     "documents": [
       {
@@ -611,7 +672,7 @@
     "endDate": "10 កក្កដា 2026",
 
     "address": "Koh Dach, Kandal Provin, Cambodia — Near Hoh Dach Pagoda",
-    "mapImage": "/maps/tree-planting-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Koh+Dach+Kandal+Cambodia",
 
     "documents": [
@@ -648,7 +709,7 @@
     "phone": "0987579686",
     "budget": "0$",
     "donation": "0$",
-    "mapImage": "/maps/digital-skills-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Phnom+Penh+Cambodia",
     "documents": [
       {
@@ -684,7 +745,7 @@
     "phone": "096333221",
     "budget": "150$",
     "donation": "1000$",
-    "mapImage": "/maps/monthly-meeting-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Phnom+Penh+Cambodia",
     "documents": [
       {
@@ -720,7 +781,7 @@
     "phone": "012456789",
     "budget": "700$",
     "donation": "400$",
-    "mapImage": "/maps/volunteer-day-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Kandal+Cambodia",
     "documents": [
       {
@@ -758,7 +819,7 @@
     "endDate": "10 កក្កដា 2026",
 
     "address": "Koh Dach, Kandal Provin, Cambodia — Near Hoh Dach Pagoda",
-    "mapImage": "/maps/tree-planting-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Koh+Dach+Kandal+Cambodia",
 
     "documents": [
@@ -795,7 +856,7 @@
     "phone": "0987579686",
     "budget": "0$",
     "donation": "0$",
-    "mapImage": "/maps/digital-skills-map.jpg",
+    "mapImage": "/map.png",
     "mapLink": "https://maps.google.com/?q=Phnom+Penh+Cambodia",
     "documents": [
       {

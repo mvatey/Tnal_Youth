@@ -222,9 +222,10 @@ export default function ActivityPage() {
               ទាញយក
             </Button>
 
-            <Button icon={PlusCircle} variant="success">
+            <Link href="/activity/create" className="flex h-10 items-center gap-2 rounded-lg bg-success px-4 text-sm font-semibold text-white">
+              <PlusCircle size={16} />
               បង្កើតកម្មវិធីថ្មី
-            </Button>
+            </Link>
           </div>
         </div>
 

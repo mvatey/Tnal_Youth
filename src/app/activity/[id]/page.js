@@ -1,6 +1,7 @@
 import activityData from "@/data/activity.json";
 import Image from "next/image";
 import Link from "next/link";
+import { FaUsers } from "react-icons/fa";
 import {
   ArrowLeft,
   CalendarDays,
@@ -13,11 +14,12 @@ import {
   Pencil,
   Phone,
   Tag,
+  CircleDollarSign,
   UserCheck,
   UserX,
   Users,
-  WalletCards,
 } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default async function ActivityDetailPage({ params }) {
   const { id } = await params;
@@ -35,17 +37,28 @@ export default async function ActivityDetailPage({ params }) {
       <div className="flex items-center justify-between">
         <div>
           <div className="mb-2 flex items-center gap-2 text-sm text-text-secondary">
-            <Link href="/activity" className="flex items-center gap-1 hover:text-primary"><ArrowLeft size={15} />កម្មវិធី</Link>
-            <span>/</span>
-            <span>ព័ត៌មានលម្អិត</span>
+            <div className="flex items-center gap-1 text-sm">
+              <Link
+                href="/activity"
+                className="text-text-secondary transition hover:text-primary"
+              >
+                កម្មវិធី
+              </Link>
+
+              <ChevronRight size={14} className="text-text-secondary" />
+
+              <span className="font-semibold text-primary">
+                ព័ត៌មានលម្អិត
+              </span>
+            </div>
           </div>
-          <h1 className="text-xl font-bold text-secondary">ព័ត៌មានលម្អិតកម្មវិធី</h1>
+          <h1 className="text-xl font-bold text-secondary">ពត៌មានកម្មវិធី</h1>
         </div>
 
-        <button className="flex h-9 items-center gap-2 rounded-lg bg-secondary px-4 text-sm font-medium text-white hover:bg-secondary-hover">
+        <Link href={`/activity/create?edit=${activity.id}`} className="flex h-9 items-center gap-2 rounded-lg bg-secondary px-4 text-sm font-medium text-white hover:bg-secondary-hover">
           <Pencil size={15} />
           កែប្រែ
-        </button>
+        </Link>
       </div>
 
       {/* SECTION 1: Hero + status summary */}
@@ -56,17 +69,31 @@ export default async function ActivityDetailPage({ params }) {
 
             {/* no more justify-between — content hugs the top, icon row sits right under description */}
             <div className="flex flex-1 flex-col">
-              <div className="flex items-center gap-3">
-                <h2 className="text-lg font-bold text-text-primary">{activity.name}</h2>
-                <span className={`rounded-full px-3 py-1 text-[11px] ${statusStyle}`}>{statusLabel}</span>
-              </div>
-              <p className="mt-2 text-sm text-text-secondary">{activity.descriptionBrief}</p>
+              <div>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-bold text-text-primary">{activity.name}</h2>
+                  <span className={`rounded-full px-3 py-1 text-[11px] ${statusStyle}`}>{statusLabel}</span>
+                </div>
 
-              <div className="mt-5 grid grid-cols-4 gap-4 text-xs text-text-secondary">
-                <InfoIcon icon={CalendarDays} label={activity.date} sub={`${activity.startTime || ""} - ${activity.endTime || ""}`} />
+                <p className="mt-2 text-sm text-text-secondary">{activity.descriptionBrief}</p>
+              </div>
+              <div className="mt-12 grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-5 text-xs text-text-secondary">
+                <div className="flex items-start gap-2">
+                  <CalendarDays size={15} className="mt-0.5 shrink-0 text-text-secondary" />
+
+                  <div>
+                    <p className="font-semibold text-text-primary">
+                      {activity.date}
+                    </p>
+
+                    <p className="mt-1 whitespace-nowrap text-text-secondary">
+                      {activity.startTime} - {activity.endTime}
+                    </p>
+                  </div>
+                </div>
                 <InfoIcon icon={MapPin} label={activity.branch} sub={activity.location} />
                 <InfoIcon icon={Users} label={activity.participants} sub="បានចូលរួម" />
-                <InfoIcon icon={Tag} label={activity.type} sub="ប្រភេទសិល្បៈ" />
+                <InfoIcon icon={Tag} label={activity.type} sub="ប្រភេទវិស័យ" />
               </div>
             </div>
           </div>
@@ -92,16 +119,16 @@ export default async function ActivityDetailPage({ params }) {
       {/* SECTION 2: General info + Map */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         <div className="xl:col-span-2 rounded-xl border border-border bg-white p-5">
-          <h3 className="mb-3 text-base font-bold text-secondary">ព័ត៌មានកម្មវិធី</h3>
+          <h3 className="mb-3 text-base font-bold text-secondary">ទិដ្ឋភាពទូទៅ</h3>
           <p className="mb-5 text-sm leading-7 text-text-secondary">{activity.descriptionDetail}</p>
 
           <div className="grid grid-cols-2 gap-x-8 gap-y-4 border-t border-border pt-5 text-sm">
             <InfoItem icon={FileText} label="ឈ្មោះកម្មវិធី" value={activity.name} />
             <InfoItem icon={CalendarDays} label="ថ្ងៃចាប់ផ្តើម" value={activity.startDate || activity.date} />
             <InfoItem icon={Tag} label="ប្រភេទកម្មវិធី" value={activity.type} />
-            <InfoItem icon={Clock} label="រយៈពេល" value={activity.duration} />
+            <InfoItem icon={Clock} label="រយៈពេលចូលរួម" value={activity.duration} />
             <InfoItem icon={MapPin} label="វិស័យ" value={activity.sector} />
-            <InfoItem icon={Users} label="អ្នកទទួលខុសត្រូវ" value={activity.leader} />
+            <InfoItem icon={Users} label="អ្នកគ្រប់គ្រង" value={activity.leader} />
             <InfoItem icon={Users} label="ចំនួនអ្នកចូលរួម" value={activity.participants} />
             <InfoItem icon={Phone} label="លេខទំនាក់ទំនង" value={activity.phone} />
           </div>
@@ -130,88 +157,117 @@ export default async function ActivityDetailPage({ params }) {
       </div>
 
       {/* SECTION 3: Membership + Finance + Documents */}
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:col-span-2">
-          <div className="rounded-xl border border-border bg-white p-5">
-            <h3 className="mb-4 text-base font-bold text-secondary">សមាជិកភាព</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <SummaryCard
-                icon={UserCheck}
-                iconClassName="text-success"
-                bgClassName="bg-success-bg"
-                label="បានចូលរួម"
-                value={activity.participants?.split("/")[0] || "0"}
-              />
-              <SummaryCard
-                icon={UserX}
-                iconClassName="text-error"
-                bgClassName="bg-error-bg"
-                label="មិនបានចូលរួម"
-                value="0"
-              />
-            </div>
-            <button className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-white">
-              <Users size={16} />
-              សមាជិកចូលរួម
-            </button>
-          </div>
+<div className="grid grid-cols-3 gap-5">
+  {/* Member */}
+  <div className="rounded-xl border border-border bg-white p-5">
+    <h3 className="mb-4 text-base font-bold text-secondary">សមាសភាព</h3>
 
-          <div className="rounded-xl border border-border bg-white p-5">
-            <h3 className="mb-4 text-base font-bold text-secondary">ថវិកា</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <SummaryCard
-                icon={WalletCards}
-                iconClassName="text-warning"
-                bgClassName="bg-warning-bg"
-                label="ចំណូល"
-                value={activity.donation || "$ 0"}
-              />
-              <SummaryCard
-                icon={WalletCards}
-                iconClassName="text-error"
-                bgClassName="bg-error-bg"
-                label="ចំណាយ"
-                value={activity.budget || "$ 0"}
-              />
-            </div>
-            <button className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-warning text-sm font-semibold text-white">
-              <WalletCards size={16} />
-              វិភាគទាន
-            </button>
-          </div>
-        </div>
+    <div className="grid grid-cols-2 gap-4">
+      <SummaryCard
+        icon={UserCheck}
+        iconClass="bg-success-bg text-success"
+        label="បានចូលរួម"
+        value={activity.participants?.split("/")[0] || "0"}
+      />
 
-        <div className="rounded-xl border border-border bg-white p-5">
-          <h3 className="mb-4 text-base font-bold text-secondary">ឯកសារ</h3>
-          <div className="space-y-3">
-            {(activity.documents || []).map((doc) => (
-              <div key={doc.name} className="flex items-center justify-between rounded-lg border border-border p-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-error-bg text-error">
-                    <FileText size={18} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-text-primary">{doc.name}</p>
-                    <p className="text-xs text-text-secondary">{doc.size}</p>
-                  </div>
-                </div>
-                <Eye size={17} className="cursor-pointer text-primary" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <SummaryCard
+        icon={UserX}
+        iconClass="bg-error-bg text-error"
+        label="មិនបានចូលរួម"
+        value="0"
+      />
     </div>
-  );
+
+      <Link
+        href={`/activity/${activity.id}/participants`}
+        className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-white transition hover:bg-primary-hover"
+      >
+        <FaUsers size={15} />
+        សមាសភាពចូលរួម
+      </Link>
+  </div>
+
+  {/* Budget */}
+  <div className="rounded-xl border border-border bg-white p-5">
+    <h3 className="mb-4 text-base font-bold text-secondary">ថវិកា</h3>
+
+    <div className="grid grid-cols-2 gap-4">
+      <SummaryCard
+        icon={CircleDollarSign}
+        iconClass="bg-warning-bg text-warning"
+        label="ចំណូល"
+        value={activity.donation || "$ 0"}
+      />
+
+      <SummaryCard
+        icon={CircleDollarSign}
+        iconClass="bg-error-bg text-error"
+        label="ចំណាយ"
+        value={activity.budget || "$ 0"}
+      />
+    </div>
+
+    <Link href={`/activity/create/income?activityId=${activity.id}`} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-warning text-sm font-semibold text-white">
+      <CircleDollarSign size={16} />
+      វិភាគទាន
+    </Link>
+  </div>
+
+  {/* Documents */}
+  <div className="rounded-xl border border-border bg-white p-5">
+    <h3 className="mb-4 text-base font-bold text-secondary">ឯកសារ</h3>
+
+    <div className="space-y-3">
+      {(activity.documents || []).map((doc) => {
+        const fileStyle =
+          doc.type === "pdf"
+            ? "bg-error-bg text-error"
+            : "bg-blue-100 text-blue-600";
+
+        return (
+          <div
+            key={doc.name}
+            className="flex items-center justify-between rounded-lg border border-border p-3"
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className={`flex h-10 w-10 items-center justify-center rounded-lg ${fileStyle}`}
+              >
+                <FileText size={18} />
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-text-primary">
+                  {doc.name}
+                </p>
+
+                <p className="text-xs text-text-secondary">
+                  {doc.size}
+                </p>
+              </div>
+            </div>
+
+            <Eye
+              size={17}
+              className="cursor-pointer text-primary transition hover:text-primary-hover"
+            />
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</div>
+</div>
+);
 }
 
 function InfoIcon({ icon: Icon, label, sub }) {
   return (
-    <div className="flex items-start gap-2">
-      <Icon size={14} className="mt-0.5 text-text-secondary" />
-      <div>
-        <p className="font-semibold text-text-primary">{label}</p>
-        <p className="mt-1 text-text-secondary">{sub}</p>
+    <div className="flex min-w-0 items-start gap-2">
+      <Icon size={15} className="mt-0.5 shrink-0 text-text-secondary" />
+      <div className="min-w-0">
+        <p className="whitespace-nowrap font-semibold text-text-primary">{label || "-"}</p>
+        <p className="mt-1 whitespace-nowrap overflow-hidden text-ellipsis text-text-secondary">{sub || "-"}</p>
       </div>
     </div>
   );
@@ -219,12 +275,19 @@ function InfoIcon({ icon: Icon, label, sub }) {
 
 function StatusRow({ icon: Icon, label, last, children }) {
   return (
-    <div className={`flex items-center justify-between text-sm ${last ? "" : "mb-4"}`}>
+    <div
+      className={`grid grid-cols-[1fr_140px] items-center text-sm ${
+        last ? "" : "mb-4"
+      }`}
+    >
       <span className="flex items-center gap-2 text-text-secondary">
         {Icon && <Icon size={14} className="text-text-secondary" />}
         {label}
       </span>
-      {children}
+
+      <div className="flex justify-center">
+        {children}
+      </div>
     </div>
   );
 }
@@ -241,16 +304,22 @@ function InfoItem({ icon: Icon, label, value }) {
   );
 }
 
-function SummaryCard({ icon: Icon, iconClassName, bgClassName, label, value }) {
+function SummaryCard({ icon: Icon, iconClass, label, value }) {
   return (
-    <div className="rounded-lg border border-border p-4">
-      {Icon && (
-        <div className={`mb-2 flex h-8 w-8 items-center justify-center rounded-full ${bgClassName || "bg-bg-page-gray"}`}>
-          <Icon size={16} className={iconClassName} />
-        </div>
-      )}
-      <p className="text-xl font-bold text-text-primary">{value}</p>
-      <p className="mt-1 text-xs text-text-secondary">{label}</p>
+    <div className="flex flex-col items-center rounded-lg border border-border px-4 py-4 text-center">
+      <div
+        className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg ${iconClass}`}
+      >
+        <Icon size={18} />
+      </div>
+
+      <p className="text-2xl font-bold leading-none text-text-primary">
+        {value}
+      </p>
+
+      <p className="mt-2 text-xs text-text-secondary">
+        {label}
+      </p>
     </div>
   );
 }
