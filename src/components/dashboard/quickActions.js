@@ -4,7 +4,7 @@ import { CirclePlus } from "lucide-react";
 
 const ACTIONS = [
   { id: "program", label: "បង្កើតកម្មវិធី", color: "text-success", bg: "bg-success-bg", href: "/activity/create" },
-  { id: "branch", label: "បង្កើតឯកសារ", color: "text-primary", bg: "bg-primary-light", href: "/document/create" },
+  { id: "branch", label: "បង្កើតឯកសារ", color: "text-primary", bg: "bg-primary-light", href: "omponents/document/DocumentForm" },
   { id: "activity", label: "ម់ើលវិភាគទាន", color: "text-secondary", bg: "bg-secondary-light", href: "/donation" },
   { id: "member", label: "បង្កើតសមាជិក", color: "text-warning", bg: "bg-warning-bg", href: "/member/create" },
 ];

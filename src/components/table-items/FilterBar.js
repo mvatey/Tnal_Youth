@@ -17,7 +17,7 @@ function FilterInput({
 
   if (type === "date") {
     return (
-      <div className="relative w-[150px]">
+      <div className="relative w-[140px]">
         <DatePicker
           selected={value}
           onChange={(date) => onChange?.(date)}
@@ -38,11 +38,7 @@ function FilterInput({
   return (
     <div className="relative">
 
-      <select
-          value={value}
-          onChange={(e) => onChange?.(e.target.value)}
-          className="h-[34px] min-w-[150px] appearance-none rounded-lg border border-border bg-white px-3 pr-9 text-[12px] font-medium text-text-primary outline-none"
-        >
+      <select value={value} onChange={(e) => onChange?.(e.target.value)} className="h-[34px] min-w-[130px] appearance-none rounded-lg border border-border bg-white px-3 pr-9 text-[12px] font-medium text-text-primary outline-none">
 
         <option value="all">
           {placeholder}

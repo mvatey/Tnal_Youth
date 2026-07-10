@@ -21,13 +21,62 @@ import DateInput from "@/components/forms/DateInput";
 import MemberSelectModal from "@/components/activity/MemberSelectModal";
 
 import activities from "@/data/activity.json";
-
 function convertToDate(dateValue) {
   if (!dateValue) return null;
 
+  if (
+    dateValue instanceof Date &&
+    !Number.isNaN(dateValue.getTime())
+  ) {
+    return dateValue;
+  }
+
+  if (typeof dateValue === "string") {
+    const simpleDate = dateValue.match(
+      /^(\d{4})-(\d{2})-(\d{2})/
+    );
+
+    if (simpleDate) {
+      const [, year, month, day] = simpleDate;
+
+      return new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day)
+      );
+    }
+  }
+
   const date = new Date(dateValue);
 
-  return Number.isNaN(date.getTime()) ? null : date;
+  return Number.isNaN(date.getTime())
+    ? null
+    : date;
+}
+
+function formatDate(dateValue) {
+  if (!dateValue) return "";
+
+  const date =
+    dateValue instanceof Date
+      ? dateValue
+      : new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const year = date.getFullYear();
+
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+
+  const day = String(
+    date.getDate()
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function getActivityLocation(location) {
@@ -71,14 +120,23 @@ function createInitialForm(activity) {
     description:
       activity.descriptionDetail ||
       activity.description ||
-      "",
+          "",
 
     startDate: convertToDate(
-      activity.startDateISO || activity.startDate
+      activity.startDateISO ||
+      activity.startDateValue ||
+      activity.startDate ||
+      activity.dateValue ||
+      activity.date
     ),
 
     endDate: convertToDate(
-      activity.endDateISO || activity.endDate
+      activity.endDateISO ||
+      activity.endDateValue ||
+      activity.endDate ||
+      activity.finishDate ||
+      activity.dateValue ||
+      activity.date
     ),
 
     startTime:
@@ -109,15 +167,6 @@ function createInitialForm(activity) {
   };
 }
 
-function formatDate(date) {
-  if (!date) return "";
-
-  if (date instanceof Date && !Number.isNaN(date.getTime())) {
-    return date.toISOString();
-  }
-
-  return date;
-}
 
 export default function CreateActivityPage() {
   const router = useRouter();
@@ -409,12 +458,12 @@ export default function CreateActivityPage() {
         {/* Date and location */}
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <div className="rounded-xl border border-border bg-white p-5">
-            <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
+            <h2 className="mb-6 flex items-center gap-2 text-base font-bold text-secondary">
               <CalendarDays size={18} />
               កាលបរិច្ឆេទ និង ពេលវេលា
             </h2>
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2">
               <DateInput
                 label="កាលបរិច្ឆេទចាប់ផ្តើម"
                 value={form.startDate}
@@ -426,6 +475,7 @@ export default function CreateActivityPage() {
               <DateInput
                 label="កាលបរិច្ឆេទបញ្ចប់"
                 value={form.endDate}
+                min={formatDate(form.startDate)}
                 onChange={(date) =>
                   setValue("endDate", date)
                 }
