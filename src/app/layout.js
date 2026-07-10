@@ -31,19 +31,22 @@
 import { Kantumruy_Pro } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/themeProvider";
 import "./globals.css";
-
-const kantumruyPro = Kantumruy_Pro({
-  subsets: ["khmer", "latin"], // include latin too if you have English text mixed in
-  weight: ["300", "400", "500", "600", "700"], // pick the weights you'll actually use
-  variable: "--font-kantumruy",
-});
+import { ThemeProvider } from "@/components/providers/themeProvider";
 
 
 export default function RootLayout({ children }) {
   return (
+<<<<<<< HEAD
     <html lang="km" className={kantumruyPro.variable}>
       <body className={kantumruyPro.className}>
         <ThemeProvider>{children}</ThemeProvider>
+=======
+    <html lang="km">
+      <body>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
+>>>>>>> origin/feature/donation
       </body>
     </html>
   );
