@@ -4,12 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import Pagination from "@/components/navigation/Pagination";
 import NotificationItem from "./NotificationItem";
 import NotificationTabs from "./NotificationTabs";
-import { getNotifications } from "./notificationData";
+import { getNotificationHeading, getNotifications } from "./notificationData";
 
 const rowsPerPage = 10;
 
 export default function NotificationPanel({ type = "system" }) {
   const notifications = useMemo(() => getNotifications(type), [type]);
+  const heading = getNotificationHeading(type);
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(notifications.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
@@ -32,12 +33,10 @@ export default function NotificationPanel({ type = "system" }) {
 
       <section className="overflow-hidden rounded-md border border-border bg-[#fbfcfe] shadow-sm">
         <div className="px-8 pt-4">
-          <h2 className="text-[16px] font-bold text-secondary">
-            សេចក្តីជូនដំណឹងថ្មីៗ
-          </h2>
+          <h2 className="text-[16px] font-bold text-secondary">{heading}</h2>
         </div>
 
-        <ul className="mt-2">
+        <ul className="mt-[10px]">
           {pagedNotifications.map((notification) => (
             <NotificationItem
               key={notification.id}
