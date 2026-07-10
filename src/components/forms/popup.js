@@ -1,55 +1,60 @@
 "use client";
 
-import { X, UploadCloud, Download } from "lucide-react";
+import { ArchiveRestore, X, UploadCloud } from "lucide-react";
 
-export default function UploadPopup({ onClose }) {
+export default function UploadPopup({ onClose, onSave }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
-      <div className="relative w-[800px] rounded-[34px] bg-white px-14 py-12 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25">
+      <div className="relative h-[319px] w-[391px] rounded-[8px] bg-white px-7 py-7 shadow-xl">
         <button
           onClick={onClose}
-          className="absolute right-8 top-7 flex h-11 w-11 items-center justify-center rounded-full border-2 border-black"
+          className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-black text-black transition hover:bg-gray-100"
+          aria-label="Close"
         >
-          <X size={28} />
+          <X size={20} />
         </button>
 
-        <h2 className="mb-10 text-5xl font-bold text-[#4B2E91]">
-          បញ្ចូលឯកសារ
+        <h2 className="mb-6 text-[24px] font-semibold leading-none text-[#4B3391]">
+          បញ្ចូលវិក្ក័យបត្រ
         </h2>
 
-        <label className="mb-3 block text-2xl font-semibold text-gray-500">
+        <label className="mb-3 block text-[14px] font-medium text-[#6B7280]">
           ឯកសារ
         </label>
 
         <label
           htmlFor="file-upload"
-          className="flex h-[240px] cursor-pointer flex-col items-center justify-center rounded-[30px] border-4 border-dashed border-gray-200 bg-gray-50"
+          className="flex h-[116px] w-full cursor-pointer flex-col items-center justify-center rounded-[16px] border-2 border-dashed border-[#E5E7EB] bg-[#F9FAFB]"
         >
-          <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gray-200">
-            <UploadCloud size={44} className="text-gray-500" />
+          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-[#E5E7EB]">
+            <UploadCloud size={26} strokeWidth={2.4} className="text-[#6B7280]" />
           </div>
 
-          <p className="mb-3 text-2xl font-bold text-[#4B2E91]">
+          <p className="mb-2 text-[14px] font-semibold leading-none text-[#6D4E9F]">
             បញ្ចូលឯកសារ
           </p>
 
-          <p className="text-xl text-gray-400">
+          <p className="text-center text-[10px] font-normal text-[#9CA3AF]">
             គាំទ្រ: PDF, Excel, JPG, Docx, PNG ... (អតិបរមា 5MB), ទំហំគឺ: 16:9
           </p>
 
           <input id="file-upload" type="file" className="hidden" />
         </label>
 
-        <div className="mt-12 flex items-center gap-7">
+        <div className="mt-7 flex items-center gap-4">
           <button
             onClick={onClose}
-            className="h-14 w-[170px] rounded-2xl border-2 border-gray-300 bg-white text-2xl font-bold shadow-md"
+            className="h-[34px] w-[96px] rounded-[8px] border border-[#D1D5DB] bg-[#F9FAFB] text-center text-[14px] font-semibold text-black shadow-md transition hover:bg-[#F3F4F6]"
           >
             បោះបង់
           </button>
 
-          <button className="flex h-14 flex-1 items-center justify-center gap-5 rounded-2xl bg-[#4B2E91] text-2xl font-bold text-white shadow-md">
-            <Download size={34} />
+          <button
+            type="button"
+            onClick={onSave}
+            className="flex h-[34px] flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#4B3391] text-[14px] font-semibold text-white shadow-md transition hover:bg-[#3f2b7d]"
+          >
+            <ArchiveRestore size={18} />
             រក្សាទុក
           </button>
         </div>

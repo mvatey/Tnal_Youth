@@ -28,16 +28,21 @@
 // }
 
 // app/layout.js
+// app/layout.js
 import { Kantumruy_Pro } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/themeProvider";
 import "./globals.css";
 
 const kantumruyPro = Kantumruy_Pro({
-  subsets: ["khmer", "latin"], // include latin too if you have English text mixed in
-  weight: ["300", "400", "500", "600", "700"], // pick the weights you'll actually use
+  subsets: ["khmer", "latin"],
+  weight: ["300", "400", "500", "600", "700"],
   variable: "--font-kantumruy",
 });
 
+export const metadata = {
+  title: "សមាគមយុវជនកម្ពុជា",
+  description: "កម្មវិធីគ្រប់គ្រងសមាគមយុវជនកម្ពុជា",
+};
 
 export default function RootLayout({ children }) {
   return (

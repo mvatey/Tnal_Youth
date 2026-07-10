@@ -1,5 +1,5 @@
 import AddDonationLink from "../donations/AddDonationLink";
-import DonationFilterSelect from "../donations/DonationFilterSelect";
+import DonationFilterSelect from "../donations/monthlydonation/DonationFilterSelect";
 
 export default function FilterBar({
   years = [],

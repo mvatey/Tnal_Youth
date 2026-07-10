@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Phone, Mail, Calendar, User, Building2, Calendar1Icon, CalendarCheck } from "lucide-react";
+import { Phone, Mail, Calendar, CalendarCheck } from "lucide-react";
 
 const ROLE_LABELS = {
   admin: "អ្នកគ្រប់គ្រង",
