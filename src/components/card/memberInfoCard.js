@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Phone, Mail, Calendar, User, Building2, Calendar1Icon, CalendarCheck } from "lucide-react";
+import { Phone, Mail, Calendar, CalendarCheck } from "lucide-react";
 
 const ROLE_LABELS = {
   admin: "អ្នកគ្រប់គ្រង",
@@ -38,7 +38,11 @@ export default function MemberInfoCard({ member }) {
           {/* profile_photo */}
           <div className="relative w-20 h-20 rounded-lg  overflow-hidden bg-gray-200 shadow-md">
             <Image
+<<<<<<< HEAD
               src={member.profile_photo || "/member.jpg"}
+=======
+              src={member.profile_photo || "/member.png"}
+>>>>>>> feature/member
               alt={member.name}
               fill
               className="object-cover"
