@@ -9,6 +9,7 @@ import SaveAlert from "@/components/forms/savealert";
 import { addDonationRows } from "@/data/donationData";
 
 const SAVED_EVENT_DONATION_ROWS_KEY = "tnal-youth:saved-event-donation-rows";
+const EVENT_DONATION_SAVE_ALERT_KEY = "tnal-youth:event-donation-save-alert";
 
 const eventNames = {
   meeting: "កម្មវិធីប្រជុំ",
@@ -127,7 +128,8 @@ export default function EventDonationDetailForm() {
         ? `បានរក្សាទុកវិភាគទាន ${completed.length} នាក់`
         : "សូមបញ្ចូលចំនួនទឹកប្រាក់យ៉ាងហោចណាស់ម្នាក់",
     );
-    setShowSaveAlert(true);
+    window.localStorage.setItem(EVENT_DONATION_SAVE_ALERT_KEY, "true");
+    router.push("/donation/eventdonation");
   };
 
   const handleReset = (rows) => {

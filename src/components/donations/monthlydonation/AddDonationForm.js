@@ -8,6 +8,7 @@ import Table from "../../tables/table";
 import SaveAlert from "../../forms/savealert";
 
 const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
+const DONATION_SAVE_ALERT_KEY = "tnal-youth:donation-save-alert";
 
 const getSavedRowKey = (row) =>
   [row.branch, row.month, row.year, row.id].join("|");
@@ -111,7 +112,8 @@ export default function AddDonationForm() {
         ? `បានរក្សាទុកវិភាគទាន ${completed.length} នាក់`
         : "សូមបញ្ចូលចំនួនទឹកប្រាក់យ៉ាងហោចណាស់ម្នាក់",
     );
-    setShowSaveAlert(true);
+    window.localStorage.setItem(DONATION_SAVE_ALERT_KEY, "true");
+    router.push("/donation");
   };
 
   const handleReset = (rows) => {

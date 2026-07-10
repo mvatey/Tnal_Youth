@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import EventDonationFilters from "./EventDonationFilters";
 import EventDonationTable from "./EventDonationTable";
 import AddAlert from "@/components/forms/addalert";
+import SaveAlert from "@/components/forms/savealert";
 import { addDonationRows, donationRows } from "@/data/donationData";
 
+const EVENT_DONATION_SAVE_ALERT_KEY = "tnal-youth:event-donation-save-alert";
 const rowsPerPage = 12;
 const eventNames = {
   meeting: "កម្មវិធីប្រជុំ",
@@ -87,6 +89,7 @@ export default function EventDonationPanel() {
   const [currentPage, setCurrentPage] = useState(1);
   const [deletedIds, setDeletedIds] = useState([]);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
+  const [showSaveAlert, setShowSaveAlert] = useState(false);
 
   const branches = [...new Set(donationRows.map((row) => row.branch))];
   const eventDonationRows = useMemo(createEventDonationRows, []);
@@ -140,20 +143,38 @@ export default function EventDonationPanel() {
   };
 
   useEffect(() => {
-    if (!showDownloadAlert) return undefined;
+    const shouldShowSaveAlert = window.localStorage.getItem(
+      EVENT_DONATION_SAVE_ALERT_KEY,
+    );
+
+    if (shouldShowSaveAlert === "true") {
+      window.localStorage.removeItem(EVENT_DONATION_SAVE_ALERT_KEY);
+      setShowSaveAlert(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!showDownloadAlert && !showSaveAlert) return undefined;
 
     const timeoutId = window.setTimeout(() => {
       setShowDownloadAlert(false);
+      setShowSaveAlert(false);
     }, 3000);
 
     return () => window.clearTimeout(timeoutId);
-  }, [showDownloadAlert]);
+  }, [showDownloadAlert, showSaveAlert]);
 
   return (
     <section className="min-h-[650px] rounded-md border border-border bg-[#fbfcfe] px-7 py-4 shadow-sm">
       {showDownloadAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
           <AddAlert />
+        </div>
+      )}
+
+      {showSaveAlert && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
+          <SaveAlert message="អបអរសាទរ ! វិភាគទានកម្មវិធីត្រូវបានរក្សាទុកដោយជោគជ័យ" />
         </div>
       )}
 
