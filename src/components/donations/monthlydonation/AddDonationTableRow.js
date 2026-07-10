@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 
 const PAYMENT_METHODS = ["Cash", "ABA", "Wing", "Bank Transfer"];
@@ -52,9 +53,19 @@ export default function AddDonationTableRow({
   onPaymentMethodChange,
   onShowInfo,
 }) {
+  const [focusedAmountField, setFocusedAmountField] = useState(null);
+
   const handleAmountInput = (callback) => (e) => {
     const value = e.target.value.replace(/[^0-9.]/g, "");
     callback(member.id, value);
+  };
+
+  const handleAmountFocus = (field, value, callback) => () => {
+    setFocusedAmountField(field);
+
+    if (Number(value) === 0) {
+      callback(member.id, "");
+    }
   };
 
   return (
@@ -96,7 +107,13 @@ export default function AddDonationTableRow({
             inputMode="decimal"
             value={member.realAmount ?? ""}
             onChange={handleAmountInput(onRealAmountChange)}
-            placeholder="0"
+            onFocus={handleAmountFocus(
+              "realAmount",
+              member.realAmount,
+              onRealAmountChange,
+            )}
+            onBlur={() => setFocusedAmountField(null)}
+            placeholder={focusedAmountField === "realAmount" ? "" : "0"}
             className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500"
           />
           <span className="text-[13px] text-slate-500">៛</span>
@@ -115,7 +132,13 @@ export default function AddDonationTableRow({
             inputMode="decimal"
             value={member.dollarAmount ?? ""}
             onChange={handleAmountInput(onDollarAmountChange)}
-            placeholder="0.00"
+            onFocus={handleAmountFocus(
+              "dollarAmount",
+              member.dollarAmount,
+              onDollarAmountChange,
+            )}
+            onBlur={() => setFocusedAmountField(null)}
+            placeholder={focusedAmountField === "dollarAmount" ? "" : "0.00"}
             className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500"
           />
           <span className="text-[13px] text-slate-500">$</span>

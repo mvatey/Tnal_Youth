@@ -15,12 +15,19 @@ const getSavedRowKey = (row) =>
 export default function AddDonationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialBranch = searchParams.get("branch") || "all";
-  const initialMonth = searchParams.get("month") || "all";
-  const initialYear = searchParams.get("year") || "all";
-  const [selectedBranch, setSelectedBranch] = useState(initialBranch);
-  const [selectedMonth, setSelectedMonth] = useState(initialMonth);
-  const [selectedYear, setSelectedYear] = useState(initialYear);
+  const queryString = searchParams.toString();
+  const initialFilters = useMemo(() => {
+    const params = new URLSearchParams(queryString);
+
+    return {
+      branch: params.get("branch") || "all",
+      month: params.get("month") || "all",
+      year: params.get("year") || "all",
+    };
+  }, [queryString]);
+  const [selectedBranch, setSelectedBranch] = useState(initialFilters.branch);
+  const [selectedMonth, setSelectedMonth] = useState(initialFilters.month);
+  const [selectedYear, setSelectedYear] = useState(initialFilters.year);
   const [searchQuery, setSearchQuery] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
   const [showSaveAlert, setShowSaveAlert] = useState(false);
@@ -67,10 +74,18 @@ export default function AddDonationForm() {
   }, []);
 
   useEffect(() => {
-    setSelectedBranch(initialBranch);
-    setSelectedMonth(initialMonth);
-    setSelectedYear(initialYear);
-  }, [initialBranch, initialMonth, initialYear]);
+    setSelectedBranch((currentBranch) =>
+      currentBranch === initialFilters.branch
+        ? currentBranch
+        : initialFilters.branch,
+    );
+    setSelectedMonth((currentMonth) =>
+      currentMonth === initialFilters.month ? currentMonth : initialFilters.month,
+    );
+    setSelectedYear((currentYear) =>
+      currentYear === initialFilters.year ? currentYear : initialFilters.year,
+    );
+  }, [initialFilters]);
 
   useEffect(() => {
     if (!showSaveAlert) return undefined;
@@ -86,32 +101,28 @@ export default function AddDonationForm() {
     const completed = rows.filter(
       (row) => Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0,
     );
+    const nextRows = { ...savedRows };
 
-    setSavedRows((currentRows) => {
-      const nextRows = { ...currentRows };
-
-      rows.forEach((row) => {
-        nextRows[getSavedRowKey(row)] = {
-          realAmount: row.realAmount ?? "",
-          dollarAmount: row.dollarAmount ?? "",
-          paymentMethod: row.paymentMethod || "Cash",
-        };
-      });
-
-      window.localStorage.setItem(
-        SAVED_DONATION_ROWS_KEY,
-        JSON.stringify(nextRows),
-      );
-
-      return nextRows;
+    rows.forEach((row) => {
+      nextRows[getSavedRowKey(row)] = {
+        realAmount: row.realAmount ?? "",
+        dollarAmount: row.dollarAmount ?? "",
+        paymentMethod: row.paymentMethod || "Cash",
+      };
     });
+
+    window.localStorage.setItem(
+      SAVED_DONATION_ROWS_KEY,
+      JSON.stringify(nextRows),
+    );
+    setSavedRows(nextRows);
 
     setSavedMessage(
       completed.length > 0
         ? `បានរក្សាទុកវិភាគទាន ${completed.length} នាក់`
         : "សូមបញ្ចូលចំនួនទឹកប្រាក់យ៉ាងហោចណាស់ម្នាក់",
     );
-    setShowSaveAlert(true);
+    router.push("/donation");
   };
 
   const handleReset = (rows) => {

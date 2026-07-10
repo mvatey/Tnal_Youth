@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import SaveAlert from "@/components/forms/savealert";
 
+const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
 const sponsorTypes = ["បុគ្គល", "ស្ថាប័ន"];
 const paymentMethods = ["ABA", "Cash", "ACLEDA"];
 const branches = ["ភ្នំពេញ", "កណ្ដាល", "តាកែវ", "កំពង់ចាម"];
@@ -243,7 +244,30 @@ function buildInitialForm(initialData = {}) {
 export default function SponsorDonationForm({ initialData = null }) {
   const router = useRouter();
   const [showSaveAlert, setShowSaveAlert] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
   const [form, setForm] = useState(() => buildInitialForm(initialData));
+
+  useEffect(() => {
+    const initialForm = buildInitialForm(initialData);
+
+    if (!initialForm.id) {
+      setForm(initialForm);
+      return;
+    }
+
+    const savedValue = window.localStorage.getItem(
+      "tnal-youth:sponsor-donation-edits",
+    );
+    let savedEdits = {};
+
+    try {
+      savedEdits = savedValue ? JSON.parse(savedValue) : {};
+    } catch {
+      savedEdits = {};
+    }
+
+    setForm(buildInitialForm(savedEdits[initialForm.id] || initialData));
+  }, [initialData]);
 
   useEffect(() => {
     if (!showSaveAlert) return undefined;
@@ -260,9 +284,18 @@ export default function SponsorDonationForm({ initialData = null }) {
     }));
   };
 
+  const handleAmountFocus = () => {
+    setFocusedField("amount");
+
+    if (Number(form.amount) === 0) {
+      updateField("amount")("");
+    }
+  };
+
   const handleSave = () => {
+    const rowId = form.id ?? Date.now();
     const savedRow = {
-      id: form.id,
+      id: rowId,
       name: form.sponsorName,
       type: form.sponsorType,
       phone: form.phone,
@@ -296,6 +329,20 @@ export default function SponsorDonationForm({ initialData = null }) {
           [form.id]: savedRow,
         }),
       );
+    } else {
+      const savedValue = window.localStorage.getItem(SPONSOR_CREATED_ROWS_KEY);
+      let savedRows = [];
+
+      try {
+        savedRows = savedValue ? JSON.parse(savedValue) : [];
+      } catch {
+        savedRows = [];
+      }
+
+      window.localStorage.setItem(
+        SPONSOR_CREATED_ROWS_KEY,
+        JSON.stringify([savedRow, ...savedRows]),
+      );
     }
 
     window.localStorage.setItem(
@@ -305,13 +352,8 @@ export default function SponsorDonationForm({ initialData = null }) {
       JSON.stringify(form),
     );
 
-    if (form.id) {
-      window.localStorage.setItem("tnal-youth:sponsor-save-alert", "true");
-      router.push("/donation/sponsor");
-      return;
-    }
-
-    setShowSaveAlert(true);
+    window.localStorage.setItem("tnal-youth:sponsor-save-alert", "true");
+    router.push("/donation/sponsor");
   };
 
   const sponsorNamePlaceholder =
@@ -415,7 +457,11 @@ export default function SponsorDonationForm({ initialData = null }) {
               required
               value={form.amount}
               onChange={updateField("amount")}
-              placeholder="បញ្ចូលចំនួនទឹកប្រាក់"
+              onFocus={handleAmountFocus}
+              onBlur={() => setFocusedField(null)}
+              placeholder={
+                focusedField === "amount" ? "" : "បញ្ចូលចំនួនទឹកប្រាក់"
+              }
               leadingIcon={
                 <Dollar
                   size={16}

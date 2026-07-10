@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import DonationFilterSelect from "../monthlydonation/DonationFilterSelect";
 import DonationSearchInput from "@/components/forms/searchBar";
 import Table from "@/components/tables/table";
@@ -38,17 +38,22 @@ function buildEventMembers() {
 
 export default function EventDonationDetailForm() {
   const router = useRouter();
-  const params = useParams();
+  const searchParams = useSearchParams();
   const eventMembers = useMemo(buildEventMembers, []);
+  const selectedId = searchParams.get("id");
   const currentRow = eventMembers.find(
-    (row) => String(row.id) === String(params?.id),
+    (row) => String(row.id) === String(selectedId),
   );
+  const eventFromQuery = searchParams.get("event");
+  const selectedEventFromQuery = eventFromQuery
+    ? eventNames[eventFromQuery] || eventFromQuery
+    : null;
 
   const [selectedBranch, setSelectedBranch] = useState(
-    currentRow?.branch || "all",
+    searchParams.get("branch") || currentRow?.branch || "all",
   );
   const [selectedEvent, setSelectedEvent] = useState(
-    currentRow?.eventName || "all",
+    selectedEventFromQuery || currentRow?.eventName || "all",
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
@@ -89,6 +94,11 @@ export default function EventDonationDetailForm() {
   }, []);
 
   useEffect(() => {
+    setSelectedBranch(searchParams.get("branch") || currentRow?.branch || "all");
+    setSelectedEvent(selectedEventFromQuery || currentRow?.eventName || "all");
+  }, [currentRow?.branch, currentRow?.eventName, searchParams, selectedEventFromQuery]);
+
+  useEffect(() => {
     if (!showSaveAlert) return undefined;
 
     const timeoutId = window.setTimeout(() => {
@@ -102,32 +112,28 @@ export default function EventDonationDetailForm() {
     const completed = rows.filter(
       (row) => Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0,
     );
+    const nextRows = { ...savedRows };
 
-    setSavedRows((currentRows) => {
-      const nextRows = { ...currentRows };
-
-      rows.forEach((row) => {
-        nextRows[getSavedRowKey(row)] = {
-          realAmount: row.realAmount ?? "",
-          dollarAmount: row.dollarAmount ?? "",
-          paymentMethod: row.paymentMethod || "Cash",
-        };
-      });
-
-      window.localStorage.setItem(
-        SAVED_EVENT_DONATION_ROWS_KEY,
-        JSON.stringify(nextRows),
-      );
-
-      return nextRows;
+    rows.forEach((row) => {
+      nextRows[getSavedRowKey(row)] = {
+        realAmount: row.realAmount ?? "",
+        dollarAmount: row.dollarAmount ?? "",
+        paymentMethod: row.paymentMethod || "Cash",
+      };
     });
+
+    window.localStorage.setItem(
+      SAVED_EVENT_DONATION_ROWS_KEY,
+      JSON.stringify(nextRows),
+    );
+    setSavedRows(nextRows);
 
     setSavedMessage(
       completed.length > 0
         ? `បានរក្សាទុកវិភាគទាន ${completed.length} នាក់`
         : "សូមបញ្ចូលចំនួនទឹកប្រាក់យ៉ាងហោចណាស់ម្នាក់",
     );
-    setShowSaveAlert(true);
+    router.push("/donation/eventdonation");
   };
 
   const handleReset = (rows) => {

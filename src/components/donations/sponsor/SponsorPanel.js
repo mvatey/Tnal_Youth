@@ -10,6 +10,7 @@ import AddAlert from "@/components/forms/addalert";
 import SaveAlert from "@/components/forms/savealert";
 import { sponsorRows as sponsorDataRows } from "@/data/sponsorData";
 
+const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
 const rowsPerPage = 12;
 
 const sponsorRows = [
@@ -67,6 +68,7 @@ export default function SponsorPanel() {
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [showSaveAlert, setShowSaveAlert] = useState(false);
   const [savedSponsorEdits, setSavedSponsorEdits] = useState({});
+  const [createdSponsorRows, setCreatedSponsorRows] = useState([]);
 
   useEffect(() => {
     const shouldShowSaveAlert = window.localStorage.getItem(
@@ -81,6 +83,15 @@ export default function SponsorPanel() {
     const savedValue = window.localStorage.getItem(
       "tnal-youth:sponsor-donation-edits",
     );
+    const createdValue = window.localStorage.getItem(SPONSOR_CREATED_ROWS_KEY);
+
+    if (createdValue) {
+      try {
+        setCreatedSponsorRows(JSON.parse(createdValue));
+      } catch {
+        setCreatedSponsorRows([]);
+      }
+    }
 
     if (!savedValue) return;
 
@@ -92,12 +103,14 @@ export default function SponsorPanel() {
   }, []);
 
   const rows = useMemo(
-    () =>
-      sponsorDataRows.map((row) => ({
+    () => [
+      ...createdSponsorRows,
+      ...sponsorDataRows.map((row) => ({
         ...row,
         ...savedSponsorEdits[row.id],
       })),
-    [savedSponsorEdits],
+    ],
+    [createdSponsorRows, savedSponsorEdits],
   );
 
   const filteredRows = useMemo(() => {
@@ -187,7 +200,7 @@ export default function SponsorPanel() {
             className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-success px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
           >
             <PlusCircle size={17} />
-            បន្ថែមវិភាគទាន
+            បន្ថែមការឧបត្ថម្ភ
           </button>
         </div>
       </div>
@@ -224,7 +237,7 @@ export default function SponsorPanel() {
                 <td className="px-4">
                   <button
                     type="button"
-                    onClick={() => router.push(`/donation/sponsor/edit/${row.id}`)}
+                    onClick={() => router.push(`/donation/sponsor/edit?id=${row.id}`)}
                     className="inline-flex h-[20px] w-[24px] items-center justify-center rounded-[8px] text-[#D4AF37] transition hover:text-[#b88f1f]"
                     aria-label={`Edit sponsor ${row.id}`}
                   >

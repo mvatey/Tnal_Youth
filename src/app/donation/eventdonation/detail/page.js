@@ -5,7 +5,7 @@ import DonorCard from "@/components/donations/DonorCard";
 import EventDonationDetailForm from "@/components/donations/eventdonation/EventDonationDetailForm";
 import { donationStats } from "@/data/donationData";
 
-export default function EventDonationDetailPage() {
+export default function EventDonationDetailQueryPage() {
   return (
     <div className="space-y-4">
       <DonationTabs />
