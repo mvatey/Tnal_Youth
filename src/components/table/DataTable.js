@@ -116,6 +116,7 @@ export default function DataTable({
           </div>
         ))}
 
+
         <div className="ml-auto shrink-0">
           <button
             onClick={() => downloadCsv(data, filename)}
@@ -221,3 +222,5 @@ export default function DataTable({
     </div>
   );
 }
+
+

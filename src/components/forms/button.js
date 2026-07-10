@@ -3,9 +3,9 @@ import { GrInstall } from "react-icons/gr";
 
 const BUTTONS = {
   reset: {
-    label: "កំណត់ឡើងវិញ",
+    label: "ចាប់ផ្ដើមសារថ្មី",
     Icon: RefreshCw,
-    className: "bg-[#E5E7EB] border border-border text-center text-text-secondary hover:bg-bg-page-gray​ w-[141px] h-[34px]",
+    className: "bg-[#E5E7EB] border border-border text-center text-text-secondary hover:bg-bg-page-gray​ w-[150px] h-[34px]",
   },
   save: {
     label: "រក្សាទុក",
@@ -26,7 +26,7 @@ export default function Button({ action, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium ${className}`}
+      className={`inline-flex h-[34px] items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium ${className}`}
     >
       {Icon && <Icon size={16} />}
       {label}
