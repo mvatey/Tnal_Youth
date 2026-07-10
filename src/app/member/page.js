@@ -258,7 +258,7 @@ export default function MembersPage() {
   // keep all your imports and code above the return the same
 
 return (
-  <div className="h-full overflow-hidden min-h-0 flex flex-col gap-4">
+  <div className="min-h-full flex flex-col gap-4">
     <div className="grid grid-cols-3 gap-4 shrink-0">
       <StatCard
         icon={Users}
