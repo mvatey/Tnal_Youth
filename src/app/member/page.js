@@ -272,7 +272,7 @@ return (
 
       <StatCard
         icon={UserCheck}
-        label="ចំនួនសមាជិកសកម្ម"
+        label="ចំនួនព្រះសង្ឃ"
         value={String(stats.active)}
         growth={String(stats.activeGrowth)}
         iconColor="text-success"
