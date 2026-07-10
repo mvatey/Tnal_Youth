@@ -1,10 +1,30 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Pagination from "@/components/navigation/Pagination";
 import NotificationItem from "./NotificationItem";
-import NotificationPagination from "./NotificationPagination";
 import NotificationTabs from "./NotificationTabs";
 import { getNotifications } from "./notificationData";
 
+const rowsPerPage = 10;
+
 export default function NotificationPanel({ type = "system" }) {
-  const notifications = getNotifications(type);
+  const notifications = useMemo(() => getNotifications(type), [type]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(notifications.length / rowsPerPage));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedNotifications = useMemo(
+    () =>
+      notifications.slice(
+        (safePage - 1) * rowsPerPage,
+        safePage * rowsPerPage,
+      ),
+    [notifications, safePage],
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [type]);
 
   return (
     <div className="space-y-4">
@@ -18,7 +38,7 @@ export default function NotificationPanel({ type = "system" }) {
         </div>
 
         <ul className="mt-2">
-          {notifications.map((notification) => (
+          {pagedNotifications.map((notification) => (
             <NotificationItem
               key={notification.id}
               notification={notification}
@@ -26,7 +46,14 @@ export default function NotificationPanel({ type = "system" }) {
           ))}
         </ul>
 
-        <NotificationPagination />
+        <div className="border-t border-border px-6 py-3">
+          <Pagination
+            currentPage={safePage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            className="space-y-0"
+          />
+        </div>
       </section>
     </div>
   );

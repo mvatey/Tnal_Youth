@@ -9,7 +9,7 @@ export default function NotificationTabs() {
 
   return (
     <nav
-      className="grid grid-cols-1 gap-8 md:grid-cols-3"
+      className="flex flex-wrap gap-8"
       aria-label="Notification categories"
     >
       {notificationTabs.map((tab) => {
@@ -19,7 +19,7 @@ export default function NotificationTabs() {
           <Link
             key={tab.href}
             href={tab.href}
-            className={`flex h-[58px] items-center justify-center rounded-sm text-[14px] font-semibold transition ${
+            className={`flex h-[58px] w-[224px] items-center justify-center rounded-sm text-[14px] font-semibold transition ${
               active
                 ? "border-t-4 border-secondary bg-secondary-light text-secondary"
                 : "text-text-primary hover:bg-primary-lighter"

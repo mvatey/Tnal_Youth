@@ -50,10 +50,23 @@ const dates = [
   "០១ មិថុនា",
 ];
 
+const rowLabels = [
+  "១",
+  "២",
+  "៣",
+  "៤",
+  "៥",
+  "៦",
+  "៧",
+  "៨",
+  "៩",
+  "១០",
+];
+
 export function getNotifications(type) {
   return Array.from({ length: 10 }, (_, index) => ({
     id: `${type}-${index + 1}`,
-    title: titles[type],
+    title: `${rowLabels[index]}. ${titles[type]}`,
     description: descriptions[type],
     badge: badgeLabels[type],
     variant: type,
