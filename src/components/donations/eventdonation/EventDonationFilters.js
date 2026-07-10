@@ -15,7 +15,7 @@ function EventDateInput({ label, value, onChange, min }) {
         className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
         aria-label={label}
       />
-      <span className="flex h-full w-full items-center justify-between rounded-lg border border-border bg-white px-3 text-[12px] font-medium leading-none text-text-secondary shadow-sm transition hover:border-secondary">
+      <span className="flex h-full w-full items-center justify-between rounded-lg border border-border bg-white px-3 text-[16px] font-Semibold leading-none text-text-secondary shadow-sm transition hover:border-secondary">
         <span className="truncate">{value || label}</span>
         <CalendarDays size={16} strokeWidth={2.2} />
       </span>
@@ -37,7 +37,7 @@ export default function EventDonationFilters({
   const router = useRouter();
 
   return (
-    <div className="flex w-full flex-nowrap items-center justify-end gap-4 overflow-x-auto pb-1">
+    <div className="flex w-full flex-nowrap items-center justify-end gap-[5px] overflow-x-auto pb-1">
       <label className="block h-[34px] w-[202px] shrink-0">
         <span className="flex h-full items-center rounded-lg border border-border bg-white px-3 shadow-sm">
           <input
@@ -55,8 +55,7 @@ export default function EventDonationFilters({
         value={selectedBranch}
         onChange={onBranchChange}
         options={branches}
-        allLabel="សាខា"
-        className="w-[136px]"
+        allLabel="ជ្រើសរើសសាខា"
         showLabel={false}
       />
 

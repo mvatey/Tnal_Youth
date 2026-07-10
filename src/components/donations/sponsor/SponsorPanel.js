@@ -48,8 +48,9 @@ function DateFilter({ value, onChange }) {
         onChange={(event) => onChange(event.target.value)}
         className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
         aria-label="កាលបរិច្ឆេទ"
+       
       />
-      <span className="flex h-full w-full items-center justify-between rounded-lg border border-border bg-white px-3 text-[12px] font-medium text-text-secondary shadow-sm transition hover:border-secondary">
+      <span className="flex h-full w-full items-center justify-between rounded-lg border border-border bg-white px-3 text-[16px] font-Semibold text-text-secondary shadow-sm transition hover:border-secondary">
         <span className="truncate">{value || "កាលបរិច្ឆេទ"}</span>
         <CalendarDays size={16} strokeWidth={2.2} />
       </span>
@@ -154,7 +155,7 @@ export default function SponsorPanel() {
       <div className="mb-4 flex flex-col gap-4">
         <h1 className="text-base font-semibold text-secondary">ថវិកាឧបត្ថម្ភ</h1>
 
-        <div className="flex w-full flex-nowrap items-center justify-end gap-4 overflow-x-auto pb-1">
+        <div className="flex w-full flex-nowrap items-center justify-end gap-[5px] overflow-x-auto pb-1">
           <label className="block h-[34px] w-[260px] shrink-0">
             <span className="flex h-full items-center rounded-lg border border-border bg-white px-3 shadow-sm">
               <input
@@ -196,7 +197,10 @@ export default function SponsorPanel() {
           <thead>
             <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
               {headers.map((header) => (
-                <th key={header} className="px-4">
+                <th
+                  key={header}
+                  className={`px-4 ${header === "លេខទូរស័ព្ទ" ? "whitespace-nowrap" : ""}`}
+                >
                   {header}
                 </th>
               ))}
@@ -212,7 +216,7 @@ export default function SponsorPanel() {
                 <td className="px-4">{(safePage - 1) * rowsPerPage + index + 1}</td>
                 <td className="px-4">{row.name}</td>
                 <td className="px-4">{row.type}</td>
-                <td className="px-4">{row.phone}</td>
+                <td className="whitespace-nowrap px-4">{row.phone}</td>
                 <td className="px-4">{row.email}</td>
                 <td className="whitespace-nowrap px-4">{row.date}</td>
                 <td className="px-4">{row.amount}</td>
@@ -221,10 +225,10 @@ export default function SponsorPanel() {
                   <button
                     type="button"
                     onClick={() => router.push(`/donation/sponsor/edit/${row.id}`)}
-                    className="inline-flex h-[28px] w-[28px] items-center justify-center text-[#D4AF37] transition hover:text-[#b88f1f]"
+                    className="inline-flex h-[20px] w-[24px] items-center justify-center rounded-[8px] text-[#D4AF37] transition hover:text-[#b88f1f]"
                     aria-label={`Edit sponsor ${row.id}`}
                   >
-                    <SquarePen size={22} strokeWidth={2.6} />
+                    <SquarePen size={16} strokeWidth={2.6} />
                   </button>
                 </td>
               </tr>

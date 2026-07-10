@@ -160,14 +160,14 @@ export default function EventDonationDetailForm() {
     <>
       {showSaveAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
-          <SaveAlert />
+          <SaveAlert message="អបអរសាទរ ! វិភាគទានកម្មវិធីត្រូវបានបន្ថែមដោយជោគជ័យ" />
         </div>
       )}
 
       <section className="min-h-[545px] rounded-md border border-border bg-[#fbfbfd] p-6">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-base font-semibold text-secondary">
-            កត់ត្រាវិភាគទានក្នុងកម្មវិធី
+            ការកត់ត្រាវិភាគទានក្នុងកម្មវិធី
           </h1>
           {savedMessage && (
             <p className="text-sm font-medium text-success" role="status">

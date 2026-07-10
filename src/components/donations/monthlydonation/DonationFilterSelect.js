@@ -10,7 +10,7 @@ export default function DonationFilterSelect({
 }) {
   const select = (
     <select
-      className={`h-9 ${className} rounded-lg border border-border bg-white px-3 text-[12px] font-medium text-text-secondary shadow-sm outline-none transition focus:border-secondary`}
+      className={`h-[34px] ${className} rounded-lg border border-border bg-white px-3 text-[12px] font-medium text-text-secondary shadow-sm outline-none transition focus:border-secondary`}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       aria-label={!showLabel ? label : undefined}

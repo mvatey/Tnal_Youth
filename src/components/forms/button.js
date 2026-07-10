@@ -26,7 +26,7 @@ export default function Button({ action, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium ${className}`}
+      className={`inline-flex h-[34px] items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium ${className}`}
     >
       {Icon && <Icon size={16} />}
       {label}

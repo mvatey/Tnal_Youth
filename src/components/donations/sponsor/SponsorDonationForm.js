@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, ChevronDown, CloudUpload, ImportIcon } from "lucide-react";
+import { CalendarDays, ChevronDown, CloudUpload, DollarSign as Dollar, ImportIcon } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import SaveAlert from "@/components/forms/savealert";
@@ -50,17 +50,22 @@ function RequiredMark() {
   return <span className="text-error"> *</span>;
 }
 
-function TextField({ label, required = false, className = "", ...props }) {
+function TextField({ label, required = false, className = "", leadingIcon = null, ...props }) {
   return (
     <label className={`block ${className}`}>
       <span className="mb-2 block truncate whitespace-nowrap text-[13px] font-semibold leading-5 text-text-secondary">
         {label}
         {required && <RequiredMark />}
       </span>
-      <input
-        {...props}
-        className="h-[38px] w-full rounded-xl border border-[#CBD0D8] bg-white px-4 text-[13px] font-medium text-text-secondary outline-none transition placeholder:text-text-mute focus:border-secondary"
-      />
+      <span className="relative block">
+        {leadingIcon}
+        <input
+          {...props}
+          className={`h-[34px] w-full rounded-xl border border-[#CBD0D8] bg-white px-4 text-[13px] font-medium text-text-secondary outline-none transition placeholder:text-text-mute focus:border-secondary ${
+            leadingIcon ? "pl-10" : ""
+          }`}
+        />
+      </span>
     </label>
   );
 }
@@ -84,7 +89,7 @@ function SelectField({
         <select
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="h-[38px] w-full appearance-none rounded-xl border border-[#CBD0D8] bg-white px-4 pr-10 text-[13px] font-medium text-text-secondary outline-none transition focus:border-secondary"
+          className="h-[34px] w-full appearance-none rounded-xl border border-[#CBD0D8] bg-white px-4 pr-10 text-[13px] font-medium text-text-secondary outline-none transition focus:border-secondary"
         >
           <option value="">{placeholder}</option>
           {options.map((option) => (
@@ -103,7 +108,7 @@ function SelectField({
   );
 }
 
-function DateField({ label, value, onChange, required = false }) {
+function DateField({ label, value, onChange, required = false, className = "" }) {
   const inputRef = useRef(null);
   const hasSelectedDate = Boolean(value);
 
@@ -122,7 +127,7 @@ function DateField({ label, value, onChange, required = false }) {
   };
 
   return (
-    <div className="relative block">
+    <div className={`relative block ${className}`}>
       <span className="mb-2 block truncate whitespace-nowrap text-[13px] font-semibold leading-5 text-text-secondary">
         {label}
         {required && <RequiredMark />}
@@ -138,7 +143,7 @@ function DateField({ label, value, onChange, required = false }) {
       <button
         type="button"
         onClick={openDatePicker}
-        className={`flex h-[38px] w-full items-center justify-between rounded-xl border bg-white px-4 text-left text-[13px] font-medium text-text-secondary transition hover:border-secondary focus:border-secondary focus:outline-none ${
+        className={`flex h-[34px] w-full items-center justify-between rounded-xl border bg-white px-4 text-left text-[13px] font-medium text-text-secondary transition hover:border-secondary focus:border-secondary focus:outline-none ${
           hasSelectedDate ? "border-secondary" : "border-[#CBD0D8]"
         }`}
       >
@@ -153,16 +158,16 @@ function DateField({ label, value, onChange, required = false }) {
   );
 }
 
-function PaymentMethodField({ value, onChange }) {
+function PaymentMethodField({ value, onChange, className = "" }) {
   const logo = paymentLogos[value];
 
   return (
-    <label className="block">
+    <label className={`block ${className}`}>
       <span className="mb-2 block truncate whitespace-nowrap text-[13px] font-semibold leading-5 text-text-secondary">
         វិធីសាស្ត្រទូទាត់
         <RequiredMark />
       </span>
-      <div className="relative flex h-[38px] items-center rounded-xl border border-[#CBD0D8] bg-white px-4 transition focus-within:border-secondary">
+      <div className="relative flex h-[34px] items-center rounded-xl border border-[#CBD0D8] bg-white px-4 transition focus-within:border-secondary">
         <span className="pointer-events-none inline-flex h-7 min-w-[76px] items-center justify-center gap-2 rounded-lg px-2 text-[13px] font-semibold text-text-secondary">
           {logo ? (
             <Image
@@ -329,8 +334,8 @@ export default function SponsorDonationForm({ initialData = null }) {
           ការកត់ត្រាថវិការឧបត្ថម្ភ
         </h1>
 
-        <div className="grid gap-9 lg:grid-cols-2">
-          <div className="space-y-4">
+        <div className="flex w-full flex-nowrap justify-between gap-10 overflow-x-auto">
+          <div className="w-[466px] shrink-0 space-y-4">
             <h2 className="text-[15px] font-semibold text-secondary">
               ១. ព័ត៌មានអ្នកឧបត្ថម្ភ
             </h2>
@@ -383,21 +388,25 @@ export default function SponsorDonationForm({ initialData = null }) {
             <ReceiptUpload />
           </div>
 
-          <div className="space-y-4">
+          <div className="w-[455px] shrink-0 space-y-4">
             <h2 className="text-[15px] font-semibold text-secondary">
               ២. ព័ត៌មានវិភាគទានឧបត្ថម្ភ
             </h2>
 
-            <div className="grid items-end gap-4 sm:grid-cols-[1fr_1fr]">
+            <div className="h-5" aria-hidden="true" />
+
+            <div className="flex items-end gap-4">
               <DateField
-                label="កាលបរិច្ឆេទវិភាគទាន"
+                label="កាលបរិច្ឆេទនៃការឧបត្ថម្ភ"
                 value={form.date}
                 onChange={updateField("date")}
                 required
+                className="min-w-0 flex-1"
               />
               <PaymentMethodField
                 value={form.paymentMethod}
                 onChange={updateField("paymentMethod")}
+                className="min-w-0 flex-1"
               />
             </div>
 
@@ -407,6 +416,14 @@ export default function SponsorDonationForm({ initialData = null }) {
               value={form.amount}
               onChange={updateField("amount")}
               placeholder="បញ្ចូលចំនួនទឹកប្រាក់"
+              leadingIcon={
+                <Dollar
+                  size={16}
+                  strokeWidth={2.2}
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
+                />
+              }
+              
             />
             <TextField
               label="Note (Optional)"
@@ -415,13 +432,14 @@ export default function SponsorDonationForm({ initialData = null }) {
               placeholder="សរសេរ Note"
             />
 
-            <div className="grid items-end gap-4 sm:grid-cols-[1fr_1fr]">
+            <div className="flex items-end gap-4">
               <SelectField
                 label="សាខា(Optional)"
                 value={form.branch}
                 onChange={updateField("branch")}
                 options={branches}
                 placeholder="ជ្រើសរើសសាខា"
+                className="min-w-0 flex-1"
               />
               <SelectField
                 label="ឧបត្ថម្ភក្នុងកម្មវិធី(Optional)"
@@ -429,6 +447,7 @@ export default function SponsorDonationForm({ initialData = null }) {
                 onChange={updateField("status")}
                 options={sponsorStatuses}
                 placeholder="ជ្រើសរើសកម្មវិធី"
+                className="min-w-0 flex-1"
               />
             </div>
           </div>

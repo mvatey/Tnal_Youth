@@ -67,7 +67,7 @@ export default function Pagination({
   filename = "export.csv",
 }) {
   const pageButton =
-    "flex h-9 min-w-9 items-center justify-center rounded-lg px-2.5 text-sm font-medium text-text-secondary transition hover:bg-primary-lighter hover:text-primary";
+    "flex h-[34px] min-w-[34px] items-center justify-center rounded-lg px-2.5 text-sm font-medium text-text-secondary transition hover:bg-primary-lighter hover:text-primary";
 
   const pageNumbers = getPageNumbers(currentPage, totalPages);
 
@@ -90,7 +90,7 @@ export default function Pagination({
         <button
           onClick={() => goTo(currentPage - 1)}
           disabled={currentPage === 1}
-          className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-text-secondary"
+          className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-text-secondary"
         >
           <ArrowLeft size={15} />
           មុននេះ
@@ -119,7 +119,7 @@ export default function Pagination({
         <button
           onClick={() => goTo(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-text-secondary"
+          className="inline-flex h-[34px] items-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-text-secondary"
         >
           បន្ទាប់
           <ArrowRight size={15} />
@@ -129,7 +129,7 @@ export default function Pagination({
       <div className="flex justify-end">
         <button
           onClick={handleDownloadClick}
-          className="inline-flex h-9 items-center gap-2 rounded-lg bg-secondary px-4 text-xs font-bold text-white shadow-sm transition hover:bg-secondary-hover"
+          className="inline-flex h-[34px] items-center gap-2 rounded-lg bg-secondary px-4 text-xs font-bold text-white shadow-sm transition hover:bg-secondary-hover"
         >
           <Download size={15} />
           ទាញយក

@@ -127,7 +127,7 @@ export default function DonationTable() {
         onBranchChange={updateFilter(setSelectedBranch)}
       />
 
-      <div className="mt-4 overflow-x-auto">
+      <div className="mt-[17px] overflow-x-auto">
         <table className="w-full min-w-[840px] border-collapse border border-border">
           <thead>
             <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
