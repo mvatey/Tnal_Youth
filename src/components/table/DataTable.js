@@ -83,10 +83,9 @@ export default function DataTable({
           </div>
         )}
 
-        {filters.map((filter, index) => (
-          <div className="relative w-[150px]">
+        {filters.map((filter) => (
+          <div key={filter.placeholder} className="relative w-[150px]">
             <select
-              key={index}
               value={filter.value}
               onChange={(e) => filter.onChange(e.target.value)}
               className="h-9 w-full appearance-none rounded-lg border border-gray-200 bg-white px-3 pr-10 text-xs text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30"
