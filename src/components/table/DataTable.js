@@ -16,7 +16,7 @@ function downloadCsv(data, filename) {
     .map((row) =>
       row
         .map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`)
-        .join(",")
+        .join(","),
     )
     .join("\n");
 
@@ -66,9 +66,7 @@ export default function DataTable({
   return (
     <div className="w-full rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
       {title && (
-        <h3 className="mb-4 text-lg font-semibold text-primary">
-          {title}
-        </h3>
+        <h3 className="mb-4 text-lg font-semibold text-primary">{title}</h3>
       )}
 
       <div className="mb-4 flex items-center gap-4">
@@ -86,23 +84,37 @@ export default function DataTable({
         )}
 
         {filters.map((filter, index) => (
-          <select
-            key={index}
-            value={filter.value}
-            onChange={(e) => filter.onChange(e.target.value)}
-            className="h-9 w-[150px] rounded-lg border border-gray-200 px-3 text-xs text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30"
-          >
-            <option value="">{filter.placeholder}</option>
+          <div className="relative w-[150px]">
+            <select
+              key={index}
+              value={filter.value}
+              onChange={(e) => filter.onChange(e.target.value)}
+              className="h-9 w-full appearance-none rounded-lg border border-gray-200 bg-white px-3 pr-10 text-xs text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="">{filter.placeholder}</option>
 
-            {filter.options.map((opt, optIndex) => (
-              <option
-                key={`${filter.placeholder}-${opt}-${optIndex}`}
-                value={opt}
-              >
-                {opt}
-              </option>
-            ))}
-          </select>
+              {filter.options.map((opt, optIndex) => (
+                <option
+                  key={`${filter.placeholder}-${opt}-${optIndex}`}
+                  value={opt}
+                >
+                  {opt}
+                </option>
+              ))}
+            </select>
+
+            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M5 7L10 12L15 7"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+          </div>
         ))}
 
         <div className="ml-auto shrink-0">
@@ -133,8 +145,8 @@ export default function DataTable({
                   col.align === "center"
                     ? "justify-center text-center"
                     : col.align === "right"
-                    ? "justify-end text-right"
-                    : "justify-start text-left";
+                      ? "justify-end text-right"
+                      : "justify-start text-left";
 
                 return (
                   <th key={idx} className="px-2 align-middle font-medium">
@@ -163,8 +175,8 @@ export default function DataTable({
                     col.align === "center"
                       ? "justify-center text-center"
                       : col.align === "right"
-                      ? "justify-end text-right"
-                      : "justify-start text-left";
+                        ? "justify-end text-right"
+                        : "justify-start text-left";
 
                   return (
                     <td
