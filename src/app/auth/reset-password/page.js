@@ -1,11 +1,12 @@
 // app/auth/reset-password/page.jsx
 "use client";
+import { Suspense } from "react";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { KeyRound } from "lucide-react";
 import PasswordInput from "@/components/ui/passwordInput";
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter();
   const params = useSearchParams();
   const token = params.get("token");
@@ -84,5 +85,13 @@ export default function ResetPasswordPage() {
         </p>
       </form>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
