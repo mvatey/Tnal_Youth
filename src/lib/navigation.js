@@ -1,0 +1,51 @@
+export const NAV_ITEMS = [
+  {
+    id: "dashboard",
+    label: "ផ្ទាំងគ្រប់គ្រង",
+    href: "/dashboard",
+    icon: "dashboard",
+    roles: ["admin", "secretary", "branch_leader"],
+  },
+  {
+    id: "branch",
+    label: "សាខា",
+    href: "/branch",
+    icon: "building",
+    roles: ["admin", "secretary"],
+  },
+  {
+    id: "member",
+    label: "សមាជិក",
+    href: "/member",
+    icon: "users",
+    roles: ["admin", "secretary", "branch_leader"],
+  },
+  {
+    id: "event",
+    label: "កម្មវិធី",
+    href: "/event",
+    icon: "calendar",
+    roles: ["admin", "secretary", "branch_leader"],
+  },
+  {
+    id: "donation",
+    label: "វិភាគទាន",
+    href: "/donation",
+    icon: "donation",
+    roles: ["admin", "secretary", "branch_leader"],
+  },
+  {
+    id: "notification",
+    label: "សេចក្តីជូនដំណឹង",
+    href: "/notification",
+    icon: "file",
+    roles: ["admin", "secretary", "branch_leader"],
+  },
+  {
+    id: "profile",
+    label: "ប្រវត្តិរូប",
+    href: "/profile",
+    icon: "profile",
+    roles: ["admin", "secretary", "branch_leader"],
+  },
+];
