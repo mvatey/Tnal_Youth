@@ -5,7 +5,9 @@ import DonorCard from "@/components/donations/DonorCard";
 import EventDonationDetailForm from "@/components/donations/eventdonation/EventDonationDetailForm";
 import { donationStats } from "@/data/donationData";
 
-export default function AddEventDonationPage() {
+export default async function AddEventDonationPage({ searchParams }) {
+  const initialQuery = (await searchParams) || {};
+
   return (
     <div className="space-y-4">
       <DonationTabs />
@@ -14,7 +16,7 @@ export default function AddEventDonationPage() {
         <DonorCard {...donationStats[1]} />
       </div>
       <Suspense fallback={null}>
-        <EventDonationDetailForm />
+        <EventDonationDetailForm initialQuery={initialQuery} />
       </Suspense>
     </div>
   );
