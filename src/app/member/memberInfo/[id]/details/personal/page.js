@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { UploadCloud } from "lucide-react";
 import SaveButton from "@/components/forms/SaveButton";
+import BoxFill from "@/components/forms/boxFill.js";
 
 export default function PersonalPage() {
 
@@ -45,13 +46,13 @@ export default function PersonalPage() {
             />
 
 
-            <FormInput
+            <BoxFill
               label="អ៊ីមែល"
               placeholder="riya.dy.@example.com"
             />
 
 
-            <FormInput
+            <BoxFill
               label="លេខទូរស័ព្ទ"
               placeholder="0987654321"
             />
@@ -59,9 +60,13 @@ export default function PersonalPage() {
 
             <div className="col-span-2">
 
-              <FormSelect
+              <BoxFill
                 label="សញ្ជាតិ"
                 placeholder="សញ្ជាតិ"
+              />
+              <BoxFill
+                label="ជនជាតិ"
+                placeholder="ជនជាតិ"
               />
 
             </div>
@@ -145,7 +150,7 @@ export default function PersonalPage() {
 
 
 
-function FormInput({label, placeholder}) {
+function fill({label, placeholder}) {
 
   return (
     <div>

@@ -1,4 +1,4 @@
-// app/dashboard/members/page.jsx
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -7,6 +7,7 @@ import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal.js";
 import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
 import DataTable from "@/components/table/DataTable.js";
 import StatCard from "@/components/dashboard/statCard";
+import ButtonSee from "@/components/forms/ButtonSee";
 
 import { Users, UserCheck, Trash2, EyeIcon } from "lucide-react";
 import users from "@/data/members.json";
@@ -105,14 +106,8 @@ export default function MembersPage() {
       active,
       female,
       totalGrowth: calcGrowth(activeMembersList, () => true),
-      activeGrowth: calcGrowth(
-        activeMembersList,
-        (m) => m.status === "សកម្ម"
-      ),
-      femaleGrowth: calcGrowth(
-        activeMembersList,
-        (m) => m.gender === "ស្រី"
-      ),
+      activeGrowth: calcGrowth(activeMembersList, (m) => m.status === "សកម្ម"),
+      femaleGrowth: calcGrowth(activeMembersList, (m) => m.gender === "ស្រី"),
     };
   }, [activeMembersList]);
 
@@ -161,11 +156,7 @@ export default function MembersPage() {
       header: "សាខា",
       width: "w-[14%]",
       align: "left",
-      render: (m) => (
-        <span className="block w-full truncate">
-          {m.branch}
-        </span>
-      ),
+      render: (m) => <span className="block w-full truncate">{m.branch}</span>,
     },
     {
       header: "តួនាទី",
@@ -206,9 +197,7 @@ export default function MembersPage() {
       width: "w-[14%]",
       align: "left",
       render: (m) => (
-        <span className="block w-full truncate">
-          {m.joinedAt}
-        </span>
+        <span className="block w-full truncate">{m.joinedAt}</span>
       ),
     },
     {
@@ -217,18 +206,9 @@ export default function MembersPage() {
       align: "center",
       render: (m) => (
         <div className="flex w-full min-w-0 items-center justify-center gap-1">
-          <button
+          <ButtonSee
             onClick={() => router.push(`/member/memberInfo/${m.id}`)}
-            className="
-              inline-flex min-w-0 items-center gap-1
-              rounded-lg bg-secondary px-2 py-1.5
-              text-[11px] font-medium text-white
-              hover:opacity-90 transition
-            "
-          >
-            <EyeIcon className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">មើល</span>
-          </button>
+          />
 
           <button
             onClick={() => setDeleteTarget(m)}
@@ -258,79 +238,79 @@ export default function MembersPage() {
 
   // keep all your imports and code above the return the same
 
-return (
-  <div className="h-full overflow-hidden min-h-0 flex flex-col gap-4">
-    <div className="grid grid-cols-3 gap-4 shrink-0">
-      <StatCard
-        icon={Users}
-        label="ចំនួនសមាជិកសរុប"
-        value={String(stats.total)}
-        growth={String(stats.totalGrowth)}
-        iconColor="text-primary"
-        iconBg="bg-primary-light"
-      />
+  return (
+    <div className="min-h-full flex flex-col gap-4">
+      <div className="grid grid-cols-3 gap-4 shrink-0">
+        <StatCard
+          icon={Users}
+          label="ចំនួនសមាជិកសរុប"
+          value={String(stats.total)}
+          growth={String(stats.totalGrowth)}
+          iconColor="text-primary"
+          iconBg="bg-primary-light"
+        />
 
-      <StatCard
-        icon={UserCheck}
-        label="ចំនួនព្រះសង្ឃ"
-        value={String(stats.active)}
-        growth={String(stats.activeGrowth)}
-        iconColor="text-success"
-        iconBg="bg-success-bg"
-      />
+        <StatCard
+          icon={UserCheck}
+          label="ចំនួនព្រះសង្ឃ"
+          value={String(stats.active)}
+          growth={String(stats.activeGrowth)}
+          iconColor="text-success"
+          iconBg="bg-success-bg"
+        />
 
-      <StatCard
-        icon={AiOutlineWoman}
-        label="ចំនួនភេទស្រី"
-        value={String(stats.female)}
-        growth={String(stats.femaleGrowth)}
-        iconColor="text-warning"
-        iconBg="bg-warning-bg"
-      />
-    </div>
+        <StatCard
+          icon={AiOutlineWoman}
+          label="ចំនួនភេទស្រី"
+          value={String(stats.female)}
+          growth={String(stats.femaleGrowth)}
+          iconColor="text-warning"
+          iconBg="bg-warning-bg"
+        />
+      </div>
 
-    <div className="w-full">
-      <DataTable
-        title="បញ្ជីសមាជិក"
-        data={filteredMembers}
-        columns={tableColumns}
-        filters={filterConfig}
-        searchQuery={query}
-        onSearchChange={setQuery}
-        searchPlaceholder="ស្វែងរកតាមរយៈឈ្មោះ ឬលេខទូរស័ព្ទ..."
-        pageSize={10}
-        actionButton={
-          <button
-            onClick={() => setIsCreateOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-success px-3 py-2 text-sm font-medium text-white hover:opacity-90 transition whitespace-nowrap"
-          >
-            <RiAddCircleLine className="h-4 w-4 shrink-0" />
-            <span>បន្ថែមសមាជិកថ្មី</span>
-          </button>
+      <div className="w-full">
+        <DataTable
+          title="បញ្ជីសមាជិក"
+          data={filteredMembers}
+          columns={tableColumns}
+          filters={filterConfig}
+          searchQuery={query}
+          onSearchChange={setQuery}
+          searchPlaceholder="ស្វែងរកតាមរយៈឈ្មោះ ឬលេខទូរស័ព្ទ..."
+          pageSize={20}
+          actionButton={
+            <button
+              onClick={() => setIsCreateOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-success px-3 py-2 text-sm font-medium text-white hover:opacity-90 transition whitespace-nowrap"
+            >
+              <RiAddCircleLine className="h-4 w-4 shrink-0" />
+              <span>បន្ថែមសមាជិកថ្មី</span>
+            </button>
+          }
+        />
+      </div>
+
+      <ConfirmDeleteModal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          setDeletedIds((prev) => [...prev, deleteTarget.id]);
+          setDeleteTarget(null);
+        }}
+        description={
+          deleteTarget
+            ? `តើអ្នកប្រាកដថានឹងលុប "${deleteTarget.name}" ចេញពីបញ្ជីសមាជិកទេ?`
+            : undefined
         }
       />
+
+      <CreateMemberModal
+        open={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSave={() => setIsCreateOpen(false)}
+        branches={branches}
+      />
     </div>
-
-    <ConfirmDeleteModal
-      open={!!deleteTarget}
-      onClose={() => setDeleteTarget(null)}
-      onConfirm={() => {
-        setDeletedIds((prev) => [...prev, deleteTarget.id]);
-        setDeleteTarget(null);
-      }}
-      description={
-        deleteTarget
-          ? `តើអ្នកប្រាកដថានឹងលុប "${deleteTarget.name}" ចេញពីបញ្ជីសមាជិកទេ?`
-          : undefined
-      }
-    />
-
-    <CreateMemberModal
-      open={isCreateOpen}
-      onClose={() => setIsCreateOpen(false)}
-      onSave={() => setIsCreateOpen(false)}
-      branches={branches}
-    />
-  </div>
-);
+  );
 }

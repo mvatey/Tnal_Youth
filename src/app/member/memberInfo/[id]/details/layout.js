@@ -1,17 +1,21 @@
 "use client";
 
+import { use } from "react";
+import { useRouter } from "next/navigation";
 import MemberDetailNav from "@/components/navigation/MemberDetailNav";
 
-export default function DetailLayout({children}) {
 
-return(
-<div className="space-y-4">
+export default function DetailLayout({ children, params }) {
+  const router = useRouter();
+  const { id } = use(params);
 
-<MemberDetailNav/>
+  return (
+    <div className="space-y-4">
+      
 
-{children}
+      <MemberDetailNav />
 
-</div>
-);
-
+      <div>{children}</div>
+    </div>
+  );
 }

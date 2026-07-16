@@ -35,21 +35,21 @@ export default function PasswordPage() {
 
         <div className="space-y-5">
 
-          <PasswordInput
+          <BoxFill
             label="ពាក្យសម្ងាត់បច្ចុប្បន្ន"
             show={showCurrent}
             setShow={setShowCurrent}
           />
 
 
-          <PasswordInput
+          <BoxFill
             label="ពាក្យសម្ងាត់ថ្មី"
             show={showNew}
             setShow={setShowNew}
           />
 
 
-          <PasswordInput
+          <BoxFill
             label="បញ្ជាក់ពាក្យសម្ងាត់ថ្មី"
             show={showConfirm}
             setShow={setShowConfirm}
@@ -115,7 +115,7 @@ export default function PasswordPage() {
 
 
 
-function PasswordInput({ label, show, setShow }) {
+function BoxFill({ label, show, setShow }) {
 
   return (
     <div>

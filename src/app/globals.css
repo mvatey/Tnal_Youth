@@ -83,3 +83,25 @@ input::-webkit-credentials-auto-fill-button {
   -ms-overflow-style: none; 
   scrollbar-width: none;
 }
+/* Hide native calendar icon */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 12px;
+  width: 18px;
+  height: 18px;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* Remove extra controls */
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-clear-button {
+  display: none;
+}
+
+/* Remove browser appearance */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
