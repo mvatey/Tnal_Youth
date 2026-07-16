@@ -1,64 +1,96 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import FilterBar from "../../forms/FilterBar";
 import AddAlert from "../../forms/addalert";
 import SaveButton from "../../forms/save";
 import Pagination from "../../navigation/Pagination";
-import TableRow from "./TableRow";
-import { donationRows } from "@/data/donationData";
+import DonationFilterSelect from "./DonationFilterSelect";
+import MonthlyDonationMemberRow from "./MonthlyDonationMemberRow";
+import { addDonationRows } from "@/data/donationData";
 
 const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
 
-const rowHasSavedMoney = (row, savedRows) =>
-  Object.entries(savedRows).some(([key, value]) => {
-    const [branch, month, year] = key.split("|");
-    const matchesDonation =
-      branch === row.branch && month === row.month && year === row.year;
+const DEFAULT_AMOUNTS = [
+  "$200",
+  "$150",
+  "$70",
+  "$80",
+  "$45",
+  "$40",
+  "$100",
+  "$150",
+  "$180",
+  "$25",
+  "$60",
+  "$70",
+];
 
-    return (
-      matchesDonation &&
-      (Number(value?.realAmount) > 0 || Number(value?.dollarAmount) > 0)
-    );
+const getSavedRowKey = (row) => [row.branch, row.month, row.year, row.id].join("|");
+
+const formatDollarAmount = (value) => {
+  const amount = Number(value);
+
+  if (!amount) return null;
+
+  return `$${amount.toLocaleString("en-US")}`;
+};
+
+const buildDisplayRows = (savedRows) =>
+  addDonationRows.map((row, index) => {
+    const savedRow = savedRows[getSavedRowKey(row)] || {};
+    const savedAmount = formatDollarAmount(savedRow.dollarAmount);
+
+    return {
+      ...row,
+      role: "យុវជន",
+      amount: savedAmount || DEFAULT_AMOUNTS[index % DEFAULT_AMOUNTS.length],
+      paymentMethod: savedRow.paymentMethod || row.paymentMethod || "Cash",
+    };
   });
 
 export default function DonationTable() {
   const rowsPerPage = 12;
   const headers = [
     "ល.រ",
-    "ខែ",
+    "សមាជិក",
+    "ភេទ",
+    "តួនាទី",
     "ឆ្នាំ",
-    "សាខា",
-    "ចំនួនប្រាក់រៀល",
-    "ចំនួនប្រាក់ដុល្លារ",
-    "ប្រាក់សរុប(ដុល្លារ)",
+    "ចំនួនទឹកប្រាក់(ដុល្លា)",
+    "វិធីសាស្ត្រទូទាត់",
     "សកម្មភាព",
   ];
-  const [selectedYear, setSelectedYear] = useState("all");
-  const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedBranch, setSelectedBranch] = useState("all");
-  const [rows, setRows] = useState(donationRows);
+  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [selectedYear, setSelectedYear] = useState("all");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [savedRows, setSavedRows] = useState({});
 
-  const years = useMemo(() => [...new Set(rows.map((row) => row.year))], [rows]);
-  const months = useMemo(() => [...new Set(rows.map((row) => row.month))], [rows]);
+  const rows = useMemo(() => buildDisplayRows(savedRows), [savedRows]);
   const branches = useMemo(() => [...new Set(rows.map((row) => row.branch))], [rows]);
-  const handleDelete = (rowId) => {
-    setRows((currentRows) => currentRows.filter((row) => row.id !== rowId));
-  };
+  const months = useMemo(() => [...new Set(rows.map((row) => row.month))], [rows]);
+  const years = useMemo(() => [...new Set(rows.map((row) => row.year))], [rows]);
+  const paymentMethods = useMemo(
+    () => [...new Set(rows.map((row) => row.paymentMethod))],
+    [rows],
+  );
+
   const filteredRows = useMemo(
     () =>
       rows.filter((row) => {
-        const matchesYear = selectedYear === "all" || row.year === selectedYear;
-        const matchesMonth = selectedMonth === "all" || row.month === selectedMonth;
         const matchesBranch = selectedBranch === "all" || row.branch === selectedBranch;
+        const matchesMonth = selectedMonth === "all" || row.month === selectedMonth;
+        const matchesYear = selectedYear === "all" || row.year === selectedYear;
+        const matchesPaymentMethod =
+          selectedPaymentMethod === "all" || row.paymentMethod === selectedPaymentMethod;
 
-        return matchesYear && matchesMonth && matchesBranch;
+        return matchesBranch && matchesMonth && matchesYear && matchesPaymentMethod;
       }),
-    [rows, selectedYear, selectedMonth, selectedBranch],
+    [rows, selectedBranch, selectedMonth, selectedYear, selectedPaymentMethod],
   );
+
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
   const pagedRows = filteredRows.slice(
@@ -108,31 +140,59 @@ export default function DonationTable() {
   }, [showDownloadAlert]);
 
   return (
-    <section className="rounded-md border border-border bg-white px-7 py-4 shadow-sm">
+    <section className="min-h-[605px] rounded-md border border-border bg-white px-7 py-4 shadow-sm">
       {showDownloadAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
           <AddAlert />
         </div>
       )}
 
-      <FilterBar
-        years={years}
-        months={months}
-        branches={branches}
-        selectedYear={selectedYear}
-        selectedMonth={selectedMonth}
-        selectedBranch={selectedBranch}
-        onYearChange={updateFilter(setSelectedYear)}
-        onMonthChange={updateFilter(setSelectedMonth)}
-        onBranchChange={updateFilter(setSelectedBranch)}
-      />
+      <div className="space-y-4">
+        <h3 className="text-base font-semibold text-secondary">វិភាគទានប្រចាំខែ</h3>
+
+        <div className="flex flex-wrap items-center justify-end gap-4">
+          <DonationFilterSelect
+            label="សាខា"
+            value={selectedBranch}
+            onChange={updateFilter(setSelectedBranch)}
+            options={branches}
+            allLabel="សាខាទាំងអស់"
+            showLabel={false}
+          />
+          <DonationFilterSelect
+            label="ខែ"
+            value={selectedMonth}
+            onChange={updateFilter(setSelectedMonth)}
+            options={months}
+            allLabel="ខែទាំងអស់"
+            showLabel={false}
+          />
+          <DonationFilterSelect
+            label="ឆ្នាំ"
+            value={selectedYear}
+            onChange={updateFilter(setSelectedYear)}
+            options={years}
+            allLabel="ឆ្នាំទាំងអស់"
+            showLabel={false}
+          />
+          <DonationFilterSelect
+            label="វិធីបង់ប្រាក់"
+            value={selectedPaymentMethod}
+            onChange={updateFilter(setSelectedPaymentMethod)}
+            options={paymentMethods}
+            allLabel="វិធីបង់ប្រាក់ទាំងអស់"
+            className="w-[178px]"
+            showLabel={false}
+          />
+        </div>
+      </div>
 
       <div className="mt-[17px] overflow-x-auto">
-        <table className="w-full min-w-[840px] border-collapse border border-border">
+        <table className="w-full min-w-[920px] border-collapse">
           <thead>
-            <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
+            <tr className="h-11 border-b border-border bg-white text-center text-[12px] font-semibold text-text-secondary">
               {headers.map((header) => (
-                <th key={header} className="px-4">
+                <th key={header} className="px-3">
                   {header}
                 </th>
               ))}
@@ -141,17 +201,18 @@ export default function DonationTable() {
 
           <tbody>
             {pagedRows.map((row, index) => (
-              <TableRow
+              <MonthlyDonationMemberRow
                 key={row.id}
                 row={row}
                 rowNumber={(safePage - 1) * rowsPerPage + index + 1}
-                onDelete={handleDelete}
-                hasMoney={rowHasSavedMoney(row, savedRows)}
               />
             ))}
             {filteredRows.length === 0 && (
               <tr>
-                <td colSpan={headers.length} className="px-4 py-8 text-center text-xs font-medium text-text-secondary">
+                <td
+                  colSpan={headers.length}
+                  className="px-4 py-8 text-center text-xs font-medium text-text-secondary"
+                >
                   មិនមានទិន្នន័យ
                 </td>
               </tr>
@@ -164,11 +225,12 @@ export default function DonationTable() {
         currentPage={safePage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
+        className="mt-3"
       />
+
       <div className="mt-10 flex justify-end">
         <SaveButton onClick={() => setShowDownloadAlert(true)} />
       </div>
     </section>
-
   );
 }

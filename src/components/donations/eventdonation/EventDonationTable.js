@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { List, Trash2 } from "lucide-react";
 import Pagination from "@/components/navigation/Pagination";
 import SaveButton from "@/components/forms/save";
@@ -25,6 +26,11 @@ export default function EventDonationTable({
   onDelete,
   onDownload,
 }) {
+  const pathname = usePathname();
+  const detailPath = pathname?.startsWith("/admin/donation")
+    ? "/admin/donation/eventdonation/detail"
+    : "/donation/eventdonation/detail";
+
   return (
     <>
       <div className="mt-4 overflow-x-auto">
@@ -57,7 +63,7 @@ export default function EventDonationTable({
                   <div className="flex items-center justify-center gap-[5px]">
                     <Link
                       href={{
-                        pathname: "/donation/eventdonation/detail",
+                        pathname: detailPath,
                         query: {
                           id: row.id,
                           branch: row.branch,

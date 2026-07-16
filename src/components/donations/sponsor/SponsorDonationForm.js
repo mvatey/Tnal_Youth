@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CalendarDays, ChevronDown, CloudUpload, DollarSign as Dollar, ImportIcon } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import SaveAlert from "@/components/forms/savealert";
 
 const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
@@ -243,6 +243,10 @@ function buildInitialForm(initialData = {}) {
 
 export default function SponsorDonationForm({ initialData = null }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const listPath = pathname?.startsWith("/admin/donation")
+    ? "/admin/donation/sponsor"
+    : "/donation/sponsor";
   const [showSaveAlert, setShowSaveAlert] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [form, setForm] = useState(() => buildInitialForm(initialData));
@@ -353,7 +357,7 @@ export default function SponsorDonationForm({ initialData = null }) {
     );
 
     window.localStorage.setItem("tnal-youth:sponsor-save-alert", "true");
-    router.push("/donation/sponsor");
+    router.push(listPath);
   };
 
   const sponsorNamePlaceholder =
@@ -502,7 +506,7 @@ export default function SponsorDonationForm({ initialData = null }) {
         <div className="mt-28 flex items-center justify-between gap-4">
           <button
             type="button"
-            onClick={() => router.push("/donation/sponsor")}
+            onClick={() => router.push(listPath)}
             className="inline-flex h-[34px] w-[196px] items-center justify-center rounded-lg border border-[#CBD0D8] bg-[#F3F5FC] px-3 text-[14px] font-semibold text-text-primary shadow-sm transition hover:bg-bg-page-gray"
           >
             បោះបង់

@@ -58,11 +58,12 @@ export default function Sidebar({ role = 'secretary', userName = 'ផាន វ�
         <nav className="px-3 space-y-1">
           {visibleItems.map((item) => {
             const Icon = ICON_MAP[item.icon];
-            const active = pathname === item.href || pathname?.startsWith(item.href + '/');
+            const href = item.hrefByRole?.[role] || item.href;
+            const active = pathname === href || pathname?.startsWith(href + '/');
             return (
               <Link
                 key={item.id}
-                href={item.href}
+                href={href}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
                   active ? 'bg-white/15 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'
                 }`}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import DonationFilterSelect from "../monthlydonation/DonationFilterSelect";
 import DonationSearchInput from "@/components/forms/searchBar";
 import Table from "@/components/tables/table";
@@ -36,25 +36,31 @@ function buildEventMembers() {
   });
 }
 
-export default function EventDonationDetailForm() {
+export default function EventDonationDetailForm({ initialQuery = {} }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const listPath = pathname?.startsWith("/admin/donation")
+    ? "/admin/donation/eventdonation"
+    : "/donation/eventdonation";
   const eventMembers = useMemo(buildEventMembers, []);
-  const selectedId = searchParams.get("id");
+  const queryValues = useMemo(() => {
+    const eventFromQuery = initialQuery.event;
+
+    return {
+      branch: initialQuery.branch || null,
+      event: eventFromQuery ? eventNames[eventFromQuery] || eventFromQuery : null,
+      id: initialQuery.id || null,
+    };
+  }, [initialQuery.branch, initialQuery.event, initialQuery.id]);
+  const selectedId = queryValues.id;
   const currentRow = eventMembers.find(
     (row) => String(row.id) === String(selectedId),
   );
-  const eventFromQuery = searchParams.get("event");
-  const selectedEventFromQuery = eventFromQuery
-    ? eventNames[eventFromQuery] || eventFromQuery
-    : null;
+  const initialBranch = queryValues.branch || currentRow?.branch || "all";
+  const initialEvent = queryValues.event || currentRow?.eventName || "all";
 
-  const [selectedBranch, setSelectedBranch] = useState(
-    searchParams.get("branch") || currentRow?.branch || "all",
-  );
-  const [selectedEvent, setSelectedEvent] = useState(
-    selectedEventFromQuery || currentRow?.eventName || "all",
-  );
+  const [selectedBranch, setSelectedBranch] = useState(initialBranch);
+  const [selectedEvent, setSelectedEvent] = useState(initialEvent);
   const [searchQuery, setSearchQuery] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
   const [showSaveAlert, setShowSaveAlert] = useState(false);
@@ -94,9 +100,13 @@ export default function EventDonationDetailForm() {
   }, []);
 
   useEffect(() => {
-    setSelectedBranch(searchParams.get("branch") || currentRow?.branch || "all");
-    setSelectedEvent(selectedEventFromQuery || currentRow?.eventName || "all");
-  }, [currentRow?.branch, currentRow?.eventName, searchParams, selectedEventFromQuery]);
+    setSelectedBranch((currentBranch) =>
+      currentBranch === initialBranch ? currentBranch : initialBranch,
+    );
+    setSelectedEvent((currentEvent) =>
+      currentEvent === initialEvent ? currentEvent : initialEvent,
+    );
+  }, [initialBranch, initialEvent]);
 
   useEffect(() => {
     if (!showSaveAlert) return undefined;
@@ -133,7 +143,7 @@ export default function EventDonationDetailForm() {
         ? `បានរក្សាទុកវិភាគទាន ${completed.length} នាក់`
         : "សូមបញ្ចូលចំនួនទឹកប្រាក់យ៉ាងហោចណាស់ម្នាក់",
     );
-    router.push("/donation/eventdonation");
+    router.push(listPath);
   };
 
   const handleReset = (rows) => {
@@ -217,7 +227,7 @@ export default function EventDonationDetailForm() {
             selectedBranch={selectedBranch}
             searchQuery={searchQuery}
             onReset={handleReset}
-            onCancel={() => router.push("/donation/eventdonation")}
+            onCancel={() => router.push(listPath)}
             onSave={handleSave}
             onReceiptSave={handleReceiptSave}
           />

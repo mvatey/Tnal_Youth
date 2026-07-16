@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { addDonationRows } from "@/data/donationData";
 import AddDonationFilters from "./AddDonationFilters";
@@ -14,7 +14,11 @@ const getSavedRowKey = (row) =>
 
 export default function AddDonationForm() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const listPath = pathname?.startsWith("/admin/donation")
+    ? "/admin/donation"
+    : "/donation";
   const queryString = searchParams.toString();
   const initialFilters = useMemo(() => {
     const params = new URLSearchParams(queryString);
@@ -122,7 +126,7 @@ export default function AddDonationForm() {
         ? `បានរក្សាទុកវិភាគទាន ${completed.length} នាក់`
         : "សូមបញ្ចូលចំនួនទឹកប្រាក់យ៉ាងហោចណាស់ម្នាក់",
     );
-    router.push("/donation");
+    router.push(listPath);
   };
 
   const handleReset = (rows) => {
@@ -152,7 +156,7 @@ export default function AddDonationForm() {
   };
 
   const handleCancel = () => {
-    router.push("/donation");
+    router.push(listPath);
   };
 
   return (

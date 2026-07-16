@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, PlusCircle, Search, SquarePen } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import SponsorTypeSelect from "@/components/forms/sponsorTypeSelect";
 import Pagination from "@/components/navigation/Pagination";
 import SaveButton from "@/components/forms/save";
@@ -61,6 +61,10 @@ function DateFilter({ value, onChange }) {
 
 export default function SponsorPanel() {
   const router = useRouter();
+  const pathname = usePathname();
+  const routePrefix = pathname?.startsWith("/admin/donation")
+    ? "/admin/donation/sponsor"
+    : "/donation/sponsor";
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
@@ -196,7 +200,7 @@ export default function SponsorPanel() {
 
           <button
             type="button"
-            onClick={() => router.push("/donation/sponsor/add")}
+            onClick={() => router.push(`${routePrefix}/add`)}
             className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-success px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
           >
             <PlusCircle size={17} />
@@ -237,7 +241,7 @@ export default function SponsorPanel() {
                 <td className="px-4">
                   <button
                     type="button"
-                    onClick={() => router.push(`/donation/sponsor/edit?id=${row.id}`)}
+                    onClick={() => router.push(`${routePrefix}/edit?id=${row.id}`)}
                     className="inline-flex h-[20px] w-[24px] items-center justify-center rounded-[8px] text-[#D4AF37] transition hover:text-[#b88f1f]"
                     aria-label={`Edit sponsor ${row.id}`}
                   >

@@ -11,6 +11,7 @@ const STATUS_OPTIONS = ["សកម្ម", "អសកម្ម"];
 
 const ROLE_OPTIONS = [
   { value: "admin", label: "អ្នកគ្រប់គ្រង" },
+  { value: "donation_admin", label: "អ្នកគ្រប់គ្រងការបរិច្ចាគ" },
   { value: "branch_leader", label: "ប្រធានសាខា" },
   { value: "secretary", label: "លេខាធិការ" },
   { value: "member", label: "សមាជិក" },
