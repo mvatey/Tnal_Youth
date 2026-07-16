@@ -6,7 +6,9 @@ import SaveButton from "../../forms/save";
 import Pagination from "../../navigation/Pagination";
 import DonationFilterSelect from "./DonationFilterSelect";
 import MonthlyDonationMemberRow from "./MonthlyDonationMemberRow";
-import { addDonationRows } from "@/data/donationData";
+import MonthlyDonationViewSwitch from "./MonthlyDonationViewSwitch";
+import TableRow from "./TableRow";
+import { addDonationRows, donationRows } from "@/data/donationData";
 
 const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
 
@@ -23,6 +25,26 @@ const DEFAULT_AMOUNTS = [
   "$25",
   "$60",
   "$70",
+];
+
+const memberHeaders = [
+  "ល.រ",
+  "សមាជិក",
+  "សាខា",
+  "ខែ",
+  "ឆ្នាំ",
+  "ចំនួនទឹកប្រាក់(ដុល្លារ)",
+  "វិធីសាស្ត្រទូទាត់",
+  "សកម្មភាព",
+];
+
+const branchHeaders = [
+  "ល.រ",
+  "សាខា",
+  "ខែ",
+  "ឆ្នាំ",
+  "ចំនួនទឹកប្រាក់(ដុល្លារ)",
+  "សកម្មភាព",
 ];
 
 const getSavedRowKey = (row) => [row.branch, row.month, row.year, row.id].join("|");
@@ -50,45 +72,34 @@ const buildDisplayRows = (savedRows) =>
 
 export default function DonationTable() {
   const rowsPerPage = 12;
-  const headers = [
-    "ល.រ",
-    "សមាជិក",
-    "ភេទ",
-    "តួនាទី",
-    "ឆ្នាំ",
-    "ចំនួនទឹកប្រាក់(ដុល្លា)",
-    "វិធីសាស្ត្រទូទាត់",
-    "សកម្មភាព",
-  ];
+  const [viewMode, setViewMode] = useState("member");
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedYear, setSelectedYear] = useState("all");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [savedRows, setSavedRows] = useState({});
+  const branchRows = donationRows;
 
-  const rows = useMemo(() => buildDisplayRows(savedRows), [savedRows]);
-  const branches = useMemo(() => [...new Set(rows.map((row) => row.branch))], [rows]);
-  const months = useMemo(() => [...new Set(rows.map((row) => row.month))], [rows]);
-  const years = useMemo(() => [...new Set(rows.map((row) => row.year))], [rows]);
-  const paymentMethods = useMemo(
-    () => [...new Set(rows.map((row) => row.paymentMethod))],
-    [rows],
+  const memberRows = useMemo(() => buildDisplayRows(savedRows), [savedRows]);
+  const activeRows = viewMode === "member" ? memberRows : branchRows;
+  const branches = useMemo(
+    () => [...new Set(activeRows.map((row) => row.branch))],
+    [activeRows],
   );
+  const months = useMemo(() => [...new Set(activeRows.map((row) => row.month))], [activeRows]);
+  const years = useMemo(() => [...new Set(activeRows.map((row) => row.year))], [activeRows]);
 
   const filteredRows = useMemo(
     () =>
-      rows.filter((row) => {
+      activeRows.filter((row) => {
         const matchesBranch = selectedBranch === "all" || row.branch === selectedBranch;
         const matchesMonth = selectedMonth === "all" || row.month === selectedMonth;
         const matchesYear = selectedYear === "all" || row.year === selectedYear;
-        const matchesPaymentMethod =
-          selectedPaymentMethod === "all" || row.paymentMethod === selectedPaymentMethod;
 
-        return matchesBranch && matchesMonth && matchesYear && matchesPaymentMethod;
+        return matchesBranch && matchesMonth && matchesYear;
       }),
-    [rows, selectedBranch, selectedMonth, selectedYear, selectedPaymentMethod],
+    [activeRows, selectedBranch, selectedMonth, selectedYear],
   );
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
@@ -97,10 +108,19 @@ export default function DonationTable() {
     (safePage - 1) * rowsPerPage,
     safePage * rowsPerPage,
   );
+  const activeHeaders = viewMode === "member" ? memberHeaders : branchHeaders;
 
   const updateFilter = (setter) => (value) => {
     setter(value);
     setCurrentPage(1);
+  };
+
+  const updateViewMode = (nextViewMode) => {
+    setViewMode(nextViewMode);
+    setCurrentPage(1);
+    setSelectedBranch("all");
+    setSelectedMonth("all");
+    setSelectedYear("all");
   };
 
   useEffect(() => {
@@ -140,7 +160,7 @@ export default function DonationTable() {
   }, [showDownloadAlert]);
 
   return (
-    <section className="min-h-[605px] rounded-md border border-border bg-white px-7 py-4 shadow-sm">
+    <section className="min-h-[605px] rounded-md border border-border bg-[#fbfcfe] px-7 py-4 shadow-sm">
       {showDownloadAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
           <AddAlert />
@@ -148,51 +168,47 @@ export default function DonationTable() {
       )}
 
       <div className="space-y-4">
-        <h3 className="text-base font-semibold text-secondary">វិភាគទានប្រចាំខែ</h3>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-3">
+            <h3 className="text-base font-semibold text-secondary">វិភាគទានប្រចាំខែ</h3>
+          </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-4">
-          <DonationFilterSelect
-            label="សាខា"
-            value={selectedBranch}
-            onChange={updateFilter(setSelectedBranch)}
-            options={branches}
-            allLabel="សាខាទាំងអស់"
-            showLabel={false}
-          />
-          <DonationFilterSelect
-            label="ខែ"
-            value={selectedMonth}
-            onChange={updateFilter(setSelectedMonth)}
-            options={months}
-            allLabel="ខែទាំងអស់"
-            showLabel={false}
-          />
-          <DonationFilterSelect
-            label="ឆ្នាំ"
-            value={selectedYear}
-            onChange={updateFilter(setSelectedYear)}
-            options={years}
-            allLabel="ឆ្នាំទាំងអស់"
-            showLabel={false}
-          />
-          <DonationFilterSelect
-            label="វិធីបង់ប្រាក់"
-            value={selectedPaymentMethod}
-            onChange={updateFilter(setSelectedPaymentMethod)}
-            options={paymentMethods}
-            allLabel="វិធីបង់ប្រាក់ទាំងអស់"
-            className="w-[178px]"
-            showLabel={false}
-          />
+          <div className="flex flex-wrap items-center justify-end gap-4">
+            <MonthlyDonationViewSwitch value={viewMode} onChange={updateViewMode} />
+            <DonationFilterSelect
+              label="សាខា"
+              value={selectedBranch}
+              onChange={updateFilter(setSelectedBranch)}
+              options={branches}
+              allLabel="សាខាទាំងអស់"
+              showLabel={false}
+            />
+            <DonationFilterSelect
+              label="ខែ"
+              value={selectedMonth}
+              onChange={updateFilter(setSelectedMonth)}
+              options={months}
+              allLabel="ខែទាំងអស់"
+              showLabel={false}
+            />
+            <DonationFilterSelect
+              label="ឆ្នាំ"
+              value={selectedYear}
+              onChange={updateFilter(setSelectedYear)}
+              options={years}
+              allLabel="ឆ្នាំទាំងអស់"
+              showLabel={false}
+            />
+          </div>
         </div>
       </div>
 
-      <div className="mt-[17px] overflow-x-auto">
-        <table className="w-full min-w-[920px] border-collapse">
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full min-w-[980px] border-collapse border border-border">
           <thead>
-            <tr className="h-11 border-b border-border bg-white text-center text-[12px] font-semibold text-text-secondary">
-              {headers.map((header) => (
-                <th key={header} className="px-3">
+            <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
+              {activeHeaders.map((header) => (
+                <th key={header} className="px-4">
                   {header}
                 </th>
               ))}
@@ -200,17 +216,25 @@ export default function DonationTable() {
           </thead>
 
           <tbody>
-            {pagedRows.map((row, index) => (
-              <MonthlyDonationMemberRow
-                key={row.id}
-                row={row}
-                rowNumber={(safePage - 1) * rowsPerPage + index + 1}
-              />
-            ))}
+            {pagedRows.map((row, index) =>
+              viewMode === "member" ? (
+                <MonthlyDonationMemberRow
+                  key={row.id}
+                  row={row}
+                  rowNumber={(safePage - 1) * rowsPerPage + index + 1}
+                />
+              ) : (
+                <TableRow
+                  key={row.id}
+                  row={row}
+                  rowNumber={(safePage - 1) * rowsPerPage + index + 1}
+                />
+              ),
+            )}
             {filteredRows.length === 0 && (
               <tr>
                 <td
-                  colSpan={headers.length}
+                  colSpan={activeHeaders.length}
                   className="px-4 py-8 text-center text-xs font-medium text-text-secondary"
                 >
                   មិនមានទិន្នន័យ

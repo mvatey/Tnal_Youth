@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import EventDonationFilters from "./EventDonationFilters";
 import EventDonationTable from "./EventDonationTable";
 import AddAlert from "@/components/forms/addalert";
-import { addDonationRows, donationRows } from "@/data/donationData";
+import { addDonationRows } from "@/data/donationData";
 
 const rowsPerPage = 12;
 const eventNames = {
@@ -56,6 +56,10 @@ function createEventDonationRows() {
 
     return {
       id: member.id,
+      memberName: member.name,
+      avatar: member.avatar,
+      gender: member.gender,
+      role: "យុវជន",
       eventType: schedule.type,
       eventName: eventNames[schedule.type],
       branch: member.branch,
@@ -66,6 +70,7 @@ function createEventDonationRows() {
       days: schedule.days,
       rielAmount: `៛ ${realAmount.toLocaleString()}`,
       dollarAmount: `$ ${dollarAmount}`,
+      paymentMethod: member.paymentMethod || "Cash",
     };
   });
 }
@@ -80,42 +85,34 @@ function rowMatchesDateRange(row, startDate, endDate) {
 }
 
 export default function EventDonationPanel() {
+  const [viewMode, setViewMode] = useState("member");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [deletedIds, setDeletedIds] = useState([]);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
 
-  const branches = [...new Set(donationRows.map((row) => row.branch))];
   const eventDonationRows = useMemo(createEventDonationRows, []);
-  const hasSelectedBranch = selectedBranch !== "all";
+  const branches = useMemo(
+    () => [...new Set(eventDonationRows.map((row) => row.branch))],
+    [eventDonationRows],
+  );
 
   const filteredRows = useMemo(() => {
-    if (!hasSelectedBranch) return [];
-
     return eventDonationRows.filter((row) => {
       const query = searchQuery.trim().toLowerCase();
-      const matchesBranch = row.branch === selectedBranch;
+      const matchesBranch = selectedBranch === "all" || row.branch === selectedBranch;
       const matchesSearch =
         !query ||
+        row.memberName.toLowerCase().includes(query) ||
         row.eventName.toLowerCase().includes(query) ||
         row.branch.toLowerCase().includes(query);
       const matchesDateRange = rowMatchesDateRange(row, startDate, endDate);
-      const isDeleted = deletedIds.includes(row.id);
 
-      return matchesBranch && matchesSearch && matchesDateRange && !isDeleted;
+      return matchesBranch && matchesSearch && matchesDateRange;
     });
-  }, [
-    deletedIds,
-    endDate,
-    eventDonationRows,
-    hasSelectedBranch,
-    searchQuery,
-    selectedBranch,
-    startDate,
-  ]);
+  }, [endDate, eventDonationRows, searchQuery, selectedBranch, startDate]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
@@ -128,6 +125,11 @@ export default function EventDonationPanel() {
 
   const updateFilter = (setter) => (value) => {
     setter(value);
+    setCurrentPage(1);
+  };
+
+  const updateViewMode = (value) => {
+    setViewMode(value);
     setCurrentPage(1);
   };
 
@@ -163,6 +165,8 @@ export default function EventDonationPanel() {
         </h1>
 
         <EventDonationFilters
+          viewMode={viewMode}
+          onViewModeChange={updateViewMode}
           searchQuery={searchQuery}
           onSearchChange={updateFilter(setSearchQuery)}
           selectedBranch={selectedBranch}
@@ -175,18 +179,14 @@ export default function EventDonationPanel() {
         />
       </div>
 
-      {hasSelectedBranch ? (
-        <EventDonationTable
-          rows={pagedRows}
-          currentPage={safePage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          onDelete={(rowId) => setDeletedIds((current) => [...current, rowId])}
-          onDownload={() => setShowDownloadAlert(true)}
-        />
-      ) : (
-        <div className="min-h-[560px] rounded-sm bg-[#fbfcfe]" />
-      )}
+      <EventDonationTable
+        rows={pagedRows}
+        viewMode={viewMode}
+        currentPage={safePage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        onDownload={() => setShowDownloadAlert(true)}
+      />
     </section>
   );
 }

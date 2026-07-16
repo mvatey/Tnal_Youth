@@ -1,7 +1,7 @@
 import Sidebar from "@/components/navigation/sidebar";
 import Topbar from "@/components/navigation/topbar";
 
-const PAGE_TITLE = "áž€áž¶ážšáž‚áŸ’ážšáž”áŸ‹áž‚áŸ’ážšáž„áž áž·ážšáž‰áŸ’áž‰ážœážáŸ’ážáž»";
+const PAGE_TITLE = "ការគ្រប់គ្រងហិរញ្ញវត្ថុ";
 
 export const metadata = {
   title: PAGE_TITLE,
@@ -12,8 +12,8 @@ export default function AdminDonationLayout({ children }) {
     <div className="flex min-h-screen bg-bg-page-gray">
       <Sidebar
         role="donation_admin"
-        userName="áž¢áŸ’áž“áž€áž‚áŸ’ážšáž”áŸ‹áž‚áŸ’ážšáž„áž€áž¶ážšáž”ážšáž·áž…áŸ’áž…áž¶áž‚"
-        userTitle="áž¢áŸ’áž“áž€áž‚áŸ’ážšáž”áŸ‹áž‚áŸ’ážšáž„áž€áž¶ážšáž”ážšáž·áž…áŸ’áž…áž¶áž‚"
+        userName="ថាវរី វតី"
+        userTitle="Admin"
         userAvatar="/admin.jpg"
       />
 

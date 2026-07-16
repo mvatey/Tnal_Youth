@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, PlusCircle, Search, SquarePen } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { CalendarDays, Search } from "lucide-react";
 import SponsorTypeSelect from "@/components/forms/sponsorTypeSelect";
 import Pagination from "@/components/navigation/Pagination";
 import SaveButton from "@/components/forms/save";
@@ -10,23 +9,7 @@ import AddAlert from "@/components/forms/addalert";
 import SaveAlert from "@/components/forms/savealert";
 import { sponsorRows as sponsorDataRows } from "@/data/sponsorData";
 
-const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
 const rowsPerPage = 12;
-
-const sponsorRows = [
-  { id: 1, name: "ឌី រីយ៉ា", type: "បុគ្គល", phone: "097 678 8596", email: "diriya12@gmail.com", date: "០១ មិថុនា ២០២៦", amount: "$150", method: "Cash" },
-  { id: 2, name: "ឌួង សុភ័ក្ត្រ", type: "បុគ្គល", phone: "088 500 6789", email: "sivheang@gmail.com", date: "០១ មិថុនា ២០២៦", amount: "$50", method: "ABA" },
-  { id: 3, name: "ព្រីន សុភិតា", type: "បុគ្គល", phone: "088 345 6547", email: "chetra@gmail.com", date: "០១ មិថុនា ២០២៦", amount: "$150", method: "ACLEDA" },
-  { id: 4, name: "សាខា ឧបត្ថម្ភ", type: "ស្ថាប័ន", phone: "097 447 5422", email: "thorn12@gmail.com", date: "០១ មិថុនា ២០២៦", amount: "$200", method: "Cash" },
-  { id: 5, name: "សូលីសា គ្រុប", type: "ស្ថាប័ន", phone: "088 346 6573", email: "solisa@gmail.com", date: "០១ មិថុនា ២០២៦", amount: "$150", method: "Cash" },
-  { id: 6, name: "ជា គីមឆេង", type: "បុគ្គល", phone: "097 764 3746", email: "ahching@gmail.com", date: "០២ មិថុនា ២០២៦", amount: "$80", method: "ABA" },
-  { id: 7, name: "ហេង ចាន់", type: "បុគ្គល", phone: "088 456 3477", email: "chtha@gmail.com", date: "០២ មិថុនា ២០២៦", amount: "$90", method: "Cash" },
-  { id: 8, name: "ទេព មករា", type: "បុគ្គល", phone: "097 347 3456", email: "makara@gmail.com", date: "០២ មិថុនា ២០២៦", amount: "$230", method: "Cash" },
-  { id: 9, name: "លីដា សហគ្រាស", type: "ស្ថាប័ន", phone: "088 345 6374", email: "leak168@gmail.com", date: "០៤ មិថុនា ២០២៦", amount: "$280", method: "ABA" },
-  { id: 10, name: "យឹម ស្រីពៅ", type: "បុគ្គល", phone: "097 346 3476", email: "sreypov@gmail.com", date: "០៤ មិថុនា ២០២៦", amount: "$100", method: "ABA" },
-  { id: 11, name: "វី ឌីយ៉ា", type: "បុគ្គល", phone: "088 465 3489", email: "lydeth@gmail.com", date: "០៤ មិថុនា ២០២៦", amount: "$100", method: "Cash" },
-  { id: 12, name: "លុន ម៉ាលីស", type: "បុគ្គល", phone: "097 345 6543", email: "malisch@gmail.com", date: "០៤ មិថុនា ២០២៦", amount: "$190", method: "ACLEDA" },
-];
 
 const headers = [
   "ល.រ",
@@ -37,7 +20,6 @@ const headers = [
   "កាលបរិច្ឆេទ",
   "ចំនួនទឹកប្រាក់(ដុល្លារ)",
   "វិធីសាស្ត្រទូទាត់",
-  "សកម្មភាព",
 ];
 
 function DateFilter({ value, onChange }) {
@@ -60,19 +42,12 @@ function DateFilter({ value, onChange }) {
 }
 
 export default function SponsorPanel() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const routePrefix = pathname?.startsWith("/admin/donation")
-    ? "/admin/donation/sponsor"
-    : "/donation/sponsor";
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [showSaveAlert, setShowSaveAlert] = useState(false);
-  const [savedSponsorEdits, setSavedSponsorEdits] = useState({});
-  const [createdSponsorRows, setCreatedSponsorRows] = useState([]);
 
   useEffect(() => {
     const shouldShowSaveAlert = window.localStorage.getItem(
@@ -83,44 +58,12 @@ export default function SponsorPanel() {
       window.localStorage.removeItem("tnal-youth:sponsor-save-alert");
       setShowSaveAlert(true);
     }
-
-    const savedValue = window.localStorage.getItem(
-      "tnal-youth:sponsor-donation-edits",
-    );
-    const createdValue = window.localStorage.getItem(SPONSOR_CREATED_ROWS_KEY);
-
-    if (createdValue) {
-      try {
-        setCreatedSponsorRows(JSON.parse(createdValue));
-      } catch {
-        setCreatedSponsorRows([]);
-      }
-    }
-
-    if (!savedValue) return;
-
-    try {
-      setSavedSponsorEdits(JSON.parse(savedValue));
-    } catch {
-      setSavedSponsorEdits({});
-    }
   }, []);
-
-  const rows = useMemo(
-    () => [
-      ...createdSponsorRows,
-      ...sponsorDataRows.map((row) => ({
-        ...row,
-        ...savedSponsorEdits[row.id],
-      })),
-    ],
-    [createdSponsorRows, savedSponsorEdits],
-  );
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return rows.filter((row) => {
+    return sponsorDataRows.filter((row) => {
       const matchesSearch =
         !query ||
         row.name.toLowerCase().includes(query) ||
@@ -130,7 +73,7 @@ export default function SponsorPanel() {
 
       return matchesSearch && matchesType;
     });
-  }, [rows, searchQuery, selectedType]);
+  }, [searchQuery, selectedType]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
@@ -198,14 +141,6 @@ export default function SponsorPanel() {
             onChange={updateFilter(setSelectedDate)}
           />
 
-          <button
-            type="button"
-            onClick={() => router.push(`${routePrefix}/add`)}
-            className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-success px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
-          >
-            <PlusCircle size={17} />
-            បន្ថែមការឧបត្ថម្ភ
-          </button>
         </div>
       </div>
 
@@ -238,16 +173,6 @@ export default function SponsorPanel() {
                 <td className="whitespace-nowrap px-4">{row.date}</td>
                 <td className="px-4">{row.amount}</td>
                 <td className="px-4">{row.method}</td>
-                <td className="px-4">
-                  <button
-                    type="button"
-                    onClick={() => router.push(`${routePrefix}/edit?id=${row.id}`)}
-                    className="inline-flex h-[20px] w-[24px] items-center justify-center rounded-[8px] text-[#D4AF37] transition hover:text-[#b88f1f]"
-                    aria-label={`Edit sponsor ${row.id}`}
-                  >
-                    <SquarePen size={16} strokeWidth={2.6} />
-                  </button>
-                </td>
               </tr>
             ))}
           </tbody>

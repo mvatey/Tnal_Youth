@@ -1,8 +1,8 @@
 "use client";
 
-import { CalendarDays, PlusCircle, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { CalendarDays, Search } from "lucide-react";
 import DonationFilterSelect from "../monthlydonation/DonationFilterSelect";
+import MonthlyDonationViewSwitch from "../monthlydonation/MonthlyDonationViewSwitch";
 
 function EventDateInput({ label, value, onChange, min }) {
   return (
@@ -24,6 +24,8 @@ function EventDateInput({ label, value, onChange, min }) {
 }
 
 export default function EventDonationFilters({
+  viewMode,
+  onViewModeChange,
   searchQuery,
   onSearchChange,
   selectedBranch,
@@ -34,10 +36,9 @@ export default function EventDonationFilters({
   onEndDateChange,
   branches = [],
 }) {
-  const router = useRouter();
-
   return (
     <div className="flex w-full flex-nowrap items-center justify-end gap-[5px] overflow-x-auto pb-1">
+
       <label className="block h-[34px] w-[202px] shrink-0">
         <span className="flex h-full items-center rounded-lg border border-border bg-white px-3 shadow-sm">
           <input
@@ -49,6 +50,7 @@ export default function EventDonationFilters({
           <Search size={16} className="text-text-secondary" />
         </span>
       </label>
+      <MonthlyDonationViewSwitch value={viewMode} onChange={onViewModeChange} />
 
       <DonationFilterSelect
         label="សាខា"

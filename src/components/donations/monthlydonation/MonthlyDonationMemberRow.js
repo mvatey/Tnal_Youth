@@ -1,15 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import DonationDetailButton from "@/components/donations/DonationDetailButton";
 
 export default function MonthlyDonationMemberRow({ row, rowNumber }) {
   const pathname = usePathname();
   const addPath = pathname?.startsWith("/admin/donation")
-    ? "/admin/donation/add"
-    : "/donation/add";
+    ? "/admin/donation/monthly/add"
+    : "/donation/monthlydonation/add";
   const detailHref = {
     pathname: addPath,
     query: {
@@ -20,9 +19,9 @@ export default function MonthlyDonationMemberRow({ row, rowNumber }) {
   };
 
   return (
-    <tr className="h-[42px] border-b border-border bg-white text-center text-[12px] text-text-secondary last:border-b-0 hover:bg-primary-lighter/50">
-      <td className="px-3 font-medium">{rowNumber}</td>
-      <td className="px-3 text-left">
+    <tr className="h-11 border-b border-border text-center text-sm text-text-secondary last:border-b-0">
+      <td className="px-4 font-normal">{rowNumber}</td>
+      <td className="px-4 text-left">
         <div className="flex items-center gap-3">
           <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full bg-primary-light">
             {row.avatar ? (
@@ -36,19 +35,13 @@ export default function MonthlyDonationMemberRow({ row, rowNumber }) {
           <span className="min-w-0 truncate font-medium">{row.name}</span>
         </div>
       </td>
-      <td className="px-3">{row.gender}</td>
-      <td className="px-3">{row.role}</td>
-      <td className="px-3">{row.year}</td>
-      <td className="px-3 font-medium">{row.amount}</td>
-      <td className="px-3">{row.paymentMethod}</td>
-      <td className="px-3">
-        <Link
-          href={detailHref}
-          className="inline-flex h-[22px] items-center justify-center gap-1 rounded-full bg-secondary px-3 text-[10px] font-medium leading-none text-white transition hover:bg-secondary-hover"
-        >
-          <CheckCircle2 size={12} strokeWidth={2.3} />
-          បញ្ជាក់
-        </Link>
+      <td className="px-4">{row.branch}</td>
+      <td className="px-4">{row.month}</td>
+      <td className="px-4">{row.year}</td>
+      <td className="px-4">{row.amount}</td>
+      <td className="px-4">{row.paymentMethod}</td>
+      <td className="px-4">
+        <DonationDetailButton href={detailHref} />
       </td>
     </tr>
   );
