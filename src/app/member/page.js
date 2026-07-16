@@ -46,8 +46,8 @@ function calcGrowth(members, filterFn) {
   return Math.round(((currentCount - previousCount) / previousCount) * 100);
 }
 
-const ROLE_LABELS = { admin: "អ្នកគ្រប់គ្រង", branch_leader: "ប្រធានសាខា", secretary: "លេខាធិការ", member: "សមាជិក" };
-const ROLE_BADGE_STYLES = { admin: "bg-primary-light text-primary", branch_leader: "bg-warning-bg text-warning", secretary: "bg-success-bg text-success", member: "bg-gray-100 text-text-secondary" };
+const ROLE_LABELS = { admin: "អ្នកគ្រប់គ្រង", donation_admin: "អ្នកគ្រប់គ្រងការបរិច្ចាគ", branch_leader: "ប្រធានសាខា", secretary: "លេខាធិការ", member: "សមាជិក" };
+const ROLE_BADGE_STYLES = { admin: "bg-primary-light text-primary", donation_admin: "bg-secondary/10 text-secondary", branch_leader: "bg-warning-bg text-warning", secretary: "bg-success-bg text-success", member: "bg-gray-100 text-text-secondary" };
 const STATUS_BADGE_STYLES = { "សកម្ម": "bg-success-bg text-success", "អសកម្ម": "bg-red-50 text-red-600" };
 
 export default function MembersPage() {

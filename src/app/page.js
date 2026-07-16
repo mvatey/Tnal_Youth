@@ -1,6 +1,10 @@
-// app/page.js
-import { redirect } from "next/navigation";
+import AuthLayout from "@/app/auth/layout";
+import LoginPage from "@/app/auth/login/page";
 
 export default function Home() {
-  redirect("/auth/login");
+  return (
+    <AuthLayout>
+      <LoginPage />
+    </AuthLayout>
+  );
 }
