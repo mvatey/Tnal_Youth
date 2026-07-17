@@ -237,7 +237,7 @@ text-gray-500
 
 <Link
 
-href={`/activity/${item.id}`}
+href={`/loading/detail?id=${item.id}`}
 
 className="
 mt-auto
