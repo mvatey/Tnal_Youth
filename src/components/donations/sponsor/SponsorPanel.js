@@ -1,44 +1,43 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, PlusCircle, Search, SquarePen } from "lucide-react";
+import { CalendarDays, FileText, PlusCircle, Search, SquarePen } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import SponsorTypeSelect from "@/components/forms/sponsorTypeSelect";
 import Pagination from "@/components/navigation/Pagination";
 import SaveButton from "@/components/forms/save";
 import AddAlert from "@/components/forms/addalert";
 import SaveAlert from "@/components/forms/savealert";
-import { sponsorRows as sponsorDataRows } from "@/data/sponsorData";
+import sponsorData from "@/data/donation/sponsorData.json";
+import tableHeaders from "@/data/donation/tableHeaders.json";
 
 const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
+const { sponsorRows: sponsorDataRows } = sponsorData;
+const { sponsorHeaders: headers } = tableHeaders;
 const rowsPerPage = 12;
 
-const sponsorRows = [
-  { id: 1, name: "ឌី រីយ៉ា", type: "បុគ្គល", phone: "097 678 8596", email: "diriya12@gmail.com", date: "០១ មិថុនា ២០២៦", amount: "$150", method: "Cash" },
-  { id: 2, name: "ឌួង សុភ័ក្ត្រ", type: "បុគ្គល", phone: "088 500 6789", email: "sivheang@gmail.com", date: "០១ មិថុនា ២០២៦", amount: "$50", method: "ABA" },
-  { id: 3, name: "ព្រីន សុភិតា", type: "បុគ្គល", phone: "088 345 6547", email: "chetra@gmail.com", date: "០១ មិថុនា ២០២៦", amount: "$150", method: "ACLEDA" },
-  { id: 4, name: "សាខា ឧបត្ថម្ភ", type: "ស្ថាប័ន", phone: "097 447 5422", email: "thorn12@gmail.com", date: "០១ មិថុនា ២០២៦", amount: "$200", method: "Cash" },
-  { id: 5, name: "សូលីសា គ្រុប", type: "ស្ថាប័ន", phone: "088 346 6573", email: "solisa@gmail.com", date: "០១ មិថុនា ២០២៦", amount: "$150", method: "Cash" },
-  { id: 6, name: "ជា គីមឆេង", type: "បុគ្គល", phone: "097 764 3746", email: "ahching@gmail.com", date: "០២ មិថុនា ២០២៦", amount: "$80", method: "ABA" },
-  { id: 7, name: "ហេង ចាន់", type: "បុគ្គល", phone: "088 456 3477", email: "chtha@gmail.com", date: "០២ មិថុនា ២០២៦", amount: "$90", method: "Cash" },
-  { id: 8, name: "ទេព មករា", type: "បុគ្គល", phone: "097 347 3456", email: "makara@gmail.com", date: "០២ មិថុនា ២០២៦", amount: "$230", method: "Cash" },
-  { id: 9, name: "លីដា សហគ្រាស", type: "ស្ថាប័ន", phone: "088 345 6374", email: "leak168@gmail.com", date: "០៤ មិថុនា ២០២៦", amount: "$280", method: "ABA" },
-  { id: 10, name: "យឹម ស្រីពៅ", type: "បុគ្គល", phone: "097 346 3476", email: "sreypov@gmail.com", date: "០៤ មិថុនា ២០២៦", amount: "$100", method: "ABA" },
-  { id: 11, name: "វី ឌីយ៉ា", type: "បុគ្គល", phone: "088 465 3489", email: "lydeth@gmail.com", date: "០៤ មិថុនា ២០២៦", amount: "$100", method: "Cash" },
-  { id: 12, name: "លុន ម៉ាលីស", type: "បុគ្គល", phone: "097 345 6543", email: "malisch@gmail.com", date: "០៤ មិថុនា ២០២៦", amount: "$190", method: "ACLEDA" },
-];
+function SponsorReceiptPreview({ receipt }) {
+  if (!receipt) {
+    return null;
+  }
 
-const headers = [
-  "ល.រ",
-  "ឈ្មោះអ្នកឧបត្ថម្ភ",
-  "ប្រភេទឧបត្ថម្ភ",
-  "លេខទូរស័ព្ទ",
-  "អ៊ីមែល",
-  "កាលបរិច្ឆេទ",
-  "ចំនួនទឹកប្រាក់(ដុល្លារ)",
-  "វិធីសាស្ត្រទូទាត់",
-  "សកម្មភាព",
-];
+  return (
+    <span
+      className="inline-flex h-8 w-11 items-center justify-center overflow-hidden rounded-md border border-[#4B2E91]/20 bg-white text-[#4B2E91] shadow-sm"
+      title={receipt.name || "Receipt"}
+    >
+      {receipt.type?.startsWith("image/") ? (
+        <img
+          src={receipt.dataUrl}
+          alt={receipt.name || "Receipt"}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <FileText size={17} strokeWidth={2.2} />
+      )}
+    </span>
+  );
+}
 
 function DateFilter({ value, onChange }) {
   return (
@@ -239,14 +238,17 @@ export default function SponsorPanel() {
                 <td className="px-4">{row.amount}</td>
                 <td className="px-4">{row.method}</td>
                 <td className="px-4">
-                  <button
-                    type="button"
-                    onClick={() => router.push(`${routePrefix}/edit?id=${row.id}`)}
-                    className="inline-flex h-[20px] w-[24px] items-center justify-center rounded-[8px] text-[#D4AF37] transition hover:text-[#b88f1f]"
-                    aria-label={`Edit sponsor ${row.id}`}
-                  >
-                    <SquarePen size={16} strokeWidth={2.6} />
-                  </button>
+                  <div className="inline-flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => router.push(`${routePrefix}/edit?id=${row.id}`)}
+                      className="inline-flex h-[20px] w-[24px] items-center justify-center rounded-[8px] text-[#D4AF37] transition hover:text-[#b88f1f]"
+                      aria-label={`Edit sponsor ${row.id}`}
+                    >
+                      <SquarePen size={16} strokeWidth={2.6} />
+                    </button>
+                    <SponsorReceiptPreview receipt={row.receipt} />
+                  </div>
                 </td>
               </tr>
             ))}

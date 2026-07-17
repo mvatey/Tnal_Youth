@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Pagination from "../navigation/Pagination";
 import AddDonationActions from "../donations/monthlydonation/AddDonationActions";
 import AddDonationTableHeader from "../donations/monthlydonation/AddDonationTableHeader";
@@ -21,11 +21,19 @@ export default function Table({
   const [rows, setRows] = useState(members);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedReceiptMember, setSelectedReceiptMember] = useState(null);
+  const receiptUrlsRef = useRef(new Set());
 
   useEffect(() => {
     setRows(members);
     setCurrentPage(1);
   }, [members]);
+
+  useEffect(() => {
+    return () => {
+      receiptUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      receiptUrlsRef.current.clear();
+    };
+  }, []);
 
   const filteredRows = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
@@ -53,6 +61,64 @@ export default function Table({
       current.map((member) =>
         member.id === id ? { ...member, ...values } : member,
       ),
+    );
+  };
+
+  const handleReceiptSave = (id, file) => {
+    if (!file) {
+      setSelectedReceiptMember(null);
+      return;
+    }
+
+    const previewUrl = file.type.startsWith("image/")
+      ? URL.createObjectURL(file)
+      : "";
+
+    if (previewUrl) {
+      receiptUrlsRef.current.add(previewUrl);
+    }
+
+    setRows((current) =>
+      current.map((member) => {
+        if (member.id !== id) {
+          return member;
+        }
+
+        if (member.receipt?.previewUrl) {
+          URL.revokeObjectURL(member.receipt.previewUrl);
+          receiptUrlsRef.current.delete(member.receipt.previewUrl);
+        }
+
+        return {
+          ...member,
+          receipt: {
+            name: file.name,
+            type: file.type,
+            previewUrl,
+          },
+        };
+      }),
+    );
+
+    setSelectedReceiptMember(null);
+    onReceiptSave?.();
+  };
+
+  const handleReceiptRemove = (id) => {
+    setRows((current) =>
+      current.map((member) => {
+        if (member.id !== id) {
+          return member;
+        }
+
+        if (member.receipt?.previewUrl) {
+          URL.revokeObjectURL(member.receipt.previewUrl);
+          receiptUrlsRef.current.delete(member.receipt.previewUrl);
+        }
+
+        const { receipt, ...memberWithoutReceipt } = member;
+        return memberWithoutReceipt;
+      }),
     );
   };
 
@@ -93,6 +159,7 @@ export default function Table({
                     updateRow(id, { paymentMethod })
                   }
                   onShowInfo={setSelectedReceiptMember}
+                  onRemoveReceipt={handleReceiptRemove}
                 />
               ))
             ) : (
@@ -121,10 +188,11 @@ export default function Table({
       {selectedReceiptMember && (
         <UploadPopup
           onClose={() => setSelectedReceiptMember(null)}
-          onSave={() => {
-            setSelectedReceiptMember(null);
-            onReceiptSave?.();
-          }}
+          onSave={(file) => handleReceiptSave(selectedReceiptMember.id, file)}
+          onRemoveReceipt={() => handleReceiptRemove(selectedReceiptMember.id)}
+          initialReceipt={
+            rows.find((member) => member.id === selectedReceiptMember.id)?.receipt
+          }
         />
       )}
     </div>

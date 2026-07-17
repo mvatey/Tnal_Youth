@@ -6,8 +6,11 @@ import DonationTabs from "@/components/donations/DonationTabs";
 import DonorCard from "@/components/donations/DonorCard";
 import SponsorCard from "@/components/donations/SponsorCard";
 import SponsorDonationForm from "@/components/donations/sponsor/SponsorDonationForm";
-import { donationStats } from "@/data/donationData";
-import { sponsorRows } from "@/data/sponsorData";
+import donationData from "@/data/donation/donationData.json";
+import sponsorData from "@/data/donation/sponsorData.json";
+
+const { donationStats } = donationData;
+const { sponsorRows } = sponsorData;
 
 const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
 

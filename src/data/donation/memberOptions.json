@@ -1,0 +1,44 @@
+{
+  "genderOptions": ["ភេទស្រី", "ភេទប្រុស"],
+  "statusOptions": ["សកម្ម", "អសកម្ម"],
+  "roleOptions": [
+    { "value": "admin", "label": "អ្នកគ្រប់គ្រង" },
+    { "value": "donation_admin", "label": "អ្នកគ្រប់គ្រងការបរិច្ចាគ" },
+    { "value": "branch_leader", "label": "ប្រធានសាខា" },
+    { "value": "secretary", "label": "លេខាធិការ" },
+    { "value": "member", "label": "សមាជិក" }
+  ],
+  "roleLabels": {
+    "admin": "អ្នកគ្រប់គ្រង",
+    "donation_admin": "អ្នកគ្រប់គ្រងការបរិច្ចាគ",
+    "branch_leader": "ប្រធានសាខា",
+    "secretary": "លេខាធិការ",
+    "member": "សមាជិក"
+  },
+  "statusBadgeStyles": {
+    "សកម្ម": "bg-success-bg text-success",
+    "អសកម្ម": "bg-red-50 text-red-600"
+  },
+  "roleBadgeStyles": {
+    "admin": "bg-primary-light text-primary",
+    "donation_admin": "bg-secondary/10 text-secondary",
+    "branch_leader": "bg-warning-bg text-warning",
+    "secretary": "bg-success-bg text-success",
+    "member": "bg-gray-100 text-text-secondary"
+  },
+  "khmerMonths": {
+    "មករា": 0,
+    "កុម្ភៈ": 1,
+    "កុម្ភះ": 1,
+    "មីនា": 2,
+    "មេសា": 3,
+    "ឧសភា": 4,
+    "មិថុនា": 5,
+    "កក្កដា": 6,
+    "សីហា": 7,
+    "កញ្ញា": 8,
+    "តុលា": 9,
+    "វិច្ឆិកា": 10,
+    "ធ្នូ": 11
+  }
+}

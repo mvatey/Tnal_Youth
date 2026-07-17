@@ -6,7 +6,9 @@ import AddAlert from "../../forms/addalert";
 import SaveButton from "../../forms/save";
 import Pagination from "../../navigation/Pagination";
 import TableRow from "./TableRow";
-import { donationRows } from "@/data/donationData";
+import donationData from "@/data/donation/donationData.json";
+
+const { donationRows } = donationData;
 
 const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
 

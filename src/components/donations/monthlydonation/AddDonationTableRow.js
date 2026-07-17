@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { FileText, X } from "lucide-react";
+import donationOptions from "@/data/donation/donationOptions.json";
 
-const PAYMENT_METHODS = ["Cash", "ABA", "Wing", "Bank Transfer"];
 const RECEIPT_ICON_COLOR = "#4B2E91";
+const { monthlyDonationPaymentMethods } = donationOptions;
 
 const getAmountFieldClass = (value) =>
   Number(value) > 0
@@ -52,8 +54,12 @@ export default function AddDonationTableRow({
   onDollarAmountChange,
   onPaymentMethodChange,
   onShowInfo,
+  onRemoveReceipt,
 }) {
   const [focusedAmountField, setFocusedAmountField] = useState(null);
+  const receipt = member.receipt;
+  const hasReceiptImage =
+    receipt?.previewUrl && receipt?.type?.startsWith("image/");
 
   const handleAmountInput = (callback) => (e) => {
     const value = e.target.value.replace(/[^0-9.]/g, "");
@@ -152,7 +158,7 @@ export default function AddDonationTableRow({
           onChange={(e) => onPaymentMethodChange(member.id, e.target.value)}
           className="mx-auto block h-7 w-[82px] rounded-md border border-slate-400 bg-white px-2 text-[12px] text-slate-600 outline-none focus:border-[#4B2E91]"
         >
-          {PAYMENT_METHODS.map((method) => (
+          {monthlyDonationPaymentMethods.map((method) => (
             <option key={method} value={method}>
               {method}
             </option>
@@ -162,14 +168,45 @@ export default function AddDonationTableRow({
 
       {/* វិក្ក័យបត្រ */}
       <td className="px-3 text-center">
-        <button
-          type="button"
-          onClick={() => onShowInfo(member)}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#4B2E91] hover:bg-[#4B2E91]/10"
-          aria-label="receipt"
-        >
-          <ReceiptIcon size={18} />
-        </button>
+        <div className="relative inline-flex">
+          <button
+            type="button"
+            onClick={() => onShowInfo(member)}
+            className={`inline-flex items-center justify-center overflow-hidden rounded-md text-[#4B2E91] transition hover:bg-[#4B2E91]/10 ${
+              receipt
+                ? "h-8 w-11 border border-[#4B2E91]/20 bg-white"
+                : "h-7 w-7"
+            }`}
+            aria-label="receipt"
+            title={receipt?.name || "receipt"}
+          >
+            {hasReceiptImage ? (
+              <img
+                src={receipt.previewUrl}
+                alt={receipt.name || "Receipt"}
+                className="h-full w-full object-cover"
+              />
+            ) : receipt ? (
+              <FileText size={18} strokeWidth={2.2} />
+            ) : (
+              <ReceiptIcon size={18} />
+            )}
+          </button>
+
+          {receipt && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onRemoveReceipt?.(member.id);
+              }}
+              className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#EF4444] text-white shadow-sm transition hover:bg-[#DC2626]"
+              aria-label="Remove receipt"
+            >
+              <X size={10} strokeWidth={3} />
+            </button>
+          )}
+        </div>
       </td>
     </tr>
   );

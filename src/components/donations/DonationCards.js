@@ -1,6 +1,8 @@
 import DonationCard from "./DonationCard";
 import DonorCard from "./DonorCard";
-import { donationStats } from "@/data/donationData";
+import donationData from "@/data/donation/donationData.json";
+
+const { donationStats } = donationData;
 
 export default function DonationCards() {
   return (

@@ -2,12 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import donationOptions from "@/data/donation/donationOptions.json";
 
-const tabs = [
-  { label: "វិភាគទានប្រចាំខែ", href: "/donation" },
-  { label: "វិភាគទានក្នុងកម្មវិធី", href: "/donation/eventdonation" },
-  { label: "ថវិកាឧបត្ថម្ភ", href: "/donation/sponsor" },
-];
+const { donationTabs } = donationOptions;
 
 export default function DonationTabs() {
   const pathname = usePathname();
@@ -17,7 +14,7 @@ export default function DonationTabs() {
 
   return (
     <nav className="flex grid-cols gap-[80px] sm:grid-cols-3" aria-label="Donation categories">
-      {tabs.map((tab) => {
+      {donationTabs.map((tab) => {
         const href =
           tab.href === "/donation"
             ? monthlyHref

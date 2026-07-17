@@ -3,7 +3,9 @@ import DonationTabs from "@/components/donations/DonationTabs";
 import EventDonationSummaryCard from "@/components/donations/EventDonationSummaryCard";
 import DonorCard from "@/components/donations/DonorCard";
 import EventDonationDetailForm from "@/components/donations/eventdonation/EventDonationDetailForm";
-import { donationStats } from "@/data/donationData";
+import donationData from "@/data/donation/donationData.json";
+
+const { donationStats } = donationData;
 
 export default function EventDonationDetailQueryPage() {
   return (

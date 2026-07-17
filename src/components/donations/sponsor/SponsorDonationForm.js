@@ -1,36 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, ChevronDown, CloudUpload, DollarSign as Dollar, ImportIcon } from "lucide-react";
+import { CalendarDays, ChevronDown, CloudUpload, DollarSign as Dollar, FileText, ImportIcon, X } from "lucide-react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import SaveAlert from "@/components/forms/savealert";
+import sponsorOptions from "@/data/donation/sponsorOptions.json";
 
 const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
-const sponsorTypes = ["បុគ្គល", "ស្ថាប័ន"];
-const paymentMethods = ["ABA", "Cash", "ACLEDA"];
-const branches = ["ភ្នំពេញ", "កណ្ដាល", "តាកែវ", "កំពង់ចាម"];
-const sponsorStatuses = ["សប្បុរសធម៌", "ជួយកុមារកំព្រា", "ជួយចាស់ជរា"];
-const paymentLogos = {
-  ABA: "/ABA.jpg",
-  ACLEDA: "/ACLEDA.webp",
-
-};
-const khmerMonths = [
-  "មករា",
-  "កុម្ភៈ",
-  "មីនា",
-  "មេសា",
-  "ឧសភា",
-  "មិថុនា",
-  "កក្កដា",
-  "សីហា",
-  "កញ្ញា",
-  "តុលា",
-  "វិច្ឆិកា",
-  "ធ្នូ",
-];
-const khmerDigits = ["០", "១", "២", "៣", "៤", "៥", "៦", "៧", "៨", "៩"];
+const {
+  branches,
+  khmerDigits,
+  khmerMonths,
+  paymentLogos,
+  paymentMethods,
+  sponsorStatuses,
+  sponsorTypes,
+} = sponsorOptions;
 
 function toKhmerNumber(value) {
   return String(value).replace(/\d/g, (digit) => khmerDigits[Number(digit)]);
@@ -203,20 +189,72 @@ function PaymentMethodField({ value, onChange, className = "" }) {
   );
 }
 
-function ReceiptUpload() {
+function ReceiptUpload({ value, onChange }) {
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      onChange({
+        name: file.name,
+        type: file.type,
+        dataUrl: reader.result,
+      });
+    };
+
+    reader.readAsDataURL(file);
+    event.target.value = "";
+  };
+
   return (
     <label className="block max-w-[250px] cursor-pointer">
       <span className="mb-2 block truncate whitespace-nowrap text-[14px] font-semibold leading-5 text-secondary">
         វិក្កយបត្រ (Optional)
       </span>
-      <span className="flex h-[86px] items-center justify-center rounded-lg border-2 border-dashed border-[#7F7DB8] bg-[#F8F9FF] px-4 text-center text-[11px] font-medium leading-5 text-text-mute transition hover:border-secondary">
-        <input type="file" className="sr-only" accept="image/*,.pdf" />
-        <span>
-          <CloudUpload className="mx-auto mb-1 h-6 w-6 text-text-secondary" />
-          ប្រភេទ: JPG, Docx, PDF, PNG (អតិបរមា 5MB)
-          <br />
-          ទំហំរូបភាព: 16:9
-        </span>
+      <span className="relative flex min-h-[86px] items-center justify-center rounded-lg border-2 border-dashed border-[#7F7DB8] bg-[#F8F9FF] px-4 py-3 text-center text-[11px] font-medium leading-5 text-text-mute transition hover:border-secondary">
+        <input
+          type="file"
+          className="sr-only"
+          accept="image/*,.pdf,.doc,.docx"
+          onChange={handleFileChange}
+        />
+        {value && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              onChange(null);
+            }}
+            className="absolute right-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-[#EF4444] text-white shadow-sm transition hover:bg-[#DC2626]"
+            aria-label="Remove receipt"
+          >
+            <X size={12} strokeWidth={3} />
+          </button>
+        )}
+        {value?.type?.startsWith("image/") ? (
+          <img
+            src={value.dataUrl}
+            alt={value.name || "Receipt preview"}
+            className="h-[72px] w-full rounded-md object-cover"
+          />
+        ) : value ? (
+          <span className="flex max-w-full flex-col items-center gap-1 text-text-secondary">
+            <FileText className="h-6 w-6 text-secondary" />
+            <span className="max-w-full truncate">{value.name}</span>
+          </span>
+        ) : (
+          <span>
+            <CloudUpload className="mx-auto mb-1 h-6 w-6 text-text-secondary" />
+            ប្រភេទ: JPG, Docx, PDF, PNG (អតិបរមា 5MB)
+            <br />
+            ទំហំរូបភាព: 16:9
+          </span>
+        )}
       </span>
     </label>
   );
@@ -238,6 +276,7 @@ function buildInitialForm(initialData = {}) {
     note: data.note || "",
     branch: data.branch || "",
     status: data.status || "",
+    receipt: data.receipt || null,
   };
 }
 
@@ -312,6 +351,7 @@ export default function SponsorDonationForm({ initialData = null }) {
       note: form.note,
       branch: form.branch,
       status: form.status,
+      receipt: form.receipt,
     };
 
     if (form.id) {
@@ -431,7 +471,10 @@ export default function SponsorDonationForm({ initialData = null }) {
               placeholder="បញ្ចូលអាសយដ្ឋាន"
             />
 
-            <ReceiptUpload />
+            <ReceiptUpload
+              value={form.receipt}
+              onChange={updateField("receipt")}
+            />
           </div>
 
           <div className="w-[455px] shrink-0 space-y-4">

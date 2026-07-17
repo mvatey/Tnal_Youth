@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import dashboardActivities from "@/data/dashboard/activityLists.json";
+import dashboardActivities from "@/data/donation/activityLists.json";
 
 // ---- DATA LAYER ----
 // Imported directly since data now lives under src/ (not browser-
@@ -290,7 +290,7 @@ export default function ActivityList() {
  *   GET /dashboard/activities?status=upcoming&limit=5
  *
  *   (Modeled here against one shared "activities" array, since that's
- *   what's currently in data/dashboard.json — see note below.)
+ *   what's currently in src/data/donation/activityLists.json — see note below.)
  *
  *   Each activity:
  *   {

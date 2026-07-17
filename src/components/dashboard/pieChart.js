@@ -1,11 +1,7 @@
 // components/dashboard/DonutChart.jsx
 "use client";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-
-const data = [
-  { name: "សមាជិកបានបង់", value: 280, color: "#16A34A" },
-  { name: "សមាជិកមិនទាន់", value: 220, color: "#4B3391" },
-];
+import data from "@/data/donation/activitySummary.json";
 
 export default function DonutChart() {
   return (

@@ -5,18 +5,9 @@ import { usePathname } from "next/navigation";
 import { List, Trash2 } from "lucide-react";
 import Pagination from "@/components/navigation/Pagination";
 import SaveButton from "@/components/forms/save";
+import tableHeaders from "@/data/donation/tableHeaders.json";
 
-const headers = [
-  "ល.រ",
-  "កម្មវិធី",
-  "សាខា",
-  "កាលបរិច្ឆេទចាប់ផ្តើម",
-  "កាលបរិច្ឆេទបញ្ចប់",
-  "ចំនួនថ្ងៃ",
-  "ចំនួនទឹកប្រាក់(រៀល)",
-  "ចំនួនទឹកប្រាក់(ដុល្លារ)",
-  "សកម្មភាព",
-];
+const { eventDonationHeaders: headers } = tableHeaders;
 
 export default function EventDonationTable({
   rows,

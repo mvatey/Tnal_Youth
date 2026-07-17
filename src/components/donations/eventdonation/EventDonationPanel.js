@@ -4,49 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import EventDonationFilters from "./EventDonationFilters";
 import EventDonationTable from "./EventDonationTable";
 import AddAlert from "@/components/forms/addalert";
-import { addDonationRows, donationRows } from "@/data/donationData";
+import donationData from "@/data/donation/donationData.json";
+import eventDonationData from "@/data/donation/eventDonationData.json";
 
 const rowsPerPage = 12;
-const eventNames = {
-  meeting: "កម្មវិធីប្រជុំ",
-  charity: "កម្មវិធីសប្បុរសធម៌",
-  training: "កម្មវិធីបណ្តុះបណ្តាល",
-};
-
-const eventSchedule = [
-  {
-    type: "meeting",
-    startDate: "០១ មិថុនា ២០២៦",
-    endDate: "០៣ មិថុនា ២០២៦",
-    startDateValue: "2026-06-01",
-    endDateValue: "2026-06-03",
-    days: "០៣ ថ្ងៃ",
-  },
-  {
-    type: "charity",
-    startDate: "០៥ មិថុនា ២០២៦",
-    endDate: "០៨ មិថុនា ២០២៦",
-    startDateValue: "2026-06-05",
-    endDateValue: "2026-06-08",
-    days: "០៤ ថ្ងៃ",
-  },
-  {
-    type: "training",
-    startDate: "១០ មិថុនា ២០២៦",
-    endDate: "១២ មិថុនា ២០២៦",
-    startDateValue: "2026-06-10",
-    endDateValue: "2026-06-12",
-    days: "០៣ ថ្ងៃ",
-  },
-  {
-    type: "meeting",
-    startDate: "១៣ មិថុនា ២០២៦",
-    endDate: "១៤ មិថុនា ២០២៦",
-    startDateValue: "2026-06-13",
-    endDateValue: "2026-06-14",
-    days: "០២ ថ្ងៃ",
-  },
-];
+const { addDonationRows, donationRows } = donationData;
+const { eventNames, eventSchedule } = eventDonationData;
 
 function createEventDonationRows() {
   return addDonationRows.map((member, index) => {

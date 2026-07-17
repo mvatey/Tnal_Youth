@@ -2,7 +2,9 @@ import DonationTabs from "@/components/donations/DonationTabs";
 import DonorCard from "@/components/donations/DonorCard";
 import SponsorCard from "@/components/donations/SponsorCard";
 import SponsorDonationForm from "@/components/donations/sponsor/SponsorDonationForm";
-import { donationStats } from "@/data/donationData";
+import donationData from "@/data/donation/donationData.json";
+
+const { donationStats } = donationData;
 
 export default function AddSponsorDonationPage() {
   return (
