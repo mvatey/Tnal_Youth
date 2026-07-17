@@ -11,6 +11,33 @@ const rowsPerPage = 12;
 const { addDonationRows, donationRows } = donationData;
 const { eventNames, eventSchedule } = eventDonationData;
 
+const normalizeBranchName = (branch = "") =>
+  branch
+    .replaceAll("សាខា", "")
+    .replaceAll("ខេត្ត", "")
+    .replaceAll("ក្រុង", "")
+    .replace(/\s/g, "");
+
+const getBranchDisplayName = (branch = "") =>
+  branch
+    .replaceAll("សាខា", "")
+    .replaceAll("ខេត្ត", "")
+    .replaceAll("ក្រុង", "")
+    .trim();
+
+const branchesMatch = (rowBranch, scopedBranch) => {
+  if (!scopedBranch) return true;
+
+  const normalizedRowBranch = normalizeBranchName(rowBranch);
+  const normalizedScopedBranch = normalizeBranchName(scopedBranch);
+
+  return (
+    normalizedRowBranch === normalizedScopedBranch ||
+    normalizedScopedBranch.includes(normalizedRowBranch) ||
+    normalizedRowBranch.includes(normalizedScopedBranch)
+  );
+};
+
 function createEventDonationRows() {
   return addDonationRows.map((member, index) => {
     const schedule = eventSchedule[index % eventSchedule.length];
@@ -33,6 +60,29 @@ function createEventDonationRows() {
   });
 }
 
+function createMemberEventSampleRows(scopedBranch) {
+  if (!scopedBranch) return [];
+
+  return eventSchedule.map((schedule, index) => {
+    const realAmount = 320000 + index * 60000;
+    const dollarAmount = 80 + index * 25;
+
+    return {
+      id: `member-event-${index + 1}`,
+      eventType: schedule.type,
+      eventName: eventNames[schedule.type],
+      branch: getBranchDisplayName(scopedBranch),
+      startDate: schedule.startDate,
+      endDate: schedule.endDate,
+      startDateValue: schedule.startDateValue,
+      endDateValue: schedule.endDateValue,
+      days: schedule.days,
+      rielAmount: `៛ ${realAmount.toLocaleString()}`,
+      dollarAmount: `$ ${dollarAmount}`,
+    };
+  });
+}
+
 function rowMatchesDateRange(row, startDate, endDate) {
   if (!startDate && !endDate) return true;
 
@@ -42,7 +92,11 @@ function rowMatchesDateRange(row, startDate, endDate) {
   return row.startDateValue <= selectedEnd && row.endDateValue >= selectedStart;
 }
 
-export default function EventDonationPanel() {
+export default function EventDonationPanel({
+  showBranchFilter = true,
+  showActions = true,
+  scopedBranch = "",
+}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [startDate, setStartDate] = useState("");
@@ -52,15 +106,20 @@ export default function EventDonationPanel() {
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
 
   const branches = [...new Set(donationRows.map((row) => row.branch))];
-  const eventDonationRows = useMemo(createEventDonationRows, []);
-  const hasSelectedBranch = selectedBranch !== "all";
+  const eventDonationRows = useMemo(
+    () => [...createEventDonationRows(), ...createMemberEventSampleRows(scopedBranch)],
+    [scopedBranch],
+  );
+  const hasSelectedBranch = Boolean(scopedBranch) || !showBranchFilter || selectedBranch !== "all";
 
   const filteredRows = useMemo(() => {
     if (!hasSelectedBranch) return [];
 
     return eventDonationRows.filter((row) => {
       const query = searchQuery.trim().toLowerCase();
-      const matchesBranch = row.branch === selectedBranch;
+      const matchesBranch = scopedBranch
+        ? branchesMatch(row.branch, scopedBranch)
+        : !showBranchFilter || row.branch === selectedBranch;
       const matchesSearch =
         !query ||
         row.eventName.toLowerCase().includes(query) ||
@@ -77,6 +136,8 @@ export default function EventDonationPanel() {
     hasSelectedBranch,
     searchQuery,
     selectedBranch,
+    showBranchFilter,
+    scopedBranch,
     startDate,
   ]);
 
@@ -135,6 +196,7 @@ export default function EventDonationPanel() {
           endDate={endDate}
           onEndDateChange={updateFilter(setEndDate)}
           branches={branches}
+          showBranchFilter={showBranchFilter}
         />
       </div>
 
@@ -146,6 +208,7 @@ export default function EventDonationPanel() {
           onPageChange={setCurrentPage}
           onDelete={(rowId) => setDeletedIds((current) => [...current, rowId])}
           onDownload={() => setShowDownloadAlert(true)}
+          showActions={showActions}
         />
       ) : (
         <div className="min-h-[560px] rounded-sm bg-[#fbfcfe]" />

@@ -16,11 +16,13 @@ export default function EventDonationTable({
   onPageChange,
   onDelete,
   onDownload,
+  showActions = true,
 }) {
   const pathname = usePathname();
   const detailPath = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/eventdonation/detail"
     : "/donation/eventdonation/detail";
+  const visibleHeaders = showActions ? headers : headers.slice(0, -1);
 
   return (
     <>
@@ -28,7 +30,7 @@ export default function EventDonationTable({
         <table className="w-full min-w-[980px] border-collapse border border-border">
           <thead>
             <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
-              {headers.map((header) => (
+              {visibleHeaders.map((header) => (
                 <th key={header} className="px-4">
                   {header}
                 </th>
@@ -50,6 +52,7 @@ export default function EventDonationTable({
                 <td className="px-4">{row.days}</td>
                 <td className="px-4">{row.rielAmount}</td>
                 <td className="px-4">{row.dollarAmount}</td>
+                {showActions && (
                 <td className="px-4">
                   <div className="flex items-center justify-center gap-[5px]">
                     <Link
@@ -76,13 +79,14 @@ export default function EventDonationTable({
                     </button>
                   </div>
                 </td>
+                )}
               </tr>
             ))}
 
             {rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={headers.length}
+                  colSpan={visibleHeaders.length}
                   className="px-4 py-8 text-center text-xs font-medium text-text-secondary"
                 >
                   មិនមានទិន្នន័យ
@@ -99,9 +103,11 @@ export default function EventDonationTable({
         onPageChange={onPageChange}
       />
 
-      <div className="mt-10 flex justify-end">
-        <SaveButton onClick={onDownload} />
-      </div>
+      {showActions && (
+        <div className="mt-10 flex justify-end">
+          <SaveButton onClick={onDownload} />
+        </div>
+      )}
     </>
   );
 }

@@ -4,7 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { List, Trash2 } from "lucide-react";
 
-export default function TableRow({ row, rowNumber, onDelete, hasMoney = false }) {
+export default function TableRow({
+  row,
+  rowNumber,
+  onDelete,
+  hasMoney = false,
+  showActions = true,
+}) {
   const pathname = usePathname();
   const addPath = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/add"
@@ -27,6 +33,7 @@ export default function TableRow({ row, rowNumber, onDelete, hasMoney = false })
       <td className="px-4">{row.monthlyRiel}</td>
       <td className="px-4">{row.monthlyUsd}</td>
       <td className="px-4">{row.total}</td>
+      {showActions && (
       <td className="px-4">
         <div className="flex items-center justify-center gap-[5px]">
           <Link
@@ -46,6 +53,7 @@ export default function TableRow({ row, rowNumber, onDelete, hasMoney = false })
           </button>
         </div>
       </td>
+      )}
     </tr>
   );
 }

@@ -11,20 +11,24 @@ export default function FilterBar({
   onYearChange,
   onMonthChange,
   onBranchChange,
+  showBranchFilter = true,
+  showAddDonation = true,
 }) {
   return (
     <div className="space-y-4">
       <h3 className="text-base font-semibold text-secondary">វិភាគទានប្រចាំខែ</h3>
 
       <div className="flex flex-wrap items-center justify-end gap-[5px]">
-        <DonationFilterSelect
-          label="សាខា"
-          value={selectedBranch}
-          onChange={onBranchChange}
-          options={branches}
-          allLabel="ជ្រើសរើសសាខា"
-          showLabel={false}
-        />
+        {showBranchFilter && (
+          <DonationFilterSelect
+            label="សាខា"
+            value={selectedBranch}
+            onChange={onBranchChange}
+            options={branches}
+            allLabel="ជ្រើសរើសសាខា"
+            showLabel={false}
+          />
+        )}
         <DonationFilterSelect
           label="ខែ"
           value={selectedMonth}
@@ -41,7 +45,7 @@ export default function FilterBar({
           allLabel="ឆ្នាំទាំងអស់"
           showLabel={false}
         />
-        <AddDonationLink />
+        {showAddDonation && <AddDonationLink />}
       </div>
     </div>
   );

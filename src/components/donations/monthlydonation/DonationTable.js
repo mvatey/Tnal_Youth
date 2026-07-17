@@ -11,6 +11,47 @@ import donationData from "@/data/donation/donationData.json";
 const { donationRows } = donationData;
 
 const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
+const memberSampleMonths = [
+  "មករា",
+  "កុម្ភៈ",
+  "មីនា",
+  "មេសា",
+  "ឧសភា",
+  "មិថុនា",
+  "កក្កដា",
+  "សីហា",
+  "កញ្ញា",
+  "តុលា",
+  "វិច្ឆិកា",
+  "ធ្នូ",
+];
+
+const normalizeBranchName = (branch = "") =>
+  branch
+    .replaceAll("សាខា", "")
+    .replaceAll("ខេត្ត", "")
+    .replaceAll("ក្រុង", "")
+    .replace(/\s/g, "");
+
+const getBranchDisplayName = (branch = "") =>
+  branch
+    .replaceAll("សាខា", "")
+    .replaceAll("ខេត្ត", "")
+    .replaceAll("ក្រុង", "")
+    .trim();
+
+const branchesMatch = (rowBranch, scopedBranch) => {
+  if (!scopedBranch) return true;
+
+  const normalizedRowBranch = normalizeBranchName(rowBranch);
+  const normalizedScopedBranch = normalizeBranchName(scopedBranch);
+
+  return (
+    normalizedRowBranch === normalizedScopedBranch ||
+    normalizedScopedBranch.includes(normalizedRowBranch) ||
+    normalizedRowBranch.includes(normalizedScopedBranch)
+  );
+};
 
 const rowHasSavedMoney = (row, savedRows) =>
   Object.entries(savedRows).some(([key, value]) => {
@@ -24,7 +65,29 @@ const rowHasSavedMoney = (row, savedRows) =>
     );
   });
 
-export default function DonationTable() {
+const createMemberMonthlySampleRows = (scopedBranch, rows) => {
+  if (!scopedBranch) return [];
+
+  const existingMonths = new Set(
+    rows
+      .filter((row) => branchesMatch(row.branch, scopedBranch))
+      .map((row) => row.month),
+  );
+
+  return memberSampleMonths
+    .filter((month) => !existingMonths.has(month))
+    .map((month, index) => ({
+      id: `member-month-${index + 1}`,
+      month,
+      year: "២០២៦",
+      branch: getBranchDisplayName(scopedBranch),
+      monthlyRiel: `៛ ${(240000 + index * 20000).toLocaleString()}`,
+      monthlyUsd: `$${20 + index * 5}`,
+      total: `$${80 + index * 8}`,
+    }));
+};
+
+export default function DonationTable({ showActions = true, scopedBranch = "" }) {
   const rowsPerPage = 12;
   const headers = [
     "ល.រ",
@@ -36,6 +99,7 @@ export default function DonationTable() {
     "ប្រាក់សរុប(ដុល្លារ)",
     "សកម្មភាព",
   ];
+  const visibleHeaders = showActions ? headers : headers.slice(0, -1);
   const [selectedYear, setSelectedYear] = useState("all");
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedBranch, setSelectedBranch] = useState("all");
@@ -44,22 +108,28 @@ export default function DonationTable() {
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [savedRows, setSavedRows] = useState({});
 
-  const years = useMemo(() => [...new Set(rows.map((row) => row.year))], [rows]);
-  const months = useMemo(() => [...new Set(rows.map((row) => row.month))], [rows]);
+  const displayRows = useMemo(
+    () => [...rows, ...createMemberMonthlySampleRows(scopedBranch, rows)],
+    [rows, scopedBranch],
+  );
+  const years = useMemo(() => [...new Set(displayRows.map((row) => row.year))], [displayRows]);
+  const months = useMemo(() => [...new Set(displayRows.map((row) => row.month))], [displayRows]);
   const branches = useMemo(() => [...new Set(rows.map((row) => row.branch))], [rows]);
   const handleDelete = (rowId) => {
     setRows((currentRows) => currentRows.filter((row) => row.id !== rowId));
   };
   const filteredRows = useMemo(
     () =>
-      rows.filter((row) => {
+      displayRows.filter((row) => {
         const matchesYear = selectedYear === "all" || row.year === selectedYear;
         const matchesMonth = selectedMonth === "all" || row.month === selectedMonth;
-        const matchesBranch = selectedBranch === "all" || row.branch === selectedBranch;
+        const matchesBranch = scopedBranch
+          ? branchesMatch(row.branch, scopedBranch)
+          : selectedBranch === "all" || row.branch === selectedBranch;
 
         return matchesYear && matchesMonth && matchesBranch;
       }),
-    [rows, selectedYear, selectedMonth, selectedBranch],
+    [displayRows, selectedYear, selectedMonth, selectedBranch, scopedBranch],
   );
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
@@ -127,13 +197,15 @@ export default function DonationTable() {
         onYearChange={updateFilter(setSelectedYear)}
         onMonthChange={updateFilter(setSelectedMonth)}
         onBranchChange={updateFilter(setSelectedBranch)}
+        showBranchFilter={showActions}
+        showAddDonation={showActions}
       />
 
       <div className="mt-[17px] overflow-x-auto">
         <table className="w-full min-w-[840px] border-collapse border border-border">
           <thead>
             <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
-              {headers.map((header) => (
+              {visibleHeaders.map((header) => (
                 <th key={header} className="px-4">
                   {header}
                 </th>
@@ -149,11 +221,12 @@ export default function DonationTable() {
                 rowNumber={(safePage - 1) * rowsPerPage + index + 1}
                 onDelete={handleDelete}
                 hasMoney={rowHasSavedMoney(row, savedRows)}
+                showActions={showActions}
               />
             ))}
             {filteredRows.length === 0 && (
               <tr>
-                <td colSpan={headers.length} className="px-4 py-8 text-center text-xs font-medium text-text-secondary">
+                <td colSpan={visibleHeaders.length} className="px-4 py-8 text-center text-xs font-medium text-text-secondary">
                   មិនមានទិន្នន័យ
                 </td>
               </tr>
@@ -167,9 +240,11 @@ export default function DonationTable() {
         totalPages={totalPages}
         onPageChange={setCurrentPage}
       />
-      <div className="mt-10 flex justify-end">
-        <SaveButton onClick={() => setShowDownloadAlert(true)} />
-      </div>
+      {showActions && (
+        <div className="mt-10 flex justify-end">
+          <SaveButton onClick={() => setShowDownloadAlert(true)} />
+        </div>
+      )}
     </section>
 
   );
