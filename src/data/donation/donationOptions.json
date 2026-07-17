@@ -1,0 +1,46 @@
+{
+  "monthlyDonationPaymentMethods": [
+    "Cash",
+    "ABA",
+    "Wing",
+    "Bank Transfer"
+  ],
+  "monthlyDonationDefaultAmounts": [
+    "$200",
+    "$150",
+    "$70",
+    "$80",
+    "$45",
+    "$40",
+    "$100",
+    "$150",
+    "$180",
+    "$25",
+    "$60",
+    "$70"
+  ],
+  "monthlyDonationViews": [
+    {
+      "id": "member",
+      "label": "តាមសមាជិក"
+    },
+    {
+      "id": "branch",
+      "label": "តាមសាខា"
+    }
+  ],
+  "donationTabs": [
+    {
+      "label": "វិភាគទានប្រចាំខែ",
+      "href": "/donation"
+    },
+    {
+      "label": "វិភាគទានក្នុងកម្មវិធី",
+      "href": "/donation/eventdonation"
+    },
+    {
+      "label": "ថវិកាឧបត្ថម្ភ",
+      "href": "/donation/sponsor"
+    }
+  ]
+}

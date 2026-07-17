@@ -8,24 +8,12 @@ import DonationFilterSelect from "./DonationFilterSelect";
 import MonthlyDonationMemberRow from "./MonthlyDonationMemberRow";
 import MonthlyDonationViewSwitch from "./MonthlyDonationViewSwitch";
 import TableRow from "./TableRow";
-import { addDonationRows, donationRows } from "@/data/donationData";
+import donationData from "@/data/donation/donationData.json";
+import donationOptions from "@/data/donation/donationOptions.json";
 
 const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
-
-const DEFAULT_AMOUNTS = [
-  "$200",
-  "$150",
-  "$70",
-  "$80",
-  "$45",
-  "$40",
-  "$100",
-  "$150",
-  "$180",
-  "$25",
-  "$60",
-  "$70",
-];
+const { addDonationRows, donationRows } = donationData;
+const { monthlyDonationDefaultAmounts } = donationOptions;
 
 const memberHeaders = [
   "ល.រ",
@@ -65,7 +53,9 @@ const buildDisplayRows = (savedRows) =>
     return {
       ...row,
       role: "យុវជន",
-      amount: savedAmount || DEFAULT_AMOUNTS[index % DEFAULT_AMOUNTS.length],
+      amount:
+        savedAmount ||
+        monthlyDonationDefaultAmounts[index % monthlyDonationDefaultAmounts.length],
       paymentMethod: savedRow.paymentMethod || row.paymentMethod || "Cash",
     };
   });

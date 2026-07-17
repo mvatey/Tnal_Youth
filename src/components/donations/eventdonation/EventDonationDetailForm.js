@@ -6,17 +6,12 @@ import DonationFilterSelect from "../monthlydonation/DonationFilterSelect";
 import DonationSearchInput from "@/components/forms/searchBar";
 import Table from "@/components/tables/table";
 import SaveAlert from "@/components/forms/savealert";
-import { addDonationRows } from "@/data/donationData";
+import donationData from "@/data/donation/donationData.json";
+import eventDonationData from "@/data/donation/eventDonationData.json";
 
 const SAVED_EVENT_DONATION_ROWS_KEY = "tnal-youth:saved-event-donation-rows";
-
-const eventNames = {
-  meeting: "កម្មវិធីប្រជុំ",
-  charity: "កម្មវិធីសប្បុរសធម៌",
-  training: "កម្មវិធីបណ្តុះបណ្តាល",
-};
-
-const eventTypes = ["meeting", "charity", "training", "meeting"];
+const { addDonationRows } = donationData;
+const { eventNames, eventTypes } = eventDonationData;
 
 const getSavedRowKey = (row) =>
   [row.branch, row.eventType, row.id].join("|");

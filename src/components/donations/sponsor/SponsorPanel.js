@@ -7,7 +7,9 @@ import Pagination from "@/components/navigation/Pagination";
 import SaveButton from "@/components/forms/save";
 import AddAlert from "@/components/forms/addalert";
 import SaveAlert from "@/components/forms/savealert";
-import { sponsorRows as sponsorDataRows } from "@/data/sponsorData";
+import sponsorData from "@/data/donation/sponsorData.json";
+
+const { sponsorRows: sponsorDataRows } = sponsorData;
 
 const rowsPerPage = 12;
 
@@ -48,6 +50,7 @@ export default function SponsorPanel() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [showSaveAlert, setShowSaveAlert] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
     const shouldShowSaveAlert = window.localStorage.getItem(
@@ -122,7 +125,9 @@ export default function SponsorPanel() {
                 className="w-full flex-1 bg-transparent pr-2 text-[12px] font-medium text-text-secondary outline-none placeholder:text-text-secondary"
                 value={searchQuery}
                 onChange={(event) => updateFilter(setSearchQuery)(event.target.value)}
-                placeholder="ស្វែងរកតាមឈ្មោះអ្នកឧបត្ថម្ភ ..."
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                placeholder={isFocused ? "" : "ស្វែងរកតាមឈ្មោះអ្នកឧបត្ថម្ភ ..."}
               />
               <Search size={16} className="text-text-secondary" />
             </span>

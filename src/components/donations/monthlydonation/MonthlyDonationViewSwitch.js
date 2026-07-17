@@ -1,9 +1,8 @@
 "use client";
 
-const views = [
-  { id: "member", label: "តាមសមាជិក" },
-  { id: "branch", label: "តាមសាខា" },
-];
+import donationOptions from "@/data/donation/donationOptions.json";
+
+const { monthlyDonationViews } = donationOptions;
 
 export default function MonthlyDonationViewSwitch({ value, onChange }) {
   return (
@@ -13,7 +12,7 @@ export default function MonthlyDonationViewSwitch({ value, onChange }) {
       onChange={(event) => onChange(event.target.value)}
       aria-label="បង្ហាញវិភាគទានតាម"
     >
-      {views.map((view) => (
+      {monthlyDonationViews.map((view) => (
         <option key={view.id} value={view.id}>
           {view.label}
         </option>

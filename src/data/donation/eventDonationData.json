@@ -1,0 +1,47 @@
+{
+  "eventNames": {
+    "meeting": "កម្មវិធីប្រជុំ",
+    "charity": "កម្មវិធីសប្បុរសធម៌",
+    "training": "កម្មវិធីបណ្តុះបណ្តាល"
+  },
+  "eventTypes": [
+    "meeting",
+    "charity",
+    "training",
+    "meeting"
+  ],
+  "eventSchedule": [
+    {
+      "type": "meeting",
+      "startDate": "០១ មិថុនា ២០២៦",
+      "endDate": "០៣ មិថុនា ២០២៦",
+      "startDateValue": "2026-06-01",
+      "endDateValue": "2026-06-03",
+      "days": "០៣ ថ្ងៃ"
+    },
+    {
+      "type": "charity",
+      "startDate": "០៥ មិថុនា ២០២៦",
+      "endDate": "០៨ មិថុនា ២០២៦",
+      "startDateValue": "2026-06-05",
+      "endDateValue": "2026-06-08",
+      "days": "០៤ ថ្ងៃ"
+    },
+    {
+      "type": "training",
+      "startDate": "១០ មិថុនា ២០២៦",
+      "endDate": "១២ មិថុនា ២០២៦",
+      "startDateValue": "2026-06-10",
+      "endDateValue": "2026-06-12",
+      "days": "០៣ ថ្ងៃ"
+    },
+    {
+      "type": "meeting",
+      "startDate": "១៣ មិថុនា ២០២៦",
+      "endDate": "១៤ មិថុនា ២០២៦",
+      "startDateValue": "2026-06-13",
+      "endDateValue": "2026-06-14",
+      "days": "០២ ថ្ងៃ"
+    }
+  ]
+}

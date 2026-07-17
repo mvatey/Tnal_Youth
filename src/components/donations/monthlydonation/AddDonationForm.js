@@ -2,12 +2,13 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { addDonationRows } from "@/data/donationData";
+import donationData from "@/data/donation/donationData.json";
 import AddDonationFilters from "./AddDonationFilters";
 import Table from "../../tables/table";
 import SaveAlert from "../../forms/savealert";
 
 const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
+const { addDonationRows } = donationData;
 
 const getSavedRowKey = (row) =>
   [row.branch, row.month, row.year, row.id].join("|");

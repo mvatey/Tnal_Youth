@@ -1,11 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { CalendarDays, Search } from "lucide-react";
 import DonationFilterSelect from "../monthlydonation/DonationFilterSelect";
 import MonthlyDonationViewSwitch from "../monthlydonation/MonthlyDonationViewSwitch";
 
 function EventDateInput({ label, value, onChange, min }) {
-  return (
+  return(
     <label className="relative block h-[34px] w-[192px] shrink-0 cursor-pointer">
       <input
         type="date"
@@ -20,7 +21,7 @@ function EventDateInput({ label, value, onChange, min }) {
         <CalendarDays size={16} strokeWidth={2.2} />
       </span>
     </label>
-  );
+    );
 }
 
 export default function EventDonationFilters({
@@ -36,7 +37,10 @@ export default function EventDonationFilters({
   onEndDateChange,
   branches = [],
 }) {
+  const [isFocused, setIsFocused] = useState(false);
+
   return (
+    
     <div className="flex w-full flex-nowrap items-center justify-end gap-[5px] overflow-x-auto pb-1">
 
       <label className="block h-[34px] w-[202px] shrink-0">
@@ -45,7 +49,9 @@ export default function EventDonationFilters({
             className="w-full flex-1 bg-transparent pr-2 text-[12px] font-medium text-text-secondary outline-none placeholder:text-text-secondary"
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="ស្វែងរកតាមឈ្មោះកម្មវិធី ..."
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder={isFocused ? "" : "ស្វែងរកតាមឈ្មោះកម្មវិធី ..."}
           />
           <Search size={16} className="text-text-secondary" />
         </span>

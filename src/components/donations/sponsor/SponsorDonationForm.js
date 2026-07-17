@@ -5,32 +5,18 @@ import { CalendarDays, ChevronDown, CloudUpload, DollarSign as Dollar, ImportIco
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import SaveAlert from "@/components/forms/savealert";
+import sponsorOptions from "@/data/donation/sponsorOptions.json";
 
 const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
-const sponsorTypes = ["បុគ្គល", "ស្ថាប័ន"];
-const paymentMethods = ["ABA", "Cash", "ACLEDA"];
-const branches = ["ភ្នំពេញ", "កណ្ដាល", "តាកែវ", "កំពង់ចាម"];
-const sponsorStatuses = ["សប្បុរសធម៌", "ជួយកុមារកំព្រា", "ជួយចាស់ជរា"];
-const paymentLogos = {
-  ABA: "/ABA.jpg",
-  ACLEDA: "/ACLEDA.webp",
-
-};
-const khmerMonths = [
-  "មករា",
-  "កុម្ភៈ",
-  "មីនា",
-  "មេសា",
-  "ឧសភា",
-  "មិថុនា",
-  "កក្កដា",
-  "សីហា",
-  "កញ្ញា",
-  "តុលា",
-  "វិច្ឆិកា",
-  "ធ្នូ",
-];
-const khmerDigits = ["០", "១", "២", "៣", "៤", "៥", "៦", "៧", "៨", "៩"];
+const {
+  khmerDigits,
+  khmerMonths,
+  sponsorBranches,
+  sponsorPaymentLogos,
+  sponsorPaymentMethods,
+  sponsorStatuses,
+  sponsorTypes,
+} = sponsorOptions;
 
 function toKhmerNumber(value) {
   return String(value).replace(/\d/g, (digit) => khmerDigits[Number(digit)]);
@@ -160,7 +146,7 @@ function DateField({ label, value, onChange, required = false, className = "" })
 }
 
 function PaymentMethodField({ value, onChange, className = "" }) {
-  const logo = paymentLogos[value];
+  const logo = sponsorPaymentLogos[value];
 
   return (
     <label className={`block ${className}`}>
@@ -187,7 +173,7 @@ function PaymentMethodField({ value, onChange, className = "" }) {
           className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
           aria-label="វិធីសាស្ត្រទូទាត់"
         >
-          {paymentMethods.map((method) => (
+          {sponsorPaymentMethods.map((method) => (
             <option key={method} value={method}>
               {method}
             </option>
@@ -487,7 +473,7 @@ export default function SponsorDonationForm({ initialData = null }) {
                 label="សាខា(Optional)"
                 value={form.branch}
                 onChange={updateField("branch")}
-                options={branches}
+                options={sponsorBranches}
                 placeholder="ជ្រើសរើសសាខា"
                 className="min-w-0 flex-1"
               />

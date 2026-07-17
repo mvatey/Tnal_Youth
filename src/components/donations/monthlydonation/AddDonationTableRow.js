@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import donationOptions from "@/data/donation/donationOptions.json";
 
-const PAYMENT_METHODS = ["Cash", "ABA", "Wing", "Bank Transfer"];
 const RECEIPT_ICON_COLOR = "#4B2E91";
+const { monthlyDonationPaymentMethods } = donationOptions;
 
 const getAmountFieldClass = (value) =>
   Number(value) > 0
@@ -152,7 +153,7 @@ export default function AddDonationTableRow({
           onChange={(e) => onPaymentMethodChange(member.id, e.target.value)}
           className="mx-auto block h-7 w-[82px] rounded-md border border-slate-400 bg-white px-2 text-[12px] text-slate-600 outline-none focus:border-[#4B2E91]"
         >
-          {PAYMENT_METHODS.map((method) => (
+          {monthlyDonationPaymentMethods.map((method) => (
             <option key={method} value={method}>
               {method}
             </option>

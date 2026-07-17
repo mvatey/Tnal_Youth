@@ -1,11 +1,14 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
+import sponsorOptions from "@/data/donation/sponsorOptions.json";
+
+const { sponsorTypes } = sponsorOptions;
 
 export default function SponsorTypeSelect({
   value = "",
   onChange,
-  options = ["បុគ្គល", "ស្ថាប័ន"],
+  options = sponsorTypes,
   placeholder = "ជ្រើសរើសប្រភេទអ្នកឧបត្ថម្ភ",
   className = "w-[430px]",
   size = "large",
