@@ -58,8 +58,7 @@ export default function AddDonationTableRow({
 }) {
   const [focusedAmountField, setFocusedAmountField] = useState(null);
   const receipt = member.receipt;
-  const hasReceiptImage =
-    receipt?.previewUrl && receipt?.type?.startsWith("image/");
+  const hasReceiptImage = Boolean(receipt?.previewUrl);
 
   const handleAmountInput = (callback) => (e) => {
     const value = e.target.value.replace(/[^0-9.]/g, "");
@@ -170,6 +169,7 @@ export default function AddDonationTableRow({
       <td className="px-3 text-center">
         <div className="relative inline-flex">
           <button
+            key={receipt?.previewUrl || "receipt-icon"}
             type="button"
             onClick={() => onShowInfo(member)}
             className={`inline-flex items-center justify-center overflow-hidden rounded-md text-[#4B2E91] transition hover:bg-[#4B2E91]/10 ${
@@ -182,9 +182,10 @@ export default function AddDonationTableRow({
           >
             {hasReceiptImage ? (
               <img
+                key={receipt.previewUrl}
                 src={receipt.previewUrl}
                 alt={receipt.name || "Receipt"}
-                className="h-full w-full object-cover"
+                className="block h-full w-full object-cover"
               />
             ) : receipt ? (
               <FileText size={18} strokeWidth={2.2} />

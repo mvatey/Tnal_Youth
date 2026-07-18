@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import DonationFilterSelect from "../monthlydonation/DonationFilterSelect";
 import DonationSearchInput from "@/components/forms/searchBar";
 import Table from "@/components/tables/table";
@@ -34,19 +34,21 @@ function buildEventMembers() {
 export default function EventDonationDetailForm({ initialQuery = {} }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isDetailPage = pathname?.endsWith("/detail");
   const listPath = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/eventdonation"
     : "/donation/eventdonation";
   const eventMembers = useMemo(buildEventMembers, []);
   const queryValues = useMemo(() => {
-    const eventFromQuery = initialQuery.event;
+    const eventFromQuery = initialQuery.event || searchParams.get("event");
 
     return {
-      branch: initialQuery.branch || null,
+      branch: initialQuery.branch || searchParams.get("branch") || null,
       event: eventFromQuery ? eventNames[eventFromQuery] || eventFromQuery : null,
-      id: initialQuery.id || null,
+      id: initialQuery.id || searchParams.get("id") || null,
     };
-  }, [initialQuery.branch, initialQuery.event, initialQuery.id]);
+  }, [initialQuery.branch, initialQuery.event, initialQuery.id, searchParams]);
   const selectedId = queryValues.id;
   const currentRow = eventMembers.find(
     (row) => String(row.id) === String(selectedId),
@@ -121,6 +123,7 @@ export default function EventDonationDetailForm({ initialQuery = {} }) {
 
     rows.forEach((row) => {
       nextRows[getSavedRowKey(row)] = {
+        ...nextRows[getSavedRowKey(row)],
         realAmount: row.realAmount ?? "",
         dollarAmount: row.dollarAmount ?? "",
         paymentMethod: row.paymentMethod || "Cash",
@@ -147,6 +150,7 @@ export default function EventDonationDetailForm({ initialQuery = {} }) {
 
       rows.forEach((row) => {
         nextRows[getSavedRowKey(row)] = {
+          ...nextRows[getSavedRowKey(row)],
           realAmount: "0",
           dollarAmount: "0",
           paymentMethod: row.paymentMethod || "Cash",
@@ -162,7 +166,30 @@ export default function EventDonationDetailForm({ initialQuery = {} }) {
     });
   };
 
-  const handleReceiptSave = () => {
+  const handleReceiptSave = (id, receipt) => {
+    const row = members.find((member) => member.id === id);
+
+    if (row) {
+      setSavedRows((currentRows) => {
+        const key = getSavedRowKey(row);
+        const nextRows = {
+          ...currentRows,
+          [key]: { ...currentRows[key], receipt },
+        };
+
+        try {
+          window.localStorage.setItem(
+            SAVED_EVENT_DONATION_ROWS_KEY,
+            JSON.stringify(nextRows),
+          );
+        } catch {
+          // Keep large receipt previews in React state when storage is full.
+        }
+
+        return nextRows;
+      });
+    }
+
     setSavedMessage("បានរក្សាទុកវិក្កយបត្រដោយជោគជ័យ");
     setShowSaveAlert(true);
   };
@@ -197,6 +224,7 @@ export default function EventDonationDetailForm({ initialQuery = {} }) {
               allLabel="ជ្រើសរើសសាខា"
               className="w-[158px]"
               required
+              disabled={isDetailPage}
             />
             <DonationFilterSelect
               label="កម្មវិធី"
@@ -206,6 +234,7 @@ export default function EventDonationDetailForm({ initialQuery = {} }) {
               allLabel="ជ្រើសរើសកម្មវិធី"
               className="w-[158px]"
               required
+              disabled={isDetailPage}
             />
           </div>
 

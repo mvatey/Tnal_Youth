@@ -1,5 +1,4 @@
-import { ArchiveRestore, ImportIcon, RefreshCw, SaveIcon } from "lucide-react";
-import { GrInstall } from "react-icons/gr";
+import { ImportIcon, RefreshCw } from "lucide-react";
 
 const BUTTONS = {
   reset: {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, FileText, PlusCircle, Search, SquarePen } from "lucide-react";
+import { CalendarDays, FileText, PencilLineIcon, PencilRulerIcon, PenSquareIcon, PlusCircle, Search, SquarePen, SquarePenIcon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import SponsorTypeSelect from "@/components/forms/sponsorTypeSelect";
 import Pagination from "@/components/navigation/Pagination";
@@ -10,8 +10,12 @@ import AddAlert from "@/components/forms/addalert";
 import SaveAlert from "@/components/forms/savealert";
 import sponsorData from "@/data/donation/sponsorData.json";
 import tableHeaders from "@/data/donation/tableHeaders.json";
+import { MdEditSquare } from "react-icons/md";
+import { HiPencilSquare } from "react-icons/hi2";
+import { BsPencilSquare } from "react-icons/bs";
+import { PiPencilSlash } from "react-icons/pi";
+import { VscEditSparkle } from "react-icons/vsc";
 
-const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
 const { sponsorRows: sponsorDataRows } = sponsorData;
 const { sponsorHeaders: headers } = tableHeaders;
 const rowsPerPage = 12;
@@ -70,8 +74,6 @@ export default function SponsorPanel() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [showSaveAlert, setShowSaveAlert] = useState(false);
-  const [savedSponsorEdits, setSavedSponsorEdits] = useState({});
-  const [createdSponsorRows, setCreatedSponsorRows] = useState([]);
 
   useEffect(() => {
     const shouldShowSaveAlert = window.localStorage.getItem(
@@ -83,53 +85,23 @@ export default function SponsorPanel() {
       setShowSaveAlert(true);
     }
 
-    const savedValue = window.localStorage.getItem(
-      "tnal-youth:sponsor-donation-edits",
-    );
-    const createdValue = window.localStorage.getItem(SPONSOR_CREATED_ROWS_KEY);
-
-    if (createdValue) {
-      try {
-        setCreatedSponsorRows(JSON.parse(createdValue));
-      } catch {
-        setCreatedSponsorRows([]);
-      }
-    }
-
-    if (!savedValue) return;
-
-    try {
-      setSavedSponsorEdits(JSON.parse(savedValue));
-    } catch {
-      setSavedSponsorEdits({});
-    }
   }, []);
-
-  const rows = useMemo(
-    () => [
-      ...createdSponsorRows,
-      ...sponsorDataRows.map((row) => ({
-        ...row,
-        ...savedSponsorEdits[row.id],
-      })),
-    ],
-    [createdSponsorRows, savedSponsorEdits],
-  );
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return rows.filter((row) => {
+    return sponsorDataRows.filter((row) => {
       const matchesSearch =
         !query ||
         row.name.toLowerCase().includes(query) ||
         row.phone.includes(query) ||
         row.email.toLowerCase().includes(query);
       const matchesType = !selectedType || row.type === selectedType;
+      const matchesDate = !selectedDate || row.dateValue === selectedDate;
 
-      return matchesSearch && matchesType;
+      return matchesSearch && matchesType && matchesDate;
     });
-  }, [rows, searchQuery, selectedType]);
+  }, [searchQuery, selectedDate, selectedType]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
@@ -245,7 +217,7 @@ export default function SponsorPanel() {
                       className="inline-flex h-[20px] w-[24px] items-center justify-center rounded-[8px] text-[#D4AF37] transition hover:text-[#b88f1f]"
                       aria-label={`Edit sponsor ${row.id}`}
                     >
-                      <SquarePen size={16} strokeWidth={2.6} />
+                      <BsPencilSquare size={16}  />
                     </button>
                     <SponsorReceiptPreview receipt={row.receipt} />
                   </div>

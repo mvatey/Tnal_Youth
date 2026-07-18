@@ -20,7 +20,7 @@ export default function DonationCard({ label, value, growth, note, variant = "bl
   const unit = unitParts.join(" ");
 
   return (
-    <article className="h-[65px] w-[200px] rounded-2xl border-2 border-border bg-white px-3 py-2 shadow-sm">
+    <article className="h-[65px] w-[200px] rounded-2xl border-2 border-border bg-white px-3 py-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-secondary/40 hover:shadow-md">
       <div className="flex h-full items-center gap-2">
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${style.iconBox}`}>
           <Icon size={22} />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArchiveRestore, FileText, X, UploadCloud } from "lucide-react";
+import { FileText, ImportIcon, X, UploadCloud } from "lucide-react";
 
 export default function UploadPopup({
   onClose,
@@ -55,10 +55,10 @@ export default function UploadPopup({
       <div className="relative h-[319px] w-[391px] rounded-[8px] bg-white px-7 py-7 shadow-xl">
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-black text-black transition hover:bg-gray-100"
+          className="absolute right-5 top-5 flex h-[20px] w-[20px] items-center justify-center rounded-full border-2 border-[#000000] text-[#000000] transition hover:bg-gray-100"
           aria-label="Close"
         >
-          <X size={20} />
+          <X size={12} />
         </button>
 
         <h2 className="mb-6 text-[24px] font-semibold leading-none text-[#4B3391]">
@@ -77,10 +77,10 @@ export default function UploadPopup({
             <button
               type="button"
               onClick={clearReceipt}
-              className="absolute right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-[#EF4444] text-white shadow-sm transition hover:bg-[#DC2626]"
+              className="absolute right-2 top-2 z-10 flex h-[20px] w-[20px] items-center justify-center rounded-full bg-[#EF4444] text-white shadow-sm transition hover:bg-[#DC2626]"
               aria-label="Remove receipt"
             >
-              <X size={14} strokeWidth={3} />
+              <X size={10} strokeWidth={1} />
             </button>
           )}
 
@@ -137,7 +137,7 @@ export default function UploadPopup({
             onClick={() => onSave(receiptFile)}
             className="flex h-[34px] flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#4B3391] text-[14px] font-semibold text-white shadow-md transition hover:bg-[#3f2b7d]"
           >
-            <ArchiveRestore size={18} />
+            <ImportIcon size={18} />
             រក្សាទុក
           </button>
         </div>

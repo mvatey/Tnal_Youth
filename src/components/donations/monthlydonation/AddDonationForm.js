@@ -110,6 +110,7 @@ export default function AddDonationForm() {
 
     rows.forEach((row) => {
       nextRows[getSavedRowKey(row)] = {
+        ...nextRows[getSavedRowKey(row)],
         realAmount: row.realAmount ?? "",
         dollarAmount: row.dollarAmount ?? "",
         paymentMethod: row.paymentMethod || "Cash",
@@ -136,6 +137,7 @@ export default function AddDonationForm() {
 
       rows.forEach((row) => {
         nextRows[getSavedRowKey(row)] = {
+          ...nextRows[getSavedRowKey(row)],
           realAmount: "0",
           dollarAmount: "0",
           paymentMethod: row.paymentMethod || "Cash",
@@ -151,7 +153,30 @@ export default function AddDonationForm() {
     });
   };
 
-  const handleReceiptSave = () => {
+  const handleReceiptSave = (id, receipt) => {
+    const row = members.find((member) => member.id === id);
+
+    if (row) {
+      setSavedRows((currentRows) => {
+        const key = getSavedRowKey(row);
+        const nextRows = {
+          ...currentRows,
+          [key]: { ...currentRows[key], receipt },
+        };
+
+        try {
+          window.localStorage.setItem(
+            SAVED_DONATION_ROWS_KEY,
+            JSON.stringify(nextRows),
+          );
+        } catch {
+          // Keep large receipt previews in React state when storage is full.
+        }
+
+        return nextRows;
+      });
+    }
+
     setSavedMessage("បានរក្សាទុកវិក្ក័យបត្រដោយជោគជ័យ");
     setShowSaveAlert(true);
   };

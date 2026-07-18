@@ -8,6 +8,7 @@ import AddDonationTableRow from "../donations/monthlydonation/AddDonationTableRo
 import UploadPopup from "../forms/popup";
 
 const ROWS_PER_PAGE = 11;
+const DONATION_ROWS_CHANGE_EVENT = "tnal-youth:donation-rows-change";
 
 export default function Table({
   members = [],
@@ -24,7 +25,16 @@ export default function Table({
   const receiptUrlsRef = useRef(new Set());
 
   useEffect(() => {
-    setRows(members);
+    setRows((currentRows) =>
+      members.map((member) => {
+        const currentRow = currentRows.find((row) => row.id === member.id);
+
+        return {
+          ...member,
+          receipt: member.receipt ?? currentRow?.receipt,
+        };
+      }),
+    );
     setCurrentPage(1);
   }, [members]);
 
@@ -57,26 +67,41 @@ export default function Table({
   );
 
   const updateRow = (id, values) => {
-    setRows((current) =>
-      current.map((member) =>
+    setRows((current) => {
+      const nextRows = current.map((member) =>
         member.id === id ? { ...member, ...values } : member,
-      ),
-    );
+      );
+
+      window.dispatchEvent(
+        new CustomEvent(DONATION_ROWS_CHANGE_EVENT, { detail: nextRows }),
+      );
+      return nextRows;
+    });
   };
 
-  const handleReceiptSave = (id, file) => {
+  const handleReceiptSave = async (id, file) => {
     if (!file) {
       setSelectedReceiptMember(null);
       return;
     }
 
-    const previewUrl = file.type.startsWith("image/")
-      ? URL.createObjectURL(file)
+    const isImage =
+      file.type.startsWith("image/") ||
+      /\.(avif|bmp|gif|heic|heif|jpe?g|jfif|png|svg|webp)$/i.test(file.name);
+    const previewUrl = isImage
+      ? await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        })
       : "";
 
-    if (previewUrl) {
-      receiptUrlsRef.current.add(previewUrl);
-    }
+    const receipt = {
+      name: file.name,
+      type: file.type,
+      previewUrl,
+    };
 
     setRows((current) =>
       current.map((member) => {
@@ -84,24 +109,20 @@ export default function Table({
           return member;
         }
 
-        if (member.receipt?.previewUrl) {
+        if (member.receipt?.previewUrl?.startsWith("blob:")) {
           URL.revokeObjectURL(member.receipt.previewUrl);
           receiptUrlsRef.current.delete(member.receipt.previewUrl);
         }
 
         return {
           ...member,
-          receipt: {
-            name: file.name,
-            type: file.type,
-            previewUrl,
-          },
+          receipt,
         };
       }),
     );
 
     setSelectedReceiptMember(null);
-    onReceiptSave?.();
+    onReceiptSave?.(id, receipt);
   };
 
   const handleReceiptRemove = (id) => {
@@ -120,6 +141,8 @@ export default function Table({
         return memberWithoutReceipt;
       }),
     );
+
+    onReceiptSave?.(id, null);
   };
 
   const handleReset = () => {
@@ -131,11 +154,16 @@ export default function Table({
     }));
 
     setRows((current) => {
-      return current.map((member) =>
+      const nextRows = current.map((member) =>
         resetIds.has(member.id)
           ? { ...member, realAmount: "0", dollarAmount: "0" }
           : member,
       );
+
+      window.dispatchEvent(
+        new CustomEvent(DONATION_ROWS_CHANGE_EVENT, { detail: nextRows }),
+      );
+      return nextRows;
     });
 
     onReset?.(resetRows);
