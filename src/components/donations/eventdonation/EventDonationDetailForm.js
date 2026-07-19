@@ -197,8 +197,12 @@ export default function EventDonationDetailForm({ initialQuery = {} }) {
   return (
     <>
       {showSaveAlert && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
-          <SaveAlert message="អបអរសាទរ ! វិភាគទានកម្មវិធីត្រូវបានបន្ថែមដោយជោគជ័យ" />
+        <div
+          className="fixed inset-0 z-[60] flex items-start justify-center bg-black/25 pt-10"
+          role="status"
+          aria-live="polite"
+        >
+          <SaveAlert message="អបអរសាទរ វិភាគទានត្រូវបានបន្ថែមដោយជោគជ័យ" />
         </div>
       )}
 

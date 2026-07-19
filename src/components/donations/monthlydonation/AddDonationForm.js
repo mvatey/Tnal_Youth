@@ -188,8 +188,12 @@ export default function AddDonationForm() {
   return (
     <>
       {showSaveAlert && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
-          <SaveAlert />
+        <div
+          className="fixed inset-0 z-[60] flex items-start justify-center bg-black/25 pt-10"
+          role="status"
+          aria-live="polite"
+        >
+          <SaveAlert message="អបអរសាទរ វិភាគទានត្រូវបានបន្ថែមដោយជោគជ័យ" />
         </div>
       )}
 

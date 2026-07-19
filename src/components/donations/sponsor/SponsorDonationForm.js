@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, ChevronDown, CloudUpload, DollarSign as Dollar, FileText, ImportIcon, X } from "lucide-react";
+import { CalendarDays, ChevronDown, CloudUpload, FileText, ImportIcon, X } from "lucide-react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import SaveAlert from "@/components/forms/savealert";
@@ -10,6 +10,7 @@ import sponsorOptions from "@/data/donation/sponsorOptions.json";
 const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
 const {
   branches,
+  equipmentTypes,
   khmerDigits,
   khmerMonths,
   paymentLogos,
@@ -37,7 +38,14 @@ function RequiredMark() {
   return <span className="text-error"> *</span>;
 }
 
-function TextField({ label, required = false, className = "", leadingIcon = null, ...props }) {
+function TextField({
+  label,
+  required = false,
+  className = "",
+  heightClass = "h-[34px]",
+  leadingIcon = null,
+  ...props
+}) {
   return (
     <label className={`block ${className}`}>
       <span className="mb-2 block truncate whitespace-nowrap text-[13px] font-semibold leading-5 text-text-secondary">
@@ -48,7 +56,7 @@ function TextField({ label, required = false, className = "", leadingIcon = null
         {leadingIcon}
         <input
           {...props}
-          className={`h-[34px] w-full rounded-xl border border-[#CBD0D8] bg-white px-4 text-[13px] font-medium text-text-secondary outline-none transition placeholder:text-text-mute focus:border-secondary ${
+          className={`${heightClass} w-full rounded-xl border border-[#CBD0D8] bg-white px-4 text-[13px] font-medium text-text-secondary outline-none transition placeholder:text-text-mute focus:border-secondary ${
             leadingIcon ? "pl-10" : ""
           }`}
         />
@@ -270,9 +278,19 @@ function buildInitialForm(initialData = {}) {
     phone: data.phone || "",
     email: data.email || "",
     address: data.address || "",
+    equipment: data.equipment || "",
+    equipmentType: data.equipmentType || "",
     date: data.dateValue || "",
     paymentMethod: data.method || "ABA",
-    amount: data.amount || "",
+    currency:
+      data.currency ||
+      (data.rielAmount && data.rielAmount !== "0" ? "KHR" : "USD"),
+    amount:
+      (data.rielAmount && data.rielAmount !== "0"
+        ? data.rielAmount
+        : data.dollarAmount) ||
+      data.amount ||
+      "",
     note: data.note || "",
     branch: data.branch || "",
     status: data.status || "",
@@ -344,9 +362,12 @@ export default function SponsorDonationForm({ initialData = null }) {
       phone: form.phone,
       email: form.email,
       address: form.address,
+      equipment: form.equipment,
+      equipmentType: form.equipmentType,
       date: formatKhmerDate(form.date),
       dateValue: form.date,
-      amount: form.amount,
+      rielAmount: form.currency === "KHR" ? form.amount || "0" : "0",
+      dollarAmount: form.currency === "USD" ? form.amount || "0" : "0",
       method: form.paymentMethod,
       note: form.note,
       branch: form.branch,
@@ -451,26 +472,24 @@ export default function SponsorDonationForm({ initialData = null }) {
             />
             <TextField
               label="លេខទូរស័ព្ទ"
-              required
               value={form.phone}
               onChange={updateField("phone")}
               placeholder="បញ្ចូលលេខទូរស័ព្ទ"
             />
             <TextField
               label="អ៊ីមែល"
-              required
               type="email"
               value={form.email}
               onChange={updateField("email")}
               placeholder="បញ្ចូលអ៊ីមែល"
             />
-            <TextField
-              label="អាសយដ្ឋាន(Optional)"
-              value={form.address}
-              onChange={updateField("address")}
-              placeholder="បញ្ចូលអាសយដ្ឋាន"
-            />
-
+              <TextField
+                label="អាសយដ្ឋាន(Optional)"
+                value={form.address}
+                onChange={updateField("address")}
+                placeholder="បញ្ចូលអាសយដ្ឋាន"
+                className="min-w-0 flex-1"
+              />
             <ReceiptUpload
               value={form.receipt}
               onChange={updateField("receipt")}
@@ -499,31 +518,34 @@ export default function SponsorDonationForm({ initialData = null }) {
               />
             </div>
 
-            <TextField
-              label="ចំនួនទឹកប្រាក់ (ដុល្លារ)"
-              required
-              value={form.amount}
-              onChange={updateField("amount")}
-              onFocus={handleAmountFocus}
-              onBlur={() => setFocusedField(null)}
-              placeholder={
-                focusedField === "amount" ? "" : "បញ្ចូលចំនួនទឹកប្រាក់"
-              }
-              leadingIcon={
-                <Dollar
-                  size={16}
-                  strokeWidth={2.2}
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
+            <label className="block">
+              <span className="mb-2 block text-[13px] font-semibold leading-5 text-text-secondary">
+                ចំនួនទឹកប្រាក់<RequiredMark />
+              </span>
+              <span className="flex h-[34px] overflow-hidden rounded-xl border border-[#CBD0D8] bg-white transition focus-within:border-secondary">
+                <select
+                  value={form.currency}
+                  onChange={updateField("currency")}
+                  className="w-[92px] border-r border-[#CBD0D8] bg-[#F8F9FF] px-3 text-[13px] font-semibold text-text-secondary outline-none"
+                  aria-label="រូបិយប័ណ្ណ"
+                >
+                  <option value="USD">$ USD</option>
+                  <option value="KHR">៛ KHR</option>
+                </select>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={form.amount}
+                  onChange={updateField("amount")}
+                  onFocus={handleAmountFocus}
+                  onBlur={() => setFocusedField(null)}
+                  placeholder={
+                    focusedField === "amount" ? "" : "បញ្ចូលចំនួនទឹកប្រាក់"
+                  }
+                  className="min-w-0 flex-1 bg-white px-4 text-[13px] font-medium text-text-secondary outline-none placeholder:text-text-mute"
                 />
-              }
-              
-            />
-            <TextField
-              label="Note (Optional)"
-              value={form.note}
-              onChange={updateField("note")}
-              placeholder="សរសេរ Note"
-            />
+              </span>
+            </label>
 
             <div className="flex items-end gap-4">
               <SelectField
@@ -542,7 +564,38 @@ export default function SponsorDonationForm({ initialData = null }) {
                 placeholder="ជ្រើសរើសកម្មវិធី"
                 className="min-w-0 flex-1"
               />
-            </div>
+              </div>
+              <div className="flex items-end gap-4">
+                <fieldset className="flex h-[34px] items-center text-[13px] font-medium text-text-secondary">
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="equipment"
+                      value="សម្ភារៈ"
+                      checked={form.equipment === "សម្ភារៈ"}
+                      onChange={updateField("equipment")}
+                      className="h-3.5 w-3.5 accent-[#1689F2]"
+                    />
+                    សម្ភារៈ
+                  </label>
+                </fieldset>
+                <SelectField
+                  label="ប្រភេទសម្ភារៈ"
+                  value={form.equipmentType}
+                  onChange={updateField("equipmentType")}
+                  options={equipmentTypes}
+                  placeholder="ជ្រើសរើសប្រភេទ"
+                  className="min-w-0 flex-1"
+                />
+              </div>
+              <TextField
+                label="Note (Optional)"
+                value={form.note}
+                onChange={updateField("note")}
+                placeholder="សរសេរ Note"
+                heightClass="h-[86px]"
+              />
+
           </div>
         </div>
 

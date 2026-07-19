@@ -35,6 +35,17 @@ export default function UploadPopup({
   const activeFileName = receiptFile?.name || activeReceipt?.name || "";
   const hasActiveReceipt = receiptFile || activeReceipt;
 
+  const handleClose = () => {
+    if (
+      receiptFile &&
+      !window.confirm("Discard the uploaded receipt without saving it?")
+    ) {
+      return;
+    }
+
+    onClose?.();
+  };
+
   const clearReceipt = (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -50,11 +61,20 @@ export default function UploadPopup({
     }
   };
 
+  const handleSave = () => {
+    if (receiptFile) {
+      onSave?.(receiptFile);
+      return;
+    }
+
+    onClose?.();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25">
       <div className="relative h-[319px] w-[391px] rounded-[8px] bg-white px-7 py-7 shadow-xl">
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute right-5 top-5 flex h-[20px] w-[20px] items-center justify-center rounded-full border-2 border-[#000000] text-[#000000] transition hover:bg-gray-100"
           aria-label="Close"
         >
@@ -126,7 +146,7 @@ export default function UploadPopup({
 
         <div className="mt-7 flex items-center gap-4">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="h-[34px] w-[96px] rounded-[8px] border border-[#D1D5DB] bg-[#F9FAFB] text-center text-[14px] font-semibold text-black shadow-md transition hover:bg-[#F3F4F6]"
           >
             បោះបង់
@@ -134,7 +154,7 @@ export default function UploadPopup({
 
           <button
             type="button"
-            onClick={() => onSave(receiptFile)}
+            onClick={handleSave}
             className="flex h-[34px] flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#4B3391] text-[14px] font-semibold text-white shadow-md transition hover:bg-[#3f2b7d]"
           >
             <ImportIcon size={18} />

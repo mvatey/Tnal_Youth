@@ -207,7 +207,12 @@ export default function SponsorPanel() {
                 <td className="whitespace-nowrap px-4">{row.phone}</td>
                 <td className="px-4">{row.email}</td>
                 <td className="whitespace-nowrap px-4">{row.date}</td>
-                <td className="px-4">{row.amount}</td>
+                <td className="px-4">
+                  {row.rielAmount || "0"}
+                </td>
+                <td className="px-4">
+                  {row.dollarAmount || "0"}
+                </td>
                 <td className="px-4">{row.method}</td>
                 <td className="px-4">
                   <div className="inline-flex items-center justify-center gap-2">
