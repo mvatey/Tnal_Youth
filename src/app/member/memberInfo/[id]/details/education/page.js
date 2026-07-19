@@ -1,40 +1,151 @@
 "use client";
 
-import { useState } from "react";
-import { Link2, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { Trash2 } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
-import SaveButton from "@/components/forms/SaveButton";
+
+import SaveButton from "@/components/forms/SaveButton.js";
 import BoxFill from "@/components/forms/boxFill.js";
 import FormDate from "@/components/forms/FormDate.js";
 import SelectArrow from "@/components/forms/SelectArrow";
+import ButtonDropLink from "@/components/forms/ButtonDropLink";
+
+import locationData from "@/data/location.json";
+import educationData from "@/data/education.json";
+import membersData from "@/data/members.json";
+
+function createEmptyEducation() {
+  return {
+    id: `edu-${Date.now()}`,
+    ...educationData.emptyEducation,
+  };
+}
 
 export default function EducationPage() {
-  const [educations, setEducations] = useState([{ id: 1 }]);
+  const params = useParams();
+  const memberId = String(params?.id ?? "");
 
-  const addEducation = () => {
-    setEducations((prev) => [...prev, { id: Date.now() }]);
-  };
+  const [member, setMember] = useState(null);
+  const [educations, setEducations] = useState([]);
 
-  const removeEducation = (id) => {
-    setEducations((prev) => {
-      if (prev.length === 1) return prev;
-      return prev.filter((item) => item.id !== id);
+  useEffect(() => {
+    const selectedMember = membersData.find(
+      (item) => String(item.id) === memberId,
+    );
+
+    if (!selectedMember) {
+      setMember(null);
+      setEducations([]);
+      return;
+    }
+
+    setMember(selectedMember);
+
+    const educationHistory = Array.isArray(
+      selectedMember.educationHistory,
+    )
+      ? selectedMember.educationHistory
+      : [];
+
+    setEducations(
+      educationHistory.length > 0
+        ? educationHistory
+        : [createEmptyEducation()],
+    );
+  }, [memberId]);
+
+  function handleEducationChange(id, field, value) {
+    setEducations((previous) =>
+      previous.map((education) =>
+        education.id === id
+          ? {
+              ...education,
+              [field]: value,
+            }
+          : education,
+      ),
+    );
+  }
+
+  function addEducation() {
+    setEducations((previous) => [
+      ...previous,
+      createEmptyEducation(),
+    ]);
+  }
+
+  function removeEducation(id) {
+    setEducations((previous) => {
+      if (previous.length === 1) {
+        return previous;
+      }
+
+      return previous.filter(
+        (education) => education.id !== id,
+      );
     });
-  };
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+
+    if (!member) return;
+
+    const updatedMember = {
+      ...member,
+      educationHistory: educations,
+    };
+
+    console.log("Updated member:", updatedMember);
+  }
+
+  if (!member) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6">
+        <p className="text-sm text-red-500">
+          រកមិនឃើញព័ត៌មានសមាជិក
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="text-lg font-bold text-primary">ការអប់រំ/បណ្តុះបណ្តាល</h2>
+        <div>
+          <h2 className="text-lg font-bold text-primary">
+            កម្រិតការបណ្ដុះបណ្ដាល
+          </h2>
+        </div>
 
         <div className="mt-5 space-y-5">
-          {educations.map((item) => (
-            <EducationGroup key={item.id} canDelete={educations.length > 1} onDelete={() => removeEducation(item.id)} />
+          {educations.map((education, index) => (
+            <EducationGroup
+              key={education.id}
+              index={index}
+              education={education}
+              canDelete={educations.length > 1}
+              onChange={(field, value) =>
+                handleEducationChange(
+                  education.id,
+                  field,
+                  value,
+                )
+              }
+              onDelete={() =>
+                removeEducation(education.id)
+              }
+            />
           ))}
         </div>
 
         <div className="mt-6 flex justify-center">
-          <button type="button" onClick={addEducation} className="inline-flex items-center gap-2 rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white transition hover:bg-green-700">
+          <button
+            type="button"
+            onClick={addEducation}
+            className="inline-flex items-center gap-2 rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
+          >
             <RiAddCircleLine size={17} />
             បន្ថែម
           </button>
@@ -42,58 +153,155 @@ export default function EducationPage() {
       </div>
 
       <div className="flex justify-end">
-        <SaveButton />
+        <SaveButton type="submit" />
       </div>
-    </div>
+    </form>
   );
 }
 
-function EducationGroup({ canDelete, onDelete }) {
+function EducationGroup({
+  index,
+  education,
+  canDelete,
+  onDelete,
+  onChange,
+}) {
+  const provinces = Array.isArray(locationData.provinces)
+    ? locationData.provinces
+    : [];
+
+  const countries = Array.isArray(locationData.countries)
+    ? locationData.countries
+    : [];
+
+  const degrees = Array.isArray(educationData.degrees)
+    ? educationData.degrees
+    : [];
+
   return (
     <div className="rounded-xl border border-gray-300 p-6">
-      <div className="grid grid-cols-3 gap-x-6 gap-y-5">
-        <BoxFill label="សាលា ឬ ស្ថាប័ន" placeholder="បញ្ចូលឈ្មោះសាលា ឬ ស្ថាប័ន" />
+      <h3 className="mb-5 text-sm font-semibold text-text-primary">
+        ប្រវត្តិការសិក្សា ទី {index + 1}
+      </h3>
 
-        <FormSelect label="កម្រិត/ថ្នាក់" placeholder="ជ្រើសរើសកម្រិត" options={["បឋមសិក្សា", "មធ្យមសិក្សា", "បរិញ្ញាបត្រ", "អនុបណ្ឌិត", "បណ្ឌិត"]} />
+      <div className="grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2 xl:grid-cols-3">
+        <BoxFill
+          label="សាលា ឬ ស្ថាប័ន"
+          placeholder="បញ្ចូលឈ្មោះសាលា ឬ ស្ថាប័ន"
+          value={education.school ?? ""}
+          onChange={(event) =>
+            onChange("school", event.target.value)
+          }
+        />
 
-        <FormSelect label="កម្រិត/ជំនាញ" placeholder="ជ្រើសរើសជំនាញ" options={["វិទ្យាសាស្ត្រ", "សង្គមសាស្ត្រ", "បច្ចេកវិទ្យា", "គ្រប់គ្រង", "ផ្សេងៗ"]} />
+        <FormSelect
+          label="រាជធានី/ខេត្ត/រដ្ឋ"
+          placeholder="ជ្រើសរើសរាជធានី/ខេត្ត/រដ្ឋ"
+          value={education.province ?? ""}
+          onChange={(event) =>
+            onChange("province", event.target.value)
+          }
+          options={provinces}
+        />
 
-        <FormSelect label="ជំនាញឯកទេស" placeholder="ជ្រើសរើសជំនាញ" options={["ព័ត៌មានវិទ្យា", "គណនេយ្យ", "ច្បាប់", "គ្រប់គ្រង", "អប់រំ"]} />
+        <FormSelect
+          label="ប្រទេស"
+          placeholder="ជ្រើសរើសប្រទេស"
+          value={education.country ?? ""}
+          onChange={(event) =>
+            onChange("country", event.target.value)
+          }
+          options={countries}
+        />
+
+        <FormSelect
+          label="កម្រិតសញ្ញាប័ត្រ"
+          placeholder="ជ្រើសរើសកម្រិតសញ្ញាប័ត្រ"
+          value={education.degree ?? ""}
+          onChange={(event) =>
+            onChange("degree", event.target.value)
+          }
+          options={degrees}
+        />
 
         <div className="flex items-end">
-          <button type="button" className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition hover:opacity-90">
-            <Link2 size={17} />
-            តំណភ្ជាប់ឯកសារ
-          </button>
+          <ButtonDropLink
+            value={education.documentLink ?? ""}
+            onChange={(value) =>
+              onChange("documentLink", value)
+            }
+          />
         </div>
 
-        <FormDate label="ថ្ងៃចាប់ផ្តើម" name="startDate" />
-        <FormDate label="ថ្ងៃបញ្ចប់" name="endDate" />
+        <FormDate
+          label="ថ្ងៃចាប់ផ្តើម"
+          name={`startDate-${education.id}`}
+          value={education.startDate ?? ""}
+          onChange={(event) =>
+            onChange("startDate", event.target.value)
+          }
+        />
+
+        <FormDate
+          label="ថ្ងៃបញ្ចប់"
+          name={`endDate-${education.id}`}
+          value={education.endDate ?? ""}
+          onChange={(event) =>
+            onChange("endDate", event.target.value)
+          }
+        />
       </div>
 
-      {canDelete && (
-        <div className="mt-6 flex justify-end">
-          <button type="button" onClick={onDelete} className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-red-700">
-            <Trash2 size={17} />
-            លុប
-          </button>
-        </div>
-      )}
+      <div className="mt-6 flex justify-end">
+        <button
+          type="button"
+          disabled={!canDelete}
+          onClick={onDelete}
+          className={`inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white transition ${
+            canDelete
+              ? "hover:bg-red-700"
+              : "cursor-not-allowed opacity-60"
+          }`}
+        >
+          <Trash2 size={17} />
+          លុប
+        </button>
+      </div>
     </div>
   );
 }
 
-function FormSelect({ label, placeholder, options = [] }) {
+function FormSelect({
+  label,
+  placeholder,
+  options = [],
+  value = "",
+  onChange,
+}) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-semibold text-text-primary">{label}</label>
+      <label className="mb-2 block text-sm font-semibold text-text-primary">
+        {label}
+      </label>
 
       <div className="relative">
-        <select defaultValue="" className="h-11 w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 pr-12 text-sm text-gray-500 outline-none focus:border-primary">
-          <option value="" disabled>{placeholder}</option>
+        <select
+          value={value}
+          onChange={onChange}
+          className={`h-11 w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 pr-12 text-sm outline-none focus:border-primary ${
+            value
+              ? "text-text-primary"
+              : "text-gray-500"
+          }`}
+        >
+          <option value="" disabled>
+            {placeholder}
+          </option>
 
           {options.map((option) => (
-            <option key={option} value={option}>{option}</option>
+            <option key={option} value={option}>
+              {option}
+            </option>
           ))}
         </select>
 

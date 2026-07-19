@@ -95,7 +95,7 @@ export default function CertificateCard({ user }) {
             font-bold
             text-[#062f6b]
           ">
-            {user.name}
+            {user.name_kh}
           </h1>
 
 

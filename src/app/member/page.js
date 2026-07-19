@@ -7,12 +7,13 @@ import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal.js";
 import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
 import DataTable from "@/components/table/DataTable.js";
 import StatCard from "@/components/dashboard/statCard";
-import ButtonSee from "@/components/forms/ButtonSee";
+
 
 import { Users, UserCheck, Trash2, EyeIcon } from "lucide-react";
 import users from "@/data/members.json";
 import { AiOutlineWoman } from "react-icons/ai";
 import { RiAddCircleLine } from "react-icons/ri";
+import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail";
 
 const KHMER_MONTHS = {
   មករា: 0,
@@ -116,7 +117,7 @@ export default function MembersPage() {
       const search = query.toLowerCase();
 
       const matchesQuery =
-        m.name?.toLowerCase().includes(search) || m.phone?.includes(query);
+        m.name_kh?.toLowerCase().includes(search) || m.phone?.includes(query);
 
       const matchesBranch = !branchFilter || m.branch === branchFilter;
       const matchesStatus = !statusFilter || m.status === statusFilter;
@@ -142,7 +143,7 @@ export default function MembersPage() {
       align: "left",
       render: (m) => (
         <span className="block w-full truncate font-medium text-text-primary">
-          {m.name}
+          {m.name_kh}
         </span>
       ),
     },
@@ -206,7 +207,7 @@ export default function MembersPage() {
       align: "center",
       render: (m) => (
         <div className="flex w-full min-w-0 items-center justify-center gap-1">
-          <ButtonSee
+          <ButtonSeeDetail
             onClick={() => router.push(`/member/memberInfo/${m.id}`)}
           />
 
@@ -300,7 +301,7 @@ export default function MembersPage() {
         }}
         description={
           deleteTarget
-            ? `តើអ្នកប្រាកដថានឹងលុប "${deleteTarget.name}" ចេញពីបញ្ជីសមាជិកទេ?`
+            ? `តើអ្នកប្រាកដថានឹងលុប "${deleteTarget.name_kh}" ចេញពីបញ្ជីសមាជិកទេ?`
             : undefined
         }
       />

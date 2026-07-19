@@ -1,10 +1,10 @@
 "use client";
 
-import { EyeIcon } from "lucide-react";
+import { List } from "lucide-react";
 
-export default function ButtonSee({
+export default function ButtonSeeDetail({
   onClick,
-  children = "មើល",
+  children = "លម្អិត",
   className = "",
 }) {
   return (
@@ -12,7 +12,7 @@ export default function ButtonSee({
       onClick={onClick}
       className={`inline-flex items-center gap-1 rounded-lg bg-secondary px-1 py-1 text-[11px] font-medium text-white transition hover:opacity-90 ${className}`}
     >
-      <EyeIcon className="h-3.5 w-3.5 shrink-0" />
+      <List className="h-3.5 w-3.5 shrink-0" />
       <span className="truncate">{children}</span>
     </button>
   );
