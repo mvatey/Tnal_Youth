@@ -5,8 +5,7 @@ export async function POST(req) {
   try {
     const body = await req.json();
 
-    const phoneOrEmail =
-      body.phoneOrEmail?.trim() || "";
+    const phoneOrEmail = body.phoneOrEmail?.trim();
 
     if (!phoneOrEmail) {
       return Response.json(
@@ -21,34 +20,66 @@ export async function POST(req) {
       ? "EMAIL"
       : "SMS";
 
-    const response = await fetch(
-      `${BACKEND_URL}/auth/forgot-password`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phoneOrEmail,
-          deliveryChannel,
-        }),
-      }
-    );
+    const backendEndpoint =
+      `${BACKEND_URL}/auth/forgot-password`;
 
-    const data = await response.json().catch(() => ({}));
+    console.log("Calling backend:", backendEndpoint);
 
-    return Response.json(data, {
-      status: response.status,
+    const response = await fetch(backendEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        phoneOrEmail,
+        deliveryChannel,
+      }),
+      cache: "no-store",
     });
-  } catch (error) {
-    console.error(error);
+
+    const responseText = await response.text();
+
+    let data = {};
+
+    try {
+      data = responseText
+        ? JSON.parse(responseText)
+        : {};
+    } catch {
+      data = {
+        message:
+          responseText || "Backend returned an invalid response",
+      };
+    }
 
     return Response.json(
       {
-        message: "Something went wrong",
+        ...data,
+        message:
+          data.message ||
+          data.error ||
+          data.detail ||
+          `Request failed with status ${response.status}`,
       },
       {
-        status: 500,
+        status: response.status,
+      }
+    );
+  } catch (error) {
+    console.error("Send OTP proxy error:", error);
+
+    const isConnectionRefused =
+      error?.cause?.code === "ECONNREFUSED" ||
+      error?.code === "ECONNREFUSED";
+
+    return Response.json(
+      {
+        message: isConnectionRefused
+          ? "Backend server is not running on port 8081"
+          : "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ",
+      },
+      {
+        status: 503,
       }
     );
   }
