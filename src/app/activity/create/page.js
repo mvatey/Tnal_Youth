@@ -12,12 +12,13 @@ import {
   Link2,
   MapPin,
   PencilLine,
-  Upload,
 } from "lucide-react";
 
 import FormField from "@/components/forms/FormField";
 import FormSelect from "@/components/forms/FormSelect";
 import DateInput from "@/components/forms/DateInput";
+import ActionButton from "@/components/forms/button";
+import UploadBox from "@/components/forms/UploadBox";
 import MemberSelectModal from "@/components/activity/MemberSelectModal";
 
 import activities from "@/data/activity.json";
@@ -364,7 +365,7 @@ export default function CreateActivityPage() {
           <p className="mt-1 text-sm text-text-secondary">
             {isEditMode
               ? "កែប្រែព័ត៌មានកម្មវិធី"
-              : "បំពេញព័ត៌មានកម្មវិធី"}
+              : "ព័ត៌មានកម្មវិធី"}
           </p>
         </div>
 
@@ -387,7 +388,7 @@ export default function CreateActivityPage() {
               />
 
               <FormSelect
-                label="សាខា"
+                label="ឈ្មោះទីតាំង"
                 value={form.branch}
                 onChange={(value) =>
                   setValue("branch", value)
@@ -448,7 +449,7 @@ export default function CreateActivityPage() {
                     event.target.value
                   )
                 }
-                placeholder="ពិពណ៌នាអំពីកម្មវិធី..."
+                placeholder={form.description ? "" : "ពិពណ៌នាអំពីកម្មវិធី..."}
                 className="h-32 w-full resize-none rounded-lg border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-secondary"
               />
             </FormField>
@@ -537,7 +538,7 @@ export default function CreateActivityPage() {
                         event.target.value
                       )
                     }
-                    placeholder="បញ្ចូល Google Maps link"
+                    placeholder={form.mapLink ? "" : "បញ្ចូល Google Maps link"}
                     className="h-11 w-full rounded-lg border border-border bg-white pl-4 pr-11 text-sm outline-none transition focus:border-secondary"
                   />
 
@@ -622,7 +623,7 @@ export default function CreateActivityPage() {
                 }
                 className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90"
               >
-                សមាជិកចូលរួម
+                ជ្រើសរើសសមាជិក
               </button>
             )}
 
@@ -647,6 +648,19 @@ export default function CreateActivityPage() {
             >
               ចំណាយ
             </Link>
+          </div>
+        </section>
+
+        {/* Activity images */}
+        <section className="rounded-xl border border-border bg-white p-5">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <UploadBox label="រូបភាពកម្មវិធី" />
+            <UploadBox
+              label="ឯកសារផ្សេងៗ"
+              accept=".pdf,.doc,.docx"
+              uploadText="បញ្ចូលឯកសារ"
+              helperText="គាំទ្រ៖ PDF, DOC, DOCX (អតិបរមា 5MB)"
+            />
           </div>
         </section>
 
@@ -701,29 +715,23 @@ export default function CreateActivityPage() {
           )}
 
         {/* Buttons */}
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-          <button
-            type="button"
+        <div className="flex items-center justify-between gap-3">
+          <ActionButton
+            action="cancel"
             onClick={handleCancel}
             disabled={isSaving}
-            className="flex h-11 w-full items-center justify-center rounded-lg border border-border bg-white text-sm font-semibold text-text-secondary transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-32"
-          >
-            បោះបង់
-          </button>
+          />
 
-          <button
+          <ActionButton
+            action="save"
             type="submit"
             disabled={isSaving}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white transition hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60 sm:w-44"
-          >
-            <Upload size={17} />
-
-            {isSaving
+            label={isSaving
               ? "កំពុងរក្សាទុក..."
               : isEditMode
                 ? "រក្សាទុកការកែប្រែ"
                 : "រក្សាទុក"}
-          </button>
+          />
         </div>
       </form>
 

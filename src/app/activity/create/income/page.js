@@ -3,17 +3,16 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  ChevronRight,
-  FileUp,
-} from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { RiDownloadCloud2Line } from "react-icons/ri";
 
 import Pagination from "@/components/dashboard/Pagination";
+import { ReceiptIcon } from "@/components/donations/monthlydonation/AddDonationTableRow";
 import members from "@/data/members.json";
 import activities from "@/data/activity.json";
 
 const ROWS_PER_PAGE = 10;
+const KHR_PER_USD = 4000;
 
 function createInitialRows() {
   return members.map((member) => ({
@@ -25,8 +24,8 @@ function createInitialRows() {
       member.joinedAt ||
       "",
 
-    amountRiel: "",
-    amountDollar: "",
+    amountRiel: "0",
+    amountDollar: "0.00",
 
     paymentMethod: "Cash",
     receipt: null,
@@ -71,6 +70,18 @@ function sanitizeDecimal(value) {
   }
 
   return cleanedValue;
+}
+
+const getAmountFieldClass = (value) =>
+  Number(value) > 0
+    ? "border-[#65686b] bg-[#eef5f3]"
+    : "border-[#65686b] bg-[#e5e7eb]";
+
+function getTotalInDollars(row) {
+  return (
+    parseAmount(row.amountDollar) +
+    parseAmount(row.amountRiel) / KHR_PER_USD
+  );
 }
 
 export default function IncomePage() {
@@ -132,6 +143,22 @@ export default function IncomePage() {
     );
   };
 
+  const handleAmountFocus = (rowId, field, value) => {
+    if (parseAmount(value) === 0) {
+      updateRow(rowId, field, "");
+    }
+  };
+
+  const handleAmountBlur = (rowId, field, fallback) => {
+    setRows((currentRows) =>
+      currentRows.map((row) =>
+        row.id === rowId && row[field] === ""
+          ? { ...row, [field]: fallback }
+          : row
+      )
+    );
+  };
+
   const handleReceiptChange = (
     rowId,
     event
@@ -154,10 +181,15 @@ export default function IncomePage() {
           parseAmount(
             row.amountDollar
           ),
+
+        totalDollar:
+          total.totalDollar +
+          getTotalInDollars(row),
       }),
       {
         riel: 0,
         dollar: 0,
+        totalDollar: 0,
       }
     );
   }, [rows]);
@@ -253,38 +285,38 @@ export default function IncomePage() {
         </div>
 
         <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full min-w-[1100px] table-fixed border-collapse text-sm">
+          <table className="w-full min-w-[1050px] table-fixed border-collapse text-sm">
             <thead>
               <tr className="h-11 border-b border-border bg-bg-page-gray text-text-secondary">
                 <th className="w-[5%] text-center">
                   ល.រ
                 </th>
 
-                <th className="w-[22%] text-center">
+                <th className="w-[15%] text-center">
                   សមាជិក
                 </th>
 
-                <th className="w-[9%] text-center">
+                <th className="w-[8%] text-center">
                   ភេទ
                 </th>
 
-                <th className="w-[14%] text-center">
+                <th className="w-[12%] text-center">
                   ថ្ងៃខែឆ្នាំចូលរួម
                 </th>
 
-                <th className="w-[15%] text-center">
+                <th className="w-[17%] text-center">
                   ចំនួនវិភាគទាន (រៀល)
                 </th>
 
-                <th className="w-[15%] text-center">
+                <th className="w-[17%] text-center">
                   ចំនួនវិភាគទាន ($)
                 </th>
 
-                <th className="w-[13%] text-center">
-                  វិធីបង់ប្រាក់
+                <th className="w-[18%] text-center">
+                  វិធីសាស្ត្រទូទាត់ប្រាក់
                 </th>
 
-                <th className="w-[7%] text-center">
+                <th className="w-[8%] text-center">
                   វិក្កយបត្រ
                 </th>
               </tr>
@@ -301,14 +333,14 @@ export default function IncomePage() {
                   return (
                     <tr
                       key={row.id}
-                      className="h-14 border-b border-border"
+                      className="h-[42px] border-b border-[#e5eaf0] bg-[#fbfcfe] text-[12px] text-slate-500 transition-colors hover:bg-[#f6f8fb]"
                     >
                       <td className="text-center text-text-secondary">
                         {realIndex + 1}
                       </td>
 
-                      <td className="px-2">
-                        <p className="font-semibold text-text-primary">
+                      <td className="max-w-0 overflow-hidden px-2">
+                        <p className="truncate font-semibold text-text-primary" title={row.name}>
                           {row.name}
                         </p>
                       </td>
@@ -322,8 +354,8 @@ export default function IncomePage() {
                       </td>
 
                       {/* Independent riel input */}
-                      <td className="px-1">
-                        <div className="relative">
+                      <td className="px-3">
+                        <div className={`mx-auto flex h-7 w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(row.amountRiel)}`}>
                           <input
                             type="text"
                             inputMode="numeric"
@@ -346,19 +378,33 @@ export default function IncomePage() {
                                 value
                               );
                             }}
-                            placeholder="0"
-                            className="h-10 w-full rounded-md border border-border px-3 pr-9 text-sm outline-none transition focus:border-secondary"
+                            onFocus={() =>
+                              handleAmountFocus(
+                                row.id,
+                                "amountRiel",
+                                row.amountRiel
+                              )
+                            }
+                            onBlur={() =>
+                              handleAmountBlur(
+                                row.id,
+                                "amountRiel",
+                                "0"
+                              )
+                            }
+                            placeholder={row.amountRiel ? "" : "0"}
+                            className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500"
                           />
 
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-secondary">
+                          <span className="text-[13px] text-slate-500">
                             ៛
                           </span>
                         </div>
                       </td>
 
                       {/* Independent dollar input */}
-                      <td className="px-1">
-                        <div className="relative">
+                      <td className="px-3">
+                        <div className={`mx-auto flex h-7 w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(row.amountDollar)}`}>
                           <input
                             type="text"
                             inputMode="decimal"
@@ -381,17 +427,31 @@ export default function IncomePage() {
                                 value
                               );
                             }}
-                            placeholder="0.00"
-                            className="h-10 w-full rounded-md border border-border px-3 pr-9 text-sm outline-none transition focus:border-secondary"
+                            onFocus={() =>
+                              handleAmountFocus(
+                                row.id,
+                                "amountDollar",
+                                row.amountDollar
+                              )
+                            }
+                            onBlur={() =>
+                              handleAmountBlur(
+                                row.id,
+                                "amountDollar",
+                                "0.00"
+                              )
+                            }
+                            placeholder={row.amountDollar ? "" : "0.00"}
+                            className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500"
                           />
 
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-secondary">
+                          <span className="text-[13px] text-slate-500">
                             $
                           </span>
                         </div>
                       </td>
 
-                      <td className="px-1">
+                      <td className="px-3">
                         <select
                           value={
                             row.paymentMethod
@@ -407,7 +467,7 @@ export default function IncomePage() {
                                 .value
                             )
                           }
-                          className="h-10 w-full rounded-md border border-border bg-white px-2 text-sm outline-none transition focus:border-secondary"
+                          className="mx-auto block h-7 w-[82px] rounded-md border border-slate-400 bg-white px-2 text-[12px] text-slate-600 outline-none focus:border-[#4B2E91]"
                         >
                           <option value="Cash">
                             Cash
@@ -427,9 +487,12 @@ export default function IncomePage() {
                         </select>
                       </td>
 
-                      <td className="text-center">
-                        <label className="inline-flex cursor-pointer flex-col items-center gap-1 text-secondary transition hover:text-secondary-hover">
-                          <FileUp size={17} />
+                      <td className="px-3 text-center">
+                        <label
+                          className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-[#4B2E91] hover:bg-[#4B2E91]/10"
+                          aria-label="receipt"
+                        >
+                          <ReceiptIcon size={18} />
 
                           <input
                             type="file"
@@ -445,15 +508,6 @@ export default function IncomePage() {
                             }
                           />
 
-                          {row.receipt && (
-                            <span className="max-w-[70px] truncate text-[10px] text-success">
-                              {
-                                row
-                                  .receipt
-                                  .name
-                              }
-                            </span>
-                          )}
                         </label>
                       </td>
                     </tr>
@@ -487,7 +541,10 @@ export default function IncomePage() {
         </div>
 
         {/* Summary */}
-        <div className="ml-auto mt-5 w-full max-w-[360px] rounded-lg border border-border p-4">
+        <div
+          className="ml-auto mt-5 w-full max-w-[360px] rounded-lg border border-border p-4"
+          aria-live="polite"
+        >
           <h3 className="mb-3 font-bold text-secondary">
             សរុបចំណូល
           </h3>
@@ -520,7 +577,7 @@ export default function IncomePage() {
             </span>
 
             <span>
-              {summary.dollar.toFixed(2)}
+              {summary.totalDollar.toFixed(2)}
               {" "}$
             </span>
           </div>

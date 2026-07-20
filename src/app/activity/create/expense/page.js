@@ -5,7 +5,7 @@ import {
   useState,
 } from "react";
 
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import Link from "next/link";
 import {
@@ -26,12 +26,11 @@ function createEmptyRow(id) {
     name: "",
     category: "",
 
-    // Quantity displays a real zero
-    quantity: 0,
+    // Start at one so entered prices immediately contribute to the total.
+    quantity: 1,
 
-    // Empty strings allow placeholders to display
-    unitPriceRiel: "",
-    unitPriceDollar: "",
+    unitPriceRiel: "0",
+    unitPriceDollar: "0.00",
 
     // Calculated values
     totalRiel: 0,
@@ -93,9 +92,18 @@ function sanitizeDollarInput(value) {
   return sanitizedValue;
 }
 
+function sanitizeInteger(value) {
+  return value.replace(/\D/g, "");
+}
+
+const getAmountFieldClass = (value) =>
+  parseNumber(value) > 0
+    ? "border-[#65686b] bg-[#eef5f3]"
+    : "border-[#65686b] bg-[#e5e7eb]";
+
 export default function ExpensePage() {
-  const params = useParams();
-  const id = params?.id;
+  const searchParams = useSearchParams();
+  const id = searchParams.get("activityId");
 
   
   const activity = activities.find(
@@ -158,6 +166,20 @@ export default function ExpensePage() {
         };
       })
     );
+  };
+
+  const handleAmountFocus = (rowId, field, value) => {
+    if (parseNumber(value) === 0) {
+      updateRow(rowId, field, "");
+    }
+  };
+
+  const handleAmountBlur = (rowId, field, fallback) => {
+    const row = rows.find((item) => item.id === rowId);
+
+    if (row?.[field] === "") {
+      updateRow(rowId, field, fallback);
+    }
   };
 
   const addRowBelow = (rowId) => {
@@ -305,19 +327,19 @@ export default function ExpensePage() {
           </button>
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full min-w-[1250px] table-fixed border-collapse text-sm">
+        <div className="overflow-hidden rounded-lg border border-border">
+          <table className="w-full table-fixed border-collapse text-xs">
             <thead>
               <tr className="h-11 border-b border-border bg-bg-page-gray text-text-secondary">
                 <th className="w-[5%] text-center">
                   ល.រ
                 </th>
 
-                <th className="w-[17%] text-center">
+                <th className="w-[18%] text-center">
                   ឈ្មោះ
                 </th>
 
-                <th className="w-[17%] text-center">
+                <th className="w-[18%] text-center">
                   ការពិពណ៌នា
                 </th>
 
@@ -325,11 +347,11 @@ export default function ExpensePage() {
                   ចំនួន
                 </th>
 
-                <th className="w-[14%] text-center">
+                <th className="w-[15%] text-center">
                   តម្លៃ/ឯកតា (រៀល)
                 </th>
 
-                <th className="w-[14%] text-center">
+                <th className="w-[15%] text-center">
                   តម្លៃ/ឯកតា ($)
                 </th>
 
@@ -337,7 +359,7 @@ export default function ExpensePage() {
                   តម្លៃសរុប ($)
                 </th>
 
-                <th className="w-[12%] text-center">
+                <th className="w-[8%] text-center">
                   សកម្មភាព
                 </th>
               </tr>
@@ -348,7 +370,7 @@ export default function ExpensePage() {
                 (row, index) => (
                   <tr
                     key={row.id}
-                    className="h-14 border-b border-border last:border-b-0"
+                    className="h-[42px] border-b border-[#e5eaf0] bg-[#fbfcfe] text-[12px] text-slate-500 transition-colors last:border-b-0 hover:bg-[#f6f8fb]"
                   >
                     <td className="text-center text-text-secondary">
                       {index + 1}
@@ -366,7 +388,7 @@ export default function ExpensePage() {
                             event.target.value
                           )
                         }
-                        placeholder="បញ្ចូលឈ្មោះ"
+                        placeholder={row.name ? "" : "បញ្ចូលឈ្មោះ"}
                         className="h-10 w-full rounded-md border border-border px-3 text-sm outline-none transition placeholder:text-text-secondary focus:border-secondary"
                       />
                     </td>
@@ -383,7 +405,7 @@ export default function ExpensePage() {
                             event.target.value
                           )
                         }
-                        placeholder="បញ្ចូលការពិពណ៌នា"
+                        placeholder={row.category ? "" : "បញ្ចូលការពិពណ៌នា"}
                         className="h-10 w-full rounded-md border border-border px-3 text-sm outline-none transition placeholder:text-text-secondary focus:border-secondary"
                       />
                     </td>
@@ -392,7 +414,7 @@ export default function ExpensePage() {
                     <td className="px-1">
                       <QuantityInput
                         value={row.quantity}
-                        min={0}
+                        min={1}
                         onChange={(value) =>
                           updateRow(
                             row.id,
@@ -404,54 +426,40 @@ export default function ExpensePage() {
                     </td>
 
                     {/* Editable riel */}
-                    <td className="px-1">
-                      <div className="relative">
+                    <td className="px-3">
+                      <div className={`mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(row.unitPriceRiel)}`}>
                         <input
-                          type="number"
-                          min="0"
-                          step="1"
+                          type="text"
+                          inputMode="numeric"
                           value={
                             row.unitPriceRiel
                           }
-                          onChange={(
-                            event
-                          ) =>
+                          onChange={(event) =>
                             updateRow(
                               row.id,
                               "unitPriceRiel",
-                              event.target
-                                .value
+                              sanitizeInteger(event.target.value)
                             )
                           }
-                          placeholder="0"
-                          className="
-                            h-10
-                            w-full
-                            rounded-md
-                            border
-                            border-border
-                            px-3
-                            pr-9
-                            text-sm
-                            outline-none
-                            transition
-                            placeholder:text-text-secondary
-                            focus:border-secondary
-                            [appearance:textfield]
-                            [&::-webkit-inner-spin-button]:appearance-none
-                            [&::-webkit-outer-spin-button]:appearance-none
-                          "
+                          onFocus={() =>
+                            handleAmountFocus(row.id, "unitPriceRiel", row.unitPriceRiel)
+                          }
+                          onBlur={() =>
+                            handleAmountBlur(row.id, "unitPriceRiel", "0")
+                          }
+                          placeholder={row.unitPriceRiel ? "" : "0"}
+                          className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500"
                         />
 
-                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-secondary">
+                        <span className="text-[13px] text-slate-500">
                           ៛
                         </span>
                       </div>
                     </td>
 
                     {/* Editable dollar */}
-                    <td className="px-1">
-                      <div className="relative">
+                    <td className="px-3">
+                      <div className={`mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(row.unitPriceDollar)}`}>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -473,29 +481,30 @@ export default function ExpensePage() {
                               value
                             );
                           }}
-                          placeholder="0.00"
-                          className="h-10 w-full rounded-md border border-border px-3 pr-9 text-sm outline-none transition placeholder:text-text-secondary focus:border-secondary"
+                          onFocus={() =>
+                            handleAmountFocus(row.id, "unitPriceDollar", row.unitPriceDollar)
+                          }
+                          onBlur={() =>
+                            handleAmountBlur(row.id, "unitPriceDollar", "0.00")
+                          }
+                          placeholder={row.unitPriceDollar ? "" : "0.00"}
+                          className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500"
                         />
 
-                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-secondary">
+                        <span className="text-[13px] text-slate-500">
                           $
                         </span>
                       </div>
                     </td>
 
                     {/* Combined row total */}
-                    <td className="px-1">
-                      <div className="relative">
-                        <input
-                          type="text"
-                          readOnly
-                          value={formatDollar(
-                            row.totalDollar
-                          )}
-                          className="h-10 w-full cursor-default rounded-md border border-border bg-bg-page-gray px-3 pr-9 text-sm outline-none"
-                        />
+                    <td className="px-3">
+                      <div className="mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border border-[#65686b] bg-[#e5e7eb] px-2 text-[13px] text-slate-600">
+                        <span className="min-w-0 flex-1 text-left">
+                          {formatDollar(row.totalDollar)}
+                        </span>
 
-                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-secondary">
+                        <span>
                           $
                         </span>
                       </div>
@@ -589,7 +598,7 @@ export default function ExpensePage() {
         {/* Actions */}
         <div className="mt-5 flex justify-between">
           <Link
-            href={`/activity/${id}`}
+            href={id ? `/activity/create?edit=${id}` : "/activity/create"}
             className="flex h-10 w-32 items-center justify-center rounded-lg border border-border bg-white text-sm font-semibold text-text-secondary"
           >
             បោះបង់

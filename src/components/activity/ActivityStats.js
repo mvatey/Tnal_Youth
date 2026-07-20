@@ -1,14 +1,15 @@
 import {
   CalendarDays,
-  Clock,
   CheckCircle,
   Activity,
+  RefreshCcw,
 } from "lucide-react";
 
-const stats = [
+function getStats(activities) {
+  return [
   {
     label: "កម្មវិធីសរុប",
-    value: 28,
+    value: activities.length,
     icon: Activity,
     accent: "bg-primary",
     iconBg: "bg-primary-light",
@@ -16,7 +17,7 @@ const stats = [
   },
   {
     label: "កម្មវិធីបន្ទាប់",
-    value: 9,
+    value: activities.filter((item) => item.status === "upcoming").length,
     icon: CalendarDays,
     accent: "bg-secondary-hover",
     iconBg: "bg-secondary-light",
@@ -24,21 +25,22 @@ const stats = [
   },
   {
     label: "កំពុងដំណើរការ",
-    value: 3,
-    icon: Clock,
+    value: activities.filter((item) => item.status === "ongoing").length,
+    icon: RefreshCcw,
     accent: "bg-warning",
     iconBg: "bg-warning-bg",
     iconColor: "text-warning",
   },
   {
     label: "បានបញ្ចប់",
-    value: 16,
+    value: activities.filter((item) => item.status === "completed").length,
     icon: CheckCircle,
     accent: "bg-success",
     iconBg: "bg-success-bg",
     iconColor: "text-success",
   },
-];
+  ];
+}
 
 
 function StatCard({
@@ -97,7 +99,9 @@ function StatCard({
 }
 
 
-export default function ActivityStats() {
+export default function ActivityStats({ activities = [] }) {
+  const stats = getStats(activities);
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((item) => (

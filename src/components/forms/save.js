@@ -1,12 +1,14 @@
 "use client";
 
 import { CloudDownload } from "lucide-react";
+import { RiDownloadCloud2Line } from "react-icons/ri";
 
-export default function SaveButton({ onClick }) {
+export default function SaveButton({ onClick, ...buttonProps }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      {...buttonProps}
       className="
         flex items-center justify-center gap-2 px-3
         h-[34px] w-[110px]
@@ -18,12 +20,7 @@ export default function SaveButton({ onClick }) {
         transition-all
       "
     >
-      <CloudDownload
-        className="
-          h-4 w-4 shrink-0
-          stroke-[2]
-        "
-      />
+      <CloudDownload className="h-5 w-5 shrink-0" />
 
       <span
         className="

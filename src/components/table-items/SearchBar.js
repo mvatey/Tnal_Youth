@@ -22,7 +22,7 @@ export default function SearchBar({
         <input
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
-          placeholder={placeholder}
+          placeholder={value ? "" : placeholder}
           className="w-full flex-1 bg-transparent pr-2 text-[12px] font-medium outline-none"
         />
 

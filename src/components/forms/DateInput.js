@@ -21,7 +21,7 @@ export default function DateInput({
         <DatePicker
           selected={value}
           onChange={onChange}
-          placeholderText={placeholder}
+          placeholderText={value ? "" : placeholder}
           dateFormat="dd/MM/yyyy"
           className="
             h-11 w-full rounded-lg border border-border

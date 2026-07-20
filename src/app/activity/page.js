@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { List, PlusCircle } from "lucide-react";
-import { RiDownloadCloud2Line } from "react-icons/ri";
 
 import SearchBar from "@/components/table-items/SearchBar";
-import Button from "@/components/table-items/Button";
 import FilterBar from "@/components/table-items/FilterBar";
 import Table from "@/components/table-items/Table";
 import ActivityStats from "@/components/activity/ActivityStats";
+import SaveButton from "@/components/forms/save";
+import SaveFile from "@/components/forms/savefile";
 
 import { useBranch } from "@/context/BranchContext";
 import activities from "@/data/activity.json";
@@ -81,6 +81,19 @@ export default function ActivityPage() {
 
   const [selectedDate, setSelectedDate] =
     useState(null);
+
+  const [showSaveFile, setShowSaveFile] =
+    useState(false);
+
+  useEffect(() => {
+    if (!showSaveFile) return undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      setShowSaveFile(false);
+    }, 3000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [showSaveFile]);
 
   const filteredActivities = useMemo(() => {
     const query = searchQuery
@@ -238,18 +251,18 @@ export default function ActivityPage() {
 
   const filters = [
     {
-      key: "sector",
-      value: selectedSector,
-      onChange: setSelectedSector,
-      placeholder: "វិស័យ",
-      options: sectors,
-    },
-    {
       key: "type",
       value: selectedType,
       onChange: setSelectedType,
       placeholder: "ប្រភេទ",
       options: types,
+    },
+    {
+      key: "sector",
+      value: selectedSector,
+      onChange: setSelectedSector,
+      placeholder: "វិស័យ",
+      options: sectors,
     },
     {
       key: "branch",
@@ -269,7 +282,7 @@ export default function ActivityPage() {
 
   return (
     <div className="space-y-5">
-      <ActivityStats />
+      <ActivityStats activities={filteredActivities} />
 
       <section className="rounded-xl border border-border bg-white p-4">
         <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -287,16 +300,27 @@ export default function ActivityPage() {
   </div>
 
   <div className="ml-auto flex shrink-0 items-center gap-3">
-    <Button
-      icon={RiDownloadCloud2Line}
-      variant="primary"
-    >
-      ទាញយក
-    </Button>
+    <div className="relative">
+      <SaveButton
+        onClick={() => setShowSaveFile((isOpen) => !isOpen)}
+        aria-expanded={showSaveFile}
+        aria-controls="activity-save-file"
+      />
+
+      {showSaveFile && (
+        <div
+          id="activity-save-file"
+          role="alert"
+          className="absolute right-0 top-full z-50 mt-3"
+        >
+          <SaveFile />
+        </div>
+      )}
+    </div>
 
     <Link
       href="/activity/create"
-      className="flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-success px-4 text-sm font-semibold text-white"
+      className="flex h-[34px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-success px-4 text-sm font-semibold text-white"
     >
       <PlusCircle size={16} />
       បង្កើតកម្មវិធីថ្មី

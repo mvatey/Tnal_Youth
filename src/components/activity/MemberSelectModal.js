@@ -97,7 +97,7 @@ export default function MemberSelectModal({ onClose }) {
       <div className="w-full max-w-5xl rounded-xl bg-white p-5 shadow-xl">
         <div className="mb-4 flex items-center gap-3">
           <div className="relative flex-1">
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ស្វែងរកសមាជិក..." className="h-10 w-full rounded-lg border border-border bg-white pl-4 pr-10 text-sm outline-none" />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={query ? "" : "ស្វែងរកសមាជិក..."} className="h-10 w-full rounded-lg border border-border bg-white pl-4 pr-10 text-sm outline-none" />
             <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary" />
           </div>
 

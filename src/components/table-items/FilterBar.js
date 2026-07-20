@@ -21,7 +21,7 @@ function FilterInput({
         <DatePicker
           selected={value}
           onChange={(date) => onChange?.(date)}
-          placeholderText="ថ្ងៃ/ខែ/ឆ្នាំ"
+          placeholderText={value ? "" : "ថ្ងៃ/ខែ/ឆ្នាំ"}
           dateFormat="dd/MM/yyyy"
           isClearable
           className="h-[34px] w-full rounded-lg border border-border bg-white px-3 pr-14 text-[12px] text-text-primary outline-none"
@@ -40,7 +40,7 @@ function FilterInput({
 
       <select value={value} onChange={(e) => onChange?.(e.target.value)} className="h-[34px] min-w-[130px] appearance-none rounded-lg border border-border bg-white px-3 pr-9 text-[12px] font-medium text-text-primary outline-none">
 
-        <option value="all">
+        <option value="all" hidden={value !== "all"}>
           {placeholder}
         </option>
 

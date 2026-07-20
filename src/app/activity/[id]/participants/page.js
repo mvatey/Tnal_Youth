@@ -165,7 +165,7 @@ export default function ActivityParticipantsPage({ params }) {
         <SearchBar
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder="ស្វែងរកសមាជិក..."
+          placeholder={searchQuery ? "" : "ស្វែងរកសមាជិក..."}
           width="w-[300px]"
         />
 
