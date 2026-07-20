@@ -167,6 +167,7 @@ export default function DonutChart() {
 
   return (
     <div
+      className="app-card"
       style={{
         background: "#FFFFFF",
         borderRadius: 14,
@@ -214,12 +215,16 @@ export default function DonutChart() {
                   </linearGradient>
                 </defs>
                 <Pie
+                  key={`${month}-${isLoading ? "loading" : "loaded"}`}
                   data={chartData}
                   dataKey="value"
                   innerRadius={DONUT_INNER_RADIUS}
                   outerRadius={DONUT_OUTER_RADIUS}
                   paddingAngle={2}
                   isAnimationActive={!isLoading}
+                  animationBegin={100}
+                  animationDuration={1000}
+                  animationEasing="ease-out"
                 >
                   {chartData.map((entry) => (
                     <Cell

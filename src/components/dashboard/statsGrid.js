@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  UserGroupIcon,
-  BuildingOffice2Icon,
-  DocumentCheckIcon,
-} from "@heroicons/react/24/solid";
-import { FaHandHoldingHeart } from "react-icons/fa6";
+  FaBuilding,
+  FaClipboardCheck,
+  FaHandHoldingHeart,
+  FaUsers,
+} from "react-icons/fa6";
 import dashboardSummary from "@/data/dashboard/cardSummary.json";
 
 // ---- DATA LAYER ----
@@ -22,7 +22,7 @@ const CARD_CONFIG = [
   {
     key: "total_members",
     label: "សមាជិកសរុប",
-    icon: UserGroupIcon,
+    icon: FaUsers,
     accent: "bg-secondary-hover",
     iconBg: "bg-secondary-light",
     iconColor: "text-secondary-hover",
@@ -31,7 +31,7 @@ const CARD_CONFIG = [
   {
     key: "total_branches",
     label: "សាខាសរុប",
-    icon: BuildingOffice2Icon,
+    icon: FaBuilding,
     accent: "bg-primary",
     iconBg: "bg-primary-light",
     iconColor: "text-primary",
@@ -40,7 +40,7 @@ const CARD_CONFIG = [
   {
     key: "total_activities",
     label: "កម្មវិធីសរុប",
-    icon: DocumentCheckIcon,
+    icon: FaClipboardCheck,
     accent: "bg-success",
     iconBg: "bg-success-bg",
     iconColor: "text-success",
@@ -77,7 +77,7 @@ function SummaryCard({ label, icon: Icon, accent, iconBg, iconColor, value, chan
   const isUp = changePercent >= 0;
 
   return (
-    <div className="relative bg-bg-page-white border border-border rounded-xl overflow-hidden">
+    <div className="app-card relative bg-bg-page-white border border-border rounded-xl overflow-hidden">
       {/* Thin full-width accent bar across the top edge */}
       <div className={`h-[3px] w-full ${accent}`} />
 

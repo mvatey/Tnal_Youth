@@ -238,7 +238,7 @@ export default function ParticipationPage() {
       </div>
 
       {/* Table Card */}
-      <div className="bg-white rounded-xl p-5 shadow-sm">
+      <div className="app-card bg-white rounded-xl p-5 shadow-sm">
         <DataTable
           columns={columns}
           data={paginated}

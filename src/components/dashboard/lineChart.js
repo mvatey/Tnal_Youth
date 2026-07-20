@@ -146,6 +146,7 @@ export default function ParticipationChart() {
 
   return (
     <div
+      className="app-card"
       style={{
         // Fills the full width/height of whatever grid cell it's placed
         // in (matches DonutChart's root sizing so both cards stretch
