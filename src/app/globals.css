@@ -105,3 +105,18 @@ input[type="date"] {
   -webkit-appearance: none;
   appearance: none;
 }
+/* Remove blue text selection inside date input */
+input[type="date"] {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Hide text cursor */
+input[type="date"]::-webkit-datetime-edit {
+  user-select: none;
+}
+
+/* Remove focus outline */
+input[type="date"]:focus {
+  outline: none;
+}

@@ -3,57 +3,45 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { UploadCloud } from "lucide-react";
+
 import SaveButton from "@/components/forms/SaveButton";
 import BoxFill from "@/components/forms/boxFill.js";
 import SelectArrow from "@/components/forms/SelectArrow";
-import members from "@/data/members.json";
+import FormDate from "@/components/forms/FormDate.js";
 
-const EMPTY_FORM = {
-  nameKh: "",
-  nameEn: "",
-  branch: "",
-  gender: "",
-  email: "",
-  phone: "",
-  nationality: "",
-  ethnicity: "",
-};
+import members from "@/data/members.json";
 
 export default function PersonalPage() {
   const { id } = useParams();
+
   const fileRef = useRef(null);
 
+  const [member, setMember] = useState(null);
+
   const [fileName, setFileName] = useState("");
-  const [form, setForm] = useState(EMPTY_FORM);
 
   const branchOptions = useMemo(() => {
-    return [...new Set(members.map((member) => member.branch).filter(Boolean))];
+    return [...new Set(members.map((item) => item.branch).filter(Boolean))];
   }, []);
 
   useEffect(() => {
     const selectedMember = members.find(
-      (member) => String(member.id) === String(id),
+      (item) => String(item.id) === String(id),
     );
 
     if (!selectedMember) {
-      setForm(EMPTY_FORM);
+      setMember(null);
+
       return;
     }
 
-    setForm({
-      nameKh: selectedMember.name_kh || "",
-      nameEn: selectedMember.name_en || "",
-      branch: selectedMember.branch || "",
-      gender: selectedMember.gender || "",
-      email: selectedMember.email || "",
-      phone: selectedMember.phone || "",
-      nationality: selectedMember.nationality || "",
-      ethnicity: selectedMember.ethnicity || "",
+    setMember({
+      ...selectedMember,
     });
   }, [id]);
 
   const handleChange = (field) => (event) => {
-    setForm((previous) => ({
+    setMember((previous) => ({
       ...previous,
       [field]: event.target.value,
     }));
@@ -66,7 +54,9 @@ export default function PersonalPage() {
 
     if (file.size > 5 * 1024 * 1024) {
       alert("ទំហំឯកសារមិនត្រូវលើស 5MB");
+
       event.target.value = "";
+
       return;
     }
 
@@ -75,11 +65,21 @@ export default function PersonalPage() {
 
   const handleSave = () => {
     console.log("Member ID:", id);
-    console.log("Updated data:", form);
-    console.log("Selected CV:", fileRef.current?.files?.[0] || null);
+
+    console.log("Updated member:", member);
+
+    console.log("CV:", fileRef.current?.files?.[0] || null);
 
     alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
   };
+
+  if (!member) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6">
+        <p className="text-sm text-red-500">រកមិនឃើញព័ត៌មានសមាជិក</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -87,75 +87,78 @@ export default function PersonalPage() {
         <h2 className="text-lg font-bold text-primary">ព័ត៌មានផ្ទាល់ខ្លួន</h2>
 
         <div className="mt-6 grid grid-cols-3 gap-6">
+          {/* FORM */}
+
           <div className="col-span-2 grid grid-cols-2 gap-5">
             <BoxFill
               label="ឈ្មោះជាភាសាខ្មែរ"
-              name="nameKh"
-              value={form.nameKh}
-              onChange={handleChange("nameKh")}
-              placeholder={form.nameKh ? "" : "បញ្ចូលឈ្មោះជាភាសាខ្មែរ"}
+              value={member.name_kh || ""}
+              onChange={handleChange("name_kh")}
+              placeholder={member.name_kh ? "" : "បញ្ចូលឈ្មោះជាភាសាខ្មែរ"}
             />
 
             <BoxFill
               label="ឈ្មោះជាអក្សរឡាតាំង"
-              name="nameEn"
-              value={form.nameEn}
-              onChange={handleChange("nameEn")}
-              placeholder={form.nameEn ? "" : "បញ្ចូលឈ្មោះជាអក្សរឡាតាំង"}
+              value={member.name_en || ""}
+              onChange={handleChange("name_en")}
+              placeholder={member.name_en ? "" : "បញ្ចូលឈ្មោះជាអក្សរឡាតាំង"}
             />
 
             <FormSelect
               label="សាខា"
-              name="branch"
-              value={form.branch}
+              value={member.branch || ""}
               onChange={handleChange("branch")}
-              placeholder={form.branch ? "" : "ជ្រើសរើសសាខា"}
+              placeholder="ជ្រើសរើសសាខា"
               options={branchOptions}
             />
 
             <FormSelect
               label="ភេទ"
-              name="gender"
-              value={form.gender}
+              value={member.gender || ""}
               onChange={handleChange("gender")}
-              placeholder={form.gender ? "" : "ជ្រើសរើសភេទ"}
+              placeholder="ជ្រើសរើសភេទ"
               options={["ប្រុស", "ស្រី"]}
             />
 
             <BoxFill
               label="អ៊ីមែល"
               type="email"
-              name="email"
-              value={form.email}
+              value={member.email || ""}
               onChange={handleChange("email")}
-              placeholder={form.email ? "" : "បញ្ចូលអ៊ីមែល"}
+              placeholder={member.email ? "" : "បញ្ចូលអ៊ីមែល"}
             />
 
             <BoxFill
               label="លេខទូរស័ព្ទ"
               type="tel"
-              name="phone"
-              value={form.phone}
+              value={member.phone || ""}
               onChange={handleChange("phone")}
-              placeholder={form.phone ? "" : "បញ្ចូលលេខទូរស័ព្ទ"}
+              placeholder={member.phone ? "" : "បញ្ចូលលេខទូរស័ព្ទ"}
+            />
+
+            <FormDate
+              label="ថ្ងៃខែឆ្នាំកំណើត"
+              name="date_of_birth"
+              value={member.date_of_birth || ""}
+              onChange={handleChange("date_of_birth")}
             />
 
             <BoxFill
               label="សញ្ជាតិ"
-              name="nationality"
-              value={form.nationality}
+              value={member.nationality || ""}
               onChange={handleChange("nationality")}
-              placeholder={form.nationality ? "" : "បញ្ចូលសញ្ជាតិ"}
+              placeholder={member.nationality ? "" : "បញ្ចូលសញ្ជាតិ"}
             />
 
             <BoxFill
               label="ជនជាតិ"
-              name="ethnicity"
-              value={form.ethnicity}
+              value={member.ethnicity || ""}
               onChange={handleChange("ethnicity")}
-              placeholder={form.ethnicity ? "" : "បញ្ចូលជនជាតិ"}
+              placeholder={member.ethnicity ? "" : "បញ្ចូលជនជាតិ"}
             />
           </div>
+
+          {/* CV UPLOAD */}
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
@@ -204,18 +207,32 @@ export default function PersonalPage() {
   );
 }
 
-function FormSelect({ label, name, value, onChange, placeholder, options = [] }) {
+function FormSelect({
+  label,
+
+  value,
+
+  onChange,
+
+  placeholder,
+
+  options = [],
+}) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-semibold text-text-primary">{label}</label>
+      <label className="mb-2 block text-sm font-semibold text-text-primary">
+        {label}
+      </label>
 
       <div className="relative">
-        <select name={name} value={value} onChange={onChange} className="h-11 w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 pr-10 text-sm text-gray-600 outline-none focus:border-primary">
-          {placeholder && (
-            <option value="" disabled>
-              {placeholder}
-            </option>
-          )}
+        <select
+          value={value}
+          onChange={onChange}
+          className="h-11 w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 pr-10 text-sm text-gray-600 outline-none focus:border-primary"
+        >
+          <option value="" disabled>
+            {placeholder}
+          </option>
 
           {options.map((option) => (
             <option key={option} value={option}>

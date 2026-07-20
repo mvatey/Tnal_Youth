@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
+import FormSelect from "@/components/forms/FormSelect";
 
 import SaveButton from "@/components/forms/SaveButton.js";
 import BoxFill from "@/components/forms/boxFill.js";
 import FormDate from "@/components/forms/FormDate.js";
 import SelectArrow from "@/components/forms/SelectArrow";
+import DeleteButton from "@/components/forms/DeleteButton";
 import ButtonDropLink from "@/components/forms/ButtonDropLink";
 
 import locationData from "@/data/location.json";
@@ -253,60 +255,11 @@ function EducationGroup({
       </div>
 
       <div className="mt-6 flex justify-end">
-        <button
-          type="button"
-          disabled={!canDelete}
-          onClick={onDelete}
-          className={`inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white transition ${
-            canDelete
-              ? "hover:bg-red-700"
-              : "cursor-not-allowed opacity-60"
-          }`}
-        >
-          <Trash2 size={17} />
-          លុប
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function FormSelect({
-  label,
-  placeholder,
-  options = [],
-  value = "",
-  onChange,
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-semibold text-text-primary">
-        {label}
-      </label>
-
-      <div className="relative">
-        <select
-          value={value}
-          onChange={onChange}
-          className={`h-11 w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 pr-12 text-sm outline-none focus:border-primary ${
-            value
-              ? "text-text-primary"
-              : "text-gray-500"
-          }`}
-        >
-          <option value="" disabled>
-            {placeholder}
-          </option>
-
-          {options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-
-        <SelectArrow />
-      </div>
+  <DeleteButton
+    canDelete={canDelete}
+    onClick={onDelete}
+  />
+</div>
     </div>
   );
 }

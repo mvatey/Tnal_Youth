@@ -29,7 +29,81 @@
     "ទេសចរណ៍ និងបដិសណ្ឋារកិច្ច",
     "ផ្សេងៗ"
   ],
-
+  "languages": [
+    "ភាសាខ្មែរ",
+    "ភាសាអង់គ្លេស",
+    "ភាសាចិន",
+    "ភាសាថៃ",
+    "ភាសាវៀតណាម",
+    "ភាសាបារាំង",
+    "ភាសាជប៉ុន",
+    "ភាសាកូរ៉េ",
+    "ភាសាអាល្លឺម៉ង់",
+    "ភាសាអេស្ប៉ាញ",
+    "ផ្សេងៗ"
+  ],
+  "proficiencyLevels": [
+    "ខ្សោយ",
+    "មធ្យម",
+    "ល្អ",
+    "ល្អណាស់",
+    "ស្ទាត់ជំនាញ"
+  ],
+  "listeningLevels": [
+    "ខ្សោយ",
+    "មធ្យម",
+    "ល្អ",
+    "ល្អណាស់",
+    "ស្ទាត់ជំនាញ"
+  ],
+  "readingLevels": [
+    "ខ្សោយ",
+    "មធ្យម",
+    "ល្អ",
+    "ល្អណាស់",
+    "ស្ទាត់ជំនាញ"
+  ],
+  "speakingLevels": [
+    "ខ្សោយ",
+    "មធ្យម",
+    "ល្អ",
+    "ល្អណាស់",
+    "ស្ទាត់ជំនាញ"
+  ],
+  "writingLevels": [
+    "ខ្សោយ",
+    "មធ្យម",
+    "ល្អ",
+    "ល្អណាស់",
+    "ស្ទាត់ជំនាញ"
+  ],
+  "computerSkills": [
+    "Microsoft Word",
+    "Microsoft Excel",
+    "Microsoft PowerPoint",
+    "Microsoft Access",
+    "Google Docs",
+    "Google Sheets",
+    "Google Slides",
+    "Adobe Photoshop",
+    "Adobe Illustrator",
+    "Adobe Premiere Pro",
+    "Canva",
+    "AutoCAD",
+    "SketchUp",
+    "Figma",
+    "Visual Studio Code",
+    "កម្មវិធីគណនេយ្យ",
+    "កម្មវិធីគ្រប់គ្រងទិន្នន័យ",
+    "ផ្សេងៗ"
+  ],
+  "computerSkillLevels": [
+    "មូលដ្ឋាន",
+    "មធ្យម",
+    "ល្អ",
+    "ល្អណាស់",
+    "ជំនាញ"
+  ],
   "emptyEducation": {
     "school": "",
     "province": "",
@@ -38,5 +112,16 @@
     "documentLink": "",
     "startDate": "",
     "endDate": ""
+  },
+  "emptyLanguageSkill": {
+    "language": "",
+    "listening": "",
+    "reading": "",
+    "speaking": "",
+    "writing": ""
+  },
+  "emptyComputerSkill": {
+    "skill": "",
+    "level": ""
   }
 }
