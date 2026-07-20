@@ -1,13 +1,51 @@
-// app/api/auth/verify-otp/route.js
-import { verifyOtp, createResetToken } from "@/lib/auth";
+// src/app/api/auth/verify-otp/route.js
+
+const BACKEND_URL =
+  process.env.BACKEND_API_URL || "http://127.0.0.1:8081/api";
 
 export async function POST(req) {
-  const { phone, code } = await req.json();
+  try {
+    const body = await req.json();
 
-  if (!verifyOtp(phone, code)) {
-    return Response.json({ message: "លេខកូដមិនត្រឹមត្រូវ ឬហួសសម័យ" }, { status: 400 });
+    const phoneOrEmail =
+      body.phoneOrEmail ||
+      body.phone ||
+      body.email;
+
+    const otp =
+      body.otp ||
+      body.code;
+
+    const response = await fetch(
+      `${BACKEND_URL}/auth/verify-otp`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phoneOrEmail,
+          otp,
+        }),
+        cache: "no-store",
+      }
+    );
+
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : {};
+
+    return Response.json(data, {
+      status: response.status,
+    });
+  } catch (error) {
+    console.error("Verify OTP proxy error:", error);
+
+    return Response.json(
+      {
+        success: false,
+        message: "មិនអាចផ្ទៀងផ្ទាត់ OTP បានទេ",
+      },
+      { status: 500 }
+    );
   }
-
-  const resetToken = createResetToken(phone);
-  return Response.json({ resetToken });
 }

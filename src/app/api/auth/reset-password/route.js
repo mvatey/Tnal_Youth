@@ -1,11 +1,20 @@
 // src/app/api/auth/reset-password/route.js
 
 const BACKEND_URL =
-  process.env.BACKEND_API_URL || "http://localhost:8081/api";
+  process.env.BACKEND_API_URL || "http://127.0.0.1:8081/api";
 
 export async function POST(req) {
   try {
     const body = await req.json();
+
+    const phoneOrEmail =
+      body.phoneOrEmail ||
+      body.phone ||
+      body.email;
+
+    const otp =
+      body.otp ||
+      body.code;
 
     const response = await fetch(
       `${BACKEND_URL}/auth/reset-password`,
@@ -15,15 +24,16 @@ export async function POST(req) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          phoneOrEmail: body.phoneOrEmail,
-          otp: body.otp,
+          phoneOrEmail,
+          otp,
           newPassword: body.newPassword,
         }),
         cache: "no-store",
       }
     );
 
-    const data = await response.json().catch(() => ({}));
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : {};
 
     return Response.json(data, {
       status: response.status,
@@ -33,7 +43,8 @@ export async function POST(req) {
 
     return Response.json(
       {
-        message: "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ",
+        success: false,
+        message: "មិនអាចកំណត់លេខសម្ងាត់ថ្មីបានទេ",
       },
       { status: 500 }
     );
