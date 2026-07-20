@@ -1,3 +1,5 @@
+// src/app/api/auth/send-otp/route.js
+
 const BACKEND_URL =
   process.env.BACKEND_API_URL || "http://localhost:8081/api";
 
@@ -10,7 +12,8 @@ export async function POST(req) {
     if (!phoneOrEmail) {
       return Response.json(
         {
-          message: "សូមបញ្ចូលលេខទូរស័ព្ទ ឬ អ៊ីមែល",
+          success: false,
+          message: "សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល",
         },
         { status: 400 }
       );

@@ -8,19 +8,34 @@ export async function POST(req) {
   try {
     const body = await req.json();
 
+    const phoneOrEmail =
+      body.phoneOrEmail ||
+      body.phone ||
+      body.email;
+
+    if (!phoneOrEmail || !body.password) {
+      return Response.json(
+        {
+          message: "សូមបញ្ចូលលេខទូរស័ព្ទ/អ៊ីមែល និងលេខសម្ងាត់",
+        },
+        { status: 400 }
+      );
+    }
+
     const response = await fetch(`${BACKEND_URL}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        phoneOrEmail: body.phone,
+        phoneOrEmail,
         password: body.password,
       }),
       cache: "no-store",
     });
 
-    const data = await response.json();
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : {};
 
     if (!response.ok) {
       return Response.json(
@@ -47,7 +62,9 @@ export async function POST(req) {
 
     if (!accessToken) {
       return Response.json(
-        { message: "Backend did not return an access token" },
+        {
+          message: "Backend did not return an access token",
+        },
         { status: 500 }
       );
     }
@@ -72,12 +89,16 @@ export async function POST(req) {
       });
     }
 
-    return Response.json(data);
+    return Response.json(data, {
+      status: response.status,
+    });
   } catch (error) {
     console.error("Login proxy error:", error);
 
     return Response.json(
-      { message: "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ" },
+      {
+        message: "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ",
+      },
       { status: 500 }
     );
   }
