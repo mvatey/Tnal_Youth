@@ -1,7 +1,5 @@
 import Image from "next/image";
-
 import { gallery } from "./data";
-
 export default function Gallery() {
   return (
     <section
@@ -11,7 +9,6 @@ export default function Gallery() {
       "
     >
       {/* Title */}
-
       <h2
         className="
         mt-10
@@ -22,7 +19,6 @@ export default function Gallery() {
       >
         សកម្មភាពសប្បុរសធម៍របស់យើង
       </h2>
-
       <p
         className="
         mt-2
@@ -32,9 +28,7 @@ export default function Gallery() {
       >
         រូបភាពខ្លះៗពីការចុះជួយសហគមន៍
       </p>
-
       {/* Images */}
-
       <div
         className="
         mt-8

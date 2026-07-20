@@ -1,18 +1,16 @@
 import Image from "next/image";
-
 import {
-  MapPin,
-  Phone,
-  Mail
-} from "lucide-react";
-
-
+  FaEnvelope,
+  FaFacebookF,
+  FaLocationDot,
+  FaPhone,
+  FaTelegram,
+  FaYoutube,
+} from "react-icons/fa6";
 
 export default function Footer(){
 
-
 return (
-
 <footer
 className="
 bg-[#171d52]
@@ -21,10 +19,7 @@ py-10
 text-white
 "
 >
-
-
 {/* TOP FOOTER */}
-
 <div
 className="
 grid
@@ -32,14 +27,8 @@ grid-cols-[3fr_1fr_1fr_1fr]
 gap-6
 "
 >
-
-
-
 {/* Logo Section */}
-
 <div>
-
-
 <div
 className="
 flex
@@ -47,43 +36,22 @@ items-center
 gap-3
 "
 >
-
-
 <Image
-
 src="/logo.png"
-
 width={45}
-
 height={45}
-
 alt="logo"
-
 className="rounded-full"
-
 />
-
-
-
 <h3
 className="
 text-sm
 font-bold
 "
 >
-
 សមាគមយុវជន
-
 </h3>
-
-
-
 </div>
-
-
-
-
-
 <p
 className="
 mt-5
@@ -93,18 +61,10 @@ leading-6
 text-gray-400
 "
 >
-
 ជួយអភិវឌ្ឍសង្គម និងសហគមន៍
 តាមរយៈសកម្មភាពស្ម័គ្រចិត្ត
-
 </p>
-
-
-
-
-
 {/* Social */}
-
 <div
 className="
 mt-5
@@ -112,8 +72,6 @@ flex
 gap-3
 "
 >
-
-
 <div
 className="
 flex
@@ -126,11 +84,8 @@ bg-white/10
 text-sm
 "
 >
-f
+<FaFacebookF aria-label="Facebook" />
 </div>
-
-
-
 <div
 className="
 flex
@@ -143,11 +98,8 @@ bg-white/10
 text-sm
 "
 >
-◎
+<FaTelegram aria-label="Telegram" />
 </div>
-
-
-
 <div
 className="
 flex
@@ -160,39 +112,20 @@ bg-white/10
 text-sm
 "
 >
-▶
+<FaYoutube aria-label="YouTube" />
 </div>
-
-
-
 </div>
-
-
 </div>
-
-
-
-
-
-
-
-
 {/* Menu */}
-
 <div>
-
-
 <h3
 className="
 text-sm
 font-semibold
 "
 >
-ម៉ឺនុយ
+ការរុករក
 </h3>
-
-
-
 <div
 className="
 mt-5
@@ -201,118 +134,44 @@ text-xs
 text-gray-400
 "
 >
-
-<p>
-ទំព័រដើម
-</p>
-
-
-<p>
-កម្មវិធី
-</p>
-
-
-<p>
-សកម្មភាព
-</p>
-
-
-<p>
-អំពីយើង
-</p>
-
-
+<p>ទំព័រដើម</p>
+<p>លក្ខណៈពិសេស</p>
+<p>ទំនាក់ទំនង</p>
+<p>គោលការណ៍ឯកជន</p>
 </div>
-
-
-
 </div>
-
-
-
-
-
-
-
-
-
 {/* Information */}
-
 <div>
-
-
 <h3
 className="
 text-sm
 font-semibold
 "
 >
-
-ព័ត៌មាន
-
+ជំនួយ
 </h3>
-
-
-
-
 <div
 className="
 mt-5
 space-y-3
 text-xs
 text-gray-400
-"
->
-
-
-<p>
-ព័ត៌មានថ្មីៗ
-</p>
-
-
-<p>
-សកម្មភាពសង្គម
-</p>
-
-
-<p>
-ព្រឹត្តិការណ៍
-</p>
-
-
+">
+<p>មជ្ឈមណ្ឌលជំនួយ</p>
+<p>ឯកសារបច្ចេកទេស</p>
+<p>ទំនាក់ទំនងក្រុម</p>
 </div>
-
-
 </div>
-
-
-
-
-
-
-
-
-
 {/* Contact */}
-
 <div>
-
-
 <h3
 className="
 text-sm
 font-semibold
 "
 >
-
 ទំនាក់ទំនង
-
 </h3>
-
-
-
-
-
 <div
 className="
 mt-5
@@ -321,9 +180,6 @@ text-xs
 text-gray-400
 "
 >
-
-
-
 <div
 className="
 flex
@@ -331,19 +187,11 @@ items-center
 gap-3
 "
 >
-
-<MapPin size={15}/>
-
+<FaLocationDot size={15} className="text-white" />
 <span>
 ភ្នំពេញ, កម្ពុជា
 </span>
-
 </div>
-
-
-
-
-
 <div
 className="
 flex
@@ -351,19 +199,11 @@ items-center
 gap-3
 "
 >
-
-<Phone size={15}/>
-
+<FaPhone size={15} className="text-white" />
 <span>
 +855 12 345 678
 </span>
-
 </div>
-
-
-
-
-
 <div
 className="
 flex
@@ -371,38 +211,15 @@ items-center
 gap-3
 "
 >
-
-<Mail size={15}/>
-
+<FaEnvelope size={15} className="text-white" />
 <span>
 info@cny.org.kh
 </span>
-
 </div>
-
-
-
 </div>
-
-
-
 </div>
-
-
-
-
 </div>
-
-
-
-
-
-
-
-
-
 {/* Bottom */}
-
 <div
 className="
 mt-8
@@ -416,48 +233,21 @@ text-xs
 text-gray-400
 "
 >
-
-
 <p>
-© 2026 សមាគមយុវជន
+© 2026 សមាគមថ្នាលយុវជនកម្ពុជា
 </p>
-
-
-
 <div
 className="
 flex
 gap-8
 "
 >
-
-<span>
-គោលការណ៍ឯកជនភាព
-</span>
-
-
-<span>
-លក្ខខណ្ឌប្រើប្រាស់
-</span>
-
-
-<span>
-ជំនួយ
-</span>
-
-
+<span>លក្ខខណ្ឌប្រើប្រាស់</span>
+<span>គោលការណ៍ឯកជនភាព</span>
+<span>ជំនួយ</span>
 </div>
-
-
-
 </div>
-
-
-
-
-
 </footer>
-
 
 )
 

@@ -1,225 +1,127 @@
 export const gallery = [
 
 {
-image:"/Charity work 1 (1).png"
+image:"/Event 6.png"
 },
 
 {
-image:"/Charity work 1.png"
+image:"/Event 8.png"
 },
 
 {
-image:"/Charity work 2 (1).png"
+image:"/Event 4 .png"
 },
 
 {
-image:"/Charity work 2.png"
-}
-
+image:"/event 10.png"
+},
 ];
-
-
-
-
 
 export const activities = [
 
 {
 id:0,
 
-image:"/Event 4 (1).png",
-
-title:"កម្មវិធីចែកអំណោយ",
-
-date:"Feb 16, 2026",
-
+image:"/Event 1.png",
+title:"កម្មវិធីអភិវឌ្ឍសហគមន៍",
+date:"Feb 14, 2026 |",
 time:"8:00 AM",
-
-location:"ភ្នំពេញ",
-
-description:
-"សកម្មភាពចែកអំណោយជួយដល់ប្រជាពលរដ្ឋ និងសហគមន៍ដែលមានតម្រូវការ។"
+location:"ខេត្ត កណ្ដាល",
+description:"ការចុះសួរសុខទុក្ខ និង ចែកអំណោយជូនពលរដ្ឋ។"
 
 },
-
-
 
 {
 id:1,
-
-image:"/Event 4 (2).png",
-
-title:"សកម្មភាពយុវជន",
-
-date:"Mar 10, 2026",
-
+image:"/Event 2.png",
+title:"សួរសុខទុក្ខចាស់ជរា",
+date:"Mar 10, 2026 |",
 time:"9:30 AM",
-
-location:"សៀមរាប",
-
-description:
-"ការចូលរួមរបស់យុវជនក្នុងការអភិវឌ្ឍសង្គម។"
+location:"ស្រុក បាទី",
+description:"ការអភិវឌ្ឍសម្ថភាពតាមរយៈសកម្មភាពសង្គម។"
 
 },
-
-
 
 {
 id:2,
-
-image:"/Event 4 (3).png",
-
-title:"កម្មវិធីសង្គម",
-
-date:"Apr 05, 2026",
-
+image:"/Event 3.png",
+title:"ជំនួបសំណេះសំណាល",
+date:"Apr 05, 2026 |",
 time:"7:00 AM",
-
-location:"ភ្នំពេញ",
-
-description:
-"កម្មវិធីសង្គមសម្រាប់ការចូលរួមរបស់សហគមន៍។"
+location:"ក្រុង កំពត",
+description:"ការអភិវឌ្ឍសម្ថភាពតាមរយៈសកម្មភាពសង្គម។"
 
 },
-
-
 
 {
 id:3,
-
-image:"/Event 4 (4).png",
-
-title:"សកម្មភាពស្ម័គ្រចិត្ត",
-
-date:"May 20, 2026",
-
+image:"/Event 4.png",
+title:"អំណោយមនុស្សធម៌",
+date:"May 20, 2026 |",
 time:"2:00 PM",
-
-location:"កំពង់ចាម",
-
-description:
-"ការងារស្ម័គ្រចិត្តដើម្បីជួយសង្គម។"
-
+location:"ខេត្ត​ កែប",
+description:"ការអភិវឌ្ឍសម្ថភាពតាមរយៈសកម្មភាពសង្គម និងចែកអំណោយជូនពលរដ្ឋ។"
 },
-
-
 
 {
 id:4,
-
-image:"/Event 4.png",
-
+image:"/Event 5.png",
 title:"វគ្គបណ្តុះបណ្តាល",
-
-date:"Jun 12, 2026",
-
+date:"Jun 12, 2026 |",
 time:"8:30 AM",
-
-location:"ភ្នំពេញ",
-
-description:
-"វគ្គបណ្តុះបណ្តាលសម្រាប់សមាជិក និងយុវជន។"
-
+location:"ក្រុង ដូនពេញ",
+description:"វគ្គបណ្តុះបណ្តាលសម្រាប់សមាជិក និងយុវជន។"
 },
-
-
 
 {
 id:5,
-
-image:"/Event 4 (5).png",
-
-title:"កម្មវិធីជួបជុំសហគមន៍",
-
-date:"Jul 08, 2026",
-
+image:"/Event 6.png",
+title:"សួរសុខទុក្ខអ្នកជំងឺ",
+date:"Jul 08, 2026 |",
 time:"4:00 PM",
-
-location:"ក្រចេះ",
-
-description:
-"ការជួបជុំសហគមន៍ដើម្បីពិភាក្សា និងចែករំលែកបទពិសោធន៍។"
-
+location:"ស្រុក ពាម",
+description:"ការចុះសួរសុខទុក្ខ និងផ្តល់អំណោយដល់អ្នកជំងឺ។"
 },
-
-
 
 {
 id:6,
-
-image:"/Event 4 (6).png",
-
-title:"ការចុះសួរសុខទុក្ខ",
-
-date:"Aug 22, 2026",
-
+image:"/Event 7.png",
+title:"យុទ្ធនាការចុះភូមិ",
+date:"Aug 22, 2026 |",
 time:"1:30 PM",
-
-location:"កំពង់ធំ",
-
-description:
-"សកម្មភាពចុះសួរសុខទុក្ខ និងផ្តល់ការគាំទ្រដល់ប្រជាពលរដ្ឋ។"
-
+location:"ស្រុក រមាស",
+description:"សកម្មភាពចុះសួរសុខទុក្ខ និងផ្តល់ការគាំទ្រដល់ប្រជាពលរដ្ឋ។"
 },
-
-
 
 {
 id:7,
-
-image:"/Event 4 (7).png",
-
-title:"កិច្ចសហការយុវជន",
-
-date:"Sep 15, 2026",
-
+image:"/Event 8.png",
+title:"សួរសុខទុក្ខកងទ័ព",
+date:"Sep 15, 2026 |",
 time:"9:00 AM",
-
-location:"បាត់ដំបង",
-
-description:
-"កិច្ចសហការរបស់យុវជនក្នុងការរៀបចំសកម្មភាពជួយសង្គម។"
+location:"ខេត្ត ព្រះវិហារ",
+description:"ការចុះសួរសុខទុក្ខ និងផ្ដល់ជាអំណោយទៅដល់វីរៈកងទ័ពជួរមុខ។"
 
 },
-
-
 
 {
 id:8,
-
-image:"/Event 4 (8).png",
-
-title:"កម្មវិធីអប់រំសង្គម",
-
-date:"Oct 10, 2026",
-
+image:"/Event 9.png",
+title:"ទស្សនកិច្ចសន្យា",
+date:"Oct 10, 2026 |",
 time:"8:00 AM",
-
-location:"សៀមរាប",
-
-description:
-"កម្មវិធីអប់រំ និងផ្សព្វផ្សាយចំណេះដឹងសម្រាប់សហគមន៍។"
-
+location:"ខេត្ត សៀមរាប",
+description:"ការទស្សនកិច្ចសន្យា និងពិភាក្សាអំពីការអភិវឌ្ឍសហគមន៍។"
 },
-
-
 
 {
 id:9,
-
-image:"/meeting.jpg",
-
-title:"កិច្ចប្រជុំសមាជិក",
-
-date:"Nov 01, 2026",
-
+image:"/event 10.png",
+title:"កម្មវិធីកម្សាន្ត",
+date:"Nov 01, 2026 |",
 time:"3:00 PM",
-
-location:"ភ្នំពេញ",
-
-description:
-"កិច្ចប្រជុំសមាជិកដើម្បីរៀបចំផែនការ និងពង្រឹងការងារសហគមន៍។"
-
+location:"ស្រុក​ ស្គន់",
+description:"ការលែងល្បែងប្រជាប្រិយខ្មែរដែលជាការលែងកម្សាន្តជាមួយក្រុមការងារ​។ "
 }
 
 
