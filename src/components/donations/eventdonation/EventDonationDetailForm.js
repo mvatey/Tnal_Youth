@@ -191,7 +191,6 @@ export default function EventDonationDetailForm({ initialQuery = {} }) {
     }
 
     setSavedMessage("បានរក្សាទុកវិក្កយបត្រដោយជោគជ័យ");
-    setShowSaveAlert(true);
   };
 
   return (

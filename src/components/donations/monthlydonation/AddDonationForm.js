@@ -178,7 +178,6 @@ export default function AddDonationForm() {
     }
 
     setSavedMessage("បានរក្សាទុកវិក្ក័យបត្រដោយជោគជ័យ");
-    setShowSaveAlert(true);
   };
 
   const handleCancel = () => {

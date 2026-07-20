@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { FileText, X } from "lucide-react";
 import donationOptions from "@/data/donation/donationOptions.json";
 
 const RECEIPT_ICON_COLOR = "#4B2E91";
@@ -54,11 +53,9 @@ export default function AddDonationTableRow({
   onDollarAmountChange,
   onPaymentMethodChange,
   onShowInfo,
-  onRemoveReceipt,
 }) {
   const [focusedAmountField, setFocusedAmountField] = useState(null);
   const receipt = member.receipt;
-  const hasReceiptImage = Boolean(receipt?.previewUrl);
 
   const handleAmountInput = (callback) => (e) => {
     const value = e.target.value.replace(/[^0-9.]/g, "");
@@ -172,41 +169,13 @@ export default function AddDonationTableRow({
             key={receipt?.previewUrl || "receipt-icon"}
             type="button"
             onClick={() => onShowInfo(member)}
-            className={`inline-flex items-center justify-center overflow-hidden rounded-md text-[#4B2E91] transition hover:bg-[#4B2E91]/10 ${
-              receipt
-                ? "h-8 w-11 border border-[#4B2E91]/20 bg-white"
-                : "h-7 w-7"
-            }`}
+            className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-md text-[#4B2E91] transition hover:bg-[#4B2E91]/10"
             aria-label="receipt"
             title={receipt?.name || "receipt"}
           >
-            {hasReceiptImage ? (
-              <img
-                key={receipt.previewUrl}
-                src={receipt.previewUrl}
-                alt={receipt.name || "Receipt"}
-                className="block h-full w-full object-cover"
-              />
-            ) : receipt ? (
-              <FileText size={18} strokeWidth={2.2} />
-            ) : (
-              <ReceiptIcon size={18} />
-            )}
+            <ReceiptIcon size={18} />
           </button>
 
-          {receipt && (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onRemoveReceipt?.(member.id);
-              }}
-              className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-[#EF4444] text-white shadow-sm transition hover:bg-[#DC2626]"
-              aria-label="Remove receipt"
-            >
-              <X size={10} strokeWidth={3} />
-            </button>
-          )}
         </div>
       </td>
     </tr>
