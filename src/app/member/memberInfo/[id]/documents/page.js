@@ -8,7 +8,7 @@ import LetterOfAppointment from "@/components/card/LetterOfAppointment";
 
 import users from "@/data/members.json";
 
-export default async function Page({ params }) {
+export default async function Document({ params }) {
   const { id } = await params;
 
   const user = users.find((item) => String(item.id) === String(id));
