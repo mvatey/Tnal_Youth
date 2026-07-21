@@ -79,24 +79,27 @@ export default function Sidebar({
     router.push("/login");
   }
 
-  function handleLogout() {
+async function handleLogout() {
+  try {
     setProfileOpen(false);
 
-    /*
-      Remove your real authentication data here.
+    const response = await fetch("/api/auth/logout", {
+      method: "POST",
+    });
 
-      Examples:
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      document.cookie = "token=; Max-Age=0; path=/";
-    */
+    if (!response.ok) {
+      throw new Error("Logout failed");
+    }
 
     localStorage.removeItem("token");
     localStorage.removeItem("user");
 
-    router.replace("/login");
+    router.replace("/auth/login");
     router.refresh();
+  } catch (error) {
+    console.error("Logout error:", error);
   }
+}
 
   return (
     <aside className="flex h-screen w-72 shrink-0 flex-col justify-between bg-primary-sidebar text-white">

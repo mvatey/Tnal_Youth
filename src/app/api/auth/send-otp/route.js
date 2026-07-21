@@ -1,14 +1,89 @@
-// app/api/auth/send-otp/route.js
-import { findUserByPhone, generateOtp } from "@/lib/auth";
+// src/app/api/auth/send-otp/route.js
+
+const BACKEND_URL =
+  process.env.BACKEND_API_URL || "http://localhost:8081/api";
 
 export async function POST(req) {
-  const { phone } = await req.json();
-  const user = findUserByPhone(phone);
+  try {
+    const body = await req.json();
 
-  if (!user) {
-    return Response.json({ message: "រកមិនឃើញលេខទូរស័ព្ទនេះទេ" }, { status: 404 });
+    const phoneOrEmail = body.phoneOrEmail?.trim();
+
+    if (!phoneOrEmail) {
+      return Response.json(
+        {
+          success: false,
+          message: "សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល",
+        },
+        { status: 400 }
+      );
+    }
+
+    const deliveryChannel = phoneOrEmail.includes("@")
+      ? "EMAIL"
+      : "SMS";
+
+    const backendEndpoint =
+      `${BACKEND_URL}/auth/forgot-password`;
+
+    console.log("Calling backend:", backendEndpoint);
+
+    const response = await fetch(backendEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        phoneOrEmail,
+        deliveryChannel,
+      }),
+      cache: "no-store",
+    });
+
+    const responseText = await response.text();
+
+    let data = {};
+
+    try {
+      data = responseText
+        ? JSON.parse(responseText)
+        : {};
+    } catch {
+      data = {
+        message:
+          responseText || "Backend returned an invalid response",
+      };
+    }
+
+    return Response.json(
+      {
+        ...data,
+        message:
+          data.message ||
+          data.error ||
+          data.detail ||
+          `Request failed with status ${response.status}`,
+      },
+      {
+        status: response.status,
+      }
+    );
+  } catch (error) {
+    console.error("Send OTP proxy error:", error);
+
+    const isConnectionRefused =
+      error?.cause?.code === "ECONNREFUSED" ||
+      error?.code === "ECONNREFUSED";
+
+    return Response.json(
+      {
+        message: isConnectionRefused
+          ? "Backend server is not running on port 8081"
+          : "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ",
+      },
+      {
+        status: 503,
+      }
+    );
   }
-
-  generateOtp(phone); // logs code to your terminal instead of sending real SMS
-  return Response.json({ message: "OTP sent (check terminal)" });
 }
