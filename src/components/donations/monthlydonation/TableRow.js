@@ -1,9 +1,16 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { List, Trash2 } from "lucide-react";
 
 export default function TableRow({ row, rowNumber, onDelete, hasMoney = false }) {
+  const pathname = usePathname();
+  const addPath = pathname?.startsWith("/admin/donation")
+    ? "/admin/donation/add"
+    : "/donation/add";
   const detailHref = {
-    pathname: "/donation/add",
+    pathname: addPath,
     query: {
       branch: row.branch,
       month: row.month,

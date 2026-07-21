@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import DonationTabs from "@/components/donations/DonationTabs";
 import SponsorDonationForm from "@/components/donations/sponsor/SponsorDonationForm";
 import sponsorData from "@/data/donation/sponsorData.json";
@@ -10,9 +9,7 @@ const { sponsorRows } = sponsorData;
 
 const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
 
-export default function EditSponsorDonationQueryPage() {
-  const searchParams = useSearchParams();
-  const id = searchParams.get("id");
+export default function SponsorEditContent({ id = null }) {
   const [createdRows, setCreatedRows] = useState([]);
 
   useEffect(() => {

@@ -1,14 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 import FilterBar from "../../forms/FilterBar";
 import AddAlert from "../../forms/addalert";
 import SaveButton from "../../forms/save";
 import Pagination from "../../navigation/Pagination";
 import TableRow from "./TableRow";
-import { donationRows } from "@/data/donationData";
+import donationData from "@/data/donation/donationData.json";
+
+const { donationRows } = donationData;
 
 const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
+
+const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
 const rowHasSavedMoney = (row, savedRows) =>
   Object.entries(savedRows).some(([key, value]) => {
@@ -41,6 +46,7 @@ export default function DonationTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [savedRows, setSavedRows] = useState({});
+  const [moneySort, setMoneySort] = useState(null);
 
   const years = useMemo(() => [...new Set(rows.map((row) => row.year))], [rows]);
   const months = useMemo(() => [...new Set(rows.map((row) => row.month))], [rows]);
@@ -59,9 +65,18 @@ export default function DonationTable() {
       }),
     [rows, selectedYear, selectedMonth, selectedBranch],
   );
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+  const sortedRows = useMemo(() => {
+    if (!moneySort) return filteredRows;
+
+    return [...filteredRows].sort((a, b) => {
+      const difference = parseMoney(a[moneySort.field]) - parseMoney(b[moneySort.field]);
+      return moneySort.direction === "asc" ? difference : -difference;
+    });
+  }, [filteredRows, moneySort]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
-  const pagedRows = filteredRows.slice(
+  const pagedRows = sortedRows.slice(
     (safePage - 1) * rowsPerPage,
     safePage * rowsPerPage,
   );
@@ -131,9 +146,34 @@ export default function DonationTable() {
         <table className="w-full min-w-[840px] border-collapse border border-border">
           <thead>
             <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
-              {headers.map((header) => (
+              {headers.map((header, index) => (
                 <th key={header} className="px-4">
-                  {header}
+                  {index >= 4 && index <= 6 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const field = ["monthlyRiel", "monthlyUsd", "total"][index - 4];
+                        setMoneySort((current) => ({
+                          field,
+                          direction: current?.field === field && current.direction === "asc" ? "desc" : "asc",
+                        }));
+                        setCurrentPage(1);
+                      }}
+                      className="mx-auto inline-flex items-center justify-center gap-1.5 font-medium transition hover:text-primary"
+                      aria-label={`Sort ${header}`}
+                    >
+                      {header}
+                      {moneySort?.field === ["monthlyRiel", "monthlyUsd", "total"][index - 4] && moneySort.direction === "asc" ? (
+                        <ArrowUp size={14} />
+                      ) : moneySort?.field === ["monthlyRiel", "monthlyUsd", "total"][index - 4] && moneySort.direction === "desc" ? (
+                        <ArrowDown size={14} />
+                      ) : (
+                        <ChevronsUpDown size={14} />
+                      )}
+                    </button>
+                  ) : (
+                    header
+                  )}
                 </th>
               ))}
             </tr>

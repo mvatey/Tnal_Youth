@@ -8,11 +8,19 @@
     "role": "admin"
   },
   {
+    "id": "5",
+    "phone": "0121110000",
+    "email": "donationadmin@example.com",
+    "password": "12345",
+    "name": "អ្នកគ្រប់គ្រងការបរិច្ចាគ",
+    "role": "donation_admin"
+  },
+  {
     "id": "2",
     "phone": "0127776777",
     "email": "branchleader@example.com",
     "password": "12345",
-    "name": "ព្រឿន ផាត់សា",
+    "name": "ព្រឿន ផាត់សារ",
     "role": "branch_leader"
   },
   {

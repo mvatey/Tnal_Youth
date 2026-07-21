@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Pagination from "../navigation/Pagination";
 import AddDonationActions from "../donations/monthlydonation/AddDonationActions";
 import AddDonationTableHeader from "../donations/monthlydonation/AddDonationTableHeader";
@@ -8,6 +8,7 @@ import AddDonationTableRow from "../donations/monthlydonation/AddDonationTableRo
 import UploadPopup from "../forms/popup";
 
 const ROWS_PER_PAGE = 11;
+const DONATION_ROWS_CHANGE_EVENT = "tnal-youth:donation-rows-change";
 
 export default function Table({
   members = [],
@@ -21,11 +22,28 @@ export default function Table({
   const [rows, setRows] = useState(members);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedReceiptMember, setSelectedReceiptMember] = useState(null);
+  const receiptUrlsRef = useRef(new Set());
 
   useEffect(() => {
-    setRows(members);
+    setRows((currentRows) =>
+      members.map((member) => {
+        const currentRow = currentRows.find((row) => row.id === member.id);
+
+        return {
+          ...member,
+          receipt: member.receipt ?? currentRow?.receipt,
+        };
+      }),
+    );
     setCurrentPage(1);
   }, [members]);
+
+  useEffect(() => {
+    return () => {
+      receiptUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      receiptUrlsRef.current.clear();
+    };
+  }, []);
 
   const filteredRows = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
@@ -49,11 +67,82 @@ export default function Table({
   );
 
   const updateRow = (id, values) => {
-    setRows((current) =>
-      current.map((member) =>
+    setRows((current) => {
+      const nextRows = current.map((member) =>
         member.id === id ? { ...member, ...values } : member,
-      ),
+      );
+
+      window.dispatchEvent(
+        new CustomEvent(DONATION_ROWS_CHANGE_EVENT, { detail: nextRows }),
+      );
+      return nextRows;
+    });
+  };
+
+  const handleReceiptSave = async (id, file) => {
+    if (!file) {
+      setSelectedReceiptMember(null);
+      return;
+    }
+
+    const isImage =
+      file.type.startsWith("image/") ||
+      /\.(avif|bmp|gif|heic|heif|jpe?g|jfif|png|svg|webp)$/i.test(file.name);
+    const previewUrl = isImage
+      ? await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        })
+      : "";
+
+    const receipt = {
+      name: file.name,
+      type: file.type,
+      previewUrl,
+    };
+
+    setRows((current) =>
+      current.map((member) => {
+        if (member.id !== id) {
+          return member;
+        }
+
+        if (member.receipt?.previewUrl?.startsWith("blob:")) {
+          URL.revokeObjectURL(member.receipt.previewUrl);
+          receiptUrlsRef.current.delete(member.receipt.previewUrl);
+        }
+
+        return {
+          ...member,
+          receipt,
+        };
+      }),
     );
+
+    setSelectedReceiptMember(null);
+    onReceiptSave?.(id, receipt);
+  };
+
+  const handleReceiptRemove = (id) => {
+    setRows((current) =>
+      current.map((member) => {
+        if (member.id !== id) {
+          return member;
+        }
+
+        if (member.receipt?.previewUrl) {
+          URL.revokeObjectURL(member.receipt.previewUrl);
+          receiptUrlsRef.current.delete(member.receipt.previewUrl);
+        }
+
+        const { receipt, ...memberWithoutReceipt } = member;
+        return memberWithoutReceipt;
+      }),
+    );
+
+    onReceiptSave?.(id, null);
   };
 
   const handleReset = () => {
@@ -65,11 +154,16 @@ export default function Table({
     }));
 
     setRows((current) => {
-      return current.map((member) =>
+      const nextRows = current.map((member) =>
         resetIds.has(member.id)
           ? { ...member, realAmount: "0", dollarAmount: "0" }
           : member,
       );
+
+      window.dispatchEvent(
+        new CustomEvent(DONATION_ROWS_CHANGE_EVENT, { detail: nextRows }),
+      );
+      return nextRows;
     });
 
     onReset?.(resetRows);
@@ -93,6 +187,7 @@ export default function Table({
                     updateRow(id, { paymentMethod })
                   }
                   onShowInfo={setSelectedReceiptMember}
+                  onRemoveReceipt={handleReceiptRemove}
                 />
               ))
             ) : (
@@ -121,10 +216,11 @@ export default function Table({
       {selectedReceiptMember && (
         <UploadPopup
           onClose={() => setSelectedReceiptMember(null)}
-          onSave={() => {
-            setSelectedReceiptMember(null);
-            onReceiptSave?.();
-          }}
+          onSave={(file) => handleReceiptSave(selectedReceiptMember.id, file)}
+          onRemoveReceipt={() => handleReceiptRemove(selectedReceiptMember.id)}
+          initialReceipt={
+            rows.find((member) => member.id === selectedReceiptMember.id)?.receipt
+          }
         />
       )}
     </div>

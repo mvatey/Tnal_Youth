@@ -7,7 +7,7 @@ import {
   DocumentCheckIcon,
 } from "@heroicons/react/24/solid";
 import { FaHandHoldingHeart } from "react-icons/fa6";
-import dashboardSummary from "@/data/dashboard/cardSummary.json";
+import dashboardSummary from "@/data/donation/cardSummary.json";
 
 // ---- DATA LAYER ----
 async function fetchDashboardSummary() {

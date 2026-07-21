@@ -1,20 +1,25 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { addDonationRows } from "@/data/donationData";
+import donationData from "@/data/donation/donationData.json";
 import AddDonationFilters from "./AddDonationFilters";
 import Table from "../../tables/table";
 import SaveAlert from "../../forms/savealert";
 
 const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
+const { addDonationRows } = donationData;
 
 const getSavedRowKey = (row) =>
   [row.branch, row.month, row.year, row.id].join("|");
 
 export default function AddDonationForm() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+  const listPath = pathname?.startsWith("/admin/donation")
+    ? "/admin/donation"
+    : "/donation";
   const queryString = searchParams.toString();
   const initialFilters = useMemo(() => {
     const params = new URLSearchParams(queryString);
@@ -105,6 +110,7 @@ export default function AddDonationForm() {
 
     rows.forEach((row) => {
       nextRows[getSavedRowKey(row)] = {
+        ...nextRows[getSavedRowKey(row)],
         realAmount: row.realAmount ?? "",
         dollarAmount: row.dollarAmount ?? "",
         paymentMethod: row.paymentMethod || "Cash",
@@ -122,7 +128,7 @@ export default function AddDonationForm() {
         ? `បានរក្សាទុកវិភាគទាន ${completed.length} នាក់`
         : "សូមបញ្ចូលចំនួនទឹកប្រាក់យ៉ាងហោចណាស់ម្នាក់",
     );
-    router.push("/donation");
+    router.push(listPath);
   };
 
   const handleReset = (rows) => {
@@ -131,6 +137,7 @@ export default function AddDonationForm() {
 
       rows.forEach((row) => {
         nextRows[getSavedRowKey(row)] = {
+          ...nextRows[getSavedRowKey(row)],
           realAmount: "0",
           dollarAmount: "0",
           paymentMethod: row.paymentMethod || "Cash",
@@ -146,20 +153,46 @@ export default function AddDonationForm() {
     });
   };
 
-  const handleReceiptSave = () => {
+  const handleReceiptSave = (id, receipt) => {
+    const row = members.find((member) => member.id === id);
+
+    if (row) {
+      setSavedRows((currentRows) => {
+        const key = getSavedRowKey(row);
+        const nextRows = {
+          ...currentRows,
+          [key]: { ...currentRows[key], receipt },
+        };
+
+        try {
+          window.localStorage.setItem(
+            SAVED_DONATION_ROWS_KEY,
+            JSON.stringify(nextRows),
+          );
+        } catch {
+          // Keep large receipt previews in React state when storage is full.
+        }
+
+        return nextRows;
+      });
+    }
+
     setSavedMessage("បានរក្សាទុកវិក្ក័យបត្រដោយជោគជ័យ");
-    setShowSaveAlert(true);
   };
 
   const handleCancel = () => {
-    router.push("/donation");
+    router.push(listPath);
   };
 
   return (
     <>
       {showSaveAlert && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
-          <SaveAlert />
+        <div
+          className="fixed inset-0 z-[60] flex items-start justify-center bg-black/25 pt-10"
+          role="status"
+          aria-live="polite"
+        >
+          <SaveAlert message="អបអរសាទរ វិភាគទានត្រូវបានបន្ថែមដោយជោគជ័យ" />
         </div>
       )}
 

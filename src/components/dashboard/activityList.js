@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import dashboardActivities from "@/data/dashboard/activityLists.json";
+import dashboardActivities from "@/data/donation/activityLists.json";
 
 // ---- DATA LAYER ----
 // Imported directly since data now lives under src/ (not browser-
@@ -290,7 +290,7 @@ export default function ActivityList() {
  *   GET /dashboard/activities?status=upcoming&limit=5
  *
  *   (Modeled here against one shared "activities" array, since that's
- *   what's currently in data/dashboard.json — see note below.)
+ *   what's currently in src/data/donation/activityLists.json — see note below.)
  *
  *   Each activity:
  *   {
@@ -330,5 +330,6 @@ export default function ActivityList() {
  * getting a colored icon box. Since `image` is currently null for
  * upcoming activities (see above), those rows fall back to
  * /dashboard/activity-placeholder.jpg until real per-event photos exist
- * on the backend.
+ * on the backend — swap that fallback path for whatever generic
+ * placeholder asset the project uses.
  */

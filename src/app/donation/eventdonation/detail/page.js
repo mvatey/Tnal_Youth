@@ -1,19 +1,14 @@
 import { Suspense } from "react";
 import DonationTabs from "@/components/donations/DonationTabs";
-import EventDonationSummaryCard from "@/components/donations/EventDonationSummaryCard";
-import DonorCard from "@/components/donations/DonorCard";
+import EventDonationDetailCards from "@/components/donations/eventdonation/EventDonationDetailCards";
 import EventDonationDetailForm from "@/components/donations/eventdonation/EventDonationDetailForm";
-import { donationStats } from "@/data/donationData";
 
 export default function EventDonationDetailQueryPage() {
   return (
     <div className="space-y-4">
       <DonationTabs />
-      <div className="flex gap-[50px] xl:grid-cols-2">
-        <EventDonationSummaryCard />
-        <DonorCard {...donationStats[1]} />
-      </div>
       <Suspense fallback={null}>
+        <EventDonationDetailCards />
         <EventDonationDetailForm />
       </Suspense>
     </div>

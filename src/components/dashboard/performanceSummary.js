@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
-import branchStats from "@/data/dashboard/branchPerformance.json";
+import branchStats from "@/data/donation/branchPerformance.json";
 
 // Placeholder until real per-branch data exists — see note above.
 const PLACEHOLDER_BRANCHES = [{ id: "default", name: "សាខាក្រុងភ្នំពេញ" }];

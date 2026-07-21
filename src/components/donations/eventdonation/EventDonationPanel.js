@@ -4,49 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import EventDonationFilters from "./EventDonationFilters";
 import EventDonationTable from "./EventDonationTable";
 import AddAlert from "@/components/forms/addalert";
-import { addDonationRows, donationRows } from "@/data/donationData";
+import donationData from "@/data/donation/donationData.json";
+import eventDonationData from "@/data/donation/eventDonationData.json";
 
 const rowsPerPage = 12;
-const eventNames = {
-  meeting: "កម្មវិធីប្រជុំ",
-  charity: "កម្មវិធីសប្បុរសធម៌",
-  training: "កម្មវិធីបណ្តុះបណ្តាល",
-};
-
-const eventSchedule = [
-  {
-    type: "meeting",
-    startDate: "០១ មិថុនា ២០២៦",
-    endDate: "០៣ មិថុនា ២០២៦",
-    startDateValue: "2026-06-01",
-    endDateValue: "2026-06-03",
-    days: "០៣ ថ្ងៃ",
-  },
-  {
-    type: "charity",
-    startDate: "០៥ មិថុនា ២០២៦",
-    endDate: "០៨ មិថុនា ២០២៦",
-    startDateValue: "2026-06-05",
-    endDateValue: "2026-06-08",
-    days: "០៤ ថ្ងៃ",
-  },
-  {
-    type: "training",
-    startDate: "១០ មិថុនា ២០២៦",
-    endDate: "១២ មិថុនា ២០២៦",
-    startDateValue: "2026-06-10",
-    endDateValue: "2026-06-12",
-    days: "០៣ ថ្ងៃ",
-  },
-  {
-    type: "meeting",
-    startDate: "១៣ មិថុនា ២០២៦",
-    endDate: "១៤ មិថុនា ២០២៦",
-    startDateValue: "2026-06-13",
-    endDateValue: "2026-06-14",
-    days: "០២ ថ្ងៃ",
-  },
-];
+const { addDonationRows, donationRows } = donationData;
+const { eventNames, eventSchedule } = eventDonationData;
+const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
 function createEventDonationRows() {
   return addDonationRows.map((member, index) => {
@@ -87,6 +51,7 @@ export default function EventDonationPanel() {
   const [currentPage, setCurrentPage] = useState(1);
   const [deletedIds, setDeletedIds] = useState([]);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
+  const [moneySort, setMoneySort] = useState(null);
 
   const branches = [...new Set(donationRows.map((row) => row.branch))];
   const eventDonationRows = useMemo(createEventDonationRows, []);
@@ -117,9 +82,17 @@ export default function EventDonationPanel() {
     startDate,
   ]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+  const sortedRows = useMemo(() => {
+    if (!moneySort) return filteredRows;
+    return [...filteredRows].sort((a, b) => {
+      const difference = parseMoney(a[moneySort.field]) - parseMoney(b[moneySort.field]);
+      return moneySort.direction === "asc" ? difference : -difference;
+    });
+  }, [filteredRows, moneySort]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
-  const pagedRows = filteredRows
+  const pagedRows = sortedRows
     .slice((safePage - 1) * rowsPerPage, safePage * rowsPerPage)
     .map((row, index) => ({
       ...row,
@@ -183,6 +156,14 @@ export default function EventDonationPanel() {
           onPageChange={setCurrentPage}
           onDelete={(rowId) => setDeletedIds((current) => [...current, rowId])}
           onDownload={() => setShowDownloadAlert(true)}
+          moneySort={moneySort}
+          onMoneySort={(field) => {
+            setMoneySort((current) => ({
+              field,
+              direction: current?.field === field && current.direction === "asc" ? "desc" : "asc",
+            }));
+            setCurrentPage(1);
+          }}
         />
       ) : (
         <div className="min-h-[560px] rounded-sm bg-[#fbfcfe]" />

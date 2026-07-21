@@ -1,0 +1,8 @@
+{
+  "monthlyDonationPaymentMethods": ["Cash", "ABA", "Wing", "Bank Transfer"],
+  "donationTabs": [
+    { "label": "វិភាគទានប្រចាំខែ", "href": "/donation" },
+    { "label": "វិភាគទានក្នុងកម្មវិធី", "href": "/donation/eventdonation" },
+    { "label": "ថវិកាឧបត្ថម្ភ", "href": "/donation/sponsor" }
+  ]
+}

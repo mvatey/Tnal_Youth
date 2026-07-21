@@ -5,19 +5,28 @@ import { useRouter } from "next/navigation";
 import DonationFilterSelect from "../monthlydonation/DonationFilterSelect";
 
 function EventDateInput({ label, value, onChange, min }) {
+  const openDatePicker = (event) => {
+    event.currentTarget.showPicker?.();
+  };
+
   return (
-    <label className="relative block h-[34px] w-[192px] shrink-0 cursor-pointer">
+    <label className="group relative block h-[34px] w-[192px] shrink-0 cursor-pointer">
       <input
         type="date"
         value={value}
         min={min}
         onChange={(event) => onChange(event.target.value)}
+        onClick={openDatePicker}
         className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
         aria-label={label}
       />
-      <span className="flex h-full w-full items-center justify-between rounded-lg border border-border bg-white px-3 text-[16px] font-Semibold leading-none text-text-secondary shadow-sm transition hover:border-secondary">
+      <span className="flex h-full w-full items-center justify-between rounded-lg border border-border bg-white px-3 text-[16px] font-Semibold leading-none text-text-secondary shadow-sm transition-all duration-200 group-hover:border-secondary group-hover:bg-secondary-light/40 group-hover:shadow-md group-focus-within:border-secondary group-focus-within:ring-2 group-focus-within:ring-secondary/20">
         <span className="truncate">{value || label}</span>
-        <CalendarDays size={16} strokeWidth={2.2} />
+        <CalendarDays
+          size={16}
+          strokeWidth={2.2}
+          className="transition-colors duration-200 group-hover:text-secondary group-focus-within:text-secondary"
+        />
       </span>
     </label>
   );

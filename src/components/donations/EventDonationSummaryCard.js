@@ -7,7 +7,7 @@ export default function EventDonationSummaryCard({
   note = "ក្នុងខែនេះ",
 }) {
   return (
-    <article className="h-[65px] w-[200px] rounded-2xl border-2 border-border bg-white px-3 py-2 shadow-sm">
+    <article className="h-[65px] w-[200px] rounded-2xl border-2 border-border bg-white px-3 py-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-secondary/40 hover:shadow-md">
       <div className="flex h-full items-center gap-2">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E4E6FA] text-[#8356D8]">
           <Gift size={22} strokeWidth={2.4} />
@@ -25,10 +25,12 @@ export default function EventDonationSummaryCard({
             </div>
 
             <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
-              <span className="flex items-center text-[10px] font-medium leading-none text-emerald-500">
-                <ArrowUp size={12} strokeWidth={3} />
-                {growth}
-              </span>
+              {growth && (
+                <span className="flex items-center text-[10px] font-medium leading-none text-emerald-500">
+                  <ArrowUp size={12} strokeWidth={3} />
+                  {growth}
+                </span>
+              )}
               <span className="text-[10px] font-medium leading-none text-black">
                 {note}
               </span>

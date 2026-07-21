@@ -5,16 +5,13 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { User, Phone, Mail, Calendar, X, Save } from "lucide-react";
+import memberOptions from "@/data/donation/memberOptions.json";
 
-const GENDER_OPTIONS = ["ភេទស្រី", "ភេទប្រុស"];
-const STATUS_OPTIONS = ["សកម្ម", "អសកម្ម"];
-
-const ROLE_OPTIONS = [
-  { value: "admin", label: "អ្នកគ្រប់គ្រង" },
-  { value: "branch_leader", label: "ប្រធានសាខា" },
-  { value: "secretary", label: "លេខាធិការ" },
-  { value: "member", label: "សមាជិក" },
-];
+const {
+  genderOptions: GENDER_OPTIONS,
+  roleOptions: ROLE_OPTIONS,
+  statusOptions: STATUS_OPTIONS,
+} = memberOptions;
 
 const EMPTY_FORM = {
   nameKh: "",

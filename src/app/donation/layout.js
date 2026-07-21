@@ -26,13 +26,7 @@ export default function DonationLayout({ children }) {
           scroll on <main> below (a classic flexbox gotcha). */}
       <div className="flex-1 flex flex-col min-h-0">
         <Topbar title={PAGE_TITLE} icon="donation" />
-
-        {/* The only scrollable element on the page. flex-1 lets it fill
-            the remaining height below Topbar; overflow-y-auto gives it
-            its own scrollbar instead of scrolling the whole window. */}
-        <main className="flex-1 min-h-0 overflow-y-auto p-6 bg-bg-page-gray no-scrollbar">
-          {children}
-        </main>
+        <main className="donation-ui flex-1 p-6">{children}</main>
       </div>
     </div>
   );

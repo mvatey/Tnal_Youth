@@ -1,44 +1,48 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, PlusCircle, Search, SquarePen } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { ArrowDown, ArrowUp, CalendarDays, ChevronsUpDown, FileText, PencilLineIcon, PencilRulerIcon, PenSquareIcon, PlusCircle, Search, SquarePen, SquarePenIcon } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import SponsorTypeSelect from "@/components/forms/sponsorTypeSelect";
 import Pagination from "@/components/navigation/Pagination";
 import SaveButton from "@/components/forms/save";
 import AddAlert from "@/components/forms/addalert";
 import SaveAlert from "@/components/forms/savealert";
-import { sponsorRows as sponsorDataRows } from "@/data/sponsorData";
+import sponsorData from "@/data/donation/sponsorData.json";
+import tableHeaders from "@/data/donation/tableHeaders.json";
+import { MdEditSquare } from "react-icons/md";
+import { HiPencilSquare } from "react-icons/hi2";
+import { BsPencilSquare } from "react-icons/bs";
+import { PiPencilSlash } from "react-icons/pi";
+import { VscEditSparkle } from "react-icons/vsc";
 
-const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
+const { sponsorRows: sponsorDataRows } = sponsorData;
+const { sponsorHeaders: headers } = tableHeaders;
 const rowsPerPage = 12;
+const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
-const sponsorRows = [
-  { id: 1, name: "ឌី រីយ៉ា", type: "បុគ្គល", phone: "097 678 8596", email: "diriya12@gmail.com", date: "០១ មិថុនា ២០២៦", amount: "$150", method: "Cash" },
-  { id: 2, name: "ឌួង សុភ័ក្ត្រ", type: "បុគ្គល", phone: "088 500 6789", email: "sivheang@gmail.com", date: "០១ មិថុនា ២០២៦", amount: "$50", method: "ABA" },
-  { id: 3, name: "ព្រីន សុភិតា", type: "បុគ្គល", phone: "088 345 6547", email: "chetra@gmail.com", date: "០១ មិថុនា ២០២៦", amount: "$150", method: "ACLEDA" },
-  { id: 4, name: "សាខា ឧបត្ថម្ភ", type: "ស្ថាប័ន", phone: "097 447 5422", email: "thorn12@gmail.com", date: "០១ មិថុនា ២០២៦", amount: "$200", method: "Cash" },
-  { id: 5, name: "សូលីសា គ្រុប", type: "ស្ថាប័ន", phone: "088 346 6573", email: "solisa@gmail.com", date: "០១ មិថុនា ២០២៦", amount: "$150", method: "Cash" },
-  { id: 6, name: "ជា គីមឆេង", type: "បុគ្គល", phone: "097 764 3746", email: "ahching@gmail.com", date: "០២ មិថុនា ២០២៦", amount: "$80", method: "ABA" },
-  { id: 7, name: "ហេង ចាន់", type: "បុគ្គល", phone: "088 456 3477", email: "chtha@gmail.com", date: "០២ មិថុនា ២០២៦", amount: "$90", method: "Cash" },
-  { id: 8, name: "ទេព មករា", type: "បុគ្គល", phone: "097 347 3456", email: "makara@gmail.com", date: "០២ មិថុនា ២០២៦", amount: "$230", method: "Cash" },
-  { id: 9, name: "លីដា សហគ្រាស", type: "ស្ថាប័ន", phone: "088 345 6374", email: "leak168@gmail.com", date: "០៤ មិថុនា ២០២៦", amount: "$280", method: "ABA" },
-  { id: 10, name: "យឹម ស្រីពៅ", type: "បុគ្គល", phone: "097 346 3476", email: "sreypov@gmail.com", date: "០៤ មិថុនា ២០២៦", amount: "$100", method: "ABA" },
-  { id: 11, name: "វី ឌីយ៉ា", type: "បុគ្គល", phone: "088 465 3489", email: "lydeth@gmail.com", date: "០៤ មិថុនា ២០២៦", amount: "$100", method: "Cash" },
-  { id: 12, name: "លុន ម៉ាលីស", type: "បុគ្គល", phone: "097 345 6543", email: "malisch@gmail.com", date: "០៤ មិថុនា ២០២៦", amount: "$190", method: "ACLEDA" },
-];
+function SponsorReceiptPreview({ receipt }) {
+  if (!receipt) {
+    return null;
+  }
 
-const headers = [
-  "ល.រ",
-  "ឈ្មោះអ្នកឧបត្ថម្ភ",
-  "ប្រភេទឧបត្ថម្ភ",
-  "លេខទូរស័ព្ទ",
-  "អ៊ីមែល",
-  "កាលបរិច្ឆេទ",
-  "ចំនួនទឹកប្រាក់(ដុល្លារ)",
-  "វិធីសាស្ត្រទូទាត់",
-  "សកម្មភាព",
-];
+  return (
+    <span
+      className="inline-flex h-8 w-11 items-center justify-center overflow-hidden rounded-md border border-[#4B2E91]/20 bg-white text-[#4B2E91] shadow-sm"
+      title={receipt.name || "Receipt"}
+    >
+      {receipt.type?.startsWith("image/") ? (
+        <img
+          src={receipt.dataUrl}
+          alt={receipt.name || "Receipt"}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <FileText size={17} strokeWidth={2.2} />
+      )}
+    </span>
+  );
+}
 
 function DateFilter({ value, onChange }) {
   return (
@@ -61,14 +65,17 @@ function DateFilter({ value, onChange }) {
 
 export default function SponsorPanel() {
   const router = useRouter();
+  const pathname = usePathname();
+  const routePrefix = pathname?.startsWith("/admin/donation")
+    ? "/admin/donation/sponsor"
+    : "/donation/sponsor";
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [showSaveAlert, setShowSaveAlert] = useState(false);
-  const [savedSponsorEdits, setSavedSponsorEdits] = useState({});
-  const [createdSponsorRows, setCreatedSponsorRows] = useState([]);
+  const [moneySort, setMoneySort] = useState(null);
 
   useEffect(() => {
     const shouldShowSaveAlert = window.localStorage.getItem(
@@ -80,57 +87,35 @@ export default function SponsorPanel() {
       setShowSaveAlert(true);
     }
 
-    const savedValue = window.localStorage.getItem(
-      "tnal-youth:sponsor-donation-edits",
-    );
-    const createdValue = window.localStorage.getItem(SPONSOR_CREATED_ROWS_KEY);
-
-    if (createdValue) {
-      try {
-        setCreatedSponsorRows(JSON.parse(createdValue));
-      } catch {
-        setCreatedSponsorRows([]);
-      }
-    }
-
-    if (!savedValue) return;
-
-    try {
-      setSavedSponsorEdits(JSON.parse(savedValue));
-    } catch {
-      setSavedSponsorEdits({});
-    }
   }, []);
-
-  const rows = useMemo(
-    () => [
-      ...createdSponsorRows,
-      ...sponsorDataRows.map((row) => ({
-        ...row,
-        ...savedSponsorEdits[row.id],
-      })),
-    ],
-    [createdSponsorRows, savedSponsorEdits],
-  );
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return rows.filter((row) => {
+    return sponsorDataRows.filter((row) => {
       const matchesSearch =
         !query ||
         row.name.toLowerCase().includes(query) ||
         row.phone.includes(query) ||
         row.email.toLowerCase().includes(query);
       const matchesType = !selectedType || row.type === selectedType;
+      const matchesDate = !selectedDate || row.dateValue === selectedDate;
 
-      return matchesSearch && matchesType;
+      return matchesSearch && matchesType && matchesDate;
     });
-  }, [rows, searchQuery, selectedType]);
+  }, [searchQuery, selectedDate, selectedType]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+  const sortedRows = useMemo(() => {
+    if (!moneySort) return filteredRows;
+    return [...filteredRows].sort((a, b) => {
+      const difference = parseMoney(a[moneySort.field]) - parseMoney(b[moneySort.field]);
+      return moneySort.direction === "asc" ? difference : -difference;
+    });
+  }, [filteredRows, moneySort]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
-  const pagedRows = filteredRows.slice(
+  const pagedRows = sortedRows.slice(
     (safePage - 1) * rowsPerPage,
     safePage * rowsPerPage,
   );
@@ -196,7 +181,7 @@ export default function SponsorPanel() {
 
           <button
             type="button"
-            onClick={() => router.push("/donation/sponsor/add")}
+            onClick={() => router.push(`${routePrefix}/add`)}
             className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-success px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
           >
             <PlusCircle size={17} />
@@ -209,12 +194,34 @@ export default function SponsorPanel() {
         <table className="w-full min-w-[980px] border-collapse border border-border">
           <thead>
             <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
-              {headers.map((header) => (
+              {headers.map((header, index) => (
                 <th
                   key={header}
                   className={`px-4 ${header === "លេខទូរស័ព្ទ" ? "whitespace-nowrap" : ""}`}
                 >
-                  {header}
+                  {index === 6 || index === 7 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const field = index === 6 ? "rielAmount" : "dollarAmount";
+                        setMoneySort((current) => ({
+                          field,
+                          direction: current?.field === field && current.direction === "asc" ? "desc" : "asc",
+                        }));
+                        setCurrentPage(1);
+                      }}
+                      className="mx-auto inline-flex items-center justify-center gap-1.5 font-medium transition hover:text-primary"
+                    >
+                      {header}
+                      {moneySort?.field === (index === 6 ? "rielAmount" : "dollarAmount") && moneySort.direction === "asc" ? (
+                        <ArrowUp size={14} />
+                      ) : moneySort?.field === (index === 6 ? "rielAmount" : "dollarAmount") && moneySort.direction === "desc" ? (
+                        <ArrowDown size={14} />
+                      ) : (
+                        <ChevronsUpDown size={14} />
+                      )}
+                    </button>
+                  ) : header}
                 </th>
               ))}
             </tr>
@@ -232,17 +239,25 @@ export default function SponsorPanel() {
                 <td className="whitespace-nowrap px-4">{row.phone}</td>
                 <td className="px-4">{row.email}</td>
                 <td className="whitespace-nowrap px-4">{row.date}</td>
-                <td className="px-4">{row.amount}</td>
+                <td className="px-4">
+                  {row.rielAmount || "0"}
+                </td>
+                <td className="px-4">
+                  {row.dollarAmount || "0"}
+                </td>
                 <td className="px-4">{row.method}</td>
                 <td className="px-4">
-                  <button
-                    type="button"
-                    onClick={() => router.push(`/donation/sponsor/edit?id=${row.id}`)}
-                    className="inline-flex h-[20px] w-[24px] items-center justify-center rounded-[8px] text-[#D4AF37] transition hover:text-[#b88f1f]"
-                    aria-label={`Edit sponsor ${row.id}`}
-                  >
-                    <SquarePen size={16} strokeWidth={2.6} />
-                  </button>
+                  <div className="inline-flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => router.push(`${routePrefix}/edit?id=${row.id}`)}
+                      className="inline-flex h-[20px] w-[24px] items-center justify-center rounded-[8px] text-[#D4AF37] transition hover:text-[#b88f1f]"
+                      aria-label={`Edit sponsor ${row.id}`}
+                    >
+                      <BsPencilSquare size={16}  />
+                    </button>
+                    <SponsorReceiptPreview receipt={row.receipt} />
+                  </div>
                 </td>
               </tr>
             ))}

@@ -1,21 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { List, Trash2 } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { ArrowDown, ArrowUp, ChevronsUpDown, List, Trash2 } from "lucide-react";
 import Pagination from "@/components/navigation/Pagination";
 import SaveButton from "@/components/forms/save";
+import tableHeaders from "@/data/donation/tableHeaders.json";
 
-const headers = [
-  "ល.រ",
-  "កម្មវិធី",
-  "សាខា",
-  "កាលបរិច្ឆេទចាប់ផ្តើម",
-  "កាលបរិច្ឆេទបញ្ចប់",
-  "ចំនួនថ្ងៃ",
-  "ចំនួនទឹកប្រាក់(រៀល)",
-  "ចំនួនទឹកប្រាក់(ដុល្លារ)",
-  "សកម្មភាព",
-];
+const { eventDonationHeaders: headers } = tableHeaders;
 
 export default function EventDonationTable({
   rows,
@@ -24,16 +16,38 @@ export default function EventDonationTable({
   onPageChange,
   onDelete,
   onDownload,
+  moneySort,
+  onMoneySort,
 }) {
+  const pathname = usePathname();
+  const detailPath = pathname?.startsWith("/admin/donation")
+    ? "/admin/donation/eventdonation/detail"
+    : "/donation/eventdonation/detail";
+
   return (
     <>
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[980px] border-collapse border border-border">
           <thead>
             <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
-              {headers.map((header) => (
+              {headers.map((header, index) => (
                 <th key={header} className="px-4">
-                  {header}
+                  {index === 6 || index === 7 ? (
+                    <button
+                      type="button"
+                      onClick={() => onMoneySort(index === 6 ? "rielAmount" : "dollarAmount")}
+                      className="mx-auto inline-flex items-center justify-center gap-1.5 font-medium transition hover:text-primary"
+                    >
+                      {header}
+                      {moneySort?.field === (index === 6 ? "rielAmount" : "dollarAmount") && moneySort.direction === "asc" ? (
+                        <ArrowUp size={14} />
+                      ) : moneySort?.field === (index === 6 ? "rielAmount" : "dollarAmount") && moneySort.direction === "desc" ? (
+                        <ArrowDown size={14} />
+                      ) : (
+                        <ChevronsUpDown size={14} />
+                      )}
+                    </button>
+                  ) : header}
                 </th>
               ))}
             </tr>
@@ -57,7 +71,7 @@ export default function EventDonationTable({
                   <div className="flex items-center justify-center gap-[5px]">
                     <Link
                       href={{
-                        pathname: "/donation/eventdonation/detail",
+                        pathname: detailPath,
                         query: {
                           id: row.id,
                           branch: row.branch,
