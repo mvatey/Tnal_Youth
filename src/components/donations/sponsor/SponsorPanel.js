@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, FileText, PencilLineIcon, PencilRulerIcon, PenSquareIcon, PlusCircle, Search, SquarePen, SquarePenIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, CalendarDays, ChevronsUpDown, FileText, PencilLineIcon, PencilRulerIcon, PenSquareIcon, PlusCircle, Search, SquarePen, SquarePenIcon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import SponsorTypeSelect from "@/components/forms/sponsorTypeSelect";
 import Pagination from "@/components/navigation/Pagination";
@@ -19,6 +19,7 @@ import { VscEditSparkle } from "react-icons/vsc";
 const { sponsorRows: sponsorDataRows } = sponsorData;
 const { sponsorHeaders: headers } = tableHeaders;
 const rowsPerPage = 12;
+const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
 function SponsorReceiptPreview({ receipt }) {
   if (!receipt) {
@@ -74,6 +75,7 @@ export default function SponsorPanel() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [showSaveAlert, setShowSaveAlert] = useState(false);
+  const [moneySort, setMoneySort] = useState(null);
 
   useEffect(() => {
     const shouldShowSaveAlert = window.localStorage.getItem(
@@ -103,9 +105,17 @@ export default function SponsorPanel() {
     });
   }, [searchQuery, selectedDate, selectedType]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+  const sortedRows = useMemo(() => {
+    if (!moneySort) return filteredRows;
+    return [...filteredRows].sort((a, b) => {
+      const difference = parseMoney(a[moneySort.field]) - parseMoney(b[moneySort.field]);
+      return moneySort.direction === "asc" ? difference : -difference;
+    });
+  }, [filteredRows, moneySort]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
-  const pagedRows = filteredRows.slice(
+  const pagedRows = sortedRows.slice(
     (safePage - 1) * rowsPerPage,
     safePage * rowsPerPage,
   );
@@ -184,12 +194,34 @@ export default function SponsorPanel() {
         <table className="w-full min-w-[980px] border-collapse border border-border">
           <thead>
             <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
-              {headers.map((header) => (
+              {headers.map((header, index) => (
                 <th
                   key={header}
                   className={`px-4 ${header === "លេខទូរស័ព្ទ" ? "whitespace-nowrap" : ""}`}
                 >
-                  {header}
+                  {index === 6 || index === 7 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const field = index === 6 ? "rielAmount" : "dollarAmount";
+                        setMoneySort((current) => ({
+                          field,
+                          direction: current?.field === field && current.direction === "asc" ? "desc" : "asc",
+                        }));
+                        setCurrentPage(1);
+                      }}
+                      className="mx-auto inline-flex items-center justify-center gap-1.5 font-medium transition hover:text-primary"
+                    >
+                      {header}
+                      {moneySort?.field === (index === 6 ? "rielAmount" : "dollarAmount") && moneySort.direction === "asc" ? (
+                        <ArrowUp size={14} />
+                      ) : moneySort?.field === (index === 6 ? "rielAmount" : "dollarAmount") && moneySort.direction === "desc" ? (
+                        <ArrowDown size={14} />
+                      ) : (
+                        <ChevronsUpDown size={14} />
+                      )}
+                    </button>
+                  ) : header}
                 </th>
               ))}
             </tr>

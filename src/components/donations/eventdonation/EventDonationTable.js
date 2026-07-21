@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { List, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronsUpDown, List, Trash2 } from "lucide-react";
 import Pagination from "@/components/navigation/Pagination";
 import SaveButton from "@/components/forms/save";
 import tableHeaders from "@/data/donation/tableHeaders.json";
@@ -16,6 +16,8 @@ export default function EventDonationTable({
   onPageChange,
   onDelete,
   onDownload,
+  moneySort,
+  onMoneySort,
 }) {
   const pathname = usePathname();
   const detailPath = pathname?.startsWith("/admin/donation")
@@ -28,9 +30,24 @@ export default function EventDonationTable({
         <table className="w-full min-w-[980px] border-collapse border border-border">
           <thead>
             <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
-              {headers.map((header) => (
+              {headers.map((header, index) => (
                 <th key={header} className="px-4">
-                  {header}
+                  {index === 6 || index === 7 ? (
+                    <button
+                      type="button"
+                      onClick={() => onMoneySort(index === 6 ? "rielAmount" : "dollarAmount")}
+                      className="mx-auto inline-flex items-center justify-center gap-1.5 font-medium transition hover:text-primary"
+                    >
+                      {header}
+                      {moneySort?.field === (index === 6 ? "rielAmount" : "dollarAmount") && moneySort.direction === "asc" ? (
+                        <ArrowUp size={14} />
+                      ) : moneySort?.field === (index === 6 ? "rielAmount" : "dollarAmount") && moneySort.direction === "desc" ? (
+                        <ArrowDown size={14} />
+                      ) : (
+                        <ChevronsUpDown size={14} />
+                      )}
+                    </button>
+                  ) : header}
                 </th>
               ))}
             </tr>

@@ -19,7 +19,7 @@ export default function DonationLayout({ children }) {
 
       <div className="flex-1 flex flex-col">
         <Topbar title={PAGE_TITLE} icon="donation" />
-        <main className="flex-1 p-6">{children}</main>
+        <main className="donation-ui flex-1 p-6">{children}</main>
       </div>
     </div>
   );

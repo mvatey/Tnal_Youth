@@ -10,6 +10,7 @@ import eventDonationData from "@/data/donation/eventDonationData.json";
 const rowsPerPage = 12;
 const { addDonationRows, donationRows } = donationData;
 const { eventNames, eventSchedule } = eventDonationData;
+const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
 function createEventDonationRows() {
   return addDonationRows.map((member, index) => {
@@ -50,6 +51,7 @@ export default function EventDonationPanel() {
   const [currentPage, setCurrentPage] = useState(1);
   const [deletedIds, setDeletedIds] = useState([]);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
+  const [moneySort, setMoneySort] = useState(null);
 
   const branches = [...new Set(donationRows.map((row) => row.branch))];
   const eventDonationRows = useMemo(createEventDonationRows, []);
@@ -80,9 +82,17 @@ export default function EventDonationPanel() {
     startDate,
   ]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+  const sortedRows = useMemo(() => {
+    if (!moneySort) return filteredRows;
+    return [...filteredRows].sort((a, b) => {
+      const difference = parseMoney(a[moneySort.field]) - parseMoney(b[moneySort.field]);
+      return moneySort.direction === "asc" ? difference : -difference;
+    });
+  }, [filteredRows, moneySort]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
-  const pagedRows = filteredRows
+  const pagedRows = sortedRows
     .slice((safePage - 1) * rowsPerPage, safePage * rowsPerPage)
     .map((row, index) => ({
       ...row,
@@ -146,6 +156,14 @@ export default function EventDonationPanel() {
           onPageChange={setCurrentPage}
           onDelete={(rowId) => setDeletedIds((current) => [...current, rowId])}
           onDownload={() => setShowDownloadAlert(true)}
+          moneySort={moneySort}
+          onMoneySort={(field) => {
+            setMoneySort((current) => ({
+              field,
+              direction: current?.field === field && current.direction === "asc" ? "desc" : "asc",
+            }));
+            setCurrentPage(1);
+          }}
         />
       ) : (
         <div className="min-h-[560px] rounded-sm bg-[#fbfcfe]" />
