@@ -10,6 +10,7 @@ import { Users, Landmark, Moon, Sparkles, Trash2 } from "lucide-react";
 import users from "@/data/members.json";
 import { AiOutlineWoman } from "react-icons/ai";
 import { RiAddCircleLine } from "react-icons/ri";
+import { RiDownloadCloud2Line } from "react-icons/ri";
 import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail";
 import { FaDharmachakra } from "react-icons/fa";
 

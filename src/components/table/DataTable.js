@@ -100,18 +100,8 @@ export default function DataTable({
           </select>
         ))}
 
-
-        <div className="ml-auto shrink-0">
-          <button
-            onClick={() => downloadCsv(data, filename)}
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-secondary px-5 text-xs font-bold text-white shadow-sm transition hover:bg-secondary-hover"
-          >
-            <RiDownloadCloud2Line size={18} />
-            ទាញយក
-          </button>
-        </div>
-
-        {actionButton && <div className="shrink-0">{actionButton}</div>}
+        {/* Dynamic Top Right Action Button Slot */}
+        {actionButton && <div className="ml-auto">{actionButton}</div>}
       </div>
 
       {/* Table Shell with explicit fixed sizing setup matching your original layout */}

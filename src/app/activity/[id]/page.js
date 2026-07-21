@@ -194,31 +194,46 @@ export default async function ActivityDetailPage({ params }) {
       </Link>
   </div>
 
-  {/* Budget */}
-  <div className="rounded-xl border border-border bg-white p-5">
-    <h3 className="mb-4 text-base font-bold text-secondary">ថវិកា</h3>
+{/* Budget */}
+<div className="rounded-xl border border-border bg-white p-5">
+  <h3 className="mb-4 text-base font-bold text-secondary">
+    ថវិកា
+  </h3>
 
-    <div className="grid grid-cols-2 gap-4">
-      <SummaryCard
-        icon={CircleDollarSign}
-        iconClass="bg-warning-bg text-warning"
-        label="ចំណូល"
-        value={activity.donation || "$ 0"}
-      />
+  <div className="grid grid-cols-2 gap-4">
+    <SummaryCard
+      icon={CircleDollarSign}
+      iconClass="bg-warning-bg text-warning"
+      label="ចំណូល"
+      value={activity.donation || "$ 0"}
+    />
 
-      <SummaryCard
-        icon={Banknote}
-        iconClass="bg-error-bg text-error"
-        label="ចំណាយ"
-        value={activity.budget || "$ 0"}
-      />
-    </div>
+    <SummaryCard
+      icon={Banknote}
+      iconClass="bg-error-bg text-error"
+      label="ចំណាយ"
+      value={activity.budget || "$ 0"}
+    />
+  </div>
 
-    <Link href={`/activity/create/income?activityId=${activity.id}`} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#D3AF3C] text-sm font-semibold text-white">
+  <div className="mt-5 grid grid-cols-2 gap-3">
+    <Link
+      href={`/activity/create/income?activityId=${activity.id}`}
+      className="flex h-10 items-center justify-center gap-2 rounded-lg bg-[#D3AF3C] text-sm font-semibold text-white transition-colors hover:bg-[#BF9C2D]"
+    >
       <CircleDollarSign size={16} />
-      វិភាគទាន
+      ចំណូល
+    </Link>
+
+    <Link
+      href={`/activity/create/expense?activityId=${activity.id}`}
+      className="flex h-10 items-center justify-center gap-2 rounded-lg bg-[#D9534F] text-sm font-semibold text-white transition-colors hover:bg-[#C4413E]"
+    >
+      <Banknote size={16} />
+      ចំណាយ
     </Link>
   </div>
+</div>
 
   {/* Documents */}
   <div className="rounded-xl border border-border bg-white p-5">
