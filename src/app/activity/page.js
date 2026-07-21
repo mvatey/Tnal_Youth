@@ -328,16 +328,13 @@ export default function ActivityPage() {
   </div>
 </div>
 
-        <div className="overflow-x-auto">
-          <div className="min-w-[1180px]">
-            <Table
-              columns={columns}
-              data={filteredActivities}
-              rowsPerPage={10}
-              emptyMessage="មិនមានទិន្នន័យកម្មវិធីទេ"
-            />
-          </div>
-        </div>
+        <Table
+          columns={columns}
+          data={filteredActivities}
+          rowsPerPage={10}
+          tableClassName="min-w-[1180px]"
+          emptyMessage="មិនមានទិន្នន័យកម្មវិធីទេ"
+        />
       </section>
     </div>
   );

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { ChevronRight } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ChevronRight, Download } from "lucide-react";
 import { RiDownloadCloud2Line } from "react-icons/ri";
 
 import Pagination from "@/components/dashboard/Pagination";
@@ -15,7 +15,23 @@ const ROWS_PER_PAGE = 10;
 const KHR_PER_USD = 4000;
 
 function createInitialRows() {
-  return members.map((member) => ({
+  const getMemberIdentity = (member) =>
+    String(
+      member.email || member.phone || member.name || member.id
+    )
+      .trim()
+      .toLowerCase();
+
+  const uniqueMembers = Array.from(
+    new Map(
+      members.map((member) => [
+        getMemberIdentity(member),
+        member,
+      ])
+    ).values()
+  );
+
+  return uniqueMembers.map((member) => ({
     id: member.id,
     name: member.name || "",
     gender: member.gender || "",
@@ -85,6 +101,7 @@ function getTotalInDollars(row) {
 }
 
 export default function IncomePage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const activityId =
     searchParams.get("activityId");
@@ -217,9 +234,7 @@ export default function IncomePage() {
       JSON.stringify(incomeData)
     );
 
-    alert(
-      "បានរក្សាទុកចំណូលដោយជោគជ័យ"
-    );
+    router.back();
   };
 
   const cancelHref = activityId
@@ -285,9 +300,9 @@ export default function IncomePage() {
         </div>
 
         <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full min-w-[1050px] table-fixed border-collapse text-sm">
+          <table className="w-full min-w-[1050px] table-fixed border-collapse text-[12px] text-text-secondary">
             <thead>
-              <tr className="h-11 border-b border-border bg-bg-page-gray text-text-secondary">
+              <tr className="h-11 border-b border-border bg-bg-page-gray font-medium text-text-secondary">
                 <th className="w-[5%] text-center">
                   ល.រ
                 </th>
@@ -333,14 +348,14 @@ export default function IncomePage() {
                   return (
                     <tr
                       key={row.id}
-                      className="h-[42px] border-b border-[#e5eaf0] bg-[#fbfcfe] text-[12px] text-slate-500 transition-colors hover:bg-[#f6f8fb]"
+                      className="h-[42px] border-b border-[#e5eaf0] bg-[#fbfcfe] text-[12px] text-text-secondary transition-colors hover:bg-[#f6f8fb]"
                     >
                       <td className="text-center text-text-secondary">
                         {realIndex + 1}
                       </td>
 
                       <td className="max-w-0 overflow-hidden px-2">
-                        <p className="truncate font-semibold text-text-primary" title={row.name}>
+                        <p className="truncate font-medium text-text-primary" title={row.name}>
                           {row.name}
                         </p>
                       </td>
@@ -393,10 +408,10 @@ export default function IncomePage() {
                               )
                             }
                             placeholder={row.amountRiel ? "" : "0"}
-                            className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500"
+                            className="w-full bg-transparent text-[12px] text-text-secondary outline-none placeholder:text-text-secondary"
                           />
 
-                          <span className="text-[13px] text-slate-500">
+                          <span className="text-[12px] text-text-secondary">
                             ៛
                           </span>
                         </div>
@@ -442,10 +457,10 @@ export default function IncomePage() {
                               )
                             }
                             placeholder={row.amountDollar ? "" : "0.00"}
-                            className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500"
+                            className="w-full bg-transparent text-[12px] text-text-secondary outline-none placeholder:text-text-secondary"
                           />
 
-                          <span className="text-[13px] text-slate-500">
+                          <span className="text-[12px] text-text-secondary">
                             $
                           </span>
                         </div>
@@ -467,7 +482,7 @@ export default function IncomePage() {
                                 .value
                             )
                           }
-                          className="mx-auto block h-7 w-[82px] rounded-md border border-slate-400 bg-white px-2 text-[12px] text-slate-600 outline-none focus:border-[#4B2E91]"
+                          className="mx-auto block h-7 w-[82px] rounded-md border border-slate-400 bg-white px-2 text-[12px] text-text-secondary outline-none focus:border-[#4B2E91]"
                         >
                           <option value="Cash">
                             Cash
@@ -588,7 +603,7 @@ export default function IncomePage() {
       <div className="flex justify-between">
         <Link
           href={cancelHref}
-          className="flex h-10 w-32 items-center justify-center rounded-lg border border-border bg-white text-sm font-semibold text-text-secondary transition hover:bg-gray-50"
+          className="flex h-[34px] w-[91px] items-center justify-center rounded-lg border border-border bg-white text-sm font-semibold text-text-secondary transition hover:bg-gray-50"
         >
           បោះបង់
         </Link>
@@ -596,11 +611,9 @@ export default function IncomePage() {
         <button
           type="button"
           onClick={handleSave}
-          className="flex h-10 items-center gap-2 rounded-lg bg-secondary px-8 text-sm font-semibold text-white transition hover:bg-secondary-hover"
+          className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white transition hover:bg-secondary-hover"
         >
-          <RiDownloadCloud2Line
-            size={18}
-          />
+          <Download size={16} />
 
           រក្សាទុក
         </button>

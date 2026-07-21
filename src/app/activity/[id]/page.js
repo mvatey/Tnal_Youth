@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FaUsers } from "react-icons/fa";
 import {
   ArrowLeft,
+  Banknote,
   CalendarDays,
   CheckCircle2,
   Clock,
@@ -15,6 +16,7 @@ import {
   Phone,
   Tag,
   CircleDollarSign,
+  Sprout,
   UserCheck,
   UserX,
   Users,
@@ -55,9 +57,9 @@ export default async function ActivityDetailPage({ params }) {
           <h1 className="text-xl font-bold text-secondary">ពត៌មានកម្មវិធី</h1>
         </div>
 
-        <Link href={`/activity/create?edit=${activity.id}`} className="flex h-9 items-center gap-2 rounded-lg bg-secondary px-4 text-sm font-medium text-white hover:bg-secondary-hover">
+        <Link href={`/activity/create?edit=${activity.id}`} className="flex h-[34px] items-center gap-2 rounded-lg bg-secondary px-4 text-sm font-medium text-white hover:bg-secondary-hover">
           <Pencil size={15} />
-          កែប្រែ
+          កែព័ត៌មាន
         </Link>
       </div>
 
@@ -93,7 +95,7 @@ export default async function ActivityDetailPage({ params }) {
                 </div>
                 <InfoIcon icon={MapPin} label={activity.branch} sub={activity.location} />
                 <InfoIcon icon={Users} label={activity.participants} sub="បានចូលរួម" />
-                <InfoIcon icon={Tag} label={activity.type} sub="ប្រភេទវិស័យ" />
+                <InfoIcon icon={Sprout} label="បរិស្ថាន" sub="ប្រភេទវិស័យ" />
               </div>
             </div>
           </div>
@@ -118,25 +120,27 @@ export default async function ActivityDetailPage({ params }) {
 
       {/* SECTION 2: General info + Map */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
-        <div className="xl:col-span-2 rounded-xl border border-border bg-white p-5">
-          <h3 className="mb-3 text-base font-bold text-secondary">ទិដ្ឋភាពទូទៅ</h3>
-          <p className="mb-5 text-sm leading-7 text-text-secondary">{activity.descriptionDetail}</p>
+        <div className="flex flex-col xl:col-span-2">
+          <h3 className="mb-2 text-base font-bold text-secondary">ទិដ្ឋភាពទូទៅ</h3>
+          <div className="flex-1 rounded-xl border border-border bg-white p-5">
+            <p className="mb-5 text-sm leading-7 text-text-secondary">{activity.descriptionDetail}</p>
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4 border-t border-border pt-5 text-sm">
-            <InfoItem icon={FileText} label="ឈ្មោះកម្មវិធី" value={activity.name} />
-            <InfoItem icon={CalendarDays} label="ថ្ងៃចាប់ផ្តើម" value={activity.startDate || activity.date} />
-            <InfoItem icon={Tag} label="ប្រភេទកម្មវិធី" value={activity.type} />
-            <InfoItem icon={Clock} label="រយៈពេលចូលរួម" value={activity.duration} />
-            <InfoItem icon={MapPin} label="វិស័យ" value={activity.sector} />
-            <InfoItem icon={Users} label="អ្នកគ្រប់គ្រង" value={activity.leader} />
-            <InfoItem icon={Users} label="ចំនួនអ្នកចូលរួម" value={activity.participants} />
-            <InfoItem icon={Phone} label="លេខទំនាក់ទំនង" value={activity.phone} />
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4 border-t border-border pt-5 text-sm">
+              <InfoItem icon={FileText} label="ឈ្មោះកម្មវិធី" value={activity.name} />
+              <InfoItem icon={CalendarDays} label="ថ្ងៃចាប់ផ្តើម" value={activity.startDate || activity.date} />
+              <InfoItem icon={Tag} label="ប្រភេទកម្មវិធី" value={activity.type} />
+              <InfoItem icon={Clock} label="រយៈពេលចូលរួម" value={activity.duration} />
+              <InfoItem icon={MapPin} label="វិស័យ" value={activity.sector} />
+              <InfoItem icon={Users} label="អ្នកគ្រប់គ្រង" value={activity.leader} />
+              <InfoItem icon={Users} label="ចំនួនអ្នកចូលរួម" value={activity.participants} />
+              <InfoItem icon={Phone} label="លេខទំនាក់ទំនង" value={activity.phone} />
+            </div>
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-white p-5">
-          <h3 className="mb-3 text-base font-bold text-secondary">ទីតាំង</h3>
-          
+        <div className="flex flex-col">
+          <h3 className="mb-2 text-base font-bold text-secondary">ទីតាំង</h3>
+          <div className="flex-1 rounded-xl border border-border bg-white p-5">
             <a href={activity.mapLink || "#"}
             target="_blank"
             rel="noopener noreferrer"
@@ -153,6 +157,7 @@ export default async function ActivityDetailPage({ params }) {
             <MapPin size={16} className="mt-0.5 shrink-0 text-primary" />
             {activity.address || activity.location}
           </p>
+          </div>
         </div>
       </div>
 
@@ -168,6 +173,7 @@ export default async function ActivityDetailPage({ params }) {
         iconClass="bg-success-bg text-success"
         label="បានចូលរួម"
         value={activity.participants?.split("/")[0] || "0"}
+        unit="នាក់"
       />
 
       <SummaryCard
@@ -175,6 +181,7 @@ export default async function ActivityDetailPage({ params }) {
         iconClass="bg-error-bg text-error"
         label="មិនបានចូលរួម"
         value="0"
+        unit="នាក់"
       />
     </div>
 
@@ -200,14 +207,14 @@ export default async function ActivityDetailPage({ params }) {
       />
 
       <SummaryCard
-        icon={CircleDollarSign}
+        icon={Banknote}
         iconClass="bg-error-bg text-error"
         label="ចំណាយ"
         value={activity.budget || "$ 0"}
       />
     </div>
 
-    <Link href={`/activity/create/income?activityId=${activity.id}`} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-warning text-sm font-semibold text-white">
+    <Link href={`/activity/create/income?activityId=${activity.id}`} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-[#D3AF3C] text-sm font-semibold text-white">
       <CircleDollarSign size={16} />
       វិភាគទាន
     </Link>
@@ -280,8 +287,8 @@ function StatusRow({ icon: Icon, label, last, children }) {
         last ? "" : "mb-4"
       }`}
     >
-      <span className="flex items-center gap-2 text-text-secondary">
-        {Icon && <Icon size={14} className="text-text-secondary" />}
+      <span className="flex items-center gap-2 font-medium text-text-primary">
+        {Icon && <Icon size={14} className="text-text-primary" />}
         {label}
       </span>
 
@@ -304,20 +311,21 @@ function InfoItem({ icon: Icon, label, value }) {
   );
 }
 
-function SummaryCard({ icon: Icon, iconClass, label, value }) {
+function SummaryCard({ icon: Icon, iconClass, label, value, unit }) {
   return (
-    <div className="flex flex-col items-center rounded-lg border border-border px-4 py-4 text-center">
+    <div className="flex min-h-[120px] flex-col items-start rounded-lg border border-border bg-white px-4 py-3 text-left shadow-sm">
       <div
-        className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg ${iconClass}`}
+        className={`mb-3 flex h-8 w-8 items-center justify-center rounded-md ${iconClass}`}
       >
-        <Icon size={18} />
+        <Icon size={16} />
       </div>
 
-      <p className="text-2xl font-bold leading-none text-text-primary">
+      <p className="flex items-baseline gap-1 text-2xl font-bold leading-none text-text-primary">
         {value}
+        {unit && <span className="text-[11px] font-semibold">{unit}</span>}
       </p>
 
-      <p className="mt-2 text-xs text-text-secondary">
+      <p className="mt-2 text-[11px] text-text-secondary">
         {label}
       </p>
     </div>

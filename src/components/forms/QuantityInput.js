@@ -33,7 +33,8 @@ export default function QuantityInput({
           bg-transparent
           px-2
           text-center
-          text-sm
+          text-[12px]
+          text-text-secondary
           outline-none
           [appearance:textfield]
           [&::-webkit-inner-spin-button]:appearance-none

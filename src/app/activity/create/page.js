@@ -212,21 +212,6 @@ export default function CreateActivityPage() {
   const handleSave = async (event) => {
     event.preventDefault();
 
-    if (!form.name.trim()) {
-      alert("សូមបញ្ចូលឈ្មោះកម្មវិធី");
-      return;
-    }
-
-    if (!form.branch) {
-      alert("សូមជ្រើសរើសសាខា");
-      return;
-    }
-
-    if (!form.type) {
-      alert("សូមជ្រើសរើសប្រភេទកម្មវិធី");
-      return;
-    }
-
     setIsSaving(true);
 
     try {
@@ -290,22 +275,9 @@ export default function CreateActivityPage() {
         JSON.stringify(newActivities)
       );
 
-      alert(
-        isEditMode
-          ? "បានកែប្រែកម្មវិធីដោយជោគជ័យ"
-          : "បានបង្កើតកម្មវិធីដោយជោគជ័យ"
-      );
-
-      if (isEditMode) {
-        router.push(`/activity/${editId}`);
-      } else {
-        router.push("/activity");
-      }
-
-      router.refresh();
+      router.back();
     } catch (error) {
       console.error("Save activity error:", error);
-      alert("មិនអាចរក្សាទុកកម្មវិធីបានទេ");
     } finally {
       setIsSaving(false);
     }
@@ -315,7 +287,7 @@ export default function CreateActivityPage() {
     <>
       <form
         onSubmit={handleSave}
-        className="space-y-6"
+        className="activity-create-form space-y-6"
       >
         {/* Header */}
         <div>

@@ -5,11 +5,12 @@ import {
   useState,
 } from "react";
 
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import Link from "next/link";
 import {
   ChevronRight,
+  Download,
   PlusCircle,
   Trash2,
 } from "lucide-react";
@@ -102,6 +103,7 @@ const getAmountFieldClass = (value) =>
     : "border-[#65686b] bg-[#e5e7eb]";
 
 export default function ExpensePage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("activityId");
 
@@ -271,9 +273,7 @@ export default function ExpensePage() {
       JSON.stringify(expenseData)
     );
 
-    alert(
-      "បានរក្សាទុកចំណាយដោយជោគជ័យ"
-    );
+    router.back();
   };
 
   return (
@@ -328,9 +328,9 @@ export default function ExpensePage() {
         </div>
 
         <div className="overflow-hidden rounded-lg border border-border">
-          <table className="w-full table-fixed border-collapse text-xs">
+          <table className="w-full table-fixed border-collapse text-[12px] text-text-secondary">
             <thead>
-              <tr className="h-11 border-b border-border bg-bg-page-gray text-text-secondary">
+              <tr className="h-11 border-b border-border bg-bg-page-gray font-medium text-text-secondary">
                 <th className="w-[5%] text-center">
                   ល.រ
                 </th>
@@ -370,7 +370,7 @@ export default function ExpensePage() {
                 (row, index) => (
                   <tr
                     key={row.id}
-                    className="h-[42px] border-b border-[#e5eaf0] bg-[#fbfcfe] text-[12px] text-slate-500 transition-colors last:border-b-0 hover:bg-[#f6f8fb]"
+                    className="h-[42px] border-b border-[#e5eaf0] bg-[#fbfcfe] text-[12px] text-text-secondary transition-colors last:border-b-0 hover:bg-[#f6f8fb]"
                   >
                     <td className="text-center text-text-secondary">
                       {index + 1}
@@ -389,7 +389,7 @@ export default function ExpensePage() {
                           )
                         }
                         placeholder={row.name ? "" : "បញ្ចូលឈ្មោះ"}
-                        className="h-10 w-full rounded-md border border-border px-3 text-sm outline-none transition placeholder:text-text-secondary focus:border-secondary"
+                        className="h-10 w-full rounded-md border border-border px-3 text-[12px] text-text-secondary outline-none transition placeholder:text-text-secondary focus:border-secondary"
                       />
                     </td>
 
@@ -406,7 +406,7 @@ export default function ExpensePage() {
                           )
                         }
                         placeholder={row.category ? "" : "បញ្ចូលការពិពណ៌នា"}
-                        className="h-10 w-full rounded-md border border-border px-3 text-sm outline-none transition placeholder:text-text-secondary focus:border-secondary"
+                        className="h-10 w-full rounded-md border border-border px-3 text-[12px] text-text-secondary outline-none transition placeholder:text-text-secondary focus:border-secondary"
                       />
                     </td>
 
@@ -448,10 +448,10 @@ export default function ExpensePage() {
                             handleAmountBlur(row.id, "unitPriceRiel", "0")
                           }
                           placeholder={row.unitPriceRiel ? "" : "0"}
-                          className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500"
+                          className="w-full bg-transparent text-[12px] text-text-secondary outline-none placeholder:text-text-secondary"
                         />
 
-                        <span className="text-[13px] text-slate-500">
+                        <span className="text-[12px] text-text-secondary">
                           ៛
                         </span>
                       </div>
@@ -488,10 +488,10 @@ export default function ExpensePage() {
                             handleAmountBlur(row.id, "unitPriceDollar", "0.00")
                           }
                           placeholder={row.unitPriceDollar ? "" : "0.00"}
-                          className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500"
+                          className="w-full bg-transparent text-[12px] text-text-secondary outline-none placeholder:text-text-secondary"
                         />
 
-                        <span className="text-[13px] text-slate-500">
+                        <span className="text-[12px] text-text-secondary">
                           $
                         </span>
                       </div>
@@ -499,7 +499,7 @@ export default function ExpensePage() {
 
                     {/* Combined row total */}
                     <td className="px-3">
-                      <div className="mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border border-[#65686b] bg-[#e5e7eb] px-2 text-[13px] text-slate-600">
+                      <div className="mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border border-[#65686b] bg-[#e5e7eb] px-2 text-[12px] text-text-secondary">
                         <span className="min-w-0 flex-1 text-left">
                           {formatDollar(row.totalDollar)}
                         </span>
@@ -599,7 +599,7 @@ export default function ExpensePage() {
         <div className="mt-5 flex justify-between">
           <Link
             href={id ? `/activity/create?edit=${id}` : "/activity/create"}
-            className="flex h-10 w-32 items-center justify-center rounded-lg border border-border bg-white text-sm font-semibold text-text-secondary"
+            className="flex h-[34px] w-[91px] items-center justify-center rounded-lg border border-border bg-white text-sm font-semibold text-text-secondary"
           >
             បោះបង់
           </Link>
@@ -607,11 +607,9 @@ export default function ExpensePage() {
           <button
             type="button"
             onClick={handleSave}
-            className="flex h-10 items-center gap-2 rounded-lg bg-secondary px-8 text-sm font-semibold text-white hover:bg-secondary-hover"
+            className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white hover:bg-secondary-hover"
           >
-            <RiDownloadCloud2Line
-              size={18}
-            />
+            <Download size={16} />
 
             រក្សាទុក
           </button>

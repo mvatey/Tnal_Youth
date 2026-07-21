@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { CloudUpload, FileText } from "lucide-react";
+import { CloudUpload, FileText, X } from "lucide-react";
 
 export default function UploadBox({
   label,
@@ -22,6 +22,13 @@ export default function UploadBox({
     setPreview(file.type.startsWith("image/") ? URL.createObjectURL(file) : null);
   };
 
+  const handleRemove = () => {
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(null);
+    setSelectedFile(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
   return (
     <div>
       <p className="mb-2 text-sm font-medium text-text-secondary">
@@ -36,18 +43,19 @@ export default function UploadBox({
         className="hidden"
       />
 
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        className="
-          flex h-44 w-full items-center justify-center
-          rounded-2xl border-2 border-dashed border-[#E2E5EA]
-          bg-[#F8F9FB]
-          transition
-          hover:border-primary
-          hover:bg-primary-light/20
-        "
-      >
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="
+            activity-upload-button flex h-44 w-full items-center justify-center
+            rounded-2xl border-2 border-dashed border-[#E2E5EA]
+            bg-[#F8F9FB]
+            transition
+            hover:border-primary
+            hover:bg-primary-light/20
+          "
+        >
         {preview ? (
           <Image
             src={preview}
@@ -83,7 +91,19 @@ export default function UploadBox({
           </div>
           
         )}
-      </button>
+        </button>
+
+        {selectedFile && (
+          <button
+            type="button"
+            onClick={handleRemove}
+            aria-label="Remove selected file"
+            className="activity-upload-cancel absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-error shadow-md transition hover:bg-error-bg"
+          >
+            <X size={17} strokeWidth={2.5} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

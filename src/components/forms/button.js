@@ -1,4 +1,4 @@
-import { ImportIcon, RefreshCw } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 
 const BUTTONS = {
   reset: {
@@ -8,7 +8,7 @@ const BUTTONS = {
   },
   save: {
     label: "រក្សាទុក",
-    Icon: ImportIcon,
+    Icon: Download,
     className: "bg-[#1F285A] text-white text-center hover:bg-[#182149] w-[196px] h-[34px]",
   },
   cancel: {
@@ -32,7 +32,7 @@ export default function Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex h-[34px] items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+      className={`activity-form-action-button inline-flex h-[34px] items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
     >
       {Icon && <Icon size={16} />}
       {label || defaultLabel}
