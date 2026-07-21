@@ -60,6 +60,7 @@ function StatMiniCard({ label, value, growth, isLoading }) {
 
   return (
     <div
+      className="app-card"
       style={{
         background: "#F7F8FA",
         border: "1px solid #EEF0F3",
@@ -114,6 +115,7 @@ export default function PerformanceSummary() {
 
   return (
     <div
+      className="app-card"
       style={{
         background: "#FFFFFF",
         border: "1px solid #EEF0F3",

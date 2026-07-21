@@ -152,6 +152,7 @@ function ActivityRow({ activity }) {
 export function ActivityListCard({ title, activities, isLoading }) {
   return (
     <div
+      className="app-card"
       style={{
         background: "#FFFFFF",
         border: "1px solid #EEF0F3",

@@ -31,7 +31,7 @@ export default function MemberInfoCard({ member }) {
   };
 
   return (
-    <div className="bg-gradient-to-r from-primary to-primary-sidebar rounded-2xl shadow-lg overflow-hidden p-8">
+    <div className="app-card bg-gradient-to-r from-primary to-primary-sidebar rounded-2xl shadow-lg overflow-hidden p-8">
       <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6 lg:gap-8">
         {/* Left Section - profile_photo & Basic Info */}
         <div className="flex items-start gap-5 flex-shrink-0">

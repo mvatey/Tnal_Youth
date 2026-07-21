@@ -1,3 +1,5 @@
+// activity/create
+
 "use client";
 
 import Link from "next/link";
@@ -17,7 +19,7 @@ import {
 import FormField from "@/components/forms/FormField";
 import FormSelect from "@/components/forms/FormSelect";
 import DateInput from "@/components/forms/DateInput";
-import ActionButton from "@/components/forms/button";
+import Button from "@/components/forms/button";
 import UploadBox from "@/components/forms/UploadBox";
 import MemberSelectModal from "@/components/activity/MemberSelectModal";
 
@@ -688,13 +690,13 @@ export default function CreateActivityPage() {
 
         {/* Buttons */}
         <div className="flex items-center justify-between gap-3">
-          <ActionButton
+          <Button
             action="cancel"
             onClick={handleCancel}
             disabled={isSaving}
           />
 
-          <ActionButton
+          <Button
             action="save"
             type="submit"
             disabled={isSaving}

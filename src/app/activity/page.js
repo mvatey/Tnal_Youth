@@ -251,18 +251,18 @@ export default function ActivityPage() {
 
   const filters = [
     {
-      key: "sector",
-      value: selectedSector,
-      onChange: setSelectedSector,
-      placeholder: "វិស័យ",
-      options: sectors,
-    },
-    {
       key: "type",
       value: selectedType,
       onChange: setSelectedType,
       placeholder: "ប្រភេទ",
       options: types,
+    },
+    {
+      key: "sector",
+      value: selectedSector,
+      onChange: setSelectedSector,
+      placeholder: "វិស័យ",
+      options: sectors,
     },
     {
       key: "date",

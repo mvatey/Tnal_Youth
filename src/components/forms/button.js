@@ -1,4 +1,4 @@
-import { ImportIcon, RefreshCw } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 
 const BUTTONS = {
   reset: {

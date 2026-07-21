@@ -1,0 +1,23 @@
+[
+  {"month": "2026-01",
+  "internal": {"label": "កម្មវិធីខាងក្នុង", "count": 280},
+  "external": {"label": "កម្មវិធីខាងក្រៅ", "count": 220}},
+  {"month": "2026-02",
+  "internal": {"label": "កម្មវិធីខាងក្នុង", "count": 200},
+  "external": {"label": "កម្មវិធីខាងក្រៅ", "count": 400}},
+  {"month": "2026-03",
+  "internal": {"label": "កម្មវិធីខាងក្នុង", "count": 300},
+  "external": {"label": "កម្មវិធីខាងក្រៅ", "count": 300}},
+  {"month": "2026-04",
+  "internal": {"label": "កម្មវិធីខាងក្នុង", "count": 400},
+  "external": {"label": "កម្មវិធីខាងក្រៅ", "count": 200}},
+  {"month": "2026-05",
+  "internal": {"label": "កម្មវិធីខាងក្នុង", "count": 500},
+  "external": {"label": "កម្មវិធីខាងក្រៅ", "count": 100}},
+  {"month": "2026-06",
+  "internal": {"label": "កម្មវិធីខាងក្នុង", "count": 600},
+  "external": {"label": "កម្មវិធីខាងក្រៅ", "count": 50}},
+  {"month": "2026-07",
+  "internal": {"label": "កម្មវិធីខាងក្នុង", "count": 200},
+  "external": {"label": "កម្មវិធីខាងក្រៅ", "count": 400}}
+  ]
