@@ -1,0 +1,42 @@
+[
+  {
+    "id": "1",
+    "phone": "0126667666",
+    "email": "admin@example.com",
+    "password": "000000",
+    "name": "ផល ថាវរីវតី",
+    "role": "admin"
+  },
+  {
+    "id": "5",
+    "phone": "0121110000",
+    "email": "donationadmin@example.com",
+    "password": "12345",
+    "name": "អ្នកគ្រប់គ្រងការបរិច្ចាគ",
+    "role": "donation_admin"
+  },
+  {
+    "id": "2",
+    "phone": "0127776777",
+    "email": "branchleader@example.com",
+    "password": "12345",
+    "name": "ព្រឿន ផាត់សារ",
+    "role": "branch_leader"
+  },
+  {
+    "id": "3",
+    "phone": "0129998999",
+    "email": "secretary@example.com",
+    "password": "12345",
+    "name": "ផាន់ រិទ្ធី",
+    "role": "secretary"
+  },
+  {
+    "id": "4",
+    "phone": "0125556555",
+    "email": "member@example.com",
+    "password": "12345",
+    "name": "ឌី រីយ៉ា",
+    "role": "member"
+  }
+]

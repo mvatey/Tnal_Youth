@@ -76,7 +76,7 @@ export default function IdCard({ user }) {
             >
               <Image
                 src={user.profile_photo || "/member.png"}
-                alt={user.name_kh}
+                alt={user.name_kh || user.name_en || "រូបថតសមាជិក"}
                 fill
                 className="object-cover"
               />

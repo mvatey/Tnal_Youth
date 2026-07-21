@@ -1,36 +1,12 @@
-// components/dashboard/DataTable.js
 "use client";
-import { useState, useMemo, useEffect } from "react";
-import { Search } from "lucide-react";
-import Pagination from "@/components/forms/download.js";
 
-/**
- * Reusable DataTable component reflecting your precise layout design
- * 
- * @param {string} title - Table header text (e.g., "បញ្ជីសមាជិក")
- * @param {Array} data - Raw array of objects to display
- * @param {Array} columns - Array defining your column settings:
- *    { 
- *      header: "Title", 
- *      width: "w-[100px]", 
- *      align: "center"|"left"|"right",
- *      render: (item, index) => JSX // optional custom cell styling
- *      accessor: "keyName" // optional direct key picker if no render fn
- *    }
- * @param {Array} filters - Dynamic filters configuration:
- *    {
- *      value: selectedValue,
- *      onChange: (val) => void,
- *      options: ["Option 1", "Option 2"],
- *      placeholder: "Select Something"
- *    }
- * @param {string} searchPlaceholder - Placeholder for search bar
- * @param {string} searchQuery - Current search state string
- * @param {function} onSearchChange - Callback when text changes
- * @param {ReactNode} actionButton - Top right primary button slot (e.g., "Add Member")
- * @param {string} emptyMessage - Text to show when no entries found
- * @param {number} pageSize - Limit of rows per page (default: 10)
- */
+import { useEffect, useMemo, useState } from "react";
+import { Search } from "lucide-react";
+import FormSelect from "@/components/forms/FormSelect.js";
+
+import Pagination from "@/components/navigation/Pagination";
+import DownloadButton from "@/components/forms/download";
+
 export default function DataTable({
   title,
   data = [],
@@ -42,125 +18,126 @@ export default function DataTable({
   actionButton,
   emptyMessage = "មិនមានទិន្នន័យត្រូវនឹងលក្ខខណ្ឌស្វែងរកទេ",
   pageSize = 10,
+  downloadFilename = "table-data.csv",
 }) {
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Reset pagination to first page if search queries or filters alter the data array size
   useEffect(() => {
     setCurrentPage(1);
   }, [data.length, searchQuery]);
 
   const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
 
-  // Slice down your exact pagination chunk
   const paginatedData = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
+    const start = (safePage - 1) * pageSize;
     return data.slice(start, start + pageSize);
-  }, [data, currentPage, pageSize]);
+  }, [data, safePage, pageSize]);
+
+  const getAlignment = (align) => {
+    if (align === "center") return "text-center";
+    if (align === "right") return "text-right";
+    return "text-left";
+  };
 
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm">
-      {/* Table Header/Title */}
-      {title && (
-        <h3 className="font-semibold text-text-primary mb-4 text-lg">
-          {title}
-        </h3>
+    <div className="w-full">
+      {(title || onSearchChange || filters.length > 0 || actionButton) && (
+        <div className="mb-4 rounded-lg border border-[#e5eaf0] bg-white p-4">
+          {title && (
+            <h3 className="mb-4 text-lg font-semibold text-text-primary">
+              {title}
+            </h3>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3">
+            {onSearchChange && (
+              <div className="relative min-w-[220px] flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
+
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => onSearchChange(event.target.value)}
+                  placeholder={searchPlaceholder}
+                  className="h-10 w-full rounded-lg border border-gray-200 bg-white pl-9 pr-4 text-sm outline-none transition focus:border-primary"
+                />
+              </div>
+            )}
+
+            {filters.map((filter, index) => (
+              <div key={index} className="min-w-[140px]">
+                <FormSelect
+                  name={filter.name || `filter-${index}`}
+                  value={filter.value}
+                  onChange={(event) => filter.onChange(event.target.value)}
+                  placeholder={filter.placeholder}
+                  options={filter.options || []}
+                  disabled={filter.disabled || false}
+                />
+              </div>
+            ))}
+
+            {actionButton && <div className="ml-auto">{actionButton}</div>}
+          </div>
+        </div>
       )}
 
-      {/* Dynamic Toolbar Layer */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        {/* Universal Search Bar */}
-        {onSearchChange && (
-          <div className="relative flex-1 min-w-[220px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder={searchPlaceholder}
-              className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
-        )}
-
-        {/* Dynamic Filters Loop */}
-        {filters.map((filter, index) => (
-          <select
-            key={index}
-            value={filter.value}
-            onChange={(e) => filter.onChange(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-gray-200 text-sm text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30"
-          >
-            <option value="">{filter.placeholder}</option>
-            {filter.options.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
-            ))}
-          </select>
-        ))}
-
-        {/* Dynamic Top Right Action Button Slot */}
-        {actionButton && <div className="ml-auto">{actionButton}</div>}
-      </div>
-
-      {/* Table Shell with explicit fixed sizing setup matching your original layout */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm table-fixed">
+      <div className="overflow-x-auto rounded-sm border border-[#e5eaf0] bg-white">
+        <table className="w-full min-w-[980px] table-fixed border-collapse text-sm">
           <colgroup>
-            {columns.map((col, idx) => (
-              <col key={idx} className={col.width || ""} />
+            {columns.map((column, index) => (
+              <col key={index} className={column.width || ""} />
             ))}
           </colgroup>
-          <thead>
-            <tr className="text-text-secondary border-b border-gray-100">
-              {columns.map((col, idx) => {
-                let alignment = "text-left";
-                if (col.align === "center") alignment = "text-center";
-                if (col.align === "right") alignment = "text-right";
-                
-                return (
-                  <th key={idx} className={`py-3 px-2 font-medium ${alignment}`}>
-                    {col.header}
-                  </th>
-                );
-              })}
+
+          <thead className="bg-[#f8fafc]">
+            <tr className="border-b border-[#e5eaf0]">
+              {columns.map((column, index) => (
+                <th
+                  key={index}
+                  className={`h-11 px-4 text-xs font-semibold text-text-secondary ${getAlignment(
+                    column.align,
+                  )}`}
+                >
+                  {column.header}
+                </th>
+              ))}
             </tr>
           </thead>
+
           <tbody>
-            {paginatedData.map((item, itemIndex) => (
-              <tr
-                key={item.id || itemIndex}
-                className="border-b border-gray-50 hover:bg-bg-page-gray/50"
-              >
-                {columns.map((col, colIdx) => {
-                  let alignment = "text-left";
-                  if (col.align === "center") alignment = "text-center";
-                  if (col.align === "right") alignment = "text-right";
+            {paginatedData.length > 0 ? (
+              paginatedData.map((item, itemIndex) => {
+                const globalIndex = (safePage - 1) * pageSize + itemIndex + 1;
 
-                  // Global row entry sequential indexing rule (ល.រ)
-                  const globalIndex = (currentPage - 1) * pageSize + itemIndex + 1;
-
-                  return (
-                    <td
-                      key={colIdx}
-                      className={`py-3 px-2 text-text-secondary truncate ${alignment}`}
-                    >
-                      {col.render
-                        ? col.render(item, globalIndex)
-                        : item[col.accessor]}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-
-            {/* Empty Array Fallback Screen State */}
-            {data.length === 0 && (
+                return (
+                  <tr
+                    key={item.id ?? itemIndex}
+                    className="border-b border-[#edf0f3] transition last:border-b-0 hover:bg-bg-page-gray/60"
+                  >
+                    {columns.map((column, columnIndex) => (
+                      <td
+                        key={columnIndex}
+                        className={`h-12 overflow-hidden px-4 text-text-secondary ${getAlignment(
+                          column.align,
+                        )}`}
+                      >
+                        <div className="min-w-0 truncate">
+                          {column.render
+                            ? column.render(item, globalIndex)
+                            : (item[column.accessor] ?? "-")}
+                        </div>
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
+            ) : (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="py-8 text-center text-text-secondary"
+                  className="px-4 py-10 text-center text-sm text-gray-400"
                 >
                   {emptyMessage}
                 </td>
@@ -170,13 +147,18 @@ export default function DataTable({
         </table>
       </div>
 
-      {/* Pagination Integration */}
       {data.length > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={(page) => setCurrentPage(page)}
-        />
+        <div className="mt-3">
+          <Pagination
+            currentPage={safePage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+
+          <div className="mt-3 flex justify-end">
+            <DownloadButton data={data} filename={downloadFilename} />
+          </div>
+        </div>
       )}
     </div>
   );

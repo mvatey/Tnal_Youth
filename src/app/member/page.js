@@ -171,7 +171,20 @@ export default function MembersPage() {
   }, [activeMembersList, query, branchFilter, statusFilter, genderFilter]);
 
   const branches = useMemo(() => {
-    return [...new Set(users.map((m) => m.branch))];
+    const uniqueBranches = [
+      ...new Set(users.map((member) => member.branch).filter(Boolean)),
+    ];
+
+    return [
+      {
+        label: "សាខា",
+        value: "",
+      },
+      ...uniqueBranches.map((branch) => ({
+        label: branch,
+        value: branch,
+      })),
+    ];
   }, []);
 
   const tableColumns = [
@@ -267,25 +280,58 @@ export default function MembersPage() {
   ];
 
   const filterConfig = [
-    {
-      value: branchFilter,
-      onChange: setBranchFilter,
-      options: branches,
-      placeholder: "សាខា",
-    },
-    {
-      value: statusFilter,
-      onChange: setStatusFilter,
-      options: ["សកម្ម", "អសកម្ម"],
-      placeholder: "ស្ថានភាព",
-    },
-    {
-      value: genderFilter,
-      onChange: setGenderFilter,
-      options: ["ស្រី", "ប្រុស", "ព្រះសង្ឃ"],
-      placeholder: "ភេទ",
-    },
-  ];
+  {
+    name: "branch",
+    value: branchFilter,
+    onChange: setBranchFilter,
+    options: branches,
+    placeholder: "សាខា",
+  },
+  {
+    name: "status",
+    value: statusFilter,
+    onChange: setStatusFilter,
+    options: [
+      {
+        label: "ស្ថានភាព",
+        value: "",
+      },
+      {
+        label: "សកម្ម",
+        value: "សកម្ម",
+      },
+      {
+        label: "អសកម្ម",
+        value: "អសកម្ម",
+      },
+    ],
+    placeholder: "ស្ថានភាព",
+  },
+  {
+    name: "gender",
+    value: genderFilter,
+    onChange: setGenderFilter,
+    options: [
+      {
+        label: "ភេទ",
+        value: "",
+      },
+      {
+        label: "ស្រី",
+        value: "ស្រី",
+      },
+      {
+        label: "ប្រុស",
+        value: "ប្រុស",
+      },
+      {
+        label: "ព្រះសង្ឃ",
+        value: "ព្រះសង្ឃ",
+      },
+    ],
+    placeholder: "ភេទ",
+  },
+];
 
   return (
     <div className="min-h-full flex flex-col gap-4">

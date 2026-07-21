@@ -1,0 +1,102 @@
+[
+    {
+      "id": "1",
+      "title": "កម្មវិធីដាំដើមឈើ",
+      "type": "external",
+      "status": "completed",
+      "date": "25 មករា, 2026",
+      "time": null,
+      "attendeeCount": 200,
+      "image": "/tree planning.jpg"
+    },
+    {
+      "id": "2",
+      "title": "កម្មវិធីបរិច្ចាគសៀវភៅ",
+      "type": "external",
+      "status": "completed",
+      "date": "25 មករា, 2026",
+      "time": null,
+      "attendeeCount": 200,
+      "image": "/book.webp"
+    },
+    {
+      "id": "3",
+      "title": "កម្មវិធីជប់លៀង",
+      "type": "internal",
+      "status": "completed",
+      "date": "25 មករា, 2026",
+      "time": null,
+      "attendeeCount": 200,
+      "image": "/dinner.webp"
+    },
+    {
+      "id": "4",
+      "title": "កម្មវិធីជួបជុំសមាជិក",
+      "type": "external",
+      "status": "upcoming",
+      "date": "06 កុម្ភៈ, 2026",
+      "time": "9:00 ព្រឹក",
+      "attendeeCount": null,
+      "image": "/meeting.jpg"
+    },
+    {
+      "id": "5",
+      "title": "កិច្ចប្រជុំក្រុមប្រឹក្សា",
+      "type": "internal",
+      "status": "upcoming",
+      "date": "06 កុម្ភៈ, 2026",
+      "time": "9:00 ព្រឹក",
+      "attendeeCount": null,
+      "image": "/dinner.webp"
+    },
+    {
+      "id": "6",
+      "title": "កម្មវិធីដាំដើមឈើ",
+      "type": "external",
+      "status": "completed",
+      "date": "25 មករា, 2026",
+      "time": null,
+      "attendeeCount": 200,
+      "image": "/tree planning.jpg"
+    },
+    {
+      "id": "7",
+      "title": "កម្មវិធីបរិច្ចាគសៀវភៅ",
+      "type": "external",
+      "status": "completed",
+      "date": "25 មករា, 2026",
+      "time": null,
+      "attendeeCount": 200,
+      "image": "/book.webp"
+    },
+    {
+      "id": "8",
+      "title": "កម្មវិធីជប់លៀង",
+      "type": "internal",
+      "status": "upcoming",
+      "date": "25 មករា, 2026",
+      "time": "9:00 ព្រឹក",
+      "attendeeCount": 200,
+      "image": "/dinner.webp"
+    },
+    {
+      "id": "9",
+      "title": "កម្មវិធីជួបជុំសមាជិក",
+      "type": "external",
+      "status": "upcoming",
+      "date": "06 កុម្ភៈ, 2026",
+      "time": "9:00 ព្រឹក",
+      "attendeeCount": null,
+      "image": "/meeting.jpg"
+    },
+    {
+      "id": "10",
+      "title": "កិច្ចប្រជុំក្រុមប្រឹក្សា",
+      "type": "internal",
+      "status": "upcoming",
+      "date": "06 កុម្ភៈ, 2026",
+      "time": "9:00 ព្រឹក",
+      "attendeeCount": null,
+      "image": "/dinner.webp"
+    }
+  ]

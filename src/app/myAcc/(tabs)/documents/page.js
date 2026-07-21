@@ -1,4 +1,10 @@
-import { notFound } from "next/navigation";
+"use client";
+
+
+import {
+  getCurrentMember
+} from "@/lib/currentMember";
+
 
 import IdCard from "@/components/card/idCard";
 import CertificateCard from "@/components/card/certificate";
@@ -6,49 +12,73 @@ import DocumentPreviewCard from "@/components/card/DocumentPreviewCard";
 import LetterOfAppointment from "@/components/card/LetterOfAppointment";
 
 
-import users from "@/data/members.json";
+export default function DocumentsPage(){
 
-export default async function Document({ params }) {
-  const { id } = await params;
 
-  const user = users.find((item) => String(item.id) === String(id));
+  const member = getCurrentMember();
 
-  if (!user) {
-    notFound();
+
+
+  if (!member) {
+    return (
+      <div className="rounded-xl bg-white p-6">
+        រកមិនឃើញព័ត៌មានសមាជិក
+      </div>
+    );
   }
 
+
+
   return (
+
     <div className="flex justify-center gap-30 p-6">
+
+
       {/* ID CARD */}
       <DocumentPreviewCard
         title="ប័ណ្ណសម្គាល់សមាជិក"
-        data={[user]}
+        data={[member]}
         filename="member-card.csv"
         previewClass="scale-[0.55]"
       >
-        <IdCard user={user} />
+
+        <IdCard user={member}/>
+
       </DocumentPreviewCard>
 
-      {/* Letter of appointment */}
+
+
+      {/* LETTER */}
       <DocumentPreviewCard
         title="លិខិតតែងតាំង"
-        data={[user]}
+        data={[member]}
         filename="letter_of_appointment.csv"
         previewClass="scale-[0.35]"
       >
-        <LetterOfAppointment user={user} />
+
+        <LetterOfAppointment user={member}/>
+
       </DocumentPreviewCard>
+
+
+
 
       {/* CERTIFICATE */}
       <DocumentPreviewCard
         title="បណ្ណសរសើរ"
-        data={[user]}
+        data={[member]}
         filename="certificate.csv"
         previewClass="scale-[0.35]"
       >
-        <CertificateCard user={user} />
+
+        <CertificateCard user={member}/>
+
       </DocumentPreviewCard>
 
+
+
     </div>
+
   );
+
 }
