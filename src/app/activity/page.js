@@ -37,7 +37,7 @@ function TypeBadge({ type }) {
 
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-[11px] font-normal ${style}`}
+      className={`inline-flex w-[70px] items-center justify-center whitespace-nowrap rounded-full px-2 py-1 text-[11px] font-normal ${style}`}
     >
       {type}
     </span>
@@ -57,7 +57,7 @@ function StatusBadge({ status }) {
 
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-[11px] font-normal ${style}`}
+      className={`inline-flex w-[70px] items-center justify-center whitespace-nowrap rounded-full px-2 py-1 text-[11px] font-normal ${style}`}
     >
       {label}
     </span>
@@ -240,7 +240,7 @@ export default function ActivityPage() {
       render: (row) => (
         <Link
           href={`/activity/${row.id}`}
-          className="mx-auto flex h-8 w-fit items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-3 text-[11px] font-semibold text-white transition hover:bg-primary-hover"
+          className="mx-auto flex h-8 w-fit items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-3 text-[11px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-sm active:translate-y-0"
         >
           <List size={14} />
           ព័ត៌មានលម្អិត
@@ -251,13 +251,6 @@ export default function ActivityPage() {
 
   const filters = [
     {
-      key: "type",
-      value: selectedType,
-      onChange: setSelectedType,
-      placeholder: "ប្រភេទ",
-      options: types,
-    },
-    {
       key: "sector",
       value: selectedSector,
       onChange: setSelectedSector,
@@ -265,11 +258,11 @@ export default function ActivityPage() {
       options: sectors,
     },
     {
-      key: "branch",
-      value: selectedBranch,
-      onChange: setSelectedBranch,
-      placeholder: "សាខា",
-      options: branches,
+      key: "type",
+      value: selectedType,
+      onChange: setSelectedType,
+      placeholder: "ប្រភេទ",
+      options: types,
     },
     {
       key: "date",
@@ -281,12 +274,12 @@ export default function ActivityPage() {
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5 overflow-x-hidden">
       <ActivityStats activities={filteredActivities} />
 
-      <section className="rounded-xl border border-border bg-white p-4">
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-  <div className="w-[320px] shrink-0">
+      <section className="rounded-xl border border-border bg-white p-4 transition-shadow duration-200 hover:shadow-sm">
+        <div className="mb-4 flex min-w-0 flex-nowrap items-center gap-3">
+  <div className="w-[265px] shrink-0">
     <SearchBar
       value={searchQuery}
       onChange={setSearchQuery}
@@ -296,7 +289,7 @@ export default function ActivityPage() {
   </div>
 
   <div className="shrink-0">
-    <FilterBar filters={filters} />
+    <FilterBar filters={filters} className="flex-nowrap" />
   </div>
 
   <div className="ml-auto flex shrink-0 items-center gap-3">
@@ -320,7 +313,7 @@ export default function ActivityPage() {
 
     <Link
       href="/activity/create"
-      className="flex h-[34px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-success px-4 text-sm font-semibold text-white"
+      className="flex h-[34px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-success px-4 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-sm active:translate-y-0"
     >
       <PlusCircle size={16} />
       បង្កើតកម្មវិធីថ្មី
@@ -332,7 +325,7 @@ export default function ActivityPage() {
           columns={columns}
           data={filteredActivities}
           rowsPerPage={10}
-          tableClassName="min-w-[1180px]"
+          scrollable={false}
           emptyMessage="មិនមានទិន្នន័យកម្មវិធីទេ"
         />
       </section>

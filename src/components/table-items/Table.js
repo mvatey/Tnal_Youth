@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Pagination from "@/components/dashboard/Pagination";
 
-export default function Table({ columns = [], data = [], emptyMessage = "មិនមានទិន្នន័យទេ", rowKey, rowsPerPage = 10, tableClassName = "" }) {
+export default function Table({ columns = [], data = [], emptyMessage = "មិនមានទិន្នន័យទេ", rowKey, rowsPerPage = 10, tableClassName = "", scrollable = true }) {
   const [currentPage, setCurrentPage] = useState(1);
 
   const totalPages = Math.max(1, Math.ceil(data.length / rowsPerPage));
@@ -18,8 +18,8 @@ export default function Table({ columns = [], data = [], emptyMessage = "មិ�
   }, [data, currentPage, rowsPerPage]);
 
   return (
-    <div>
-      <div className="overflow-x-auto rounded-lg border border-[#e5eaf0] bg-white no-scrollbar">
+    <div className="min-w-0">
+      <div className={`max-w-full rounded-lg border border-[#e5eaf0] bg-white ${scrollable ? "overflow-x-auto no-scrollbar" : "overflow-hidden"}`}>
         <table className={`w-full table-fixed border-collapse ${tableClassName}`}>
           <thead className="bg-white">
             <tr className="h-[42px] border-b border-border text-[12px] text-text-secondary">

@@ -52,7 +52,7 @@ function StatCard({
   iconColor,
 }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-bg-page-white">
+    <div className="group relative overflow-hidden rounded-xl border border-border bg-bg-page-white transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md">
       
       {/* top color line */}
       <div className={`h-[3px] w-full ${accent}`} />
@@ -68,6 +68,7 @@ function StatCard({
             items-center
             justify-center
             rounded-xl
+            transition-transform duration-200 group-hover:scale-105
             ${iconBg}
           `}
         >

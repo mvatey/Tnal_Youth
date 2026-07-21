@@ -68,9 +68,9 @@ function FilterInput({
 
 
 
-export default function FilterBar({ filters = [] }) {
+export default function FilterBar({ filters = [], className = "" }) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className={`flex flex-wrap items-center gap-3 ${className}`}>
       {filters.map(({ key, ...filter }) => (
         <FilterInput
           key={key}
