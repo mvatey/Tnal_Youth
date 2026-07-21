@@ -1,3 +1,5 @@
+// src/app/api/auth/logout/route.js
+
 import { cookies } from "next/headers";
 
 export async function POST() {
@@ -5,6 +7,7 @@ export async function POST() {
 
   cookieStore.delete("accessToken");
   cookieStore.delete("refreshToken");
+  cookieStore.delete("userRole");
 
   return Response.json({
     success: true,

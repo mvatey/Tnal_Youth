@@ -28,9 +28,9 @@
 // }
 
 // app/layout.js
-// app/layout.js
 import { Kantumruy_Pro } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/themeProvider";
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 const kantumruyPro = Kantumruy_Pro({
@@ -48,7 +48,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="km" className={kantumruyPro.variable}>
       <body className={kantumruyPro.className}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
