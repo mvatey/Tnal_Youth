@@ -76,7 +76,7 @@ export default function IdCard({ user }) {
             >
               <Image
                 src={user.profile_photo || "/member.png"}
-                alt={user.name}
+                alt={user.name_kh}
                 fill
                 className="object-cover"
               />
@@ -96,7 +96,7 @@ export default function IdCard({ user }) {
               </h2>
 
               <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-                <Info label="ឈ្មោះ" value={user.name} />
+                <Info label="ឈ្មោះ" value={user.name_kh} />
 
                 <Info label="ភេទ" value={user.gender} />
 

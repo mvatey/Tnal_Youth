@@ -2,9 +2,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Eye, List } from "lucide-react";
 import participationData from "@/data/participation.json";
 import DataTable from "@/components/table/DataTable.js";
+import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail.js";
 
 const TYPE_BADGE_STYLES = {
   កម្មវិធីផ្ទៃក្នុង: "bg-primary-light text-primary",
@@ -24,20 +24,18 @@ export default function ParticipationPage() {
     return [...new Set(participationData.map((item) => item.type))];
   }, []);
 
-  const filtered = useMemo(() => {
+  const filteredData = useMemo(() => {
     return participationData.filter((item) => {
-      const matchesQuery = item.activity
-        ?.toLowerCase()
-        .includes(query.toLowerCase());
-
+      const search = query.trim().toLowerCase();
+      const matchesQuery =
+        !search || item.activity?.toLowerCase().includes(search);
       const matchesType = !typeFilter || item.type === typeFilter;
-
       return matchesQuery && matchesType;
     });
   }, [query, typeFilter]);
 
   const handleViewDetail = (item) => {
-    console.log("View detail:", item);
+    console.log("View activity detail:", item);
   };
 
   const columns = [
@@ -49,7 +47,7 @@ export default function ParticipationPage() {
     },
     {
       header: "ឈ្មោះកម្មវិធី",
-      width: "w-[22%]",
+      width: "w-[21%]",
       align: "left",
       render: (item) => (
         <span className="block truncate font-medium text-text-primary">
@@ -69,7 +67,7 @@ export default function ParticipationPage() {
       align: "center",
       render: (item) => (
         <span
-          className={`inline-flex max-w-full items-center justify-center rounded-full px-2 py-1 text-[11px] whitespace-nowrap truncate ${TYPE_BADGE_STYLES[item.type] || "bg-gray-100 text-text-secondary"}`}
+          className={`inline-flex max-w-full items-center justify-center truncate whitespace-nowrap rounded-full px-2 py-1 text-[11px] ${TYPE_BADGE_STYLES[item.type] || "bg-gray-100 text-text-secondary"}`}
         >
           {item.type}
         </span>
@@ -81,22 +79,27 @@ export default function ParticipationPage() {
       align: "center",
       render: (item) => (
         <span
-          className={`inline-flex max-w-full items-center justify-center rounded-full px-2 py-1 text-[11px] whitespace-nowrap truncate ${STATUS_BADGE_STYLES[item.status] || "bg-gray-100 text-text-secondary"}`}
+          className={`inline-flex max-w-full items-center justify-center truncate whitespace-nowrap rounded-full px-2 py-1 text-[11px] ${STATUS_BADGE_STYLES[item.status] || "bg-gray-100 text-text-secondary"}`}
         >
           {item.status}
         </span>
       ),
     },
     {
-      header: "ទីតាំង",
-      width: "w-[14%]",
-      align: "left",
-      render: (item) => (
-        <span className="block truncate">
-          {item.location?.city} {item.location?.district}
-        </span>
-      ),
-    },
+  header: "ទីតាំង",
+  width: "w-[14%]",
+  align: "left",
+  render: (item) => (
+    <div className="flex flex-col leading-4">
+      <span className="text-xs font-medium truncate">
+        {item.location?.city}
+      </span>
+      <span className="text-[11px] text-text-secondary truncate">
+        {item.location?.district}
+      </span>
+    </div>
+  ),
+},
     {
       header: "ថ្ងៃចូលរួម",
       width: "w-[14%]",
@@ -104,34 +107,13 @@ export default function ParticipationPage() {
       render: (item) => <span className="block truncate">{item.date}</span>,
     },
     {
-  header: "សកម្មភាព",
-  width: "w-[8%]",
-  align: "center",
-  render: (item) => (
-    <button
-      onClick={() => handleViewDetail(item)}
-      className="
-        inline-flex 
-        items-center 
-        justify-center 
-        gap-1.5
-        rounded-xl 
-        bg-secondary 
-        px-3
-        py-1.5
-        text-xs 
-        font-medium 
-        text-white 
-        hover:opacity-90 
-        transition
-        whitespace-nowrap
-      "
-    >
-      <List className="h-3.5 w-3.5 shrink-0" />
-      <span>លម្អិត</span>
-    </button>
-  ),
-}
+      header: "សកម្មភាព",
+      width: "w-[8%]",
+      align: "center",
+      render: (item) => (
+        <ButtonSeeDetail onClick={() => handleViewDetail(item)} />
+      ),
+    },
   ];
 
   const filters = [
@@ -145,14 +127,12 @@ export default function ParticipationPage() {
 
   return (
     <div className="space-y-2">
-      <div>
-        <h2 className="text-lg font-semibold text-text-primary">
-          ប្រវត្តិការចូលរួមសកម្មភាព
-        </h2>
-      </div>
+      <h2 className="text-lg font-semibold text-text-primary">
+        ប្រវត្តិការចូលរួមសកម្មភាព
+      </h2>
 
       <DataTable
-        data={filtered}
+        data={filteredData}
         columns={columns}
         filters={filters}
         searchQuery={query}

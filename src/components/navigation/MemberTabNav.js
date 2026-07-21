@@ -8,14 +8,6 @@ export default function MemberTabNav({ memberId }) {
 
   const tabs = [
     {
-      name: "សកម្មភាព",
-      href: `/member/memberInfo/${memberId}/participation`,
-    },
-    {
-      name: "ការធ្វើវិភាគទាន",
-      href: `/member/memberInfo/${memberId}/donation`,
-    },
-    {
       name: "ប័ណ្ណសម្គាល់ខ្លួននិងលិខិត",
       href: `/member/memberInfo/${memberId}/documents`,
     },
@@ -23,6 +15,15 @@ export default function MemberTabNav({ memberId }) {
       name: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
       href: `/member/memberInfo/${memberId}/password`,
     },
+    {
+      name: "សកម្មភាព",
+      href: `/member/memberInfo/${memberId}/participation`,
+    },
+    {
+      name: "ការធ្វើវិភាគទាន",
+      href: `/member/memberInfo/${memberId}/donation`,
+    },
+    
   ];
 
   return (

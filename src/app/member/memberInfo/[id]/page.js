@@ -29,7 +29,7 @@ export default function MemberInfoPage({ params }) {
   // Redirect default member page to participation tab
   useEffect(() => {
     if (member) {
-      router.replace(`/member/memberInfo/${id}/participation`);
+      router.replace(`/member/memberInfo/${id}/documents`);
     }
   }, [member, id, router]);
 

@@ -302,7 +302,11 @@ export default function ActivityList() {
  *     "date": "25 មករា, 2026",
  *     "time": null,             // populated for "upcoming", null for "completed"
  *     "attendeeCount": 200,     // populated for "completed", null for "upcoming"
+<<<<<<< HEAD
  *     "image": "/tree planning.jpg"  // null for "upcoming" (no photo exists yet)
+=======
+ *     "image": "/activities/1.jpg"  // null for "upcoming" (no photo exists yet)
+>>>>>>> origin/feature/member
  *   }
  *
  * IMPORTANT — sorting & limiting responsibility:

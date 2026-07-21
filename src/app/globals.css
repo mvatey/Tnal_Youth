@@ -143,3 +143,47 @@ input::-webkit-credentials-auto-fill-button {
   height: 14px;
   font-size: 10px;
 }
+/* Hide native calendar icon */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 12px;
+  width: 18px;
+  height: 18px;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* Remove extra controls */
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-clear-button {
+  display: none;
+}
+
+/* Remove browser appearance */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+/* Remove blue text selection inside date input */
+input[type="date"] {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Hide text cursor */
+input[type="date"]::-webkit-datetime-edit {
+  user-select: none;
+}
+
+/* Remove focus outline */
+input[type="date"]:focus {
+  outline: none;
+}
+button,
+a,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  cursor: pointer;
+}

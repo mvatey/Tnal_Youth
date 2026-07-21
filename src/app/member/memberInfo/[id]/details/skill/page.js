@@ -4,44 +4,105 @@ import { useState } from "react";
 import { RiAddCircleLine } from "react-icons/ri";
 import { Trash2 } from "lucide-react";
 import SaveButton from "@/components/forms/SaveButton";
+import FormSelect from "@/components/forms/FormSelect";
+import educationData from "@/data/education.json";
+import DeleteButton from "@/components/forms/DeleteButton";
+
+function createLanguageSkill() {
+  return {
+    id: `language-${Date.now()}-${Math.random()}`,
+    ...educationData.emptyLanguageSkill,
+  };
+}
+
+function createComputerSkill() {
+  return {
+    id: `computer-${Date.now()}-${Math.random()}`,
+    ...educationData.emptyComputerSkill,
+  };
+}
 
 export default function SkillPage() {
-  const [skills, setSkills] = useState([{ id: 1 }]);
-  const [languages, setLanguages] = useState([{ id: 1 }]);
+  const [languageSkills, setLanguageSkills] = useState([createLanguageSkill()]);
+  const [computerSkills, setComputerSkills] = useState([createComputerSkill()]);
 
-  const addSkill = () => {
-    setSkills([...skills, { id: Date.now() }]);
+  const updateLanguageSkill = (id, field, value) => {
+    setLanguageSkills((previous) =>
+      previous.map((item) =>
+        item.id === id ? { ...item, [field]: value } : item,
+      ),
+    );
   };
 
-  const removeSkill = (id) => {
-    if (skills.length === 1) return;
-
-    setSkills(skills.filter((item) => item.id !== id));
+  const addLanguageSkill = () => {
+    setLanguageSkills((previous) => [...previous, createLanguageSkill()]);
   };
 
-  const addLanguage = () => {
-    setLanguages([...languages, { id: Date.now() }]);
+  const removeLanguageSkill = (id) => {
+    setLanguageSkills((previous) =>
+      previous.length === 1
+        ? previous
+        : previous.filter((item) => item.id !== id),
+    );
   };
 
-  const removeLanguage = (id) => {
-    if (languages.length === 1) return;
+  const updateComputerSkill = (id, field, value) => {
+    setComputerSkills((previous) =>
+      previous.map((item) =>
+        item.id === id ? { ...item, [field]: value } : item,
+      ),
+    );
+  };
 
-    setLanguages(languages.filter((item) => item.id !== id));
+  const addComputerSkill = () => {
+    setComputerSkills((previous) => [...previous, createComputerSkill()]);
+  };
+
+  const removeComputerSkill = (id) => {
+    setComputerSkills((previous) =>
+      previous.length === 1
+        ? previous
+        : previous.filter((item) => item.id !== id),
+    );
+  };
+
+  const handleSave = () => {
+    const data = {
+      languageSkills,
+      computerSkills,
+    };
+
+    console.log("Skill data:", data);
+    alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
   };
 
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="text-lg font-bold text-primary">ការប្រើប្រាស់ជំនាញបច្ចេកទេស</h2>
+        <h2 className="text-lg font-bold text-primary">
+          ការប្រើប្រាស់ភាសាបរទេស
+        </h2>
 
         <div className="mt-5 space-y-5">
-          {skills.map((item) => (
-            <SkillGroup key={item.id} canDelete={skills.length > 1} onDelete={() => removeSkill(item.id)} />
+          {languageSkills.map((item) => (
+            <LanguageSkillGroup
+              key={item.id}
+              item={item}
+              canDelete={languageSkills.length > 1}
+              onChange={(field, value) =>
+                updateLanguageSkill(item.id, field, value)
+              }
+              onDelete={() => removeLanguageSkill(item.id)}
+            />
           ))}
         </div>
 
         <div className="mt-6 flex justify-center">
-          <button onClick={addSkill} className="inline-flex items-center gap-2 rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white hover:bg-green-700">
+          <button
+            type="button"
+            onClick={addLanguageSkill}
+            className="inline-flex items-center gap-2 rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
+          >
             <RiAddCircleLine size={17} />
             បន្ថែម
           </button>
@@ -49,16 +110,30 @@ export default function SkillPage() {
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="text-lg font-bold text-primary">ការប្រើប្រាស់ភាសាបរទេស</h2>
+        <h2 className="text-lg font-bold text-primary">
+          ការប្រើប្រាស់កម្មវិធីកុំព្យូទ័រ
+        </h2>
 
         <div className="mt-5 space-y-5">
-          {languages.map((item) => (
-            <LanguageGroup key={item.id} canDelete={languages.length > 1} onDelete={() => removeLanguage(item.id)} />
+          {computerSkills.map((item) => (
+            <ComputerSkillGroup
+              key={item.id}
+              item={item}
+              canDelete={computerSkills.length > 1}
+              onChange={(field, value) =>
+                updateComputerSkill(item.id, field, value)
+              }
+              onDelete={() => removeComputerSkill(item.id)}
+            />
           ))}
         </div>
 
         <div className="mt-6 flex justify-center">
-          <button onClick={addLanguage} className="inline-flex items-center gap-2 rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white hover:bg-green-700">
+          <button
+            type="button"
+            onClick={addComputerSkill}
+            className="inline-flex items-center gap-2 rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
+          >
             <RiAddCircleLine size={17} />
             បន្ថែម
           </button>
@@ -66,70 +141,107 @@ export default function SkillPage() {
       </div>
 
       <div className="flex justify-end">
-        <SaveButton />
+        <SaveButton onClick={handleSave} />
       </div>
     </div>
   );
 }
 
-function SkillGroup({ canDelete, onDelete }) {
+function LanguageSkillGroup({ item, canDelete, onChange, onDelete }) {
   return (
     <div className="rounded-xl border border-gray-300 p-6">
-      <div className="grid grid-cols-5 gap-5">
-        <FormSelect label="កម្រិត" placeholder="ជ្រើសរើសកម្រិត" />
-        <FormSelect label="ការប្រើប្រាស់" placeholder="ជ្រើសរើសការប្រើប្រាស់" />
-        <FormSelect label="ការអាន" placeholder="ជ្រើសរើសការអាន" />
-        <FormSelect label="ការសរសេរ" placeholder="ជ្រើសរើសការសរសេរ" />
-        <FormSelect label="ការស្តាប់" placeholder="ជ្រើសរើសការស្តាប់" />
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-5">
+        <FormSelect
+          label="ភាសា"
+          placeholder="ជ្រើសរើសភាសា"
+          value={item.language || ""}
+          onChange={(event) => onChange("language", event.target.value)}
+          options={educationData.languages || []}
+        />
+        <FormSelect
+          label="ការស្ដាប់"
+          placeholder="ជ្រើសរើសកម្រិត"
+          value={item.listening || ""}
+          onChange={(event) => onChange("listening", event.target.value)}
+          options={
+            educationData.listeningLevels ||
+            educationData.proficiencyLevels ||
+            []
+          }
+        />
+        <FormSelect
+          label="ការអាន"
+          placeholder="ជ្រើសរើសកម្រិត"
+          value={item.reading || ""}
+          onChange={(event) => onChange("reading", event.target.value)}
+          options={
+            educationData.readingLevels || educationData.proficiencyLevels || []
+          }
+        />
+        <FormSelect
+          label="ការនិយាយ"
+          placeholder="ជ្រើសរើសកម្រិត"
+          value={item.speaking || ""}
+          onChange={(event) => onChange("speaking", event.target.value)}
+          options={
+            educationData.speakingLevels ||
+            educationData.proficiencyLevels ||
+            []
+          }
+        />
+        <FormSelect
+          label="ការសរសេរ"
+          placeholder="ជ្រើសរើសកម្រិត"
+          value={item.writing || ""}
+          onChange={(event) => onChange("writing", event.target.value)}
+          options={
+            educationData.writingLevels || educationData.proficiencyLevels || []
+          }
+        />
       </div>
 
-      {canDelete && (
-        <div className="mt-6 flex justify-end">
-          <button onClick={onDelete} className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-700">
-            <Trash2 size={17} />
-            លុប
-          </button>
-        </div>
-      )}
+      <div className="mt-6 flex justify-end">
+  <DeleteButton
+    canDelete={canDelete}
+    onClick={onDelete}
+  />
+</div>
     </div>
   );
 }
 
-function LanguageGroup({ canDelete, onDelete }) {
+function ComputerSkillGroup({ item, canDelete, onChange, onDelete }) {
   return (
     <div className="rounded-xl border border-gray-300 p-6">
-      <div className="grid grid-cols-2 gap-6">
-        <FormSelect label="ភាសា" placeholder="ជ្រើសរើសភាសា" />
-        <FormSelect label="កម្រិតជំនាញ" placeholder="ជ្រើសរើសកម្រិតជំនាញ" />
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <FormSelect
+          label="ជំនាញ"
+          placeholder="ជ្រើសរើសកម្មវិធី"
+          value={item.skill || ""}
+          onChange={(event) => onChange("skill", event.target.value)}
+          options={educationData.computerSkills || []}
+        />
+        <FormSelect
+          label="កម្រិតជំនាញ"
+          placeholder="ជ្រើសរើសកម្រិតជំនាញ"
+          value={item.level || ""}
+          onChange={(event) => onChange("level", event.target.value)}
+          options={educationData.computerSkillLevels || []}
+        />
       </div>
 
-      {canDelete && (
-        <div className="mt-6 flex justify-end">
-          <button onClick={onDelete} className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-700">
-            <Trash2 size={17} />
-            លុប
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function FormSelect({ label, placeholder }) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-semibold text-text-primary">{label}</label>
-
-      <div className="relative">
-        <select className="h-11 w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 pr-12 text-sm text-gray-500 outline-none focus:border-primary">
-          <option>{placeholder}</option>
-        </select>
-
-        <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-            <path d="M5 7L10 12L15 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
+      <div className="mt-6 flex justify-end">
+        <button
+          type="button"
+          disabled={!canDelete}
+          onClick={onDelete}
+          className={`inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white ${
+            canDelete ? "hover:bg-red-700" : "cursor-not-allowed"
+          }`}
+        >
+          <Trash2 size={17} />
+          លុប
+        </button>
       </div>
     </div>
   );

@@ -1,448 +1,265 @@
 "use client";
 
-import { useState } from "react";
-import { Calendar, Link2, Plus, Trash2 } from "lucide-react";
-import SaveButton from "@/components/forms/SaveButton";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { Trash2 } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
+import FormSelect from "@/components/forms/FormSelect";
 
+import SaveButton from "@/components/forms/SaveButton.js";
+import BoxFill from "@/components/forms/boxFill.js";
+import FormDate from "@/components/forms/FormDate.js";
+import SelectArrow from "@/components/forms/SelectArrow";
+import DeleteButton from "@/components/forms/DeleteButton";
+import ButtonDropLink from "@/components/forms/ButtonDropLink";
 
-export default function EducationPage(){
+import locationData from "@/data/location.json";
+import educationData from "@/data/education.json";
+import membersData from "@/data/members.json";
 
-  const [educations,setEducations] = useState([
-    {
-      id:1
-    }
-  ]);
-
-
-
-  const addEducation = ()=>{
-
-    setEducations([
-      ...educations,
-      {
-        id:Date.now()
-      }
-    ]);
-
+function createEmptyEducation() {
+  return {
+    id: `edu-${Date.now()}`,
+    ...educationData.emptyEducation,
   };
+}
 
+export default function EducationPage() {
+  const params = useParams();
+  const memberId = String(params?.id ?? "");
 
+  const [member, setMember] = useState(null);
+  const [educations, setEducations] = useState([]);
 
-  const removeEducation = (id)=>{
+  useEffect(() => {
+    const selectedMember = membersData.find(
+      (item) => String(item.id) === memberId,
+    );
 
-    if(educations.length === 1){
+    if (!selectedMember) {
+      setMember(null);
+      setEducations([]);
       return;
     }
 
+    setMember(selectedMember);
+
+    const educationHistory = Array.isArray(
+      selectedMember.educationHistory,
+    )
+      ? selectedMember.educationHistory
+      : [];
 
     setEducations(
-      educations.filter(
-        item=>item.id !== id
-      )
+      educationHistory.length > 0
+        ? educationHistory
+        : [createEmptyEducation()],
     );
+  }, [memberId]);
 
-  };
+  function handleEducationChange(id, field, value) {
+    setEducations((previous) =>
+      previous.map((education) =>
+        education.id === id
+          ? {
+              ...education,
+              [field]: value,
+            }
+          : education,
+      ),
+    );
+  }
 
+  function addEducation() {
+    setEducations((previous) => [
+      ...previous,
+      createEmptyEducation(),
+    ]);
+  }
 
+  function removeEducation(id) {
+    setEducations((previous) => {
+      if (previous.length === 1) {
+        return previous;
+      }
+
+      return previous.filter(
+        (education) => education.id !== id,
+      );
+    });
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+
+    if (!member) return;
+
+    const updatedMember = {
+      ...member,
+      educationHistory: educations,
+    };
+
+    console.log("Updated member:", updatedMember);
+  }
+
+  if (!member) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6">
+        <p className="text-sm text-red-500">
+          រកមិនឃើញព័ត៌មានសមាជិក
+        </p>
+      </div>
+    );
+  }
 
   return (
-
-    <div className="space-y-4">
-
-
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="rounded-xl border border-gray-200 bg-white p-5">
-
-
-        <h2 className="text-lg font-bold text-primary">
-          ការអប់រំ/បណ្តុះបណ្តាល
-        </h2>
-
-
+        <div>
+          <h2 className="text-lg font-bold text-primary">
+            កម្រិតការបណ្ដុះបណ្ដាល
+          </h2>
+        </div>
 
         <div className="mt-5 space-y-5">
-
-
-          {
-            educations.map((item,index)=>(
-
-
-              <EducationGroup
-
-                key={item.id}
-
-                index={index}
-
-                canDelete={educations.length > 1}
-
-                onDelete={()=>removeEducation(item.id)}
-
-              />
-
-
-            ))
-          }
-
-
+          {educations.map((education, index) => (
+            <EducationGroup
+              key={education.id}
+              index={index}
+              education={education}
+              canDelete={educations.length > 1}
+              onChange={(field, value) =>
+                handleEducationChange(
+                  education.id,
+                  field,
+                  value,
+                )
+              }
+              onDelete={() =>
+                removeEducation(education.id)
+              }
+            />
+          ))}
         </div>
 
-
-
-        {/* ADD BUTTON */}
-
-        <div className="flex justify-center mt-6">
-
-
+        <div className="mt-6 flex justify-center">
           <button
-
+            type="button"
             onClick={addEducation}
-
-            className="inline-flex items-center gap-2 rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white hover:bg-green-700"
-
+            className="inline-flex items-center gap-2 rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
           >
-
-            <RiAddCircleLine size={17}/>
-
+            <RiAddCircleLine size={17} />
             បន្ថែម
-
           </button>
-
-
         </div>
-
-
       </div>
-
-
-
-
-      {/* SAVE */}
 
       <div className="flex justify-end">
-
-        <SaveButton/>
-
+        <SaveButton type="submit" />
       </div>
-
-
-
-    </div>
-
+    </form>
   );
-
 }
-
-
-
-
-
-
 
 function EducationGroup({
+  index,
+  education,
   canDelete,
-  onDelete
-}){
+  onDelete,
+  onChange,
+}) {
+  const provinces = Array.isArray(locationData.provinces)
+    ? locationData.provinces
+    : [];
 
+  const countries = Array.isArray(locationData.countries)
+    ? locationData.countries
+    : [];
 
-return (
+  const degrees = Array.isArray(educationData.degrees)
+    ? educationData.degrees
+    : [];
 
-<div className="relative rounded-xl border border-gray-300 p-6">
+  return (
+    <div className="rounded-xl border border-gray-300 p-6">
+      <h3 className="mb-5 text-sm font-semibold text-text-primary">
+        ប្រវត្តិការសិក្សា ទី {index + 1}
+      </h3>
 
+      <div className="grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2 xl:grid-cols-3">
+        <BoxFill
+          label="សាលា ឬ ស្ថាប័ន"
+          placeholder="បញ្ចូលឈ្មោះសាលា ឬ ស្ថាប័ន"
+          value={education.school ?? ""}
+          onChange={(event) =>
+            onChange("school", event.target.value)
+          }
+        />
 
-<div className="grid grid-cols-3 gap-x-6 gap-y-5">
+        <FormSelect
+          label="រាជធានី/ខេត្ត/រដ្ឋ"
+          placeholder="ជ្រើសរើសរាជធានី/ខេត្ត/រដ្ឋ"
+          value={education.province ?? ""}
+          onChange={(event) =>
+            onChange("province", event.target.value)
+          }
+          options={provinces}
+        />
 
+        <FormSelect
+          label="ប្រទេស"
+          placeholder="ជ្រើសរើសប្រទេស"
+          value={education.country ?? ""}
+          onChange={(event) =>
+            onChange("country", event.target.value)
+          }
+          options={countries}
+        />
 
+        <FormSelect
+          label="កម្រិតសញ្ញាប័ត្រ"
+          placeholder="ជ្រើសរើសកម្រិតសញ្ញាប័ត្រ"
+          value={education.degree ?? ""}
+          onChange={(event) =>
+            onChange("degree", event.target.value)
+          }
+          options={degrees}
+        />
 
-<FormInput
+        <div className="flex items-end">
+          <ButtonDropLink
+            value={education.documentLink ?? ""}
+            onChange={(value) =>
+              onChange("documentLink", value)
+            }
+          />
+        </div>
 
-label="សាលា ឬ ស្ថាប័ន"
+        <FormDate
+          label="ថ្ងៃចាប់ផ្តើម"
+          name={`startDate-${education.id}`}
+          value={education.startDate ?? ""}
+          onChange={(event) =>
+            onChange("startDate", event.target.value)
+          }
+        />
 
-placeholder="បញ្ចូលឈ្មោះសាលា ឬ ស្ថាប័ន"
+        <FormDate
+          label="ថ្ងៃបញ្ចប់"
+          name={`endDate-${education.id}`}
+          value={education.endDate ?? ""}
+          onChange={(event) =>
+            onChange("endDate", event.target.value)
+          }
+        />
+      </div>
 
-/>
-
-
-
-<FormSelect
-
-label="កម្រិត/ថ្នាក់"
-
-placeholder="កម្រិត"
-
-/>
-
-
-
-<FormSelect
-
-label="កម្រិត/ជំនាញ"
-
-placeholder="ជ្រើសរើសជំនាញ"
-
-/>
-
-
-
-
-
-<FormSelect
-
-label="ជំនាញឯកទេស"
-
-placeholder="ជ្រើសរើសជំនាញ"
-
-/>
-
-
-
-<div className="flex items-end">
-
-
-<button
-
-className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white"
-
->
-
-<Link2 size={17}/>
-
-តំណភ្ជាប់ឯកសារ
-
-</button>
-
-
+      <div className="mt-6 flex justify-end">
+  <DeleteButton
+    canDelete={canDelete}
+    onClick={onDelete}
+  />
 </div>
-
-
-
-
-<DateInput
-
-label="ថ្ងៃចាប់ផ្តើម"
-
-/>
-
-
-<DateInput
-
-label="ថ្ងៃបញ្ចប់"
-
-/>
-
-
-
-</div>
-
-
-
-
-
-{
-canDelete && (
-
-<button
-
-onClick={onDelete}
-
-className="absolute bottom-5 right-5 inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:bg-red-700"
-
->
-
-<Trash2 size={17}/>
-
-លុប
-
-</button>
-
-)
-
-}
-
-
-
-</div>
-
-);
-
-
-}
-
-
-
-
-
-
-
-
-
-function FormInput({
-label,
-placeholder
-}){
-
-
-return (
-
-<div>
-
-
-<label className="mb-2 block text-sm font-semibold text-text-primary">
-
-{label}
-
-</label>
-
-
-<input
-
-placeholder={placeholder}
-
-className="h-11 w-full rounded-lg border border-gray-200 px-4 text-sm text-gray-600 outline-none focus:border-primary"
-
-/>
-
-
-</div>
-
-);
-
-
-}
-
-
-
-
-
-
-
-
-
-function FormSelect({
-label,
-placeholder
-}){
-
-
-return (
-
-<div>
-
-
-<label className="mb-2 block text-sm font-semibold text-text-primary">
-
-{label}
-
-</label>
-
-
-
-<div className="relative">
-
-
-<select
-
-className="h-11 w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 pr-12 text-sm text-gray-500 outline-none focus:border-primary"
-
->
-
-<option>
-
-{placeholder}
-
-</option>
-
-
-</select>
-
-
-
-<div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-
-<svg
-width="14"
-height="14"
-viewBox="0 0 20 20"
-fill="none"
->
-
-<path
-d="M5 7L10 12L15 7"
-stroke="currentColor"
-strokeWidth="2"
-strokeLinecap="round"
-strokeLinejoin="round"
-/>
-
-
-</svg>
-
-
-</div>
-
-
-</div>
-
-
-</div>
-
-);
-
-
-}
-
-
-
-
-
-
-
-
-
-function DateInput({
-label
-}){
-
-
-return (
-
-<div>
-
-
-<label className="mb-2 block text-sm font-semibold text-text-primary">
-
-{label}
-
-</label>
-
-
-
-<div className="relative">
-
-
-<input
-
-placeholder="ថ្ងៃ/ខែ/ឆ្នាំ"
-
-className="h-11 w-full rounded-lg border border-gray-200 px-4 pr-12 text-sm text-gray-600 outline-none focus:border-primary"
-
-/>
-
-
-<Calendar
-
-size={18}
-
-className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-
-/>
-
-
-</div>
-
-
-</div>
-
-);
-
-
+    </div>
+  );
 }

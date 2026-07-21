@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "month": "មករា",
+    "year": 2026,
+    "amount": "$20.00",
+    "date": "2026-01-12",
+    "recordedBy": "ផាន វិទ្ធី",
+    "paymentMethod": "Cash"
+  },
+  {
+    "id": 2,
+    "month": "កុម្ភៈ",
+    "year": 2026,
+    "amount": "$10.00",
+    "date": "2026-02-04",
+    "recordedBy": "ផាន វិទ្ធី",
+    "paymentMethod": "ABA"
+  },
+  {
+    "id": 3,
+    "month": "មីនា",
+    "year": 2026,
+    "amount": "$50.00",
+    "date": "2026-03-04",
+    "recordedBy": "ផាន វិទ្ធី",
+    "paymentMethod": "ACELEDA"
+  },
+  {
+    "id": 4,
+    "month": "មេសា",
+    "year": 2026,
+    "amount": "$15.00",
+    "date": "2026-04-10",
+    "recordedBy": "សុខ ដារ៉ា",
+    "paymentMethod": "Cash"
+  },
+  {
+    "id": 5,
+    "month": "ឧសភា",
+    "year": 2026,
+    "amount": "$30.00",
+    "date": "2026-05-08",
+    "recordedBy": "សុខ ដារ៉ា",
+    "paymentMethod": "ABA"
+  }
+]
