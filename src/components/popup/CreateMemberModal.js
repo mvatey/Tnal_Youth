@@ -5,19 +5,13 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { User, Phone, Mail, Calendar, X, Save } from "lucide-react";
-import SelectArrow from "@/components/forms/SelectArrow";
-import { HiSaveAs } from "react-icons/hi";
+import memberOptions from "@/data/donation/memberOptions.json";
 
-const GENDER_OPTIONS = ["ស្រី", "ប្រុស"];
-const STATUS_OPTIONS = ["សកម្ម", "អសកម្ម"];
-const LEVEL_OPTIONS = ["1", "2", "3", "4", "5"];
-
-const ROLE_OPTIONS = [
-  { value: "admin", label: "អ្នកគ្រប់គ្រង" },
-  { value: "branch_leader", label: "ប្រធានសាខា" },
-  { value: "secretary", label: "លេខាធិការ" },
-  { value: "member", label: "សមាជិក" },
-];
+const {
+  genderOptions: GENDER_OPTIONS,
+  roleOptions: ROLE_OPTIONS,
+  statusOptions: STATUS_OPTIONS,
+} = memberOptions;
 
 const EMPTY_FORM = {
   nameKh: "",
@@ -30,7 +24,6 @@ const EMPTY_FORM = {
   role: "",
   dob: "",
   joinedAt: "",
-  level: "",
 };
 
 export default function CreateMemberModal({
@@ -41,8 +34,6 @@ export default function CreateMemberModal({
 }) {
   const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
-  const dateInputClass =
-    "w-full rounded-xl border border-gray-200 py-3 pl-3 pr-4 text-sm text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30";
 
   useEffect(() => {
     setMounted(true);
@@ -98,11 +89,11 @@ export default function CreateMemberModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-3xl bg-white p-8 shadow-xl"
+        className="w-full max-w-2xl rounded-3xl bg-white p-8 shadow-xl"
       >
         {/* Header */}
         <div className="mb-6 flex items-start justify-between">
-          <h2 className="text-md font-bold text-primary">បង្កើតសមាជិកថ្មី</h2>
+          <h2 className="text-2xl font-bold text-primary">បង្កើតសមាជិកថ្មី</h2>
           <button
             onClick={onClose}
             className="rounded-full p-1 text-text-secondary hover:bg-gray-100"
@@ -132,7 +123,7 @@ export default function CreateMemberModal({
 
             {/* Name (English) */}
             <div>
-              <label className={labelClass}>ឈ្មោះជាភាសាឡាតាំង</label>
+              <label className={labelClass}>ឈ្មោះជាភាសាអង់គ្លេស</label>
               <div className="relative">
                 <User className={iconClass} />
                 <input
@@ -155,13 +146,18 @@ export default function CreateMemberModal({
                   className={selectClass}
                   required
                 >
+                  <option value="" disabled>
+                    ភេទស្រី
+                  </option>
                   {GENDER_OPTIONS.map((g) => (
                     <option key={g} value={g}>
                       {g}
                     </option>
                   ))}
                 </select>
-                <SelectArrow />
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary">
+                  ▾
+                </span>
               </div>
             </div>
 
@@ -175,13 +171,18 @@ export default function CreateMemberModal({
                   className={selectClass}
                   required
                 >
+                  <option value="" disabled>
+                    សកម្ម
+                  </option>
                   {STATUS_OPTIONS.map((s) => (
                     <option key={s} value={s}>
                       {s}
                     </option>
                   ))}
                 </select>
-                <SelectArrow />
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary">
+                  ▾
+                </span>
               </div>
             </div>
 
@@ -235,7 +236,9 @@ export default function CreateMemberModal({
                     </option>
                   ))}
                 </select>
-                <SelectArrow />
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary">
+                  ▾
+                </span>
               </div>
             </div>
 
@@ -258,25 +261,22 @@ export default function CreateMemberModal({
                     </option>
                   ))}
                 </select>
-                <SelectArrow />
+                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary">
+                  ▾
+                </span>
               </div>
             </div>
 
             {/* Date of birth */}
             <div>
               <label className={labelClass}>ថ្ងៃខែឆ្នាំកំណើត</label>
-
               <div className="relative">
+                <Calendar className={iconClass} />
                 <input
                   type="date"
                   value={form.dob}
                   onChange={update("dob")}
-                  className={`${dateInputClass} appearance-none pr-10`}
-                />
-
-                <Calendar
-                  size={18}
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary"
+                  className={`${inputClass} text-text-secondary`}
                 />
               </div>
             </div>
@@ -284,44 +284,15 @@ export default function CreateMemberModal({
             {/* Date joined */}
             <div>
               <label className={labelClass}>ថ្ងៃខែឆ្នាំចូលរួម</label>
-
               <div className="relative">
+                <Calendar className={iconClass} />
                 <input
                   type="date"
                   value={form.joinedAt}
                   onChange={update("joinedAt")}
-                  className={`${dateInputClass} appearance-none pr-10`}
-                />
-
-                <Calendar
-                  size={18}
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary"
-                />
-              </div>
-            </div>
-            {/* Level */}
-            <div>
-              <label className={labelClass}>កាំ</label>
-
-              <div className="relative">
-                <select
-                  value={form.level}
-                  onChange={update("level")}
-                  className={selectClass}
+                  className={`${inputClass} text-text-secondary`}
                   required
-                >
-                  <option value="" disabled>
-                    ជ្រើសរើសកាំ
-                  </option>
-
-                  {LEVEL_OPTIONS.map((level) => (
-                    <option key={level} value={level}>
-                      កាំ {level}
-                    </option>
-                  ))}
-                </select>
-
-                <SelectArrow />
+                />
               </div>
             </div>
           </div>
@@ -333,13 +304,13 @@ export default function CreateMemberModal({
               onClick={onClose}
               className="rounded-full bg-gray-100 px-8 py-3 text-sm font-medium text-text-secondary transition hover:bg-gray-200"
             >
-              បោះបង់
+              បោះបង់បង់
             </button>
             <button
               type="submit"
               className="flex flex-1 items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-white transition hover:opacity-90"
             >
-              <HiSaveAs className="w-4 h-4" />
+              <Save className="w-4 h-4" />
               រក្សាទុក
             </button>
           </div>

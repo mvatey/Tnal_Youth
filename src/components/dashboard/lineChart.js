@@ -1,15 +1,7 @@
 // components/dashboard/LineChart.jsx
 "use client";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-
-const data = [
-  { month: "ខែមករា", value: 40 },
-  { month: "ខែកុម្ភៈ", value: 78 },
-  { month: "ខែមិនា", value: 30 },
-  { month: "ខែមេសា", value: 65 },
-  { month: "ខែឧសភា", value: 45 },
-  { month: "ខែមិថុនា", value: 55 },
-];
+import data from "@/data/donation/participationSummary.json";
 
 export default function RevenueChart() {
   return (

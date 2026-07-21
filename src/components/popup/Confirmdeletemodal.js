@@ -69,13 +69,13 @@ export default function ConfirmDeleteModal({
         <div className="flex items-center gap-3">
           <button
             onClick={onClose}
-            className="flex-1 rounded-2xl bg-gray-100 py-3.5 text-sm font-medium text-text-secondary transition hover:bg-gray-200"
+            className="flex-1 rounded-full bg-gray-100 py-3.5 text-sm font-medium text-text-secondary transition hover:bg-gray-200"
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 rounded-2xl bg-red-600 py-3.5 text-sm font-medium text-white transition hover:bg-red-700"
+            className="flex-1 rounded-full bg-red-600 py-3.5 text-sm font-medium text-white transition hover:bg-red-700"
           >
             {confirmLabel}
           </button>
