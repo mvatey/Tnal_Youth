@@ -11,7 +11,7 @@ const getAmountFieldClass = (value) =>
     ? "border-[#65686b] bg-[#eef5f3]"
     : "border-[#65686b] bg-[#e5e7eb]";
 
-function ReceiptIcon({ size = 20 }) {
+export function ReceiptIcon({ size = 20 }) {
   return (
     <svg
       width={size}

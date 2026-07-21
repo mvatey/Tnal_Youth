@@ -1,8 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Eye, Search } from "lucide-react";
-import { RiDownloadCloud2Line } from "react-icons/ri";
+import { Download, Eye, Search } from "lucide-react";
 import FilterBar from "@/components/table-items/FilterBar";
 
 const members = [
@@ -92,12 +91,17 @@ export default function MemberSelectModal({ onClose }) {
     }
   };
 
+  const handleSave = () => {
+    localStorage.setItem("activity-selected-members", JSON.stringify(selected));
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-5">
       <div className="w-full max-w-5xl rounded-xl bg-white p-5 shadow-xl">
         <div className="mb-4 flex items-center gap-3">
           <div className="relative flex-1">
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ស្វែងរកសមាជិក..." className="h-10 w-full rounded-lg border border-border bg-white pl-4 pr-10 text-sm outline-none" />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={query ? "" : "ស្វែងរកសមាជិក..."} className="h-10 w-full rounded-lg border border-border bg-white pl-4 pr-10 text-sm outline-none" />
             <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary" />
           </div>
 
@@ -107,9 +111,9 @@ export default function MemberSelectModal({ onClose }) {
         </div>
 
         <div className="max-h-[430px] overflow-y-auto rounded-lg border border-border">
-          <table className="w-full table-fixed border-collapse text-sm">
+          <table className="w-full table-fixed border-collapse text-[12px] text-text-secondary">
             <thead className="sticky top-0 z-10 bg-white">
-              <tr className="h-11 border-b border-border text-text-secondary">
+              <tr className="h-11 border-b border-border font-medium text-text-secondary">
                 <th className="w-[4%] text-center">
                   <input type="checkbox" checked={allFilteredSelected} onChange={toggleAll} />
                 </th>
@@ -134,8 +138,8 @@ export default function MemberSelectModal({ onClose }) {
                     </td>
 
                     <td>
-                      <p className="font-semibold text-text-primary">{member.name}</p>
-                      <p className="text-xs text-text-secondary">{member.email}</p>
+                      <p className="font-medium text-text-primary">{member.name}</p>
+                      <p className="text-[12px] text-text-secondary">{member.email}</p>
                     </td>
 
                     <td className="text-center">{member.gender}</td>
@@ -166,10 +170,10 @@ export default function MemberSelectModal({ onClose }) {
         </div>
 
         <div className="mt-5 flex items-center justify-between">
-          <button type="button" onClick={onClose} className="h-10 rounded-lg border border-border bg-white px-6 text-sm font-semibold text-text-secondary">បោះបង់</button>
+          <button type="button" onClick={onClose} className="h-[34px] w-[91px] rounded-lg border border-border bg-white text-sm font-semibold text-text-secondary">បោះបង់</button>
 
-          <button type="button" onClick={onClose} className="flex h-10 items-center gap-2 rounded-lg bg-secondary px-8 text-sm font-semibold text-white">
-            <RiDownloadCloud2Line size={18} />
+          <button type="button" onClick={handleSave} className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white">
+            <Download size={16} />
             រក្សាទុក
           </button>
         </div>

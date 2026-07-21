@@ -232,4 +232,15 @@ export async function POST(request) {
       }
     );
   }
+
+  const token = Buffer.from(JSON.stringify({ id: user.id, role: user.role })).toString("base64");
+
+  const cookieStore = await cookies();
+  cookieStore.set("session", token, {
+    httpOnly: true,
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
+
+  return Response.json({ role: user.role, name: user.name });
 }

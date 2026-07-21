@@ -107,7 +107,7 @@ export default function Sidebar() {
 
     await logout();
 
-    router.replace("/auth/login");
+    router.replace("/login");
     router.refresh();
   }
 

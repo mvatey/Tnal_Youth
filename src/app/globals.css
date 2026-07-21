@@ -78,6 +78,12 @@ textarea {
   font: inherit;
 }
 
+.activity-ui input:focus::placeholder,
+.activity-ui textarea:focus::placeholder {
+  color: transparent;
+  opacity: 0;
+}
+
 .sidebar {
   overflow: hidden;
 }

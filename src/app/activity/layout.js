@@ -14,7 +14,7 @@ export default function ActivityLayout({ children }) {
           <Topbar title="កម្មវិធី" />
 
           <main className="flex-1 overflow-hidden bg-bg-page-gray">
-            <div className="h-full overflow-y-auto p-5 no-scrollbar">{children}</div>
+            <div className="activity-ui h-full overflow-y-auto p-5 no-scrollbar">{children}</div>
           </main>
         </div>
       </div>
