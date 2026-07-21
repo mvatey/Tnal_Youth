@@ -1,28 +1,43 @@
-// app/auth/login/page.jsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, LogIn } from "lucide-react";
+import { LogIn, User } from "lucide-react";
 
 import TextInput from "@/components/ui/textInput";
 import PasswordInput from "@/components/ui/passwordInput";
 import { useAuth } from "@/context/AuthContext";
 import { getRoleHomePath } from "@/lib/navigation";
 
+const REMEMBERED_LOGIN_KEY = "rememberedLogin";
+
 export default function LoginPage() {
   const router = useRouter();
-  const { refreshUser } = useAuth();
+  const { setUser } = useAuth();
 
   const [phoneOrEmail, setPhoneOrEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const rememberedLogin = localStorage.getItem(
+      REMEMBERED_LOGIN_KEY
+    );
+
+    if (rememberedLogin) {
+      setPhoneOrEmail(rememberedLogin);
+      setRememberMe(true);
+    }
+  }, []);
 
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!phoneOrEmail.trim() || !password) {
+    const normalizedLogin = phoneOrEmail.trim();
+
+    if (!normalizedLogin || !password) {
       setError(
         "សូមបញ្ចូលលេខទូរស័ព្ទ/អ៊ីមែល និងលេខសម្ងាត់"
       );
@@ -40,8 +55,9 @@ export default function LoginPage() {
         },
         credentials: "include",
         body: JSON.stringify({
-          phoneOrEmail: phoneOrEmail.trim(),
+          phoneOrEmail: normalizedLogin,
           password,
+          rememberMe,
         }),
       });
 
@@ -55,19 +71,31 @@ export default function LoginPage() {
         return;
       }
 
-      const currentUser = await refreshUser();
-
-      router.replace(getRoleHomePath(currentUser.role));
-      router.refresh();
+      const currentUser = data.user;
 
       if (!currentUser) {
         setError(
-          "ចូលប្រើប្រាស់បាន ប៉ុន្តែមិនអាចទាញយកព័ត៌មានគណនីបាន"
+          "មិនអាចទាញយកព័ត៌មានគណនីបានទេ"
         );
         return;
       }
 
-      const homePath = getRoleHomePath(currentUser.role);
+      if (rememberMe) {
+        localStorage.setItem(
+          REMEMBERED_LOGIN_KEY,
+          normalizedLogin
+        );
+      } else {
+        localStorage.removeItem(
+          REMEMBERED_LOGIN_KEY
+        );
+      }
+
+      setUser(currentUser);
+
+      const homePath = getRoleHomePath(
+        currentUser.role
+      );
 
       router.replace(homePath);
       router.refresh();
@@ -82,6 +110,18 @@ export default function LoginPage() {
     }
   }
 
+  function handleRememberMeChange(event) {
+    const checked = event.target.checked;
+
+    setRememberMe(checked);
+
+    if (!checked) {
+      localStorage.removeItem(
+        REMEMBERED_LOGIN_KEY
+      );
+    }
+  }
+
   return (
     <div>
       <h2 className="mb-2 text-center text-xl font-bold text-text-primary">
@@ -92,11 +132,17 @@ export default function LoginPage() {
         សូមបញ្ចូលព័ត៌មានគណនីរបស់អ្នក
       </p>
 
-      <form onSubmit={handleSubmit} className="w-full space-y-5">
+      <form
+        onSubmit={handleSubmit}
+        autoComplete="on"
+        className="w-full space-y-5"
+      >
         <TextInput
           label="លេខទូរស័ព្ទប្រើប្រាស់ ឬ អ៊ីមែល"
           icon={User}
           placeholder="បញ្ចូលលេខទូរស័ព្ទ ឬ អ៊ីមែល"
+          name="username"
+          autoComplete="username"
           value={phoneOrEmail}
           onChange={(event) =>
             setPhoneOrEmail(event.target.value)
@@ -106,6 +152,8 @@ export default function LoginPage() {
         <PasswordInput
           label="លេខសម្ងាត់"
           placeholder="បញ្ចូលលេខសម្ងាត់"
+          name="password"
+          autoComplete="current-password"
           value={password}
           onChange={(event) =>
             setPassword(event.target.value)
@@ -125,15 +173,20 @@ export default function LoginPage() {
         >
           <LogIn size={18} />
 
-          {loading ? "កំពុងចូល..." : "ចូលប្រើប្រាស់"}
+          {loading
+            ? "កំពុងចូល..."
+            : "ចូលប្រើប្រាស់"}
         </button>
 
         <div className="flex items-center justify-between pt-1 text-sm">
           <label className="flex items-center gap-2 text-slate-600">
             <input
               type="checkbox"
+              checked={rememberMe}
+              onChange={handleRememberMeChange}
               className="rounded border-slate-300"
             />
+
             ចងចាំខ្ញុំ
           </label>
 
@@ -147,6 +200,7 @@ export default function LoginPage() {
 
         <p className="pt-2 text-center text-sm text-slate-500">
           មិនទាន់មានគណនី?{" "}
+
           <a
             href="/auth/signup"
             className="text-blue-700 hover:underline"

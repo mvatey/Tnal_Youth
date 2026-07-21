@@ -1,5 +1,3 @@
-// src/proxy.js
-
 import { NextResponse } from "next/server";
 
 const ROUTE_ROLES = {
@@ -63,57 +61,90 @@ function findMatchedRoute(pathname) {
 }
 
 export function proxy(request) {
-  const { pathname, search } = request.nextUrl;
+  const { pathname, search } =
+    request.nextUrl;
 
   const accessToken =
-    request.cookies.get("accessToken")?.value;
+    request.cookies.get(
+      "accessToken"
+    )?.value;
 
   const userRole =
-    request.cookies.get("userRole")?.value
-      ?.trim()
+    request.cookies
+      .get("userRole")
+      ?.value?.trim()
       .toUpperCase();
 
-  const matchedRoute = findMatchedRoute(pathname);
+  const matchedRoute =
+    findMatchedRoute(pathname);
 
   if (!matchedRoute) {
     return NextResponse.next();
   }
 
-  // Not logged in
+  /*
+    Not logged in
+  */
   if (!accessToken) {
-    const loginUrl = new URL(
-      "/auth/login",
+    const unauthorizedUrl = new URL(
+      "/unauthorized",
       request.url
     );
 
-    loginUrl.searchParams.set(
+    unauthorizedUrl.searchParams.set(
       "redirect",
       `${pathname}${search}`
     );
 
-    return NextResponse.redirect(loginUrl);
+    unauthorizedUrl.searchParams.set(
+      "reason",
+      "login-required"
+    );
+
+    return NextResponse.redirect(
+      unauthorizedUrl
+    );
   }
 
-  // Token exists, but role is missing
+  /*
+    Token exists but role is missing
+  */
   if (!userRole) {
     const unauthorizedUrl = new URL(
       "/unauthorized",
       request.url
     );
 
-    return NextResponse.redirect(unauthorizedUrl);
+    unauthorizedUrl.searchParams.set(
+      "reason",
+      "role-missing"
+    );
+
+    return NextResponse.redirect(
+      unauthorizedUrl
+    );
   }
 
-  const allowedRoles = ROUTE_ROLES[matchedRoute];
+  const allowedRoles =
+    ROUTE_ROLES[matchedRoute];
 
-  // Logged in, but the role cannot access this page
+  /*
+    Logged in, but wrong role
+  */
   if (!allowedRoles.includes(userRole)) {
     const unauthorizedUrl = new URL(
       "/unauthorized",
       request.url
     );
 
-    return NextResponse.redirect(unauthorizedUrl);
+    unauthorizedUrl.searchParams.set(
+      "reason",
+      "forbidden"
+    );
+
+    return NextResponse.redirect(
+      unauthorizedUrl
+    );
   }
 
   return NextResponse.next();

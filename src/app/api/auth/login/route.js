@@ -1,9 +1,8 @@
-// src/app/api/auth/login/route.js
-
 import { cookies } from "next/headers";
 
 const BACKEND_URL =
-  process.env.BACKEND_API_URL || "http://localhost:8081/api";
+  process.env.BACKEND_API_URL ||
+  "http://localhost:8081/api";
 
 function parseJsonSafely(text) {
   if (!text) {
@@ -29,6 +28,7 @@ export async function POST(request) {
       body.email;
 
     const password = body.password;
+    const rememberMe = Boolean(body.rememberMe);
 
     if (!phoneOrEmail?.trim() || !password) {
       return Response.json(
@@ -42,7 +42,9 @@ export async function POST(request) {
       );
     }
 
-    // 1. Authenticate with Spring Boot
+    /*
+      1. Login to Spring Boot
+    */
     const loginResponse = await fetch(
       `${BACKEND_URL}/auth/login`,
       {
@@ -89,7 +91,7 @@ export async function POST(request) {
 
     if (!accessToken) {
       console.error(
-        "Login response did not contain access token:",
+        "Backend login response has no access token:",
         loginData
       );
 
@@ -104,7 +106,9 @@ export async function POST(request) {
       );
     }
 
-    // 2. Use the access token to retrieve the authenticated user
+    /*
+      2. Load the real authenticated user
+    */
     const meResponse = await fetch(
       `${BACKEND_URL}/auth/me`,
       {
@@ -121,16 +125,11 @@ export async function POST(request) {
     const currentUser = parseJsonSafely(meText);
 
     if (!meResponse.ok) {
-      console.error(
-        "Login succeeded but /auth/me failed:",
-        currentUser
-      );
-
       return Response.json(
         {
           message:
             currentUser.message ||
-            "ចូលប្រើប្រាស់បាន ប៉ុន្តែមិនអាចទាញយកព័ត៌មានគណនីបាន",
+            "ចូលបាន ប៉ុន្តែមិនអាចទាញយកព័ត៌មានគណនីបាន",
         },
         {
           status: meResponse.status,
@@ -138,39 +137,24 @@ export async function POST(request) {
       );
     }
 
-    if (!currentUser?.role) {
-      console.error(
-        "/auth/me did not return a user role:",
-        currentUser
-      );
-
-      return Response.json(
-        {
-          message:
-            "គណនីនេះមិនមានតួនាទីប្រើប្រាស់ត្រឹមត្រូវ",
-        },
-        {
-          status: 500,
-        }
-      );
-    }
-
-    const normalizedRole = String(currentUser.role)
+    const normalizedRole = String(
+      currentUser.role || ""
+    )
       .trim()
       .toUpperCase();
 
-    const allowedRoles = [
+    const supportedRoles = [
       "ADMIN",
       "SECRETARY",
       "BRANCH_LEADER",
       "MEMBER",
     ];
 
-    if (!allowedRoles.includes(normalizedRole)) {
+    if (!supportedRoles.includes(normalizedRole)) {
       return Response.json(
         {
           message:
-            "តួនាទីរបស់គណនីនេះមិនត្រូវបានគាំទ្រ",
+            "គណនីនេះមិនមានតួនាទីត្រឹមត្រូវ",
         },
         {
           status: 403,
@@ -178,7 +162,9 @@ export async function POST(request) {
       );
     }
 
-    // 3. Store authentication cookies
+    /*
+      3. Save cookies
+    */
     const cookieStore = await cookies();
 
     const commonCookieOptions = {
@@ -188,26 +174,45 @@ export async function POST(request) {
       path: "/",
     };
 
-    cookieStore.set("accessToken", accessToken, {
-      ...commonCookieOptions,
-      maxAge: 60 * 60 * 24,
-    });
+    const accessCookieOptions = rememberMe
+      ? {
+          ...commonCookieOptions,
+          maxAge: 60 * 60 * 24,
+        }
+      : commonCookieOptions;
+
+    const refreshCookieOptions = rememberMe
+      ? {
+          ...commonCookieOptions,
+          maxAge: 60 * 60 * 24 * 7,
+        }
+      : commonCookieOptions;
+
+    cookieStore.set(
+      "accessToken",
+      accessToken,
+      accessCookieOptions
+    );
+
+    cookieStore.set(
+      "userRole",
+      normalizedRole,
+      accessCookieOptions
+    );
 
     if (refreshToken) {
-      cookieStore.set("refreshToken", refreshToken, {
-        ...commonCookieOptions,
-        maxAge: 60 * 60 * 24 * 7,
-      });
+      cookieStore.set(
+        "refreshToken",
+        refreshToken,
+        refreshCookieOptions
+      );
     } else {
       cookieStore.delete("refreshToken");
     }
 
-    cookieStore.set("userRole", normalizedRole, {
-      ...commonCookieOptions,
-      maxAge: 60 * 60 * 24,
-    });
-
-    // 4. Return login result plus authenticated user
+    /*
+      4. Return user to the frontend
+    */
     return Response.json(
       {
         success: true,
@@ -225,22 +230,12 @@ export async function POST(request) {
 
     return Response.json(
       {
-        message: "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ",
+        message:
+          "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ",
       },
       {
         status: 500,
       }
     );
   }
-
-  const token = Buffer.from(JSON.stringify({ id: user.id, role: user.role })).toString("base64");
-
-  const cookieStore = await cookies();
-  cookieStore.set("session", token, {
-    httpOnly: true,
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-  });
-
-  return Response.json({ role: user.role, name: user.name });
 }

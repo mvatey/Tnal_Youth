@@ -1,12 +1,14 @@
-// src/lib/navigation.js
-
 export const NAV_ITEMS = [
   {
     id: "dashboard",
     label: "ផ្ទាំងគ្រប់គ្រង",
     href: "/dashboard",
     icon: "dashboard",
-    roles: ["admin", "secretary", "branch_leader"],
+    roles: [
+      "admin",
+      "secretary",
+      "branch_leader",
+    ],
   },
   {
     id: "branches",
@@ -80,7 +82,9 @@ export const NAV_ITEMS = [
 ];
 
 export function normalizeRole(role) {
-  return String(role || "").trim().toLowerCase();
+  return String(role || "")
+    .trim()
+    .toLowerCase();
 }
 
 export function getNavigationForRole(role) {
@@ -94,12 +98,15 @@ export function getNavigationForRole(role) {
 export function getRoleHomePath(role) {
   const normalizedRole = normalizeRole(role);
 
-  const homePaths = {
+  const roleHomePaths = {
     admin: "/dashboard",
     secretary: "/dashboard",
     branch_leader: "/dashboard",
     member: "/activity",
   };
 
-  return homePaths[normalizedRole] || "/auth/login";
+  return (
+    roleHomePaths[normalizedRole] ||
+    "/auth/login"
+  );
 }

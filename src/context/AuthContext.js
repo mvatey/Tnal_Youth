@@ -36,7 +36,10 @@ export function AuthProvider({ children }) {
 
       return currentUser;
     } catch (error) {
-      console.error("Failed to load current user:", error);
+      console.error(
+        "Failed to load current user:",
+        error
+      );
 
       setUser(null);
 
@@ -66,12 +69,18 @@ export function AuthProvider({ children }) {
   const value = useMemo(
     () => ({
       user,
+      setUser,
       isLoggedIn: Boolean(user),
       authLoading,
       refreshUser,
       logout,
     }),
-    [user, authLoading, refreshUser, logout]
+    [
+      user,
+      authLoading,
+      refreshUser,
+      logout,
+    ]
   );
 
   return (
