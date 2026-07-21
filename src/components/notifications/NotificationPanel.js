@@ -32,8 +32,8 @@ export default function NotificationPanel({ type = "system" }) {
       <NotificationTabs />
 
       <section className="overflow-hidden rounded-md border border-border bg-[#fbfcfe] shadow-sm">
-        <div className="px-8 pt-4">
-          <h2 className="text-[16px] font-bold text-secondary">{heading}</h2>
+        <div className="min-h-[48px] overflow-visible px-8 pb-1 pt-[10px]">
+          <h2 className="overflow-visible text-[16px] font-bold leading-[2] text-secondary">{heading}</h2>
         </div>
 
         <ul className="mt-[10px]">

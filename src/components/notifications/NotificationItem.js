@@ -14,18 +14,18 @@ export default function NotificationItem({ notification }) {
   return (
     <li
       className={`grid grid-cols-[minmax(0,1fr)_120px_86px] items-start gap-5 border-b border-border px-8 last:border-b-0 ${
-        expanded ? "min-h-[132px] py-4" : "h-[74px]"
+        expanded ? "min-h-[132px] py-4" : "min-h-[86px] py-3"
       }`}
     >
-      <div className="min-w-0 pt-[2px] pb-[10px]">
-        <h3 className="truncate text-[14px] font-bold leading-none text-text-primary">
+      <div className="min-w-0 overflow-visible pb-1 pt-[2px]">
+        <h3 className="overflow-visible whitespace-normal text-[14px] font-bold leading-[1.75] text-text-primary">
           {notification.title}
         </h3>
         <p
           className={`mt-1 text-[12px] font-medium text-text-secondary ${
             expanded
               ? "whitespace-normal leading-5"
-              : "truncate leading-3"
+              : "truncate leading-[1.6]"
           }`}
         >
           {notification.description}
