@@ -9,16 +9,16 @@ const TABS = [
     href: "/myAcc/documents",
   },
   {
-    label: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
-    href: "/myAcc/password",
-  },
-  {
-    label: "សកម្មភាព",
+    label: "ការចូលរួមកម្មវិធី",
     href: "/myAcc/participation",
   },
   {
     label: "ការធ្វើវិភាគទាន",
     href: "/myAcc/donation",
+  },
+  {
+    label: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
+    href: "/myAcc/password",
   },
 ];
 

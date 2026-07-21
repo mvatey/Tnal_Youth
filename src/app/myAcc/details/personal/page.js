@@ -2,14 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { UploadCloud } from "lucide-react";
-import { getCurrentMember } from "@/lib/currentMember";
+
+import useCurrentMember from "@/hooks/useCurrentMember";
+
 import SaveButton from "@/components/forms/SaveButton";
 import BoxFill from "@/components/forms/boxFill";
 import FormDate from "@/components/forms/FormDate";
 import FormSelect from "@/components/forms/FormSelect";
+
 export default function MyAccountPersonalPage() {
   const fileRef = useRef(null);
-  const member = getCurrentMember();
+
+  const {
+    member,
+    loading,
+    error,
+  } = useCurrentMember();
 
   const [form, setForm] = useState(null);
   const [fileName, setFileName] = useState("");
@@ -58,6 +66,24 @@ export default function MyAccountPersonalPage() {
     console.log("Updated account:", form);
   };
 
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-border bg-white p-6">
+        កំពុងទាញយកព័ត៌មានសមាជិក...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6">
+        <p className="text-sm text-red-500">
+          {error}
+        </p>
+      </div>
+    );
+  }
+
   if (!member || !form) {
     return (
       <div className="rounded-xl border border-red-200 bg-white p-6">
@@ -71,7 +97,9 @@ export default function MyAccountPersonalPage() {
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-bold text-primary">ព័ត៌មានផ្ទាល់ខ្លួន</h2>
+        <h2 className="text-lg font-bold text-primary">
+          ព័ត៌មានផ្ទាល់ខ្លួន
+        </h2>
 
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:col-span-2">
@@ -157,7 +185,10 @@ export default function MyAccountPersonalPage() {
             </label>
 
             <div className="flex h-[165px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 text-center">
-              <UploadCloud size={22} className="mb-3 text-gray-400" />
+              <UploadCloud
+                size={22}
+                className="mb-3 text-gray-400"
+              />
 
               <input
                 ref={fileRef}

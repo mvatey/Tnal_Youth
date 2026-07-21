@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { RiAddCircleLine } from "react-icons/ri";
 
-import { getCurrentMember } from "@/lib/currentMember";
+import useCurrentMember from "@/hooks/useCurrentMember";
 import educationData from "@/data/education.json";
 
 import SaveButton from "@/components/forms/SaveButton";
@@ -30,7 +30,11 @@ function createComputerSkill() {
 }
 
 export default function MyAccountSkillPage() {
-  const member = getCurrentMember();
+  const {
+    member,
+    loading,
+    error,
+  } = useCurrentMember();
 
   const [languageSkills, setLanguageSkills] = useState([]);
   const [computerSkills, setComputerSkills] = useState([]);
@@ -66,7 +70,12 @@ export default function MyAccountSkillPage() {
   const updateLanguage = (id, field, value) => {
     setLanguageSkills((previous) =>
       previous.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item,
+        item.id === id
+          ? {
+              ...item,
+              [field]: value,
+            }
+          : item,
       ),
     );
   };
@@ -74,7 +83,12 @@ export default function MyAccountSkillPage() {
   const updateComputer = (id, field, value) => {
     setComputerSkills((previous) =>
       previous.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item,
+        item.id === id
+          ? {
+              ...item,
+              [field]: value,
+            }
+          : item,
       ),
     );
   };
@@ -83,7 +97,9 @@ export default function MyAccountSkillPage() {
     setLanguageSkills((previous) =>
       previous.length === 1
         ? previous
-        : previous.filter((item) => item.id !== id),
+        : previous.filter(
+            (item) => item.id !== id,
+          ),
     );
   };
 
@@ -91,7 +107,9 @@ export default function MyAccountSkillPage() {
     setComputerSkills((previous) =>
       previous.length === 1
         ? previous
-        : previous.filter((item) => item.id !== id),
+        : previous.filter(
+            (item) => item.id !== id,
+          ),
     );
   };
 
@@ -102,6 +120,24 @@ export default function MyAccountSkillPage() {
       computerSkills,
     });
   };
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-border bg-white p-6">
+        កំពុងទាញយកព័ត៌មានសមាជិក...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6">
+        <p className="text-sm text-red-500">
+          {error}
+        </p>
+      </div>
+    );
+  }
 
   if (!member) {
     return <NotFound />;
@@ -142,39 +178,44 @@ export default function MyAccountSkillPage() {
                   options={educationData.languages || []}
                 />
 
-                {["listening", "reading", "speaking", "writing"].map(
-                  (field) => {
-                    const labels = {
-                      listening: "ការស្ដាប់",
-                      reading: "ការអាន",
-                      speaking: "ការនិយាយ",
-                      writing: "ការសរសេរ",
-                    };
+                {[
+                  "listening",
+                  "reading",
+                  "speaking",
+                  "writing",
+                ].map((field) => {
+                  const labels = {
+                    listening: "ការស្ដាប់",
+                    reading: "ការអាន",
+                    speaking: "ការនិយាយ",
+                    writing: "ការសរសេរ",
+                  };
 
-                    return (
-                      <FormSelect
-                        key={field}
-                        label={labels[field]}
-                        value={item[field] || ""}
-                        onChange={(event) =>
-                          updateLanguage(
-                            item.id,
-                            field,
-                            event.target.value,
-                          )
-                        }
-                        placeholder="ជ្រើសរើសកម្រិត"
-                        options={levels}
-                      />
-                    );
-                  },
-                )}
+                  return (
+                    <FormSelect
+                      key={field}
+                      label={labels[field]}
+                      value={item[field] || ""}
+                      onChange={(event) =>
+                        updateLanguage(
+                          item.id,
+                          field,
+                          event.target.value,
+                        )
+                      }
+                      placeholder="ជ្រើសរើសកម្រិត"
+                      options={levels}
+                    />
+                  );
+                })}
               </div>
 
               <div className="mt-6 flex justify-end">
                 <DeleteButton
                   canDelete={languageSkills.length > 1}
-                  onClick={() => removeLanguage(item.id)}
+                  onClick={() =>
+                    removeLanguage(item.id)
+                  }
                 />
               </div>
             </div>
@@ -235,14 +276,19 @@ export default function MyAccountSkillPage() {
                     )
                   }
                   placeholder="ជ្រើសរើសកម្រិត"
-                  options={educationData.computerSkillLevels || levels}
+                  options={
+                    educationData.computerSkillLevels ||
+                    levels
+                  }
                 />
               </div>
 
               <div className="mt-6 flex justify-end">
                 <DeleteButton
                   canDelete={computerSkills.length > 1}
-                  onClick={() => removeComputer(item.id)}
+                  onClick={() =>
+                    removeComputer(item.id)
+                  }
                 />
               </div>
             </div>

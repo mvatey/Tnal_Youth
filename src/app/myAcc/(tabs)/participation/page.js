@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { getCurrentMember } from "@/lib/currentMember";
+import useCurrentMember from "@/hooks/useCurrentMember";
 import participationData from "@/data/participation.json";
 
 import DataTable from "@/components/table/DataTable";
@@ -19,7 +19,10 @@ const STATUS_STYLES = {
 };
 
 export default function MyAccountParticipationPage() {
-  const member = getCurrentMember();
+  const { member, loading, error } = useCurrentMember();
+
+  const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
 
   const memberParticipation = useMemo(() => {
     if (!member) return [];
@@ -30,9 +33,6 @@ export default function MyAccountParticipationPage() {
       return String(item.memberId) === String(member.id);
     });
   }, [member]);
-
-  const [query, setQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
 
   const types = useMemo(
     () => [
@@ -60,6 +60,24 @@ export default function MyAccountParticipationPage() {
       return matchesSearch && matchesType;
     });
   }, [memberParticipation, query, typeFilter]);
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-border bg-white p-6">
+        កំពុងទាញយកព័ត៌មានសមាជិក...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6">
+        <p className="text-sm text-red-500">
+          {error}
+        </p>
+      </div>
+    );
+  }
 
   if (!member) {
     return <NotFound />;
@@ -127,6 +145,7 @@ export default function MyAccountParticipationPage() {
           <span className="truncate">
             {item.location?.city || "-"}
           </span>
+
           <span className="truncate text-[11px] text-text-secondary">
             {item.location?.district || ""}
           </span>

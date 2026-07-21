@@ -6,14 +6,10 @@ import { usePathname } from "next/navigation";
 export default function MemberTabNav({ memberId }) {
   const pathname = usePathname();
 
-  const tabs = [
+const tabs = [
     {
       name: "ប័ណ្ណសម្គាល់ខ្លួននិងលិខិត",
       href: `/member/memberInfo/${memberId}/documents`,
-    },
-    {
-      name: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
-      href: `/member/memberInfo/${memberId}/password`,
     },
     {
       name: "សកម្មភាព",
@@ -23,6 +19,10 @@ export default function MemberTabNav({ memberId }) {
       name: "ការធ្វើវិភាគទាន",
       href: `/member/memberInfo/${memberId}/donation`,
     },
+    {
+      name: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
+      href: `/member/memberInfo/${memberId}/password`,
+    }
     
   ];
 

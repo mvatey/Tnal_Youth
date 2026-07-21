@@ -3,56 +3,86 @@
 import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 
-import { getCurrentMember } from "@/lib/currentMember";
+import useCurrentMember from "@/hooks/useCurrentMember";
+
+import DataTable from "@/components/table/DataTable.js";
+import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal.js";
+
 import donationData from "@/data/donation.json";
 
-import DataTable from "@/components/table/DataTable";
-import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal";
+export default function DonationPage() {
+  const { member, loading, error } = useCurrentMember();
 
-export default function MyAccountDonationPage() {
-  const member = getCurrentMember();
+  const [donations, setDonations] = useState(donationData);
+  const [query, setQuery] = useState("");
+  const [methodFilter, setMethodFilter] = useState("");
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [selectedDonation, setSelectedDonation] = useState(null);
 
-  const initialDonations = useMemo(() => {
+  const memberDonations = useMemo(() => {
     if (!member) return [];
 
-    return donationData.filter((item) => {
-      if (item.memberId === undefined) return true;
+    return donations.filter((item) => {
+      /*
+       * Temporary behavior:
+       * If the JSON item has no memberId, show it for now.
+       */
+      if (item.memberId === undefined || item.memberId === null) {
+        return true;
+      }
 
       return String(item.memberId) === String(member.id);
     });
-  }, [member]);
+  }, [donations, member]);
 
-  const [donations, setDonations] = useState(initialDonations);
-  const [query, setQuery] = useState("");
-  const [methodFilter, setMethodFilter] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState(null);
-
-  const paymentMethods = useMemo(
-    () => [
+  const paymentMethods = useMemo(() => {
+    return [
       ...new Set(
-        donations.map((item) => item.paymentMethod).filter(Boolean),
+        memberDonations
+          .map((item) => item.paymentMethod)
+          .filter(Boolean),
       ),
-    ],
-    [donations],
-  );
+    ];
+  }, [memberDonations]);
 
-  const filteredDonations = useMemo(() => {
+  const filteredData = useMemo(() => {
     const search = query.trim().toLowerCase();
 
-    return donations.filter((item) => {
-      const matchesSearch =
+    return memberDonations.filter((item) => {
+      const month = String(item.month ?? "").toLowerCase();
+      const amount = String(item.amount ?? "").toLowerCase();
+      const recordedBy = String(item.recordedBy ?? "").toLowerCase();
+
+      const matchesQuery =
         !search ||
-        item.month?.toLowerCase().includes(search) ||
-        String(item.year || "").includes(search) ||
-        item.amount?.toLowerCase().includes(search) ||
-        item.recordedBy?.toLowerCase().includes(search);
+        month.includes(search) ||
+        amount.includes(search) ||
+        recordedBy.includes(search);
 
       const matchesMethod =
-        !methodFilter || item.paymentMethod === methodFilter;
+        !methodFilter ||
+        item.paymentMethod === methodFilter;
 
-      return matchesSearch && matchesMethod;
+      return matchesQuery && matchesMethod;
     });
-  }, [donations, query, methodFilter]);
+  }, [
+    memberDonations,
+    query,
+    methodFilter,
+  ]);
+
+  const handleDelete = () => {
+    if (!selectedDonation) return;
+
+    setDonations((previousDonations) =>
+      previousDonations.filter(
+        (item) => item.id !== selectedDonation.id,
+      ),
+    );
+
+    setDeleteModal(false);
+    setSelectedDonation(null);
+  };
 
   const columns = [
     {
@@ -90,7 +120,7 @@ export default function MyAccountDonationPage() {
       accessor: "recordedBy",
     },
     {
-      header: "វិធីសាស្ត្រទូទាត់",
+      header: "វិធីសាស្រ្តទូទាត់",
       width: "w-[18%]",
       align: "left",
       accessor: "paymentMethod",
@@ -102,8 +132,12 @@ export default function MyAccountDonationPage() {
       render: (item) => (
         <button
           type="button"
-          onClick={() => setDeleteTarget(item)}
-          className="inline-flex items-center justify-center p-1.5 text-red-500 hover:text-red-600"
+          onClick={() => {
+            setSelectedDonation(item);
+            setDeleteModal(true);
+          }}
+          className="inline-flex items-center justify-center text-red-500 hover:text-red-600"
+          aria-label="លុបវិភាគទាន"
         >
           <Trash2 className="h-5 w-5" />
         </button>
@@ -111,25 +145,54 @@ export default function MyAccountDonationPage() {
     },
   ];
 
+  const filters = [
+    {
+      name: "paymentMethod",
+      value: methodFilter,
+      onChange: setMethodFilter,
+      options: paymentMethods,
+      placeholder: "វិធីសាស្រ្តទូទាត់",
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-border bg-white p-6">
+        កំពុងទាញយកព័ត៌មានសមាជិក...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6">
+        <p className="text-sm text-red-500">
+          {error}
+        </p>
+      </div>
+    );
+  }
+
   if (!member) {
-    return <NotFound />;
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6">
+        <p className="text-sm text-red-500">
+          រកមិនឃើញព័ត៌មានសមាជិក
+        </p>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-3">
+      <h2 className="text-lg font-semibold text-text-primary">
+        បញ្ជីការធ្វើវិភាគទាន
+      </h2>
+
       <DataTable
-        title="បញ្ជីការធ្វើវិភាគទាន"
-        data={filteredDonations}
+        data={filteredData}
         columns={columns}
-        filters={[
-          {
-            name: "paymentMethod",
-            value: methodFilter,
-            onChange: setMethodFilter,
-            placeholder: "វិធីសាស្ត្រទូទាត់",
-            options: paymentMethods,
-          },
-        ]}
+        filters={filters}
         searchQuery={query}
         onSearchChange={setQuery}
         searchPlaceholder="ស្វែងរក..."
@@ -138,34 +201,21 @@ export default function MyAccountDonationPage() {
       />
 
       <ConfirmDeleteModal
-        open={Boolean(deleteTarget)}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          setDonations((previous) =>
-            previous.filter((item) => item.id !== deleteTarget.id),
-          );
-
-          setDeleteTarget(null);
+        open={deleteModal}
+        onClose={() => {
+          setDeleteModal(false);
+          setSelectedDonation(null);
         }}
+        onConfirm={handleDelete}
         title="លុបវិភាគទាន?"
         description={
-          deleteTarget
-            ? `តើអ្នកប្រាកដថាចង់លុបវិភាគទាន ${deleteTarget.amount} នេះទេ?`
-            : ""
+          selectedDonation
+            ? `តើអ្នកប្រាកដថាចង់លុបវិភាគទាន ${selectedDonation.amount} នេះទេ?`
+            : "តើអ្នកប្រាកដថាចង់លុបទិន្នន័យនេះទេ?"
         }
         cancelLabel="បោះបង់"
         confirmLabel="លុប"
       />
-    </div>
-  );
-}
-
-function NotFound() {
-  return (
-    <div className="rounded-xl border border-red-200 bg-white p-6">
-      <p className="text-sm text-red-500">
-        រកមិនឃើញព័ត៌មានសមាជិក
-      </p>
     </div>
   );
 }

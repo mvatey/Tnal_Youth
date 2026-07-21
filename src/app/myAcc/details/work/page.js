@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { RiAddCircleLine } from "react-icons/ri";
 
-import { getCurrentMember } from "@/lib/currentMember";
+import useCurrentMember from "@/hooks/useCurrentMember";
 
 import SaveButton from "@/components/forms/SaveButton";
 import DeleteButton from "@/components/forms/DeleteButton";
@@ -24,7 +24,12 @@ function createEmptyWork() {
 }
 
 export default function MyAccountWorkPage() {
-  const member = getCurrentMember();
+  const {
+    member,
+    loading,
+    error,
+  } = useCurrentMember();
+
   const [works, setWorks] = useState([]);
 
   useEffect(() => {
@@ -37,13 +42,22 @@ export default function MyAccountWorkPage() {
       ? member.workHistory
       : [];
 
-    setWorks(history.length > 0 ? history : [createEmptyWork()]);
+    setWorks(
+      history.length > 0
+        ? history
+        : [createEmptyWork()],
+    );
   }, [member]);
 
   const updateWork = (id, field, value) => {
     setWorks((previous) =>
       previous.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item,
+        item.id === id
+          ? {
+              ...item,
+              [field]: value,
+            }
+          : item,
       ),
     );
   };
@@ -52,7 +66,9 @@ export default function MyAccountWorkPage() {
     setWorks((previous) =>
       previous.length === 1
         ? previous
-        : previous.filter((item) => item.id !== id),
+        : previous.filter(
+            (item) => item.id !== id,
+          ),
     );
   };
 
@@ -60,6 +76,24 @@ export default function MyAccountWorkPage() {
     console.log("Member ID:", member?.id);
     console.log("Updated work history:", works);
   };
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-border bg-white p-6">
+        កំពុងទាញយកព័ត៌មានសមាជិក...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6">
+        <p className="text-sm text-red-500">
+          {error}
+        </p>
+      </div>
+    );
+  }
 
   if (!member) {
     return <NotFound />;
@@ -177,7 +211,9 @@ export default function MyAccountWorkPage() {
               <div className="mt-6 flex justify-end">
                 <DeleteButton
                   canDelete={works.length > 1}
-                  onClick={() => removeWork(work.id)}
+                  onClick={() =>
+                    removeWork(work.id)
+                  }
                 />
               </div>
             </div>

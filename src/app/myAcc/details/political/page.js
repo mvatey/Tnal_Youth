@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { RiAddCircleLine } from "react-icons/ri";
 
-import { getCurrentMember } from "@/lib/currentMember";
+import useCurrentMember from "@/hooks/useCurrentMember";
 import politicalData from "@/data/political.json";
 import locationData from "@/data/location.json";
 
@@ -27,7 +27,12 @@ function createEmptyPolitical() {
 }
 
 export default function MyAccountPoliticalPage() {
-  const member = getCurrentMember();
+  const {
+    member,
+    loading,
+    error,
+  } = useCurrentMember();
+
   const [politicals, setPoliticals] = useState([]);
 
   useEffect(() => {
@@ -41,14 +46,21 @@ export default function MyAccountPoliticalPage() {
       : [];
 
     setPoliticals(
-      history.length > 0 ? history : [createEmptyPolitical()],
+      history.length > 0
+        ? history
+        : [createEmptyPolitical()],
     );
   }, [member]);
 
   const updatePolitical = (id, field, value) => {
     setPoliticals((previous) =>
       previous.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item,
+        item.id === id
+          ? {
+              ...item,
+              [field]: value,
+            }
+          : item,
       ),
     );
   };
@@ -64,14 +76,37 @@ export default function MyAccountPoliticalPage() {
     setPoliticals((previous) =>
       previous.length === 1
         ? previous
-        : previous.filter((item) => item.id !== id),
+        : previous.filter(
+            (item) => item.id !== id,
+          ),
     );
   };
 
   const handleSave = () => {
     console.log("Member ID:", member?.id);
-    console.log("Updated political history:", politicals);
+    console.log(
+      "Updated political history:",
+      politicals,
+    );
   };
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-border bg-white p-6">
+        កំពុងទាញយកព័ត៌មានសមាជិក...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6">
+        <p className="text-sm text-red-500">
+          {error}
+        </p>
+      </div>
+    );
+  }
 
   if (!member) {
     return <NotFound />;
@@ -94,7 +129,11 @@ export default function MyAccountPoliticalPage() {
       "អ្នកស្ម័គ្រចិត្ត",
     ];
 
-  const countries = locationData.countries || [];
+  const countries = Array.isArray(
+    locationData.countries,
+  )
+    ? locationData.countries
+    : [];
 
   return (
     <div className="space-y-4">
@@ -212,7 +251,9 @@ export default function MyAccountPoliticalPage() {
               <div className="mt-6 flex justify-end">
                 <DeleteButton
                   canDelete={politicals.length > 1}
-                  onClick={() => removePolitical(item.id)}
+                  onClick={() =>
+                    removePolitical(item.id)
+                  }
                 />
               </div>
             </div>
