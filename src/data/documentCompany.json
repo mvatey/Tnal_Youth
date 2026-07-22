@@ -6,7 +6,7 @@
     "date": "2026-01-06",
     "size": "2MB",
     "type": "PDF",
-    "image": "/document.png"
+    "image": "/document.jpg"
   },
   {
     "id": 2,
@@ -15,7 +15,7 @@
     "date": "2026-02-10",
     "size": "5MB",
     "type": "PDF",
-    "image": "/document.png"
+    "image": "/document.jpg"
   },
   {
     "id": 3,
@@ -24,7 +24,7 @@
     "date": "2026-03-15",
     "size": "3MB",
     "type": "PDF",
-    "image": "/document.png"
+    "image": "/document.jpg"
   },
   {
     "id": 4,
@@ -33,7 +33,7 @@
     "date": "2026-04-05",
     "size": "4MB",
     "type": "Excel",
-    "image": "/document.png"
+    "image": "/document.jpg"
   },
   {
     "id": 5,
@@ -42,7 +42,7 @@
     "date": "2026-05-20",
     "size": "1MB",
     "type": "PDF",
-    "image": "/document.png"
+    "image": "/document.jpg"
   },
   {
     "id": 6,
@@ -51,7 +51,7 @@
     "date": "2026-06-12",
     "size": "6MB",
     "type": "PDF",
-    "image": "/document.png"
+    "image": "/document.jpg"
   },
   {
     "id": 7,
@@ -60,7 +60,7 @@
     "date": "2026-07-08",
     "size": "8MB",
     "type": "Word",
-    "image": "/document.png"
+    "image": "/document.jpg"
   },
   {
     "id": 8,
@@ -69,7 +69,7 @@
     "date": "2026-08-18",
     "size": "2MB",
     "type": "PDF",
-    "image": "/document.png"
+    "image": "/document.jpg"
   },
   {
     "id": 9,
@@ -78,7 +78,7 @@
     "date": "2026-09-25",
     "size": "7MB",
     "type": "PDF",
-    "image": "/document.png"
+    "image": "/document.jpg"
   },
   {
     "id": 10,
@@ -87,6 +87,6 @@
     "date": "2026-10-30",
     "size": "10MB",
     "type": "Word",
-    "image": "/document.png"
+    "image": "/document.jpg"
   }
 ]

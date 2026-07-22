@@ -8,7 +8,7 @@
     "date": "Jan 6, 2022",
     "size": "2.5MB",
     "type": "PDF",
-    "image": "/certificate.jpg"
+    "image": "/idCard.jpg"
   },
   {
     "id": 2,
@@ -19,7 +19,7 @@
     "date": "Feb 15, 2022",
     "size": "3.1MB",
     "type": "PDF",
-    "image": "/certificate.jpg"
+    "image": "/idCard.jpg"
   },
   {
     "id": 3,
@@ -30,7 +30,7 @@
     "date": "Mar 10, 2022",
     "size": "1.8MB",
     "type": "PDF",
-    "image": "/certificate.jpg"
+    "image": "/idCard.jpg"
   },
   {
     "id": 4,
@@ -41,7 +41,7 @@
     "date": "Apr 20, 2022",
     "size": "4MB",
     "type": "PDF",
-    "image": "/certificate.jpg"
+    "image": "/idCard.jpg"
   },
   {
     "id": 5,
@@ -52,7 +52,7 @@
     "date": "May 5, 2022",
     "size": "2MB",
     "type": "PDF",
-    "image": "/certificate.jpg"
+    "image": "/idCard.jpg"
   },
   {
     "id": 6,
@@ -63,7 +63,7 @@
     "date": "Jun 18, 2022",
     "size": "5MB",
     "type": "PDF",
-    "image": "/certificate.jpg"
+    "image": "/idCard.jpg"
   },
   {
     "id": 7,
@@ -74,7 +74,7 @@
     "date": "Jul 12, 2022",
     "size": "3.5MB",
     "type": "PDF",
-    "image": "/certificate.jpg"
+    "image": "/idCard.jpg"
   },
   {
     "id": 8,
@@ -85,7 +85,7 @@
     "date": "Aug 25, 2022",
     "size": "2.8MB",
     "type": "PDF",
-    "image": "/certificate.jpg"
+    "image": "/idCard.jpg"
   },
   {
     "id": 9,
@@ -96,7 +96,7 @@
     "date": "Sep 30, 2022",
     "size": "4.2MB",
     "type": "PDF",
-    "image": "/certificate.jpg"
+    "image": "/idCard.jpg"
   },
   {
     "id": 10,
@@ -107,6 +107,6 @@
     "date": "Oct 15, 2022",
     "size": "3MB",
     "type": "PDF",
-    "image": "/certificate.jpg"
+    "image": "/idCard.jpg"
   }
 ]
