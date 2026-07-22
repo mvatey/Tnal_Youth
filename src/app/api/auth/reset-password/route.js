@@ -46,8 +46,8 @@ export async function POST(request) {
     if (!phoneOrEmail) {
       return NextResponse.json(
         {
-          message:
-            "រកមិនឃើញលេខទូរស័ព្ទ ឬអ៊ីមែល",
+          success: false,
+          message: "រកមិនឃើញលេខទូរស័ព្ទ ឬអ៊ីមែល",
         },
         {
           status: 400,
@@ -58,8 +58,8 @@ export async function POST(request) {
     if (!/^\d{6}$/.test(otp)) {
       return NextResponse.json(
         {
-          message:
-            "លេខកូដ OTP មិនត្រឹមត្រូវ",
+          success: false,
+          message: "លេខកូដ OTP មិនត្រឹមត្រូវ",
         },
         {
           status: 400,
@@ -70,8 +70,8 @@ export async function POST(request) {
     if (!newPassword) {
       return NextResponse.json(
         {
-          message:
-            "សូមបញ្ចូលលេខសម្ងាត់ថ្មី",
+          success: false,
+          message: "សូមបញ្ចូលលេខសម្ងាត់ថ្មី",
         },
         {
           status: 400,
@@ -100,21 +100,24 @@ export async function POST(request) {
       backendResponse,
     );
 
-    console.log("RESET PASSWORD BACKEND RESPONSE:", {
-      status: backendResponse.status,
-      phoneOrEmail,
-      otpLength: otp.length,
-      data,
+    console.log("RESET PASSWORD PROXY:", {
+      request: {
+        phoneOrEmail,
+        otp,
+        newPasswordLength: newPassword.length,
+      },
+      backendStatus: backendResponse.status,
+      backendResponse: data,
     });
 
     if (!backendResponse.ok) {
       return NextResponse.json(
         {
+          success: false,
           message:
             data?.message ||
             data?.error ||
             data?.detail ||
-            data?.errors?.[0]?.message ||
             "មិនអាចប្ដូរលេខសម្ងាត់បាន",
         },
         {
@@ -143,8 +146,7 @@ export async function POST(request) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          "មានបញ្ហាក្នុងការប្ដូរលេខសម្ងាត់",
+        message: "មានបញ្ហាក្នុងការប្ដូរលេខសម្ងាត់",
       },
       {
         status: 500,

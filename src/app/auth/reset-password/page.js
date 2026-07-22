@@ -1,8 +1,10 @@
-// app/auth/reset-password/page.jsx
 "use client";
 
 import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { KeyRound } from "lucide-react";
 
 import PasswordInput from "@/components/ui/passwordInput";
@@ -11,13 +13,30 @@ function ResetPasswordContent() {
   const router = useRouter();
   const params = useSearchParams();
 
-  const phoneOrEmail = params.get("phoneOrEmail");
-  const otp = params.get("otp");
+  const phoneOrEmail =
+    params.get("phoneOrEmail") ||
+    params.get("phone") ||
+    params.get("email") ||
+    "";
 
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const otp =
+    params.get("otp") ||
+    params.get("code") ||
+    "";
+
+  const [password, setPassword] =
+    useState("");
+
+  const [
+    confirmPassword,
+    setConfirmPassword,
+  ] = useState("");
+
+  const [error, setError] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -58,7 +77,8 @@ function ResetPasswordContent() {
         },
       );
 
-      const responseText = await response.text();
+      const responseText =
+        await response.text();
 
       let data = {};
 
@@ -82,6 +102,7 @@ function ResetPasswordContent() {
       }
 
       router.replace("/auth/login");
+      router.refresh();
     } catch (submitError) {
       console.error(
         "Reset password error:",
@@ -125,7 +146,9 @@ function ResetPasswordContent() {
           placeholder="បញ្ចូលលេខសម្ងាត់ថ្មីម្តងទៀត"
           value={confirmPassword}
           onChange={(event) =>
-            setConfirmPassword(event.target.value)
+            setConfirmPassword(
+              event.target.value,
+            )
           }
         />
 

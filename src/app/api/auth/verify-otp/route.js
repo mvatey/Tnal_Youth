@@ -21,7 +21,7 @@ export async function POST(request) {
       return NextResponse.json(
         {
           success: false,
-          message: "សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល",
+          message: "រកមិនឃើញលេខទូរស័ព្ទ ឬអ៊ីមែល",
         },
         {
           status: 400,
