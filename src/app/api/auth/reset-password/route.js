@@ -1,26 +1,154 @@
-// app/api/auth/reset-password/route.js
-import fs from "fs";
-import path from "path";
-import { verifyResetToken } from "@/lib/auth";
+import { NextResponse } from "next/server";
 
-const usersPath = path.join(process.cwd(), "src", "data", "users.json");
+const BACKEND_URL =
+  process.env.BACKEND_API_URL ||
+  "http://localhost:8081/api";
 
-export async function POST(req) {
-  const { token, password } = await req.json();
-  const phone = verifyResetToken(token);
+async function readResponse(response) {
+  const text = await response.text();
 
-  if (!phone) {
-    return Response.json({ message: "Token មិនត្រឹមត្រូវ ឬហួសសម័យ" }, { status: 400 });
+  if (!text) {
+    return {};
   }
 
-  const users = JSON.parse(fs.readFileSync(usersPath, "utf-8"));
-  const idx = users.findIndex((u) => u.phone === phone);
-  if (idx === -1) {
-    return Response.json({ message: "រកមិនឃើញអ្នកប្រើប្រាស់" }, { status: 404 });
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      message: text,
+    };
   }
+}
 
-  users[idx].password = password;
-  fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+export async function POST(request) {
+  try {
+    const body = await request.json();
 
-  return Response.json({ message: "លេខសម្ងាត់ត្រូវបានប្តូរដោយជោគជ័យ" });
+    const phoneOrEmail = String(
+      body.phoneOrEmail ||
+        body.phone ||
+        body.email ||
+        "",
+    ).trim();
+
+    const otp = String(
+      body.otp ||
+        body.code ||
+        "",
+    ).trim();
+
+    const newPassword = String(
+      body.newPassword ||
+        body.password ||
+        "",
+    );
+
+    if (!phoneOrEmail) {
+      return NextResponse.json(
+        {
+          message:
+            "រកមិនឃើញលេខទូរស័ព្ទ ឬអ៊ីមែល",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (!/^\d{6}$/.test(otp)) {
+      return NextResponse.json(
+        {
+          message:
+            "លេខកូដ OTP មិនត្រឹមត្រូវ",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    if (!newPassword) {
+      return NextResponse.json(
+        {
+          message:
+            "សូមបញ្ចូលលេខសម្ងាត់ថ្មី",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const backendResponse = await fetch(
+      `${BACKEND_URL}/auth/reset-password`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          phoneOrEmail,
+          otp,
+          newPassword,
+        }),
+        cache: "no-store",
+      },
+    );
+
+    const data = await readResponse(
+      backendResponse,
+    );
+
+    console.log("RESET PASSWORD BACKEND RESPONSE:", {
+      status: backendResponse.status,
+      phoneOrEmail,
+      otpLength: otp.length,
+      data,
+    });
+
+    if (!backendResponse.ok) {
+      return NextResponse.json(
+        {
+          message:
+            data?.message ||
+            data?.error ||
+            data?.detail ||
+            data?.errors?.[0]?.message ||
+            "មិនអាចប្ដូរលេខសម្ងាត់បាន",
+        },
+        {
+          status: backendResponse.status,
+        },
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        message:
+          data?.message ||
+          "លេខសម្ងាត់ត្រូវបានប្ដូរដោយជោគជ័យ",
+      },
+      {
+        status: 200,
+      },
+    );
+  } catch (error) {
+    console.error(
+      "Reset password route error:",
+      error,
+    );
+
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          "មានបញ្ហាក្នុងការប្ដូរលេខសម្ងាត់",
+      },
+      {
+        status: 500,
+      },
+    );
+  }
 }
