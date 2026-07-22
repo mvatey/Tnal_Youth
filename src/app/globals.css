@@ -127,3 +127,12 @@ input[type="submit"],
 input[type="reset"] {
   cursor: pointer;
 }
+/* Hide scrollbar but keep scrolling */
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
