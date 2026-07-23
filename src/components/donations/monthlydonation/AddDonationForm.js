@@ -37,7 +37,10 @@ export default function AddDonationForm() {
   const [savedMessage, setSavedMessage] = useState("");
   const [showSaveAlert, setShowSaveAlert] = useState(false);
   const [savedRows, setSavedRows] = useState({});
-  const branchSelected = selectedBranch !== "all";
+  const allFiltersSelected =
+  selectedBranch !== "all" &&
+  selectedMonth !== "all" &&
+  selectedYear !== "all";
 
   const branches = useMemo(
     () => [...new Set(addDonationRows.map((row) => row.branch))],
@@ -51,20 +54,29 @@ export default function AddDonationForm() {
     () => [...new Set(addDonationRows.map((row) => row.year))],
     [],
   );
-  const members = useMemo(
-    () =>
-      addDonationRows
-        .filter(
-          (row) =>
-            (selectedMonth === "all" || row.month === selectedMonth) &&
-            (selectedYear === "all" || row.year === selectedYear),
-        )
-        .map((row) => ({
-          ...row,
-          ...savedRows[getSavedRowKey(row)],
-        })),
-    [savedRows, selectedMonth, selectedYear],
-  );
+  const members = useMemo(() => {
+  if (!allFiltersSelected) {
+    return [];
+  }
+
+  return addDonationRows
+    .filter(
+      (row) =>
+        row.branch === selectedBranch &&
+        row.month === selectedMonth &&
+        row.year === selectedYear,
+    )
+    .map((row) => ({
+      ...row,
+      ...savedRows[getSavedRowKey(row)],
+    }));
+}, [
+  allFiltersSelected,
+  savedRows,
+  selectedBranch,
+  selectedMonth,
+  selectedYear,
+]);
 
   useEffect(() => {
     const savedValue = window.localStorage.getItem(SAVED_DONATION_ROWS_KEY);
@@ -220,17 +232,17 @@ export default function AddDonationForm() {
           onSearchChange={setSearchQuery}
         />
 
-        {branchSelected && (
-          <Table
-            members={members}
-            selectedBranch={selectedBranch}
-            searchQuery={searchQuery}
-            onReset={handleReset}
-            onCancel={handleCancel}
-            onSave={handleSave}
-            onReceiptSave={handleReceiptSave}
-          />
-        )}
+        {allFiltersSelected && (
+        <Table
+        members={members}
+        selectedBranch={selectedBranch}
+        searchQuery={searchQuery}
+        onReset={handleReset}
+        onCancel={handleCancel}
+        onSave={handleSave}
+        onReceiptSave={handleReceiptSave}
+      />
+)}
       </section>
     </>
   );
