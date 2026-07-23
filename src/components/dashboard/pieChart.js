@@ -124,7 +124,7 @@ function LegendRow({ color, label, count, isLoading }) {
         style={{ background: color, flexShrink: 0 }}
       />
       <span>{label}</span>
-      <span className="font-semibold text-text-primary">{count} នាក់</span>
+      <span className="font-semibold text-text-primary">ចំនួន {count}</span>
     </div>
   );
 }

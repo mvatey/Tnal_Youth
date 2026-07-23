@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal.js";
@@ -10,7 +11,6 @@ import { Users, Landmark, Moon, Sparkles, Trash2 } from "lucide-react";
 import users from "@/data/members.json";
 import { AiOutlineWoman } from "react-icons/ai";
 import { RiAddCircleLine } from "react-icons/ri";
-import { RiDownloadCloud2Line } from "react-icons/ri";
 import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail";
 import { FaDharmachakra } from "react-icons/fa";
 
@@ -63,9 +63,24 @@ function calcGrowth(members, filterFn) {
   return Math.round(((currentCount - previousCount) / previousCount) * 100);
 }
 
-const ROLE_LABELS = { admin: "អ្នកគ្រប់គ្រង", donation_admin: "អ្នកគ្រប់គ្រងការបរិច្ចាគ", branch_leader: "ប្រធានសាខា", secretary: "លេខាធិការ", member: "សមាជិក" };
-const ROLE_BADGE_STYLES = { admin: "bg-primary-light text-primary", donation_admin: "bg-secondary/10 text-secondary", branch_leader: "bg-warning-bg text-warning", secretary: "bg-success-bg text-success", member: "bg-gray-100 text-text-secondary" };
-const STATUS_BADGE_STYLES = { "សកម្ម": "bg-success-bg text-success", "អសកម្ម": "bg-red-50 text-red-600" };
+const ROLE_LABELS = {
+  admin: "អ្នកគ្រប់គ្រង",
+  branch_leader: "ប្រធានសាខា",
+  secretary: "លេខាធិការ",
+  member: "សមាជិក",
+};
+
+const ROLE_BADGE_STYLES = {
+  admin: "bg-primary-light text-primary",
+  branch_leader: "bg-warning-bg text-warning",
+  secretary: "bg-success-bg text-success",
+  member: "bg-gray-100 text-text-secondary",
+};
+
+const STATUS_BADGE_STYLES = {
+  សកម្ម: "bg-success-bg text-success",
+  អសកម្ម: "bg-red-50 text-red-600",
+};
 
 // religion / gender constants — must match the exact strings used in members.json
 const ISLAM_LABEL = "អ៊ីស្លាម";
@@ -156,7 +171,20 @@ export default function MembersPage() {
   }, [activeMembersList, query, branchFilter, statusFilter, genderFilter]);
 
   const branches = useMemo(() => {
-    return [...new Set(users.map((m) => m.branch))];
+    const uniqueBranches = [
+      ...new Set(users.map((member) => member.branch).filter(Boolean)),
+    ];
+
+    return [
+      {
+        label: "សាខា",
+        value: "",
+      },
+      ...uniqueBranches.map((branch) => ({
+        label: branch,
+        value: branch,
+      })),
+    ];
   }, []);
 
   const tableColumns = [
@@ -252,25 +280,58 @@ export default function MembersPage() {
   ];
 
   const filterConfig = [
-    {
-      value: branchFilter,
-      onChange: setBranchFilter,
-      options: branches,
-      placeholder: "សាខា",
-    },
-    {
-      value: statusFilter,
-      onChange: setStatusFilter,
-      options: ["សកម្ម", "អសកម្ម"],
-      placeholder: "ស្ថានភាព",
-    },
-    {
-      value: genderFilter,
-      onChange: setGenderFilter,
-      options: ["ស្រី", "ប្រុស", "ព្រះសង្ឃ"],
-      placeholder: "ភេទ",
-    },
-  ];
+  {
+    name: "branch",
+    value: branchFilter,
+    onChange: setBranchFilter,
+    options: branches,
+    placeholder: "សាខា",
+  },
+  {
+    name: "status",
+    value: statusFilter,
+    onChange: setStatusFilter,
+    options: [
+      {
+        label: "ស្ថានភាព",
+        value: "",
+      },
+      {
+        label: "សកម្ម",
+        value: "សកម្ម",
+      },
+      {
+        label: "អសកម្ម",
+        value: "អសកម្ម",
+      },
+    ],
+    placeholder: "ស្ថានភាព",
+  },
+  {
+    name: "gender",
+    value: genderFilter,
+    onChange: setGenderFilter,
+    options: [
+      {
+        label: "ភេទ",
+        value: "",
+      },
+      {
+        label: "ស្រី",
+        value: "ស្រី",
+      },
+      {
+        label: "ប្រុស",
+        value: "ប្រុស",
+      },
+      {
+        label: "ព្រះសង្ឃ",
+        value: "ព្រះសង្ឃ",
+      },
+    ],
+    placeholder: "ភេទ",
+  },
+];
 
   return (
     <div className="min-h-full flex flex-col gap-4">
