@@ -9,7 +9,6 @@ import FormDate from "@/components/forms/FormDate.js";
 import Pagination from "@/components/navigation/Pagination";
 import DownloadButton from "@/components/forms/download";
 
-
 export default function DataTable({
   title,
   data = [],
@@ -23,93 +22,35 @@ export default function DataTable({
   pageSize = 10,
   downloadFilename = "table-data.csv",
 }) {
-
-
   const [currentPage, setCurrentPage] = useState(1);
-
-
 
   useEffect(() => {
     setCurrentPage(1);
   }, [data.length, searchQuery]);
 
+  const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
 
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(data.length / pageSize)
-  );
-
-
-  const safePage = Math.min(
-    currentPage,
-    totalPages
-  );
-
-
+  const safePage = Math.min(currentPage, totalPages);
 
   const paginatedData = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
 
-    const start =
-      (safePage - 1) * pageSize;
-
-
-    return data.slice(
-      start,
-      start + pageSize
-    );
-
-  }, [
-    data,
-    safePage,
-    pageSize
-  ]);
-
-
-
+    return data.slice(start, start + pageSize);
+  }, [data, safePage, pageSize]);
 
   const getAlignment = (align) => {
+    if (align === "center") return "text-center";
 
-    if (align === "center")
-      return "text-center";
-
-    if (align === "right")
-      return "text-right";
+    if (align === "right") return "text-right";
 
     return "text-left";
-
   };
 
-
-
-
-
   return (
-
     <div className="w-full">
-
-
-      {(title ||
-        onSearchChange ||
-        filters.length > 0 ||
-        actionButton) && (
-
-
-        <div
-          className="
-          mb-4
-          rounded-lg
-          border
-          border-[#e5eaf0]
-          bg-white
-          p-4
-          "
-        >
-
-
-
+      {(title || onSearchChange || filters.length > 0 || actionButton) && (
+        <div className="mb-4 rounded-lg border border-[#e5eaf0] bg-white p-4">
           {title && (
-
             <h3
               className="
               mb-4
@@ -120,11 +61,7 @@ export default function DataTable({
             >
               {title}
             </h3>
-
           )}
-
-
-
 
           <div
             className="
@@ -134,11 +71,7 @@ export default function DataTable({
             gap-3
             "
           >
-
-
-
             {onSearchChange && (
-
               <div
                 className="
                 relative
@@ -146,7 +79,6 @@ export default function DataTable({
                 flex-1
                 "
               >
-
                 <Search
                   className="
                   absolute
@@ -159,15 +91,10 @@ export default function DataTable({
                   "
                 />
 
-
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(event)=>
-                    onSearchChange(
-                      event.target.value
-                    )
-                  }
+                  onChange={(event) => onSearchChange(event.target.value)}
                   placeholder={searchPlaceholder}
                   className="
                   h-10
@@ -184,117 +111,33 @@ export default function DataTable({
                   focus:border-primary
                   "
                 />
-
               </div>
-
             )}
 
-
-
-
-
-
-            {filters.map(
-              (filter,index)=>(
-
-
-                <div
-                  key={index}
-                  className="min-w-[140px]"
-                >
-
-
-
-                  {filter.type === "date" ? (
-
-
-                    <FormDate
-
-                      value={filter.value}
-
-                      onChange={(event)=>
-                        filter.onChange(
-                          event.target.value
-                        )
-                      }
-
-                    />
-
-
-                  ) : (
-
-
-                    <FormSelect
-
-                      name={
-                        filter.name ||
-                        `filter-${index}`
-                      }
-
-
-                      value={filter.value}
-
-
-                      onChange={(event)=>
-                        filter.onChange(
-                          event.target.value
-                        )
-                      }
-
-
-                      placeholder={
-                        filter.placeholder
-                      }
-
-
-                      options={
-                        filter.options || []
-                      }
-
-
-                      disabled={
-                        filter.disabled || false
-                      }
-
-                    />
-
-
-                  )}
-
-
-
-                </div>
-
-
-              )
-            )}
-
-
-
-
-            {actionButton && (
-
-              <div className="ml-auto">
-                {actionButton}
+            {filters.map((filter, index) => (
+              <div key={index} className="min-w-[140px]">
+                {filter.type === "date" ? (
+                  <FormDate
+                    value={filter.value}
+                    onChange={(event) => filter.onChange(event.target.value)}
+                  />
+                ) : (
+                  <FormSelect
+                    name={filter.name || `filter-${index}`}
+                    value={filter.value}
+                    onChange={(event) => filter.onChange(event.target.value)}
+                    placeholder={filter.placeholder}
+                    options={filter.options || []}
+                    disabled={filter.disabled || false}
+                  />
+                )}
               </div>
+            ))}
 
-            )}
-
-
-
+            {actionButton && <div className="ml-auto">{actionButton}</div>}
           </div>
-
-
         </div>
-
-
       )}
-
-
-
-
-
-
 
       <div
         className="
@@ -305,8 +148,6 @@ export default function DataTable({
         bg-white
         "
       >
-
-
         <table
           className="
           w-full
@@ -316,200 +157,78 @@ export default function DataTable({
           text-sm
           "
         >
-
-
-
           <colgroup>
-
-            {columns.map(
-              (column,index)=>(
-
-                <col
-                  key={index}
-                  className={
-                    column.width || ""
-                  }
-                />
-
-              )
-            )}
-
+            {columns.map((column, index) => (
+              <col key={index} className={column.width || ""} />
+            ))}
           </colgroup>
 
-
-
-
-
           <thead className="bg-[#f8fafc]">
-
-
             <tr
               className="
               border-b
               border-[#e5eaf0]
               "
             >
-
-              {columns.map(
-                (column,index)=>(
-
-
-                  <th
-
-                    key={index}
-
-                    className={`
+              {columns.map((column, index) => (
+                <th
+                  key={index}
+                  className={`
                     h-11
                     px-4
                     text-xs
                     font-semibold
                     text-text-secondary
-                    ${getAlignment(
-                      column.align
-                    )}
+                    ${getAlignment(column.align)}
                     `}
-
-                  >
-
-                    {column.header}
-
-                  </th>
-
-
-                )
-              )}
-
-
+                >
+                  {column.header}
+                </th>
+              ))}
             </tr>
-
-
           </thead>
 
-
-
-
-
-
-
           <tbody>
-
-
             {paginatedData.length > 0 ? (
+              paginatedData.map((item, itemIndex) => {
+                const globalIndex = (safePage - 1) * pageSize + itemIndex + 1;
 
-
-              paginatedData.map(
-                (item,itemIndex)=>{
-
-
-                  const globalIndex =
-                    (safePage - 1) *
-                    pageSize +
-                    itemIndex +
-                    1;
-
-
-
-                  return (
-
-                    <tr
-
-                      key={
-                        item.id ??
-                        itemIndex
-                      }
-
-                      className="
+                return (
+                  <tr
+                    key={item.id ?? itemIndex}
+                    className="
                       border-b
                       border-[#edf0f3]
                       transition
                       last:border-b-0
                       hover:bg-bg-page-gray/60
                       "
-
-                    >
-
-
-
-                      {columns.map(
-                        (column,columnIndex)=>(
-
-
-                          <td
-
-                            key={columnIndex}
-
-                            className={`
+                  >
+                    {columns.map((column, columnIndex) => (
+                      <td
+                        key={columnIndex}
+                        className={`
                             h-12
                             overflow-hidden
                             px-4
                             text-text-secondary
-                            ${getAlignment(
-                              column.align
-                            )}
+                            ${getAlignment(column.align)}
                             `}
-
-                          >
-
-                            <div className="min-w-0 truncate">
-
-
-                              {
-                                column.render
-
-                                ?
-
-                                column.render(
-                                  item,
-                                  globalIndex
-                                )
-
-                                :
-
-                                (
-                                  item[
-                                    column.accessor
-                                  ] ?? "-"
-                                )
-
-                              }
-
-
-                            </div>
-
-
-                          </td>
-
-
-                        )
-                      )}
-
-
-
-                    </tr>
-
-                  );
-
-
-                }
-
-
-              )
-
-
-            )
-
-            :
-
-            (
-
+                      >
+                        <div className="min-w-0 truncate">
+                          {column.render
+                            ? column.render(item, globalIndex)
+                            : (item[column.accessor] ?? "-")}
+                        </div>
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
+            ) : (
               <tr>
-
                 <td
-
-                  colSpan={
-                    columns.length
-                  }
-
+                  colSpan={columns.length}
                   className="
                   px-4
                   py-10
@@ -517,55 +236,22 @@ export default function DataTable({
                   text-sm
                   text-gray-400
                   "
-
                 >
-
                   {emptyMessage}
-
                 </td>
-
-
               </tr>
-
-            )
-
-            }
-
-
+            )}
           </tbody>
-
-
-
         </table>
-
-
       </div>
 
-
-
-
-
-
-
       {data.length > 0 && (
-
-
         <div className="mt-3">
-
-
           <Pagination
-
             currentPage={safePage}
-
             totalPages={totalPages}
-
-            onPageChange={
-              setCurrentPage
-            }
-
+            onPageChange={setCurrentPage}
           />
-
-
 
           <div
             className="
@@ -574,31 +260,10 @@ export default function DataTable({
             justify-end
             "
           >
-
-            <DownloadButton
-
-              data={data}
-
-              filename={
-                downloadFilename
-              }
-
-            />
-
-
+            <DownloadButton data={data} filename={downloadFilename} />
           </div>
-
-
         </div>
-
-
       )}
-
-
-
     </div>
-
-
   );
-
 }

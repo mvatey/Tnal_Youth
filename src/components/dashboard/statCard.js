@@ -1,18 +1,76 @@
-// components/dashboard/StatCard.jsx
-export default function StatCard({ icon: Icon, label, value, growth, iconColor, iconBg }) {
+"use client";
+
+export default function StatCard({
+  icon: Icon,
+  label,
+  value,
+  growth,
+  iconColor,
+  iconBg,
+}) {
+  const isUp = Number(growth) >= 0;
+  const accent = iconColor.replace("text-", "bg-");
+
   return (
-    <div className="bg-white rounded-xl p-4 flex items-center gap-4 shadow-sm">
-      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${iconBg}`}>
-        <Icon size={22} className={iconColor} />
-      </div>
-      <div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-text-secondary">{label}</span>
-          <span className="text-xs text-success bg-success-bg px-1.5 py-0.5 rounded">
-            ↑{growth}%
+    <div className="app-card relative overflow-hidden rounded-xl border border-border bg-bg-page-white">
+      <div className={`h-[3px] w-full ${accent}`} />
+
+      <div className="flex items-center gap-3 p-4">
+        <div
+          className={`
+          flex
+          h-12
+          w-12
+          shrink-0
+          items-center
+          justify-center
+          rounded-xl
+          ${iconBg}
+          `}
+        >
+          <Icon
+            className={`
+            h-5
+            w-5
+            ${iconColor}
+            `}
+          />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="mb-0.5 text-sm text-text-primary">
+            {label}
+          </div>
+
+          <div className="text-lg font-bold text-text-primary">
+            {value}
+          </div>
+        </div>
+
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <div
+            className={`
+            flex
+            items-center
+            gap-1
+            text-sm
+            font-semibold
+            ${isUp ? "text-success" : "text-error"}
+            `}
+          >
+            <span>
+              {isUp ? "↑" : "↓"}
+            </span>
+
+            <span>
+              {Math.abs(Number(growth))}%
+            </span>
+          </div>
+
+          <span className="text-xs text-text-mute">
+            ក្នុងខែនេះ
           </span>
         </div>
-        <div className="text-xl font-bold text-text-primary">{value}</div>
       </div>
     </div>
   );
