@@ -28,17 +28,28 @@ import branchData from "@/data/branch/branches.json";
 import { RiDownloadCloud2Line } from "react-icons/ri";
 import Button from "@/components/ui/Button";
 
-const ALL_OPTION = "ទាំងអស់";
+const branchTypes = [
+  {
+    label: "ជ្រើសរើសប្រភេទ",
+    value: "",
+  },
+  {
+    label: "សាខារដ្ឋបាល",
+    value: "ADMIN",
+  },
+  {
+    label: "សាខាសមាគម",
+    value: "ASSOCIATION",
+  },
+];
 
 const branchLevels = [
-  ALL_OPTION,
   "រាជធានី/ខេត្ត",
   "ក្រុង/ស្រុក/ខណ្ឌ",
   "ឃុំ/សង្កាត់",
 ];
 
 const statusOptions = [
-  ALL_OPTION,
   "សកម្ម",
   "អសកម្ម",
 ];
@@ -77,17 +88,17 @@ export default function BranchPage() {
     useState("");
 
   const [selectedLevel, setSelectedLevel] =
-    useState(ALL_OPTION);
+    useState("");
 
   const [
     selectedProvince,
     setSelectedProvince,
-  ] = useState(ALL_OPTION);
+  ] = useState("");
 
   const [
     selectedStatus,
     setSelectedStatus,
-  ] = useState(ALL_OPTION);
+  ] = useState("");
 
   const [showSaveFile, setShowSaveFile] =
     useState(false);
@@ -107,17 +118,12 @@ export default function BranchPage() {
   }, [showSaveFile]);
 
   const provinces = useMemo(() => {
-    const provinceValues = [
+    return [
       ...new Set(
         branches
           .map((branch) => branch.province)
           .filter(Boolean),
       ),
-    ];
-
-    return [
-      ALL_OPTION,
-      ...provinceValues,
     ];
   }, [branches]);
 
@@ -139,16 +145,6 @@ export default function BranchPage() {
         branch.province || "",
       ).toLowerCase();
 
-      
-
-      /*
-       * Search only Khmer branch name,
-       * branch code, and province.
-       *
-       * nameEn is intentionally excluded,
-       * so English text such as "th"
-       * does not match English mock names.
-       */
       const matchesSearch =
         !query ||
         name.includes(query) ||
@@ -156,26 +152,16 @@ export default function BranchPage() {
         province.includes(query);
 
       const matchesLevel =
-        selectedLevel === ALL_OPTION ||
+        !selectedLevel ||
         branch.level === selectedLevel;
 
       const matchesProvince =
-        selectedProvince === ALL_OPTION ||
+        !selectedProvince ||
         branch.province === selectedProvince;
 
-      let selectedStatusValue = null;
-
-      if (selectedStatus === "សកម្ម") {
-        selectedStatusValue = "ACTIVE";
-      }
-
-      if (selectedStatus === "អសកម្ម") {
-        selectedStatusValue = "INACTIVE";
-      }
-
       const matchesStatus =
-        selectedStatus === ALL_OPTION ||
-        branch.status === selectedStatusValue;
+        !selectedStatus ||
+        branch.status === selectedStatus;
 
       return (
         matchesSearch &&
@@ -191,7 +177,6 @@ export default function BranchPage() {
     selectedProvince,
     selectedStatus,
   ]);
-
 
   const columns = [
     {
@@ -288,29 +273,29 @@ export default function BranchPage() {
     },
   ];
 
-  const filters = [
-    {
-      key: "level",
-      value: selectedLevel,
-      onChange: setSelectedLevel,
-      placeholder: "កម្រិតសាខា",
-      options: branchLevels,
-    },
-    {
-      key: "province",
-      value: selectedProvince,
-      onChange: setSelectedProvince,
-      placeholder: "រាជធានី/ខេត្ត",
-      options: provinces,
-    },
-    {
-      key: "status",
-      value: selectedStatus,
-      onChange: setSelectedStatus,
-      placeholder: "ស្ថានភាព",
-      options: statusOptions,
-    },
-  ];
+const filters = [
+  {
+    key: "level",
+    value: selectedLevel,
+    onChange: setSelectedLevel,
+    placeholder: "កម្រិតសាខា",
+    options: branchLevels,
+  },
+  {
+    key: "province",
+    value: selectedProvince,
+    onChange: setSelectedProvince,
+    placeholder: "រាជធានី/ខេត្ត",
+    options: provinces,
+  },
+  {
+    key: "status",
+    value: selectedStatus,
+    onChange: setSelectedStatus,
+    placeholder: "ស្ថានភាព",
+    options: statusOptions,
+  },
+];
 
   return (
     <div className="min-w-0 space-y-5 overflow-x-hidden">

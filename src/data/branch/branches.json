@@ -6,10 +6,30 @@
     "nameEn": "Phnom Penh Branch",
     "level": "រាជធានី/ខេត្ត",
     "province": "ភ្នំពេញ",
-    "district": "ខណ្ឌចំការមន",
-    "memberCount": 47,
+    "district": "ខណ្ឌដូនពេញ",
+    "commune": "",
+    "addressLine": "ផ្លូវ ២៧១ សង្កាត់ទឹកថ្លា",
+    "googleMapUrl": "https://maps.google.com",
+    "phone": "+855 12 345 678",
+    "email": "phnompenh@gmail.com",
+    "memberCount": 50,
+    "activityCount": 30,
+    "totalDonationUsd": 24780.5,
     "status": "ACTIVE",
-    "createdAt": "25 មករា, 2026"
+    "createdAt": "25 មករា, 2026",
+    "leader": {
+      "id": 2,
+      "nameKm": "ព្រឿន ផាត់សា",
+      "nameEn": "Proeun Phatsa",
+      "gender": "ស្រី",
+      "role": "ប្រធានសាខា",
+      "phone": "012 345 6789",
+      "email": "phatsaproen@gmail.com",
+      "dateOfBirth": "15 មករា, 2006",
+      "joinedAt": "23 មិថុនា, 2025",
+      "profileImage": "/profiles/branch_leader.jpg",
+      "status": "ACTIVE"
+    }
   },
   {
     "id": 2,

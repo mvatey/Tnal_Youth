@@ -1,0 +1,124 @@
+{
+  "types": [
+    {
+      "id": "member-status",
+      "label": "ស្ថានភាពសមាជិក",
+      "items": [
+        {
+          "id": 1,
+          "nameKm": "សកម្ម",
+          "nameEn": "Active",
+          "status": "ACTIVE",
+          "createdAt": "6 មករា, 2026",
+          "updatedAt": "6 មករា, 2026"
+        },
+        {
+          "id": 2,
+          "nameKm": "អសកម្ម",
+          "nameEn": "Inactive",
+          "status": "ACTIVE",
+          "createdAt": "6 មករា, 2026",
+          "updatedAt": "6 មករា, 2026"
+        },
+        {
+          "id": 3,
+          "nameKm": "ផ្អាក",
+          "nameEn": "Suspended",
+          "status": "INACTIVE",
+          "createdAt": "6 មករា, 2026",
+          "updatedAt": "6 មករា, 2026"
+        }
+      ]
+    },
+    {
+      "id": "branch-level",
+      "label": "កម្រិតសាខា",
+      "items": [
+        {
+          "id": 1,
+          "nameKm": "រាជធានី/ខេត្ត",
+          "nameEn": "Province",
+          "status": "ACTIVE",
+          "createdAt": "10 មករា, 2026",
+          "updatedAt": "10 មករា, 2026"
+        },
+        {
+          "id": 2,
+          "nameKm": "ក្រុង/ស្រុក/ខណ្ឌ",
+          "nameEn": "District",
+          "status": "ACTIVE",
+          "createdAt": "10 មករា, 2026",
+          "updatedAt": "10 មករា, 2026"
+        },
+        {
+          "id": 3,
+          "nameKm": "ឃុំ/សង្កាត់",
+          "nameEn": "Commune",
+          "status": "ACTIVE",
+          "createdAt": "10 មករា, 2026",
+          "updatedAt": "10 មករា, 2026"
+        }
+      ]
+    },
+    {
+      "id": "activity-type",
+      "label": "ប្រភេទកម្មវិធី",
+      "items": [
+        {
+          "id": 1,
+          "nameKm": "កម្មវិធីផ្ទៃក្នុង",
+          "nameEn": "Internal Activity",
+          "status": "ACTIVE",
+          "createdAt": "12 មករា, 2026",
+          "updatedAt": "12 មករា, 2026"
+        },
+        {
+          "id": 2,
+          "nameKm": "កម្មវិធីខាងក្រៅ",
+          "nameEn": "External Activity",
+          "status": "ACTIVE",
+          "createdAt": "12 មករា, 2026",
+          "updatedAt": "12 មករា, 2026"
+        }
+      ]
+    },
+    {
+      "id": "activity-sector",
+      "label": "វិស័យកម្មវិធី",
+      "items": [
+        {
+          "id": 1,
+          "nameKm": "អប់រំ",
+          "nameEn": "Education",
+          "status": "ACTIVE",
+          "createdAt": "14 មករា, 2026",
+          "updatedAt": "14 មករា, 2026"
+        },
+        {
+          "id": 2,
+          "nameKm": "សង្គម",
+          "nameEn": "Social",
+          "status": "ACTIVE",
+          "createdAt": "14 មករា, 2026",
+          "updatedAt": "14 មករា, 2026"
+        },
+        {
+          "id": 3,
+          "nameKm": "បរិស្ថាន",
+          "nameEn": "Environment",
+          "status": "ACTIVE",
+          "createdAt": "14 មករា, 2026",
+          "updatedAt": "14 មករា, 2026"
+        },
+        {
+          "id": 4,
+          "nameKm": "បច្ចេកវិទ្យា",
+          "nameEn": "Technology",
+          "status": "ACTIVE",
+          "createdAt": "14 មករា, 2026",
+          "updatedAt": "14 មករា, 2026"
+        }
+      ]
+    }
+  ]
+}
