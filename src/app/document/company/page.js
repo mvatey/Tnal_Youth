@@ -19,6 +19,8 @@ import AddDocumentForm from "@/components/document/AddDocumentForm";
 import EditDocumentForm from "@/components/document/EditDocumentForm";
 import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
 
+import DeleteConfirmModal from "@/components/popup/Confirmdeletemodal";
+
 
 import documentCompany from "@/data/documentCompany.json";
 
@@ -27,11 +29,19 @@ import documentCompany from "@/data/documentCompany.json";
 export default function CompanyDocumentPage() {
 
 
-  const [search, setSearch] = useState("");
+  const [documents, setDocuments] =
+    useState(documentCompany);
 
-  const [typeFilter, setTypeFilter] = useState("");
 
-  const [dateFilter, setDateFilter] = useState("");
+
+  const [search, setSearch] =
+    useState("");
+
+  const [typeFilter, setTypeFilter] =
+    useState("");
+
+  const [dateFilter, setDateFilter] =
+    useState("");
 
 
 
@@ -50,30 +60,22 @@ export default function CompanyDocumentPage() {
 
 
 
+  const [deleteDocument, setDeleteDocument] =
+    useState(null);
+
+
+
 
 
   const [form, setForm] = useState({
 
-    title: "",
-
-    branch: "",
-
-    description: "",
-
-    fileName: "",
-
-    fileSize: "",
+    title:"",
+    branch:"",
+    description:"",
+    date:"",
+    files:[]
 
   });
-
-
-
-
-
-
-
-
-  const documents = documentCompany;
 
 
 
@@ -91,7 +93,6 @@ export default function CompanyDocumentPage() {
         .includes(
           search.toLowerCase()
         );
-
 
 
       const matchType =
@@ -114,8 +115,8 @@ export default function CompanyDocumentPage() {
         matchDate
       );
 
-
     });
+
 
 
 
@@ -128,7 +129,6 @@ export default function CompanyDocumentPage() {
   const columns = [
 
 
-
     {
       header:"ល.រ",
 
@@ -136,12 +136,9 @@ export default function CompanyDocumentPage() {
 
       align:"center",
 
-
-      render:(_,index)=>index,
+      render:(_,index)=>index+1,
 
     },
-
-
 
 
 
@@ -153,16 +150,11 @@ export default function CompanyDocumentPage() {
       width:"w-[8%]",
 
 
-
       render:(item)=>(
 
-
         <img
-
           src={item.image}
-
           alt="document"
-
           className="
           h-8
           w-6
@@ -170,16 +162,11 @@ export default function CompanyDocumentPage() {
           border
           object-cover
           "
-
         />
-
 
       ),
 
     },
-
-
-
 
 
 
@@ -198,9 +185,6 @@ export default function CompanyDocumentPage() {
 
 
 
-
-
-
     {
       header:"សាខា",
 
@@ -209,9 +193,6 @@ export default function CompanyDocumentPage() {
       width:"w-[15%]",
 
     },
-
-
-
 
 
 
@@ -230,9 +211,6 @@ export default function CompanyDocumentPage() {
 
 
 
-
-
-
     {
       header:"ទំហំ",
 
@@ -246,21 +224,15 @@ export default function CompanyDocumentPage() {
 
 
 
-
-
-
     {
       header:"ប្រភេទឯកសារ",
 
       width:"w-[10%]",
 
 
-
       render:(item)=>(
 
-
         <span
-
           className="
           rounded-md
           bg-red-100
@@ -269,20 +241,13 @@ export default function CompanyDocumentPage() {
           text-xs
           text-red-500
           "
-
         >
-
           {item.type}
-
         </span>
-
 
       ),
 
     },
-
-
-
 
 
 
@@ -302,41 +267,28 @@ export default function CompanyDocumentPage() {
 
 
         <div
-
           className="
           flex
           justify-center
           gap-3
           "
-
         >
-
-
-
 
 
           {/* VIEW */}
 
           <button
-
-            onClick={() =>
+            onClick={()=>
               setSelectedDocument(item)
             }
-
           >
 
             <Eye
-
               size={18}
-
               className="text-blue-500"
-
             />
 
           </button>
-
-
-
 
 
 
@@ -345,24 +297,17 @@ export default function CompanyDocumentPage() {
           {/* EDIT */}
 
           <button
-
-            onClick={() =>
+            onClick={()=>
               setEditDocument(item)
             }
-
           >
 
             <Pencil
-
               size={18}
-
               className="text-yellow-500"
-
             />
 
           </button>
-
-
 
 
 
@@ -371,24 +316,22 @@ export default function CompanyDocumentPage() {
 
           {/* DELETE */}
 
-          <button>
+          <button
+            onClick={()=>
+              setDeleteDocument(item)
+            }
+          >
 
             <Trash2
-
               size={18}
-
               className="text-red-500"
-
             />
 
           </button>
 
 
 
-
-
         </div>
-
 
       ),
 
@@ -408,9 +351,7 @@ export default function CompanyDocumentPage() {
   const filters = [
 
 
-
     {
-
       name:"type",
 
       placeholder:"ប្រភេទ",
@@ -418,36 +359,25 @@ export default function CompanyDocumentPage() {
       value:typeFilter,
 
 
-
       options:[
-
         ...new Set(
           documents.map(
             item=>item.type
           )
         )
 
-      ].map(
+      ].map(type=>({
 
-        type => ({
+        label:type,
 
-          label:type,
+        value:type
 
-          value:type,
-
-        })
-
-      ),
-
+      })),
 
 
       onChange:setTypeFilter,
 
     },
-
-
-
-
 
 
 
@@ -459,10 +389,9 @@ export default function CompanyDocumentPage() {
 
       value:dateFilter,
 
-
       onChange:setDateFilter,
 
-    },
+    }
 
 
   ];
@@ -475,12 +404,12 @@ export default function CompanyDocumentPage() {
 
 
 
-  const addButton = (
 
+  const addButton = (
 
     <button
 
-      onClick={() =>
+      onClick={()=>
         setShowAddForm(true)
       }
 
@@ -502,12 +431,10 @@ export default function CompanyDocumentPage() {
 
       <RiAddCircleLine size={18}/>
 
-
       បញ្ចូលឯកសារ
 
 
     </button>
-
 
   );
 
@@ -552,60 +479,41 @@ export default function CompanyDocumentPage() {
 
 
 
-
-
-
       {/* ADD DOCUMENT */}
 
       {
         showAddForm && (
 
+          <AddDocumentForm
 
-          <Modal>
+            form={form}
 
-
-            <AddDocumentForm
-
-
-              form={form}
+            setForm={setForm}
 
 
-              setForm={setForm}
+            onClose={()=>
+              setShowAddForm(false)
+            }
 
 
-
-              onClose={() =>
-                setShowAddForm(false)
-              }
+            onSave={()=>{
 
 
-
-              onSave={()=>{
-
-
-                console.log(
-                  "new document",
-                  form
-                );
+              console.log(
+                "new document",
+                form
+              );
 
 
-                setShowAddForm(false);
+              setShowAddForm(false);
 
 
-              }}
+            }}
 
-
-            />
-
-
-          </Modal>
-
+          />
 
         )
       }
-
-
-
 
 
 
@@ -620,46 +528,27 @@ export default function CompanyDocumentPage() {
       {
         editDocument && (
 
+          <EditDocumentForm
 
-          <Modal>
+            form={editDocument}
 
-
-            <EditDocumentForm
-
-
-              form={editDocument}
+            setForm={setEditDocument}
 
 
-              setForm={setEditDocument}
+            onClose={()=>
+              setEditDocument(null)
+            }
 
 
-
-              onClose={() =>
-                setEditDocument(null)
-              }
+            onSave={()=>{
 
 
-
-              onSave={(updated)=>{
-
-
-                console.log(
-                  "updated document",
-                  updated
-                );
+              setEditDocument(null);
 
 
-                setEditDocument(null);
+            }}
 
-
-              }}
-
-
-            />
-
-
-          </Modal>
-
+          />
 
         )
       }
@@ -672,28 +561,77 @@ export default function CompanyDocumentPage() {
 
 
 
-
-
-
-      {/* PREVIEW DOCUMENT */}
+      {/* PREVIEW */}
 
       {
         selectedDocument && (
 
-
           <CompanyDocumentPreview
-
 
             document={selectedDocument}
 
-
-            onClose={() =>
+            onClose={()=>
               setSelectedDocument(null)
+            }
+
+          />
+
+        )
+      }
+
+
+
+
+
+
+
+
+
+      {/* DELETE */}
+
+      {
+        deleteDocument && (
+
+          <DeleteConfirmModal
+
+
+            open={true}
+
+
+            onClose={()=>
+              setDeleteDocument(null)
+            }
+
+
+
+            onConfirm={()=>{
+
+
+              setDocuments((prev)=>
+
+                prev.filter(
+                  item =>
+                  item.id !== deleteDocument.id
+                )
+
+              );
+
+
+              setDeleteDocument(null);
+
+
+            }}
+
+
+            title="លុបឯកសារ"
+
+
+            message={
+              `តើអ្នកប្រាកដថាចង់លុប "${deleteDocument.title}" មែនទេ?`
             }
 
 
           />
-
 
         )
       }
@@ -702,61 +640,6 @@ export default function CompanyDocumentPage() {
 
 
     </>
-
-  );
-
-}
-
-
-
-
-
-
-
-
-
-function Modal({
-  children
-}) {
-
-
-  return (
-
-    <div
-
-      className="
-      fixed
-      inset-0
-      z-50
-      flex
-      items-center
-      justify-center
-      bg-black/40
-      p-5
-      "
-
-    >
-
-
-      <div
-
-        className="
-        w-[520px]
-        rounded-xl
-        bg-white
-        p-6
-        shadow-xl
-        "
-
-      >
-
-        {children}
-
-
-      </div>
-
-
-    </div>
 
   );
 

@@ -1,119 +1,172 @@
 "use client";
 
-import { UploadCloud, X, CheckCircle } from "lucide-react";
+import { useState } from "react";
+import { UploadCloud, X } from "lucide-react";
 
-export default function EditDocumentForm({ form, setForm, onSave, onClose }) {
+import PopupCard from "@/components/popup/PopupCard";
+import FormDate from "@/components/forms/FormDate";
+import FormSelect from "@/components/forms/FormSelect";
+
+
+export default function EditDocumentForm({
+  form,
+  setForm,
+  onSave,
+  onClose,
+}) {
+
+  const [files, setFiles] = useState(
+    form.files || [
+      {
+        name: "របាយការណ៍ឆ្នាំ2026.pdf",
+        size: "3.2 MB",
+        type: "PDF",
+      }
+    ]
+  );
+
+
+  const updateField = (field) => (e) => {
+    setForm({
+      ...form,
+      [field]: e.target.value,
+    });
+  };
+
+
+
+  // Add files
+  const handleUpload = (e) => {
+
+    const selectedFiles = Array.from(e.target.files);
+
+
+    const newFiles = selectedFiles.map((file)=>({
+      name:file.name,
+      size:(file.size / 1024 / 1024).toFixed(1) + " MB",
+      type:file.name.split(".").pop().toUpperCase(),
+      file:file
+    }));
+
+
+    setFiles((prev)=>[
+      ...prev,
+      ...newFiles
+    ]);
+
+  };
+
+
+
+  // Remove file
+  const removeFile = (index)=>{
+
+    setFiles((prev)=>
+      prev.filter((_,i)=>i !== index)
+    );
+
+  };
+
+
+
   return (
-    <div className="w-full">
-      {/* Header */}
 
-      <h2
-        className="
-        mb-6
-        text-xl
-        font-bold
-        text-[#4b3192]
-      "
-      >
-        កែប្រែឯកសារ
-      </h2>
+    <PopupCard
+      size="md"
+      onClose={onClose}
+    >
+
 
       <div className="space-y-4">
-        {/* Name + Branch */}
+
+
+        <h2
+          className="
+          mb-4
+          text-lg
+          font-bold
+          text-primary
+          "
+        >
+          កែប្រែឯកសារ
+        </h2>
+
+
+
+        {/* Title + Branch */}
 
         <div className="grid grid-cols-2 gap-5">
+
+
           <div>
-            <label
-              className="
-              mb-2 block
-              text-sm
-              text-gray-600
-            "
-            >
+
+            <label className="mb-2 block text-sm font-semibold text-text-primary">
               ឈ្មោះឯកសារ
             </label>
 
+
             <input
               value={form.title || ""}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  title: e.target.value,
-                })
-              }
+              onChange={updateField("title")}
               className="
-              h-10
+              h-11
               w-full
               rounded-lg
               border
               border-gray-200
-              px-3
+              px-4
               text-sm
               outline-none
-              focus:border-[#4b3192]
+              focus:border-primary
               "
             />
+
           </div>
 
-          <div>
-            <label
-              className="
-              mb-2 block
-              text-sm
-              text-gray-600
-            "
-            >
-              សាខា
-            </label>
 
-            <select
-              value={form.branch || ""}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  branch: e.target.value,
-                })
+
+          <FormSelect
+
+            label="សាខា"
+
+            placeholder="ជ្រើសរើសសាខា"
+
+            value={form.branch}
+
+            onChange={updateField("branch")}
+
+            options={[
+              {
+                label:"សាខាភ្នំពេញ",
+                value:"សាខាភ្នំពេញ"
+              },
+              {
+                label:"សាខាសៀមរាប",
+                value:"សាខាសៀមរាប"
               }
-              className="
-              h-10
-              w-full
-              rounded-lg
-              border
-              border-gray-200
-              px-3
-              text-sm
-              outline-none
-              "
-            >
-              <option>សាខាភ្នំពេញ</option>
+            ]}
 
-              <option>សាខាសៀមរាប</option>
-            </select>
-          </div>
+          />
+
+
         </div>
+
+
+
 
         {/* Description */}
 
         <div>
-          <label
-            className="
-            mb-2 block
-            text-sm
-            text-gray-600
-          "
-          >
+
+          <label className="mb-2 block text-sm font-semibold text-text-primary">
             លេខសម្គាល់
           </label>
+
 
           <textarea
             rows={3}
             value={form.description || ""}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                description: e.target.value,
-              })
-            }
+            onChange={updateField("description")}
             className="
             w-full
             resize-none
@@ -123,112 +176,134 @@ export default function EditDocumentForm({ form, setForm, onSave, onClose }) {
             p-3
             text-sm
             outline-none
-            focus:border-[#4b3192]
+            focus:border-primary
             "
           />
+
         </div>
 
-        {/* Existing File */}
+
+
+
+        {/* Date */}
+
+        <FormDate
+          label="កាលបរិច្ឆេទ"
+          value={form.date}
+          onChange={updateField("date")}
+        />
+
+
+
+
+
+        {/* Files */}
 
         <div>
-          <label
-            className="
-            mb-2 block
-            text-sm
-            text-gray-600
-          "
-          >
+
+
+          <label className="mb-2 block text-sm font-semibold text-text-primary">
             ឯកសារ
           </label>
 
-          <div
-            className="
-            flex
-            h-[48px]
-            items-center
-            justify-between
-            rounded-lg
-            border
-            border-gray-200
-            px-3
-          "
-          >
-            <div
-              className="
-              flex
-              items-center
-              gap-3
-            "
-            >
-              {/* PDF */}
+
+
+          <div className="space-y-2">
+
+
+          {
+            files.map((file,index)=>(
 
               <div
+                key={index}
                 className="
                 flex
-                h-8
-                w-8
+                h-12
                 items-center
-                justify-center
-                rounded
-                bg-red-100
-                text-[10px]
-                font-bold
-                text-red-500
-              "
+                justify-between
+                rounded-lg
+                border
+                border-gray-200
+                px-3
+                "
               >
-                PDF
+
+
+                <div className="flex items-center gap-3">
+
+
+                  <div
+                    className="
+                    flex
+                    h-8
+                    w-8
+                    items-center
+                    justify-center
+                    rounded
+                    bg-red-100
+                    text-[10px]
+                    font-bold
+                    text-red-500
+                    "
+                  >
+                    {file.type}
+                  </div>
+
+
+
+                  <div>
+
+                    <p className="text-sm text-gray-700">
+                      {file.name}
+                    </p>
+
+
+                    <p className="text-xs text-gray-400">
+                      {file.type} - {file.size}
+                    </p>
+
+                  </div>
+
+
+                </div>
+
+
+
+                <button
+                  type="button"
+                  onClick={()=>removeFile(index)}
+                >
+
+                  <X
+                    size={18}
+                    className="
+                    cursor-pointer
+                    text-gray-400
+                    hover:text-red-500
+                    "
+                  />
+
+                </button>
+
+
               </div>
 
-              <div>
-                <p
-                  className="
-                  text-sm
-                  text-gray-700
-                "
-                >
-                  {form.fileName || "របាយការណ៍ឆ្នាំ2026.pdf"}
-                </p>
+            ))
+          }
 
-                <p
-                  className="
-                  text-xs
-                  text-gray-400
-                "
-                >
-                  PDF - {form.fileSize || "3.2 MB"}
-                </p>
-              </div>
-            </div>
 
-            <div
-              className="
-              flex
-              items-center
-              gap-3
-            "
-            >
-              <CheckCircle
-                className="
-                h-5
-                w-5
-                text-green-500
-                "
-              />
-
-              <X
-                className="
-                h-5
-                w-5
-                cursor-pointer
-                text-gray-400
-                hover:text-red-500
-                "
-              />
-            </div>
           </div>
+
+
         </div>
 
-        {/* Upload Box */}
+
+
+
+
+
+
+        {/* Upload */}
 
         <label
           className="
@@ -242,78 +317,95 @@ export default function EditDocumentForm({ form, setForm, onSave, onClose }) {
           border-2
           border-dashed
           border-gray-200
-        "
+          "
         >
+
+
           <UploadCloud
-            className="
-            mb-2
-            h-7
-            w-7
-            text-gray-400
-            "
+            size={28}
+            className="mb-2 text-gray-400"
           />
 
-          <p
-            className="
-            text-sm
-            font-medium
-            text-[#4b3192]
-          "
-          >
+
+          <p className="text-sm font-semibold text-primary">
             បញ្ចូលឯកសារ
           </p>
 
-          <p
-            className="
-            text-[11px]
-            text-gray-400
-          "
-          >
-            PDF, Excel, JPG, PNG (Max 5MB), មិនលើស 16:9
+
+          <p className="text-[11px] text-gray-400">
+            PDF, Excel, JPG, PNG (Max 5MB)
           </p>
 
-          <input type="file" hidden />
+
+
+          <input
+            type="file"
+            multiple
+            hidden
+            onChange={handleUpload}
+          />
+
+
         </label>
+
+
+
       </div>
+
+
+
+
+
 
       {/* Buttons */}
 
-      <div
-        className="
-        mt-5
-        flex
-        gap-4
-      "
-      >
+      <div className="mt-5 flex gap-4">
+
+
         <button
           onClick={onClose}
           className="
-            h-10
-            flex-1
-            rounded-lg
-            border
-            border-gray-200
-            text-sm
+          h-10
+          flex-1
+          rounded-lg
+          border
+          border-gray-200
+          text-sm
           "
         >
           បោះបង់
         </button>
 
+
+
         <button
-          onClick={onSave}
+          onClick={()=>{
+            setForm({
+              ...form,
+              files
+            });
+
+            onSave?.();
+          }}
           className="
-            h-10
-            flex-1
-            rounded-lg
-            bg-[#4b3192]
-            text-sm
-            font-medium
-            text-white
+          h-10
+          flex-1
+          rounded-lg
+          bg-primary
+          text-sm
+          font-medium
+          text-white
           "
         >
           រក្សាទុក
         </button>
+
+
       </div>
-    </div>
+
+
+
+    </PopupCard>
+
   );
 }

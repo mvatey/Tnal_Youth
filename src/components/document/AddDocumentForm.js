@@ -1,116 +1,92 @@
 "use client";
 
-import {
-  UploadCloud,
-  X,
-  Building2,
-  ChevronDown,
-} from "lucide-react";
-import { RiAddCircleLine } from "react-icons/ri";
+import { UploadCloud } from "lucide-react";
+
+import PopupCard from "@/components/popup/PopupCard";
+import FormSelect from "@/components/forms/FormSelect";
+import SaveButton from "@/components/forms/SaveButton";
 
 export default function AddDocumentForm({ form, setForm, onSave, onClose }) {
-  function handleFile(e) {
-    const file = e.target.files[0];
-
-    if (!file) return;
-
+  const updateField = (field) => (e) => {
     setForm({
       ...form,
-      fileName: file.name,
-      fileSize: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      [field]: e.target.value,
     });
-  }
+  };
+  const handleSave = () => {
+    if (!form.title?.trim() || !form.branch || !form.description?.trim()) {
+      alert("សូមបំពេញព័ត៌មានទាំងអស់");
+
+      return;
+    }
+
+    onSave?.();
+  };
 
   return (
-    <div >
-      {/* Title */}
-
+    <PopupCard size="md" onClose={onClose}>
       <h2
         className="
-      mb-6
-      text-xl
-      font-bold
-      text-[#4b3192]
-      "
+        mb-6
+        text-lg
+        font-bold
+        text-primary
+        "
       >
         បញ្ចូលឯកសារ
       </h2>
 
       <div className="space-y-4">
-        {/* Name + Branch */}
+        {/* Title + Branch */}
 
-        <div
-          className="
-        grid grid-cols-2 gap-5
-        "
-        >
+        <div className="grid grid-cols-2 gap-5">
           <div>
             <label
               className="
-            mb-2 block
-            text-sm text-gray-600
-            "
+              mb-2
+              block
+              text-sm
+              font-semibold
+              "
             >
               ឈ្មោះឯកសារ
             </label>
 
             <input
               value={form.title || ""}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  title: e.target.value,
-                })
-              }
+              onChange={updateField("title")}
               placeholder="បញ្ចូលឈ្មោះឯកសារ"
               className="
-              h-10
+              h-11
               w-full
               rounded-lg
               border
               border-gray-200
-              px-3
+              px-4
               text-sm
               outline-none
-              focus:border-[#4b3192]
+              placeholder:text-gray-400
+              focus:border-primary
               "
             />
           </div>
 
-          <div>
-            <label
-              className="
-            mb-2 block
-            text-sm text-gray-600
-            "
-            >
-              សាខា
-            </label>
-
-            <select
-              value={form.branch || ""}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  branch: e.target.value,
-                })
-              }
-              className="
-              h-10
-              w-full
-              rounded-lg
-              border
-              border-gray-200
-              px-3
-              text-sm
-              outline-none
-              "
-            >
-              <option>សាខាភ្នំពេញ</option>
-
-              <option>សាខាសៀមរាប</option>
-            </select>
-          </div>
+          <FormSelect
+            label="សាខា"
+            placeholder="ជ្រើសរើសសាខា"
+            value={form.branch}
+            onChange={updateField("branch")}
+            options={[
+              {
+                label: "សាខាភ្នំពេញ",
+                value: "សាខាភ្នំពេញ",
+              },
+              {
+                label: "សាខាសៀមរាប",
+                value: "សាខាសៀមរាប",
+              },
+            ]}
+          />
         </div>
 
         {/* Description */}
@@ -118,9 +94,11 @@ export default function AddDocumentForm({ form, setForm, onSave, onClose }) {
         <div>
           <label
             className="
-          mb-2 block
-          text-sm text-gray-600
-          "
+            mb-2
+            block
+            text-sm
+            font-semibold
+            "
           >
             លេខសម្គាល់
           </label>
@@ -128,13 +106,8 @@ export default function AddDocumentForm({ form, setForm, onSave, onClose }) {
           <textarea
             rows={3}
             value={form.description || ""}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                description: e.target.value,
-              })
-            }
-            placeholder="បញ្ចូលព័ត៌មានលម្អិត"
+            onChange={updateField("description")}
+            placeholder="បញ្ចូលលេខសម្គាល់"
             className="
             w-full
             resize-none
@@ -144,94 +117,18 @@ export default function AddDocumentForm({ form, setForm, onSave, onClose }) {
             p-3
             text-sm
             outline-none
-            focus:border-[#4b3192]
+            placeholder:text-gray-400
+            focus:border-primary
             "
           />
         </div>
 
         {/* Upload */}
 
-        <div>
-          <label
-            className="
-          mb-2 block
-          text-sm text-gray-600
-          "
-          >
-            ឯកសារ
-          </label>
-
-          {/* Uploaded preview */}
-
-          {form.fileName && (
-            <div
-              className="
-          mb-3
+        <label
+          className="
           flex
-          h-[48px]
-          items-center
-          justify-between
-          rounded-lg
-          border
-          px-3
-          "
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className="
-              flex
-              h-8
-              w-8
-              items-center
-              justify-center
-              rounded
-              bg-red-100
-              text-[10px]
-              font-bold
-              text-red-500
-              "
-                >
-                  PDF
-                </div>
-
-                <div>
-                  <p className="text-sm">{form.fileName}</p>
-
-                  <p
-                    className="
-                text-xs text-gray-400
-                "
-                  >
-                    PDF - {form.fileSize}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={() =>
-                  setForm({
-                    ...form,
-                    fileName: "",
-                    fileSize: "",
-                  })
-                }
-              >
-                <X
-                  className="
-              h-5 w-5
-              text-gray-400
-              "
-                />
-              </button>
-            </div>
-          )}
-
-          {/* Upload area */}
-
-          <label
-            className="
-          flex
-          h-[110px]
+          h-[120px]
           cursor-pointer
           flex-col
           items-center
@@ -241,78 +138,61 @@ export default function AddDocumentForm({ form, setForm, onSave, onClose }) {
           border-dashed
           border-gray-200
           "
-          >
-            <UploadCloud
-              className="
-            mb-2
-            h-7
-            w-7
-            text-gray-400
-            "
-            />
+        >
+          <UploadCloud size={30} className="mb-2 text-gray-400" />
 
-            <p
-              className="
+          <p
+            className="
             text-sm
-            font-medium
-            text-[#4b3192]
+            font-semibold
+            text-primary
             "
-            >
-              បញ្ចូលឯកសារ
-            </p>
+          >
+            បញ្ចូលឯកសារ
+          </p>
 
-            <p
-              className="
-            text-[11px]
+          <p
+            className="
+            text-xs
             text-gray-400
             "
-            >
-              PDF, Excel, JPG, PNG (Max 5MB), មិនលើស 16:9
-            </p>
+          >
+            PDF, Excel, JPG, PNG (Max 5MB)
+          </p>
 
-            <input type="file" hidden onChange={handleFile} />
-          </label>
-        </div>
+          <input type="file" hidden />
+        </label>
       </div>
+
+      {/* Buttons */}
 
       {/* Buttons */}
 
       <div
         className="
-      mt-5
-      flex
-      gap-4
-      "
+  mt-5
+  flex
+  justify-end
+  gap-4
+  "
       >
         <button
+          type="button"
           onClick={onClose}
           className="
-        h-10
-        flex-1
-        rounded-lg
-        border
-        border-gray-200
-        text-sm
-        "
+    h-10
+    w-[120px]
+    rounded-lg
+    border
+    border-gray-200
+    text-sm
+    "
         >
           បោះបង់
         </button>
 
-        <button
-          onClick={onSave}
-          className="
-        h-10
-        flex-1
-        rounded-lg
-        bg-[#4b3192]
-        text-sm
-        font-medium
-        text-white
-        "
-        >
-          រក្សាទុក
-        </button>
+        <SaveButton onClick={handleSave} />
       </div>
-    </div>
+    </PopupCard>
   );
 }
