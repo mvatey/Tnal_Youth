@@ -6,6 +6,7 @@ import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal.js";
 import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
 import DataTable from "@/components/table/DataTable.js";
 import StatCard from "@/components/dashboard/statCard";
+import { FaMosque } from "react-icons/fa6";
 
 import { Users, Landmark, Moon, Sparkles, Trash2 } from "lucide-react";
 import users from "@/data/members.json";
@@ -335,7 +336,7 @@ export default function MembersPage() {
 
   return (
     <div className="min-h-full flex flex-col gap-4">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 shrink-0">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 shrink-0">
         <StatCard
           icon={Users}
           label="សមាជិកសរុប"
@@ -379,15 +380,6 @@ export default function MembersPage() {
           growth={String(stats.islamGrowth)}
           iconColor="text-primary"
           iconBg="bg-primary-light"
-        />
-
-        <StatCard
-          icon={Sparkles}
-          label="សាសនាផ្សេង"
-          value={String(stats.otherReligion)}
-          growth={String(stats.otherReligionGrowth)}
-          iconColor="text-secondary"
-          iconBg="bg-secondary-light"
         />
       </div>
 

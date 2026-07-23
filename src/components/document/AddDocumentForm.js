@@ -6,6 +6,7 @@ import {
   Building2,
   ChevronDown,
 } from "lucide-react";
+import { RiAddCircleLine } from "react-icons/ri";
 
 export default function AddDocumentForm({ form, setForm, onSave, onClose }) {
   function handleFile(e) {

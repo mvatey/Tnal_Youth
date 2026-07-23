@@ -1,6 +1,7 @@
 import Sidebar from "@/components/navigation/sidebar";
 import Topbar from "@/components/navigation/topbar";
 
+
 export default function Member({ children }) {
   return (
     <div className="h-screen bg-bg-page-gray flex overflow-hidden">

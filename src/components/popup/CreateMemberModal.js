@@ -1,17 +1,17 @@
-// src/components/popup/createMember
-// src/components/popup/CreateMemberModal.jsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { User, Phone, Mail, Calendar, X, Save } from "lucide-react";
+import { User, Phone, Mail, Calendar, X } from "lucide-react";
+import { HiSaveAs } from "react-icons/hi";
+import BoxFill from "@/components/forms/boxFill";
+
+import SelectArrow from "@/components/forms/SelectArrow";
 import memberOptions from "@/data/donation/memberOptions.json";
 
-const {
-  genderOptions: GENDER_OPTIONS,
-  roleOptions: ROLE_OPTIONS,
-  statusOptions: STATUS_OPTIONS,
-} = memberOptions;
+const { genderOptions, roleOptions, statusOptions } = memberOptions;
+
+const LEVEL_OPTIONS = ["1", "2", "3", "4", "5"];
 
 const EMPTY_FORM = {
   nameKh: "",
@@ -24,6 +24,7 @@ const EMPTY_FORM = {
   role: "",
   dob: "",
   joinedAt: "",
+  level: "",
 };
 
 export default function CreateMemberModal({
@@ -35,52 +36,47 @@ export default function CreateMemberModal({
   const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => setMounted(true), []);
 
-  // Reset the form whenever the modal is opened fresh
   useEffect(() => {
     if (open) setForm(EMPTY_FORM);
   }, [open]);
 
-  // Close on Escape
   useEffect(() => {
     if (!open) return;
-    const handleKeyDown = (e) => {
+
+    const esc = (e) => {
       if (e.key === "Escape") onClose?.();
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    window.addEventListener("keydown", esc);
+
+    return () => window.removeEventListener("keydown", esc);
   }, [open, onClose]);
 
-  // Lock body scroll while open
   useEffect(() => {
     if (!open) return;
-    const original = document.body.style.overflow;
+
+    const old = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
     return () => {
-      document.body.style.overflow = original;
+      document.body.style.overflow = old;
     };
   }, [open]);
 
   if (!open || !mounted) return null;
 
   const update = (field) => (e) =>
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+    setForm((prev) => ({
+      ...prev,
+      [field]: e.target.value,
+    }));
 
-  const handleSubmit = (e) => {
+  const submit = (e) => {
     e.preventDefault();
     onSave?.(form);
   };
-
-  const inputClass =
-    "w-full rounded-xl border border-gray-200 py-3 pl-11 pr-4 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30";
-  const selectClass =
-    "w-full appearance-none rounded-xl border border-gray-200 py-3 pl-4 pr-10 text-sm text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30";
-  const labelClass = "mb-2 block text-sm font-medium text-text-primary";
-  const iconClass =
-    "pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary";
 
   return createPortal(
     <div
@@ -89,228 +85,126 @@ export default function CreateMemberModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl rounded-3xl bg-white p-8 shadow-xl"
+        className="w-full max-w-xl rounded-3xl bg-white p-8 shadow-xl"
       >
-        {/* Header */}
-        <div className="mb-6 flex items-start justify-between">
+        <div className="mb-6 flex justify-between items-start">
           <h2 className="text-2xl font-bold text-primary">បង្កើតសមាជិកថ្មី</h2>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1 text-text-secondary hover:bg-gray-100"
-            aria-label="បិទ"
-          >
-            <X className="w-5 h-5" />
+
+          <button onClick={onClose}>
+            <X size={20} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
-            {/* Name (Khmer) */}
-            <div>
-              <label className={labelClass}>ឈ្មោះជាភាសាខ្មែរ</label>
-              <div className="relative">
-                <User className={iconClass} />
-                <input
-                  type="text"
-                  value={form.nameKh}
-                  onChange={update("nameKh")}
-                  placeholder="បញ្ចូលឈ្មោះ"
-                  className={inputClass}
-                  required
-                />
-              </div>
-            </div>
+        <form onSubmit={submit}>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <BoxFill
+              label="ឈ្មោះជាភាសាខ្មែរ"
+              placeholder="បញ្ចូលឈ្មោះជាភាសាខ្មែរ"
+              value={form.nameKh}
+              onChange={update("nameKh")}
+            />
 
-            {/* Name (English) */}
-            <div>
-              <label className={labelClass}>ឈ្មោះជាភាសាអង់គ្លេស</label>
-              <div className="relative">
-                <User className={iconClass} />
-                <input
-                  type="text"
-                  value={form.nameEn}
-                  onChange={update("nameEn")}
-                  placeholder="បញ្ចូលឈ្មោះ"
-                  className={inputClass}
-                />
-              </div>
-            </div>
+            <BoxFill
+              label="ឈ្មោះជាអក្សរឡាតាំង"
+              placeholder="បញ្ចូលឈ្មោះជាអក្សរឡាតាំង"
+              value={form.nameEn}
+              onChange={update("nameEn")}
+            />
 
-            {/* Gender */}
-            <div>
-              <label className={labelClass}>ភេទ</label>
-              <div className="relative">
-                <select
-                  value={form.gender}
-                  onChange={update("gender")}
-                  className={selectClass}
-                  required
-                >
-                  <option value="" disabled>
-                    ភេទស្រី
-                  </option>
-                  {GENDER_OPTIONS.map((g) => (
-                    <option key={g} value={g}>
-                      {g}
-                    </option>
-                  ))}
-                </select>
-                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary">
-                  ▾
-                </span>
-              </div>
-            </div>
+            <BoxFill
+              label="ភេទ"
+              type="select"
+              placeholder="ជ្រើសរើសភេទ"
+              options={genderOptions}
+              value={form.gender}
+              onChange={update("gender")}
+            />
 
-            {/* Status */}
-            <div>
-              <label className={labelClass}>ស្ថានភាព</label>
-              <div className="relative">
-                <select
-                  value={form.status}
-                  onChange={update("status")}
-                  className={selectClass}
-                  required
-                >
-                  <option value="" disabled>
-                    សកម្ម
-                  </option>
-                  {STATUS_OPTIONS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary">
-                  ▾
-                </span>
-              </div>
-            </div>
+            <BoxFill
+              label="ស្ថានភាព"
+              type="select"
+              placeholder="ជ្រើសរើសស្ថានភាព"
+              options={statusOptions}
+              value={form.status}
+              onChange={update("status")}
+            />
 
-            {/* Phone */}
-            <div>
-              <label className={labelClass}>លេខទូរស័ព្ទ</label>
-              <div className="relative">
-                <Phone className={iconClass} />
-                <input
-                  type="tel"
-                  value={form.phone}
-                  onChange={update("phone")}
-                  placeholder="បញ្ចូលលេខទូរស័ព្ទ"
-                  className={inputClass}
-                  required
-                />
-              </div>
-            </div>
+            <BoxFill
+              label="លេខទូរស័ព្ទ"
+              placeholder="បញ្ចូលលេខទូរស័ព្ទ"
+              value={form.phone}
+              onChange={update("phone")}
+            />
 
-            {/* Email */}
-            <div>
-              <label className={labelClass}>អ៊ីមែល</label>
-              <div className="relative">
-                <Mail className={iconClass} />
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={update("email")}
-                  placeholder="បញ្ចូលអ៊ីមែល"
-                  className={inputClass}
-                />
-              </div>
-            </div>
+            <BoxFill
+              label="អ៊ីមែល"
+              placeholder="បញ្ចូលអ៊ីមែល"
+              value={form.email}
+              onChange={update("email")}
+            />
 
-            {/* Branch */}
-            <div>
-              <label className={labelClass}>សាខា</label>
-              <div className="relative">
-                <select
-                  value={form.branch}
-                  onChange={update("branch")}
-                  className={selectClass}
-                  required
-                >
-                  <option value="" disabled>
-                    ជ្រើសរើសសាខា
-                  </option>
-                  {branches.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
-                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary">
-                  ▾
-                </span>
-              </div>
-            </div>
+            <BoxFill
+              label="សាខា"
+              type="select"
+              placeholder="ជ្រើសរើសសាខា"
+              options={branches.map((b) => ({
+                label: b.label ?? b,
+                value: b.value ?? b,
+              }))}
+              value={form.branch}
+              onChange={update("branch")}
+            />
 
-            {/* Role */}
-            <div>
-              <label className={labelClass}>តួនាទី</label>
-              <div className="relative">
-                <select
-                  value={form.role}
-                  onChange={update("role")}
-                  className={selectClass}
-                  required
-                >
-                  <option value="" disabled>
-                    ជ្រើសរើសតួនាទី
-                  </option>
-                  {ROLE_OPTIONS.map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
-                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary">
-                  ▾
-                </span>
-              </div>
-            </div>
+            <BoxFill
+              label="តួនាទី"
+              type="select"
+              placeholder="ជ្រើសរើសតួនាទី"
+              options={roleOptions}
+              value={form.role}
+              onChange={update("role")}
+            />
 
-            {/* Date of birth */}
-            <div>
-              <label className={labelClass}>ថ្ងៃខែឆ្នាំកំណើត</label>
-              <div className="relative">
-                <Calendar className={iconClass} />
-                <input
-                  type="date"
-                  value={form.dob}
-                  onChange={update("dob")}
-                  className={`${inputClass} text-text-secondary`}
-                />
-              </div>
-            </div>
+            <BoxFill
+              label="ថ្ងៃខែឆ្នាំកំណើត"
+              type="date"
+              value={form.dob}
+              onChange={update("dob")}
+            />
 
-            {/* Date joined */}
-            <div>
-              <label className={labelClass}>ថ្ងៃខែឆ្នាំចូលរួម</label>
-              <div className="relative">
-                <Calendar className={iconClass} />
-                <input
-                  type="date"
-                  value={form.joinedAt}
-                  onChange={update("joinedAt")}
-                  className={`${inputClass} text-text-secondary`}
-                  required
-                />
-              </div>
-            </div>
+            <BoxFill
+              label="ថ្ងៃខែឆ្នាំចូលរួម"
+              type="date"
+              value={form.joinedAt}
+              onChange={update("joinedAt")}
+            />
+
+            <BoxFill
+              label="កាំ"
+              type="select"
+              placeholder="ជ្រើសរើសកាំ"
+              options={LEVEL_OPTIONS.map((x) => ({
+                label: `កាំ ${x}`,
+                value: x,
+              }))}
+              value={form.level}
+              onChange={update("level")}
+            />
           </div>
 
-          {/* Actions */}
-          <div className="mt-8 flex items-center gap-3">
+          <div className="mt-8 flex gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full bg-gray-100 px-8 py-3 text-sm font-medium text-text-secondary transition hover:bg-gray-200"
+              className="rounded-full bg-gray-100 px-8 py-3 text-sm"
             >
-              បោះបង់បង់
+              បោះបង់
             </button>
+
             <button
               type="submit"
-              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-medium text-white transition hover:opacity-90"
+              className="flex-1 flex items-center justify-center gap-2 rounded-full bg-primary py-3 text-white"
             >
-              <Save className="w-4 h-4" />
+              <HiSaveAs />
               រក្សាទុក
             </button>
           </div>
@@ -318,5 +212,87 @@ export default function CreateMemberModal({
       </div>
     </div>,
     document.body,
+  );
+}
+
+function InputField({ label, icon, value, onChange, placeholder }) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium text-text-primary">
+        {label}
+      </label>
+
+      <div className="relative">
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+          {icon}
+        </span>
+
+        <input
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className="
+          w-full
+          rounded-xl
+          border
+          border-gray-200
+          py-3
+          pl-11
+          pr-4
+          text-sm
+          text-text-primary
+          placeholder:text-text-secondary
+          focus:outline-none
+          focus:ring-2
+          focus:ring-primary/30
+          "
+        />
+      </div>
+    </div>
+  );
+}
+
+function SelectField({ label, value, onChange, options = [] }) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium">{label}</label>
+
+      <div className="relative">
+        <select
+          value={value}
+          onChange={onChange}
+          className="w-full appearance-none rounded-xl border border-gray-200 py-3 px-4 pr-10 text-sm"
+        >
+          <option value="">ជ្រើសរើស</option>
+
+          {options.map((item) => (
+            <option key={item.value ?? item} value={item.value ?? item}>
+              {item.label ?? item}
+            </option>
+          ))}
+        </select>
+
+        <SelectArrow />
+      </div>
+    </div>
+  );
+}
+
+function DateField({ label, value, onChange }) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium">{label}</label>
+
+      <div className="relative">
+        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+
+        <input
+          type="date"
+          value={value}
+          onChange={onChange}
+          className="w-full rounded-xl border border-gray-200 py-3 pl-11 pr-4 text-sm"
+        />
+      </div>
+    </div>
   );
 }
