@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "code": "BR-001",
+    "name": "សាខា រាជធានីភ្នំពេញ",
+    "nameEn": "Phnom Penh Branch",
+    "level": "រាជធានី/ខេត្ត",
+    "province": "ភ្នំពេញ",
+    "district": "ខណ្ឌចំការមន",
+    "memberCount": 47,
+    "status": "ACTIVE",
+    "createdAt": "25 មករា, 2026"
+  },
+  {
+    "id": 2,
+    "code": "BR-002",
+    "name": "សាខា ខេត្តកណ្ដាល",
+    "nameEn": "Kandal Branch",
+    "level": "រាជធានី/ខេត្ត",
+    "province": "កណ្ដាល",
+    "district": "ស្រុករការកោង",
+    "memberCount": 35,
+    "status": "ACTIVE",
+    "createdAt": "25 មករា, 2026"
+  },
+  {
+    "id": 3,
+    "code": "BR-003",
+    "name": "សាខា ខេត្តកំពត",
+    "nameEn": "Kampot Branch",
+    "level": "រាជធានី/ខេត្ត",
+    "province": "កំពត",
+    "district": "ស្រុកកំពង់ត្រឡាច",
+    "memberCount": 28,
+    "status": "ACTIVE",
+    "createdAt": "25 មករា, 2026"
+  },
+  {
+    "id": 4,
+    "code": "BR-004",
+    "name": "សាខា ស្រុកអង្គស្នួល",
+    "nameEn": "Angk Snuol Branch",
+    "level": "ក្រុង/ស្រុក/ខណ្ឌ",
+    "province": "កណ្ដាល",
+    "district": "ស្រុកអង្គស្នួល",
+    "memberCount": 19,
+    "status": "INACTIVE",
+    "createdAt": "26 មករា, 2026"
+  },
+  {
+    "id": 5,
+    "code": "BR-005",
+    "name": "សាខា ស្រុកឈូក",
+    "nameEn": "Chhuk Branch",
+    "level": "ក្រុង/ស្រុក/ខណ្ឌ",
+    "province": "កំពត",
+    "district": "ស្រុកឈូក",
+    "memberCount": 23,
+    "status": "ACTIVE",
+    "createdAt": "26 មករា, 2026"
+  },
+  {
+    "id": 6,
+    "code": "BR-006",
+    "name": "សាខា ឃុំត្រពាំងធំ",
+    "nameEn": "Trapeang Thom Branch",
+    "level": "ឃុំ/សង្កាត់",
+    "province": "កំពត",
+    "district": "ស្រុកកំពង់ត្រឡាច",
+    "memberCount": 12,
+    "status": "ACTIVE",
+    "createdAt": "27 មករា, 2026"
+  }
+]

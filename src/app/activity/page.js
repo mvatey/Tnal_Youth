@@ -313,8 +313,7 @@ export default function ActivityPage() {
 
     <Link
       href="/activity/create"
-      className="flex h-[34px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-success px-4 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-sm active:translate-y-0"
-    >
+              className="flex h-[34px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-success px-4 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-sm active:translate-y-0"    >
       <PlusCircle size={16} />
       បង្កើតកម្មវិធីថ្មី
     </Link>

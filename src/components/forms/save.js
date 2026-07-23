@@ -1,37 +1,44 @@
 "use client";
 
-import { CloudDownload } from "lucide-react";
 import { RiDownloadCloud2Line } from "react-icons/ri";
 
-export default function SaveButton({ onClick, ...buttonProps }) {
+export default function SaveButton({
+  onClick,
+  className = "",
+  ...buttonProps
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
       {...buttonProps}
-      className="
-        flex items-center justify-center gap-2 px-3
-        h-[34px] w-[110px]
-        bg-[#4B2E91]
+      className={`
+        flex h-[34px]
+        items-center
+        justify-center
+        gap-2
+        whitespace-nowrap
+        rounded-lg
+        bg-primary
+        px-4
+        text-sm
+        font-semibold
         text-white
-        rounded-[8px]
-        shadow-xl
-        transition-all duration-200
-        hover:-translate-y-0.5 hover:bg-[#432982] hover:shadow-md
+        transition-all
+        duration-200
+        hover:-translate-y-0.5
+        hover:bg-primary-hover
+        hover:shadow-sm
         active:translate-y-0
-      "
+        ${className}
+      `}
     >
-      <CloudDownload className="h-5 w-5 shrink-0" />
+      <RiDownloadCloud2Line
+        size={16}
+        className="shrink-0"
+      />
 
-      <span
-        className="
-          whitespace-nowrap text-[14px]
-          font-medium
-          leading-none
-        "
-      >
-        ទាញយក
-      </span>
+      <span>ទាញយក</span>
     </button>
   );
 }
