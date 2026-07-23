@@ -18,7 +18,7 @@ export default async function Document({ params }) {
   }
 
   return (
-    <div className="flex justify-center gap-30 p-6">
+    <div className="flex justify-center gap-7 p-6">
       {/* ID CARD */}
       <DocumentPreviewCard
         title="ប័ណ្ណសម្គាល់សមាជិក"

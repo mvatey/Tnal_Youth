@@ -47,10 +47,10 @@ export default function CreateMemberModal({
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) return undefined;
 
-    const handleEscape = (e) => {
-      if (e.key === "Escape") {
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
         onClose?.();
       }
     };
@@ -63,110 +63,44 @@ export default function CreateMemberModal({
   }, [open, onClose]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) return undefined;
 
-    const oldOverflow = document.body.style.overflow;
-
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow = oldOverflow;
+      document.body.style.overflow = previousOverflow;
     };
   }, [open]);
 
-  if (!open || !mounted) return null;
-
-
-  const update = (field) => (e) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: e.target.value,
+  const update = (field) => (event) => {
+    setForm((previousForm) => ({
+      ...previousForm,
+      [field]: event.target.value,
     }));
   };
 
-
-  const submit = (e) => {
-    e.preventDefault();
-
+  const submit = (event) => {
+    event.preventDefault();
     onSave?.(form);
   };
 
+  if (!open || !mounted) return null;
 
   return createPortal(
+    <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose}>
+      <div className="fixed bottom-0 left-0 right-0 top-[72px] flex items-center justify-center p-4 lg:left-[365px] lg:p-6">
+        <div className="flex max-h-[calc(100vh-120px)] w-full max-w-[640px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+          <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-6 py-5">
+            <h2 className="text-lg font-bold text-primary">បង្កើតសមាជិកថ្មី</h2>
 
-    <div
-      className="
-      fixed
-      inset-0
-      z-50
-      bg-black/40
-      "
-      onClick={onClose}
-    >
-
-      {/* CENTER ONLY FREE CONTENT AREA */}
-      <div
-        className="
-        fixed
-        left-64
-        top-16
-        right-0
-        bottom-0
-        flex
-        items-center
-        justify-center
-        px-4
-        py-5
-        overflow-y-auto
-        "
-      >
-
-        <div
-          onClick={(e)=>e.stopPropagation()}
-          className="
-          w-full
-          max-w-md
-          rounded-2xl
-          bg-white
-          p-5
-          shadow-xl
-          "
-        >
-
-          {/* HEADER */}
-
-          <div className="mb-4 flex items-center justify-between">
-
-            <h2 className="text-lg font-bold text-primary">
-              បង្កើតសមាជិកថ្មី
-            </h2>
-
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full hover:bg-gray-100 p-1"
-            >
-              <X size={18}/>
+            <button type="button" onClick={onClose} className="rounded-full p-1.5 text-gray-700 transition hover:bg-gray-100" aria-label="បិទផ្ទាំង">
+              <X size={20} />
             </button>
-
           </div>
 
-
-
-          <form onSubmit={submit}>
-
-
-            <div
-              className="
-              grid
-              grid-cols-1
-              sm:grid-cols-2
-              gap-3
-              "
-            >
-
-
+          <form id="create-member-form" onSubmit={submit} className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+            <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
               <BoxFill
                 label="ឈ្មោះជាភាសាខ្មែរ"
                 placeholder="បញ្ចូលឈ្មោះ"
@@ -174,15 +108,12 @@ export default function CreateMemberModal({
                 onChange={update("nameKh")}
               />
 
-
               <BoxFill
                 label="ឈ្មោះជាអក្សរឡាតាំង"
                 placeholder="បញ្ចូលឈ្មោះ"
                 value={form.nameEn}
                 onChange={update("nameEn")}
               />
-
-
 
               <FormSelect
                 label="ភេទ"
@@ -193,7 +124,6 @@ export default function CreateMemberModal({
                 onChange={update("gender")}
               />
 
-
               <FormSelect
                 label="ស្ថានភាព"
                 type="select"
@@ -203,8 +133,6 @@ export default function CreateMemberModal({
                 onChange={update("status")}
               />
 
-
-
               <BoxFill
                 label="លេខទូរស័ព្ទ"
                 placeholder="បញ្ចូលលេខទូរស័ព្ទ"
@@ -212,29 +140,25 @@ export default function CreateMemberModal({
                 onChange={update("phone")}
               />
 
-
               <BoxFill
                 label="អ៊ីមែល"
+                type="email"
                 placeholder="បញ្ចូលអ៊ីមែល"
                 value={form.email}
                 onChange={update("email")}
               />
 
-
-
               <FormSelect
                 label="សាខា"
                 type="select"
                 placeholder="ជ្រើសរើសសាខា"
-                options={branches.map((b)=>({
-                  label:b.label ?? b,
-                  value:b.value ?? b,
+                options={branches.map((branch) => ({
+                  label: branch.label ?? branch,
+                  value: branch.value ?? branch,
                 }))}
                 value={form.branch}
                 onChange={update("branch")}
               />
-
-
 
               <FormSelect
                 label="តួនាទី"
@@ -245,15 +169,12 @@ export default function CreateMemberModal({
                 onChange={update("role")}
               />
 
-
-
               <BoxFill
                 label="ថ្ងៃខែឆ្នាំកំណើត"
                 type="date"
                 value={form.dob}
                 onChange={update("dob")}
               />
-
 
               <BoxFill
                 label="ថ្ងៃខែឆ្នាំចូលរួម"
@@ -262,53 +183,33 @@ export default function CreateMemberModal({
                 onChange={update("joinedAt")}
               />
 
-
-
               <FormSelect
                 label="កាំ"
                 type="select"
                 placeholder="ជ្រើសរើសកាំ"
-                options={LEVEL_OPTIONS.map((x)=>({
-                  label:`កាំ ${x}`,
-                  value:x,
+                options={LEVEL_OPTIONS.map((level) => ({
+                  label: `កាំ ${level}`,
+                  value: level,
                 }))}
                 value={form.level}
                 onChange={update("level")}
               />
-
-
             </div>
-
-
-
-            <div className="mt-5 flex gap-2">
-
-
-              <button type="button" onClick={onClose} className="rounded-full bg-gray-100 px-5 py-2 text-xs" >
-                បោះបង់
-              </button>
-              <button
-                type="submit"
-                className="flex-1 flex items-center justify-center gap-2 rounded-full bg-primary py-2 text-xs text-white" >
-                <HiSaveAs size={16}/>
-                រក្សាទុក
-              </button>
-
-
-            </div>
-
-
           </form>
 
+          <div className="flex shrink-0 items-center gap-3 border-t border-gray-100 bg-white px-6 py-4">
+            <button type="button" onClick={onClose} className="rounded-full bg-gray-100 px-6 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-200">
+              បោះបង់
+            </button>
 
+            <button type="submit" form="create-member-form" className="flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition hover:opacity-90">
+              <HiSaveAs size={17} />
+              រក្សាទុក
+            </button>
+          </div>
         </div>
-
-
       </div>
-
-
     </div>,
-
     document.body
   );
 }

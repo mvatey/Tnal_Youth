@@ -335,12 +335,6 @@ export default function CreateActivityPage() {
               ? "កែប្រែកម្មវិធី"
               : "បង្កើតកម្មវិធីថ្មី"}
           </h1>
-
-          <p className="mt-1 text-sm text-text-secondary">
-            {isEditMode
-              ? "កែប្រែព័ត៌មានកម្មវិធី"
-              : "ព័ត៌មានកម្មវិធី"}
-          </p>
         </div>
 
         {/* Activity information */}
@@ -597,7 +591,7 @@ export default function CreateActivityPage() {
                 }
                 className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90"
               >
-                ជ្រើសរើសសមាជិក
+                ជ្រើសរើសសមាសភាព
               </button>
             )}
 
