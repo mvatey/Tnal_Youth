@@ -1,26 +1,85 @@
-// app/document/layout.jsx
+"use client";
+
+import { usePathname, useRouter } from "next/navigation";
+
 import Sidebar from "@/components/navigation/sidebar";
 import Topbar from "@/components/navigation/topbar";
+import DocumentTabs from "@/components/document/DocumentTabs";
 
-export default function DashboardLayout({ children }) {
+
+export default function DocumentLayout({children}) {
+
+  const router = useRouter();
+  const pathname = usePathname();
+
+
+  const activeTab =
+    pathname.includes("/member")
+      ? "member"
+      : "company";
+
+
+
+  function changeTab(tab){
+
+    if(tab === "company"){
+      router.push("/document/company");
+    }
+
+    if(tab === "member"){
+      router.push("/document/member");
+    }
+
+  }
+
+
+
   return (
-    // h-screen + overflow-hidden on the outer shell: this element itself
-    // never scrolls. Sidebar and Topbar are pinned; only <main> below
-    // gets its own independent scroll container.
-    <div className="flex h-screen overflow-hidden bg-bg-page-gray">
-      <Sidebar role="secretary" userName="ផាន វិទ្ធី" userTitle="លេខាធិការ" userAvatar="/secretary.jpg" />
 
-      {/* min-h-0 is required here: without it, a flex child won't shrink
-          below its content size, which would silently break the overflow
-          scroll on <main> below (a classic flexbox gotcha). */}
-      <div className="flex-1 flex flex-col min-h-0">
+    <div className="flex h-screen overflow-hidden bg-bg-page-gray">
+
+
+      <Sidebar
+        role="secretary"
+        userName="ផាន វិទ្ធី"
+        userTitle="លេខាធិការ"
+        userAvatar="/secretary.jpg"
+      />
+
+
+
+      <div className="flex flex-1 flex-col min-h-0">
+
+
         <Topbar title="ឯកសារ" />
 
-        {/* The only scrollable element on the page. flex-1 lets it fill
-            the remaining height below Topbar; overflow-y-auto gives it
-            its own scrollbar instead of scrolling the whole window. */}
-        <main className="flex-1 overflow-y-auto p-4">{children}</main>
+
+
+        <main className="flex-1 overflow-y-auto hide-scrollbar p-4">
+
+
+          <DocumentTabs
+            activeTab={activeTab}
+            onChangeTab={changeTab}
+          />
+
+
+
+          <div className="mt-5">
+
+            {children}
+
+          </div>
+
+
+        </main>
+
+
       </div>
+
+
     </div>
+
   );
+
 }

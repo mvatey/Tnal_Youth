@@ -1,87 +1,137 @@
-// components/popup/Confirmdeletemodal.jsx
 "use client";
 
-import { Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { Trash2, X } from "lucide-react";
+import PopupCard from "@/components/popup/PopupCard";
 
-export default function ConfirmDeleteModal({
+export default function DeleteConfirmModal({
   open,
   onClose,
   onConfirm,
-  title = "លុបទិន្នន័យ?",
-  description = "តើអ្នកប្រាកដថានឹងលុបទិន្នន័យនេះទេ?",
-  cancelLabel = "បោះបង់",
-  confirmLabel = "លុប",
+  title = "បញ្ជាក់ការលុប",
+  message = "តើអ្នកប្រាកដថាចង់លុបទិន្នន័យនេះមែនទេ?",
 }) {
-  const [mounted, setMounted] = useState(false);
 
-  // document.body only exists on the client — wait for mount before portaling
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  if (!open) return null;
 
-  // Close on Escape key
-  useEffect(() => {
-    if (!open) return;
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") onClose?.();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
 
-  // Lock body scroll while open, so the page behind can't scroll/shift
-  useEffect(() => {
-    if (!open) return;
-    const original = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = original;
-    };
-  }, [open]);
-
-  if (!open || !mounted) return null;
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-      onClick={onClose}
+  return (
+    <PopupCard
+      size="sm"
+      onClose={onClose}
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-3xl bg-white p-8 text-center shadow-xl"
-      >
+
+      <div className="text-center">
+
+
         {/* Icon */}
-        <div className="mx-auto mb-6 flex h-28 w-28 items-center justify-center rounded-full bg-gray-50">
-          <Trash2 className="h-10 w-10 text-red-600" strokeWidth={1.75} />
+
+        <div
+          className="
+          mx-auto
+          mb-4
+          flex
+          h-12
+          w-12
+          items-center
+          justify-center
+          rounded-full
+          bg-red-100
+          text-red-600
+          "
+        >
+          <Trash2 size={24}/>
         </div>
+
+
 
         {/* Title */}
-        <h2 className="mb-3 text-2xl font-bold text-text-primary">{title}</h2>
 
-        {/* Description */}
-        <p className="mb-7 text-base text-text-secondary">{description}</p>
+        <h2
+          className="
+          mb-2
+          text-lg
+          font-bold
+          text-text-primary
+          "
+        >
+          {title}
+        </h2>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3">
+
+
+        {/* Message */}
+
+        <p
+          className="
+          mb-6
+          text-sm
+          text-gray-500
+          "
+        >
+          {message}
+        </p>
+
+
+
+
+        {/* Buttons */}
+
+        <div
+          className="
+          flex
+          gap-3
+          "
+        >
+
+
           <button
+            type="button"
             onClick={onClose}
-            className="flex-1 rounded-full bg-gray-100 py-3.5 text-sm font-medium text-text-secondary transition hover:bg-gray-200"
+            className="
+            flex-1
+            rounded-lg
+            border
+            border-gray-200
+            py-2.5
+            text-sm
+            font-medium
+            text-gray-600
+            hover:bg-gray-50
+            "
           >
-            {cancelLabel}
+            បោះបង់
           </button>
+
+
+
+
           <button
+            type="button"
             onClick={onConfirm}
-            className="flex-1 rounded-full bg-red-600 py-3.5 text-sm font-medium text-white transition hover:bg-red-700"
+            className="
+            flex-1
+            rounded-lg
+            bg-red-600
+            py-2.5
+            text-sm
+            font-semibold
+            text-white
+            hover:bg-red-700
+            "
           >
-            {confirmLabel}
+            <span className="flex items-center justify-center gap-2">
+              <Trash2 size={16}/>
+              លុប
+            </span>
           </button>
+
+
         </div>
+
+
       </div>
-    </div>,
-    document.body,
+
+
+    </PopupCard>
   );
 }

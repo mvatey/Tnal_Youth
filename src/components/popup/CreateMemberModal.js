@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import { HiSaveAs } from "react-icons/hi";
 
 import BoxFill from "@/components/forms/boxFill";
+import FormSelect from "@/components/forms/FormSelect";
 import memberOptions from "@/data/donation/memberOptions.json";
 
 const { genderOptions, roleOptions, statusOptions } = memberOptions;
@@ -183,7 +184,7 @@ export default function CreateMemberModal({
 
 
 
-              <BoxFill
+              <FormSelect
                 label="ភេទ"
                 type="select"
                 placeholder="ជ្រើសរើសភេទ"
@@ -193,7 +194,7 @@ export default function CreateMemberModal({
               />
 
 
-              <BoxFill
+              <FormSelect
                 label="ស្ថានភាព"
                 type="select"
                 placeholder="ជ្រើសរើសស្ថានភាព"
@@ -221,7 +222,7 @@ export default function CreateMemberModal({
 
 
 
-              <BoxFill
+              <FormSelect
                 label="សាខា"
                 type="select"
                 placeholder="ជ្រើសរើសសាខា"
@@ -235,7 +236,7 @@ export default function CreateMemberModal({
 
 
 
-              <BoxFill
+              <FormSelect
                 label="តួនាទី"
                 type="select"
                 placeholder="ជ្រើសរើសតួនាទី"
@@ -263,7 +264,7 @@ export default function CreateMemberModal({
 
 
 
-              <BoxFill
+              <FormSelect
                 label="កាំ"
                 type="select"
                 placeholder="ជ្រើសរើសកាំ"
@@ -283,37 +284,12 @@ export default function CreateMemberModal({
             <div className="mt-5 flex gap-2">
 
 
-              <button
-                type="button"
-                onClick={onClose}
-                className="
-                rounded-full
-                bg-gray-100
-                px-5
-                py-2
-                text-xs
-                "
-              >
+              <button type="button" onClick={onClose} className="rounded-full bg-gray-100 px-5 py-2 text-xs" >
                 បោះបង់
               </button>
-
-
-
               <button
                 type="submit"
-                className="
-                flex-1
-                flex
-                items-center
-                justify-center
-                gap-2
-                rounded-full
-                bg-primary
-                py-2
-                text-xs
-                text-white
-                "
-              >
+                className="flex-1 flex items-center justify-center gap-2 rounded-full bg-primary py-2 text-xs text-white" >
                 <HiSaveAs size={16}/>
                 រក្សាទុក
               </button>

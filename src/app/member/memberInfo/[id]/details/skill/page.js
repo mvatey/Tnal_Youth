@@ -160,7 +160,7 @@ function LanguageSkillGroup({ item, canDelete, onChange, onDelete }) {
         />
         <FormSelect
           label="ការស្ដាប់"
-          placeholder="ជ្រើសរើសកម្រិត"
+          placeholder="ជ្រើសរើសកម្រិតការស្ដាប់"
           value={item.listening || ""}
           onChange={(event) => onChange("listening", event.target.value)}
           options={
@@ -171,7 +171,7 @@ function LanguageSkillGroup({ item, canDelete, onChange, onDelete }) {
         />
         <FormSelect
           label="ការអាន"
-          placeholder="ជ្រើសរើសកម្រិត"
+          placeholder="ជ្រើសរើសកម្រិតការអាន"
           value={item.reading || ""}
           onChange={(event) => onChange("reading", event.target.value)}
           options={
@@ -180,7 +180,7 @@ function LanguageSkillGroup({ item, canDelete, onChange, onDelete }) {
         />
         <FormSelect
           label="ការនិយាយ"
-          placeholder="ជ្រើសរើសកម្រិត"
+          placeholder="ជ្រើសរើសកម្រិតការនិយាយ"
           value={item.speaking || ""}
           onChange={(event) => onChange("speaking", event.target.value)}
           options={
@@ -222,7 +222,7 @@ function ComputerSkillGroup({ item, canDelete, onChange, onDelete }) {
           options={educationData.computerSkills || []}
         />
         <FormSelect
-          label="កម្រិតជំនាញ"
+          label="កម្រិតជំនាញជំនាញ"
           placeholder="ជ្រើសរើសកម្រិតជំនាញ"
           value={item.level || ""}
           onChange={(event) => onChange("level", event.target.value)}
