@@ -1,7 +1,7 @@
 {
-  "sponsorTypes": ["បុគ្គល", "ស្ថាប័ន"],
+  "sponsorTypes": ["បុគ្គល", "ស្ថាប័ន", "សមាជិក"],
   "equipmentTypes": ["សម្ភារៈសិក្សា", "សម្លៀកបំពាក់", "សម្ភារៈប្រើប្រាស់", "ផ្សេងៗ"],
-  "paymentMethods": ["ABA", "Cash", "ACLEDA"],
+  "paymentMethods": ["ABA", "Cash", "ACLEDA", "សម្ភារៈ"],
   "branches": ["ភ្នំពេញ", "កណ្ដាល", "តាកែវ", "កំពង់ចាម"],
   "sponsorStatuses": ["សប្បុរសធម៌", "ជួយកុមារកំព្រា", "ជួយចាស់ជរា"],
   "paymentLogos": {

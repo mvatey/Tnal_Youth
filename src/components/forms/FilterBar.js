@@ -22,7 +22,7 @@ export default function FilterBar({
           value={selectedBranch}
           onChange={onBranchChange}
           options={branches}
-          allLabel="ជ្រើសរើសសាខា"
+          allLabel="សាខាទាំងអស់"
           showLabel={false}
         />
         <DonationFilterSelect

@@ -31,7 +31,10 @@ function buildEventMembers() {
   });
 }
 
-export default function EventDonationDetailForm({ initialQuery = {} }) {
+export default function EventDonationDetailForm({
+  initialQuery = {},
+  onCancel,
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -254,7 +257,7 @@ export default function EventDonationDetailForm({ initialQuery = {} }) {
             selectedBranch={selectedBranch}
             searchQuery={searchQuery}
             onReset={handleReset}
-            onCancel={() => router.push(listPath)}
+            onCancel={onCancel || (() => router.push(listPath))}
             onSave={handleSave}
             onReceiptSave={handleReceiptSave}
           />

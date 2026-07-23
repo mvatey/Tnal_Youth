@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import EventDonationFilters from "./EventDonationFilters";
 import EventDonationTable from "./EventDonationTable";
 import AddAlert from "@/components/forms/addalert";
+import { downloadCsv } from "@/utils/downloadCsv";
 import donationData from "@/data/donation/donationData.json";
 import eventDonationData from "@/data/donation/eventDonationData.json";
 
@@ -43,9 +44,12 @@ function rowMatchesDateRange(row, startDate, endDate) {
   return row.startDateValue <= selectedEnd && row.endDateValue >= selectedStart;
 }
 
-export default function EventDonationPanel() {
+export default function EventDonationPanel({
+  selectedBranch: controlledSelectedBranch,
+  onBranchChange,
+}) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedBranch, setSelectedBranch] = useState("all");
+  const [internalSelectedBranch, setInternalSelectedBranch] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,6 +57,8 @@ export default function EventDonationPanel() {
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [moneySort, setMoneySort] = useState(null);
 
+  const selectedBranch = controlledSelectedBranch ?? internalSelectedBranch;
+  const setSelectedBranch = onBranchChange ?? setInternalSelectedBranch;
   const branches = [...new Set(donationRows.map((row) => row.branch))];
   const eventDonationRows = useMemo(createEventDonationRows, []);
   const hasSelectedBranch = selectedBranch !== "all";
@@ -112,6 +118,12 @@ export default function EventDonationPanel() {
     setCurrentPage(1);
   };
 
+  const handleDownload = () => {
+    if (downloadCsv(sortedRows, "event-donations.csv")) {
+      setShowDownloadAlert(true);
+    }
+  };
+
   useEffect(() => {
     if (!showDownloadAlert) return undefined;
 
@@ -155,7 +167,7 @@ export default function EventDonationPanel() {
           totalPages={totalPages}
           onPageChange={setCurrentPage}
           onDelete={(rowId) => setDeletedIds((current) => [...current, rowId])}
-          onDownload={() => setShowDownloadAlert(true)}
+          onDownload={handleDownload}
           moneySort={moneySort}
           onMoneySort={(field) => {
             setMoneySort((current) => ({

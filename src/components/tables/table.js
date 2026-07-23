@@ -14,6 +14,7 @@ export default function Table({
   members = [],
   selectedBranch = "all",
   searchQuery = "",
+  onRowsChange,
   onReset,
   onCancel,
   onSave,
@@ -66,18 +67,28 @@ export default function Table({
     safePage * ROWS_PER_PAGE,
   );
 
-  const updateRow = (id, values) => {
-    setRows((current) => {
-      const nextRows = current.map((member) =>
-        member.id === id ? { ...member, ...values } : member,
-      );
+const updateRow = (id, values) => {
+  setRows((currentRows) => {
+    const nextRows = currentRows.map((member) =>
+      member.id === id
+        ? {
+            ...member,
+            ...values,
+          }
+        : member,
+    );
 
-      window.dispatchEvent(
-        new CustomEvent(DONATION_ROWS_CHANGE_EVENT, { detail: nextRows }),
-      );
-      return nextRows;
-    });
-  };
+    onRowsChange?.(nextRows);
+
+    window.dispatchEvent(
+      new CustomEvent(DONATION_ROWS_CHANGE_EVENT, {
+        detail: nextRows,
+      }),
+    );
+
+    return nextRows;
+  });
+};
 
   const handleReceiptSave = async (id, file) => {
     if (!file) {
@@ -153,18 +164,27 @@ export default function Table({
       dollarAmount: "0",
     }));
 
-    setRows((current) => {
-      const nextRows = current.map((member) =>
-        resetIds.has(member.id)
-          ? { ...member, realAmount: "0", dollarAmount: "0" }
-          : member,
-      );
+    setRows((currentRows) => {
+  const nextRows = currentRows.map((member) =>
+    resetIds.has(member.id)
+      ? {
+          ...member,
+          realAmount: "0",
+          dollarAmount: "0",
+        }
+      : member,
+  );
 
-      window.dispatchEvent(
-        new CustomEvent(DONATION_ROWS_CHANGE_EVENT, { detail: nextRows }),
-      );
-      return nextRows;
-    });
+  onRowsChange?.(nextRows);
+
+  window.dispatchEvent(
+    new CustomEvent(DONATION_ROWS_CHANGE_EVENT, {
+      detail: nextRows,
+    }),
+  );
+
+  return nextRows;
+});
 
     onReset?.(resetRows);
   };

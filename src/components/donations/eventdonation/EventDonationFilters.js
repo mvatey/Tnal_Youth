@@ -50,7 +50,7 @@ export default function EventDonationFilters({
       <label className="block h-[34px] w-[202px] shrink-0">
         <span className="flex h-full items-center rounded-lg border border-border bg-white px-3 shadow-sm">
           <input
-            className="w-full flex-1 bg-transparent pr-2 text-[12px] font-medium text-text-secondary outline-none placeholder:text-text-secondary"
+            className="w-full flex-1 bg-transparent pr-2 text-[12px] font-medium text-text-secondary outline-none placeholder:text-text-secondary focus:placeholder-transparent"
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="ស្វែងរកតាមឈ្មោះកម្មវិធី ..."
