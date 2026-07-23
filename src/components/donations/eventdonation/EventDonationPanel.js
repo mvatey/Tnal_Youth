@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import EventDonationFilters from "./EventDonationFilters";
 import EventDonationTable from "./EventDonationTable";
 import AddAlert from "@/components/forms/addalert";
+import { downloadCsv } from "@/utils/downloadCsv";
 import donationData from "@/data/donation/donationData.json";
 import eventDonationData from "@/data/donation/eventDonationData.json";
 
@@ -117,6 +118,12 @@ export default function EventDonationPanel({
     setCurrentPage(1);
   };
 
+  const handleDownload = () => {
+    if (downloadCsv(sortedRows, "event-donations.csv")) {
+      setShowDownloadAlert(true);
+    }
+  };
+
   useEffect(() => {
     if (!showDownloadAlert) return undefined;
 
@@ -160,7 +167,7 @@ export default function EventDonationPanel({
           totalPages={totalPages}
           onPageChange={setCurrentPage}
           onDelete={(rowId) => setDeletedIds((current) => [...current, rowId])}
-          onDownload={() => setShowDownloadAlert(true)}
+          onDownload={handleDownload}
           moneySort={moneySort}
           onMoneySort={(field) => {
             setMoneySort((current) => ({

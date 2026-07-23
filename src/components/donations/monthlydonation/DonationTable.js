@@ -8,6 +8,7 @@ import SaveButton from "../../forms/save";
 import Pagination from "../../navigation/Pagination";
 import TableRow from "./TableRow";
 import donationData from "@/data/donation/donationData.json";
+import { downloadCsv } from "@/utils/downloadCsv";
 
 const { donationRows } = donationData;
 
@@ -84,6 +85,12 @@ export default function DonationTable() {
   const updateFilter = (setter) => (value) => {
     setter(value);
     setCurrentPage(1);
+  };
+
+  const handleDownload = () => {
+    if (downloadCsv(sortedRows, "monthly-donations.csv")) {
+      setShowDownloadAlert(true);
+    }
   };
 
   useEffect(() => {
@@ -206,7 +213,7 @@ export default function DonationTable() {
         onPageChange={setCurrentPage}
       />
       <div className="mt-10 flex justify-end">
-        <SaveButton onClick={() => setShowDownloadAlert(true)} />
+        <SaveButton onClick={handleDownload} />
       </div>
     </section>
     

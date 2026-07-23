@@ -16,6 +16,7 @@ import { HiPencilSquare } from "react-icons/hi2";
 import { BsPencilSquare } from "react-icons/bs";
 import { PiPencilSlash } from "react-icons/pi";
 import { VscEditSparkle } from "react-icons/vsc";
+import { downloadCsv } from "@/utils/downloadCsv";
 
 const { sponsorRows: sponsorDataRows } = sponsorData;
 const { donationRows } = donationData;
@@ -153,6 +154,12 @@ export default function SponsorPanel({
   const updateFilter = (setter) => (value) => {
     setter(value);
     setCurrentPage(1);
+  };
+
+  const handleDownload = () => {
+    if (downloadCsv(sortedRows, "sponsor-donations.csv")) {
+      setShowDownloadAlert(true);
+    }
   };
 
   useEffect(() => {
@@ -307,7 +314,7 @@ export default function SponsorPanel({
       />
 
       <div className="mt-10 flex justify-end">
-        <SaveButton onClick={() => setShowDownloadAlert(true)} />
+        <SaveButton onClick={handleDownload} />
       </div>
     </section>
   );

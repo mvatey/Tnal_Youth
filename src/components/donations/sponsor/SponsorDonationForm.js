@@ -721,7 +721,6 @@ export default function SponsorDonationForm({ initialData = null }) {
       <div className="grid grid-cols-2 gap-4">
   <TextField
     label="ចំនួនទឹកប្រាក់ (រៀល)"
-    required
     value={form.amountRiel}
     onChange={updateField("amountRiel")}
     leadingIcon={
@@ -741,7 +740,6 @@ export default function SponsorDonationForm({ initialData = null }) {
 
   <TextField
     label="ចំនួនទឹកប្រាក់ (ដុល្លារ)"
-    required
     value={form.amountDollar}
     onChange={updateField("amountDollar")}
     leadingIcon={

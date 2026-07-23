@@ -176,6 +176,8 @@ export default function DataTable({
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={(page) => setCurrentPage(page)}
+          data={data}
+          filename="table-data.csv"
         />
       )}
     </div>

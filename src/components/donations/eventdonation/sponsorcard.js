@@ -27,7 +27,7 @@ export default function NumberSponsorCard({
       }`}
     >
       <div className="flex h-full items-center gap-2">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FCE7F3] text-[#DB2777]">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E0FBE6] text-[#15803D]">
           <UserRound size={23} strokeWidth={2.4} />
         </div>
 
