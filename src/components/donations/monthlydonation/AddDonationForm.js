@@ -12,7 +12,7 @@ const { addDonationRows } = donationData;
 
 const getSavedRowKey = (row) =>
   [row.branch, row.month, row.year, row.id].join("|");
-
+const KHR_PER_USD = 4000;
 export default function AddDonationForm() {
   const router = useRouter();
   const pathname = usePathname();
@@ -37,6 +37,7 @@ export default function AddDonationForm() {
   const [savedMessage, setSavedMessage] = useState("");
   const [showSaveAlert, setShowSaveAlert] = useState(false);
   const [savedRows, setSavedRows] = useState({});
+  const [editableRows, setEditableRows] = useState([]);
   const allFiltersSelected =
   selectedBranch !== "all" &&
   selectedMonth !== "all" &&
@@ -76,7 +77,30 @@ export default function AddDonationForm() {
   selectedBranch,
   selectedMonth,
   selectedYear,
+
 ]);
+useEffect(() => {
+  setEditableRows(members);
+}, [members]);
+
+const summary = useMemo(() => {
+  const riel = editableRows.reduce(
+    (total, row) => total + (Number(row.realAmount) || 0),
+    0,
+  );
+
+  const dollar = editableRows.reduce(
+    (total, row) => total + (Number(row.dollarAmount) || 0),
+    0,
+  );
+
+  return {
+    riel,
+    dollar,
+    totalDollar: dollar + riel / KHR_PER_USD,
+  };
+}, [editableRows]);
+
 
   useEffect(() => {
     const savedValue = window.localStorage.getItem(SAVED_DONATION_ROWS_KEY);
@@ -230,18 +254,57 @@ export default function AddDonationForm() {
           onMonthChange={setSelectedMonth}
           onYearChange={setSelectedYear}
           onSearchChange={setSearchQuery}
+       
         />
 
-        {allFiltersSelected && (
-        <Table
-        members={members}
-        selectedBranch={selectedBranch}
-        searchQuery={searchQuery}
-        onReset={handleReset}
-        onCancel={handleCancel}
-        onSave={handleSave}
-        onReceiptSave={handleReceiptSave}
-      />
+        {allFiltersSelected && editableRows.length > 0 && (
+        <>
+          <Table
+              members={editableRows}
+              selectedBranch={selectedBranch}
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+              searchQuery={searchQuery}
+              onRowsChange={setEditableRows}
+              onReset={handleReset}
+              onCancel={handleCancel}
+              onSave={handleSave}
+              onReceiptSave={handleReceiptSave}
+         />
+
+    <div
+      className="ml-auto mt-5 w-full max-w-[360px] rounded-lg border border-border bg-white p-4"
+      aria-live="polite"
+    >
+      <h3 className="mb-3 font-bold text-secondary">
+        សរុបវិភាគទាន
+      </h3>
+
+      <div className="flex justify-between gap-5 text-sm text-text-secondary">
+        <span>សរុបវិភាគទាន (រៀល)</span>
+
+        <span className="font-semibold text-text-primary">
+          {summary.riel.toLocaleString()} ៛
+        </span>
+      </div>
+
+      <div className="mt-2 flex justify-between gap-5 text-sm text-text-secondary">
+        <span>សរុបវិភាគទាន ($)</span>
+
+        <span className="font-semibold text-text-primary">
+          {summary.dollar.toFixed(2)} $
+        </span>
+      </div>
+
+      <div className="mt-3 flex justify-between gap-5 border-t border-border pt-3 font-bold text-secondary">
+        <span>សរុបទាំងអស់ ($)</span>
+
+        <span>
+          {summary.totalDollar.toFixed(2)} $
+        </span>
+      </div>
+    </div>
+  </>
 )}
       </section>
     </>

@@ -8,10 +8,10 @@ export default function DonationSearchInput({ value, onChange, showLabel = true 
       )}
       <span className="flex h-[34px] items-center rounded-lg border border-border bg-white px-3">
         <input
-          className="w-full flex-1 bg-transparent pr-2 text-[12px] font-medium outline-none"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder="ស្វែងរកតាមឈ្មោះសមាជិក..."
+        className="w-full flex-1 bg-transparent pr-2 text-[12px] font-medium outline-none focus:placeholder-transparent"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="ស្វែងរកតាមឈ្មោះសមាជិក..."
         />
         <Search size={16} className="text-text-secondary" />
       </span>

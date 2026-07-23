@@ -9,6 +9,7 @@ import SaveButton from "@/components/forms/save";
 import AddAlert from "@/components/forms/addalert";
 import SaveAlert from "@/components/forms/savealert";
 import sponsorData from "@/data/donation/sponsorData.json";
+import donationData from "@/data/donation/donationData.json";
 import tableHeaders from "@/data/donation/tableHeaders.json";
 import { MdEditSquare } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
@@ -17,8 +18,10 @@ import { PiPencilSlash } from "react-icons/pi";
 import { VscEditSparkle } from "react-icons/vsc";
 
 const { sponsorRows: sponsorDataRows } = sponsorData;
+const { donationRows } = donationData;
 const { sponsorHeaders: headers } = tableHeaders;
 const rowsPerPage = 12;
+const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
 function SponsorReceiptPreview({ receipt }) {
@@ -63,7 +66,10 @@ function DateFilter({ value, onChange }) {
   );
 }
 
-export default function SponsorPanel() {
+export default function SponsorPanel({
+  selectedBranch = "all",
+  showAddButton = true,
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const routePrefix = pathname?.startsWith("/admin/donation")
@@ -76,11 +82,26 @@ export default function SponsorPanel() {
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [showSaveAlert, setShowSaveAlert] = useState(false);
   const [moneySort, setMoneySort] = useState(null);
+  const [createdRows, setCreatedRows] = useState([]);
 
   useEffect(() => {
+    const savedRowsValue = window.localStorage.getItem(
+      SPONSOR_CREATED_ROWS_KEY,
+    );
     const shouldShowSaveAlert = window.localStorage.getItem(
       "tnal-youth:sponsor-save-alert",
     );
+
+    try {
+      const savedRows = savedRowsValue ? JSON.parse(savedRowsValue) : [];
+      setCreatedRows(
+        Array.isArray(savedRows)
+          ? savedRows.filter((row) => row.name?.trim())
+          : [],
+      );
+    } catch {
+      setCreatedRows([]);
+    }
 
     if (shouldShowSaveAlert === "true") {
       window.localStorage.removeItem("tnal-youth:sponsor-save-alert");
@@ -89,10 +110,17 @@ export default function SponsorPanel() {
 
   }, []);
 
+  const allRows = useMemo(
+    () => [...createdRows, ...sponsorDataRows],
+    [createdRows],
+  );
+
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return sponsorDataRows.filter((row) => {
+    return allRows.filter((row, index) => {
+      const rowBranch =
+        row.branch || donationRows[index % donationRows.length]?.branch;
       const matchesSearch =
         !query ||
         row.name.toLowerCase().includes(query) ||
@@ -100,10 +128,12 @@ export default function SponsorPanel() {
         row.email.toLowerCase().includes(query);
       const matchesType = !selectedType || row.type === selectedType;
       const matchesDate = !selectedDate || row.dateValue === selectedDate;
+      const matchesBranch =
+        selectedBranch === "all" || rowBranch === selectedBranch;
 
-      return matchesSearch && matchesType && matchesDate;
+      return matchesSearch && matchesType && matchesDate && matchesBranch;
     });
-  }, [searchQuery, selectedDate, selectedType]);
+  }, [allRows, searchQuery, selectedBranch, selectedDate, selectedType]);
 
   const sortedRows = useMemo(() => {
     if (!moneySort) return filteredRows;
@@ -151,13 +181,16 @@ export default function SponsorPanel() {
       )}
 
       <div className="mb-4 flex flex-col gap-4">
-        <h1 className="text-base font-semibold text-secondary">ថវិកាឧបត្ថម្ភ</h1>
+        <h1 className="text-base font-semibold text-secondary">
+          ថវិកាឧបត្ថម្ភ
+          {selectedBranch !== "all" && ` — ${selectedBranch}`}
+        </h1>
 
         <div className="flex w-full flex-nowrap items-center justify-end gap-[5px] overflow-x-auto pb-1">
           <label className="block h-[34px] w-[260px] shrink-0">
             <span className="flex h-full items-center rounded-lg border border-border bg-white px-3 shadow-sm">
               <input
-                className="w-full flex-1 bg-transparent pr-2 text-[12px] font-medium text-text-secondary outline-none placeholder:text-text-secondary"
+                className=" flex-1 bg-transparent pr-2 text-[12px] font-medium text-text-secondary outline-none placeholder:text-text-secondary focus:placeholder-transparent"
                 value={searchQuery}
                 onChange={(event) => updateFilter(setSearchQuery)(event.target.value)}
                 placeholder="ស្វែងរកតាមឈ្មោះអ្នកឧបត្ថម្ភ ..."
@@ -179,14 +212,16 @@ export default function SponsorPanel() {
             onChange={updateFilter(setSelectedDate)}
           />
 
-          <button
-            type="button"
-            onClick={() => router.push(`${routePrefix}/add`)}
-            className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-success px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
-          >
-            <PlusCircle size={17} />
-            បន្ថែមការឧបត្ថម្ភ
-          </button>
+          {showAddButton && (
+            <button
+              type="button"
+              onClick={() => router.push(`${routePrefix}/add`)}
+              className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-success px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
+            >
+              <PlusCircle size={17} />
+              បន្ថែមការឧបត្ថម្ភ
+            </button>
+          )}
         </div>
       </div>
 

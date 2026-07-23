@@ -1,11 +1,50 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { ArrowUp, CircleDollarSign } from "lucide-react";
+import sponsorData from "@/data/donation/sponsorData.json";
+
+const { sponsorRows } = sponsorData;
+const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
+const RIEL_PER_DOLLAR = 4000;
+const parseMoney = (value) =>
+  Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
 export default function SponsorCard({
   label = "ថវិកាឧបត្ថម្ភ",
-  value = "$5000",
   growth = "+15%",
   note = "ក្នុងខែនេះ",
 }) {
+  const [createdRows, setCreatedRows] = useState([]);
+
+  useEffect(() => {
+    const savedValue = window.localStorage.getItem(SPONSOR_CREATED_ROWS_KEY);
+
+    try {
+      const rows = savedValue ? JSON.parse(savedValue) : [];
+      setCreatedRows(
+        Array.isArray(rows) ? rows.filter((row) => row.name?.trim()) : [],
+      );
+    } catch {
+      setCreatedRows([]);
+    }
+  }, []);
+
+  const value = useMemo(() => {
+    const totals = [...createdRows, ...sponsorRows].reduce(
+      (sum, row) => ({
+        riel: sum.riel + parseMoney(row.rielAmount),
+        dollar: sum.dollar + parseMoney(row.dollarAmount),
+      }),
+      { riel: 0, dollar: 0 },
+    );
+    const dollarTotal = totals.dollar + totals.riel / RIEL_PER_DOLLAR;
+
+    return `$${dollarTotal.toLocaleString(undefined, {
+      maximumFractionDigits: 2,
+    })}`;
+  }, [createdRows]);
+
   return (
     <article className="h-[65px] w-[200px] rounded-2xl border-2 border-border bg-white px-3 py-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-secondary/40 hover:shadow-md">
       <div className="flex h-full items-center gap-2">
