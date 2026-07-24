@@ -1,5 +1,5 @@
 {
-  "genderOptions": ["ភេទស្រី", "ភេទប្រុស"],
+  "genderOptions": ["ស្រី", "ប្រុស", "ព្រះសង្ឈ"],
   "statusOptions": ["សកម្ម", "អសកម្ម"],
   "roleOptions": [
     { "value": "admin", "label": "អ្នកគ្រប់គ្រង" },

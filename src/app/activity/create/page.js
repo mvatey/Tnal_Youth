@@ -749,12 +749,6 @@ export default function CreateActivityPage() {
               ? "កែប្រែកម្មវិធី"
               : "បង្កើតកម្មវិធីថ្មី"}
           </h1>
-
-          <p className="mt-1 text-sm text-text-secondary">
-            {isEditMode
-              ? "កែប្រែព័ត៌មានកម្មវិធី"
-              : "ព័ត៌មានកម្មវិធី"}
-          </p>
         </div>
 
         <section className="rounded-xl border border-border bg-white p-5">
@@ -827,6 +821,7 @@ export default function CreateActivityPage() {
                 label="កាលបរិច្ឆេទចាប់ផ្តើម"
                 value={form.startDate}
                 onChange={(date) => setValue("startDate", date)}
+                variant="start"
               />
 
               <DateInput
@@ -834,6 +829,7 @@ export default function CreateActivityPage() {
                 value={form.endDate}
                 min={formatDate(form.startDate)}
                 onChange={(date) => setValue("endDate", date)}
+                variant="end"
               />
 
               <FormField
