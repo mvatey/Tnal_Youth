@@ -191,7 +191,7 @@ function LanguageSkillGroup({ item, canDelete, onChange, onDelete }) {
         />
         <FormSelect
           label="ការសរសេរ"
-          placeholder="ជ្រើសរើសកម្រិត"
+          placeholder="ជ្រើសរើសកម្រិតការសរសេរ"
           value={item.writing || ""}
           onChange={(event) => onChange("writing", event.target.value)}
           options={
@@ -222,7 +222,7 @@ function ComputerSkillGroup({ item, canDelete, onChange, onDelete }) {
           options={educationData.computerSkills || []}
         />
         <FormSelect
-          label="កម្រិតជំនាញជំនាញ"
+          label="កម្រិតជំនាញ"
           placeholder="ជ្រើសរើសកម្រិតជំនាញ"
           value={item.level || ""}
           onChange={(event) => onChange("level", event.target.value)}

@@ -6,7 +6,7 @@
     "amount": "$20.00",
     "date": "2026-01-12",
     "recordedBy": "ផាន វិទ្ធី",
-    "paymentMethod": "Cash"
+    "paymentMethod": "សម្ភារះ"
   },
   {
     "id": 2,
@@ -15,7 +15,7 @@
     "amount": "$10.00",
     "date": "2026-02-04",
     "recordedBy": "ផាន វិទ្ធី",
-    "paymentMethod": "ABA"
+    "paymentMethod": "សម្ភារះ"
   },
   {
     "id": 3,
