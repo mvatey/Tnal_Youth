@@ -7,10 +7,32 @@ const ROLE_LABELS = {
   member: "សមាជិក",
 };
 
-export default function IdCard({ user }) {
-  if (!user) return null;
+const DEFAULT_USER = {
+  id: "",
+  role: "member",
+  name_kh: "",
+  name_en: "",
+  gender: "",
+  email: "",
+  phone: "",
+  date_of_birth: "",
+  branch: "",
+  profile_photo: "/profile.png",
+};
 
-  const memberId = String(user.id ?? "").padStart(4, "0");
+export default function IdCard({ user }) {
+  const displayUser = user || DEFAULT_USER;
+
+  const hasSelectedUser = Boolean(displayUser.id);
+
+  const memberId = hasSelectedUser
+    ? String(displayUser.id).padStart(4, "0")
+    : "0000";
+
+  const roleLabel =
+    ROLE_LABELS[displayUser.role] ||
+    displayUser.role ||
+    ROLE_LABELS.member;
 
   return (
     <div className="flex w-full justify-center py-4">
@@ -25,17 +47,32 @@ export default function IdCard({ user }) {
           shadow-lg
         "
       >
-        {/* background */}
+        {/* Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-white to-[#eef4fb]" />
 
-        {/* FOOTER */}
-<div className="absolute bottom-0 left-0 flex h-[42px] w-full items-center justify-center bg-[#062f6b] text-xs font-semibold text-white">
-  Member ID : NAS-{memberId}
-</div>
+        {/* Footer */}
+        <div
+          className="
+            absolute
+            bottom-0
+            left-0
+            flex
+            h-[42px]
+            w-full
+            items-center
+            justify-center
+            bg-[#062f6b]
+            text-xs
+            font-semibold
+            text-white
+          "
+        >
+          Member ID : NAS-{memberId}
+        </div>
 
-        {/* content */}
+        {/* Content */}
         <div className="relative z-10 p-6">
-          {/* HEADER */}
+          {/* Header */}
           <div className="flex items-center gap-3">
             <Image
               src="/logo.png"
@@ -43,6 +80,7 @@ export default function IdCard({ user }) {
               width={55}
               height={55}
               className="object-contain"
+              priority
             />
 
             <div>
@@ -57,33 +95,47 @@ export default function IdCard({ user }) {
                 Cambodian Youth Nursery Association
               </h1>
 
-              <p className="text-xs text-[#062f6b]">សមាគមថ្នាលយុវជនកម្ពុជា</p>
+              <p className="text-xs text-[#062f6b]">
+                សមាគមថ្នាលយុវជនកម្ពុជា
+              </p>
             </div>
           </div>
 
-          {/* BODY */}
+          {/* Body */}
           <div className="mt-6 flex gap-7">
-            {/* PHOTO */}
+            {/* Profile photo */}
             <div
               className="
                 relative
                 h-[160px]
                 w-[125px]
+                shrink-0
                 overflow-hidden
                 rounded-xl
                 bg-gray-200
               "
             >
               <Image
-                src={user.profile_photo || "/member.png"}
-                alt={user.name_kh || user.name_en || "រូបថតសមាជិក"}
+                src={
+                  hasSelectedUser
+                    ? displayUser.profile_photo || "/profile.png"
+                    : "/profile.png"
+                }
+                alt={
+                  hasSelectedUser
+                    ? displayUser.name_kh ||
+                      displayUser.name_en ||
+                      "រូបថតសមាជិក"
+                    : "រូបថតសមាជិក"
+                }
                 fill
                 className="object-cover"
+                sizes="125px"
               />
             </div>
 
-            {/* INFO */}
-            <div className="flex-1">
+            {/* Information */}
+            <div className="min-w-0 flex-1">
               <h2
                 className="
                   mb-4
@@ -92,25 +144,44 @@ export default function IdCard({ user }) {
                   text-[#062f6b]
                 "
               >
-                {ROLE_LABELS[user.role] || user.role}
+                {roleLabel}
               </h2>
 
               <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-                <Info label="ឈ្មោះ" value={user.name_kh} />
+                <Info
+                  label="ឈ្មោះ"
+                  value={hasSelectedUser ? displayUser.name_kh : ""}
+                />
 
-                <Info label="ភេទ" value={user.gender} />
+                <Info
+                  label="ភេទ"
+                  value={hasSelectedUser ? displayUser.gender : ""}
+                />
 
-                <Info label="អ៊ីមែល" value={user.email} />
+                <Info
+                  label="អ៊ីមែល"
+                  value={hasSelectedUser ? displayUser.email : ""}
+                />
 
-                <Info label="លេខទូរសព្ទ" value={user.phone} />
+                <Info
+                  label="លេខទូរសព្ទ"
+                  value={hasSelectedUser ? displayUser.phone : ""}
+                />
 
-                <Info label="ថ្ងៃកំណើត" value={user.date_of_birth} />
+                <Info
+                  label="ថ្ងៃកំណើត"
+                  value={
+                    hasSelectedUser ? displayUser.date_of_birth : ""
+                  }
+                />
 
-                <Info label="សាខា" value={user.branch} />
+                <Info
+                  label="សាខា"
+                  value={hasSelectedUser ? displayUser.branch : ""}
+                />
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -119,11 +190,12 @@ export default function IdCard({ user }) {
 
 function Info({ label, value }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-[10px] text-gray-500">{label}</p>
 
       <p
         className="
+          min-h-[18px]
           max-w-[150px]
           truncate
           text-xs
@@ -131,7 +203,7 @@ function Info({ label, value }) {
           text-[#062f6b]
         "
       >
-        {value || "-"}
+        {value || ""}
       </p>
     </div>
   );

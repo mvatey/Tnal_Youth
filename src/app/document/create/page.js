@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, CreditCard, Award } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import CertificateForm from "@/app/document/CertificateForm";
@@ -22,6 +21,7 @@ const EMPTY_FORM = {
 
 export default function CreateDocumentPage() {
   const router = useRouter();
+
   const [type, setType] = useState("");
   const [form, setForm] = useState(EMPTY_FORM);
 
@@ -43,124 +43,160 @@ export default function CreateDocumentPage() {
       return;
     }
 
-    router.back();
+    router.push("/document/member");
   };
 
   const handleSave = () => {
     console.log("Created document:", form);
+
+    router.push("/document/member");
   };
+
+  const pageTitle =
+    type === "certificate"
+      ? "បង្កើតវិញ្ញាបនបត្រ"
+      : type === "id_card"
+        ? "បង្កើតប័ណ្ណសមាជិក"
+        : "បង្កើតឯកសារ";
+
+  const pageDescription =
+    type === "certificate"
+      ? "បំពេញព័ត៌មានដើម្បីបង្កើតវិញ្ញាបនបត្រ"
+      : type === "id_card"
+        ? "បំពេញព័ត៌មានដើម្បីបង្កើតប័ណ្ណសមាជិក"
+        : "ជ្រើសរើសប្រភេទឯកសារដែលអ្នកចង់បង្កើត";
 
   return (
     <div className="min-h-full bg-bg-page-gray px-5 py-4">
-      {!type ? (
-        <>
-          {/* Breadcrumb */}
-          <div className="mb-2 flex items-center gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => router.push("/document/member")}
-              className="text-text-mute transition hover:text-primary"
-            >
-              ឯកសារ
-            </button>
+      {/* Header */}
+      <div className="mb-8">
+        {/* Breadcrumb */}
+        <div className="mb-3 flex items-center gap-2 text-sm">
+          <button
+            type="button"
+            onClick={() => router.push("/document/member")}
+            className="font-medium text-text-mute transition hover:text-primary"
+          >
+            បញ្ជីឯកសារ
+          </button>
 
-            <span className="text-text-mute">›</span>
+          <span className="text-lg text-text-mute">›</span>
 
-            <span className="font-semibold text-primary">
-              បង្កើតឯកសារ
+          {type && (
+            <>
+              <button
+                type="button"
+                onClick={() => setType("")}
+                className="font-medium text-text-mute transition hover:text-primary"
+              >
+                ប្រភេទឯកសារ
+              </button>
+
+              <span className="text-lg text-text-mute">›</span>
+            </>
+          )}
+
+          <span className="font-semibold text-primary">
+            {pageTitle}
+          </span>
+        </div>
+
+        {/* Main title */}
+        <h1 className="text-[30px] font-bold leading-tight text-primary">
+          {pageTitle}
+        </h1>
+
+        {/* Subtitle */}
+        <p className="mt-3 text-sm text-text-secondary">
+          {pageDescription}
+        </p>
+      </div>
+
+      {/* Select document type */}
+      {!type && (
+        <div className="mx-auto mt-10 grid max-w-[900px] grid-cols-1 gap-10 md:grid-cols-2">
+          {/* Certificate */}
+          <button
+            type="button"
+            onClick={() => selectDocumentType("certificate")}
+            className="
+              group
+              relative
+              flex
+              h-[210px]
+              w-full
+              items-center
+              justify-center
+              overflow-hidden
+              rounded-[24px]
+              border
+              border-border
+              bg-white
+              shadow-md
+              transition-all
+              duration-200
+              hover:-translate-y-1
+              hover:shadow-xl
+            "
+          >
+            <div className="absolute left-0 top-0 h-[8px] w-full bg-primary" />
+
+            <span className="text-2xl font-bold text-[#15204F]">
+              វិញ្ញាបនបត្រ
             </span>
-          </div>
+          </button>
 
-          {/* Heading */}
-          <div>
-            <h1 className="text-2xl font-bold text-primary">
-              បង្កើតឯកសារ
-            </h1>
+          {/* ID Card */}
+          <button
+            type="button"
+            onClick={() => selectDocumentType("id_card")}
+            className="
+              group
+              relative
+              flex
+              h-[210px]
+              w-full
+              items-center
+              justify-center
+              overflow-hidden
+              rounded-[24px]
+              border
+              border-border
+              bg-white
+              shadow-md
+              transition-all
+              duration-200
+              hover:-translate-y-1
+              hover:shadow-xl
+            "
+          >
+            <div className="absolute left-0 top-0 h-[8px] w-full bg-warning" />
 
-            <p className="mt-2 text-sm text-text-secondary">
-              ជ្រើសរើសប្រភេទឯកសារដែលអ្នកចង់បង្កើត
-            </p>
-          </div>
+            <span className="text-2xl font-bold text-[#15204F]">
+              ប័ណ្ណសមាជិក
+            </span>
+          </button>
+        </div>
+      )}
 
-          {/* Document types */}
-          <div className="mx-auto mt-14 grid max-w-[900px] grid-cols-1 gap-16 lg:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => selectDocumentType("certificate")}
-              className="group relative flex h-[300px] w-full items-center justify-center overflow-hidden rounded-[34px] border border-border bg-white shadow-md transition duration-200 hover:-translate-y-1 hover:shadow-xl"
-            >
-              <div className="absolute left-0 top-0 h-[12px] w-full bg-primary" />
+      {/* Certificate form */}
+      {type === "certificate" && (
+        <CertificateForm
+          form={form}
+          setForm={setForm}
+          onSave={handleSave}
+          onClose={handleBack}
+        />
+      )}
 
-              <div className="flex flex-col items-center gap-5">
-                <Award
-                  size={42}
-                  className="text-primary opacity-0 transition group-hover:opacity-100"
-                />
-
-                <span className="text-3xl font-bold text-[#15204F]">
-                  វិញ្ញាបនបត្រ
-                </span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => selectDocumentType("id_card")}
-              className="group relative flex h-[300px] w-full items-center justify-center overflow-hidden rounded-[34px] border border-border bg-white shadow-md transition duration-200 hover:-translate-y-1 hover:shadow-xl"
-            >
-              <div className="absolute left-0 top-0 h-[12px] w-full bg-warning" />
-
-              <div className="flex flex-col items-center gap-5">
-                <CreditCard
-                  size={42}
-                  className="text-warning opacity-0 transition group-hover:opacity-100"
-                />
-
-                <span className="text-3xl font-bold text-[#15204F]">
-                  ប័ណ្ណសមាជិក
-                </span>
-              </div>
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          {/* Back navigation */}
-          <div className="mb-5 flex items-center gap-4">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-white px-4 text-sm text-text-primary transition hover:bg-gray-50"
-            >
-              <ArrowLeft size={18} />
-              ត្រឡប់
-            </button>
-
-            <h1 className="text-xl font-bold text-primary">
-              {type === "certificate"
-                ? "បង្កើតវិញ្ញាបនបត្រ"
-                : "បង្កើតប័ណ្ណសមាជិក"}
-            </h1>
-          </div>
-
-          {type === "certificate" && (
-            <CertificateForm
-              form={form}
-              setForm={setForm}
-              onSave={handleSave}
-              onClose={() => setType("")}
-            />
-          )}
-
-          {type === "id_card" && (
-            <IdCardForm
-              form={form}
-              setForm={setForm}
-              onSave={handleSave}
-              onClose={() => setType("")}
-            />
-          )}
-        </>
+      {/* ID card form */}
+      {type === "id_card" && (
+        <IdCardForm
+          form={form}
+          setForm={setForm}
+          onSave={handleSave}
+          onClose={handleBack}
+        />
       )}
     </div>
   );

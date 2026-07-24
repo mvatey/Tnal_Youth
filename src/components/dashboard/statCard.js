@@ -12,7 +12,22 @@ export default function StatCard({
   const accent = iconColor.replace("text-", "bg-");
 
   return (
-    <div className="app-card relative overflow-hidden rounded-xl border border-border bg-bg-page-white">
+    <div
+  className="
+    app-card
+    relative
+    overflow-hidden
+    rounded-xl
+    border
+    border-border
+    bg-bg-page-white
+    shadow-sm
+    transition-all
+    duration-200
+    hover:-translate-y-1
+    hover:shadow-l
+  "
+>
       <div className={`h-[3px] w-full ${accent}`} />
 
       <div className="flex items-center gap-3 p-4">

@@ -1,411 +1,501 @@
 "use client";
 
-import { FolderPlus, UploadCloud, ChevronDown } from "lucide-react";
+import { FolderPlus, UploadCloud } from "lucide-react";
 
-export default function CertificateForm({ form, setForm, onSave, onClose }) {
-  const colors = [
-    "#12224c",
-    "#8b5cf6",
-    "#22c55e",
-    "#ef4444",
-    "#fde047",
-    "#000000",
-  ];
+import BoxFill from "@/components/forms/boxFill";
+import FormSelect from "@/components/forms/FormSelect";
+import CertificateCard from "@/components/card/certificate";
+
+import members from "@/data/members.json";
+import activities from "@/data/activity.json";
+
+const BRANCH_OPTIONS = [
+  {
+    label: "សាខាភ្នំពេញ",
+    value: "សាខាភ្នំពេញ",
+  },
+  {
+    label: "សាខាសៀមរាប",
+    value: "សាខាសៀមរាប",
+  },
+];
+
+const MEMBER_OPTIONS = members
+  .filter((member) => member?.name_kh)
+  .map((member) => ({
+    label: member.name_kh,
+    value: member.name_kh,
+  }));
+
+const ACTIVITY_OPTIONS = activities
+  .map((activity) => {
+    const activityLabel =
+      activity.title_kh ||
+      activity.titleKh ||
+      activity.title ||
+      activity.name_kh ||
+      activity.nameKh ||
+      activity.name;
+
+    return {
+      label: activityLabel,
+      value: activityLabel,
+    };
+  })
+  .filter((activity) => activity.label);
+
+const FONT_OPTIONS = [
+  {
+    label: "Noto Sans",
+    value: "Noto Sans",
+  },
+  {
+    label: "Kantumruy Pro",
+    value: "Kantumruy Pro",
+  },
+];
+
+const FONT_SIZE_OPTIONS = [
+  {
+    label: "6px",
+    value: "6px",
+  },
+  {
+    label: "8px",
+    value: "8px",
+  },
+  {
+    label: "10px",
+    value: "10px",
+  },
+];
+
+const LANGUAGE_OPTIONS = [
+  {
+    label: "ភាសាខ្មែរ",
+    value: "ភាសាខ្មែរ",
+  },
+  {
+    label: "English",
+    value: "English",
+  },
+];
+
+const COLORS = [
+  "#12224c",
+  "#8b5cf6",
+  "#22c55e",
+  "#ef4444",
+  "#fde047",
+  "#000000",
+];
+
+export default function CertificateForm({
+  form,
+  setForm,
+  onSave,
+  onClose,
+}) {
+  /*
+   * If recipientType does not exist yet,
+   * use "member" as the default selected value.
+   */
+  const recipientType = form.recipientType || "member";
+
+  const updateField = (field) => (event) => {
+    setForm((previous) => ({
+      ...previous,
+      [field]: event.target.value,
+    }));
+  };
+
+  const handleRecipientTypeChange = (event) => {
+    const selectedType = event.target.value;
+
+    setForm((previous) => ({
+      ...previous,
+      recipientType: selectedType,
+
+      /*
+       * Clear the old selection when switching.
+       */
+      member: "",
+      activity: "",
+    }));
+  };
+
+  const handleUpload = (event) => {
+    const selectedFile = event.target.files?.[0];
+
+    if (!selectedFile) return;
+
+    const previewUrl = URL.createObjectURL(selectedFile);
+
+    setForm((previous) => ({
+      ...previous,
+      templateFile: selectedFile,
+      templatePreview: previewUrl,
+    }));
+  };
+
+  const handleSave = () => {
+    const commonFieldsComplete =
+      form.title?.trim() &&
+      form.branch;
+
+    const recipientComplete =
+      recipientType === "member"
+        ? Boolean(form.member)
+        : Boolean(form.activity);
+
+    if (!commonFieldsComplete || !recipientComplete) {
+      alert("សូមបំពេញព័ត៌មានដែលចាំបាច់ទាំងអស់");
+      return;
+    }
+
+    onSave?.();
+  };
+
+  const previewName =
+    recipientType === "member"
+      ? form.member || "Member Name"
+      : form.activity || "Activity Name";
 
   return (
-    <div className="w-full p-2">
-      <h2
-        className="
-mb-1
-text-lg
-font-bold
-text-[#4b3192]
-"
-      >
-        ការបង្កើតឯកសារ
-      </h2>
+    <div className="w-full rounded-xl border border-[#e5eaf0] bg-white p-8">
+      <div className="grid grid-cols-1 gap-12 xl:grid-cols-[330px_minmax(0,1fr)]">
+        {/* LEFT FORM */}
 
-      <div
-        className="
-grid
-grid-cols-[260px_1fr]
-gap-10
-"
-      >
-        {/* LEFT */}
+        <div className="space-y-5">
+          <BoxFill
+            label="ឈ្មោះឯកសារ *"
+            name="title"
+            value={form.title || ""}
+            onChange={updateField("title")}
+            placeholder="បញ្ចូលឈ្មោះឯកសារ"
+          />
 
-        <div className="space-y-1">
-          <Field label="ឈ្មោះឯកសារ *">
-            <input
-              value={form.title || ""}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  title: e.target.value,
-                })
-              }
-              placeholder="បញ្ចូលឈ្មោះឯកសារ"
-              className="
-h-9
-w-full
-rounded-lg
-border
-px-3
-text-sm
-outline-none
-"
-            />
-          </Field>
-
-          <SelectField
+          <FormSelect
             label="សាខា"
-            value={form.branch}
-            options={["សាខាភ្នំពេញ", "សាខាសៀមរាប"]}
-            onChange={(v) =>
-              setForm({
-                ...form,
-                branch: v,
-              })
-            }
+            name="branch"
+            value={form.branch || ""}
+            onChange={updateField("branch")}
+            placeholder="ជ្រើសរើសសាខា"
+            options={BRANCH_OPTIONS}
           />
 
-          <SelectField
-            label="ប្រភេទឯកសារ"
-            value={form.type || "វិញ្ញាបនបត្រ"}
-            options={["វិញ្ញាបនបត្រ", "ប័ណ្ណសមាជិក"]}
-            onChange={(v) =>
-              setForm({
-                ...form,
-                type: v,
-              })
-            }
-          />
+          {/* Member or activity selection */}
 
           <div>
-            <label className="text-xs text-gray-600">ភេទ - ចំណូលចិត្ត</label>
+            <label className="mb-2 block text-sm font-semibold text-text-primary">
+              សម្រាប់សមាជិក ឬកម្មវិធី?
+            </label>
 
-            <div
-              className="
-mt-2
-flex
-gap-2
-text-sm
-"
-            >
-              <label className="flex gap-2 items-center">
+            <div className="flex items-center gap-6">
+              {/* Member - selected by default */}
+
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-text-primary">
                 <input
                   type="radio"
-                  checked={form.gender === "ប្រុស"}
-                  onChange={() =>
-                    setForm({
-                      ...form,
-                      gender: "ប្រុស",
-                    })
-                  }
+                  name="recipientType"
+                  value="member"
+                  checked={recipientType === "member"}
+                  onChange={handleRecipientTypeChange}
+                  className="h-4 w-4 accent-primary"
                 />
-                ប្រុស
+
+                សមាជិក
               </label>
 
-              <label className="flex gap-2 items-center">
+              {/* Activity */}
+
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-text-primary">
                 <input
                   type="radio"
-                  checked={form.gender === "ស្រី"}
-                  onChange={() =>
-                    setForm({
-                      ...form,
-                      gender: "ស្រី",
-                    })
-                  }
+                  name="recipientType"
+                  value="activity"
+                  checked={recipientType === "activity"}
+                  onChange={handleRecipientTypeChange}
+                  className="h-4 w-4 accent-primary"
                 />
-                ស្រី
+
+                កម្មវិធី
               </label>
             </div>
           </div>
 
-          <SelectField
-            label="សមាជិក"
-            value={form.member || "ម៉ៅ សំណាង"}
-            options={["ម៉ៅ សំណាង", "សុខ ចាន់"]}
-            onChange={(v) =>
-              setForm({
-                ...form,
-                member: v,
-              })
-            }
-          />
+          {/* Dynamic member/activity selector */}
 
-          <Field label="សេចក្តីពិពណ៌នា">
+          {recipientType === "member" ? (
+            <FormSelect
+              label="សមាជិក"
+              name="member"
+              value={form.member || ""}
+              onChange={updateField("member")}
+              placeholder="ជ្រើសរើសសមាជិក"
+              options={MEMBER_OPTIONS}
+            />
+          ) : (
+            <FormSelect
+              label="កម្មវិធី"
+              name="activity"
+              value={form.activity || ""}
+              onChange={updateField("activity")}
+              placeholder="ជ្រើសរើសកម្មវិធី"
+              options={ACTIVITY_OPTIONS}
+            />
+          )}
+
+          {/* Description */}
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-text-primary">
+              សេចក្តីពិពណ៌នា
+            </label>
+
             <textarea
+              name="description"
               value={form.description || ""}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  description: e.target.value,
-                })
-              }
+              onChange={updateField("description")}
               placeholder="បញ្ចូលសេចក្តីពិពណ៌នា"
               className="
-h-[80px]
-w-full
-resize-none
-rounded-lg
-border
-p-3
-text-sm
-"
+                h-[105px]
+                w-full
+                resize-none
+                rounded-lg
+                border
+                border-gray-200
+                bg-white
+                p-4
+                text-sm
+                text-text-primary
+                outline-none
+                placeholder:text-gray-400
+                focus:border-primary
+              "
             />
-          </Field>
+          </div>
 
-          <label
-            className="
-flex
-h-[80px]
-cursor-pointer
-flex-col
-items-center
-justify-center
-rounded-xl
-border-2
-border-dashed
-border-[#7180a8]
-text-gray-400
-hover:bg-gray-50
-"
-          >
-            <input hidden type="file" />
+          {/* Upload */}
 
-            <UploadCloud size={26} />
-
-            <p
-              className="
-mt-2
-text-xs
-"
-            >
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-text-primary">
               បញ្ចូលឯកសារ
-            </p>
+            </label>
 
-            <p
+            <label
               className="
-text-[10px]
-"
+                flex
+                h-[110px]
+                cursor-pointer
+                flex-col
+                items-center
+                justify-center
+                rounded-xl
+                border-2
+                border-dashed
+                border-[#7180a8]
+                bg-[#f8f9ff]
+                text-gray-400
+                transition
+                hover:bg-secondary-light/30
+              "
             >
-              PDF,JPG,PNG (5MB)
-            </p>
-          </label>
+              <UploadCloud
+                size={27}
+                className="mb-2 text-[#62708f]"
+              />
+
+              <p className="text-xs font-medium text-gray-400">
+                បញ្ចូលឯកសារ
+              </p>
+
+              <p className="mt-1 text-[10px] text-gray-400">
+                ប្រភេទ៖ JPG, DOCX, PDF, PNG (ទំហំអតិបរមា 5MB)
+              </p>
+
+              <p className="text-[10px] text-gray-400">
+                សមាមាត្រ 16:9
+              </p>
+
+              <input
+                type="file"
+                hidden
+                accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                onChange={handleUpload}
+              />
+            </label>
+          </div>
         </div>
 
-        {/* RIGHT */}
+        {/* RIGHT PREVIEW */}
 
-        <div>
-          <div
-            className="
-mb-4
-grid
-grid-cols-[160px_110px_1fr_130px]
-gap-4
-items-end
-"
-          >
-            <SelectField
+        <div className="min-w-0">
+          {/* Preview controls */}
+
+          <div className="mb-5 grid grid-cols-1 items-end gap-4 md:grid-cols-[180px_120px_minmax(220px,1fr)_150px]">
+            <FormSelect
               label="ពុម្ពអក្សរ"
-              value={form.font || "Kantumruy Pro"}
-              options={["Kantumruy Pro", "Noto Sans"]}
-              onChange={(v) =>
-                setForm({
-                  ...form,
-                  font: v,
-                })
-              }
+              name="font"
+              value={form.font || "Noto Sans"}
+              onChange={updateField("font")}
+              options={FONT_OPTIONS}
             />
 
-            <SelectField
+            <FormSelect
               label="ទំហំ"
+              name="fontSize"
               value={form.fontSize || "6px"}
-              options={["6px", "8px", "10px"]}
-              onChange={(v) =>
-                setForm({
-                  ...form,
-                  fontSize: v,
-                })
-              }
+              onChange={updateField("fontSize")}
+              options={FONT_SIZE_OPTIONS}
             />
+
+            {/* Colors */}
 
             <div>
-              <label className="text-xs">ពណ៌</label>
+              <label className="mb-2 block text-sm font-semibold text-text-primary">
+                ពណ៌
+              </label>
 
-              <div
-                className="
-mt-3
-flex
-gap-3
-"
-              >
-                {colors.map((color) => (
-                  <button
-                    key={color}
-                    onClick={() =>
-                      setForm({
-                        ...form,
-                        color,
-                      })
-                    }
-                    className="
-h-5
-w-5
-rounded-full
-border
-"
-                    style={{
-                      backgroundColor: color,
-                    }}
-                  />
-                ))}
+              <div className="flex h-11 items-center gap-3">
+                {COLORS.map((color) => {
+                  const selected = form.color === color;
+
+                  return (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() =>
+                        setForm((previous) => ({
+                          ...previous,
+                          color,
+                        }))
+                      }
+                      className={`
+                        h-6
+                        w-6
+                        shrink-0
+                        rounded-full
+                        border-2
+                        transition
+                        hover:scale-110
+                        ${
+                          selected
+                            ? "border-text-primary ring-2 ring-primary/20"
+                            : "border-transparent"
+                        }
+                      `}
+                      style={{
+                        backgroundColor: color,
+                      }}
+                      aria-label={`ជ្រើសរើសពណ៌ ${color}`}
+                    />
+                  );
+                })}
               </div>
             </div>
 
-            <SelectField
+            <FormSelect
               label="ភាសា"
-              value={form.language || "ភាសាខ្មែរ"}
-              options={["ភាសាខ្មែរ", "English"]}
-              onChange={(v) =>
-                setForm({
-                  ...form,
-                  language: v,
-                })
-              }
+              name="language"
+              value={form.language || "English"}
+              onChange={updateField("language")}
+              options={LANGUAGE_OPTIONS}
             />
           </div>
 
-          {/* PREVIEW */}
+          {/* Certificate preview */}
 
           <div
             className="
-h-[390px]
-w-full
-rounded-sm
-border-[4px]
-border-[#12224c]
-bg-white
-p-2
-shadow-sm
-"
+              flex
+              min-h-[480px]
+              w-full
+              items-center
+              justify-center
+              overflow-hidden
+              rounded-sm
+              border-[4px]
+              border-[#12224c]
+              bg-white
+              p-3
+              shadow-sm
+            "
           >
-            <img
-              src="/sss.jpg"
-              className="
-h-full
-w-full
-object-contain
-"
-            />
+            {form.templatePreview ? (
+              <img
+                src={form.templatePreview}
+                alt="certificate template"
+                className="h-full max-h-[470px] w-full object-contain"
+              />
+            ) : (
+              <div className="origin-center scale-[0.9]">
+                <CertificateCard
+                  user={{
+                    id: 1,
+                    name_kh: previewName,
+                    role: "member",
+                    branch: form.branch || "-",
+                  }}
+                  activity={
+                    recipientType === "activity"
+                      ? form.activity
+                      : undefined
+                  }
+                />
+              </div>
+            )}
           </div>
 
-          <div
-            className="
-mt-5
-flex
-gap-4
-"
-          >
+          {/* Buttons */}
+
+          <div className="mt-5 flex items-center gap-5">
             <button
+              type="button"
               onClick={onClose}
               className="
-h-9
-w-[130px]
-rounded-lg
-border
-text-sm
-"
+                h-11
+                w-[165px]
+                shrink-0
+                rounded-lg
+                border
+                border-gray-300
+                bg-white
+                text-sm
+                font-medium
+                text-text-primary
+                transition
+                hover:bg-gray-50
+              "
             >
               បោះបង់
             </button>
 
             <button
-              onClick={onSave}
+              type="button"
+              onClick={handleSave}
               className="
-flex-1
-h-9
-rounded-lg
-bg-[#4b3192]
-text-white
-text-sm
-flex
-items-center
-justify-center
-gap-2
-"
+                flex
+                h-11
+                flex-1
+                items-center
+                justify-center
+                gap-2
+                rounded-lg
+                bg-primary
+                text-sm
+                font-medium
+                text-white
+                transition
+                hover:opacity-90
+              "
             >
-              <FolderPlus size={18} />
+              <FolderPlus size={19} />
+
               បង្កើតឯកសារ
             </button>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function Field({ label, children }) {
-  return (
-    <div>
-      <label
-        className="
-text-xs
-text-gray-600
-"
-      >
-        {label}
-      </label>
-
-      <div className="mt-1">{children}</div>
-    </div>
-  );
-}
-
-function SelectField({ label, value, options, onChange }) {
-  return (
-    <div>
-      <label
-        className="
-text-xs
-text-gray-600
-"
-      >
-        {label}
-      </label>
-
-      <div className="relative mt-1">
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="
-h-9
-w-full
-appearance-none
-rounded-lg
-border
-px-3
-pr-8
-text-sm
-outline-none
-"
-        >
-          {options.map((item) => (
-            <option key={item}>{item}</option>
-          ))}
-        </select>
-
-        <ChevronDown
-          className="
-absolute
-right-3
-top-3
-h-4
-w-4
-text-gray-500
-"
-        />
       </div>
     </div>
   );

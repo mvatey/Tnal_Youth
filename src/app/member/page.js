@@ -336,8 +336,9 @@ export default function MembersPage() {
 
   return (
     <div className="min-h-full flex flex-col gap-4">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 shrink-0">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 shrink-0 ">
         <StatCard
+        
           icon={Users}
           label="សមាជិកសរុប"
           value={String(stats.total)}

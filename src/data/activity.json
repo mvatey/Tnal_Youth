@@ -1,0 +1,98 @@
+[
+  {
+    "id": 1,
+    "title_kh": "កម្មវិធីបរិច្ចាគឈាម",
+    "title_en": "Blood Donation Program",
+    "type": "ផ្ទៃក្នុង",
+    "status": "កំពុងដំណើរការ",
+    "branch": "សាខាភ្នំពេញ",
+    "startDate": "2026-01-15",
+    "endDate": "2026-01-15",
+    "location": "ភ្នំពេញ",
+    "participants": 120
+  },
+  {
+    "id": 2,
+    "title_kh": "កម្មវិធីដាំដើមឈើ",
+    "title_en": "Tree Planting",
+    "type": "ខាងក្រៅ",
+    "status": "បានបញ្ចប់",
+    "branch": "សាខាសៀមរាប",
+    "startDate": "2026-02-10",
+    "endDate": "2026-02-10",
+    "location": "សៀមរាប",
+    "participants": 80
+  },
+  {
+    "id": 3,
+    "title_kh": "កម្មវិធីអប់រំយុវជន",
+    "title_en": "Youth Education",
+    "type": "ផ្ទៃក្នុង",
+    "status": "កំពុងដំណើរការ",
+    "branch": "សាខាបាត់ដំបង",
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-03",
+    "location": "បាត់ដំបង",
+    "participants": 150
+  },
+  {
+    "id": 4,
+    "title_kh": "កម្មវិធីជួយសហគមន៍",
+    "title_en": "Community Service",
+    "type": "ខាងក្រៅ",
+    "status": "បានបញ្ចប់",
+    "branch": "សាខាកំពង់ចាម",
+    "startDate": "2026-03-15",
+    "endDate": "2026-03-15",
+    "location": "កំពង់ចាម",
+    "participants": 65
+  },
+  {
+    "id": 5,
+    "title_kh": "កម្មវិធីបណ្តុះបណ្តាល",
+    "title_en": "Leadership Training",
+    "type": "ផ្ទៃក្នុង",
+    "status": "គ្រោងទុក",
+    "branch": "សាខាភ្នំពេញ",
+    "startDate": "2026-04-05",
+    "endDate": "2026-04-06",
+    "location": "ភ្នំពេញ",
+    "participants": 100
+  },
+  {
+    "id": 6,
+    "title_kh": "កម្មវិធីសម្អាតបរិស្ថាន",
+    "title_en": "Environment Cleanup",
+    "type": "ខាងក្រៅ",
+    "status": "គ្រោងទុក",
+    "branch": "សាខាព្រះសីហនុ",
+    "startDate": "2026-04-20",
+    "endDate": "2026-04-20",
+    "location": "ព្រះសីហនុ",
+    "participants": 95
+  },
+  {
+    "id": 7,
+    "title_kh": "កម្មវិធីចែកអំណោយ",
+    "title_en": "Charity Distribution",
+    "type": "ខាងក្រៅ",
+    "status": "បានបញ្ចប់",
+    "branch": "សាខាកណ្ដាល",
+    "startDate": "2026-05-12",
+    "endDate": "2026-05-12",
+    "location": "កណ្ដាល",
+    "participants": 75
+  },
+  {
+    "id": 8,
+    "title_kh": "កម្មវិធីអភិវឌ្ឍសមត្ថភាព",
+    "title_en": "Capacity Building",
+    "type": "ផ្ទៃក្នុង",
+    "status": "កំពុងដំណើរការ",
+    "branch": "សាខាតាកែវ",
+    "startDate": "2026-06-08",
+    "endDate": "2026-06-09",
+    "location": "តាកែវ",
+    "participants": 130
+  }
+]
