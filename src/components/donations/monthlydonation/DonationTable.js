@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 import FilterBar from "../../forms/FilterBar";
 import AddAlert from "../../forms/addalert";
+import SaveAlert from "../../forms/savealert";
 import SaveButton from "../../forms/save";
 import Pagination from "../../navigation/Pagination";
 import TableRow from "./TableRow";
@@ -13,6 +14,7 @@ import { downloadCsv } from "@/utils/downloadCsv";
 const { donationRows } = donationData;
 
 const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
+const DONATION_SAVE_ALERT_KEY = "tnal-youth:donation-save-alert";
 
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
@@ -46,6 +48,7 @@ export default function DonationTable() {
   const [rows, setRows] = useState(donationRows);
   const [currentPage, setCurrentPage] = useState(1);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
+  const [showSaveAlert, setShowSaveAlert] = useState(false);
   const [savedRows, setSavedRows] = useState({});
   const [moneySort, setMoneySort] = useState(null);
 
@@ -95,7 +98,15 @@ export default function DonationTable() {
 
   useEffect(() => {
     const loadSavedRows = () => {
+      const shouldShowSaveAlert = window.localStorage.getItem(
+        DONATION_SAVE_ALERT_KEY,
+      );
       const savedValue = window.localStorage.getItem(SAVED_DONATION_ROWS_KEY);
+
+      if (shouldShowSaveAlert === "true") {
+        window.localStorage.removeItem(DONATION_SAVE_ALERT_KEY);
+        setShowSaveAlert(true);
+      }
 
       if (!savedValue) {
         setSavedRows({});
@@ -120,20 +131,27 @@ export default function DonationTable() {
   }, []);
 
   useEffect(() => {
-    if (!showDownloadAlert) return undefined;
+    if (!showDownloadAlert && !showSaveAlert) return undefined;
 
     const timeoutId = window.setTimeout(() => {
       setShowDownloadAlert(false);
+      setShowSaveAlert(false);
     }, 3000);
 
     return () => window.clearTimeout(timeoutId);
-  }, [showDownloadAlert]);
+  }, [showDownloadAlert, showSaveAlert]);
 
   return (
     <section className="rounded-md border border-border bg-white px-7 py-4 shadow-sm">
       {showDownloadAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
           <AddAlert />
+        </div>
+      )}
+
+      {showSaveAlert && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
+          <SaveAlert />
         </div>
       )}
 

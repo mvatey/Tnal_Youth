@@ -63,6 +63,7 @@ export const NAV_ITEMS = [
   {
     id: "profile",
     label: "ប្រវត្តិរូប",
+<<<<<<< HEAD
     href: "/myAcc",
     icon: "profile",
     roles: [
@@ -110,3 +111,10 @@ export function getRoleHomePath(role) {
     "/auth/login"
   );
 }
+=======
+    href: "/profile",
+    icon: "profile",
+    roles: ["admin", "secretary", "branch_leader"],
+  },
+];
+>>>>>>> origin/feature/notification

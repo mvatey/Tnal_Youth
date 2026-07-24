@@ -8,6 +8,7 @@ import { downloadCsv } from "@/utils/downloadCsv";
 import donationData from "@/data/donation/donationData.json";
 import eventDonationData from "@/data/donation/eventDonationData.json";
 
+const EVENT_DONATION_SAVE_ALERT_KEY = "tnal-youth:event-donation-save-alert";
 const rowsPerPage = 12;
 const { addDonationRows, donationRows } = donationData;
 const { eventNames, eventSchedule } = eventDonationData;
@@ -125,20 +126,38 @@ export default function EventDonationPanel({
   };
 
   useEffect(() => {
-    if (!showDownloadAlert) return undefined;
+    const shouldShowSaveAlert = window.localStorage.getItem(
+      EVENT_DONATION_SAVE_ALERT_KEY,
+    );
+
+    if (shouldShowSaveAlert === "true") {
+      window.localStorage.removeItem(EVENT_DONATION_SAVE_ALERT_KEY);
+      setShowSaveAlert(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!showDownloadAlert && !showSaveAlert) return undefined;
 
     const timeoutId = window.setTimeout(() => {
       setShowDownloadAlert(false);
+      setShowSaveAlert(false);
     }, 3000);
 
     return () => window.clearTimeout(timeoutId);
-  }, [showDownloadAlert]);
+  }, [showDownloadAlert, showSaveAlert]);
 
   return (
     <section className="min-h-[650px] rounded-md border border-border bg-[#fbfcfe] px-7 py-4 shadow-sm">
       {showDownloadAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
           <AddAlert />
+        </div>
+      )}
+
+      {showSaveAlert && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
+          <SaveAlert message="អបអរសាទរ ! វិភាគទានកម្មវិធីត្រូវបានរក្សាទុកដោយជោគជ័យ" />
         </div>
       )}
 

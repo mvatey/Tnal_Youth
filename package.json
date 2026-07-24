@@ -3,16 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev-no-fork.js",
     "build": "next build",
     "start": "next start"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@heroicons/react": "^2.2.0",
     "@fortawesome/free-regular-svg-icons": "^7.3.1",
     "@fortawesome/free-solid-svg-icons": "^7.3.1",
     "@fortawesome/react-fontawesome": "^3.5.0",
     "lucide-react": "^1.23.0",
+=======
+    "lucide-react": "^0.542.0",
+>>>>>>> origin/feature/notification
     "next": "16.2.9",
     "react": "19.2.4",
     "react-datepicker": "^9.1.0",
