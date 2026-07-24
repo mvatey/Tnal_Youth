@@ -46,7 +46,7 @@ export default function FormSelect({ label, placeholder = "ជ្រើសរើ
     <div ref={containerRef} className="relative">
       {label && <label className="mb-2 block text-sm font-semibold text-text-primary">{label}</label>}
 
-      <button type="button" disabled={disabled} onClick={() => setOpen((previous) => !previous)} className={`flex h-11 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-4 text-left text-sm outline-none transition focus:border-primary disabled:cursor-not-allowed disabled:bg-gray-100 ${selectedLabel ? "text-text-primary" : "text-gray-500"}`}>
+      <button type="button" disabled={disabled} onClick={() => setOpen((previous) => !previous)} className={`flex py-2 w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 text-left text-sm outline-none transition focus:border-primary disabled:cursor-not-allowed disabled:bg-gray-100 ${selectedLabel ? "text-text-primary" : "text-gray-500"}`}>
         <span className="truncate">{selectedLabel || placeholder}</span>
         <ChevronDown size={17} className={`ml-3 shrink-0 text-gray-500 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
@@ -61,13 +61,13 @@ export default function FormSelect({ label, placeholder = "ជ្រើសរើ
                 const active = String(optionValue) === String(value);
 
                 return (
-                  <button key={optionValue} type="button" onClick={() => handleSelect(option)} className={`flex h-10 w-full items-center px-4 text-left text-sm transition hover:bg-primary-lighter hover:text-primary ${active ? "bg-primary-lighter font-semibold text-primary" : "text-text-primary"}`}>
+                  <button key={optionValue} type="button" onClick={() => handleSelect(option)} className={`flex h-10 w-full items-center px-3 text-left text-sm transition hover:bg-primary-lighter hover:text-primary ${active ? "bg-primary-lighter font-semibold text-primary" : "text-text-primary"}`}>
                     <span className="truncate">{optionLabel}</span>
                   </button>
                 );
               })
             ) : (
-              <div className="flex h-10 items-center px-4 text-sm text-gray-400">មិនមានទិន្នន័យ</div>
+              <div className="flex h-10 items-center px-3 text-sm text-gray-400">មិនមានទិន្នន័យ</div>
             )}
           </div>
         </div>

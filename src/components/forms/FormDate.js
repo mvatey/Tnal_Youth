@@ -111,13 +111,13 @@ export default function FormDate({
           value={formatKhmerDisplayDate(formattedValue)}
           placeholder="ថ្ងៃ/ខែ/ឆ្នាំ"
           className="
-            h-11
+            py-2
             w-full
             cursor-pointer
             rounded-lg
             border
             border-gray-200
-            px-4
+            px-3
             pr-10
             text-sm
             text-gray-600

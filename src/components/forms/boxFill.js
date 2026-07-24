@@ -15,7 +15,7 @@ export default function BoxFill({ label, type = "text", placeholder = "", option
 
       {type === "select" ? (
         <div className="relative">
-          <select name={name} {...sharedValueProps} disabled={disabled} className="h-11 w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 pr-10 text-sm text-gray-600 outline-none focus:border-primary disabled:cursor-not-allowed disabled:bg-gray-100">
+          <select name={name} {...sharedValueProps} disabled={disabled} className="py-2 w-full appearance-none rounded-lg border border-gray-200 bg-white px-3 pr-10 text-sm text-gray-600 outline-none focus:border-primary disabled:cursor-not-allowed disabled:bg-gray-100">
             <option value="" disabled>{placeholder}</option>
 
             {options.map((option) => {
@@ -32,12 +32,12 @@ export default function BoxFill({ label, type = "text", placeholder = "", option
         </div>
       ) : type === "date" ? (
         <div className="relative">
-          <input type="date" name={name} {...sharedValueProps} readOnly={readOnly} disabled={disabled} className="h-11 w-full rounded-lg border border-gray-200 px-4 pr-10 text-sm text-gray-600 outline-none focus:border-primary disabled:cursor-not-allowed disabled:bg-gray-100" />
+          <input type="date" name={name} {...sharedValueProps} readOnly={readOnly} disabled={disabled} className="py-2 w-full rounded-lg border border-gray-200 px-3 pr-10 text-sm text-gray-600 outline-none focus:border-primary disabled:cursor-not-allowed disabled:bg-gray-100" />
 
           <Calendar size={18} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
         </div>
       ) : (
-        <input type={type} name={name} {...sharedValueProps} readOnly={readOnly} disabled={disabled} placeholder={focused ? "" : placeholder} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} className="h-11 w-full rounded-lg border border-gray-200 px-4 text-sm text-gray-600 outline-none focus:border-primary disabled:cursor-not-allowed disabled:bg-gray-100" />
+        <input type={type} name={name} {...sharedValueProps} readOnly={readOnly} disabled={disabled} placeholder={focused ? "" : placeholder} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} className="py-2 w-full rounded-lg border border-gray-200 px-3 text-sm text-gray-600 outline-none focus:border-primary disabled:cursor-not-allowed disabled:bg-gray-100" />
       )}
     </div>
   );

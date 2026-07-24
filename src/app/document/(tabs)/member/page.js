@@ -20,14 +20,14 @@ export default function MemberDocumentPage() {
   const documents = documentMember;
 
   const filteredDocuments = documents.filter((item) => {
-    const searchValue = search.toLowerCase();
+    const searchValue = search.trim().toLowerCase();
 
     const matchSearch =
       item.title?.toLowerCase().includes(searchValue) ||
       item.memberName?.toLowerCase().includes(searchValue);
 
-    const matchType = typeFilter === "" || item.type === typeFilter;
-    const matchDate = dateFilter === "" || item.date === dateFilter;
+    const matchType = !typeFilter || item.type === typeFilter;
+    const matchDate = !dateFilter || item.date === dateFilter;
 
     return matchSearch && matchType && matchDate;
   });
@@ -35,25 +35,25 @@ export default function MemberDocumentPage() {
   const columns = [
     {
       header: "ល.រ",
-      width: "w-[5%]",
+      width: "w-[6%]",
       align: "center",
       render: (_, index) => index + 1,
     },
     {
-      header: "រូបភាព",
+      header: "ឯកសារ",
       width: "w-[8%]",
       render: (item) => (
         <img
-          src={item.image}
-          alt={item.title || "certificate"}
-          className="h-8 w-12 rounded border object-cover"
+          src={item.image || "/document.jpg"}
+          alt={item.title || "document"}
+          className="h-8 w-6 rounded border border-gray-200 object-cover"
         />
       ),
     },
     {
       header: "ឈ្មោះឯកសារ",
       accessor: "title",
-      width: "w-[15%]",
+      width: "w-[19%]",
     },
     {
       header: "សមាជិក",
@@ -68,7 +68,7 @@ export default function MemberDocumentPage() {
     {
       header: "សាខា",
       accessor: "branch",
-      width: "w-[12%]",
+      width: "w-[14%]",
     },
     {
       header: "កាលបរិច្ឆេទ",
@@ -84,24 +84,26 @@ export default function MemberDocumentPage() {
       header: "ប្រភេទឯកសារ",
       width: "w-[10%]",
       render: (item) => (
-        <span className="rounded-md bg-red-100 px-3 py-1 text-xs text-red-500">
+        <span className="inline-flex rounded-md bg-red-100 px-3 py-1 text-xs font-medium text-red-500">
           {item.type}
         </span>
       ),
     },
     {
       header: "សកម្មភាព",
-      width: "w-[7%]",
+      width: "w-[8%]",
       align: "center",
       render: (item) => (
-        <button
-          type="button"
-          onClick={() => setSelectedCertificate(item)}
-          className="inline-flex items-center justify-center"
-          aria-label="មើលឯកសារ"
-        >
-          <Eye size={18} className="text-blue-500" />
-        </button>
+        <div className="flex items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setSelectedCertificate(item)}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-blue-50"
+            aria-label="មើលឯកសារ"
+          >
+            <Eye size={18} className="text-blue-500" />
+          </button>
+        </div>
       ),
     },
   ];
@@ -109,12 +111,14 @@ export default function MemberDocumentPage() {
   const filters = [
     {
       name: "type",
-      placeholder: "ប្រភេទ",
+      placeholder: "ប្រភេទឯកសារ",
       value: typeFilter,
-      options: [...new Set(documents.map((item) => item.type))].map((type) => ({
-        label: type,
-        value: type,
-      })),
+      options: [...new Set(documents.map((item) => item.type))].map(
+        (type) => ({
+          label: type,
+          value: type,
+        }),
+      ),
       onChange: setTypeFilter,
     },
     {
@@ -127,15 +131,30 @@ export default function MemberDocumentPage() {
   ];
 
   const addButton = (
-    <button
-      type="button"
-      onClick={() => router.push("/document/certificate")}
-      className="flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
-    >
-      <RiAddCircleLine size={18} />
-      បង្កើតឯកសារ
-    </button>
-  );
+  <button
+    type="button"
+    onClick={() => router.push("/document/create")}
+    className="
+      inline-flex
+      items-center
+      gap-2
+      whitespace-nowrap
+      rounded-lg
+      bg-success
+      px-3
+      py-2
+      text-sm
+      font-medium
+      text-white
+      transition
+      hover:opacity-90
+    "
+  >
+    <RiAddCircleLine className="h-4 w-4 shrink-0" />
+
+    <span>បង្កើតឯកសារ</span>
+  </button>
+);
 
   return (
     <>

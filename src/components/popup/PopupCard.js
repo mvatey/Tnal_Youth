@@ -11,6 +11,7 @@ export default function PopupCard({
   children,
   onClose,
   size = "md",
+  className = "",
 }) {
   return (
     <div
@@ -23,7 +24,6 @@ export default function PopupCard({
       onClick={onClose}
     >
 
-      {/* Center only content area (exclude sidebar + topbar) */}
       <div
         className="
         fixed
@@ -38,9 +38,8 @@ export default function PopupCard({
         "
       >
 
-        {/* Popup Card */}
         <div
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e)=>e.stopPropagation()}
           className={`
           ${SIZE[size]}
           max-h-[90vh]
@@ -49,6 +48,7 @@ export default function PopupCard({
           bg-white
           p-6
           shadow-xl
+          ${className}
           `}
         >
 
