@@ -70,6 +70,7 @@ function DateFilter({ value, onChange }) {
 export default function SponsorPanel({
   selectedBranch = "all",
   showAddButton = true,
+  typeOptions,
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -209,6 +210,7 @@ export default function SponsorPanel({
           <SponsorTypeSelect
             value={selectedType}
             onChange={updateFilter(setSelectedType)}
+            options={typeOptions}
             placeholder="ប្រភេទអ្នកឧបត្ថម្ភ"
             className="w-[180px]"
             size="compact"
