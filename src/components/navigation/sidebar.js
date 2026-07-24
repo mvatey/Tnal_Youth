@@ -22,6 +22,7 @@ import {
   FaUniversity,
   FaUserCircle,
   FaUsers,
+  FaBell
 } from "react-icons/fa";
 
 import { useAuth } from "@/context/AuthContext";
@@ -43,6 +44,7 @@ const ICON_MAP = {
   file: FaFileAlt,
   profile: FaUserCircle,
   settings: FaCog,
+  bell: FaBell,
 };
 
 const ROLE_LABELS = {

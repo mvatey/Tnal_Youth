@@ -1,7 +1,7 @@
 // components/navigation/PageHeader.jsx
 "use client";
 import { usePathname } from "next/navigation";
-import { FaBuilding, FaUsers, FaCalendarAlt, FaHandHoldingHeart, FaFileAlt, FaUserCircle, FaCog } from "react-icons/fa";
+import { FaBuilding, FaUsers, FaCalendarAlt, FaHandHoldingHeart, FaFileAlt, FaUserCircle, FaCog, FaBell} from "react-icons/fa";
 import { NAV_ITEMS } from "@/lib/navigation";
 import ChartIcon from "@/components/ui/icons/chartIcon";
 
@@ -14,6 +14,7 @@ const ICON_MAP = {
   file: FaFileAlt,
   profile: FaUserCircle,
   settings: FaCog,
+  bell: FaBell,
 };
 
 export default function PageHeader() {

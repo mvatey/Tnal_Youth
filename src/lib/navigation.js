@@ -63,7 +63,6 @@ export const NAV_ITEMS = [
   {
     id: "profile",
     label: "ប្រវត្តិរូប",
-<<<<<<< HEAD
     href: "/myAcc",
     icon: "profile",
     roles: [
@@ -80,6 +79,19 @@ export const NAV_ITEMS = [
     icon: "settings",
     roles: ["admin"],
   },
+  {
+  id: "notification",
+  label: "ការជូនដំណឹង",
+  href: "/notification",
+  icon: "bell",
+  roles: [
+    "admin",
+    "secretary",
+    "branch_leader",
+    "member",
+  ],
+  showInSidebar: false,
+},
 ];
 
 export function normalizeRole(role) {
@@ -91,8 +103,10 @@ export function normalizeRole(role) {
 export function getNavigationForRole(role) {
   const normalizedRole = normalizeRole(role);
 
-  return NAV_ITEMS.filter((item) =>
-    item.roles.includes(normalizedRole)
+  return NAV_ITEMS.filter(
+    (item) =>
+      item.roles.includes(normalizedRole) &&
+      item.showInSidebar !== false
   );
 }
 
@@ -111,10 +125,3 @@ export function getRoleHomePath(role) {
     "/auth/login"
   );
 }
-=======
-    href: "/profile",
-    icon: "profile",
-    roles: ["admin", "secretary", "branch_leader"],
-  },
-];
->>>>>>> origin/feature/notification
