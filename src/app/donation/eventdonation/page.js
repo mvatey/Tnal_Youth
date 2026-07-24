@@ -122,7 +122,11 @@ export default function EventDonationPage() {
           onCancel={() => setSelectedPeopleCard(null)}
         />
       ) : selectedPeopleCard === "sponsors" ? (
-        <SponsorPanel selectedBranch={selectedBranch} showAddButton={false} />
+        <SponsorPanel
+          selectedBranch={selectedBranch}
+          showAddButton={false}
+          typeOptions={["បុគ្គល", "ស្ថាប័ន"]}
+        />
       ) : (
         <EventDonationPanel
           selectedBranch={selectedBranch}

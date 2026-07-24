@@ -5,7 +5,7 @@ import { ChevronDown } from "lucide-react";
 export default function SponsorTypeSelect({
   value = "",
   onChange,
-  options = ["បុគ្គល", "ស្ថាប័ន"],
+  options = ["បុគ្គល", "ស្ថាប័ន", "សមាជិក"],
   placeholder = "ជ្រើសរើសប្រភេទអ្នកឧបត្ថម្ភ",
   className = "w-[430px]",
   size = "large",
