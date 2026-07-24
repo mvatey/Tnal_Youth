@@ -45,11 +45,7 @@ export default function MyAccountPoliticalPage() {
       ? member.politicalHistory
       : [];
 
-    setPoliticals(
-      history.length > 0
-        ? history
-        : [createEmptyPolitical()],
-    );
+    setPoliticals(history.length > 0 ? history : [createEmptyPolitical()]);
   }, [member]);
 
   const updatePolitical = (id, field, value) => {
@@ -66,10 +62,7 @@ export default function MyAccountPoliticalPage() {
   };
 
   const addPolitical = () => {
-    setPoliticals((previous) => [
-      ...previous,
-      createEmptyPolitical(),
-    ]);
+    setPoliticals((previous) => [...previous, createEmptyPolitical()]);
   };
 
   const removePolitical = (id) => {
@@ -112,22 +105,20 @@ export default function MyAccountPoliticalPage() {
     return <NotFound />;
   }
 
-  const workLevels =
-    politicalData.workLevels || [
-      "ថ្នាក់ជាតិ",
-      "ថ្នាក់រាជធានី/ខេត្ត",
-      "ថ្នាក់ក្រុង/ស្រុក/ខណ្ឌ",
-      "ថ្នាក់ឃុំ/សង្កាត់",
-    ];
+  const workLevels = politicalData.workLevels || [
+    "ថ្នាក់ជាតិ",
+    "ថ្នាក់រាជធានី/ខេត្ត",
+    "ថ្នាក់ក្រុង/ស្រុក/ខណ្ឌ",
+    "ថ្នាក់ឃុំ/សង្កាត់",
+  ];
 
-  const positions =
-    politicalData.positions || [
-      "ប្រធាន",
-      "អនុប្រធាន",
-      "លេខាធិការ",
-      "សមាជិក",
-      "អ្នកស្ម័គ្រចិត្ត",
-    ];
+  const positions = politicalData.positions || [
+    "ប្រធាន",
+    "អនុប្រធាន",
+    "លេខាធិការ",
+    "សមាជិក",
+    "អ្នកស្ម័គ្រចិត្ត",
+  ];
 
   const countries = Array.isArray(
     locationData.countries,
@@ -138,9 +129,7 @@ export default function MyAccountPoliticalPage() {
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="text-lg font-bold text-primary">
-          កិច្ចការនយោបាយ
-        </h2>
+        <h2 className="text-lg font-bold text-primary">កិច្ចការនយោបាយ</h2>
 
         <div className="mt-5 space-y-5">
           {politicals.map((item, index) => (
@@ -157,11 +146,7 @@ export default function MyAccountPoliticalPage() {
                   label="ឈ្មោះ ស្ថាប័ន"
                   value={item.organization || ""}
                   onChange={(event) =>
-                    updatePolitical(
-                      item.id,
-                      "organization",
-                      event.target.value,
-                    )
+                    updatePolitical(item.id, "organization", event.target.value)
                   }
                   placeholder="បញ្ចូលឈ្មោះស្ថាប័ន"
                 />
@@ -170,42 +155,24 @@ export default function MyAccountPoliticalPage() {
                   label="ទីកន្លែងបំពេញការងារ"
                   value={item.workLevel || ""}
                   onChange={(event) =>
-                    updatePolitical(
-                      item.id,
-                      "workLevel",
-                      event.target.value,
-                    )
+                    updatePolitical(item.id, "workLevel", event.target.value)
                   }
                   placeholder="ជ្រើសរើសទីកន្លែង"
                   options={workLevels}
                 />
 
-                <FormSelect
+                <BoxFill
                   label="ប្រទេស"
-                  value={item.country || ""}
-                  onChange={(event) =>
-                    updatePolitical(
-                      item.id,
-                      "country",
-                      event.target.value,
-                    )
-                  }
-                  placeholder="ជ្រើសរើសប្រទេស"
-                  options={countries}
+                  placeholder="បញ្ចូលឈ្មោះប្រទេស"
+                  value={item.country ?? ""}
+                  onChange={(event) => onChange("country", event.target.value)}
                 />
 
-                <FormSelect
+                <BoxFill
                   label="តួនាទី"
-                  value={item.position || ""}
-                  onChange={(event) =>
-                    updatePolitical(
-                      item.id,
-                      "position",
-                      event.target.value,
-                    )
-                  }
-                  placeholder="ជ្រើសរើសតួនាទី"
-                  options={positions}
+                  placeholder="បញ្ចូលឈ្មោះតួនាទី"
+                  value={item.position ?? ""}
+                  onChange={(event) => onChange("position", event.target.value)}
                 />
 
                 <BoxFill
@@ -226,11 +193,7 @@ export default function MyAccountPoliticalPage() {
                   name={`political-start-${item.id}`}
                   value={item.startDate || ""}
                   onChange={(event) =>
-                    updatePolitical(
-                      item.id,
-                      "startDate",
-                      event.target.value,
-                    )
+                    updatePolitical(item.id, "startDate", event.target.value)
                   }
                 />
 
@@ -239,11 +202,7 @@ export default function MyAccountPoliticalPage() {
                   name={`political-end-${item.id}`}
                   value={item.endDate || ""}
                   onChange={(event) =>
-                    updatePolitical(
-                      item.id,
-                      "endDate",
-                      event.target.value,
-                    )
+                    updatePolitical(item.id, "endDate", event.target.value)
                   }
                 />
               </div>
@@ -282,9 +241,7 @@ export default function MyAccountPoliticalPage() {
 function NotFound() {
   return (
     <div className="rounded-xl border border-red-200 bg-white p-6">
-      <p className="text-sm text-red-500">
-        រកមិនឃើញព័ត៌មានសមាជិក
-      </p>
+      <p className="text-sm text-red-500">រកមិនឃើញព័ត៌មានសមាជិក</p>
     </div>
   );
 }

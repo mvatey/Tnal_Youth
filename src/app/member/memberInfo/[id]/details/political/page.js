@@ -41,16 +41,12 @@ export default function PoliticalPage() {
 
     setMember(selectedMember);
 
-    const politicalHistory = Array.isArray(
-      selectedMember.politicalHistory,
-    )
+    const politicalHistory = Array.isArray(selectedMember.politicalHistory)
       ? selectedMember.politicalHistory
       : [];
 
     setPoliticals(
-      politicalHistory.length > 0
-        ? politicalHistory
-        : [createEmptyPolitical()],
+      politicalHistory.length > 0 ? politicalHistory : [createEmptyPolitical()],
     );
   }, [memberId]);
 
@@ -68,10 +64,7 @@ export default function PoliticalPage() {
   }
 
   function addPolitical() {
-    setPoliticals((previous) => [
-      ...previous,
-      createEmptyPolitical(),
-    ]);
+    setPoliticals((previous) => [...previous, createEmptyPolitical()]);
   }
 
   function removePolitical(id) {
@@ -101,9 +94,7 @@ export default function PoliticalPage() {
   if (!member) {
     return (
       <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">
-          រកមិនឃើញព័ត៌មានសមាជិក
-        </p>
+        <p className="text-sm text-red-500">រកមិនឃើញព័ត៌មានសមាជិក</p>
       </div>
     );
   }
@@ -111,9 +102,7 @@ export default function PoliticalPage() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <h2 className="text-lg font-bold text-primary">
-          កិច្ចការនយោបាយ
-        </h2>
+        <h2 className="text-lg font-bold text-primary">កិច្ចការនយោបាយ</h2>
 
         <div className="mt-5 space-y-5">
           {politicals.map((item, index) => (
@@ -149,26 +138,16 @@ export default function PoliticalPage() {
   );
 }
 
-function PoliticalGroup({
-  index,
-  item,
-  canDelete,
-  onChange,
-  onDelete,
-}) {
+function PoliticalGroup({ index, item, canDelete, onChange, onDelete }) {
   const countries = Array.isArray(locationData.countries)
     ? locationData.countries
     : [];
 
-  const workLocations = Array.isArray(
-    politicalData.workLocations,
-  )
+  const workLocations = Array.isArray(politicalData.workLocations)
     ? politicalData.workLocations
     : [];
 
-  const roles = Array.isArray(politicalData.roles)
-    ? politicalData.roles
-    : [];
+  const roles = Array.isArray(politicalData.roles) ? politicalData.roles : [];
 
   return (
     <div className="rounded-xl border border-gray-300 p-6">
@@ -181,74 +160,55 @@ function PoliticalGroup({
           label="ឈ្មោះ ស្ថាប័ន"
           placeholder="បញ្ចូលឈ្មោះស្ថាប័ន"
           value={item.organization ?? ""}
-          onChange={(event) =>
-            onChange("organization", event.target.value)
-          }
+          onChange={(event) => onChange("organization", event.target.value)}
         />
 
         <FormSelect
           label="ទីកន្លែងបំពេញការងារ"
           placeholder="ជ្រើសរើសទីកន្លែងបំពេញការងារ"
           value={item.workLocation ?? ""}
-          onChange={(event) =>
-            onChange("workLocation", event.target.value)
-          }
+          onChange={(event) => onChange("workLocation", event.target.value)}
           options={workLocations}
         />
 
-        <FormSelect
+        <BoxFill
           label="ប្រទេស"
-          placeholder="ជ្រើសរើសប្រទេស"
+          placeholder="បញ្ចូលឈ្មោះប្រទេស"
           value={item.country ?? ""}
-          onChange={(event) =>
-            onChange("country", event.target.value)
-          }
-          options={countries}
+          onChange={(event) => onChange("country", event.target.value)}
         />
 
-        <FormSelect
+        <BoxFill
           label="តួនាទី"
-          placeholder="ជ្រើសរើសតួនាទី"
-          value={item.role ?? ""}
-          onChange={(event) =>
-            onChange("role", event.target.value)
-          }
-          options={roles}
+          placeholder="បញ្ចូលឈ្មោះតួនាទី"
+          value={item.position ?? ""}
+          onChange={(event) => onChange("position", event.target.value)}
         />
 
         <BoxFill
           label="លេខកាត/លិខិតតែងតាំង"
           placeholder="បញ្ចូលលេខកាត/លិខិតតែងតាំង"
           value={item.cardNumber ?? ""}
-          onChange={(event) =>
-            onChange("cardNumber", event.target.value)
-          }
+          onChange={(event) => onChange("cardNumber", event.target.value)}
         />
 
         <FormDate
           label="ថ្ងៃខែឆ្នាំ ចាប់ផ្ដើម"
           name={`joinedDate-${item.id}`}
           value={item.joinedDate ?? ""}
-          onChange={(event) =>
-            onChange("joinedDate", event.target.value)
-          }
+          onChange={(event) => onChange("joinedDate", event.target.value)}
         />
 
         <FormDate
           label="ថ្ងៃខែឆ្នាំ បញ្ចប់"
           name={`leftDate-${item.id}`}
           value={item.leftDate ?? ""}
-          onChange={(event) =>
-            onChange("leftDate", event.target.value)
-          }
+          onChange={(event) => onChange("leftDate", event.target.value)}
         />
       </div>
 
       <div className="mt-6 flex justify-end">
-        <DeleteButton
-          canDelete={canDelete}
-          onClick={onDelete}
-        />
+        <DeleteButton canDelete={canDelete} onClick={onDelete} />
       </div>
     </div>
   );
