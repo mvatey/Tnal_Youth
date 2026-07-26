@@ -237,7 +237,7 @@ export default function CertificateForm({
 
         <div className="space-y-5">
           <BoxFill
-            label="ឈ្មោះឯកសារ *"
+            label="ឈ្មោះឯកសារ"
             name="title"
             value={form.title || ""}
             onChange={updateField("title")}

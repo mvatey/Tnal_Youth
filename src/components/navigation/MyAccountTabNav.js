@@ -20,6 +20,10 @@ const TABS = [
     label: "ការធ្វើវិភាគទាន",
     href: "/myAcc/donation",
   },
+  {
+    label: "ការបរិច្ចាក",
+    href: "/myAcc/sponsor",
+  },
 ];
 
 export default function MyAccountTabNav() {
@@ -27,7 +31,7 @@ export default function MyAccountTabNav() {
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="grid grid-cols-4">
+      <div className="grid grid-cols-5">
         {TABS.map((tab) => {
           const active =
             pathname === "/myAcc"

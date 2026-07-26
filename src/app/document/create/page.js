@@ -11,12 +11,30 @@ const EMPTY_FORM = {
   branch: "",
   description: "",
   type: "",
+
+  recipientType: "member",
+
+  memberId: "",
   member: "",
+
+  activityId: "",
+  activity: "",
+
   gender: "",
+  email: "",
+  phone: "",
+  dateOfBirth: "",
+  role: "member",
+  profilePhoto: "/profile.png",
+  userId: "",
+
+  templateFile: null,
+  templatePreview: "",
+
   font: "Noto Sans",
-  fontSize: "6px",
+  fontSize: "medium",
   color: "#12224c",
-  language: "ភាសាខ្មែរ",
+  language: "km",
 };
 
 export default function CreateDocumentPage() {
@@ -40,14 +58,21 @@ export default function CreateDocumentPage() {
   const handleBack = () => {
     if (type) {
       setType("");
+
+      setForm((previous) => ({
+        ...previous,
+        type: "",
+      }));
+
       return;
     }
 
     router.push("/document/member");
   };
 
-  const handleSave = () => {
-    console.log("Created document:", form);
+  const handleSave = (createdData) => {
+    console.log("Created document:", createdData || form);
+
     router.push("/document/member");
   };
 
@@ -55,174 +80,203 @@ export default function CreateDocumentPage() {
     type === "certificate"
       ? "បង្កើតវិញ្ញាបនបត្រ"
       : type === "id_card"
-      ? "បង្កើតប័ណ្ណសមាជិក"
-      : "បង្កើតឯកសារ";
+        ? "បង្កើតប័ណ្ណសមាជិក"
+        : "បង្កើតឯកសារ";
 
   const pageDescription =
     type === "certificate"
       ? "បំពេញព័ត៌មានដើម្បីបង្កើតវិញ្ញាបនបត្រ"
       : type === "id_card"
-      ? "បំពេញព័ត៌មានដើម្បីបង្កើតប័ណ្ណសមាជិក"
-      : "ជ្រើសរើសប្រភេទឯកសារដែលអ្នកចង់បង្កើត";
+        ? "បំពេញព័ត៌មានដើម្បីបង្កើតប័ណ្ណសមាជិក"
+        : "ជ្រើសរើសប្រភេទឯកសារដែលអ្នកចង់បង្កើត";
 
   return (
-    <div className="min-h-full bg-bg-page-gray px-5 py-4">
-      {/* Breadcrumb */}
-      <div className="mb-3 flex items-center gap-2 text-sm">
-        <button
-          type="button"
-          onClick={() => router.push("/document/member")}
-          className="font-medium text-text-mute transition hover:text-primary"
-        >
-          បញ្ជីឯកសារ
-        </button>
+    <div className="space-y-4">
+      {/* Page header */}
+      <div className="space-y-2">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm">
+          <button
+            type="button"
+            onClick={() => router.push("/document/member")}
+            className="
+              font-medium
+              text-text-mute
+              transition
+              hover:text-primary
+            "
+          >
+            បញ្ជីឯកសារ
+          </button>
 
-        <span className="text-lg text-text-mute">›</span>
+          <span className="text-base text-text-mute">
+            ›
+          </span>
 
-        {type && (
-          <>
-            <button
-              type="button"
-              onClick={() => setType("")}
-              className="font-medium text-text-mute transition hover:text-primary"
-            >
-              ប្រភេទឯកសារ
-            </button>
+          {type && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setType("");
 
-            <span className="text-lg text-text-mute">›</span>
-          </>
-        )}
+                  setForm((previous) => ({
+                    ...previous,
+                    type: "",
+                  }));
+                }}
+                className="
+                  font-medium
+                  text-text-mute
+                  transition
+                  hover:text-primary
+                "
+              >
+                ប្រភេទឯកសារ
+              </button>
 
-        <span className="font-semibold text-primary">
+              <span className="text-base text-text-mute">
+                ›
+              </span>
+            </>
+          )}
+
+          <span className="font-semibold text-primary">
+            {pageTitle}
+          </span>
+        </div>
+
+        {/* Title */}
+        <h1 className="text-xl font-bold text-primary">
           {pageTitle}
-        </span>
+        </h1>
+
+        {/* Description */}
+        <p className="text-sm text-text-secondary">
+          {pageDescription}
+        </p>
       </div>
 
-      {/* Title */}
-      <h1 className="text-[30px] font-bold text-primary">
-        {pageTitle}
-      </h1>
-
-      <p className="mt-2 text-sm text-text-secondary">
-        {pageDescription}
-      </p>
-
-      {/* ======================== SELECT TYPE ======================== */}
-
+      {/* Select document type */}
       {!type && (
-        <div className="mt-8">
-          <div className="flex flex-wrap gap-6">
-            {/* Certificate */}
-            <div
-              className="
-                w-[300px]
-                overflow-hidden
-                rounded-2xl
-                border
-                border-gray-200
-                bg-white
-                shadow-md
-                transition
-                duration-200
-                hover:-translate-y-1
-                hover:shadow-xl
-              "
-            >
-              <div className="h-[6px] bg-primary" />
+        <div className="flex flex-wrap items-start gap-4">
+          {/* Certificate card */}
+          <div
+            className="
+              w-[270px]
+              overflow-hidden
+              rounded-xl
+              border
+              border-border
+              bg-white
+              shadow-sm
+              transition-all
+              duration-200
+              hover:-translate-y-1
+              hover:shadow-lg
+            "
+          >
+            <div className="h-1 bg-primary" />
 
-              <div className="flex h-[130px] flex-col justify-between p-5">
-                <div>
-                  <h2 className="text-lg font-bold text-primary">
-                    វិញ្ញាបនបត្រ
-                  </h2>
+            <div className="flex h-[115px] flex-col justify-between p-4">
+              <div>
+                <h2 className="text-base font-bold text-primary">
+                  វិញ្ញាបនបត្រ
+                </h2>
 
-                  <p className="mt-1 text-xs text-text-secondary">
-                    បង្កើតវិញ្ញាបនបត្រសម្រាប់សមាជិក
-                  </p>
-                </div>
+                <p className="mt-1 text-xs text-text-secondary">
+                  បង្កើតវិញ្ញាបនបត្រសម្រាប់សមាជិក ឬកម្មវិធី
+                </p>
+              </div>
 
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      selectDocumentType("certificate")
-                    }
-                    className="
-                      h-8
-                      w-[90px]
-                      rounded-lg
-                      bg-primary
-                      text-xs
-                      font-medium
-                      text-white
-                      transition
-                      hover:opacity-90
-                    "
-                  >
-                    ជ្រើសរើស
-                  </button>
-                </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() =>
+                    selectDocumentType("certificate")
+                  }
+                  className="
+                    inline-flex
+                    h-8
+                    min-w-[86px]
+                    items-center
+                    justify-center
+                    rounded-lg
+                    bg-primary
+                    px-3
+                    text-xs
+                    font-medium
+                    text-white
+                    transition
+                    hover:opacity-90
+                  "
+                >
+                  ជ្រើសរើស
+                </button>
               </div>
             </div>
+          </div>
 
-            {/* Member Card */}
-            <div
-              className="
-                w-[300px]
-                overflow-hidden
-                rounded-2xl
-                border
-                border-gray-200
-                bg-white
-                shadow-md
-                transition
-                duration-200
-                hover:-translate-y-1
-                hover:shadow-xl
-              "
-            >
-              <div className="h-[6px] bg-warning" />
+          {/* ID card */}
+          <div
+            className="
+              w-[270px]
+              overflow-hidden
+              rounded-xl
+              border
+              border-border
+              bg-white
+              shadow-sm
+              transition-all
+              duration-200
+              hover:-translate-y-1
+              hover:shadow-lg
+            "
+          >
+            <div className="h-1 bg-warning" />
 
-              <div className="flex h-[130px] flex-col justify-between p-5">
-                <div>
-                  <h2 className="text-lg font-bold text-primary">
-                    ប័ណ្ណសមាជិក
-                  </h2>
+            <div className="flex h-[115px] flex-col justify-between p-4">
+              <div>
+                <h2 className="text-base font-bold text-primary">
+                  ប័ណ្ណសមាជិក
+                </h2>
 
-                  <p className="mt-1 text-xs text-text-secondary">
-                    បង្កើតប័ណ្ណសម្គាល់សមាជិក
-                  </p>
-                </div>
+                <p className="mt-1 text-xs text-text-secondary">
+                  បង្កើតប័ណ្ណសម្គាល់សម្រាប់សមាជិក
+                </p>
+              </div>
 
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      selectDocumentType("id_card")
-                    }
-                    className="
-                      h-8
-                      w-[90px]
-                      rounded-lg
-                      bg-warning
-                      text-xs
-                      font-medium
-                      text-white
-                      transition
-                      hover:opacity-90
-                    "
-                  >
-                    ជ្រើសរើស
-                  </button>
-                </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() =>
+                    selectDocumentType("id_card")
+                  }
+                  className="
+                    inline-flex
+                    h-8
+                    min-w-[86px]
+                    items-center
+                    justify-center
+                    rounded-lg
+                    bg-warning
+                    px-3
+                    text-xs
+                    font-medium
+                    text-white
+                    transition
+                    hover:opacity-90
+                  "
+                >
+                  ជ្រើសរើស
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ======================== FORMS ======================== */}
-
+      {/* Certificate form */}
       {type === "certificate" && (
         <CertificateForm
           form={form}
@@ -232,6 +286,7 @@ export default function CreateDocumentPage() {
         />
       )}
 
+      {/* ID card form */}
       {type === "id_card" && (
         <IdCardForm
           form={form}

@@ -20,7 +20,10 @@ const DEFAULT_USER = {
   profile_photo: "/profile.png",
 };
 
-export default function IdCard({ user }) {
+export default function IdCard({
+  user,
+  templatePreview = "",
+}) {
   const displayUser = user || DEFAULT_USER;
 
   const hasSelectedUser = Boolean(displayUser.id);
@@ -47,15 +50,48 @@ export default function IdCard({ user }) {
           shadow-lg
         "
       >
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white to-[#eef4fb]" />
+        {/* Custom uploaded background */}
+
+        {templatePreview ? (
+          <>
+            <img
+              src={templatePreview}
+              alt="ID card background template"
+              className="
+                absolute
+                inset-0
+                h-full
+                w-full
+                object-cover
+              "
+            />
+
+            {/*
+             * White overlay keeps member information readable.
+             * Lower opacity if the uploaded design becomes too faded.
+             */}
+            <div className="absolute inset-0 bg-white/35" />
+          </>
+        ) : (
+          <div
+            className="
+              absolute
+              inset-0
+              bg-gradient-to-br
+              from-white
+              to-[#eef4fb]
+            "
+          />
+        )}
 
         {/* Footer */}
+
         <div
           className="
             absolute
             bottom-0
             left-0
+            z-20
             flex
             h-[42px]
             w-full
@@ -71,12 +107,14 @@ export default function IdCard({ user }) {
         </div>
 
         {/* Content */}
+
         <div className="relative z-10 p-6">
           {/* Header */}
+
           <div className="flex items-center gap-3">
             <Image
               src="/logo.png"
-              alt="logo"
+              alt="Cambodian Youth Nursery Association logo"
               width={55}
               height={55}
               className="object-contain"
@@ -102,8 +140,10 @@ export default function IdCard({ user }) {
           </div>
 
           {/* Body */}
+
           <div className="mt-6 flex gap-7">
             {/* Profile photo */}
+
             <div
               className="
                 relative
@@ -122,11 +162,9 @@ export default function IdCard({ user }) {
                     : "/profile.png"
                 }
                 alt={
-                  hasSelectedUser
-                    ? displayUser.name_kh ||
-                      displayUser.name_en ||
-                      "រូបថតសមាជិក"
-                    : "រូបថតសមាជិក"
+                  displayUser.name_kh ||
+                  displayUser.name_en ||
+                  "រូបថតសមាជិក"
                 }
                 fill
                 className="object-cover"
@@ -134,7 +172,8 @@ export default function IdCard({ user }) {
               />
             </div>
 
-            {/* Information */}
+            {/* Member information */}
+
             <div className="min-w-0 flex-1">
               <h2
                 className="
@@ -150,34 +189,56 @@ export default function IdCard({ user }) {
               <div className="grid grid-cols-2 gap-x-8 gap-y-3">
                 <Info
                   label="ឈ្មោះ"
-                  value={hasSelectedUser ? displayUser.name_kh : ""}
+                  value={
+                    hasSelectedUser
+                      ? displayUser.name_kh
+                      : ""
+                  }
                 />
 
                 <Info
                   label="ភេទ"
-                  value={hasSelectedUser ? displayUser.gender : ""}
+                  value={
+                    hasSelectedUser
+                      ? displayUser.gender
+                      : ""
+                  }
                 />
 
                 <Info
                   label="អ៊ីមែល"
-                  value={hasSelectedUser ? displayUser.email : ""}
+                  value={
+                    hasSelectedUser
+                      ? displayUser.email
+                      : ""
+                  }
                 />
 
                 <Info
                   label="លេខទូរសព្ទ"
-                  value={hasSelectedUser ? displayUser.phone : ""}
+                  value={
+                    hasSelectedUser
+                      ? displayUser.phone
+                      : ""
+                  }
                 />
 
                 <Info
                   label="ថ្ងៃកំណើត"
                   value={
-                    hasSelectedUser ? displayUser.date_of_birth : ""
+                    hasSelectedUser
+                      ? displayUser.date_of_birth
+                      : ""
                   }
                 />
 
                 <Info
                   label="សាខា"
-                  value={hasSelectedUser ? displayUser.branch : ""}
+                  value={
+                    hasSelectedUser
+                      ? displayUser.branch
+                      : ""
+                  }
                 />
               </div>
             </div>
@@ -191,7 +252,9 @@ export default function IdCard({ user }) {
 function Info({ label, value }) {
   return (
     <div className="min-w-0">
-      <p className="text-[10px] text-gray-500">{label}</p>
+      <p className="text-[10px] text-gray-500">
+        {label}
+      </p>
 
       <p
         className="
