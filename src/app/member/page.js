@@ -159,7 +159,7 @@ export default function MembersPage() {
       const search = query.toLowerCase();
 
       const matchesQuery =
-        m.name_kh?.toLowerCase().includes(search) || m.phone?.includes(query);
+        m.name_kh?.toLowerCase().includes(search) ;
 
       const matchesBranch = !branchFilter || m.branch === branchFilter;
 

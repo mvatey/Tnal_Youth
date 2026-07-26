@@ -48,7 +48,7 @@ export default function CompanyDocumentPage() {
       header: "ល.រ",
       width: "w-[6%]",
       align: "center",
-      render: (_, index) => index + 1,
+      render: (_, index) => index ,
     },
     {
       header: "ឯកសារ",

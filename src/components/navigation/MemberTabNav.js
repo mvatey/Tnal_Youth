@@ -22,13 +22,16 @@ export default function MemberTabNav({ memberId }) {
     {
       name: "ការធ្វើវិភាគទាន",
       href: `/member/memberInfo/${memberId}/donation`,
+    },{
+      name: "ការបរិច្ចាក",
+      href: `/member/memberInfo/${memberId}/sponsor`,
     },
     
   ];
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="grid grid-cols-4">
+      <div className="grid grid-cols-5">
         {tabs.map((tab) => {
           const active = pathname === tab.href;
 

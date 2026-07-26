@@ -3,13 +3,13 @@
 import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 
-import DataTable from "@/components/table/DataTable.js";
-import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal.js";
+import DataTable from "@/components/table/DataTable";
+import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal";
 
-import donationData from "@/data/donation.json";
+import sponsorData from "@/data/sponsor.json";
 
-export default function DonationPage() {
-  const [donations, setDonations] = useState(donationData);
+export default function SponsorDonationPage() {
+  const [sponsors, setSponsors] = useState(sponsorData);
 
   const [query, setQuery] = useState("");
 
@@ -17,60 +17,53 @@ export default function DonationPage() {
 
   const [deleteModal, setDeleteModal] = useState(false);
 
-  const [selectedDonation, setSelectedDonation] = useState(null);
+  const [selectedSponsor, setSelectedSponsor] = useState(null);
 
   const paymentMethods = useMemo(() => {
-    return [...new Set(donations.map((item) => item.paymentMethod))];
-  }, [donations]);
+    return [...new Set(sponsors.map((item) => item.paymentMethod))];
+  }, [sponsors]);
 
   const filteredData = useMemo(() => {
-    return donations.filter((item) => {
+    return sponsors.filter((item) => {
       const search = query.toLowerCase();
 
       const matchesQuery =
-        item.month.toLowerCase().includes(search);
+        item.amount.toLowerCase().includes(search);
 
       const matchesMethod =
-        !methodFilter || item.paymentMethod === methodFilter;
+        !methodFilter ||
+        item.paymentMethod === methodFilter;
 
       return matchesQuery && matchesMethod;
     });
-  }, [donations, query, methodFilter]);
+  }, [sponsors, query, methodFilter]);
 
   const handleDelete = () => {
-    if (!selectedDonation) return;
+    if (!selectedSponsor) return;
 
-    setDonations((prev) =>
-      prev.filter((item) => item.id !== selectedDonation.id),
+    setSponsors((previous) =>
+      previous.filter(
+        (item) => item.id !== selectedSponsor.id,
+      ),
     );
 
     setDeleteModal(false);
 
-    setSelectedDonation(null);
+    setSelectedSponsor(null);
   };
 
   const columns = [
     {
-      header: "ល.រ",
-      width: "w-[6%]",
-      align: "center",
-      render: (_, index) => index,
-    },
+    header: "ល.រ",
+    width: "w-[6%]",
+    align: "center",
+    render: (_, index) => index ,
+  },
 
-    {
-      header: "ប្រចាំខែ",
-      width: "w-[16%]",
-      align: "left",
-      render: (item) => (
-        <span>
-          {item.month}, {item.year}
-        </span>
-      ),
-    },
 
     {
       header: "ចំនួន",
-      width: "w-[14%]",
+      width: "w-[15%]",
       align: "left",
       accessor: "amount",
     },
@@ -91,7 +84,7 @@ export default function DonationPage() {
 
     {
       header: "វិធីសាស្រ្តទូទាត់",
-      width: "w-[18%]",
+      width: "w-[19%]",
       align: "left",
       accessor: "paymentMethod",
     },
@@ -103,17 +96,18 @@ export default function DonationPage() {
 
       render: (item) => (
         <button
+          type="button"
           onClick={() => {
-            setSelectedDonation(item);
-
+            setSelectedSponsor(item);
             setDeleteModal(true);
           }}
           className="
-          inline-flex
-          items-center
-          justify-center
-          text-red-500
-          hover:text-red-600
+            inline-flex
+            items-center
+            justify-center
+            text-red-500
+            transition
+            hover:text-red-600
           "
         >
           <Trash2 className="h-5 w-5" />
@@ -125,11 +119,8 @@ export default function DonationPage() {
   const filters = [
     {
       value: methodFilter,
-
       onChange: setMethodFilter,
-
       options: paymentMethods,
-
       placeholder: "វិធីសាស្រ្តទូទាត់",
     },
   ];
@@ -137,7 +128,7 @@ export default function DonationPage() {
   return (
     <div className="space-y-3">
       <h2 className="text-lg font-semibold text-text-primary">
-        បញ្ជីការធ្វើវិភាគទាន
+        បញ្ជីវិភាគទានអ្នកឧបត្ថម្ភ
       </h2>
 
       <DataTable
@@ -148,20 +139,20 @@ export default function DonationPage() {
         onSearchChange={setQuery}
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
+        downloadFilename="sponsor-donation.csv"
       />
 
       <ConfirmDeleteModal
         open={deleteModal}
         onClose={() => {
           setDeleteModal(false);
-
-          setSelectedDonation(null);
+          setSelectedSponsor(null);
         }}
         onConfirm={handleDelete}
         title="លុបវិភាគទាន?"
         description={
-          selectedDonation
-            ? `តើអ្នកប្រាកដថាចង់លុបវិភាគទាន ${selectedDonation.amount} នេះទេ?`
+          selectedSponsor
+            ? `តើអ្នកប្រាកដថាចង់លុបវិភាគទាន ${selectedSponsor.amount} នេះទេ?`
             : "តើអ្នកប្រាកដថាចង់លុបទិន្នន័យនេះទេ?"
         }
         cancelLabel="បោះបង់"

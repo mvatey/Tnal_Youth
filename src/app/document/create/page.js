@@ -48,7 +48,6 @@ export default function CreateDocumentPage() {
 
   const handleSave = () => {
     console.log("Created document:", form);
-
     router.push("/document/member");
   };
 
@@ -56,130 +55,174 @@ export default function CreateDocumentPage() {
     type === "certificate"
       ? "បង្កើតវិញ្ញាបនបត្រ"
       : type === "id_card"
-        ? "បង្កើតប័ណ្ណសមាជិក"
-        : "បង្កើតឯកសារ";
+      ? "បង្កើតប័ណ្ណសមាជិក"
+      : "បង្កើតឯកសារ";
 
   const pageDescription =
     type === "certificate"
       ? "បំពេញព័ត៌មានដើម្បីបង្កើតវិញ្ញាបនបត្រ"
       : type === "id_card"
-        ? "បំពេញព័ត៌មានដើម្បីបង្កើតប័ណ្ណសមាជិក"
-        : "ជ្រើសរើសប្រភេទឯកសារដែលអ្នកចង់បង្កើត";
+      ? "បំពេញព័ត៌មានដើម្បីបង្កើតប័ណ្ណសមាជិក"
+      : "ជ្រើសរើសប្រភេទឯកសារដែលអ្នកចង់បង្កើត";
 
   return (
     <div className="min-h-full bg-bg-page-gray px-5 py-4">
-      {/* Header */}
-      <div className="mb-8">
-        {/* Breadcrumb */}
-        <div className="mb-3 flex items-center gap-2 text-sm">
-          <button
-            type="button"
-            onClick={() => router.push("/document/member")}
-            className="font-medium text-text-mute transition hover:text-primary"
-          >
-            បញ្ជីឯកសារ
-          </button>
+      {/* Breadcrumb */}
+      <div className="mb-3 flex items-center gap-2 text-sm">
+        <button
+          type="button"
+          onClick={() => router.push("/document/member")}
+          className="font-medium text-text-mute transition hover:text-primary"
+        >
+          បញ្ជីឯកសារ
+        </button>
 
-          <span className="text-lg text-text-mute">›</span>
+        <span className="text-lg text-text-mute">›</span>
 
-          {type && (
-            <>
-              <button
-                type="button"
-                onClick={() => setType("")}
-                className="font-medium text-text-mute transition hover:text-primary"
-              >
-                ប្រភេទឯកសារ
-              </button>
+        {type && (
+          <>
+            <button
+              type="button"
+              onClick={() => setType("")}
+              className="font-medium text-text-mute transition hover:text-primary"
+            >
+              ប្រភេទឯកសារ
+            </button>
 
-              <span className="text-lg text-text-mute">›</span>
-            </>
-          )}
+            <span className="text-lg text-text-mute">›</span>
+          </>
+        )}
 
-          <span className="font-semibold text-primary">
-            {pageTitle}
-          </span>
-        </div>
-
-        {/* Main title */}
-        <h1 className="text-[30px] font-bold leading-tight text-primary">
+        <span className="font-semibold text-primary">
           {pageTitle}
-        </h1>
-
-        {/* Subtitle */}
-        <p className="mt-3 text-sm text-text-secondary">
-          {pageDescription}
-        </p>
+        </span>
       </div>
 
-      {/* Select document type */}
+      {/* Title */}
+      <h1 className="text-[30px] font-bold text-primary">
+        {pageTitle}
+      </h1>
+
+      <p className="mt-2 text-sm text-text-secondary">
+        {pageDescription}
+      </p>
+
+      {/* ======================== SELECT TYPE ======================== */}
+
       {!type && (
-        <div className="mx-auto mt-10 grid max-w-[900px] grid-cols-1 gap-10 md:grid-cols-2">
-          {/* Certificate */}
-          <button
-            type="button"
-            onClick={() => selectDocumentType("certificate")}
-            className="
-              group
-              relative
-              flex
-              h-[210px]
-              w-full
-              items-center
-              justify-center
-              overflow-hidden
-              rounded-[24px]
-              border
-              border-border
-              bg-white
-              shadow-md
-              transition-all
-              duration-200
-              hover:-translate-y-1
-              hover:shadow-xl
-            "
-          >
-            <div className="absolute left-0 top-0 h-[8px] w-full bg-primary" />
+        <div className="mt-8">
+          <div className="flex flex-wrap gap-6">
+            {/* Certificate */}
+            <div
+              className="
+                w-[300px]
+                overflow-hidden
+                rounded-2xl
+                border
+                border-gray-200
+                bg-white
+                shadow-md
+                transition
+                duration-200
+                hover:-translate-y-1
+                hover:shadow-xl
+              "
+            >
+              <div className="h-[6px] bg-primary" />
 
-            <span className="text-2xl font-bold text-[#15204F]">
-              វិញ្ញាបនបត្រ
-            </span>
-          </button>
+              <div className="flex h-[130px] flex-col justify-between p-5">
+                <div>
+                  <h2 className="text-lg font-bold text-primary">
+                    វិញ្ញាបនបត្រ
+                  </h2>
 
-          {/* ID Card */}
-          <button
-            type="button"
-            onClick={() => selectDocumentType("id_card")}
-            className="
-              group
-              relative
-              flex
-              h-[210px]
-              w-full
-              items-center
-              justify-center
-              overflow-hidden
-              rounded-[24px]
-              border
-              border-border
-              bg-white
-              shadow-md
-              transition-all
-              duration-200
-              hover:-translate-y-1
-              hover:shadow-xl
-            "
-          >
-            <div className="absolute left-0 top-0 h-[8px] w-full bg-warning" />
+                  <p className="mt-1 text-xs text-text-secondary">
+                    បង្កើតវិញ្ញាបនបត្រសម្រាប់សមាជិក
+                  </p>
+                </div>
 
-            <span className="text-2xl font-bold text-[#15204F]">
-              ប័ណ្ណសមាជិក
-            </span>
-          </button>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      selectDocumentType("certificate")
+                    }
+                    className="
+                      h-8
+                      w-[90px]
+                      rounded-lg
+                      bg-primary
+                      text-xs
+                      font-medium
+                      text-white
+                      transition
+                      hover:opacity-90
+                    "
+                  >
+                    ជ្រើសរើស
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Member Card */}
+            <div
+              className="
+                w-[300px]
+                overflow-hidden
+                rounded-2xl
+                border
+                border-gray-200
+                bg-white
+                shadow-md
+                transition
+                duration-200
+                hover:-translate-y-1
+                hover:shadow-xl
+              "
+            >
+              <div className="h-[6px] bg-warning" />
+
+              <div className="flex h-[130px] flex-col justify-between p-5">
+                <div>
+                  <h2 className="text-lg font-bold text-primary">
+                    ប័ណ្ណសមាជិក
+                  </h2>
+
+                  <p className="mt-1 text-xs text-text-secondary">
+                    បង្កើតប័ណ្ណសម្គាល់សមាជិក
+                  </p>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      selectDocumentType("id_card")
+                    }
+                    className="
+                      h-8
+                      w-[90px]
+                      rounded-lg
+                      bg-warning
+                      text-xs
+                      font-medium
+                      text-white
+                      transition
+                      hover:opacity-90
+                    "
+                  >
+                    ជ្រើសរើស
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Certificate form */}
+      {/* ======================== FORMS ======================== */}
+
       {type === "certificate" && (
         <CertificateForm
           form={form}
@@ -189,7 +232,6 @@ export default function CreateDocumentPage() {
         />
       )}
 
-      {/* ID card form */}
       {type === "id_card" && (
         <IdCardForm
           form={form}

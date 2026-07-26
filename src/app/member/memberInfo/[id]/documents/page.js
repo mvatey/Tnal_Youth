@@ -5,7 +5,6 @@ import CertificateCard from "@/components/card/certificate";
 import DocumentPreviewCard from "@/components/card/DocumentPreviewCard";
 import LetterOfAppointment from "@/components/card/LetterOfAppointment";
 
-
 import users from "@/data/members.json";
 
 export default async function Document({ params }) {
@@ -46,9 +45,15 @@ export default async function Document({ params }) {
         filename="certificate.csv"
         previewClass="scale-[0.35]"
       >
-        <CertificateCard user={user} />
+        <CertificateCard
+          recipientType="member"
+          member={user}
+          language="km"
+          color="#12224c"
+          font="Noto Sans"
+          fontSize="medium"
+        />
       </DocumentPreviewCard>
-
     </div>
   );
 }
