@@ -1,11 +1,47 @@
+"use client";
+
 import Image from "next/image";
+import {
+  Battambang,
+  Kantumruy_Pro,
+  Moul,
+  Noto_Sans_Khmer,
+} from "next/font/google";
+
+const kantumruyPro = Kantumruy_Pro({
+  subsets: ["khmer"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+const notoSansKhmer = Noto_Sans_Khmer({
+  subsets: ["khmer"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+const battambang = Battambang({
+  subsets: ["khmer"],
+  weight: ["400", "700"],
+  display: "swap",
+});
+
+const moul = Moul({
+  subsets: ["khmer"],
+  weight: ["400"],
+  display: "swap",
+});
 
 const TEXT_COLOR = "#12224c";
 const DESCRIPTION_COLOR = "#4b5563";
 const DEFAULT_BORDER_COLOR = "#12224c";
-const certificateFont = "km"
-  ? "var(--font-kantumruy-pro)"
-  : font;
+
+const FONT_FAMILIES = {
+  "Noto Sans": notoSansKhmer.style.fontFamily,
+  "Kantumruy Pro": kantumruyPro.style.fontFamily,
+  Battambang: battambang.style.fontFamily,
+  Moul: moul.style.fontFamily,
+};
 
 const SIZE_STYLES = {
   small: {
@@ -13,7 +49,6 @@ const SIZE_STYLES = {
     name: "text-[23px]",
     description: "text-xs",
   },
-
 
   medium: {
     title: "text-[36px]",
@@ -39,11 +74,14 @@ export default function CertificateCard({
   description = "",
   templatePreview = "",
 }) {
-  const sizeStyle =
-    SIZE_STYLES[fontSize] || SIZE_STYLES.medium;
+  const sizeStyle = SIZE_STYLES[fontSize] || SIZE_STYLES.medium;
 
   const isKhmer = language === "km";
   const isMember = recipientType === "member";
+
+  const selectedFontFamily = FONT_FAMILIES[font] || FONT_FAMILIES["Noto Sans"];
+
+  const selectedFontWeight = font === "Moul" ? 400 : 700;
 
   /*
    * These certificate texts always remain English.
@@ -51,31 +89,19 @@ export default function CertificateCard({
   const mainTitle = "CERTIFICATE";
   const subTitle = "OF APPRECIATION";
 
-  const presentedText = isMember
-    ? "This certificate is proudly presented to"
-    : "This certificate is created for the activity";
+  const presentedText = "This certificate is proudly presented to";
 
   /*
    * Only the selected member/activity name changes language.
    */
-  const recipientName = isMember
-    ? isKhmer
-      ? member?.name_kh || "ឈ្មោះសមាជិក"
-      : member?.name_en ||
-        member?.name_kh ||
-        "Member Name"
-    : isKhmer
-      ? activity?.title_kh || "ឈ្មោះកម្មវិធី"
-      : activity?.title_en ||
-        activity?.title_kh ||
-        "Activity Name";
-
+  const recipientName = isKhmer
+    ? member?.name_kh || "ឈ្មោះសមាជិក"
+    : member?.name_en || member?.name_kh || "Member Name";
   const defaultDescription = isMember
     ? "For active participation and valuable contribution to the Cambodian Youth Nursery Association."
     : "For successfully organizing and completing this activity.";
 
-  const displayedDescription =
-    description?.trim() || defaultDescription;
+  const displayedDescription = description?.trim() || defaultDescription;
 
   return (
     <div className="flex w-full justify-center">
@@ -92,7 +118,6 @@ export default function CertificateCard({
         "
         style={{
           border: `10px solid ${color}`,
-          fontFamily: certificateFont,
         }}
       >
         {/* Background */}
@@ -111,7 +136,6 @@ export default function CertificateCard({
               "
             />
 
-            {/* Makes text easier to read over uploaded image */}
             <div className="absolute inset-0 bg-white/35" />
           </>
         ) : (
@@ -127,10 +151,6 @@ export default function CertificateCard({
               "
             />
 
-            {/*
-             * Decorative shapes have a fixed color.
-             * They do not change with the border picker.
-             */}
             <div
               className="
                 absolute
@@ -159,9 +179,8 @@ export default function CertificateCard({
           </>
         )}
 
-        {/*
-         * Only these two certificate borders use the selected color.
-         */}
+        {/* Border */}
+
         <div
           className="
             pointer-events-none
@@ -174,7 +193,7 @@ export default function CertificateCard({
           }}
         />
 
-        {/* Certificate content */}
+        {/* Certificate Content */}
 
         <div
           className="
@@ -189,8 +208,6 @@ export default function CertificateCard({
             text-center
           "
         >
-          {/* Logo */}
-
           <Image
             src="/logo.png"
             alt="Cambodian Youth Nursery Association logo"
@@ -198,8 +215,6 @@ export default function CertificateCard({
             height={70}
             className="object-contain"
           />
-
-          {/* Organization */}
 
           <h2
             className="
@@ -213,8 +228,6 @@ export default function CertificateCard({
           >
             Cambodian Youth Nursery Association
           </h2>
-
-          {/* Certificate title */}
 
           <h1
             className={`
@@ -244,8 +257,6 @@ export default function CertificateCard({
             {subTitle}
           </p>
 
-          {/* Presented text */}
-
           <p
             className="
               mt-5
@@ -257,8 +268,7 @@ export default function CertificateCard({
           >
             {presentedText}
           </p>
-
-          {/* Member or activity name */}
+          {/* Member or Activity Name */}
 
           <h2
             className={`
@@ -267,13 +277,14 @@ export default function CertificateCard({
               border-b-2
               px-10
               pb-2
-              font-bold
               leading-relaxed
               ${sizeStyle.name}
             `}
             style={{
               color: TEXT_COLOR,
               borderColor: TEXT_COLOR,
+              fontFamily: selectedFontFamily,
+              fontWeight: selectedFontWeight,
             }}
           >
             {recipientName}
@@ -295,34 +306,35 @@ export default function CertificateCard({
             {displayedDescription}
           </p>
 
-          {/* Activity information */}
+          {/* Activity Information */}
 
-          {!isMember && activity && (
+          {recipientType === "activity" && activity && (
             <div
               className="
-                mt-3
-                flex
-                flex-wrap
-                justify-center
-                gap-x-6
-                gap-y-1
-                text-xs
-              "
+      mt-3
+      flex
+      flex-wrap
+      justify-center
+      gap-x-6
+      gap-y-1
+      text-xs
+    "
               style={{
                 color: DESCRIPTION_COLOR,
               }}
             >
               <span>
-                Location: {activity.location || "-"}
+                Activity:{" "}
+                {isKhmer
+                  ? activity.title_kh || "-"
+                  : activity.title_en || activity.title_kh || "-"}
               </span>
 
-              <span>
-                Date: {activity.startDate || "-"}
-              </span>
+              <span>Location: {activity.location || "-"}</span>
 
-              <span>
-                Branch: {activity.branch || "-"}
-              </span>
+              <span>Date: {activity.startDate || "-"}</span>
+
+              <span>Branch: {activity.branch || "-"}</span>
             </div>
           )}
 
@@ -351,9 +363,7 @@ export default function CertificateCard({
                 "
               />
 
-              <p className="text-xs">
-                President
-              </p>
+              <p className="text-xs">President</p>
             </div>
 
             <div className="text-center">
@@ -366,9 +376,7 @@ export default function CertificateCard({
                 "
               />
 
-              <p className="text-xs">
-                Date
-              </p>
+              <p className="text-xs">Date</p>
             </div>
           </div>
         </div>

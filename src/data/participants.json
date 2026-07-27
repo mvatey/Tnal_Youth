@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "activityId": 1,
+    "memberId": 1,
+    "status": "JOINED"
+  },
+  {
+    "id": 2,
+    "activityId": 1,
+    "memberId": 2,
+    "status": "JOINED"
+  },
+  {
+    "id": 3,
+    "activityId": 2,
+    "memberId": 3,
+    "status": "JOINED"
+  }
+]

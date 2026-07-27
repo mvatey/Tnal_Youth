@@ -8,13 +8,10 @@ import CertificateCard from "@/components/card/certificate";
 
 import membersData from "@/data/members.json";
 import activities from "@/data/activity.json";
+import participantsData from "@/data/participants.json";
 
 const BRANCH_OPTIONS = [
-  ...new Set(
-    membersData
-      .map((member) => member.branch)
-      .filter(Boolean),
-  ),
+  ...new Set(membersData.map((member) => member.branch).filter(Boolean)),
 ].map((branch) => ({
   label: branch,
   value: branch,
@@ -34,7 +31,7 @@ const ACTIVITY_OPTIONS = activities.map((activity) => ({
 
 const FONT_OPTIONS = [
   {
-    label: "Noto Sans",
+    label: "Noto Sans Khmer",
     value: "Noto Sans",
   },
   {
@@ -42,12 +39,12 @@ const FONT_OPTIONS = [
     value: "Kantumruy Pro",
   },
   {
-    label: "Arial",
-    value: "Arial",
+    label: "Battambang",
+    value: "Battambang",
   },
   {
-    label: "Georgia",
-    value: "Georgia",
+    label: "Moul",
+    value: "Moul",
   },
 ];
 
@@ -87,25 +84,33 @@ const COLORS = [
   "#000000",
 ];
 
-export default function CertificateForm({
-  form,
-  setForm,
-  onSave,
-  onClose,
-}) {
+export default function CertificateForm({ form, setForm, onSave, onClose }) {
   const recipientType = form.recipientType || "member";
   const language = form.language || "km";
   const selectedColor = form.color || "#12224c";
 
   const selectedMember = membersData.find(
-    (member) =>
-      String(member.id) === String(form.memberId),
+    (member) => String(member.id) === String(form.memberId),
   );
 
   const selectedActivity = activities.find(
-    (activity) =>
-      String(activity.id) === String(form.activityId),
+    (activity) => String(activity.id) === String(form.activityId),
   );
+  const selectedActivityMembers =
+    recipientType === "activity"
+      ? participantsData
+          .filter(
+            (participant) =>
+              String(participant.activityId) === String(form.activityId) &&
+              participant.status !== "CANCELLED",
+          )
+          .map((participant) =>
+            membersData.find(
+              (member) => String(member.id) === String(participant.memberId),
+            ),
+          )
+          .filter(Boolean)
+      : [];
 
   const updateField = (field) => (event) => {
     setForm((previous) => ({
@@ -120,10 +125,8 @@ export default function CertificateForm({
     setForm((previous) => ({
       ...previous,
       recipientType: selectedType,
-
       memberId: "",
       member: "",
-
       activityId: "",
       activity: "",
     }));
@@ -164,20 +167,18 @@ export default function CertificateForm({
 
     if (!selectedFile) return;
 
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-    ];
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
     if (!allowedTypes.includes(selectedFile.type)) {
       alert("សូមជ្រើសរើសឯកសារ JPG, PNG ឬ WEBP");
+
       event.target.value = "";
       return;
     }
 
     if (selectedFile.size > 5 * 1024 * 1024) {
       alert("ទំហំឯកសារមិនអាចលើស 5MB");
+
       event.target.value = "";
       return;
     }
@@ -216,7 +217,8 @@ export default function CertificateForm({
         : Boolean(form.activityId);
 
     if (!hasTitle || !hasRecipient) {
-      alert("សូមបំពេញឈ្មោះឯកសារ និងជ្រើសរើសអ្នកទទួល");
+      alert("សូមបំពេញព័ត៌មានទាំងអស់");
+
       return;
     }
 
@@ -257,7 +259,7 @@ export default function CertificateForm({
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
-              ប្រភេទអ្នកទទួល
+              ប្រភេទ
             </label>
 
             <div className="flex items-center gap-6">
@@ -270,7 +272,6 @@ export default function CertificateForm({
                   onChange={handleRecipientTypeChange}
                   className="h-4 w-4 accent-primary"
                 />
-
                 សមាជិក
               </label>
 
@@ -283,7 +284,6 @@ export default function CertificateForm({
                   onChange={handleRecipientTypeChange}
                   className="h-4 w-4 accent-primary"
                 />
-
                 កម្មវិធី
               </label>
             </div>
@@ -310,7 +310,6 @@ export default function CertificateForm({
               options={ACTIVITY_OPTIONS}
             />
           )}
-
           {/* Description */}
 
           <div>
@@ -399,10 +398,7 @@ export default function CertificateForm({
                   hover:bg-secondary-light/30
                 "
               >
-                <UploadCloud
-                  size={27}
-                  className="mb-2 text-[#62708f]"
-                />
+                <UploadCloud size={27} className="mb-2 text-[#62708f]" />
 
                 <p className="text-xs font-semibold text-primary">
                   បញ្ចូលរូបភាពគំរូ
@@ -412,9 +408,7 @@ export default function CertificateForm({
                   JPG, PNG, WEBP — មិនលើស 5MB
                 </p>
 
-                <p className="text-[10px] text-gray-400">
-                  សមាមាត្រណែនាំ 16:9
-                </p>
+                <p className="text-[10px] text-gray-400">សមាមាត្រណែនាំ 16:9</p>
 
                 <input
                   type="file"
@@ -505,20 +499,63 @@ export default function CertificateForm({
 
           {/* Live certificate */}
 
-          <div className="flex min-h-[500px] items-center justify-center overflow-hidden rounded-lg bg-gray-100 p-5">
-            <CertificateCard
-              recipientType={recipientType}
-              member={selectedMember}
-              activity={selectedActivity}
-              language={language}
-              color={selectedColor}
-              font={form.font || "Noto Sans"}
-              fontSize={form.fontSize || "medium"}
-              description={form.description || ""}
-              templatePreview={form.templatePreview || ""}
-            />
-          </div>
+          <div
+            className="
+    h-[560px]
+    overflow-y-auto
+    overflow-x-hidden
+    rounded-lg
+    bg-gray-100
+    p-5
+  "
+          >
+            {recipientType === "member" ? (
+              <div className="flex min-h-full items-center justify-center">
+                <CertificateCard
+                  recipientType="member"
+                  member={selectedMember}
+                  activity={null}
+                  language={language}
+                  color={selectedColor}
+                  font={form.font || "Noto Sans"}
+                  fontSize={form.fontSize || "medium"}
+                  description={form.description || ""}
+                  templatePreview={form.templatePreview || ""}
+                />
+              </div>
+            ) : !form.activityId ? (
+              <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                សូមជ្រើសរើសកម្មវិធី
+              </div>
+            ) : selectedActivityMembers.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                មិនមានសមាជិកចូលរួមក្នុងកម្មវិធីនេះទេ
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {selectedActivityMembers.map((member, index) => (
+                  <div key={member.id}>
+                    <div className="mb-2 text-sm font-semibold text-text-primary">
+                      វិញ្ញាបនបត្រ {index + 1} /{" "}
+                      {selectedActivityMembers.length}
+                    </div>
 
+                    <CertificateCard
+                      recipientType="activity"
+                      member={member}
+                      activity={selectedActivity}
+                      language={language}
+                      color={selectedColor}
+                      font={form.font || "Noto Sans"}
+                      fontSize={form.fontSize || "medium"}
+                      description={form.description || ""}
+                      templatePreview={form.templatePreview || ""}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           {/* Buttons */}
 
           <div className="mt-5 flex items-center gap-4">
@@ -526,19 +563,19 @@ export default function CertificateForm({
               type="button"
               onClick={onClose}
               className="
-                h-11
-                w-[150px]
-                shrink-0
-                rounded-lg
-                border
-                border-gray-300
-                bg-white
-                text-sm
-                font-medium
-                text-text-primary
-                transition
-                hover:bg-gray-50
-              "
+      h-11
+      w-[150px]
+      shrink-0
+      rounded-lg
+      border
+      border-gray-300
+      bg-white
+      text-sm
+      font-medium
+      text-text-primary
+      transition
+      hover:bg-gray-50
+    "
             >
               បោះបង់
             </button>
@@ -547,23 +584,22 @@ export default function CertificateForm({
               type="button"
               onClick={handleSave}
               className="
-                flex
-                h-11
-                flex-1
-                items-center
-                justify-center
-                gap-2
-                rounded-lg
-                bg-primary
-                text-sm
-                font-medium
-                text-white
-                transition
-                hover:opacity-90
-              "
+      flex
+      h-11
+      flex-1
+      items-center
+      justify-center
+      gap-2
+      rounded-lg
+      bg-primary
+      text-sm
+      font-medium
+      text-white
+      transition
+      hover:opacity-90
+    "
             >
               <FolderPlus size={19} />
-
               បង្កើតឯកសារ
             </button>
           </div>
