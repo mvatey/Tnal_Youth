@@ -35,6 +35,12 @@ export default function LoginPage() {
   async function handleSubmit(event) {
     event.preventDefault();
 
+    console.log("LOGIN HANDLER ENTERED");
+
+    if (loading) {
+      return;
+    }
+
     const normalizedLogin = phoneOrEmail.trim();
 
     if (!normalizedLogin || !password) {
@@ -54,6 +60,7 @@ export default function LoginPage() {
           "Content-Type": "application/json",
         },
         credentials: "include",
+        cache: "no-store",
         body: JSON.stringify({
           phoneOrEmail: normalizedLogin,
           password,
@@ -61,21 +68,74 @@ export default function LoginPage() {
         }),
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
 
-      if (!response.ok) {
+      let data = {};
+
+      try {
+        data = responseText
+          ? JSON.parse(responseText)
+          : {};
+      } catch (parseError) {
+        console.error(
+          "Invalid login response JSON:",
+          responseText,
+          parseError
+        );
+
         setError(
-          data.message ||
-            "លេខទូរស័ព្ទ ឬលេខសម្ងាត់មិនត្រឹមត្រូវ"
+          "ម៉ាស៊ីនមេបានផ្ញើទិន្នន័យមិនត្រឹមត្រូវ"
         );
         return;
       }
 
-      const currentUser = data.user;
+      console.log("Login response:", {
+        status: response.status,
+        data,
+      });
+
+      if (!response.ok) {
+        setError(
+          data?.message ||
+            "លេខទូរស័ព្ទ/អ៊ីមែល ឬលេខសម្ងាត់មិនត្រឹមត្រូវ"
+        );
+        return;
+      }
+
+      const currentUser =
+        data?.data?.user ||
+        data?.data ||
+        data?.user ||
+        null;
 
       if (!currentUser) {
+        console.error(
+          "No user returned after login:",
+          data
+        );
+
         setError(
           "មិនអាចទាញយកព័ត៌មានគណនីបានទេ"
+        );
+        return;
+      }
+
+      const normalizedUser = {
+        ...currentUser,
+        role: String(currentUser?.role || "")
+          .trim()
+          .replace(/^ROLE_/, "")
+          .toUpperCase(),
+      };
+
+      if (!normalizedUser.role) {
+        console.error(
+          "User role is missing:",
+          normalizedUser
+        );
+
+        setError(
+          "គណនីនេះមិនមានតួនាទីត្រឹមត្រូវ"
         );
         return;
       }
@@ -91,16 +151,21 @@ export default function LoginPage() {
         );
       }
 
-      setUser(currentUser);
+      setUser(normalizedUser);
 
       const homePath = getRoleHomePath(
-        currentUser.role
+        normalizedUser.role
       );
+
+      console.log("Redirecting after login:", {
+        role: normalizedUser.role,
+        homePath,
+      });
 
       router.replace(homePath);
       router.refresh();
-    } catch (error) {
-      console.error("Login error:", error);
+    } catch (loginError) {
+      console.error("Login error:", loginError);
 
       setError(
         "មានបញ្ហាកើតឡើង សូមព្យាយាមម្តងទៀត"
@@ -135,13 +200,13 @@ export default function LoginPage() {
       <form
         onSubmit={handleSubmit}
         autoComplete="on"
+        noValidate
         className="w-full space-y-5"
       >
         <TextInput
           label="លេខទូរស័ព្ទប្រើប្រាស់ ឬ អ៊ីមែល"
           icon={User}
           placeholder="បញ្ចូលលេខទូរស័ព្ទ ឬ អ៊ីមែល"
-          name="username"
           autoComplete="username"
           value={phoneOrEmail}
           onChange={(event) =>
@@ -152,7 +217,6 @@ export default function LoginPage() {
         <PasswordInput
           label="លេខសម្ងាត់"
           placeholder="បញ្ចូលលេខសម្ងាត់"
-          name="password"
           autoComplete="current-password"
           value={password}
           onChange={(event) =>
