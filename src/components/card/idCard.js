@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 
 const ROLE_LABELS = {
@@ -24,18 +26,32 @@ export default function IdCard({
   user,
   templatePreview = "",
 }) {
-  const displayUser = user || DEFAULT_USER;
+  const displayUser = {
+    ...DEFAULT_USER,
+    ...(user || {}),
+  };
 
   const hasSelectedUser = Boolean(displayUser.id);
+  const hasCustomTemplate = Boolean(templatePreview);
 
   const memberId = hasSelectedUser
     ? String(displayUser.id).padStart(4, "0")
     : "0000";
 
+  const roleKey =
+    typeof displayUser.role === "string"
+      ? displayUser.role.toLowerCase()
+      : "member";
+
   const roleLabel =
-    ROLE_LABELS[displayUser.role] ||
+    ROLE_LABELS[roleKey] ||
     displayUser.role ||
     ROLE_LABELS.member;
+
+  const profilePhoto =
+    displayUser.profile_photo ||
+    displayUser.profilePhoto ||
+    "/profile.png";
 
   return (
     <div className="flex w-full justify-center py-4">
@@ -44,15 +60,18 @@ export default function IdCard({
           relative
           h-[340px]
           w-[560px]
+          max-w-full
           overflow-hidden
           rounded-2xl
           bg-white
           shadow-lg
         "
       >
-        {/* Custom uploaded background */}
+        {/* ====================================
+            BACKGROUND
+        ==================================== */}
 
-        {templatePreview ? (
+        {hasCustomTemplate ? (
           <>
             <img
               src={templatePreview}
@@ -62,29 +81,19 @@ export default function IdCard({
                 inset-0
                 h-full
                 w-full
-                object-cover
+                object-fill
               "
             />
 
-            {/*
-             * White overlay keeps member information readable.
-             * Lower opacity if the uploaded design becomes too faded.
-             */}
-            <div className="absolute inset-0 bg-white/35" />
+            <div className="absolute inset-0 bg-white/10" />
           </>
         ) : (
-          <div
-            className="
-              absolute
-              inset-0
-              bg-gradient-to-br
-              from-white
-              to-[#eef4fb]
-            "
-          />
+          <DefaultIdCardBackground />
         )}
 
-        {/* Footer */}
+        {/* ====================================
+            FOOTER
+        ==================================== */}
 
         <div
           className="
@@ -98,6 +107,8 @@ export default function IdCard({
             items-center
             justify-center
             bg-[#062f6b]
+            px-4
+            text-center
             text-xs
             font-semibold
             text-white
@@ -106,9 +117,19 @@ export default function IdCard({
           Member ID : NAS-{memberId}
         </div>
 
-        {/* Content */}
+        {/* ====================================
+            CARD CONTENT
+        ==================================== */}
 
-        <div className="relative z-10 p-6">
+        <div
+          className="
+            relative
+            z-10
+            h-full
+            p-6
+            pb-[58px]
+          "
+        >
           {/* Header */}
 
           <div className="flex items-center gap-3">
@@ -117,13 +138,14 @@ export default function IdCard({
               alt="Cambodian Youth Nursery Association logo"
               width={55}
               height={55}
-              className="object-contain"
+              className="shrink-0 object-contain"
               priority
             />
 
-            <div>
+            <div className="min-w-0">
               <h1
                 className="
+                  truncate
                   text-lg
                   font-bold
                   leading-tight
@@ -133,7 +155,14 @@ export default function IdCard({
                 Cambodian Youth Nursery Association
               </h1>
 
-              <p className="text-xs text-[#062f6b]">
+              <p
+                className="
+                  mt-1
+                  truncate
+                  text-xs
+                  text-[#062f6b]
+                "
+              >
                 សមាគមថ្នាលយុវជនកម្ពុជា
               </p>
             </div>
@@ -152,13 +181,16 @@ export default function IdCard({
                 shrink-0
                 overflow-hidden
                 rounded-xl
+                border-4
+                border-white
                 bg-gray-200
+                shadow-md
               "
             >
               <Image
                 src={
                   hasSelectedUser
-                    ? displayUser.profile_photo || "/profile.png"
+                    ? profilePhoto
                     : "/profile.png"
                 }
                 alt={
@@ -167,8 +199,8 @@ export default function IdCard({
                   "រូបថតសមាជិក"
                 }
                 fill
-                className="object-cover"
                 sizes="125px"
+                className="object-cover"
               />
             </div>
 
@@ -178,6 +210,7 @@ export default function IdCard({
               <h2
                 className="
                   mb-4
+                  truncate
                   text-xl
                   font-medium
                   text-[#062f6b]
@@ -192,6 +225,15 @@ export default function IdCard({
                   value={
                     hasSelectedUser
                       ? displayUser.name_kh
+                      : ""
+                  }
+                />
+
+                <Info
+                  label="ឈ្មោះអង់គ្លេស"
+                  value={
+                    hasSelectedUser
+                      ? displayUser.name_en
                       : ""
                   }
                 />
@@ -244,12 +286,139 @@ export default function IdCard({
             </div>
           </div>
         </div>
+
+        {/* ====================================
+            DEFAULT INNER BORDER
+        ==================================== */}
+
+        {!hasCustomTemplate && (
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-2
+              z-30
+              rounded-xl
+              border
+              border-[#062f6b]/20
+            "
+          />
+        )}
       </div>
     </div>
   );
 }
 
-function Info({ label, value }) {
+function DefaultIdCardBackground() {
+  return (
+    <div className="absolute inset-0 overflow-hidden bg-white">
+      {/* Main light background */}
+
+      <div
+        className="
+          absolute
+          inset-0
+          bg-gradient-to-br
+          from-white
+          via-[#f6f9ff]
+          to-[#dfe9ff]
+        "
+      />
+
+      {/* Dark left section */}
+
+      <div
+        className="
+          absolute
+          left-0
+          top-0
+          h-full
+          w-[32%]
+          bg-[#062f6b]
+        "
+      />
+
+      {/* White curved area */}
+
+      <div
+        className="
+          absolute
+          left-[21%]
+          top-[-22%]
+          h-[150%]
+          w-[28%]
+          rotate-[8deg]
+          rounded-[50%]
+          bg-white
+        "
+      />
+
+      {/* Top-right circle */}
+
+      <div
+        className="
+          absolute
+          right-[-10%]
+          top-[-28%]
+          h-[70%]
+          w-[40%]
+          rounded-full
+          bg-[#8db7ee]
+          opacity-20
+        "
+      />
+
+      {/* Bottom-right circle */}
+
+      <div
+        className="
+          absolute
+          bottom-[-38%]
+          right-[2%]
+          h-[75%]
+          w-[45%]
+          rounded-full
+          bg-[#9ebcf0]
+          opacity-20
+        "
+      />
+
+      {/* Left decorative circle */}
+
+      <div
+        className="
+          absolute
+          left-[8%]
+          top-[17%]
+          h-16
+          w-16
+          rounded-full
+          bg-white/10
+        "
+      />
+
+      {/* Bottom-left outline circle */}
+
+      <div
+        className="
+          absolute
+          bottom-[16%]
+          left-[7%]
+          h-12
+          w-12
+          rounded-full
+          border
+          border-white/30
+        "
+      />
+    </div>
+  );
+}
+
+function Info({
+  label,
+  value,
+}) {
   return (
     <div className="min-w-0">
       <p className="text-[10px] text-gray-500">
@@ -265,6 +434,7 @@ function Info({ label, value }) {
           font-bold
           text-[#062f6b]
         "
+        title={value || ""}
       >
         {value || ""}
       </p>

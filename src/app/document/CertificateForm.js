@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 import { FolderPlus, UploadCloud, X } from "lucide-react";
 
 import BoxFill from "@/components/forms/boxFill";
@@ -9,6 +11,10 @@ import CertificateCard from "@/components/card/certificate";
 import membersData from "@/data/members.json";
 import activities from "@/data/activity.json";
 import participantsData from "@/data/participants.json";
+
+const MAX_TEMPLATE_SIZE = 5 * 1024 * 1024;
+
+const ALLOWED_TEMPLATE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const BRANCH_OPTIONS = [
   ...new Set(membersData.map((member) => member.branch).filter(Boolean)),
@@ -24,10 +30,12 @@ const MEMBER_OPTIONS = membersData
     value: String(member.id),
   }));
 
-const ACTIVITY_OPTIONS = activities.map((activity) => ({
-  label: activity.title_kh,
-  value: String(activity.id),
-}));
+const ACTIVITY_OPTIONS = activities
+  .filter((activity) => activity?.title_kh)
+  .map((activity) => ({
+    label: activity.title_kh,
+    value: String(activity.id),
+  }));
 
 const FONT_OPTIONS = [
   {
@@ -86,7 +94,9 @@ const COLORS = [
 
 export default function CertificateForm({ form, setForm, onSave, onClose }) {
   const recipientType = form.recipientType || "member";
+
   const language = form.language || "km";
+
   const selectedColor = form.color || "#12224c";
 
   const selectedMember = membersData.find(
@@ -96,6 +106,11 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
   const selectedActivity = activities.find(
     (activity) => String(activity.id) === String(form.activityId),
   );
+
+  /*
+   * Find every active participant
+   * for the selected activity.
+   */
   const selectedActivityMembers =
     recipientType === "activity"
       ? participantsData
@@ -112,6 +127,18 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
           .filter(Boolean)
       : [];
 
+  /*
+   * Clean the temporary browser URL
+   * when the component is removed.
+   */
+  useEffect(() => {
+    return () => {
+      if (form.templatePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(form.templatePreview);
+      }
+    };
+  }, [form.templatePreview]);
+
   const updateField = (field) => (event) => {
     setForm((previous) => ({
       ...previous,
@@ -119,19 +146,31 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
     }));
   };
 
+  /*
+   * Switch between single-member
+   * certificate and activity certificates.
+   */
   const handleRecipientTypeChange = (event) => {
     const selectedType = event.target.value;
 
     setForm((previous) => ({
       ...previous,
+
       recipientType: selectedType,
+
       memberId: "",
       member: "",
+
       activityId: "",
       activity: "",
+
+      branch: "",
     }));
   };
 
+  /*
+   * Select a single member.
+   */
   const handleMemberChange = (event) => {
     const memberId = event.target.value;
 
@@ -139,14 +178,32 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
       (item) => String(item.id) === String(memberId),
     );
 
+    if (!member) {
+      setForm((previous) => ({
+        ...previous,
+
+        memberId: "",
+        member: "",
+        branch: "",
+      }));
+
+      return;
+    }
+
     setForm((previous) => ({
       ...previous,
-      memberId,
-      member: member?.name_kh || "",
-      branch: member?.branch || previous.branch || "",
+
+      memberId: String(member.id),
+
+      member: member.name_kh || "",
+
+      branch: member.branch || previous.branch || "",
     }));
   };
 
+  /*
+   * Select an activity.
+   */
   const handleActivityChange = (event) => {
     const activityId = event.target.value;
 
@@ -154,36 +211,62 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
       (item) => String(item.id) === String(activityId),
     );
 
+    if (!activity) {
+      setForm((previous) => ({
+        ...previous,
+
+        activityId: "",
+        activity: "",
+        branch: "",
+      }));
+
+      return;
+    }
+
     setForm((previous) => ({
       ...previous,
-      activityId,
-      activity: activity?.title_kh || "",
-      branch: activity?.branch || previous.branch || "",
+
+      activityId: String(activity.id),
+
+      activity: activity.title_kh || "",
+
+      branch: activity.branch || previous.branch || "",
     }));
   };
 
-  const handleUpload = (event) => {
+  /*
+   * Upload blank certificate template.
+   *
+   * This only replaces the certificate
+   * background. Certificate information
+   * stays above the image.
+   */
+  const handleTemplateUpload = (event) => {
     const selectedFile = event.target.files?.[0];
 
     if (!selectedFile) return;
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-
-    if (!allowedTypes.includes(selectedFile.type)) {
-      alert("សូមជ្រើសរើសឯកសារ JPG, PNG ឬ WEBP");
+    if (!ALLOWED_TEMPLATE_TYPES.includes(selectedFile.type)) {
+      alert("សូមជ្រើសរើសរូបភាព JPG, PNG ឬ WEBP");
 
       event.target.value = "";
+
       return;
     }
 
-    if (selectedFile.size > 5 * 1024 * 1024) {
-      alert("ទំហំឯកសារមិនអាចលើស 5MB");
+    if (selectedFile.size > MAX_TEMPLATE_SIZE) {
+      alert("ទំហំរូបភាពមិនអាចលើស 5MB");
 
       event.target.value = "";
+
       return;
     }
 
-    if (form.templatePreview) {
+    /*
+     * Delete the previous temporary URL
+     * before creating a new one.
+     */
+    if (form.templatePreview?.startsWith("blob:")) {
       URL.revokeObjectURL(form.templatePreview);
     }
 
@@ -191,23 +274,39 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
 
     setForm((previous) => ({
       ...previous,
+
       templateFile: selectedFile,
+
       templatePreview: previewUrl,
     }));
+
+    /*
+     * Allows the same image to be
+     * selected again later.
+     */
+    event.target.value = "";
   };
 
+  /*
+   * Remove uploaded template and
+   * return to the default design.
+   */
   const removeTemplate = () => {
-    if (form.templatePreview) {
+    if (form.templatePreview?.startsWith("blob:")) {
       URL.revokeObjectURL(form.templatePreview);
     }
 
     setForm((previous) => ({
       ...previous,
+
       templateFile: null,
       templatePreview: "",
     }));
   };
 
+  /*
+   * Save certificate data.
+   */
   const handleSave = () => {
     const hasTitle = Boolean(form.title?.trim());
 
@@ -217,7 +316,13 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
         : Boolean(form.activityId);
 
     if (!hasTitle || !hasRecipient) {
-      alert("សូមបំពេញព័ត៌មានទាំងអស់");
+      alert("សូមបំពេញឈ្មោះឯកសារ និងជ្រើសរើសអ្នកទទួល");
+
+      return;
+    }
+
+    if (recipientType === "activity" && selectedActivityMembers.length === 0) {
+      alert("កម្មវិធីនេះមិនមានសមាជិកចូលរួមទេ");
 
       return;
     }
@@ -226,16 +331,23 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
 
     onSave?.({
       ...form,
+
       recipientType,
+
       selectedMember,
+
       selectedActivity,
+
+      selectedActivityMembers,
     });
   };
 
   return (
     <div className="w-full rounded-xl border border-[#e5eaf0] bg-white p-6">
       <div className="grid grid-cols-1 gap-8 xl:grid-cols-[330px_minmax(0,1fr)]">
-        {/* LEFT FORM */}
+        {/* =====================================
+            LEFT FORM
+        ===================================== */}
 
         <div className="space-y-5">
           <BoxFill
@@ -255,7 +367,7 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
             options={BRANCH_OPTIONS}
           />
 
-          {/* Member or activity */}
+          {/* Recipient type */}
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
@@ -310,6 +422,7 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
               options={ACTIVITY_OPTIONS}
             />
           )}
+
           {/* Description */}
 
           <div>
@@ -340,7 +453,9 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
             />
           </div>
 
-          {/* Upload template */}
+          {/* =====================================
+              UPLOAD CERTIFICATE TEMPLATE
+          ===================================== */}
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
@@ -348,11 +463,24 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
             </label>
 
             {form.templatePreview ? (
-              <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+              <div
+                className="
+                  relative
+                  overflow-hidden
+                  rounded-xl
+                  border
+                  border-gray-200
+                  bg-gray-50
+                "
+              >
                 <img
                   src={form.templatePreview}
                   alt="uploaded certificate template"
-                  className="h-[150px] w-full object-contain"
+                  className="
+                    aspect-[16/9]
+                    w-full
+                    object-fill
+                  "
                 />
 
                 <button
@@ -383,7 +511,7 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
               <label
                 className="
                   flex
-                  h-[120px]
+                  h-[130px]
                   cursor-pointer
                   flex-col
                   items-center
@@ -393,7 +521,7 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
                   border-dashed
                   border-[#7180a8]
                   bg-[#f8f9ff]
-                  text-gray-400
+                  text-center
                   transition
                   hover:bg-secondary-light/30
                 "
@@ -408,20 +536,24 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
                   JPG, PNG, WEBP — មិនលើស 5MB
                 </p>
 
-                <p className="text-[10px] text-gray-400">សមាមាត្រណែនាំ 16:9</p>
+                <p className="text-[10px] text-gray-400">
+                  ទំហំគំរូណែនាំ 1600 × 900 px
+                </p>
 
                 <input
                   type="file"
                   hidden
                   accept=".jpg,.jpeg,.png,.webp"
-                  onChange={handleUpload}
+                  onChange={handleTemplateUpload}
                 />
               </label>
             )}
           </div>
         </div>
 
-        {/* RIGHT SIDE */}
+        {/* =====================================
+            RIGHT SIDE
+        ===================================== */}
 
         <div className="min-w-0">
           {/* Design controls */}
@@ -465,19 +597,19 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
                         }))
                       }
                       className={`
-                        h-6
-                        w-6
-                        shrink-0
-                        rounded-full
-                        border-2
-                        transition
-                        hover:scale-110
-                        ${
-                          selected
-                            ? "border-gray-800 ring-2 ring-primary/20"
-                            : "border-transparent"
-                        }
-                      `}
+                          h-6
+                          w-6
+                          shrink-0
+                          rounded-full
+                          border-2
+                          transition
+                          hover:scale-110
+                          ${
+                            selected
+                              ? "border-gray-800 ring-2 ring-primary/20"
+                              : "border-transparent"
+                          }
+                        `}
                       style={{
                         backgroundColor: color,
                       }}
@@ -497,19 +629,56 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
             />
           </div>
 
-          {/* Live certificate */}
+          {/* =====================================
+              LIVE CERTIFICATE PREVIEW
+          ===================================== */}
 
           <div
             className="
     h-[560px]
     overflow-y-auto
     overflow-x-hidden
-    rounded-lg
+    
+    rounded-xl
+    border
+    border-gray-200
     bg-gray-100
     p-5
   "
           >
-            {recipientType === "member" ? (
+            {!form.templatePreview ? (
+              <div
+                className="
+      flex
+      h-full
+      items-center
+      justify-center
+    "
+              >
+                <div
+                  className="
+        w-full
+        max-w-[360px]
+        rounded-3xl
+        border
+        border-gray-200
+        bg-white
+        px-10
+        py-8
+        text-center
+        shadow-sm
+      "
+                >
+                  <p className="text-xl font-bold text-text-primary">
+                    មិនទាន់មានគំរូវិញ្ញាបនបត្រ
+                  </p>
+
+                  <p className="mt-3 text-sm leading-6 text-gray-500">
+                    សូមបញ្ចូលរូបភាពគំរូវិញ្ញាបនបត្រជាមុនសិន
+                  </p>
+                </div>
+              </div>
+            ) : recipientType === "member" ? (
               <div className="flex min-h-full items-center justify-center">
                 <CertificateCard
                   recipientType="member"
@@ -520,7 +689,7 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
                   font={form.font || "Noto Sans"}
                   fontSize={form.fontSize || "medium"}
                   description={form.description || ""}
-                  templatePreview={form.templatePreview || ""}
+                  templatePreview={form.templatePreview}
                 />
               </div>
             ) : !form.activityId ? (
@@ -534,7 +703,7 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
             ) : (
               <div className="space-y-6">
                 {selectedActivityMembers.map((member, index) => (
-                  <div key={member.id}>
+                  <div key={`${form.activityId}-${member.id}`}>
                     <div className="mb-2 text-sm font-semibold text-text-primary">
                       វិញ្ញាបនបត្រ {index + 1} /{" "}
                       {selectedActivityMembers.length}
@@ -549,7 +718,7 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
                       font={form.font || "Noto Sans"}
                       fontSize={form.fontSize || "medium"}
                       description={form.description || ""}
-                      templatePreview={form.templatePreview || ""}
+                      templatePreview={form.templatePreview}
                     />
                   </div>
                 ))}
@@ -563,19 +732,19 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
               type="button"
               onClick={onClose}
               className="
-      h-11
-      w-[150px]
-      shrink-0
-      rounded-lg
-      border
-      border-gray-300
-      bg-white
-      text-sm
-      font-medium
-      text-text-primary
-      transition
-      hover:bg-gray-50
-    "
+                h-11
+                w-[150px]
+                shrink-0
+                rounded-lg
+                border
+                border-gray-300
+                bg-white
+                text-sm
+                font-medium
+                text-text-primary
+                transition
+                hover:bg-gray-50
+              "
             >
               បោះបង់
             </button>
@@ -583,21 +752,27 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
             <button
               type="button"
               onClick={handleSave}
+              disabled={
+                !form.title?.trim() ||
+                (recipientType === "member" ? !form.memberId : !form.activityId)
+              }
               className="
-      flex
-      h-11
-      flex-1
-      items-center
-      justify-center
-      gap-2
-      rounded-lg
-      bg-primary
-      text-sm
-      font-medium
-      text-white
-      transition
-      hover:opacity-90
-    "
+                flex
+                h-11
+                flex-1
+                items-center
+                justify-center
+                gap-2
+                rounded-lg
+                bg-primary
+                text-sm
+                font-medium
+                text-white
+                transition
+                hover:opacity-90
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
             >
               <FolderPlus size={19} />
               បង្កើតឯកសារ
