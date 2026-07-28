@@ -28,7 +28,18 @@ export default function HeaderUserInfo({
         <button
           type="button"
           onClick={handleClick}
-          className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
+          className="flex
+    h-[34px]
+    items-center
+    justify-center
+    rounded-lg
+    bg-primary
+    px-5
+    text-sm
+    font-medium
+    text-white
+    transition
+    hover:opacity-90"
         >
           {buttonText}
         </button>

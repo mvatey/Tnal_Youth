@@ -8,19 +8,15 @@ const DEFAULT_BORDER_COLOR = "#12224c";
 
 const SIZE_STYLES = {
   small: {
-    title: "text-[28px]",
     name: "text-[23px]",
-    description: "text-xs",
   },
+
   medium: {
-    title: "text-[36px]",
     name: "text-[28px]",
-    description: "text-sm",
   },
+
   large: {
-    title: "text-[44px]",
     name: "text-[34px]",
-    description: "text-base",
   },
 };
 
@@ -30,6 +26,25 @@ const FONT_FAMILIES = {
   Battambang: "var(--font-battambang)",
   Moul: "var(--font-moul)",
 };
+
+function getMemberName(member, language) {
+  if (language === "en") {
+    return (
+      member?.name_en ||
+      member?.fullNameEn ||
+      member?.full_name_en ||
+      member?.name_kh ||
+      "Member Name"
+    );
+  }
+
+  return (
+    member?.name_kh ||
+    member?.fullNameKm ||
+    member?.full_name_km ||
+    "ឈ្មោះសមាជិក"
+  );
+}
 
 export default function CertificateCard({
   recipientType = "member",
@@ -42,34 +57,32 @@ export default function CertificateCard({
   description = "",
   templatePreview = "",
 }) {
-  const sizeStyle = SIZE_STYLES[fontSize] || SIZE_STYLES.medium;
-
-  const isKhmer = language === "km";
   const isActivity = recipientType === "activity";
+
   const hasCustomTemplate = Boolean(templatePreview);
 
-  const certificateFont =
-    FONT_FAMILIES[font] ||
-    (isKhmer ? "var(--font-kantumruy-pro)" : "Arial, sans-serif");
+  const sizeStyle = SIZE_STYLES[fontSize] || SIZE_STYLES.medium;
 
-  const recipientName = isKhmer
-    ? member?.name_kh ||
-      member?.fullNameKm ||
-      member?.full_name_km ||
-      "ឈ្មោះសមាជិក"
-    : member?.name_en ||
-      member?.fullNameEn ||
-      member?.full_name_en ||
-      member?.name_kh ||
-      "Member Name";
+  /*
+   * Only the member name changes
+   * when language changes.
+   */
+  const recipientName = getMemberName(member, language);
 
-  const activityTitle = isKhmer
-    ? activity?.title_kh || activity?.titleKm || activity?.title || ""
-    : activity?.title_en ||
-      activity?.titleEn ||
-      activity?.title ||
-      activity?.title_kh ||
-      "";
+  /*
+   * Only the member name uses
+   * the selected font.
+   */
+  const memberNameFont = FONT_FAMILIES[font] || "var(--font-kantumruy-pro)";
+
+  /*
+   * All other certificate text
+   * always stays in Khmer.
+   */
+  const certificateTextFont = "var(--font-kantumruy-pro)";
+
+  const activityTitle =
+    activity?.title_kh || activity?.titleKm || activity?.title || "";
 
   const activityLocation = activity?.location || activity?.address || "";
 
@@ -77,19 +90,11 @@ export default function CertificateCard({
     activity?.startDate || activity?.start_date || activity?.date || "";
 
   const activityBranch =
-    activity?.branch?.name_kh ||
-    activity?.branch?.name_en ||
-    activity?.branchName ||
-    activity?.branch ||
-    "";
+    activity?.branch?.name_kh || activity?.branchName || activity?.branch || "";
 
-  const defaultDescription = isKhmer
-    ? isActivity
-      ? "សម្រាប់ការចូលរួមយ៉ាងសកម្ម និងការរួមចំណែកដ៏មានតម្លៃក្នុងសកម្មភាពនេះ។"
-      : "សម្រាប់ការចូលរួមយ៉ាងសកម្ម និងការរួមចំណែកដ៏មានតម្លៃដល់សមាគមថ្នាលយុវជនកម្ពុជា។"
-    : isActivity
-      ? "For active participation and valuable contribution to this activity."
-      : "For active participation and valuable contribution to the Cambodian Youth Nursery Association.";
+  const defaultDescription = isActivity
+    ? "សម្រាប់ការចូលរួមយ៉ាងសកម្ម និងការរួមចំណែកដ៏មានតម្លៃក្នុងសកម្មភាពនេះ។"
+    : "សម្រាប់ការចូលរួមយ៉ាងសកម្ម និងការរួមចំណែកដ៏មានតម្លៃដល់សមាគមថ្នាលយុវជនកម្ពុជា។";
 
   const displayedDescription = description?.trim() || defaultDescription;
 
@@ -97,51 +102,58 @@ export default function CertificateCard({
     <div className="flex w-full justify-center py-4">
       <div
         className="
-           relative
-    h-[439px]
-    w-[780px]
-    shrink-0
-    overflow-hidden
-    rounded-xl
-    bg-white
-    shadow-xl
+          relative
+          h-[439px]
+          w-[780px]
+          shrink-0
+          overflow-hidden
+          rounded-xl
+          bg-white
+          shadow-xl
         "
-        style={{
-          border: hasCustomTemplate ? "none" : `10px solid ${color}`,
-        }}
       >
         {/* Background */}
+
         {hasCustomTemplate ? (
           <>
             <img
               src={templatePreview}
               alt="Certificate template"
-              className="absolute inset-0 h-full w-full object-fill"
+              className="
+                absolute
+                inset-0
+                h-full
+                w-full
+                object-fill
+              "
             />
 
             <div className="absolute inset-0 bg-white/5" />
           </>
         ) : (
-          <DefaultCertificateBackground color={color} />
+          <DefaultCertificateBackground />
         )}
 
-        {/* Default inner border */}
-        {!hasCustomTemplate && (
-          <div
-            className="
-              pointer-events-none
-              absolute
-              inset-3
-              z-20
-              border-2
-            "
-            style={{
-              borderColor: color,
-            }}
-          />
-        )}
+        {/* Outer border */}
+
+        <div
+          className="
+    pointer-events-none
+    absolute
+    inset-0
+    z-20
+    rounded-2xl
+    border-[10px]
+  "
+          style={{
+            borderColor: color,
+          }}
+        />
+
+        <div />
 
         {/* Certificate content */}
+
         <div
           className="
             absolute
@@ -155,10 +167,9 @@ export default function CertificateCard({
             text-center
           "
           style={{
-            fontFamily: certificateFont,
+            fontFamily: certificateTextFont,
           }}
         >
-          {/* Logo */}
           <Image
             src="/logo.png"
             alt="Organization logo"
@@ -168,34 +179,29 @@ export default function CertificateCard({
             priority
           />
 
-          {/* Organization name */}
           <h2
             className="mt-2 text-lg font-bold"
             style={{
               color: TEXT_COLOR,
             }}
           >
-            {isKhmer
-              ? "សមាគមថ្នាលយុវជនកម្ពុជា"
-              : "Cambodian Youth Nursery Association"}
+            សមាគមថ្នាលយុវជនកម្ពុជា
           </h2>
 
-          {/* Main title */}
           <h1
-            className={`
+            className="
               mt-4
+              text-[36px]
               font-bold
               tracking-wide
-              ${sizeStyle.title}
-            `}
+            "
             style={{
               color: TEXT_COLOR,
             }}
           >
-            {isKhmer ? "បណ្ណសរសើរ" : "CERTIFICATE"}
+            បណ្ណសរសើរ
           </h1>
 
-          {/* Subtitle */}
           <p
             className="
               mt-1
@@ -207,22 +213,20 @@ export default function CertificateCard({
               color: TEXT_COLOR,
             }}
           >
-            {isKhmer ? "លិខិតបញ្ជាក់នៃការកោតសរសើរ" : "OF APPRECIATION"}
+            លិខិតបញ្ជាក់នៃការកោតសរសើរ
           </p>
 
-          {/* Presented text */}
           <p
             className="mt-4 text-sm"
             style={{
               color: DESCRIPTION_COLOR,
             }}
           >
-            {isKhmer
-              ? "បណ្ណសរសើរនេះត្រូវបានប្រគល់ជូន"
-              : "This certificate is proudly presented to"}
+            បណ្ណសរសើរនេះត្រូវបានប្រគល់ជូន
           </p>
 
-          {/* Recipient name */}
+          {/* Only member name changes */}
+
           <h3
             className={`
               mt-3
@@ -235,21 +239,22 @@ export default function CertificateCard({
             `}
             style={{
               color: TEXT_COLOR,
-              borderColor: color,
-              fontWeight: font === "Moul" ? 400 : 700,
+              borderColor: TEXT_COLOR,
+              fontFamily: memberNameFont,
+              fontWeight:
+                font === "Moul" ? 400 : font === "Battambang" ? 700 : 600,
             }}
           >
             {recipientName}
           </h3>
 
-          {/* Description */}
           <p
-            className={`
+            className="
               mt-4
               max-w-[620px]
+              text-sm
               leading-7
-              ${sizeStyle.description}
-            `}
+            "
             style={{
               color: DESCRIPTION_COLOR,
             }}
@@ -257,97 +262,44 @@ export default function CertificateCard({
             {displayedDescription}
           </p>
 
-          {/* Activity details */}
           {isActivity && activity && (
             <div
               className="
-                mt-3
-                flex
-                max-w-[650px]
-                flex-wrap
-                justify-center
-                gap-x-6
-                gap-y-1
-                text-xs
-              "
+                  mt-3
+                  flex
+                  max-w-[650px]
+                  flex-wrap
+                  justify-center
+                  gap-x-6
+                  gap-y-1
+                  text-xs
+                "
               style={{
-                color: DESCRIPTION_COLOR,
+                color: TEXT_COLOR,
+                borderColor: TEXT_COLOR,
+                fontFamily: memberNameFont,
+                fontWeight:
+                  font === "Moul" ? 400 : font === "Battambang" ? 700 : 600,
               }}
             >
-              {activityTitle && (
-                <span>
-                  {isKhmer ? "សកម្មភាព៖ " : "Activity: "}
-                  {activityTitle}
-                </span>
-              )}
+              {activityTitle && <span>សកម្មភាព៖ {activityTitle}</span>}
 
-              {activityLocation && (
-                <span>
-                  {isKhmer ? "ទីតាំង៖ " : "Location: "}
-                  {activityLocation}
-                </span>
-              )}
+              {activityLocation && <span>ទីតាំង៖ {activityLocation}</span>}
 
-              {activityDate && (
-                <span>
-                  {isKhmer ? "កាលបរិច្ឆេទ៖ " : "Date: "}
-                  {activityDate}
-                </span>
-              )}
+              {activityDate && <span>កាលបរិច្ឆេទ៖ {activityDate}</span>}
 
-              {activityBranch && (
-                <span>
-                  {isKhmer ? "សាខា៖ " : "Branch: "}
-                  {activityBranch}
-                </span>
-              )}
+              {activityBranch && <span>សាខា៖ {activityBranch}</span>}
             </div>
           )}
 
-          {/* Footer */}
-          <div
-            className="
-              mt-auto
-              flex
-              w-full
-              items-end
-              justify-between
-              px-10
-              pb-1
-            "
-            style={{
-              color: TEXT_COLOR,
-            }}
-          >
-            <div className="text-center">
-              <div
-                className="mb-2 h-px w-32"
-                style={{
-                  backgroundColor: color,
-                }}
-              />
-
-              <p className="text-xs">{isKhmer ? "ប្រធានសមាគម" : "President"}</p>
-            </div>
-
-            <div className="text-center">
-              <div
-                className="mb-2 h-px w-32"
-                style={{
-                  backgroundColor: color,
-                }}
-              />
-
-              <p className="text-xs">{isKhmer ? "កាលបរិច្ឆេទ" : "Date"}</p>
-            </div>
-          </div>
+          <div className="mt-auto w-full" />
         </div>
       </div>
     </div>
   );
 }
 
-function DefaultCertificateBackground({ color }) {
+function DefaultCertificateBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden bg-white">
       <div
@@ -361,7 +313,6 @@ function DefaultCertificateBackground({ color }) {
         "
       />
 
-      {/* Top-left corner */}
       <div
         className="
           absolute
@@ -370,14 +321,11 @@ function DefaultCertificateBackground({ color }) {
           h-28
           w-28
           rounded-br-full
+          bg-[#12224c]
           opacity-10
         "
-        style={{
-          backgroundColor: color,
-        }}
       />
 
-      {/* Bottom-right corner */}
       <div
         className="
           absolute
@@ -386,14 +334,11 @@ function DefaultCertificateBackground({ color }) {
           h-36
           w-36
           rounded-tl-full
+          bg-[#12224c]
           opacity-10
         "
-        style={{
-          backgroundColor: color,
-        }}
       />
 
-      {/* Top-right circle */}
       <div
         className="
           absolute
@@ -402,14 +347,11 @@ function DefaultCertificateBackground({ color }) {
           h-56
           w-56
           rounded-full
+          bg-[#8db7ee]
           opacity-20
         "
-        style={{
-          backgroundColor: "#8db7ee",
-        }}
       />
 
-      {/* Bottom-left circle */}
       <div
         className="
           absolute
@@ -418,14 +360,11 @@ function DefaultCertificateBackground({ color }) {
           h-64
           w-64
           rounded-full
+          bg-[#9ebcf0]
           opacity-15
         "
-        style={{
-          backgroundColor: "#9ebcf0",
-        }}
       />
 
-      {/* Left accent line */}
       <div
         className="
           absolute
@@ -434,14 +373,11 @@ function DefaultCertificateBackground({ color }) {
           h-16
           w-1
           rounded-full
+          bg-[#12224c]
           opacity-20
         "
-        style={{
-          backgroundColor: color,
-        }}
       />
 
-      {/* Decorative outlined circle */}
       <div
         className="
           absolute
@@ -451,11 +387,9 @@ function DefaultCertificateBackground({ color }) {
           w-14
           rounded-full
           border-2
+          border-[#12224c]
           opacity-10
         "
-        style={{
-          borderColor: color,
-        }}
       />
     </div>
   );

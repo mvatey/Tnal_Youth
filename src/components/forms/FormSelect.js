@@ -67,7 +67,7 @@ export default function FormSelect({ label, placeholder = "ជ្រើសរើ
                 );
               })
             ) : (
-              <div className="flex h-10 items-center px-3 text-sm text-gray-400">មិនមានទិន្នន័យ</div>
+              <div className="flex h-[34px] items-center px-3 text-sm text-gray-400">មិនមានទិន្នន័យ</div>
             )}
           </div>
         </div>

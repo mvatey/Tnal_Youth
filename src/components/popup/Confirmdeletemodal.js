@@ -30,7 +30,7 @@ export default function DeleteConfirmModal({
           mx-auto
           mb-4
           flex
-          h-12
+          h-[34px]
           w-12
           items-center
           justify-center

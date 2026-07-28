@@ -19,6 +19,18 @@ const EMPTY_FORM = {
   date: "",
   files: [],
 };
+const DOCUMENT_TYPE_BADGE_STYLES = {
+  PDF: "bg-red-100 text-red-500",
+  Excel: "bg-success-bg text-success",
+  Word: "bg-blue-50 text-blue-600",
+  PowerPoint: "bg-orange-50 text-orange-600",
+  PNG: "bg-purple-50 text-purple-600",
+  JPG: "bg-yellow-50 text-yellow-600",
+  JPEG: "bg-yellow-50 text-yellow-600",
+};
+
+const DEFAULT_DOCUMENT_TYPE_STYLE =
+  "bg-gray-100 text-text-secondary";
 
 export default function CompanyDocumentPage() {
   const [documents, setDocuments] = useState(documentCompany);
@@ -82,20 +94,41 @@ export default function CompanyDocumentPage() {
       width: "w-[10%]",
     },
     {
-      header: "ប្រភេទឯកសារ",
-      width: "w-[10%]",
-      render: (item) => (
-        <span className="inline-flex rounded-md bg-red-100 px-3 py-1 text-xs font-medium text-red-500">
-          {item.type}
-        </span>
-      ),
-    },
+  header: "ប្រភេទឯកសារ",
+  width: "w-[10%]",
+  align: "center",
+  render: (item) => {
+    const badgeStyle =
+      DOCUMENT_TYPE_BADGE_STYLES[item.type] ||
+      DEFAULT_DOCUMENT_TYPE_STYLE;
+
+    return (
+      <span
+        className={`
+          inline-flex
+          max-w-full
+          items-center
+          justify-center
+          rounded-full
+          px-2
+          py-1
+          text-[11px]
+          truncate whitespace nowrap
+          
+          ${badgeStyle}
+        `}
+      >
+        {item.type}
+      </span>
+    );
+  },
+},
     {
       header: "សកម្មភាព",
       width: "w-[11%]",
       align: "center",
       render: (item) => (
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center justify-center ">
           <button
             type="button"
             onClick={() => setSelectedDocument(item)}

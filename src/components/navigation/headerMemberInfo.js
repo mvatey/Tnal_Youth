@@ -33,7 +33,18 @@ export default function HeaderMemberInfo({ title, breadcrumb, buttonText, onButt
       </div>
 
       {buttonText && (
-        <button type="button" onClick={onButtonClick} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:opacity-90">
+        <button type="button" onClick={onButtonClick} className="flex
+    h-[34px]
+    items-center
+    justify-center
+    rounded-lg
+    bg-primary
+    px-5
+    text-sm
+    font-medium
+    text-white
+    transition
+    hover:opacity-90">
           {buttonText}
         </button>
       )}

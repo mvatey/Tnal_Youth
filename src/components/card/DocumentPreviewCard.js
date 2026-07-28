@@ -74,7 +74,7 @@ export default function DocumentPreviewCard({
 
       <button
         onClick={() => downloadCsv(data, filename)}
-        className="mt-4 flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-secondary text-xs font-semibold text-white transition hover:bg-secondary-hover"
+        className="mt-4 flex h-[34px] w-full items-center justify-center gap-2 rounded-lg bg-secondary text-xs font-semibold text-white transition hover:bg-secondary-hover"
       >
         <RiDownloadCloud2Line size={15} />
         ទាញយក

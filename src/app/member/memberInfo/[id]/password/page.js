@@ -137,7 +137,7 @@ function BoxFill({ label, show, setShow }) {
         <input
           type={show ? "text" : "password"}
           placeholder="បញ្ចូលពាក្យសម្ងាត់"
-          className="h-11 w-full rounded-lg border border-gray-200 bg-white pl-11 pr-11 text-sm outline-none transition focus:border-primary"
+          className="h-[34px] w-full rounded-lg border border-gray-200 bg-white pl-11 pr-11 text-sm outline-none transition focus:border-primary"
         />
 
 

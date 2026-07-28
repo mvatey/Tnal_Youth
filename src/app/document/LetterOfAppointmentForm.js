@@ -1,42 +1,54 @@
 "use client";
 
-import { useEffect } from "react";
-import { useState } from "react";
-
+import { useEffect, useMemo, useState } from "react";
 import { UploadCloud, X } from "lucide-react";
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
-import CertificateCard from "@/components/card/certificate";
-import DocumentActionButton from "@/components/forms/documentActionbutton";
+import LetterOfAppointment from "@/components/card/LetterOfAppointment";
+import FormActionButton from "@/components/forms/documentActionbutton";
 
 import membersData from "@/data/members.json";
-import activities from "@/data/activity.json";
-import participantsData from "@/data/participants.json";
 
 const MAX_TEMPLATE_SIZE = 5 * 1024 * 1024;
 
 const ALLOWED_TEMPLATE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-const BRANCH_OPTIONS = [
-  ...new Set(membersData.map((member) => member.branch).filter(Boolean)),
-].map((branch) => ({
-  label: branch,
-  value: branch,
-}));
+const ROLE_OPTIONS = [
+  {
+    label: "អ្នកគ្រប់គ្រង",
+    value: "admin",
+  },
+  {
+    label: "ប្រធានសាខា",
+    value: "branch_leader",
+  },
+  {
+    label: "លេខាធិការ",
+    value: "secretary",
+  },
+  {
+    label: "សមាជិក",
+    value: "member",
+  },
+];
 
 const MEMBER_OPTIONS = membersData
-  .filter((member) => member?.name_kh)
+  .filter(
+    (member) =>
+      member?.id &&
+      (member?.name_kh ||
+        member?.name_en ||
+        member?.fullNameKm ||
+        member?.fullNameEn),
+  )
   .map((member) => ({
-    label: member.name_kh,
+    label:
+      member.name_kh ||
+      member.fullNameKm ||
+      member.name_en ||
+      member.fullNameEn,
     value: String(member.id),
-  }));
-
-const ACTIVITY_OPTIONS = activities
-  .filter((activity) => activity?.title_kh)
-  .map((activity) => ({
-    label: activity.title_kh,
-    value: String(activity.id),
   }));
 
 const FONT_OPTIONS = [
@@ -94,45 +106,63 @@ const COLORS = [
   "#000000",
 ];
 
-export default function CertificateForm({ form, setForm, onSave, onClose }) {
-  const recipientType = form.recipientType || "member";
+function getBranchName(branch) {
+  if (!branch) {
+    return "";
+  }
 
+  if (typeof branch === "string") {
+    return branch;
+  }
+
+  return branch.name_kh || branch.name_en || branch.name || "";
+}
+
+function getMemberNameKh(member) {
+  return member?.name_kh || member?.fullNameKm || member?.full_name_km || "";
+}
+
+function getMemberNameEn(member) {
+  return member?.name_en || member?.fullNameEn || member?.full_name_en || "";
+}
+
+function getMemberJoinedDate(member) {
+  return (
+    member?.joinedAt ||
+    member?.joined_at ||
+    member?.joinDate ||
+    member?.joinedDate ||
+    ""
+  );
+}
+
+const BRANCH_OPTIONS = [
+  ...new Set(
+    membersData.map((member) => getBranchName(member.branch)).filter(Boolean),
+  ),
+].map((branch) => ({
+  label: branch,
+  value: branch,
+}));
+
+export default function LetterOfAppointmentForm({
+  form,
+  setForm,
+  onSave,
+  onClose,
+  saving = false,
+}) {
+  const [showValidationError, setShowValidationError] = useState(false);
   const language = form.language || "km";
 
   const selectedColor = form.color || "#12224c";
 
-  const selectedMember = membersData.find(
-    (member) => String(member.id) === String(form.memberId),
+  const selectedMember = useMemo(
+    () =>
+      membersData.find((member) => String(member.id) === String(form.memberId)),
+    [form.memberId],
   );
 
-  const selectedActivity = activities.find(
-    (activity) => String(activity.id) === String(form.activityId),
-  );
-
-  /*
-   * Find every active participant
-   * for the selected activity.
-   */
-  const selectedActivityMembers =
-    recipientType === "activity"
-      ? participantsData
-          .filter(
-            (participant) =>
-              String(participant.activityId) === String(form.activityId) &&
-              participant.status !== "CANCELLED",
-          )
-          .map((participant) =>
-            membersData.find(
-              (member) => String(member.id) === String(participant.memberId),
-            ),
-          )
-          .filter(Boolean)
-      : [];
-
-  /*
-   * Clean the temporary browser URL
-   * when the component is removed.
-   */
   useEffect(() => {
     return () => {
       if (form.templatePreview?.startsWith("blob:")) {
@@ -140,19 +170,6 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
       }
     };
   }, [form.templatePreview]);
-  const [showValidationError, setShowValidationError] = useState(false);
-  const hasTitle = Boolean(form.title?.trim());
-
-  const hasRecipient =
-    recipientType === "member"
-      ? Boolean(form.memberId)
-      : Boolean(form.activityId);
-
-  const isFormValid =
-    hasTitle &&
-    hasRecipient &&
-    Boolean(form.templatePreview) &&
-    (recipientType !== "activity" || selectedActivityMembers.length > 0);
 
   const updateField = (field) => (event) => {
     setForm((previous) => ({
@@ -162,33 +179,8 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
 
     setShowValidationError(false);
   };
-
-  /*
-   * Switch between single-member
-   * certificate and activity certificates.
-   */
-  const handleRecipientTypeChange = (event) => {
-    const selectedType = event.target.value;
-
-    setForm((previous) => ({
-      ...previous,
-
-      recipientType: selectedType,
-
-      memberId: "",
-      member: "",
-
-      activityId: "",
-      activity: "",
-
-      branch: "",
-    }));
-  };
-
-  /*
-   * Select a single member.
-   */
   const handleMemberChange = (event) => {
+    setShowValidationError(false);
     const memberId = event.target.value;
 
     const member = membersData.find(
@@ -201,7 +193,10 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
 
         memberId: "",
         member: "",
+        memberNameEn: "",
         branch: "",
+        role: "member",
+        joinedAt: "",
       }));
 
       return;
@@ -212,62 +207,29 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
 
       memberId: String(member.id),
 
-      member: member.name_kh || "",
+      member: getMemberNameKh(member),
 
-      branch: member.branch || previous.branch || "",
+      memberNameEn: getMemberNameEn(member),
+
+      branch: getBranchName(member.branch) || previous.branch || "",
+
+      role: member.role || previous.role || "member",
+
+      joinedAt: getMemberJoinedDate(member) || previous.joinedAt || "",
     }));
   };
 
-  /*
-   * Select an activity.
-   */
-  const handleActivityChange = (event) => {
-    const activityId = event.target.value;
-
-    const activity = activities.find(
-      (item) => String(item.id) === String(activityId),
-    );
-
-    if (!activity) {
-      setForm((previous) => ({
-        ...previous,
-
-        activityId: "",
-        activity: "",
-        branch: "",
-      }));
-
-      return;
-    }
-
-    setForm((previous) => ({
-      ...previous,
-
-      activityId: String(activity.id),
-
-      activity: activity.title_kh || "",
-
-      branch: activity.branch || previous.branch || "",
-    }));
-  };
-
-  /*
-   * Upload blank certificate template.
-   *
-   * This only replaces the certificate
-   * background. Certificate information
-   * stays above the image.
-   */
   const handleTemplateUpload = (event) => {
     const selectedFile = event.target.files?.[0];
 
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      return;
+    }
 
     if (!ALLOWED_TEMPLATE_TYPES.includes(selectedFile.type)) {
       alert("សូមជ្រើសរើសរូបភាព JPG, PNG ឬ WEBP");
 
       event.target.value = "";
-
       return;
     }
 
@@ -275,14 +237,9 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
       alert("ទំហំរូបភាពមិនអាចលើស 5MB");
 
       event.target.value = "";
-
       return;
     }
 
-    /*
-     * Delete the previous temporary URL
-     * before creating a new one.
-     */
     if (form.templatePreview?.startsWith("blob:")) {
       URL.revokeObjectURL(form.templatePreview);
     }
@@ -293,21 +250,12 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
       ...previous,
 
       templateFile: selectedFile,
-
       templatePreview: previewUrl,
     }));
 
-    /*
-     * Allows the same image to be
-     * selected again later.
-     */
     event.target.value = "";
   };
 
-  /*
-   * Remove uploaded template and
-   * return to the default design.
-   */
   const removeTemplate = () => {
     if (form.templatePreview?.startsWith("blob:")) {
       URL.revokeObjectURL(form.templatePreview);
@@ -321,9 +269,24 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
     }));
   };
 
-  /*
-   * Save certificate data.
-   */
+  const previewUser = selectedMember
+    ? {
+        ...selectedMember,
+
+        id: selectedMember.id || form.memberId,
+
+        name_kh: form.member || getMemberNameKh(selectedMember),
+
+        name_en: form.memberNameEn || getMemberNameEn(selectedMember),
+
+        branch: form.branch || getBranchName(selectedMember.branch),
+
+        role: form.role || selectedMember.role || "member",
+
+        joinedAt: form.joinedAt || getMemberJoinedDate(selectedMember),
+      }
+    : null;
+
   const handleSave = async () => {
     if (!isFormValid) {
       setShowValidationError(true);
@@ -335,24 +298,29 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
     try {
       await onSave?.({
         ...form,
-        recipientType,
+        type: "លិខិតតែងតាំង",
+        documentType: "appointment_letter",
         selectedMember,
-        selectedActivity,
-        selectedActivityMembers,
+        user: previewUser,
       });
     } catch (error) {
-      console.error(error);
+      console.error("Cannot create appointment letter:", error);
 
-      alert("មានបញ្ហាក្នុងការបង្កើតវិញ្ញាបនបត្រ");
+      alert("មានបញ្ហាក្នុងការបង្កើតលិខិតតែងតាំង");
     }
   };
 
+  const isFormValid =
+    Boolean(form.title?.trim()) &&
+    Boolean(form.memberId) &&
+    Boolean(form.role) &&
+    Boolean(form.branch?.trim()) &&
+    Boolean(form.joinedAt) &&
+    Boolean(form.templatePreview);
   return (
     <div className="w-full rounded-xl border border-[#e5eaf0] bg-white p-6">
       <div className="grid grid-cols-1 gap-8 xl:grid-cols-[330px_minmax(0,1fr)]">
-        {/* =====================================
-            LEFT FORM
-        ===================================== */}
+        {/* Left form */}
 
         <div className="space-y-5">
           <BoxFill
@@ -360,7 +328,15 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
             name="title"
             value={form.title || ""}
             onChange={updateField("title")}
-            placeholder="បញ្ចូលឈ្មោះឯកសារ"
+            placeholder="លិខិតតែងតាំង"
+          />
+          <FormSelect
+            label="សមាជិក"
+            name="memberId"
+            value={form.memberId || ""}
+            onChange={handleMemberChange}
+            placeholder="ជ្រើសរើសសមាជិក"
+            options={MEMBER_OPTIONS}
           />
 
           <FormSelect
@@ -372,63 +348,41 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
             options={BRANCH_OPTIONS}
           />
 
-          {/* Recipient type */}
+          <FormSelect
+            label="តួនាទីតែងតាំង"
+            name="role"
+            value={form.role || "member"}
+            onChange={updateField("role")}
+            placeholder="ជ្រើសរើសតួនាទី"
+            options={ROLE_OPTIONS}
+          />
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
-              ប្រភេទ
+              កាលបរិច្ឆេទចេញលិខិត
             </label>
 
-            <div className="flex items-center gap-6">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-text-primary">
-                <input
-                  type="radio"
-                  name="recipientType"
-                  value="member"
-                  checked={recipientType === "member"}
-                  onChange={handleRecipientTypeChange}
-                  className="h-4 w-4 accent-primary"
-                />
-                សមាជិក
-              </label>
-
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-text-primary">
-                <input
-                  type="radio"
-                  name="recipientType"
-                  value="activity"
-                  checked={recipientType === "activity"}
-                  onChange={handleRecipientTypeChange}
-                  className="h-4 w-4 accent-primary"
-                />
-                កម្មវិធី
-              </label>
-            </div>
+            <input
+              type="date"
+              name="joinedAt"
+              value={form.joinedAt || ""}
+              onChange={updateField("joinedAt")}
+              className="
+                h-11
+                w-full
+                rounded-lg
+                border
+                border-gray-200
+                bg-white
+                px-4
+                text-sm
+                text-text-primary
+                outline-none
+                transition
+                focus:border-primary
+              "
+            />
           </div>
-
-          {/* Dynamic selector */}
-
-          {recipientType === "member" ? (
-            <FormSelect
-              label="សមាជិក"
-              name="memberId"
-              value={form.memberId || ""}
-              onChange={handleMemberChange}
-              placeholder="ជ្រើសរើសសមាជិក"
-              options={MEMBER_OPTIONS}
-            />
-          ) : (
-            <FormSelect
-              label="កម្មវិធី"
-              name="activityId"
-              value={form.activityId || ""}
-              onChange={handleActivityChange}
-              placeholder="ជ្រើសរើសកម្មវិធី"
-              options={ACTIVITY_OPTIONS}
-            />
-          )}
-
-          {/* Description */}
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
@@ -458,13 +412,11 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
             />
           </div>
 
-          {/* =====================================
-              UPLOAD CERTIFICATE TEMPLATE
-          ===================================== */}
+          {/* Upload appointment template */}
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
-              រូបភាពគំរូវិញ្ញាបនបត្រ
+              រូបភាពគំរូលិខិតតែងតាំង
             </label>
 
             {form.templatePreview ? (
@@ -480,7 +432,7 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
               >
                 <img
                   src={form.templatePreview}
-                  alt="uploaded certificate template"
+                  alt="uploaded appointment letter template"
                   className="
                     aspect-[16/9]
                     w-full
@@ -556,9 +508,7 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
           </div>
         </div>
 
-        {/* =====================================
-            RIGHT SIDE
-        ===================================== */}
+        {/* Right side */}
 
         <div className="min-w-0">
           {/* Design controls */}
@@ -579,8 +529,6 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
               onChange={updateField("fontSize")}
               options={FONT_SIZE_OPTIONS}
             />
-
-            {/* Colors */}
 
             <div>
               <label className="mb-2 block text-sm font-semibold text-text-primary">
@@ -634,62 +582,73 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
             />
           </div>
 
-          {/* =====================================
-              LIVE CERTIFICATE PREVIEW
-          ===================================== */}
+          {/* Live preview */}
 
           <div
             className="
-    h-[560px]
-    overflow-y-auto
-    overflow-x-hidden
-    
-    rounded-xl
-    border
-    border-gray-200
-    bg-gray-100
-    p-5
-  "
+              h-[560px]
+              overflow-hidden
+              rounded-xl
+              border
+              border-gray-200
+              bg-gray-100
+              p-5
+            "
           >
             {!form.templatePreview ? (
-              <div
-                className="
-      flex
-      h-full
-      items-center
-      justify-center
-    "
-              >
+              <div className="flex h-full items-center justify-center">
                 <div
                   className="
-        w-full
-        max-w-[360px]
-        rounded-3xl
-        border
-        border-gray-200
-        bg-white
-        px-10
-        py-8
-        text-center
-        shadow-sm
-      "
+                    w-full
+                    max-w-[390px]
+                    rounded-3xl
+                    border
+                    border-gray-200
+                    bg-white
+                    px-10
+                    py-8
+                    text-center
+                    shadow-sm
+                  "
                 >
                   <p className="text-xl font-bold text-text-primary">
-                    មិនទាន់មានគំរូវិញ្ញាបនបត្រ
+                    មិនទាន់មានគំរូលិខិតតែងតាំង
                   </p>
 
                   <p className="mt-3 text-sm leading-6 text-gray-500">
-                    សូមបញ្ចូលរូបភាពគំរូវិញ្ញាបនបត្រជាមុនសិន
+                    សូមបញ្ចូលរូបភាពគំរូលិខិតតែងតាំងជាមុនសិន
                   </p>
                 </div>
               </div>
-            ) : recipientType === "member" ? (
-              <div className="flex min-h-full items-center justify-center">
-                <CertificateCard
-                  title={form.title || ""}
-                  recipientType="member"
-                  member={selectedMember}
-                  activity={null}
+            ) : !form.memberId || !previewUser ? (
+              <div className="flex h-full items-center justify-center">
+                <div
+                  className="
+                    w-full
+                    max-w-[390px]
+                    rounded-3xl
+                    border
+                    border-gray-200
+                    bg-white
+                    px-10
+                    py-8
+                    text-center
+                    shadow-sm
+                  "
+                >
+                  <p className="text-xl font-bold text-text-primary">
+                    មិនទាន់ជ្រើសរើសសមាជិកតែងតាំង
+                  </p>
+
+                  <p className="mt-3 text-sm leading-6 text-gray-500">
+                    សូមជ្រើសរើសសមាជិកដើម្បីមើលលិខិតតែងតាំង
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex min-h-full min-w-full overflow-hidden items-center justify-center">
+                <LetterOfAppointment
+                  user={previewUser}
                   language={language}
                   color={selectedColor}
                   font={form.font || "Noto Sans"}
@@ -698,40 +657,9 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
                   templatePreview={form.templatePreview}
                 />
               </div>
-            ) : !form.activityId ? (
-              <div className="flex h-full items-center justify-center text-sm text-gray-500">
-                សូមជ្រើសរើសកម្មវិធី
-              </div>
-            ) : selectedActivityMembers.length === 0 ? (
-              <div className="flex h-full items-center justify-center text-sm text-gray-500">
-                មិនមានសមាជិកចូលរួមក្នុងកម្មវិធីនេះទេ
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {selectedActivityMembers.map((member, index) => (
-                  <div key={`${form.activityId}-${member.id}`}>
-                    <div className="mb-2 text-sm font-semibold text-text-primary">
-                      វិញ្ញាបនបត្រ {index + 1} /{" "}
-                      {selectedActivityMembers.length}
-                    </div>
-
-                    <CertificateCard
-                      title={form.title || ""}
-                      recipientType="activity"
-                      member={member}
-                      activity={selectedActivity}
-                      language={language}
-                      color={selectedColor}
-                      font={form.font || "Noto Sans"}
-                      fontSize={form.fontSize || "medium"}
-                      description={form.description || ""}
-                      templatePreview={form.templatePreview}
-                    />
-                  </div>
-                ))}
-              </div>
             )}
           </div>
+
           {/* Buttons */}
 
           {showValidationError && !isFormValid && (
@@ -740,12 +668,14 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
             </p>
           )}
 
-          <DocumentActionButton
+          <FormActionButton
             onCancel={onClose}
             onCreate={handleSave}
             isValid={isFormValid}
+            saving={saving}
             cancelText="បោះបង់"
-            createText="បង្កើតឯកសារ"
+            createText="បង្កើតលិខិតតែងតាំង"
+            savingText="កំពុងរក្សាទុក..."
           />
         </div>
       </div>
