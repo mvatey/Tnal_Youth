@@ -359,33 +359,6 @@ export default function LetterOfAppointmentForm({
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
-              កាលបរិច្ឆេទចេញលិខិត
-            </label>
-
-            <input
-              type="date"
-              name="joinedAt"
-              value={form.joinedAt || ""}
-              onChange={updateField("joinedAt")}
-              className="
-                h-11
-                w-full
-                rounded-lg
-                border
-                border-gray-200
-                bg-white
-                px-4
-                text-sm
-                text-text-primary
-                outline-none
-                transition
-                focus:border-primary
-              "
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-text-primary">
               សេចក្តីពិពណ៌នា
             </label>
 
@@ -513,7 +486,7 @@ export default function LetterOfAppointmentForm({
         <div className="min-w-0">
           {/* Design controls */}
 
-          <div className="mb-5 grid grid-cols-1 items-end gap-4 md:grid-cols-[170px_125px_minmax(220px,1fr)_150px]">
+          <div className="mb-5 grid grid-cols-1 items-end gap-4 md:grid-cols-[180px_140px_minmax(220px,1fr)_160px] md:items-start">
             <FormSelect
               label="ពុម្ពអក្សរ"
               name="font"
@@ -530,48 +503,48 @@ export default function LetterOfAppointmentForm({
               options={FONT_SIZE_OPTIONS}
             />
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-text-primary">
-                ពណ៌
-              </label>
+            <div className="flex flex-col">
+  <label className="mb-2 block text-sm font-semibold text-text-primary">
+    ពណ៌
+  </label>
 
-              <div className="flex h-11 items-center gap-3">
-                {COLORS.map((color) => {
-                  const selected = selectedColor === color;
+  <div className="flex h-11 items-center gap-3">
+    {COLORS.map((color) => {
+      const selected = selectedColor === color;
 
-                  return (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() =>
-                        setForm((previous) => ({
-                          ...previous,
-                          color,
-                        }))
-                      }
-                      className={`
-                          h-6
-                          w-6
-                          shrink-0
-                          rounded-full
-                          border-2
-                          transition
-                          hover:scale-110
-                          ${
-                            selected
-                              ? "border-gray-800 ring-2 ring-primary/20"
-                              : "border-transparent"
-                          }
-                        `}
-                      style={{
-                        backgroundColor: color,
-                      }}
-                      aria-label={`ជ្រើសរើសពណ៌ ${color}`}
-                    />
-                  );
-                })}
-              </div>
-            </div>
+      return (
+        <button
+          key={color}
+          type="button"
+          onClick={() =>
+            setForm((previous) => ({
+              ...previous,
+              color,
+            }))
+          }
+          className={`
+            h-5
+            w-5
+            shrink-0
+            rounded-full
+            border-2
+            transition
+            hover:scale-110
+            ${
+              selected
+                ? "border-gray-800 ring-2 ring-gray-300"
+                : "border-transparent"
+            }
+          `}
+          style={{
+            backgroundColor: color,
+          }}
+          aria-label={`ជ្រើសរើសពណ៌ ${color}`}
+        />
+      );
+    })}
+  </div>
+</div>
 
             <FormSelect
               label="ភាសា"
@@ -621,29 +594,8 @@ export default function LetterOfAppointmentForm({
                 </div>
               </div>
             ) : !form.memberId || !previewUser ? (
-              <div className="flex h-full items-center justify-center">
-                <div
-                  className="
-                    w-full
-                    max-w-[390px]
-                    rounded-3xl
-                    border
-                    border-gray-200
-                    bg-white
-                    px-10
-                    py-8
-                    text-center
-                    shadow-sm
-                  "
-                >
-                  <p className="text-xl font-bold text-text-primary">
-                    មិនទាន់ជ្រើសរើសសមាជិកតែងតាំង
-                  </p>
-
-                  <p className="mt-3 text-sm leading-6 text-gray-500">
-                    សូមជ្រើសរើសសមាជិកដើម្បីមើលលិខិតតែងតាំង
-                  </p>
-                </div>
+              <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                សូមជ្រើសរើសសមាជិក
               </div>
             ) : (
               <div className="flex min-h-full min-w-full overflow-hidden items-center justify-center">

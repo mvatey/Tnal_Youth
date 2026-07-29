@@ -57,46 +57,56 @@ export default function CertificateCard({
   description = "",
   templatePreview = "",
 }) {
-  const isActivity = recipientType === "activity";
+  const isActivity =
+    recipientType === "activity";
 
-  const hasCustomTemplate = Boolean(templatePreview);
+  const hasCustomTemplate =
+    Boolean(templatePreview);
 
-  const sizeStyle = SIZE_STYLES[fontSize] || SIZE_STYLES.medium;
+  const sizeStyle =
+    SIZE_STYLES[fontSize] ||
+    SIZE_STYLES.medium;
 
-  /*
-   * Only the member name changes
-   * when language changes.
-   */
-  const recipientName = getMemberName(member, language);
+  const recipientName =
+    getMemberName(member, language);
 
-  /*
-   * Only the member name uses
-   * the selected font.
-   */
-  const memberNameFont = FONT_FAMILIES[font] || "var(--font-kantumruy-pro)";
+  const memberNameFont =
+    FONT_FAMILIES[font] ||
+    "var(--font-kantumruy-pro)";
 
-  /*
-   * All other certificate text
-   * always stays in Khmer.
-   */
-  const certificateTextFont = "var(--font-kantumruy-pro)";
+  const certificateTextFont =
+    "var(--font-kantumruy-pro)";
 
   const activityTitle =
-    activity?.title_kh || activity?.titleKm || activity?.title || "";
+    activity?.title_kh ||
+    activity?.titleKm ||
+    activity?.title ||
+    "";
 
-  const activityLocation = activity?.location || activity?.address || "";
+  const activityLocation =
+    activity?.location ||
+    activity?.address ||
+    "";
 
   const activityDate =
-    activity?.startDate || activity?.start_date || activity?.date || "";
+    activity?.startDate ||
+    activity?.start_date ||
+    activity?.date ||
+    "";
 
   const activityBranch =
-    activity?.branch?.name_kh || activity?.branchName || activity?.branch || "";
+    activity?.branch?.name_kh ||
+    activity?.branchName ||
+    activity?.branch ||
+    "";
 
   const defaultDescription = isActivity
     ? "សម្រាប់ការចូលរួមយ៉ាងសកម្ម និងការរួមចំណែកដ៏មានតម្លៃក្នុងសកម្មភាពនេះ។"
     : "សម្រាប់ការចូលរួមយ៉ាងសកម្ម និងការរួមចំណែកដ៏មានតម្លៃដល់សមាគមថ្នាលយុវជនកម្ពុជា។";
 
-  const displayedDescription = description?.trim() || defaultDescription;
+  const displayedDescription =
+    description?.trim() ||
+    defaultDescription;
 
   return (
     <div className="flex w-full justify-center py-4">
@@ -138,21 +148,19 @@ export default function CertificateCard({
 
         <div
           className="
-    pointer-events-none
-    absolute
-    inset-0
-    z-20
-    rounded-2xl
-    border-[10px]
-  "
+            pointer-events-none
+            absolute
+            inset-0
+            z-30
+            rounded-2xl
+            border-[10px]
+          "
           style={{
             borderColor: color,
           }}
         />
 
-        <div />
-
-        {/* Certificate content */}
+        {/* Main certificate content */}
 
         <div
           className="
@@ -163,11 +171,13 @@ export default function CertificateCard({
             flex-col
             items-center
             px-14
-            py-8
+            pb-[92px]
+            pt-5
             text-center
           "
           style={{
-            fontFamily: certificateTextFont,
+            fontFamily:
+              certificateTextFont,
           }}
         >
           <Image
@@ -190,7 +200,7 @@ export default function CertificateCard({
 
           <h1
             className="
-              mt-4
+              mt-3
               text-[36px]
               font-bold
               tracking-wide
@@ -217,32 +227,40 @@ export default function CertificateCard({
           </p>
 
           <p
-            className="mt-4 text-sm"
+            className="mt-3 text-sm"
             style={{
-              color: DESCRIPTION_COLOR,
+              color:
+                DESCRIPTION_COLOR,
             }}
           >
             បណ្ណសរសើរនេះត្រូវបានប្រគល់ជូន
           </p>
 
-          {/* Only member name changes */}
+          {/* Recipient name */}
 
           <h3
             className={`
-              mt-3
+              mt-2
               max-w-[650px]
               border-b-2
               px-10
-              pb-2
+              pb-1
               leading-relaxed
               ${sizeStyle.name}
             `}
             style={{
               color: TEXT_COLOR,
-              borderColor: TEXT_COLOR,
-              fontFamily: memberNameFont,
+              borderColor:
+                TEXT_COLOR,
+              fontFamily:
+                memberNameFont,
               fontWeight:
-                font === "Moul" ? 400 : font === "Battambang" ? 700 : 600,
+                font === "Moul"
+                  ? 400
+                  : font ===
+                      "Battambang"
+                    ? 700
+                    : 600,
             }}
           >
             {recipientName}
@@ -250,49 +268,163 @@ export default function CertificateCard({
 
           <p
             className="
-              mt-4
+              mt-3
               max-w-[620px]
-              text-sm
-              leading-7
+              text-xs
+              leading-5
             "
             style={{
-              color: DESCRIPTION_COLOR,
+              color:
+                DESCRIPTION_COLOR,
             }}
           >
             {displayedDescription}
           </p>
 
-          {isActivity && activity && (
-            <div
-              className="
-                  mt-3
+          {isActivity &&
+            activity && (
+              <div
+                className="
+                  mt-2
                   flex
                   max-w-[650px]
                   flex-wrap
                   justify-center
-                  gap-x-6
+                  gap-x-5
                   gap-y-1
-                  text-xs
+                  text-[10px]
                 "
+                style={{
+                  color:
+                    TEXT_COLOR,
+                  fontFamily:
+                    memberNameFont,
+                  fontWeight:
+                    font === "Moul"
+                      ? 400
+                      : font ===
+                          "Battambang"
+                        ? 700
+                        : 600,
+                }}
+              >
+                {activityTitle && (
+                  <span>
+                    សកម្មភាព៖{" "}
+                    {activityTitle}
+                  </span>
+                )}
+
+                {activityLocation && (
+                  <span>
+                    ទីតាំង៖{" "}
+                    {activityLocation}
+                  </span>
+                )}
+
+                {activityDate && (
+                  <span>
+                    កាលបរិច្ឆេទ៖{" "}
+                    {activityDate}
+                  </span>
+                )}
+
+                {activityBranch && (
+                  <span>
+                    សាខា៖{" "}
+                    {activityBranch}
+                  </span>
+                )}
+              </div>
+            )}
+        </div>
+
+        {/* Bottom left and right signatures */}
+
+        <div
+          className="
+            absolute
+            bottom-5
+            left-0
+            right-0
+            z-20
+            flex
+            items-end
+            justify-between
+            px-[110px]
+          "
+          style={{
+            fontFamily:
+              certificateTextFont,
+          }}
+        >
+          {/* Left signature */}
+
+          <div className="w-[150px] text-center">
+            <div
+              className="
+                mx-auto
+                mb-1
+                h-7
+                w-24
+                border-b
+                border-[#d6a42e]
+              "
+            />
+
+            <p
+              className="text-[10px] font-bold"
               style={{
                 color: TEXT_COLOR,
-                borderColor: TEXT_COLOR,
-                fontFamily: memberNameFont,
-                fontWeight:
-                  font === "Moul" ? 400 : font === "Battambang" ? 700 : 600,
               }}
             >
-              {activityTitle && <span>សកម្មភាព៖ {activityTitle}</span>}
+              ប្រធានសមាគម
+            </p>
 
-              {activityLocation && <span>ទីតាំង៖ {activityLocation}</span>}
+            <p
+              className="mt-0.5 text-[8px]"
+              style={{
+                color:
+                  DESCRIPTION_COLOR,
+              }}
+            >
+              សមាគមថ្នាលយុវជនកម្ពុជា
+            </p>
+          </div>
 
-              {activityDate && <span>កាលបរិច្ឆេទ៖ {activityDate}</span>}
+          {/* Right signature */}
 
-              {activityBranch && <span>សាខា៖ {activityBranch}</span>}
-            </div>
-          )}
+          <div className="w-[150px] text-center">
+            <div
+              className="
+                mx-auto
+                mb-1
+                h-7
+                w-24
+                border-b
+                border-[#d6a42e]
+              "
+            />
 
-          <div className="mt-auto w-full" />
+            <p
+              className="text-[10px] font-bold"
+              style={{
+                color: TEXT_COLOR,
+              }}
+            >
+              អគ្គលេខាធិការ
+            </p>
+
+            <p
+              className="mt-0.5 text-[8px]"
+              style={{
+                color:
+                  DESCRIPTION_COLOR,
+              }}
+            >
+              សមាគមថ្នាលយុវជនកម្ពុជា
+            </p>
+          </div>
         </div>
       </div>
     </div>

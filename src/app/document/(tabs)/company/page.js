@@ -113,7 +113,7 @@ export default function CompanyDocumentPage() {
           px-2
           py-1
           text-[11px]
-          truncate whitespace nowrap
+          truncate whitespace-nowrap
           
           ${badgeStyle}
         `}

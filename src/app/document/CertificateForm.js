@@ -563,7 +563,7 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
         <div className="min-w-0">
           {/* Design controls */}
 
-          <div className="mb-5 grid grid-cols-1 items-end gap-4 md:grid-cols-[170px_125px_minmax(220px,1fr)_150px]">
+          <div className="mb-5 grid grid-cols-1 items-end gap-4  md:grid-cols-[180px_140px_minmax(220px,1fr)_160px]  md:items-start">
             <FormSelect
               label="ពុម្ពអក្សរ"
               name="font"
@@ -582,48 +582,48 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
 
             {/* Colors */}
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-text-primary">
-                ពណ៌
-              </label>
+            <div className="flex flex-col">
+  <label className="mb-2 block text-sm font-semibold text-text-primary">
+    ពណ៌
+  </label>
 
-              <div className="flex h-11 items-center gap-3">
-                {COLORS.map((color) => {
-                  const selected = selectedColor === color;
+  <div className="flex h-11 items-center gap-3">
+    {COLORS.map((color) => {
+      const selected = selectedColor === color;
 
-                  return (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() =>
-                        setForm((previous) => ({
-                          ...previous,
-                          color,
-                        }))
-                      }
-                      className={`
-                          h-6
-                          w-6
-                          shrink-0
-                          rounded-full
-                          border-2
-                          transition
-                          hover:scale-110
-                          ${
-                            selected
-                              ? "border-gray-800 ring-2 ring-primary/20"
-                              : "border-transparent"
-                          }
-                        `}
-                      style={{
-                        backgroundColor: color,
-                      }}
-                      aria-label={`ជ្រើសរើសពណ៌ ${color}`}
-                    />
-                  );
-                })}
-              </div>
-            </div>
+      return (
+        <button
+          key={color}
+          type="button"
+          onClick={() =>
+            setForm((previous) => ({
+              ...previous,
+              color,
+            }))
+          }
+          className={`
+            h-5
+            w-5
+            shrink-0
+            rounded-full
+            border-2
+            transition
+            hover:scale-110
+            ${
+              selected
+                ? "border-gray-800 ring-2 ring-gray-300"
+                : "border-transparent"
+            }
+          `}
+          style={{
+            backgroundColor: color,
+          }}
+          aria-label={`ជ្រើសរើសពណ៌ ${color}`}
+        />
+      );
+    })}
+  </div>
+</div>
 
             <FormSelect
               label="ភាសា"
