@@ -5,12 +5,12 @@ import { RiAddCircleLine } from "react-icons/ri";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
 
-import SaveButton from "@/components/forms/SaveButton";
-import BoxFill from "@/components/forms/boxFill";
-import FormDate from "@/components/forms/FormDate";
+import SaveButton from "@/components/ui/actions/SaveButton";
+import FormControl from "@/components/forms/FormControl";
+import KhmerDateField from "@/components/forms/KhmerDateField";
 import FormSelect from "@/components/forms/FormSelect";
-import DeleteButton from "@/components/forms/DeleteButton";
-import ButtonDropLink from "@/components/forms/ButtonDropLink";
+import DeleteButton from "@/components/ui/actions/DeleteButton";
+import DocumentLinkField from "@/components/forms/DocumentLinkField";
 
 import locationData from "@/data/location.json";
 import educationData from "@/data/education.json";
@@ -204,7 +204,7 @@ function EducationGroup({
       </h3>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-  <BoxFill
+  <FormControl
     label="សាលា ឬ ស្ថាប័ន"
     placeholder="បញ្ចូលឈ្មោះសាលា"
     value={education.school || ""}
@@ -248,7 +248,7 @@ function EducationGroup({
       ឯកសារភ្ជាប់
     </label>
 
-    <ButtonDropLink
+    <DocumentLinkField
       value={education.documentLink || ""}
       onChange={(value) =>
         onChange("documentLink", value)
@@ -256,7 +256,7 @@ function EducationGroup({
     />
   </div>
 
-  <FormDate
+  <KhmerDateField
     label="ថ្ងៃចាប់ផ្ដើម"
     name={`start-${education.id}`}
     value={education.startDate || ""}
@@ -265,7 +265,7 @@ function EducationGroup({
     }
   />
 
-  <FormDate
+  <KhmerDateField
     label="ថ្ងៃបញ្ចប់"
     name={`end-${education.id}`}
     value={education.endDate || ""}

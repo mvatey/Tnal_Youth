@@ -2,121 +2,137 @@
   "types": [
     {
       "id": "member-status",
-      "label": "ស្ថានភាពសមាជិក",
+      "labelKm": "ស្ថានភាពសមាជិក",
+      "labelEn": "Member Status",
       "items": [
         {
           "id": 1,
+          "code": "ACTIVE",
           "nameKm": "សកម្ម",
           "nameEn": "Active",
           "status": "ACTIVE",
-          "createdAt": "6 មករា, 2026",
-          "updatedAt": "6 មករា, 2026"
+          "createdAt": "2026-01-06",
+          "updatedAt": "2026-01-06"
         },
         {
           "id": 2,
+          "code": "INACTIVE",
           "nameKm": "អសកម្ម",
           "nameEn": "Inactive",
           "status": "ACTIVE",
-          "createdAt": "6 មករា, 2026",
-          "updatedAt": "6 មករា, 2026"
+          "createdAt": "2026-01-06",
+          "updatedAt": "2026-01-06"
         },
         {
           "id": 3,
+          "code": "SUSPENDED",
           "nameKm": "ផ្អាក",
           "nameEn": "Suspended",
           "status": "INACTIVE",
-          "createdAt": "6 មករា, 2026",
-          "updatedAt": "6 មករា, 2026"
+          "createdAt": "2026-01-06",
+          "updatedAt": "2026-01-06"
         }
       ]
     },
     {
       "id": "branch-level",
-      "label": "កម្រិតសាខា",
+      "labelKm": "កម្រិតសាខា",
+      "labelEn": "Branch Level",
       "items": [
         {
           "id": 1,
+          "code": "PROVINCE",
           "nameKm": "រាជធានី/ខេត្ត",
           "nameEn": "Province",
           "status": "ACTIVE",
-          "createdAt": "10 មករា, 2026",
-          "updatedAt": "10 មករា, 2026"
+          "createdAt": "2026-01-10",
+          "updatedAt": "2026-01-10"
         },
         {
           "id": 2,
+          "code": "DISTRICT",
           "nameKm": "ក្រុង/ស្រុក/ខណ្ឌ",
           "nameEn": "District",
           "status": "ACTIVE",
-          "createdAt": "10 មករា, 2026",
-          "updatedAt": "10 មករា, 2026"
+          "createdAt": "2026-01-10",
+          "updatedAt": "2026-01-10"
         },
         {
           "id": 3,
+          "code": "COMMUNE",
           "nameKm": "ឃុំ/សង្កាត់",
           "nameEn": "Commune",
           "status": "ACTIVE",
-          "createdAt": "10 មករា, 2026",
-          "updatedAt": "10 មករា, 2026"
+          "createdAt": "2026-01-10",
+          "updatedAt": "2026-01-10"
         }
       ]
     },
     {
       "id": "activity-type",
-      "label": "ប្រភេទកម្មវិធី",
+      "labelKm": "ប្រភេទកម្មវិធី",
+      "labelEn": "Activity Type",
       "items": [
         {
           "id": 1,
+          "code": "INTERNAL",
           "nameKm": "កម្មវិធីផ្ទៃក្នុង",
           "nameEn": "Internal Activity",
           "status": "ACTIVE",
-          "createdAt": "12 មករា, 2026",
-          "updatedAt": "12 មករា, 2026"
+          "createdAt": "2026-01-12",
+          "updatedAt": "2026-01-12"
         },
         {
           "id": 2,
+          "code": "EXTERNAL",
           "nameKm": "កម្មវិធីខាងក្រៅ",
           "nameEn": "External Activity",
           "status": "ACTIVE",
-          "createdAt": "12 មករា, 2026",
-          "updatedAt": "12 មករា, 2026"
+          "createdAt": "2026-01-12",
+          "updatedAt": "2026-01-12"
         }
       ]
     },
     {
       "id": "activity-sector",
-      "label": "វិស័យកម្មវិធី",
+      "labelKm": "វិស័យកម្មវិធី",
+      "labelEn": "Activity Sector",
       "items": [
         {
           "id": 1,
+          "code": "EDUCATION",
           "nameKm": "អប់រំ",
           "nameEn": "Education",
           "status": "ACTIVE",
-          "createdAt": "14 មករា, 2026",
-          "updatedAt": "14 មករា, 2026"
+          "createdAt": "2026-01-14",
+          "updatedAt": "2026-01-14"
         },
         {
           "id": 2,
+          "code": "SOCIAL",
           "nameKm": "សង្គម",
           "nameEn": "Social",
           "status": "ACTIVE",
-          "createdAt": "14 មករា, 2026",
-          "updatedAt": "14 មករា, 2026"
+          "createdAt": "2026-01-14",
+          "updatedAt": "2026-01-14"
         },
         {
           "id": 3,
+          "code": "ENVIRONMENT",
           "nameKm": "បរិស្ថាន",
           "nameEn": "Environment",
           "status": "ACTIVE",
-          "createdAt": "14 មករា, 2026",
-          "updatedAt": "14 មករា, 2026"
+          "createdAt": "2026-01-14",
+          "updatedAt": "2026-01-14"
         },
         {
           "id": 4,
+          "code": "TECHNOLOGY",
           "nameKm": "បច្ចេកវិទ្យា",
           "nameEn": "Technology",
           "status": "ACTIVE",
-          "createdAt": "14 មករា, 2026",
-          "updatedAt": "14 មករា, 2026"
+          "createdAt": "2026-01-14",
+          "updatedAt": "2026-01-14"
         }
       ]
     }

@@ -2,9 +2,9 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal.js";
-import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
-import DataTable from "@/components/table/DataTable.js";
+import ConfirmDeleteModal from "@/components/modals/Confirmdeletemodal.js";
+import CreateMemberModal from "@/components/modals/CreateMemberModal.js";
+import DataTable from "@/components/tables/DataTable.js";
 import StatCard from "@/components/dashboard/statCard";
 import { FaMosque } from "react-icons/fa6";
 
@@ -12,7 +12,7 @@ import { Users, Landmark, Moon, Sparkles, Trash2 } from "lucide-react";
 import users from "@/data/members.json";
 import { AiOutlineWoman } from "react-icons/ai";
 import { RiAddCircleLine } from "react-icons/ri";
-import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail";
+import DetailButton from "@/components/ui/actions/DetailButton";
 import { FaDharmachakra } from "react-icons/fa";
 
 const KHMER_MONTHS = {
@@ -159,7 +159,7 @@ export default function MembersPage() {
       const search = query.toLowerCase();
 
       const matchesQuery =
-        m.name_kh?.toLowerCase().includes(search) || m.phone?.includes(query);
+        m.name_kh?.toLowerCase().includes(search) ;
 
       const matchesBranch = !branchFilter || m.branch === branchFilter;
 
@@ -264,14 +264,14 @@ export default function MembersPage() {
       width: "w-[14%]",
       align: "center",
       render: (m) => (
-        <div className="flex w-full min-w-0 items-center justify-center gap-1">
-          <ButtonSeeDetail
+        <div className="flex items-center justify-center gap-[5px]">
+          <DetailButton
             onClick={() => router.push(`/member/memberInfo/${m.id}`)}
           />
 
           <button
             onClick={() => setDeleteTarget(m)}
-            className="shrink-0 p-1.5 text-red-500 hover:text-red-600"
+            className="shrink-0 px-0 p-1.5 text-red-500 hover:text-red-600"
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -336,8 +336,9 @@ export default function MembersPage() {
 
   return (
     <div className="min-h-full flex flex-col gap-4">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 shrink-0">
+      <div className=" grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 shrink-0 ">
         <StatCard
+        
           icon={Users}
           label="សមាជិកសរុប"
           value={String(stats.total)}
@@ -383,7 +384,7 @@ export default function MembersPage() {
         />
       </div>
 
-      <div className="w-full">
+      <div className="w-full h-[34px]">
         <DataTable
           title="បញ្ជីសមាជិក"
           data={filteredMembers}
@@ -396,7 +397,7 @@ export default function MembersPage() {
           actionButton={
             <button
               onClick={() => setIsCreateOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-success px-3 py-2 text-sm font-medium text-white hover:opacity-90 transition whitespace-nowrap"
+              className="h-[34px] inline-flex items-center gap-2 rounded-lg bg-success px-3 py-2 text-sm font-medium text-white hover:opacity-90 transition whitespace-nowrap"
             >
               <RiAddCircleLine className="h-4 w-4 shrink-0" />
               <span>បន្ថែមសមាជិកថ្មី</span>

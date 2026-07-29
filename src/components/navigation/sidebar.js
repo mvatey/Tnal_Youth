@@ -239,6 +239,12 @@ export default function Sidebar() {
               <Link
                 key={item.id}
                 href={item.href}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setProfileOpen(false);
+                  router.push(item.href);
+                }}
                 className={`flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition ${
                   active
                     ? "bg-white/15 text-white"

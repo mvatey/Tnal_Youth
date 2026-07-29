@@ -9,7 +9,11 @@ const TABS = [
     href: "/myAcc/documents",
   },
   {
-    label: "ការចូលរួមកម្មវិធី",
+    label: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
+    href: "/myAcc/password",
+  },
+  {
+    label: "សកម្មភាព",
     href: "/myAcc/participation",
   },
   {
@@ -17,8 +21,8 @@ const TABS = [
     href: "/myAcc/donation",
   },
   {
-    label: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
-    href: "/myAcc/password",
+    label: "ការបរិច្ចាក",
+    href: "/myAcc/sponsor",
   },
 ];
 
@@ -27,7 +31,7 @@ export default function MyAccountTabNav() {
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="grid grid-cols-4">
+      <div className="grid grid-cols-5">
         {TABS.map((tab) => {
           const active =
             pathname === "/myAcc"

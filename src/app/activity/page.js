@@ -1,18 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { List, PlusCircle } from "lucide-react";
 
-import SearchBar from "@/components/table-items/SearchBar";
-import FilterBar from "@/components/table-items/FilterBar";
-import Table from "@/components/table-items/Table";
+import SearchBar from "@/components/tables/SearchBar";
+import FilterBar from "@/components/tables/FilterBar";
+import Table from "@/components/tables/GenericTable";
 import ActivityStats from "@/components/activity/ActivityStats";
-import SaveButton from "@/components/forms/save";
-import SaveFile from "@/components/forms/savefile";
+import PrimaryActionButton from "@/components/ui/actions/PrimaryActionButton";
 
 import { useBranch } from "@/context/BranchContext";
-import activities from "@/data/activity.json";
+import activities from "@/data/activityRecords.json";
+import { downloadCsv } from "@/utils/downloadCsv";
 
 const branches = ["ភ្នំពេញ", "កណ្ដាល"];
 
@@ -82,19 +82,6 @@ export default function ActivityPage() {
   const [selectedDate, setSelectedDate] =
     useState(null);
 
-  const [showSaveFile, setShowSaveFile] =
-    useState(false);
-
-  useEffect(() => {
-    if (!showSaveFile) return undefined;
-
-    const timeoutId = window.setTimeout(() => {
-      setShowSaveFile(false);
-    }, 3000);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [showSaveFile]);
-
   const filteredActivities = useMemo(() => {
     const query = searchQuery
       .trim()
@@ -160,7 +147,7 @@ export default function ActivityPage() {
     {
       key: "name",
       label: "ឈ្មោះកម្មវិធី",
-      width: "14%",
+      width: "13%",
       align: "left",
       truncate: true,
       cellClassName:
@@ -178,19 +165,20 @@ export default function ActivityPage() {
     {
       key: "sector",
       label: "វិស័យ",
-      width: "8%",
+      width: "7%",
       align: "center",
     },
     {
       key: "branch",
       label: "សាខា",
-      width: "8%",
+      width: "12%",
       align: "center",
+      cellClassName: "whitespace-nowrap",
     },
     {
       key: "location",
       label: "ទីតាំង",
-      width: "11%",
+      width: "10%",
       align: "center",
       truncate: true,
       render: (row) => {
@@ -220,7 +208,7 @@ export default function ActivityPage() {
     {
       key: "participants",
       label: "ចំនួនអ្នកចូលរួម",
-      width: "10%",
+      width: "9%",
       align: "center",
     },
     {
@@ -240,7 +228,7 @@ export default function ActivityPage() {
       render: (row) => (
         <Link
           href={`/activity/${row.id}`}
-          className="mx-auto flex h-8 w-fit items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-3 text-[11px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-sm active:translate-y-0"
+          className="mx-auto flex h-[22px] w-fit items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] bg-primary px-3 text-[10px] font-Regular text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-sm active:translate-y-0"
         >
           <List size={14} />
           ព័ត៌មានលម្អិត
@@ -273,6 +261,10 @@ export default function ActivityPage() {
     },
   ];
 
+  const handleDownload = () => {
+    downloadCsv(filteredActivities, "activities.csv");
+  };
+
   return (
     <div className="min-w-0 space-y-5 overflow-x-hidden">
       <ActivityStats activities={filteredActivities} />
@@ -293,23 +285,7 @@ export default function ActivityPage() {
   </div>
 
   <div className="ml-auto flex shrink-0 items-center gap-3">
-    <div className="relative">
-      <SaveButton
-        onClick={() => setShowSaveFile((isOpen) => !isOpen)}
-        aria-expanded={showSaveFile}
-        aria-controls="activity-save-file"
-      />
-
-      {showSaveFile && (
-        <div
-          id="activity-save-file"
-          role="alert"
-          className="absolute right-0 top-full z-50 mt-3"
-        >
-          <SaveFile />
-        </div>
-      )}
-    </div>
+    <PrimaryActionButton onClick={handleDownload} />
 
     <Link
       href="/activity/create"

@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { RiAddCircleLine } from "react-icons/ri";
 
-import SaveButton from "@/components/forms/SaveButton";
-import BoxFill from "@/components/forms/boxFill.js";
-import FormDate from "@/components/forms/FormDate.js";
+import SaveButton from "@/components/ui/actions/SaveButton";
+import FormControl from "@/components/forms/FormControl.js";
+import KhmerDateField from "@/components/forms/KhmerDateField.js";
 import FormSelect from "@/components/forms/FormSelect";
-import DeleteButton from "@/components/forms/DeleteButton";
+import DeleteButton from "@/components/ui/actions/DeleteButton";
 
 import membersData from "@/data/members.json";
 import locationData from "@/data/location.json";
@@ -156,7 +156,7 @@ function PoliticalGroup({ index, item, canDelete, onChange, onDelete }) {
       </h3>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-        <BoxFill
+        <FormControl
           label="ឈ្មោះ ស្ថាប័ន"
           placeholder="បញ្ចូលឈ្មោះស្ថាប័ន"
           value={item.organization ?? ""}
@@ -171,35 +171,35 @@ function PoliticalGroup({ index, item, canDelete, onChange, onDelete }) {
           options={workLocations}
         />
 
-        <BoxFill
+        <FormControl
           label="ប្រទេស"
           placeholder="បញ្ចូលឈ្មោះប្រទេស"
           value={item.country ?? ""}
           onChange={(event) => onChange("country", event.target.value)}
         />
 
-        <BoxFill
+        <FormControl
           label="តួនាទី"
           placeholder="បញ្ចូលឈ្មោះតួនាទី"
           value={item.position ?? ""}
           onChange={(event) => onChange("position", event.target.value)}
         />
 
-        <BoxFill
+        <FormControl
           label="លេខកាត/លិខិតតែងតាំង"
           placeholder="បញ្ចូលលេខកាត/លិខិតតែងតាំង"
           value={item.cardNumber ?? ""}
           onChange={(event) => onChange("cardNumber", event.target.value)}
         />
 
-        <FormDate
+        <KhmerDateField
           label="ថ្ងៃខែឆ្នាំ ចាប់ផ្ដើម"
           name={`joinedDate-${item.id}`}
           value={item.joinedDate ?? ""}
           onChange={(event) => onChange("joinedDate", event.target.value)}
         />
 
-        <FormDate
+        <KhmerDateField
           label="ថ្ងៃខែឆ្នាំ បញ្ចប់"
           name={`leftDate-${item.id}`}
           value={item.leftDate ?? ""}

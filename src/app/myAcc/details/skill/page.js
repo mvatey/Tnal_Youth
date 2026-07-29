@@ -6,8 +6,8 @@ import { RiAddCircleLine } from "react-icons/ri";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import educationData from "@/data/education.json";
 
-import SaveButton from "@/components/forms/SaveButton";
-import DeleteButton from "@/components/forms/DeleteButton";
+import SaveButton from "@/components/ui/actions/SaveButton";
+import DeleteButton from "@/components/ui/actions/DeleteButton";
 import FormSelect from "@/components/forms/FormSelect";
 
 function createLanguageSkill() {

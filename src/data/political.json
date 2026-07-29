@@ -1,41 +1,94 @@
 {
   "workLocations": [
-    "ថ្នាក់ជាតិ",
-    "ថ្នាក់រាជធានី/ខេត្ត",
-    "ថ្នាក់ក្រុង/ស្រុក/ខណ្ឌ",
-    "ថ្នាក់ឃុំ/សង្កាត់",
-    "ថ្នាក់ភូមិ",
-    "អន្តរជាតិ"
+    {
+      "label": "ថ្នាក់ជាតិ",
+      "value": "NATIONAL"
+    },
+    {
+      "label": "ថ្នាក់រាជធានី/ខេត្ត",
+      "value": "PROVINCE"
+    },
+    {
+      "label": "ថ្នាក់ក្រុង/ស្រុក/ខណ្ឌ",
+      "value": "DISTRICT"
+    },
+    {
+      "label": "ថ្នាក់ឃុំ/សង្កាត់",
+      "value": "COMMUNE"
+    },
+    {
+      "label": "ថ្នាក់ភូមិ",
+      "value": "VILLAGE"
+    },
+    {
+      "label": "អន្តរជាតិ",
+      "value": "INTERNATIONAL"
+    }
   ],
 
   "roles": [
-    "ប្រធាន",
-    "អនុប្រធាន",
-    "លេខាធិការ",
-    "អនុលេខាធិការ",
-    "សមាជិកគណៈកម្មការ",
-    "សមាជិក",
-    "ទីប្រឹក្សា",
-    "អ្នកស្ម័គ្រចិត្ត",
-    "ផ្សេងៗ"
+    {
+      "label": "ប្រធាន",
+      "value": "PRESIDENT"
+    },
+    {
+      "label": "អនុប្រធាន",
+      "value": "VICE_PRESIDENT"
+    },
+    {
+      "label": "លេខាធិការ",
+      "value": "SECRETARY"
+    },
+    {
+      "label": "អនុលេខាធិការ",
+      "value": "DEPUTY_SECRETARY"
+    },
+    {
+      "label": "សមាជិកគណៈកម្មការ",
+      "value": "COMMITTEE_MEMBER"
+    },
+    {
+      "label": "សមាជិក",
+      "value": "MEMBER"
+    },
+    {
+      "label": "ទីប្រឹក្សា",
+      "value": "ADVISOR"
+    },
+    {
+      "label": "អ្នកស្ម័គ្រចិត្ត",
+      "value": "VOLUNTEER"
+    },
+    {
+      "label": "ផ្សេងៗ",
+      "value": "OTHER"
+    }
   ],
 
   "organizationTypes": [
-    "គណបក្សនយោបាយ",
-    "ស្ថាប័នរដ្ឋ",
-    "អង្គការសង្គមស៊ីវិល",
-    "សមាគម",
-    "សហជីព",
-    "ផ្សេងៗ"
-  ],
-
-  "emptyPolitical": {
-    "organization": "",
-    "workLocation": "",
-    "country": "",
-    "role": "",
-    "cardNumber": "",
-    "joinedDate": "",
-    "leftDate": ""
-  }
+    {
+      "label": "គណបក្សនយោបាយ",
+      "value": "POLITICAL_PARTY"
+    },
+    {
+      "label": "ស្ថាប័នរដ្ឋ",
+      "value": "GOVERNMENT_INSTITUTION"
+    },
+    {
+      "label": "អង្គការសង្គមស៊ីវិល",
+      "value": "CIVIL_SOCIETY_ORGANIZATION"
+    },
+    {
+      "label": "សមាគម",
+      "value": "ASSOCIATION"
+    },
+    {
+      "label": "សហជីព",
+      "value": "UNION"
+    },
+    {
+      "label": "ផ្សេងៗ",
+      "value": "OTHER"
+    }
+  ]
 }

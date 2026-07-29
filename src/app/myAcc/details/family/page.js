@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
 
-import SaveButton from "@/components/forms/SaveButton";
-import BoxFill from "@/components/forms/boxFill";
-import FormDate from "@/components/forms/FormDate";
+import SaveButton from "@/components/ui/actions/SaveButton";
+import FormControl from "@/components/forms/FormControl";
+import KhmerDateField from "@/components/forms/KhmerDateField";
+import RadioGroup from "@/components/forms/RadioGroup";
 
 const EMPTY_FAMILY = {
   spouse: {
@@ -130,7 +131,7 @@ export default function FamilyPage() {
         <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2 xl:grid-cols-3">
           {/* SPOUSE */}
 
-          <BoxFill
+          <FormControl
             label="ឈ្មោះ ប្ដី/ប្រពន្ធ (ខ្មែរ)"
             placeholder="បញ្ចូលឈ្មោះ"
             value={family.spouse.name_kh}
@@ -143,7 +144,7 @@ export default function FamilyPage() {
             }
           />
 
-          <BoxFill
+          <FormControl
             label="ឈ្មោះ ប្ដី/ប្រពន្ធ (ឡាតាំង)"
             placeholder="បញ្ចូលឈ្មោះ"
             value={family.spouse.name_en}
@@ -156,7 +157,7 @@ export default function FamilyPage() {
             }
           />
 
-          <BoxFill
+          <FormControl
             label="មុខរបរ ប្ដី/ប្រពន្ធ"
             placeholder="បញ្ចូលមុខរបរ"
             value={family.spouse.occupation}
@@ -169,7 +170,7 @@ export default function FamilyPage() {
             }
           />
 
-          <FormDate
+          <KhmerDateField
             label="ថ្ងៃខែឆ្នាំកំណើត"
             value={family.spouse.date_of_birth}
             onChange={(event) =>
@@ -182,7 +183,7 @@ export default function FamilyPage() {
           />
 
           <div className="xl:col-span-2">
-            <BoxFill
+            <FormControl
               label="ទីលំនៅប្ដី/ប្រពន្ធ"
               placeholder="បញ្ចូលទីលំនៅ"
               value={family.spouse.address}
@@ -198,7 +199,7 @@ export default function FamilyPage() {
 
           {/* FATHER */}
 
-          <BoxFill
+          <FormControl
             label="ឈ្មោះឪពុក (ខ្មែរ)"
             placeholder="បញ្ចូលឈ្មោះ"
             value={family.father.name_kh}
@@ -211,7 +212,7 @@ export default function FamilyPage() {
             }
           />
 
-          <BoxFill
+          <FormControl
             label="ឈ្មោះឪពុក (ឡាតាំង)"
             placeholder="បញ្ចូលឈ្មោះ"
             value={family.father.name_en}
@@ -224,7 +225,7 @@ export default function FamilyPage() {
             }
           />
 
-          <BoxFill
+          <FormControl
             label="មុខរបរឪពុក"
             placeholder="បញ្ចូលមុខរបរ"
             value={family.father.occupation}
@@ -251,7 +252,7 @@ export default function FamilyPage() {
           />
 
           <div className="xl:col-span-2">
-            <BoxFill
+            <FormControl
               label="ទីលំនៅឪពុក"
               placeholder="បញ្ចូលទីលំនៅ"
               value={family.father.address}
@@ -267,7 +268,7 @@ export default function FamilyPage() {
 
           {/* MOTHER */}
 
-          <BoxFill
+          <FormControl
             label="ឈ្មោះម្តាយ (ខ្មែរ)"
             placeholder="បញ្ចូលឈ្មោះ"
             value={family.mother.name_kh}
@@ -280,7 +281,7 @@ export default function FamilyPage() {
             }
           />
 
-          <BoxFill
+          <FormControl
             label="ឈ្មោះម្តាយ (ឡាតាំង)"
             placeholder="បញ្ចូលឈ្មោះ"
             value={family.mother.name_en}
@@ -293,7 +294,7 @@ export default function FamilyPage() {
             }
           />
 
-          <BoxFill
+          <FormControl
             label="មុខរបរម្តាយ"
             placeholder="បញ្ចូលមុខរបរ"
             value={family.mother.occupation}
@@ -320,7 +321,7 @@ export default function FamilyPage() {
           />
 
           <div className="xl:col-span-2">
-            <BoxFill
+            <FormControl
               label="ទីលំនៅម្តាយ"
               placeholder="បញ្ចូលទីលំនៅ"
               value={family.mother.address}
@@ -340,61 +341,5 @@ export default function FamilyPage() {
         <SaveButton type="submit" />
       </div>
     </form>
-  );
-}
-
-function RadioGroup({
-  label,
-  name,
-  value,
-  onChange,
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-semibold text-text-primary">
-        {label}
-      </label>
-
-      <div className="flex gap-8 pt-2">
-        <Radio
-          name={name}
-          label="នៅរស់"
-          value="នៅរស់"
-          checked={value === "នៅរស់"}
-          onChange={onChange}
-        />
-
-        <Radio
-          name={name}
-          label="ស្លាប់"
-          value="ស្លាប់"
-          checked={value === "ស្លាប់"}
-          onChange={onChange}
-        />
-      </div>
-    </div>
-  );
-}
-
-function Radio({
-  name,
-  label,
-  value,
-  checked,
-  onChange,
-}) {
-  return (
-    <label className="flex cursor-pointer items-center gap-3 text-sm text-text-primary">
-      <input
-        type="radio"
-        name={name}
-        value={value}
-        checked={checked}
-        onChange={() => onChange(value)}
-        className="h-5 w-5 accent-primary"
-      />
-
-      {label}
-    </label>
   );
 }

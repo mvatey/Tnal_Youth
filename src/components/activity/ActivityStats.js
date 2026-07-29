@@ -42,7 +42,6 @@ function getStats(activities) {
   ];
 }
 
-
 function StatCard({
   label,
   value,
@@ -56,10 +55,7 @@ function StatCard({
       
       {/* top color line */}
       <div className={`h-[3px] w-full ${accent}`} />
-
-
       <div className="flex items-center gap-3 p-4">
-
         <div
           className={`
             flex
@@ -72,33 +68,23 @@ function StatCard({
             ${iconBg}
           `}
         >
-
           <Icon
             size={22}
             className={iconColor}
           />
-
         </div>
-
-
         <div>
-
           <p className="text-lg font-bold text-text-primary">
             {value}
           </p>
-
           <p className="text-sm text-text-secondary">
             {label}
           </p>
-
         </div>
-
       </div>
-
     </div>
   );
 }
-
 
 export default function ActivityStats({ activities = [] }) {
   const stats = getStats(activities);

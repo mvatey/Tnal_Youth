@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { RiAddCircleLine } from "react-icons/ri";
 import { Trash2 } from "lucide-react";
-import SaveButton from "@/components/forms/SaveButton";
+import SaveButton from "@/components/ui/actions/SaveButton";
 import FormSelect from "@/components/forms/FormSelect";
 import educationData from "@/data/education.json";
-import DeleteButton from "@/components/forms/DeleteButton";
+import DeleteButton from "@/components/ui/actions/DeleteButton";
 
 function createLanguageSkill() {
   return {

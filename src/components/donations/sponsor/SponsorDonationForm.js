@@ -4,13 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { CalendarDays, ChevronDown, ChevronUp, CloudUpload, FileText, ImportIcon, X } from "lucide-react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import SaveAlert from "@/components/forms/savealert";
-import memberRecords from "@/data/donation/members.json";
+import SaveSuccessAlert from "@/components/ui/feedback/SaveSuccessAlert";
+import memberRecords from "@/data/members.json";
+import branches from "@/data/branchRecords.json";
+import variables from "@/data/variables.json";
 import sponsorOptions from "@/data/donation/sponsorOptions.json";
 
-const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
+const SPONSOR_CREATED_ROWS_KEY =
+  "tnal-youth:sponsor-donation-created-rows";
+
 const {
-  branches,
   equipmentTypes,
   khmerDigits,
   khmerMonths,
@@ -19,8 +22,50 @@ const {
   sponsorStatuses,
   sponsorTypes,
 } = sponsorOptions;
-const members = memberRecords.filter((member) => member.role === "member");
-const memberNames = members.map((member) => member.name);
+
+// ===== Members =====
+const members = memberRecords.filter(
+  (member) =>
+    member.role === "MEMBER" ||
+    member.role === "member" ||
+    member.role === "សមាជិក"
+);
+
+const memberNames = members.map(
+  (member) =>
+    member.name_kh ||
+    member.nameKh ||
+    member.name ||
+    member.fullName
+);
+
+// ===== Dropdown Options =====
+const genderOptions =
+  variables.types
+    .find((type) => type.id === "gender")
+    ?.items.map((item) => ({
+      label: item.nameKm,
+      value: item.nameKm,
+    })) ?? [
+    { label: "ប្រុស", value: "ប្រុស" },
+    { label: "ស្រី", value: "ស្រី" },
+  ];
+
+const statusOptions =
+  variables.types
+    .find((type) => type.id === "member-status")
+    ?.items.map((item) => ({
+      label: item.nameKm,
+      value: item.nameKm,
+    })) ?? [];
+
+const roleOptions = [
+  { label: "ប្រធាន", value: "ប្រធាន" },
+  { label: "អនុប្រធាន", value: "អនុប្រធាន" },
+  { label: "លេខាធិការ", value: "លេខាធិការ" },
+  { label: "អនុលេខាធិការ", value: "អនុលេខាធិការ" },
+  { label: "សមាជិក", value: "សមាជិក" },
+];
 
 function toKhmerNumber(value) {
   return String(value).replace(/\d/g, (digit) => khmerDigits[Number(digit)]);
@@ -131,6 +176,33 @@ function SelectField({
   placeholder,
   className = "",
 }) {
+  const normalizedOptions = options.map((option) => {
+    if (
+      option !== null &&
+      typeof option === "object"
+    ) {
+      return {
+        label:
+          option.label ??
+          option.nameKh ??
+          option.nameKm ??
+          option.name ??
+          option.value,
+        value:
+          option.value ??
+          option.id ??
+          option.nameKh ??
+          option.nameKm ??
+          option.name,
+      };
+    }
+
+    return {
+      label: option,
+      value: option,
+    };
+  });
+
   return (
     <label className={`block ${className}`}>
       <span className="mb-2 block truncate whitespace-nowrap text-[13px] font-semibold leading-5 text-text-secondary">
@@ -144,9 +216,12 @@ function SelectField({
           className="h-[34px] w-full appearance-none rounded-xl border border-[#CBD0D8] bg-white px-4 pr-10 text-[13px] font-medium text-text-secondary outline-none transition focus:border-secondary"
         >
           <option value="">{placeholder}</option>
-          {options.map((option) => (
-            <option key={option} value={option}>
-              {option}
+          {normalizedOptions.map((option) => (
+            <option
+              key={String(option.value)}
+              value={option.value}
+            >
+              {option.label}
             </option>
           ))}
         </select>
@@ -290,7 +365,7 @@ function DateField({ label, value, onChange, required = false, className = "" })
 }
 
 function PaymentMethodField({ value, onChange, className = "" }) {
-  const logo = paymentLogos[value];
+  const logo = paymentLogos?.[value];
 
   return (
     <label className={`block ${className}`}>
@@ -309,7 +384,9 @@ function PaymentMethodField({ value, onChange, className = "" }) {
               className="h-5 w-5 rounded object-contain"
             />
           ) : null}
-          {value || "ABA"}
+          {value === "MATERIAL"
+            ? "សម្ភារៈ"
+            : value || "ABA"}
         </span>
         <select
           value={value}
@@ -317,9 +394,11 @@ function PaymentMethodField({ value, onChange, className = "" }) {
           className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
           aria-label="វិធីសាស្ត្រទូទាត់"
         >
-          {paymentMethods.map((method) => (
+          {(paymentMethods ?? ["ABA", "ACLEDA", "CASH"]).map((method) => (
             <option key={method} value={method}>
-              {method}
+              {method === "MATERIAL"
+                ? "សម្ភារៈ"
+                : method}
             </option>
           ))}
         </select>
@@ -403,13 +482,29 @@ function ReceiptUpload({ value, onChange }) {
     </label>
   );
 }
+function normalizeSponsorType(type) {
+  switch (type) {
+    case "បុគ្គល":
+      return "INDIVIDUAL";
+
+    case "ស្ថាប័ន":
+      return "ORGANIZATION";
+
+    case "សមាជិក":
+      return "MEMBER";
+
+    default:
+      return type || "";
+  }
+}
 
 function buildInitialForm(initialData = {}) {
   const data = initialData ?? {};
 
   return {
     id: data.id ?? null,
-    sponsorType: data.type || "",
+    sponsorType: normalizeSponsorType(
+    data.sponsorType || data.type),
     sponsorName: data.name || "",
     phone: data.phone || "",
     email: data.email || "",
@@ -417,10 +512,10 @@ function buildInitialForm(initialData = {}) {
     equipment: data.equipment || "",
     equipmentType: data.equipmentType || "",
     equipmentCount: data.equipmentCount || "0",
-    date: data.dateValue || "",
-    paymentMethod: data.method || "ABA",
-    amountRiel: data.rielAmount || "",
-    amountDollar: data.dollarAmount || "",
+    date: data.dateValue || data.donationDate || "",
+    paymentMethod: data.method || data.paymentMethod || "ABA",
+    amountRiel: data.rielAmount ?? data.amountKhr ?? "",
+    amountDollar: data.dollarAmount ?? data.amountUsd ?? "",
     note: data.note || "",
     branch: data.branch || "",
     status: data.status || "",
@@ -437,26 +532,21 @@ export default function SponsorDonationForm({ initialData = null }) {
   const [showSaveAlert, setShowSaveAlert] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [form, setForm] = useState(() => buildInitialForm(initialData));
-
   useEffect(() => {
     const initialForm = buildInitialForm(initialData);
-
     if (!initialForm.id) {
       setForm(initialForm);
       return;
     }
-
     const savedValue = window.localStorage.getItem(
       "tnal-youth:sponsor-donation-edits",
     );
     let savedEdits = {};
-
     try {
       savedEdits = savedValue ? JSON.parse(savedValue) : {};
     } catch {
       savedEdits = {};
     }
-
     setForm(buildInitialForm(savedEdits[initialForm.id] || initialData));
   }, [initialData]);
 
@@ -486,8 +576,13 @@ export default function SponsorDonationForm({ initialData = null }) {
   };
 
   const handleMemberChange = (memberName) => {
-    const selectedMember = members.find((member) => member.name === memberName);
-
+  const selectedMember = members.find(
+  (member) =>
+    (member.name_kh ||
+      member.nameKh ||
+      member.name ||
+      member.fullName) === memberName
+);
     setForm((currentForm) => ({
       ...currentForm,
       sponsorName: memberName,
@@ -504,8 +599,9 @@ export default function SponsorDonationForm({ initialData = null }) {
       equipment: isChecked ? "សម្ភារៈ" : "",
       paymentMethod:
         isChecked
-          ? "សម្ភារៈ"
-          : currentForm.paymentMethod === "សម្ភារៈ"
+          ? "MATERIAL"
+          : currentForm.paymentMethod === "MATERIAL" ||
+              currentForm.paymentMethod === "សម្ភារៈ"
             ? "ABA"
             : currentForm.paymentMethod,
       ...(!isChecked && {
@@ -516,7 +612,9 @@ export default function SponsorDonationForm({ initialData = null }) {
   };
 
   const handlePaymentMethodChange = (paymentMethod) => {
-    const isEquipment = paymentMethod === "សម្ភារៈ";
+    const isEquipment =
+      paymentMethod === "MATERIAL" ||
+      paymentMethod === "សម្ភារៈ";
 
     setForm((currentForm) => ({
       ...currentForm,
@@ -606,18 +704,18 @@ export default function SponsorDonationForm({ initialData = null }) {
     router.push(listPath);
   };
 
-  const sponsorNamePlaceholder =
-    form.sponsorType === sponsorTypes[0]
-      ? "បញ្ចូលឈ្មោះបុគ្គល"
-      : form.sponsorType === sponsorTypes[1]
-        ? "បញ្ចូលឈ្មោះស្ថាប័ន"
-        : "បញ្ចូលឈ្មោះបុគ្គលឬស្ថាប័ន";
+ const sponsorNamePlaceholder =
+  form.sponsorType === "INDIVIDUAL"
+    ? "បញ្ចូលឈ្មោះបុគ្គល"
+    : form.sponsorType === "ORGANIZATION"
+      ? "បញ្ចូលឈ្មោះស្ថាប័ន"
+      : "បញ្ចូលឈ្មោះបុគ្គលឬស្ថាប័ន";
 
   return (
     <>
       {showSaveAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
-          <SaveAlert message="អបអរសាទរ ! ថវិការឧបត្ថម្ភត្រូវបានបន្ថែមដោយជោគជ័យ" />
+          <SaveSuccessAlert message="អបអរសាទរ ! ថវិការឧបត្ថម្ភត្រូវបានបន្ថែមដោយជោគជ័យ" />
         </div>
       )}
 
@@ -633,22 +731,25 @@ export default function SponsorDonationForm({ initialData = null }) {
             </h2>
 
             <fieldset className="flex gap-8 text-[13px] font-medium text-text-secondary">
-              {sponsorTypes.map((type) => (
-                <label key={type} className="inline-flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="sponsorType"
-                    value={type}
-                    checked={form.sponsorType === type}
-                    onChange={handleSponsorTypeChange}
-                    className="h-3.5 w-3.5 accent-[#1689F2]"
-                  />
-                  {type}
-                </label>
-              ))}
-            </fieldset>
+  {sponsorTypes.map((option) => (
+    <label
+      key={option.value}
+      className="inline-flex items-center gap-2"
+    >
+      <input
+        type="radio"
+        name="sponsorType"
+        value={option.value}
+        checked={form.sponsorType === option.value}
+        onChange={handleSponsorTypeChange}
+        className="h-3.5 w-3.5 accent-[#1689F2]"
+      />
+      {option.label}
+    </label>
+  ))}
+</fieldset>
 
-            {form.sponsorType === "សមាជិក" ? (
+            {form.sponsorType === "MEMBER" ? (
               <MemberSelectField
                 label="ឈ្មោះអ្នកឧបត្ថម្ភ"
                 required

@@ -4,10 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { UploadCloud } from "lucide-react";
 
-import SaveButton from "@/components/forms/SaveButton";
-import BoxFill from "@/components/forms/boxFill.js";
-import SelectArrow from "@/components/forms/SelectArrow";
-import FormDate from "@/components/forms/FormDate.js";
+import SaveButton from "@/components/ui/actions/SaveButton";
+import FormControl from "@/components/forms/FormControl.js";
+import KhmerDateField from "@/components/forms/KhmerDateField.js";
+import FormSelect from "@/components/forms/FormSelect";
 
 import members from "@/data/members.json";
 
@@ -90,14 +90,14 @@ export default function PersonalPage() {
           {/* FORM */}
 
           <div className="col-span-2 grid grid-cols-2 gap-5">
-            <BoxFill
+            <FormControl
               label="ឈ្មោះជាភាសាខ្មែរ"
               value={member.name_kh || ""}
               onChange={handleChange("name_kh")}
               placeholder={member.name_kh ? "" : "បញ្ចូលឈ្មោះជាភាសាខ្មែរ"}
             />
 
-            <BoxFill
+            <FormControl
               label="ឈ្មោះជាអក្សរឡាតាំង"
               value={member.name_en || ""}
               onChange={handleChange("name_en")}
@@ -110,6 +110,7 @@ export default function PersonalPage() {
               onChange={handleChange("branch")}
               placeholder="ជ្រើសរើសសាខា"
               options={branchOptions}
+              selectClassName="h-11"
             />
 
             <FormSelect
@@ -118,9 +119,10 @@ export default function PersonalPage() {
               onChange={handleChange("gender")}
               placeholder="ជ្រើសរើសភេទ"
               options={["ប្រុស", "ស្រី"]}
+              selectClassName="h-11"
             />
 
-            <BoxFill
+            <FormControl
               label="អ៊ីមែល"
               type="email"
               value={member.email || ""}
@@ -128,7 +130,7 @@ export default function PersonalPage() {
               placeholder={member.email ? "" : "បញ្ចូលអ៊ីមែល"}
             />
 
-            <BoxFill
+            <FormControl
               label="លេខទូរស័ព្ទ"
               type="tel"
               value={member.phone || ""}
@@ -136,21 +138,21 @@ export default function PersonalPage() {
               placeholder={member.phone ? "" : "បញ្ចូលលេខទូរស័ព្ទ"}
             />
 
-            <FormDate
+            <KhmerDateField
               label="ថ្ងៃខែឆ្នាំកំណើត"
               name="date_of_birth"
               value={member.date_of_birth || ""}
               onChange={handleChange("date_of_birth")}
             />
 
-            <BoxFill
+            <FormControl
               label="សញ្ជាតិ"
               value={member.nationality || ""}
               onChange={handleChange("nationality")}
               placeholder={member.nationality ? "" : "បញ្ចូលសញ្ជាតិ"}
             />
 
-            <BoxFill
+            <FormControl
               label="ជនជាតិ"
               value={member.ethnicity || ""}
               onChange={handleChange("ethnicity")}
@@ -202,46 +204,6 @@ export default function PersonalPage() {
 
       <div className="flex justify-end">
         <SaveButton onClick={handleSave} />
-      </div>
-    </div>
-  );
-}
-
-function FormSelect({
-  label,
-
-  value,
-
-  onChange,
-
-  placeholder,
-
-  options = [],
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-semibold text-text-primary">
-        {label}
-      </label>
-
-      <div className="relative">
-        <select
-          value={value}
-          onChange={onChange}
-          className="h-11 w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 pr-10 text-sm text-gray-600 outline-none focus:border-primary"
-        >
-          <option value="" disabled>
-            {placeholder}
-          </option>
-
-          {options.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-
-        <SelectArrow />
       </div>
     </div>
   );

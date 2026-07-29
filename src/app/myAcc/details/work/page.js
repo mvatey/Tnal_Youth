@@ -5,10 +5,10 @@ import { RiAddCircleLine } from "react-icons/ri";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
 
-import SaveButton from "@/components/forms/SaveButton";
-import DeleteButton from "@/components/forms/DeleteButton";
-import BoxFill from "@/components/forms/boxFill";
-import FormDate from "@/components/forms/FormDate";
+import SaveButton from "@/components/ui/actions/SaveButton";
+import DeleteButton from "@/components/ui/actions/DeleteButton";
+import FormControl from "@/components/forms/FormControl";
+import KhmerDateField from "@/components/forms/KhmerDateField";
 import FormSelect from "@/components/forms/FormSelect";
 
 function createEmptyWork() {
@@ -117,7 +117,7 @@ export default function MyAccountWorkPage() {
               </h3>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                <BoxFill
+                <FormControl
                   label="ឈ្មោះ ស្ថាប័ន"
                   value={work.company || ""}
                   onChange={(event) =>
@@ -130,7 +130,7 @@ export default function MyAccountWorkPage() {
                   placeholder="បញ្ចូលឈ្មោះស្ថាប័ន"
                 />
 
-                <BoxFill
+                <FormControl
                   label="អាសយដ្ឋាន"
                   value={work.address || ""}
                   onChange={(event) =>
@@ -181,7 +181,7 @@ export default function MyAccountWorkPage() {
                   ]}
                 />
 
-                <FormDate
+                <KhmerDateField
                   label="ថ្ងៃចាប់ផ្ដើម"
                   name={`work-start-${work.id}`}
                   value={work.startDate || ""}
@@ -194,7 +194,7 @@ export default function MyAccountWorkPage() {
                   }
                 />
 
-                <FormDate
+                <KhmerDateField
                   label="ថ្ងៃបញ្ចប់"
                   name={`work-end-${work.id}`}
                   value={work.endDate || ""}

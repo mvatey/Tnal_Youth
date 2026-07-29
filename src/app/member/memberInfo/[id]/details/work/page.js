@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { RiAddCircleLine } from "react-icons/ri";
-import SaveButton from "@/components/forms/SaveButton";
-import BoxFill from "@/components/forms/boxFill.js";
-import FormDate from "@/components/forms/FormDate.js";
+import SaveButton from "@/components/ui/actions/SaveButton";
+import FormControl from "@/components/forms/FormControl.js";
+import KhmerDateField from "@/components/forms/KhmerDateField.js";
 import FormSelect from "@/components/forms/FormSelect";
-import DeleteButton from "@/components/forms/DeleteButton";
+import DeleteButton from "@/components/ui/actions/DeleteButton";
 import membersData from "@/data/members.json";
 
 function createEmptyWork() {
@@ -92,17 +92,17 @@ export default function WorkPage() {
               <h3 className="mb-5 text-sm font-semibold text-text-primary">ប្រវត្តិការងារ ទី {index + 1}</h3>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                <BoxFill label="ឈ្មោះ ស្ថាប័ន" placeholder="បញ្ចូលឈ្មោះស្ថាប័ន" value={work.company} onChange={(event) => handleWorkChange(work.id, "company", event.target.value)} />
+                <FormControl label="ឈ្មោះ ស្ថាប័ន" placeholder="បញ្ចូលឈ្មោះស្ថាប័ន" value={work.company} onChange={(event) => handleWorkChange(work.id, "company", event.target.value)} />
 
-                <BoxFill label="អាស័យដ្ឋាន" placeholder="បញ្ចូលអាស័យដ្ឋាន" value={work.address} onChange={(event) => handleWorkChange(work.id, "address", event.target.value)} />
+                <FormControl label="អាស័យដ្ឋាន" placeholder="បញ្ចូលអាស័យដ្ឋាន" value={work.address} onChange={(event) => handleWorkChange(work.id, "address", event.target.value)} />
 
                 <FormSelect label="តួនាទី" placeholder="ជ្រើសរើសតួនាទី" value={work.position} onChange={(event) => handleWorkChange(work.id, "position", event.target.value)} options={["ពេញម៉ោង", "ក្រៅម៉ោង", "កិច្ចសន្យា", "ស្ម័គ្រចិត្ត"]} />
 
                 <FormSelect label="ការតែងតាំងមុខតំណែង" placeholder="ជ្រើសរើសការតែងតាំង" value={work.appointment} onChange={(event) => handleWorkChange(work.id, "appointment", event.target.value)} options={["បញ្ចប់កិច្ចសន្យា", "ផ្លាស់ប្ដូរការងារ", "បន្តការសិក្សា", "ផ្សេងៗ"]} />
 
-                <FormDate label="ថ្ងៃខែចាប់ផ្ដើម" name={`startDate-${work.id}`} value={work.startDate} onChange={(event) => handleWorkChange(work.id, "startDate", event.target.value)} />
+                <KhmerDateField label="ថ្ងៃខែចាប់ផ្ដើម" name={`startDate-${work.id}`} value={work.startDate} onChange={(event) => handleWorkChange(work.id, "startDate", event.target.value)} />
 
-                <FormDate label="ថ្ងៃខែបញ្ចប់" name={`endDate-${work.id}`} value={work.endDate} onChange={(event) => handleWorkChange(work.id, "endDate", event.target.value)} />
+                <KhmerDateField label="ថ្ងៃខែបញ្ចប់" name={`endDate-${work.id}`} value={work.endDate} onChange={(event) => handleWorkChange(work.id, "endDate", event.target.value)} />
               </div>
 
               <div className="mt-6 flex justify-end">

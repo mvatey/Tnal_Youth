@@ -5,9 +5,9 @@ import { UploadCloud } from "lucide-react";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
 
-import SaveButton from "@/components/forms/SaveButton";
-import BoxFill from "@/components/forms/boxFill";
-import FormDate from "@/components/forms/FormDate";
+import SaveButton from "@/components/ui/actions/SaveButton";
+import FormControl from "@/components/forms/FormControl";
+import KhmerDateField from "@/components/forms/KhmerDateField";
 import FormSelect from "@/components/forms/FormSelect";
 
 export default function MyAccountPersonalPage() {
@@ -103,7 +103,7 @@ export default function MyAccountPersonalPage() {
 
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:col-span-2">
-            <BoxFill
+            <FormControl
               label="ឈ្មោះជាភាសាខ្មែរ"
               name="name_kh"
               value={form.name_kh}
@@ -111,7 +111,7 @@ export default function MyAccountPersonalPage() {
               placeholder="បញ្ចូលឈ្មោះជាភាសាខ្មែរ"
             />
 
-            <BoxFill
+            <FormControl
               label="ឈ្មោះជាអក្សរឡាតាំង"
               name="name_en"
               value={form.name_en}
@@ -119,25 +119,21 @@ export default function MyAccountPersonalPage() {
               placeholder="បញ្ចូលឈ្មោះជាអក្សរឡាតាំង"
             />
 
-            <FormSelect
-              label="សាខា"
-              name="branch"
-              value={form.branch}
-              onChange={handleChange("branch")}
-              placeholder="ជ្រើសរើសសាខា"
-              options={[member.branch].filter(Boolean)}
-            />
+        <BoxFill
+          label="សាខា"
+          value={member.branch || ""}
+          placeholder="-"
+          readOnly
+        />
 
-            <FormSelect
-              label="ភេទ"
-              name="gender"
-              value={form.gender}
-              onChange={handleChange("gender")}
-              placeholder="ជ្រើសរើសភេទ"
-              options={["ប្រុស", "ស្រី", "ព្រះសង្ឃ"]}
-            />
+        <BoxFill
+          label="ភេទ"
+          value={member.gender || ""}
+          placeholder="-"
+          readOnly
+        />
 
-            <BoxFill
+            <FormControl
               label="អ៊ីមែល"
               type="email"
               name="email"
@@ -146,7 +142,7 @@ export default function MyAccountPersonalPage() {
               placeholder="បញ្ចូលអ៊ីមែល"
             />
 
-            <BoxFill
+            <FormControl
               label="លេខទូរស័ព្ទ"
               type="tel"
               name="phone"
@@ -155,14 +151,14 @@ export default function MyAccountPersonalPage() {
               placeholder="បញ្ចូលលេខទូរស័ព្ទ"
             />
 
-            <FormDate
+            <KhmerDateField
               label="ថ្ងៃខែឆ្នាំកំណើត"
               name="date_of_birth"
               value={form.date_of_birth}
               onChange={handleChange("date_of_birth")}
             />
 
-            <BoxFill
+            <FormControl
               label="សញ្ជាតិ"
               name="nationality"
               value={form.nationality}
@@ -170,7 +166,7 @@ export default function MyAccountPersonalPage() {
               placeholder="បញ្ចូលសញ្ជាតិ"
             />
 
-            <BoxFill
+            <FormControl
               label="ជនជាតិ"
               name="ethnicity"
               value={form.ethnicity}
@@ -179,10 +175,12 @@ export default function MyAccountPersonalPage() {
             />
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-text-primary">
-              បញ្ចូល CV
-            </label>
+        <BoxFill
+          label="សាសនា"
+          value={member.religion || ""}
+          placeholder="-"
+          readOnly
+        />
 
             <div className="flex h-[165px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 text-center">
               <UploadCloud
@@ -190,39 +188,22 @@ export default function MyAccountPersonalPage() {
                 className="mb-3 text-gray-400"
               />
 
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-                className="hidden"
-                onChange={handleFileChange}
-              />
+        <BoxFill
+          label="ស្ថានភាព"
+          value={member.status || ""}
+          placeholder="-"
+          readOnly
+        />
 
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="text-sm font-semibold text-primary hover:underline"
-              >
-                បញ្ចូលឯកសារ
-              </button>
-
-              <p className="mt-2 text-xs text-gray-400">
-                JPG, DOCX, PDF, PNG (មិនលើស 5MB)
-              </p>
-
-              {fileName && (
-                <p className="mt-2 max-w-[200px] truncate text-xs font-medium text-primary">
-                  {fileName}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex justify-end">
-        <SaveButton onClick={handleSave} />
+        <BoxFill
+          label="ថ្ងៃចូលរួម"
+          value={member.joinedAt || ""}
+          placeholder="-"
+          readOnly
+        />
       </div>
     </div>
+     </div>
+      </div>
   );
 }

@@ -22,8 +22,6 @@ export default function DocumentTabs() {
     },
   ];
 
-
-
   return (
     <div className="flex shrink-0 gap-5">
 

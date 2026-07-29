@@ -4,8 +4,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import donationData from "@/data/donation/donationData.json";
 import AddDonationFilters from "./AddDonationFilters";
-import Table from "../../tables/table";
-import SaveAlert from "../../forms/savealert";
+import Table from "@/components/donations/DonationEntryTable";
+import SaveSuccessAlert from "@/components/ui/feedback/SaveSuccessAlert";
 
 const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
 const { addDonationRows } = donationData;
@@ -228,7 +228,7 @@ const summary = useMemo(() => {
           role="status"
           aria-live="polite"
         >
-          <SaveAlert message="អបអរសាទរ វិភាគទានត្រូវបានបន្ថែមដោយជោគជ័យ" />
+          <SaveSuccessAlert message="អបអរសាទរ វិភាគទានត្រូវបានបន្ថែមដោយជោគជ័យ" />
         </div>
       )}
 

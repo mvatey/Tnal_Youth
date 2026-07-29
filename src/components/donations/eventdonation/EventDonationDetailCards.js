@@ -5,20 +5,21 @@ import { useSearchParams } from "next/navigation";
 import EventDonationSummaryCard from "@/components/donations/EventDonationSummaryCard";
 import DonorCard from "@/components/donations/DonorCard";
 import donationData from "@/data/donation/donationData.json";
-import eventDonationData from "@/data/donation/eventDonationData.json";
+import activities from "@/data/activityRecords.json";
 
 const SAVED_EVENT_DONATION_ROWS_KEY = "tnal-youth:saved-event-donation-rows";
 const DONATION_ROWS_CHANGE_EVENT = "tnal-youth:donation-rows-change";
 const RIEL_PER_DOLLAR = 4000;
 const { addDonationRows, donationStats } = donationData;
-const { eventTypes } = eventDonationData;
 
-const getSavedRowKey = (row) => [row.branch, row.eventType, row.id].join("|");
+const getSavedRowKey = (row) =>
+  [row.branch, row.activityId, row.id].join("|");
 
 export default function EventDonationDetailCards() {
   const searchParams = useSearchParams();
   const branch = searchParams.get("branch");
-  const eventType = searchParams.get("event");
+  const activityId =
+    searchParams.get("activityId") || searchParams.get("id");
   const [savedRows, setSavedRows] = useState({});
   const [draftRows, setDraftRows] = useState([]);
 
@@ -44,15 +45,20 @@ export default function EventDonationDetailCards() {
   }, []);
 
   const summary = useMemo(() => {
-    const members = addDonationRows
-      .map((row, index) => ({
+    const selectedActivity = activities.find(
+      (activity) => String(activity.id) === String(activityId),
+    );
+    const activityBranch =
+      selectedActivity?.branchName || selectedActivity?.branch || branch;
+
+    const members = selectedActivity
+      ? addDonationRows.map((row) => ({
         ...row,
-        index,
-        eventType: eventTypes[index % eventTypes.length],
+        activityId: selectedActivity.id,
+        eventType: selectedActivity.type,
+        branch: activityBranch,
       }))
-      .filter(
-        (row) => row.branch === branch && row.eventType === eventType,
-      );
+      : [];
 
     return members.reduce(
       (totals, member) => {
@@ -69,7 +75,7 @@ export default function EventDonationDetailCards() {
       },
       { donors: members.length, riel: 0, dollar: 0 },
     );
-  }, [branch, draftRows, eventType, savedRows]);
+  }, [activityId, branch, draftRows, savedRows]);
 
   const dollarEquivalent = summary.dollar + summary.riel / RIEL_PER_DOLLAR;
 

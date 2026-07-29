@@ -2,9 +2,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import participationData from "@/data/participation.json";
-import DataTable from "@/components/table/DataTable.js";
-import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail.js";
+import participationData from "@/data/participationRecords.json";
+import DataTable from "@/components/tables/DataTable.js";
+import DetailButton from "@/components/ui/actions/DetailButton.js";
 
 const TYPE_BADGE_STYLES = {
   កម្មវិធីផ្ទៃក្នុង: "bg-primary-light text-primary",
@@ -111,7 +111,7 @@ export default function ParticipationPage() {
       width: "w-[8%]",
       align: "center",
       render: (item) => (
-        <ButtonSeeDetail onClick={() => handleViewDetail(item)} />
+        <DetailButton onClick={() => handleViewDetail(item)} />
       ),
     },
   ];

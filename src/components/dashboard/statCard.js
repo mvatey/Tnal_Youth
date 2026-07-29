@@ -2,42 +2,60 @@
 
 export default function StatCard({
   icon: Icon,
-  label,
-  value,
-  growth,
-  iconColor,
-  iconBg,
+  label = "",
+  value = 0,
+  growth = 0,
+  iconColor = "text-primary",
+  iconBg = "bg-primary/10",
+  accentColor = "bg-primary",
 }) {
-  const isUp = Number(growth) >= 0;
-  const accent = iconColor.replace("text-", "bg-");
+  const growthNumber = Number(growth) || 0;
+  const isUp = growthNumber >= 0;
 
   return (
-    <div className="app-card relative overflow-hidden rounded-xl border border-border bg-bg-page-white">
-      <div className={`h-[3px] w-full ${accent}`} />
+    <div
+      className="
+        app-card
+        relative
+        overflow-hidden
+        rounded-xl
+        border
+        border-border
+        bg-bg-page-white
+        shadow-sm
+        transition-all
+        duration-200
+        hover:-translate-y-1
+        hover:shadow-lg
+      "
+    >
+      <div className={`h-[3px] w-full ${accentColor}`} />
 
       <div className="flex items-center gap-3 p-4">
         <div
           className={`
-          flex
-          h-12
-          w-12
-          shrink-0
-          items-center
-          justify-center
-          rounded-xl
-          ${iconBg}
+            flex
+            h-12
+            w-12
+            shrink-0
+            items-center
+            justify-center
+            rounded-xl
+            ${iconBg}
           `}
         >
-          <Icon
-            className={`
-            h-5
-            w-5
-            ${iconColor}
-            `}
-          />
+          {Icon && (
+            <Icon
+              className={`
+                h-5
+                w-5
+                ${iconColor}
+              `}
+            />
+          )}
         </div>
 
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="mb-0.5 text-sm text-text-primary">
             {label}
           </div>
@@ -50,21 +68,17 @@ export default function StatCard({
         <div className="flex shrink-0 flex-col items-end gap-1">
           <div
             className={`
-            flex
-            items-center
-            gap-1
-            text-sm
-            font-semibold
-            ${isUp ? "text-success" : "text-error"}
+              flex
+              items-center
+              gap-1
+              text-sm
+              font-semibold
+              ${isUp ? "text-success" : "text-error"}
             `}
           >
-            <span>
-              {isUp ? "↑" : "↓"}
-            </span>
+            <span>{isUp ? "↑" : "↓"}</span>
 
-            <span>
-              {Math.abs(Number(growth))}%
-            </span>
+            <span>{Math.abs(growthNumber)}%</span>
           </div>
 
           <span className="text-xs text-text-mute">

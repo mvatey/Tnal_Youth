@@ -6,7 +6,7 @@ import Sidebar from "@/components/navigation/sidebar";
 import Topbar from "@/components/navigation/topbar";
 
 import HeaderUserInfo from "@/components/navigation/HeaderUserInfo";
-import MemberInfoCard from "@/components/card/memberInfoCard";
+import MemberInfoCard from "@/components/member/cards/memberInfoCard";
 import MyAccountProfileLayout from "@/components/navigation/MyAccountProfileLayout";
 import useCurrentMember from "@/hooks/useCurrentMember";
 

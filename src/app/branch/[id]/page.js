@@ -21,13 +21,13 @@ import {
   Building2
 } from "lucide-react";
 
-import SearchBar from "@/components/table-items/SearchBar";
-import FilterBar from "@/components/table-items/FilterBar";
-import Table from "@/components/table-items/Table";
+import SearchBar from "@/components/tables/SearchBar";
+import FilterBar from "@/components/tables/FilterBar";
+import Table from "@/components/tables/GenericTable";
 import Button from "@/components/ui/Button";
 
-import branches from "@/data/branch/branches.json";
-import branchMembers from "@/data/branch/branchMembers.json";
+import branches from "@/data/branchRecords.json";
+import branchMembers from "@/data/branchMemberRecords.json";
 
 const ALL_OPTION = "ទាំងអស់";
 

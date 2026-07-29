@@ -14,16 +14,16 @@ import {
 
 import CreateBranchModal from "@/components/branch/CreateBranchModal";
 
-import SearchBar from "@/components/table-items/SearchBar";
-import FilterBar from "@/components/table-items/FilterBar";
-import Table from "@/components/table-items/Table";
+import SearchBar from "@/components/tables/SearchBar";
+import FilterBar from "@/components/tables/FilterBar";
+import Table from "@/components/tables/GenericTable";
 
 import BranchStats from "@/components/branch/branchStats";
 
-import SaveButton from "@/components/forms/save";
-import SaveFile from "@/components/forms/savefile";
+import PrimaryActionButton from "@/components/ui/actions/PrimaryActionButton";
+import FileDownloadButton from "@/components/ui/actions/FileDownloadButton";
 
-import branchData from "@/data/branch/branches.json";
+import branchData from "@/data/branchRecords.json";
 
 import { RiDownloadCloud2Line } from "react-icons/ri";
 import Button from "@/components/ui/Button";
@@ -349,7 +349,7 @@ const filters = [
                   id="branch-save-file"
                   className="absolute right-0 top-full z-50 mt-3"
                 >
-                  <SaveFile />
+                  <FileDownloadButton />
                 </div>
               )}
             </div>

@@ -3,10 +3,10 @@
 import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 
-import DataTable from "@/components/table/DataTable.js";
-import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal.js";
+import DataTable from "@/components/tables/DataTable.js";
+import ConfirmDeleteModal from "@/components/modals/Confirmdeletemodal.js";
 
-import donationData from "@/data/donation.json";
+import donationData from "@/data/donationRecords.json";
 
 export default function DonationPage() {
   const [donations, setDonations] = useState(donationData);
@@ -28,9 +28,7 @@ export default function DonationPage() {
       const search = query.toLowerCase();
 
       const matchesQuery =
-        item.month.toLowerCase().includes(search) ||
-        item.amount.toLowerCase().includes(search) ||
-        item.recordedBy.toLowerCase().includes(search);
+        item.month.toLowerCase().includes(search);
 
       const matchesMethod =
         !methodFilter || item.paymentMethod === methodFilter;

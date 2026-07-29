@@ -3,35 +3,84 @@
 import { useEffect, useMemo, useState } from "react";
 import EventDonationFilters from "./EventDonationFilters";
 import EventDonationTable from "./EventDonationTable";
-import AddAlert from "@/components/forms/addalert";
+import AddSuccessAlert from "@/components/ui/feedback/AddSuccessAlert";
 import { downloadCsv } from "@/utils/downloadCsv";
-import donationData from "@/data/donation/donationData.json";
-import eventDonationData from "@/data/donation/eventDonationData.json";
-
+import activities from "@/data/activityRecords.json";
+import SaveSuccessAlert from "@/components/ui/feedback/SaveSuccessAlert";
 const EVENT_DONATION_SAVE_ALERT_KEY = "tnal-youth:event-donation-save-alert";
 const rowsPerPage = 12;
-const { addDonationRows, donationRows } = donationData;
-const { eventNames, eventSchedule } = eventDonationData;
-const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
+function calculateDurationDays(startDate, endDate) {
+  if (!startDate || !endDate) return 0;
+
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+
+  if (
+    Number.isNaN(start.getTime()) ||
+    Number.isNaN(end.getTime())
+  ) {
+    return 0;
+  }
+
+  const millisecondsPerDay = 1000 * 60 * 60 * 24;
+
+  return (
+    Math.floor(
+      (end.getTime() - start.getTime()) /
+        millisecondsPerDay
+    ) + 1
+  );
+}
 function createEventDonationRows() {
-  return addDonationRows.map((member, index) => {
-    const schedule = eventSchedule[index % eventSchedule.length];
-    const realAmount = Number(member.realAmount) || 400000 + (index % 5) * 50000;
-    const dollarAmount = Number(member.dollarAmount) || 100 + (index % 4) * 100;
+  return activities.map((activity, index) => {
+    const startDate =
+      activity.startDate ||
+      activity.dateValue ||
+      "";
+
+    const endDate =
+      activity.endDate ||
+      activity.startDate ||
+      activity.dateValue ||
+      "";
+
+    const amountKhr =
+      Number(activity.amountKhr) ||
+      400000 + (index % 5) * 50000;
+
+    const amountUsd =
+      Number(activity.amountUsd) ||
+      100 + (index % 4) * 100;
 
     return {
-      id: member.id,
-      eventType: schedule.type,
-      eventName: eventNames[schedule.type],
-      branch: member.branch,
-      startDate: schedule.startDate,
-      endDate: schedule.endDate,
-      startDateValue: schedule.startDateValue,
-      endDateValue: schedule.endDateValue,
-      days: schedule.days,
-      rielAmount: `៛ ${realAmount.toLocaleString()}`,
-      dollarAmount: `$ ${dollarAmount}`,
+      id: activity.id,
+      activityId: activity.id,
+
+      eventType: activity.type,
+      eventName:
+        activity.name ||
+        activity.title ||
+        "មិនមានឈ្មោះកម្មវិធី",
+
+      branch:
+        activity.branchName ||
+        activity.branch ||
+        "-",
+
+      startDate,
+      endDate,
+
+      startDateValue: startDate,
+      endDateValue: endDate,
+
+      days: calculateDurationDays(
+        startDate,
+        endDate
+      ),
+
+      amountKhr,
+      amountUsd,
     };
   });
 }
@@ -48,6 +97,7 @@ function rowMatchesDateRange(row, startDate, endDate) {
 export default function EventDonationPanel({
   selectedBranch: controlledSelectedBranch,
   onBranchChange,
+  onRowsChange,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [internalSelectedBranch, setInternalSelectedBranch] = useState("all");
@@ -57,10 +107,22 @@ export default function EventDonationPanel({
   const [deletedIds, setDeletedIds] = useState([]);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [moneySort, setMoneySort] = useState(null);
-
+  const [showSaveAlert, setShowSaveAlert] = useState(false);
   const selectedBranch = controlledSelectedBranch ?? internalSelectedBranch;
   const setSelectedBranch = onBranchChange ?? setInternalSelectedBranch;
-  const branches = [...new Set(donationRows.map((row) => row.branch))];
+const branches = useMemo(() => {
+  return [
+    ...new Set(
+      activities
+        .map(
+          (activity) =>
+            activity.branchName ||
+            activity.branch
+        )
+        .filter(Boolean)
+    ),
+  ];
+}, []);
   const eventDonationRows = useMemo(createEventDonationRows, []);
   const hasSelectedBranch = selectedBranch !== "all";
 
@@ -70,10 +132,14 @@ export default function EventDonationPanel({
     return eventDonationRows.filter((row) => {
       const query = searchQuery.trim().toLowerCase();
       const matchesBranch = row.branch === selectedBranch;
-      const matchesSearch =
-        !query ||
-        row.eventName.toLowerCase().includes(query) ||
-        row.branch.toLowerCase().includes(query);
+const matchesSearch =
+  !query ||
+  String(row.eventName || "")
+    .toLowerCase()
+    .includes(query) ||
+  String(row.branch || "")
+    .toLowerCase()
+    .includes(query);
       const matchesDateRange = rowMatchesDateRange(row, startDate, endDate);
       const isDeleted = deletedIds.includes(row.id);
 
@@ -89,13 +155,28 @@ export default function EventDonationPanel({
     startDate,
   ]);
 
-  const sortedRows = useMemo(() => {
-    if (!moneySort) return filteredRows;
-    return [...filteredRows].sort((a, b) => {
-      const difference = parseMoney(a[moneySort.field]) - parseMoney(b[moneySort.field]);
-      return moneySort.direction === "asc" ? difference : -difference;
-    });
-  }, [filteredRows, moneySort]);
+ const sortedRows = useMemo(() => {
+  if (!moneySort) return filteredRows;
+
+  return [...filteredRows].sort((a, b) => {
+    const firstValue =
+      Number(a[moneySort.field]) || 0;
+
+    const secondValue =
+      Number(b[moneySort.field]) || 0;
+
+    const difference =
+      firstValue - secondValue;
+
+    return moneySort.direction === "asc"
+      ? difference
+      : -difference;
+  });
+}, [filteredRows, moneySort]);
+
+  useEffect(() => {
+    onRowsChange?.(sortedRows);
+  }, [onRowsChange, sortedRows]);
 
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
@@ -151,13 +232,13 @@ export default function EventDonationPanel({
     <section className="min-h-[650px] rounded-md border border-border bg-[#fbfcfe] px-7 py-4 shadow-sm">
       {showDownloadAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
-          <AddAlert />
+          <AddSuccessAlert />
         </div>
       )}
 
       {showSaveAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
-          <SaveAlert message="អបអរសាទរ ! វិភាគទានកម្មវិធីត្រូវបានរក្សាទុកដោយជោគជ័យ" />
+          <SaveSuccessAlert message="អបអរសាទរ ! វិភាគទានកម្មវិធីត្រូវបានរក្សាទុកដោយជោគជ័យ" />
         </div>
       )}
 

@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 import { HiSaveAs } from "react-icons/hi";
-import BoxFill from "@/components/forms/boxFill";
+import FormControl from "@/components/forms/FormControl";
 import FormSelect from "@/components/forms/FormSelect";
 
 const EMPTY_FORM = {
@@ -333,7 +333,7 @@ const showCommune =
           <div className="space-y-5 px-7 pb-7">
             {/* ---------- Basic Information ---------- */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <BoxFill
+            <FormControl
                 label="ឈ្មោះសាខា"
                 name="nameKm"
                 value={form.nameKm}
@@ -347,7 +347,7 @@ const showCommune =
                 }
             />
 
-            <BoxFill
+            <FormControl
                 label="ឈ្មោះជាអក្សរឡាតាំង"
                 name="nameEn"
                 value={form.nameEn}
@@ -410,7 +410,7 @@ const showCommune =
             </div>
 
             <div className="space-y-4">
-                <BoxFill
+                <FormControl
                 label="អាសយដ្ឋានលម្អិត"
                 name="addressLine"
                 value={form.addressLine}
@@ -426,7 +426,7 @@ const showCommune =
 
                 <div className="flex items-end gap-3">
                 <div className="min-w-0 flex-1">
-                    <BoxFill
+                    <FormControl
                     label="តំណភ្ជាប់ទីតាំង"
                     name="googleMapUrl"
                     value={form.googleMapUrl}
@@ -461,7 +461,7 @@ const showCommune =
                 </div>
             </div>
 
-            <BoxFill
+            <FormControl
               label="លេខទូរស័ព្ទ"
               type="tel"
               name="phone"
@@ -483,7 +483,7 @@ const showCommune =
               }
             />
 
-            <BoxFill
+            <FormControl
               label="អ៊ីម៉ែល"
               type="email"
               name="email"

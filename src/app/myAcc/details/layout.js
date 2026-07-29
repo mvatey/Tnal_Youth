@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 
 import HeaderMemberInfo from "@/components/navigation/headerMemberInfo";
-import MemberInfoCard from "@/components/card/memberInfoCard";
+import MemberInfoCard from "@/components/member/cards/memberInfoCard";
 import MyAccountDetailTabNav from "@/components/navigation/MyAccountDetailTabNav";
 
 import useCurrentMember from "@/hooks/useCurrentMember";

@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
-import FilterBar from "../../forms/FilterBar";
-import AddAlert from "../../forms/addalert";
-import SaveAlert from "../../forms/savealert";
-import SaveButton from "../../forms/save";
-import Pagination from "../../navigation/Pagination";
+import DonationFilterBar from "@/components/donations/monthlydonation/DonationFilterBar";
+import AddSuccessAlert from "@/components/ui/feedback/AddSuccessAlert";
+import SaveSuccessAlert from "@/components/ui/feedback/SaveSuccessAlert";
+import PrimaryActionButton from "@/components/ui/actions/PrimaryActionButton";
+import Pagination from "@/components/navigation/Pagination";
 import TableRow from "./TableRow";
 import donationData from "@/data/donation/donationData.json";
 import { downloadCsv } from "@/utils/downloadCsv";
@@ -145,17 +145,17 @@ export default function DonationTable() {
     <section className="rounded-md border border-border bg-white px-7 py-4 shadow-sm">
       {showDownloadAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
-          <AddAlert />
+          <AddSuccessAlert />
         </div>
       )}
 
       {showSaveAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
-          <SaveAlert />
+          <SaveSuccessAlert />
         </div>
       )}
 
-      <FilterBar
+      <DonationFilterBar
         years={years}
         months={months}
         branches={branches}
@@ -231,7 +231,7 @@ export default function DonationTable() {
         onPageChange={setCurrentPage}
       />
       <div className="mt-10 flex justify-end">
-        <SaveButton onClick={handleDownload} />
+        <PrimaryActionButton onClick={handleDownload} />
       </div>
     </section>
     

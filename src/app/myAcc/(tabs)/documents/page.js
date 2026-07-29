@@ -2,10 +2,10 @@
 
 import useCurrentMember from "@/hooks/useCurrentMember";
 
-import IdCard from "@/components/card/idCard";
-import CertificateCard from "@/components/card/certificate";
-import DocumentPreviewCard from "@/components/card/DocumentPreviewCard";
-import LetterOfAppointment from "@/components/card/LetterOfAppointment";
+import IdCard from "@/components/member/cards/idCard";
+import CertificateCard from "@/components/member/cards/certificate";
+import DocumentPreviewCard from "@/components/member/cards/DocumentPreviewCard";
+import LetterOfAppointment from "@/components/member/cards/LetterOfAppointment";
 
 export default function DocumentsPage() {
   const {
@@ -32,7 +32,18 @@ export default function DocumentsPage() {
 
   if (!member) {
     return (
-      <div className="rounded-xl bg-white p-6">
+      <div
+        className="
+          rounded-xl
+          border
+          border-gray-200
+          bg-white
+          p-6
+          text-center
+          text-sm
+          text-gray-500
+        "
+      >
         រកមិនឃើញព័ត៌មានសមាជិក
       </div>
     );

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import CertificateForm from "@/app/document/CertificateForm";
+import CertificateForm from "@/components/document/CertificateForm";
 
 export default function CertificatePage() {
   const router = useRouter();

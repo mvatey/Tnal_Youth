@@ -96,13 +96,14 @@ export default function FormSelect({
           required={required}
           aria-invalid={Boolean(error)}
           aria-describedby={
+          
             error && name
               ? `${name}-error`
               : undefined
           }
           {...selectProps}
           className={`
-            h-10
+            h-[34px]
             w-full
             appearance-none
             rounded-lg

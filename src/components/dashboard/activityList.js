@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import dashboardActivities from "@/data/donation/activityLists.json";
-
+import dashboardActivities from "@/data/activityRecords.json";
 // ---- DATA LAYER ----
 // Imported directly since data now lives under src/ (not browser-
 // fetchable). Kept as `async function` so downstream loading logic
@@ -14,22 +13,59 @@ async function fetchActivities() {
 // --------------------------------------------------------------------
 
 const TYPE_BADGE = {
-  internal: { label: "កម្មវិធីខាងក្នុង", color: "#6D5BD0", tint: "#F1EEFC" },
-  external: { label: "កម្មវិធីខាងក្រៅ", color: "#2FA36B", tint: "#E9F9F1" },
+  internal: {
+    label: "កម្មវិធីខាងក្នុង",
+    color: "#8871E8",
+    tint: "#F1EDFF",
+  },
+  external: {
+    label: "កម្មវិធីខាងក្រៅ",
+    color: "#49B982",
+    tint: "#E7F8EF",
+  },
 };
 
 function TypeBadge({ type }) {
-  const cfg = TYPE_BADGE[type] ?? { label: type, color: "#6B7280", tint: "#F1F2F5" };
+  const normalizedType = String(type ?? "")
+    .trim()
+    .toLowerCase();
+
+  let badgeType = normalizedType;
+
+  if (
+    normalizedType === "កម្មវិធីខាងក្នុង" ||
+    normalizedType === "internal_activity"
+  ) {
+    badgeType = "internal";
+  }
+
+  if (
+    normalizedType === "កម្មវិធីខាងក្រៅ" ||
+    normalizedType === "external_activity"
+  ) {
+    badgeType = "external";
+  }
+
+  const cfg = TYPE_BADGE[badgeType] ?? {
+    label: type || "មិនមានប្រភេទ",
+    color: "#6B7280",
+    tint: "#F1F2F5",
+  };
+
   return (
     <span
       style={{
-        display: "inline-block",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: 28,
+        padding: "5px 12px",
+        borderRadius: 9,
         fontSize: 10,
-        fontWeight: 400,
+        fontWeight: 500,
+        lineHeight: 1,
         color: cfg.color,
-        background: cfg.tint,
-        borderRadius: 6,
-        padding: "2px 7px",
+        backgroundColor: cfg.tint,
         whiteSpace: "nowrap",
       }}
     >
@@ -48,8 +84,8 @@ function ActivityThumbnail({ activity }) {
       src={activity.image || "/activity-placeholder.svg"}
       alt=""
       style={{
-        width: 64,
-        height: 44,
+        width: 74,
+        height: 50,
         borderRadius: 8,
         objectFit: "cover",
         flexShrink: 0,
@@ -91,8 +127,8 @@ function ActivityRow({ activity }) {
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 10,
-        padding: "7px 0",
+        gap: 12,
+        padding: "8px 0",
         borderBottom: "1px solid #F2F3F5",
       }}
     >
@@ -102,8 +138,8 @@ function ActivityRow({ activity }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
           <span
             style={{
-              fontSize: 12,
-              fontWeight: 500,
+              fontSize: 13,
+              fontWeight: 600,
               color: "#232629",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -115,13 +151,13 @@ function ActivityRow({ activity }) {
           <TypeBadge type={activity.type} />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 2 }}>
-          <span style={{ fontSize: 10, color: "#9AA0A8" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 3 }}>
+          <span style={{ fontSize: 11, color: "#9AA0A8", whiteSpace: "nowrap" }}>
             {activity.date}
             {!isCompleted && activity.time ? `  -  ${activity.time}` : ""}
           </span>
           {isCompleted ? (
-            <span style={{ fontSize: 10, color: "#9AA0A8" }}>
+            <span style={{ fontSize: 10, color: "#9AA0A8", whiteSpace: "nowrap" }}>
               អ្នកចូលរួមសរុប {activity.attendeeCount}នាក់
             </span>
           ) : (
@@ -155,15 +191,15 @@ export function ActivityListCard({ title, activities, isLoading }) {
       className="app-card"
       style={{
         background: "#FFFFFF",
-        border: "1px solid #EEF0F3",
-        borderRadius: 14,
-        padding: "16px",
+        border: "1px solid #E7E9EE",
+        borderRadius: 16,
+        padding: "16px 18px",
         height: "100%",
         boxSizing: "border-box",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-        <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#232629" }}>{title}</h3>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 7 }}>
+        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#1F2329" }}>{title}</h3>
         <ViewMoreLink />
       </div>
 

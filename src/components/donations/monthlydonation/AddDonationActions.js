@@ -1,12 +1,12 @@
-import Button from "../../forms/button";
+import FormActionButton from "@/components/ui/actions/FormActionButton";
 
 export default function AddDonationActions({ onReset, onCancel, onSave }) {
   return (
     <div className="mt-3 flex items-center justify-between gap-3">
-      <Button action="reset" onClick={onReset} />
+      <FormActionButton action="reset" onClick={onReset} />
       <div className="flex gap-3">
-        <Button action="cancel" onClick={onCancel} />
-        <Button action="save" onClick={onSave} />
+        <FormActionButton action="cancel" onClick={onCancel} />
+        <FormActionButton action="save" onClick={onSave} />
       </div>
     </div>
   );

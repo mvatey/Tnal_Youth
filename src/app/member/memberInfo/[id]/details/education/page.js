@@ -6,12 +6,12 @@ import { Trash2 } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 import FormSelect from "@/components/forms/FormSelect";
 
-import SaveButton from "@/components/forms/SaveButton.js";
-import BoxFill from "@/components/forms/boxFill.js";
-import FormDate from "@/components/forms/FormDate.js";
+import SaveButton from "@/components/ui/actions/SaveButton.js";
+import FormControl from "@/components/forms/FormControl.js";
+import KhmerDateField from "@/components/forms/KhmerDateField.js";
 import SelectArrow from "@/components/forms/SelectArrow";
-import DeleteButton from "@/components/forms/DeleteButton";
-import ButtonDropLink from "@/components/forms/ButtonDropLink";
+import DeleteButton from "@/components/ui/actions/DeleteButton";
+import DocumentLinkField from "@/components/forms/DocumentLinkField";
 
 import locationData from "@/data/location.json";
 import educationData from "@/data/education.json";
@@ -187,7 +187,7 @@ function EducationGroup({
       </h3>
 
       <div className="grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2 xl:grid-cols-3">
-        <BoxFill
+        <FormControl
           label="សាលា ឬ ស្ថាប័ន"
           placeholder="បញ្ចូលឈ្មោះសាលា ឬ ស្ថាប័ន"
           value={education.school ?? ""}
@@ -227,7 +227,7 @@ function EducationGroup({
         />
 
         <div className="flex items-end">
-          <ButtonDropLink
+          <DocumentLinkField
             value={education.documentLink ?? ""}
             onChange={(value) =>
               onChange("documentLink", value)
@@ -235,7 +235,7 @@ function EducationGroup({
           />
         </div>
 
-        <FormDate
+        <KhmerDateField
           label="ថ្ងៃចាប់ផ្តើម"
           name={`startDate-${education.id}`}
           value={education.startDate ?? ""}
@@ -244,7 +244,7 @@ function EducationGroup({
           }
         />
 
-        <FormDate
+        <KhmerDateField
           label="ថ្ងៃបញ្ចប់"
           name={`endDate-${education.id}`}
           value={education.endDate ?? ""}

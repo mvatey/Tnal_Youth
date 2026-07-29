@@ -1,93 +1,128 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import branchStats from "@/data/donation/branchPerformance.json";
 
-// Placeholder until real per-branch data exists — see note above.
-const PLACEHOLDER_BRANCHES = [{ id: "default", name: "សាខាក្រុងភ្នំពេញ" }];
+import dashboardData from "@/data/dashboard.json";
+import branchesData from "@/data/branchRecords.json";
 
-// ---- DATA LAYER ----
-async function fetchPerformanceStats() {
-  return branchStats ?? [];
+function normalizeBranches(branches) {
+  return branches.map((branch) => ({
+    id: String(branch.id),
+    name:
+      branch.nameKm ||
+      branch.name ||
+      branch.branchName ||
+      "មិនមានឈ្មោះសាខា",
+  }));
 }
-// --------------------------------------------------------------------
 
-function BranchDropdown({ branches, value, onChange }) {
+function normalizePerformanceStats(items = []) {
+  return items.map((item) => {
+    const key = item.key || "";
+
+    const defaultLabels = {
+      newMembers: "សមាជិកថ្មី",
+      totalIncome: "ចំណូលសរុប",
+      completedActivities: "កម្មវិធីបានបញ្ចប់",
+    };
+
+    let value = item.value ?? 0;
+
+    if (item.valueUsd != null) {
+      value = `${new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: 0,
+      }).format(Number(item.valueUsd) || 0)}$`;
+    }
+
+    return {
+      key: key || item.label,
+      label:
+        item.label ||
+        defaultLabels[key] ||
+        "មិនមានចំណងជើង",
+      value,
+      growth:
+        item.growthPercent ??
+        item.growth ??
+        0,
+    };
+  });
+}
+
+// Temporary mock data loader.
+// The current dashboard.json has one organization-level summary,
+// not separate statistics for every branch.
+async function fetchPerformanceStats() {
+  return normalizePerformanceStats(
+    dashboardData.performanceSummary || []
+  );
+}
+
+function BranchDropdown({
+  branches,
+  value,
+  onChange,
+}) {
   return (
-    <div style={{ position: "relative" }}>
+    <div className="relative">
       <select
-        value={value ?? ""}
-        onChange={(e) => onChange(e.target.value)}
-        style={{
-          appearance: "none",
-          WebkitAppearance: "none",
-          background: "#FFFFFF",
-          border: "1px solid #E7E9EE",
-          borderRadius: 8,
-          padding: "7px 32px 7px 14px",
-          fontSize: 13,
-          color: "#4A4F59",
-          fontFamily: "inherit",
-          cursor: "pointer",
-          outline: "none",
-        }}
+        value={value}
+        onChange={(event) =>
+          onChange(event.target.value)
+        }
+        className="cursor-pointer appearance-none rounded-lg border border-[#E7E9EE] bg-white py-[7px] pl-[14px] pr-8 text-[13px] text-[#4A4F59] outline-none"
       >
-        {branches.map((b) => (
-          <option key={b.id} value={b.id}>
-            {b.name}
+        {branches.map((branch) => (
+          <option
+            key={branch.id}
+            value={branch.id}
+          >
+            {branch.name}
           </option>
         ))}
       </select>
+
       <ChevronDown
         size={14}
-        color="#8A8F98"
-        style={{
-          position: "absolute",
-          right: 12,
-          top: "50%",
-          transform: "translateY(-50%)",
-          pointerEvents: "none",
-        }}
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8A8F98]"
       />
     </div>
   );
 }
 
-function StatMiniCard({ label, value, growth, isLoading }) {
-  const growthNum = Number(growth);
-  const isUp = growthNum >= 0;
+function StatMiniCard({
+  label,
+  value,
+  growth,
+  isLoading,
+}) {
+  const growthNumber =
+    Number(growth) || 0;
+
+  const isUp = growthNumber >= 0;
 
   return (
-    <div
-      className="app-card"
-      style={{
-        background: "#F7F8FA",
-        border: "1px solid #EEF0F3",
-        borderRadius: 10,
-        padding: "12px 14px",
-        height: "100%",
-        boxSizing: "border-box",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <span style={{ fontSize: 12, color: "#6B7280" }}>{label}</span>
+    <div className="flex h-full flex-col rounded-[10px] border border-[#EEF0F3] bg-[#F7F8FA] px-[14px] py-3">
+      <span className="text-xs text-[#6B7280]">
+        {label}
+      </span>
 
-      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 20, fontWeight: 700, color: "#1F2329" }}>
+      <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-1.5 gap-y-1">
+        <span className="whitespace-nowrap text-base font-bold text-[#1F2329] sm:text-lg">
           {isLoading ? "···" : value}
         </span>
+
         {!isLoading && (
           <span
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: isUp ? "#22A35A" : "#D14343",
-              whiteSpace: "nowrap",
-            }}
+            className={`shrink-0 whitespace-nowrap text-[10px] font-semibold ${
+              isUp
+                ? "text-[#22A35A]"
+                : "text-[#D14343]"
+            }`}
           >
-            {isUp ? "↑" : "↓"} {Math.abs(growthNum)}%
+            {isUp ? "↑" : "↓"}{" "}
+            {Math.abs(growthNumber)}%
           </span>
         )}
       </div>
@@ -96,60 +131,102 @@ function StatMiniCard({ label, value, growth, isLoading }) {
 }
 
 export default function PerformanceSummary() {
-  const [selectedBranchId, setSelectedBranchId] = useState(PLACEHOLDER_BRANCHES[0].id);
-  const [stats, setStats] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const branchOptions = useMemo(
+    () => normalizeBranches(branchesData),
+    []
+  );
+
+  const [selectedBranchId, setSelectedBranchId] =
+    useState(
+      branchOptions[0]?.id || ""
+    );
+
+  const [stats, setStats] =
+    useState([]);
+
+  const [isLoading, setIsLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
 
   useEffect(() => {
-    fetchPerformanceStats()
-      .then((res) => {
-        setStats(res);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setError("មិនអាចទាញយកទិន្នន័យបានទេ");
-        setIsLoading(false);
-      });
-  }, []);
+    let cancelled = false;
+
+    async function loadStats() {
+      try {
+        setIsLoading(true);
+        setError("");
+
+        const result =
+          await fetchPerformanceStats(
+            selectedBranchId
+          );
+
+        if (!cancelled) {
+          setStats(result);
+        }
+      } catch {
+        if (!cancelled) {
+          setError(
+            "មិនអាចទាញយកទិន្នន័យបានទេ"
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadStats();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBranchId]);
 
   return (
-    <div
-      className="app-card"
-      style={{
-        background: "#FFFFFF",
-        border: "1px solid #EEF0F3",
-        borderRadius: 14,
-        padding: "18px 20px",
-        height: "100%",
-        boxSizing: "border-box",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h3 style={{ margin: "0 0 16px 0", fontSize: 14, fontWeight: 600, color: "#232629" }}>
+    <div className="flex h-full flex-col rounded-[14px] border border-[#EEF0F3] bg-white px-5 py-[18px]">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-[#232629]">
           សមិទ្ធផលសរុបរបស់សាខា
         </h3>
-        <BranchDropdown
-          branches={PLACEHOLDER_BRANCHES}
-          value={selectedBranchId}
-          onChange={setSelectedBranchId}
-        />
+
+        {branchOptions.length > 0 && (
+          <BranchDropdown
+            branches={branchOptions}
+            value={selectedBranchId}
+            onChange={setSelectedBranchId}
+          />
+        )}
       </div>
 
       {error ? (
-        <div style={{ padding: "16px 0", textAlign: "center", color: "#B3261E", fontSize: 13 }}>
+        <div className="py-4 text-center text-[13px] text-[#B3261E]">
           {error}
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, flex: 1, alignItems: "stretch" }}>
-          {(isLoading ? [0, 1, 2] : stats).map((item, i) =>
+        <div className="grid flex-1 grid-cols-1 items-stretch gap-3 sm:grid-cols-3">
+          {(isLoading
+            ? [0, 1, 2]
+            : stats
+          ).map((item, index) =>
             isLoading ? (
-              <StatMiniCard key={i} label="" value="" growth="0" isLoading />
+              <StatMiniCard
+                key={index}
+                label=""
+                value=""
+                growth={0}
+                isLoading
+              />
             ) : (
               <StatMiniCard
-                key={item.label}
+                key={
+                  item.key ||
+                  item.label ||
+                  index
+                }
                 label={item.label}
                 value={item.value}
                 growth={item.growth}
@@ -162,31 +239,3 @@ export default function PerformanceSummary() {
     </div>
   );
 }
-
-
-
-/**
- * PerformanceSummary
- * --------------------
- * Renders "សម្ថភពលសរុបរបស់សាខា" (branch performance summary) — a branch
- * dropdown plus three mini stat cards.
- *
- * ⚠️ IMPORTANT — CURRENT LIMITATION:
- * branch-performance.json is currently a flat array of 3 stats with NO
- * per-branch data (no branch_id, branch_name, or grouping at all):
- *
- *   [
- *     { "label": "កម្មវិធីសរុប",       "value": "58",   "growth": "8" },
- *     { "label": "វិភាគទានសរុប",       "value": "$1200", "growth": "23" },
- *     { "label": "អ្នកចូលរួមថ្មីបន្ថែម", "value": "86",   "growth": "12" }
- *   ]
- *
- * That means: the dropdown below currently shows a single hardcoded
- * placeholder branch and CANNOT actually switch between real branches'
- * data yet, because there's nothing in this file to switch to. This is
- * a stopgap, not the final behavior — once backend provides real
- * per-branch data (e.g. a "branches" array, each with its own stats),
- * this component needs its dropdown wired back to that, similar to how
- * the month/year dropdowns select from already-loaded data elsewhere in
- * this dashboard.
- */

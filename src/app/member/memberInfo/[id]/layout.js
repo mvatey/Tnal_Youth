@@ -4,7 +4,7 @@ import { notFound, usePathname, useRouter } from "next/navigation";
 import { use, useMemo } from "react";
 import { Users, InfoIcon } from "lucide-react";
 import { FaHandHoldingDollar } from "react-icons/fa6";
-import MemberInfoCard from "@/components/card/memberInfoCard";
+import MemberInfoCard from "@/components/member/cards/memberInfoCard";
 import MemberTabNav from "@/components/navigation/MemberTabNav";
 import HeaderMemberInfo from "@/components/navigation/headerMemberInfo.js";
 import StatCard from "@/components/dashboard/statCard";

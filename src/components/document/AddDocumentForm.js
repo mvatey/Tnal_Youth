@@ -2,10 +2,9 @@
 
 import { UploadCloud } from "lucide-react";
 
-import PopupCard from "@/components/popup/PopupCard";
+import PopupCard from "@/components/modals/PopupCard";
 import FormSelect from "@/components/forms/FormSelect";
-import SaveButton from "@/components/forms/SaveButton";
-
+import SaveButton from "@/components/ui/actions/SaveButton";
 export default function AddDocumentForm({ form, setForm, onSave, onClose }) {
   const updateField = (field) => (e) => {
     setForm({
