@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import { FolderPlus, UploadCloud, X } from "lucide-react";
+import { ChevronDown, FolderPlus, UploadCloud, X } from "lucide-react";
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
@@ -441,6 +441,7 @@ text-sm
 flex
 h-[80px]
 cursor-pointer
+
 flex-col
 items-center
 justify-center
@@ -517,7 +518,7 @@ flex
 gap-3
 "
               >
-                {colors.map((color) => (
+                {COLORS.map((color) => (
                   <button
                     key={color}
                     onClick={() =>
@@ -663,9 +664,18 @@ text-sm
 outline-none
 "
         >
-          {options.map((item) => (
-            <option key={item}>{item}</option>
-          ))}
+          {options.map((item) => {
+            const optionValue =
+              typeof item === "object" ? item.value : item;
+            const optionLabel =
+              typeof item === "object" ? item.label : item;
+
+            return (
+              <option key={optionValue} value={optionValue}>
+                {optionLabel}
+              </option>
+            );
+          })}
         </select>
 
         <ChevronDown

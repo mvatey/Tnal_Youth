@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 import CertificateForm from "@/components/document/CertificateForm";
 import IdCardForm from "@/components/document/IdCardForm";
