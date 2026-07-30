@@ -607,59 +607,6 @@ export default function CreateDocumentPage() {
 
           {/* ID-card card */}
 
-          <div
-            className="
-              w-[270px]
-              overflow-hidden
-              rounded-xl
-              border
-              border-border
-              bg-white
-              shadow-sm
-              transition-all
-              duration-200
-              hover:-translate-y-1
-              hover:shadow-lg
-            "
-          >
-            <div className="h-1 bg-warning" />
-
-            <div className="flex h-[115px] flex-col justify-between p-4">
-              <div>
-                <h2 className="text-base font-bold text-primary">
-                  ប័ណ្ណសមាជិក
-                </h2>
-
-                <p className="mt-1 text-xs text-text-secondary">
-                  បង្កើតប័ណ្ណសម្គាល់សម្រាប់សមាជិក
-                </p>
-              </div>
-
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => selectDocumentType("id_card")}
-                  className="
-                    inline-flex
-                    h-8
-                    min-w-[86px]
-                    items-center
-                    justify-center
-                    rounded-lg
-                    bg-warning
-                    px-3
-                    text-xs
-                    font-medium
-                    text-white
-                    transition
-                    hover:opacity-80
-                  "
-                >
-                  ជ្រើសរើស
-                </button>
-              </div>
-            </div>
-          </div>
           {/* Letter of appointment card */}
 
           <div

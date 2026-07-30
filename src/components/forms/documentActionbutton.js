@@ -62,14 +62,14 @@ export default function DocumentActionButton({
             cannotCreate
               ? `
                 cursor-not-allowed
-                bg-primary
-                hover:bg-primary-hover
+                bg-secondary
+                hover:bg-secondary-hover
                 active:scale-[0.99]
               `
               : `
                 cursor-pointer
-                bg-primary
-                hover:bg-primary-hover
+                bg-secondary
+                hover:bg-secondary-hover
                 active:scale-[0.99]
               `
           }

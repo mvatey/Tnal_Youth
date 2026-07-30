@@ -1,18 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
 
 import { getCurrentMember } from "@/lib/currentMember";
 import donationData from "@/data/donation.json";
 
 import DataTable from "@/components/table/DataTable";
-import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal";
 
 export default function MyAccountDonationPage() {
   const member = getCurrentMember();
 
-  const initialDonations = useMemo(() => {
+  const donations = useMemo(() => {
     if (!member) return [];
 
     return donationData.filter((item) => {
@@ -22,15 +20,15 @@ export default function MyAccountDonationPage() {
     });
   }, [member]);
 
-  const [donations, setDonations] = useState(initialDonations);
   const [query, setQuery] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const paymentMethods = useMemo(
     () => [
       ...new Set(
-        donations.map((item) => item.paymentMethod).filter(Boolean),
+        donations
+          .map((item) => item.paymentMethod)
+          .filter(Boolean),
       ),
     ],
     [donations],
@@ -48,7 +46,8 @@ export default function MyAccountDonationPage() {
         item.recordedBy?.toLowerCase().includes(search);
 
       const matchesMethod =
-        !methodFilter || item.paymentMethod === methodFilter;
+        !methodFilter ||
+        item.paymentMethod === methodFilter;
 
       return matchesSearch && matchesMethod;
     });
@@ -59,7 +58,7 @@ export default function MyAccountDonationPage() {
       header: "ល.រ",
       width: "w-[6%]",
       align: "center",
-      render: (_, index) => index,
+      render: (_, index) => index + 1,
     },
     {
       header: "ប្រចាំខែ",
@@ -95,20 +94,6 @@ export default function MyAccountDonationPage() {
       align: "left",
       accessor: "paymentMethod",
     },
-    {
-      header: "សកម្មភាព",
-      width: "w-[10%]",
-      align: "center",
-      render: (item) => (
-        <button
-          type="button"
-          onClick={() => setDeleteTarget(item)}
-          className="inline-flex items-center justify-center p-1.5 text-red-500 hover:text-red-600"
-        >
-          <Trash2 className="h-5 w-5" />
-        </button>
-      ),
-    },
   ];
 
   if (!member) {
@@ -127,7 +112,10 @@ export default function MyAccountDonationPage() {
             value: methodFilter,
             onChange: setMethodFilter,
             placeholder: "វិធីសាស្ត្រទូទាត់",
-            options: paymentMethods,
+            options: paymentMethods.map((method) => ({
+              label: method,
+              value: method,
+            })),
           },
         ]}
         searchQuery={query}
@@ -135,26 +123,6 @@ export default function MyAccountDonationPage() {
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
         downloadFilename={`donations-${member.id}.csv`}
-      />
-
-      <ConfirmDeleteModal
-        open={Boolean(deleteTarget)}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          setDonations((previous) =>
-            previous.filter((item) => item.id !== deleteTarget.id),
-          );
-
-          setDeleteTarget(null);
-        }}
-        title="លុបវិភាគទាន?"
-        description={
-          deleteTarget
-            ? `តើអ្នកប្រាកដថាចង់លុបវិភាគទាន ${deleteTarget.amount} នេះទេ?`
-            : ""
-        }
-        cancelLabel="បោះបង់"
-        confirmLabel="លុប"
       />
     </div>
   );

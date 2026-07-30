@@ -208,29 +208,47 @@ export default function CompanyDocumentPage() {
   </button>
 );
 
-  const handleAddSave = () => {
-    const selectedFile = form.files?.[0];
+  const handleAddSave = (newDocumentFromForm) => {
 
-    const newDocument = {
-      id: Date.now(),
-      title: form.title,
-      branch: form.branch,
-      date: form.date || new Date().toISOString().slice(0, 10),
-      description: form.description,
-      size: selectedFile
-        ? `${(selectedFile.size / 1024 / 1024).toFixed(1)}MB`
-        : "-",
-      type: selectedFile
-        ? selectedFile.name.split(".").pop()?.toUpperCase()
-        : "PDF",
-      image: "/document.jpg",
-      files: form.files || [],
-    };
+  const newDocument = {
+    id: Date.now(),
 
-    setDocuments((previous) => [newDocument, ...previous]);
-    setForm(EMPTY_FORM);
-    setShowAddForm(false);
+    title: newDocumentFromForm.title,
+
+    branch: newDocumentFromForm.branch,
+
+    description: newDocumentFromForm.description,
+
+    date:
+      newDocumentFromForm.date ||
+      new Date().toISOString().slice(0,10),
+
+    size: newDocumentFromForm.size || "-",
+
+    // TAKE FROM CREATE FORM
+    type: newDocumentFromForm.type,
+
+    // FILE FORMAT ONLY
+    fileFormat:
+      newDocumentFromForm.fileFormat,
+
+    image:
+      newDocumentFromForm.image ||
+      "/document.jpg",
+
+    files:
+      newDocumentFromForm.files || [],
   };
+
+
+  setDocuments((previous)=>[
+    newDocument,
+    ...previous,
+  ]);
+
+  setForm(EMPTY_FORM);
+  setShowAddForm(false);
+};
 
   const handleEditSave = () => {
     setDocuments((previous) =>

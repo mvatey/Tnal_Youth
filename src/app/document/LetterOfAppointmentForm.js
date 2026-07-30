@@ -1,45 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { UploadCloud, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FileText, UploadCloud, X } from "lucide-react";
 
-import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
-import LetterOfAppointment from "@/components/card/LetterOfAppointment";
-import FormActionButton from "@/components/forms/documentActionbutton";
-
 import membersData from "@/data/members.json";
+import DocumentActionButton from "@/components/forms/documentActionbutton";
 
-const MAX_TEMPLATE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-const ALLOWED_TEMPLATE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
-const ROLE_OPTIONS = [
-  {
-    label: "អ្នកគ្រប់គ្រង",
-    value: "admin",
-  },
-  {
-    label: "ប្រធានសាខា",
-    value: "branch_leader",
-  },
-  {
-    label: "លេខាធិការ",
-    value: "secretary",
-  },
-  {
-    label: "សមាជិក",
-    value: "member",
-  },
-];
+const ALLOWED_FILE_EXTENSIONS = ["jpg", "jpeg", "png", "pdf", "doc", "docx"];
 
 const MEMBER_OPTIONS = membersData
   .filter(
     (member) =>
       member?.id &&
       (member?.name_kh ||
-        member?.name_en ||
         member?.fullNameKm ||
+        member?.name_en ||
         member?.fullNameEn),
   )
   .map((member) => ({
@@ -51,65 +29,8 @@ const MEMBER_OPTIONS = membersData
     value: String(member.id),
   }));
 
-const FONT_OPTIONS = [
-  {
-    label: "Noto Sans Khmer",
-    value: "Noto Sans",
-  },
-  {
-    label: "Kantumruy Pro",
-    value: "Kantumruy Pro",
-  },
-  {
-    label: "Battambang",
-    value: "Battambang",
-  },
-  {
-    label: "Moul",
-    value: "Moul",
-  },
-];
-
-const FONT_SIZE_OPTIONS = [
-  {
-    label: "តូច",
-    value: "small",
-  },
-  {
-    label: "មធ្យម",
-    value: "medium",
-  },
-  {
-    label: "ធំ",
-    value: "large",
-  },
-];
-
-const LANGUAGE_OPTIONS = [
-  {
-    label: "ភាសាខ្មែរ",
-    value: "km",
-  },
-  {
-    label: "English",
-    value: "en",
-  },
-];
-
-const COLORS = [
-  "#12224c",
-  "#4b3192",
-  "#8b5cf6",
-  "#22c55e",
-  "#ef4444",
-  "#eab308",
-  "#000000",
-];
-
 function getBranchName(branch) {
-  if (!branch) {
-    return "";
-  }
+  if (!branch) return "";
 
   if (typeof branch === "string") {
     return branch;
@@ -152,10 +73,11 @@ export default function LetterOfAppointmentForm({
   onClose,
   saving = false,
 }) {
-  const [showValidationError, setShowValidationError] = useState(false);
-  const language = form.language || "km";
+  const fileInputRef = useRef(null);
 
-  const selectedColor = form.color || "#12224c";
+  const [showValidationError, setShowValidationError] = useState(false);
+
+  const [fileError, setFileError] = useState("");
 
   const selectedMember = useMemo(
     () =>
@@ -172,30 +94,32 @@ export default function LetterOfAppointmentForm({
   }, [form.templatePreview]);
 
   const updateField = (field) => (event) => {
+    const value = event.target.value;
+
     setForm((previous) => ({
       ...previous,
-      [field]: event.target.value,
+      [field]: value,
     }));
 
     setShowValidationError(false);
   };
+
   const handleMemberChange = (event) => {
-    setShowValidationError(false);
     const memberId = event.target.value;
 
     const member = membersData.find(
       (item) => String(item.id) === String(memberId),
     );
 
+    setShowValidationError(false);
+
     if (!member) {
       setForm((previous) => ({
         ...previous,
-
         memberId: "",
         member: "",
         memberNameEn: "",
         branch: "",
-        role: "member",
         joinedAt: "",
       }));
 
@@ -213,28 +137,31 @@ export default function LetterOfAppointmentForm({
 
       branch: getBranchName(member.branch) || previous.branch || "",
 
-      role: member.role || previous.role || "member",
-
       joinedAt: getMemberJoinedDate(member) || previous.joinedAt || "",
     }));
   };
 
-  const handleTemplateUpload = (event) => {
+  const handleFileUpload = (event) => {
     const selectedFile = event.target.files?.[0];
+
+    setFileError("");
+    setShowValidationError(false);
 
     if (!selectedFile) {
       return;
     }
 
-    if (!ALLOWED_TEMPLATE_TYPES.includes(selectedFile.type)) {
-      alert("សូមជ្រើសរើសរូបភាព JPG, PNG ឬ WEBP");
+    const extension = selectedFile.name.split(".").pop()?.toLowerCase() || "";
+
+    if (!ALLOWED_FILE_EXTENSIONS.includes(extension)) {
+      setFileError("សូមជ្រើសរើសឯកសារ JPG, PNG, PDF ឬ DOCX។");
 
       event.target.value = "";
       return;
     }
 
-    if (selectedFile.size > MAX_TEMPLATE_SIZE) {
-      alert("ទំហំរូបភាពមិនអាចលើស 5MB");
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      setFileError("ទំហំឯកសារមិនអាចលើសពី 5MB បានទេ។");
 
       event.target.value = "";
       return;
@@ -250,13 +177,20 @@ export default function LetterOfAppointmentForm({
       ...previous,
 
       templateFile: selectedFile,
+
       templatePreview: previewUrl,
+
+      fileName: selectedFile.name,
+
+      fileType: extension.toUpperCase(),
+
+      fileSize: formatFileSize(selectedFile.size),
     }));
 
     event.target.value = "";
   };
 
-  const removeTemplate = () => {
+  const removeFile = () => {
     if (form.templatePreview?.startsWith("blob:")) {
       URL.revokeObjectURL(form.templatePreview);
     }
@@ -266,26 +200,24 @@ export default function LetterOfAppointmentForm({
 
       templateFile: null,
       templatePreview: "",
+      fileName: "",
+      fileType: "",
+      fileSize: "",
     }));
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+
+    setFileError("");
+    setShowValidationError(false);
   };
 
-  const previewUser = selectedMember
-    ? {
-        ...selectedMember,
-
-        id: selectedMember.id || form.memberId,
-
-        name_kh: form.member || getMemberNameKh(selectedMember),
-
-        name_en: form.memberNameEn || getMemberNameEn(selectedMember),
-
-        branch: form.branch || getBranchName(selectedMember.branch),
-
-        role: form.role || selectedMember.role || "member",
-
-        joinedAt: form.joinedAt || getMemberJoinedDate(selectedMember),
-      }
-    : null;
+  const isFormValid =
+    Boolean(form.branch) &&
+    Boolean(form.memberId) &&
+    Boolean(form.description?.trim()) &&
+    Boolean(form.templateFile);
 
   const handleSave = async () => {
     if (!isFormValid) {
@@ -298,10 +230,32 @@ export default function LetterOfAppointmentForm({
     try {
       await onSave?.({
         ...form,
+
+        title: form.title?.trim() || "លិខិតតែងតាំង",
+
         type: "លិខិតតែងតាំង",
-        documentType: "appointment_letter",
+
+        documentType: "លិខិតតែងតាំង",
+
+        fileType: form.fileType || "",
+
         selectedMember,
-        user: previewUser,
+
+        user: selectedMember
+          ? {
+              ...selectedMember,
+
+              id: selectedMember.id || form.memberId,
+
+              name_kh: form.member || getMemberNameKh(selectedMember),
+
+              name_en: form.memberNameEn || getMemberNameEn(selectedMember),
+
+              branch: form.branch || getBranchName(selectedMember.branch),
+
+              joinedAt: form.joinedAt || getMemberJoinedDate(selectedMember),
+            }
+          : null,
       });
     } catch (error) {
       console.error("Cannot create appointment letter:", error);
@@ -310,35 +264,28 @@ export default function LetterOfAppointmentForm({
     }
   };
 
-  const isFormValid =
-    Boolean(form.title?.trim()) &&
-    Boolean(form.memberId) &&
-    Boolean(form.role) &&
-    Boolean(form.branch?.trim()) &&
-    Boolean(form.joinedAt) &&
-    Boolean(form.templatePreview);
   return (
-    <div className="w-full rounded-xl border border-[#e5eaf0] bg-white p-6">
-      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[330px_minmax(0,1fr)]">
-        {/* Left form */}
-
+    <div
+      className="
+        w-full
+        rounded-xl
+        border
+        border-[#e4e7ec]
+        bg-white
+        px-8
+        py-8
+      "
+    >
+      <div
+        className="
+          grid
+          grid-cols-1
+          gap-12
+          xl:grid-cols-[425px_minmax(0,1fr)]
+        "
+      >
+        {/* Left side */}
         <div className="space-y-5">
-          <BoxFill
-            label="ឈ្មោះឯកសារ"
-            name="title"
-            value={form.title || ""}
-            onChange={updateField("title")}
-            placeholder="លិខិតតែងតាំង"
-          />
-          <FormSelect
-            label="សមាជិក"
-            name="memberId"
-            value={form.memberId || ""}
-            onChange={handleMemberChange}
-            placeholder="ជ្រើសរើសសមាជិក"
-            options={MEMBER_OPTIONS}
-          />
-
           <FormSelect
             label="សាខា"
             name="branch"
@@ -349,288 +296,265 @@ export default function LetterOfAppointmentForm({
           />
 
           <FormSelect
-            label="តួនាទីតែងតាំង"
-            name="role"
-            value={form.role || "member"}
-            onChange={updateField("role")}
-            placeholder="ជ្រើសរើសតួនាទី"
-            options={ROLE_OPTIONS}
+            label="សមាជិក"
+            name="memberId"
+            value={form.memberId || ""}
+            onChange={handleMemberChange}
+            placeholder="ជ្រើសរើសសមាជិក"
+            options={MEMBER_OPTIONS}
           />
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-text-primary">
-              សេចក្តីពិពណ៌នា
+            <label
+              className="
+                mb-2
+                block
+                text-sm
+                font-semibold
+                text-text-primary
+              "
+            >
+              ពិពណ៌នា
             </label>
 
             <textarea
               name="description"
               value={form.description || ""}
               onChange={updateField("description")}
-              placeholder="បញ្ចូលសេចក្តីពិពណ៌នា"
+              placeholder="ពិពណ៌នាបន្ថែម"
               className="
-                h-[105px]
+                h-[180px]
                 w-full
                 resize-none
-                rounded-lg
+                rounded-xl
                 border
-                border-gray-200
+                border-gray-300
                 bg-white
-                p-4
+                px-5
+                py-4
                 text-sm
                 text-text-primary
                 outline-none
+                transition
                 placeholder:text-gray-400
                 focus:border-primary
               "
             />
           </div>
-
-          {/* Upload appointment template */}
-
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-text-primary">
-              រូបភាពគំរូលិខិតតែងតាំង
-            </label>
-
-            {form.templatePreview ? (
-              <div
-                className="
-                  relative
-                  overflow-hidden
-                  rounded-xl
-                  border
-                  border-gray-200
-                  bg-gray-50
-                "
-              >
-                <img
-                  src={form.templatePreview}
-                  alt="uploaded appointment letter template"
-                  className="
-                    aspect-[16/9]
-                    w-full
-                    object-fill
-                  "
-                />
-
-                <button
-                  type="button"
-                  onClick={removeTemplate}
-                  className="
-                    absolute
-                    right-2
-                    top-2
-                    flex
-                    h-8
-                    w-8
-                    items-center
-                    justify-center
-                    rounded-full
-                    bg-white
-                    text-red-500
-                    shadow
-                    transition
-                    hover:bg-red-50
-                  "
-                  aria-label="លុបគំរូ"
-                >
-                  <X size={17} />
-                </button>
-              </div>
-            ) : (
-              <label
-                className="
-                  flex
-                  h-[130px]
-                  cursor-pointer
-                  flex-col
-                  items-center
-                  justify-center
-                  rounded-xl
-                  border-2
-                  border-dashed
-                  border-[#7180a8]
-                  bg-[#f8f9ff]
-                  text-center
-                  transition
-                  hover:bg-secondary-light/30
-                "
-              >
-                <UploadCloud size={27} className="mb-2 text-[#62708f]" />
-
-                <p className="text-xs font-semibold text-primary">
-                  បញ្ចូលរូបភាពគំរូ
-                </p>
-
-                <p className="mt-1 text-[10px] text-gray-400">
-                  JPG, PNG, WEBP — មិនលើស 5MB
-                </p>
-
-                <p className="text-[10px] text-gray-400">
-                  ទំហំគំរូណែនាំ 1600 × 900 px
-                </p>
-
-                <input
-                  type="file"
-                  hidden
-                  accept=".jpg,.jpeg,.png,.webp"
-                  onChange={handleTemplateUpload}
-                />
-              </label>
-            )}
-          </div>
         </div>
 
         {/* Right side */}
-
         <div className="min-w-0">
-          {/* Design controls */}
-
-          <div className="mb-5 grid grid-cols-1 items-end gap-4 md:grid-cols-[180px_140px_minmax(220px,1fr)_160px] md:items-start">
-            <FormSelect
-              label="ពុម្ពអក្សរ"
-              name="font"
-              value={form.font || "Noto Sans"}
-              onChange={updateField("font")}
-              options={FONT_OPTIONS}
-            />
-
-            <FormSelect
-              label="ទំហំ"
-              name="fontSize"
-              value={form.fontSize || "medium"}
-              onChange={updateField("fontSize")}
-              options={FONT_SIZE_OPTIONS}
-            />
-
-            <div className="flex flex-col">
-  <label className="mb-2 block text-sm font-semibold text-text-primary">
-    ពណ៌
-  </label>
-
-  <div className="flex h-11 items-center gap-3">
-    {COLORS.map((color) => {
-      const selected = selectedColor === color;
-
-      return (
-        <button
-          key={color}
-          type="button"
-          onClick={() =>
-            setForm((previous) => ({
-              ...previous,
-              color,
-            }))
-          }
-          className={`
-            h-5
-            w-5
-            shrink-0
-            rounded-full
-            border-2
-            transition
-            hover:scale-110
-            ${
-              selected
-                ? "border-gray-800 ring-2 ring-gray-300"
-                : "border-transparent"
-            }
-          `}
-          style={{
-            backgroundColor: color,
-          }}
-          aria-label={`ជ្រើសរើសពណ៌ ${color}`}
-        />
-      );
-    })}
-  </div>
-</div>
-
-            <FormSelect
-              label="ភាសា"
-              name="language"
-              value={language}
-              onChange={updateField("language")}
-              options={LANGUAGE_OPTIONS}
-            />
-          </div>
-
-          {/* Live preview */}
-
-          <div
+          <label
             className="
-              h-[560px]
-              overflow-hidden
-              rounded-xl
-              border
-              border-gray-200
-              bg-gray-100
-              p-5
+              mb-3
+              block
+              text-sm
+              font-semibold
+              text-text-primary
             "
           >
-            {!form.templatePreview ? (
-              <div className="flex h-full items-center justify-center">
-                <div
+            បញ្ចូលលិខិតតែងតាំង
+          </label>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+
+          {!form.templateFile ? (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="
+                flex
+                h-[266px]
+                w-full
+                flex-col
+                items-center
+                justify-center
+                rounded-2xl
+                border-2
+                border-dashed
+                border-primary
+                bg-[#f8f8ff]
+                px-8
+                text-center
+                transition
+                hover:bg-primary/5
+              "
+            >
+              <UploadCloud
+                size={58}
+                strokeWidth={1.8}
+                className="
+                  mb-6
+                  text-[#52617b]
+                "
+              />
+
+              <p
+                className="
+                  text-lg
+                  text-gray-400
+                "
+              >
+                បញ្ចូលជាប្រភេទ JPG, Docx, PDF, PNG (អតិបរមា 5MB),
+              </p>
+
+              <p
+                className="
+                  mt-2
+                  text-lg
+                  text-gray-400
+                "
+              >
+                ទំហំគំរូ៖ 16:9
+              </p>
+            </button>
+          ) : (
+            <div
+              className="
+                relative
+                flex
+                h-[300px]
+                w-full
+                items-center
+                justify-center
+                overflow-hidden
+                rounded-2xl
+                border-2
+                border-dashed
+                border-primary
+                bg-[#f8f8ff]
+                p-6
+              "
+            >
+              {form.templateFile.type?.startsWith("image/") ? (
+                <img
+                  src={form.templatePreview}
+                  alt="appointment letter"
                   className="
+                    h-full
                     w-full
-                    max-w-[390px]
-                    rounded-3xl
-                    border
-                    border-gray-200
-                    bg-white
-                    px-10
-                    py-8
-                    text-center
-                    shadow-sm
+                    rounded-xl
+                    object-contain
                   "
-                >
-                  <p className="text-xl font-bold text-text-primary">
-                    មិនទាន់មានគំរូលិខិតតែងតាំង
+                />
+              ) : (
+                <div className="text-center">
+                  <FileText
+                    size={55}
+                    className="
+                      mx-auto
+                      mb-4
+                      text-primary
+                    "
+                  />
+
+                  <p
+                    className="
+                      max-w-[520px]
+                      truncate
+                      text-base
+                      font-semibold
+                      text-text-primary
+                    "
+                  >
+                    {form.fileName}
                   </p>
 
-                  <p className="mt-3 text-sm leading-6 text-gray-500">
-                    សូមបញ្ចូលរូបភាពគំរូលិខិតតែងតាំងជាមុនសិន
+                  <p
+                    className="
+                      mt-2
+                      text-sm
+                      text-gray-400
+                    "
+                  >
+                    {form.fileType} · {form.fileSize}
                   </p>
                 </div>
-              </div>
-            ) : !form.memberId || !previewUser ? (
-              <div className="flex h-full items-center justify-center text-sm text-gray-500">
-                សូមជ្រើសរើសសមាជិក
-              </div>
-            ) : (
-              <div className="flex min-h-full min-w-full overflow-hidden items-center justify-center">
-                <LetterOfAppointment
-                  user={previewUser}
-                  language={language}
-                  color={selectedColor}
-                  font={form.font || "Noto Sans"}
-                  fontSize={form.fontSize || "medium"}
-                  description={form.description || ""}
-                  templatePreview={form.templatePreview}
-                />
-              </div>
-            )}
-          </div>
+              )}
 
-          {/* Buttons */}
+              <button
+                type="button"
+                onClick={removeFile}
+                aria-label="លុបឯកសារ"
+                className="
+                  absolute
+                  right-4
+                  top-4
+                  flex
+                  h-9
+                  w-9
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-white
+                  text-red-500
+                  shadow-sm
+                  transition
+                  hover:bg-red-50
+                "
+              >
+                <X size={19} />
+              </button>
+            </div>
+          )}
 
-          {showValidationError && !isFormValid && (
-            <p className="mt-4 text-xs font-medium text-red-500">
-              សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
+          {fileError && (
+            <p
+              className="
+                mt-2
+                text-xs
+                font-medium
+                text-red-500
+              "
+            >
+              {fileError}
             </p>
           )}
 
-          <FormActionButton
-            onCancel={onClose}
-            onCreate={handleSave}
-            isValid={isFormValid}
-            saving={saving}
-            cancelText="បោះបង់"
-            createText="បង្កើតលិខិតតែងតាំង"
-            savingText="កំពុងរក្សាទុក..."
-          />
+          {showValidationError && !isFormValid && (
+            <p
+              className="
+                  mt-4
+                  text-xs
+                  font-medium
+                  text-red-500
+                "
+            >
+              សូមជ្រើសរើសសាខា សមាជិក បំពេញពិពណ៌នា និងបញ្ចូលឯកសារ។
+            </p>
+          )}
+          <div className="mt-12">
+            <DocumentActionButton
+              onCancel={onClose}
+              onCreate={handleSave}
+              isValid={isFormValid}
+              saving={saving}
+              cancelText="បោះបង់"
+              createText="រក្សាទុក"
+              savingText="កំពុងរក្សាទុក..."
+            />
+          </div>
         </div>
       </div>
     </div>
   );
+}
+
+function formatFileSize(bytes) {
+  if (!bytes) return "0KB";
+
+  const megabytes = bytes / (1024 * 1024);
+
+  if (megabytes < 1) {
+    return `${(bytes / 1024).toFixed(1)}KB`;
+  }
+
+  return `${megabytes.toFixed(1)}MB`;
 }

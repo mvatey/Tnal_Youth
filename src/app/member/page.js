@@ -2,12 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Landmark, Moon, Trash2, Users } from "lucide-react";
+import { Landmark, Moon, Users } from "lucide-react";
 import { AiOutlineWoman } from "react-icons/ai";
 import { FaDharmachakra } from "react-icons/fa";
 import { RiAddCircleLine } from "react-icons/ri";
 
-import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal.js";
 import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
 import DataTable from "@/components/table/DataTable.js";
 import StatCard from "@/components/dashboard/statCard";
@@ -76,7 +75,10 @@ const MONK_GENDER = "ព្រះសង្ឃ";
  * into a JavaScript Date object.
  */
 function parseKhmerDate(value) {
-  if (typeof value !== "string" || !value.trim()) {
+  if (
+    typeof value !== "string" ||
+    !value.trim()
+  ) {
     return null;
   }
 
@@ -84,10 +86,13 @@ function parseKhmerDate(value) {
    * Also support an HTML date input value:
    * yyyy-mm-dd
    */
-  const isoDateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const isoDateMatch = value.match(
+    /^(\d{4})-(\d{2})-(\d{2})$/,
+  );
 
   if (isoDateMatch) {
-    const [, year, month, day] = isoDateMatch;
+    const [, year, month, day] =
+      isoDateMatch;
 
     return new Date(
       Number(year),
@@ -104,8 +109,11 @@ function parseKhmerDate(value) {
     return null;
   }
 
-  const [, day, monthName, year] = khmerDateMatch;
-  const month = KHMER_MONTHS[monthName];
+  const [, day, monthName, year] =
+    khmerDateMatch;
+
+  const month =
+    KHMER_MONTHS[monthName];
 
   if (month === undefined) {
     return null;
@@ -119,23 +127,32 @@ function parseKhmerDate(value) {
 }
 
 /**
- * Convert yyyy-mm-dd from the form to the same display format
- * used by members.json.
+ * Convert yyyy-mm-dd from the form to
+ * the same display format used by members.json.
  */
 function formatDateToKhmer(value) {
-  if (typeof value !== "string" || !value.trim()) {
+  if (
+    typeof value !== "string" ||
+    !value.trim()
+  ) {
     return "";
   }
 
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const match = value.match(
+    /^(\d{4})-(\d{2})-(\d{2})$/,
+  );
 
   if (!match) {
     return value;
   }
 
   const [, year, month, day] = match;
-  const monthIndex = Number(month) - 1;
-  const monthName = KHMER_MONTH_NAMES[monthIndex];
+
+  const monthIndex =
+    Number(month) - 1;
+
+  const monthName =
+    KHMER_MONTH_NAMES[monthIndex];
 
   if (!monthName) {
     return value;
@@ -146,13 +163,20 @@ function formatDateToKhmer(value) {
 
 function calcGrowth(members, filterFn) {
   const today = new Date();
-  const oneMonthAgo = new Date(today);
 
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  const oneMonthAgo =
+    new Date(today);
+
+  oneMonthAgo.setMonth(
+    oneMonthAgo.getMonth() - 1,
+  );
 
   const countUpTo = (cutoff) =>
     members.filter((member) => {
-      const joinedDate = parseKhmerDate(member.joinedAt);
+      const joinedDate =
+        parseKhmerDate(
+          member.joinedAt,
+        );
 
       return (
         joinedDate &&
@@ -161,15 +185,23 @@ function calcGrowth(members, filterFn) {
       );
     }).length;
 
-  const currentCount = countUpTo(today);
-  const previousCount = countUpTo(oneMonthAgo);
+  const currentCount =
+    countUpTo(today);
+
+  const previousCount =
+    countUpTo(oneMonthAgo);
 
   if (previousCount === 0) {
-    return currentCount > 0 ? 100 : 0;
+    return currentCount > 0
+      ? 100
+      : 0;
   }
 
   return Math.round(
-    ((currentCount - previousCount) / previousCount) * 100,
+    ((currentCount -
+      previousCount) /
+      previousCount) *
+      100,
   );
 }
 
@@ -178,49 +210,62 @@ export default function MembersPage() {
 
   /*
    * Keep imported members in state.
-   * This allows newly created members to appear immediately.
+   * This allows newly created members
+   * to appear immediately.
    */
-  const [members, setMembers] = useState(initialMembers);
+  const [members, setMembers] =
+    useState(initialMembers);
 
-  const [query, setQuery] = useState("");
-  const [branchFilter, setBranchFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [genderFilter, setGenderFilter] = useState("");
+  const [query, setQuery] =
+    useState("");
 
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [deletedIds, setDeletedIds] = useState([]);
+  const [
+    branchFilter,
+    setBranchFilter,
+  ] = useState("");
 
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [
+    statusFilter,
+    setStatusFilter,
+  ] = useState("");
+
+  const [
+    genderFilter,
+    setGenderFilter,
+  ] = useState("");
+
+  const [
+    isCreateOpen,
+    setIsCreateOpen,
+  ] = useState(false);
 
   /*
-   * Remove deleted members from the visible list.
-   */
-  const activeMembersList = useMemo(() => {
-    return members.filter(
-      (member) => !deletedIds.includes(member.id),
-    );
-  }, [members, deletedIds]);
-
-  /*
-   * Statistic-card values.
+   * Statistic card values.
    */
   const stats = useMemo(() => {
-    const total = activeMembersList.length;
+    const total = members.length;
 
-    const female = activeMembersList.filter(
-      (member) => member.gender === "ស្រី",
+    const female = members.filter(
+      (member) =>
+        member.gender === "ស្រី",
     ).length;
 
-    const monk = activeMembersList.filter(
-      (member) => member.gender === MONK_GENDER,
+    const monk = members.filter(
+      (member) =>
+        member.gender ===
+        MONK_GENDER,
     ).length;
 
-    const buddhist = activeMembersList.filter(
-      (member) => member.religion === BUDDHIST_LABEL,
+    const buddhist = members.filter(
+      (member) =>
+        member.religion ===
+        BUDDHIST_LABEL,
     ).length;
 
-    const islam = activeMembersList.filter(
-      (member) => member.religion === ISLAM_LABEL,
+    const islam = members.filter(
+      (member) =>
+        member.religion ===
+        ISLAM_LABEL,
     ).length;
 
     return {
@@ -231,97 +276,131 @@ export default function MembersPage() {
       islam,
 
       totalGrowth: calcGrowth(
-        activeMembersList,
+        members,
         () => true,
       ),
 
       femaleGrowth: calcGrowth(
-        activeMembersList,
-        (member) => member.gender === "ស្រី",
+        members,
+        (member) =>
+          member.gender === "ស្រី",
       ),
 
       monkGrowth: calcGrowth(
-        activeMembersList,
-        (member) => member.gender === MONK_GENDER,
+        members,
+        (member) =>
+          member.gender ===
+          MONK_GENDER,
       ),
 
       buddhistGrowth: calcGrowth(
-        activeMembersList,
-        (member) => member.religion === BUDDHIST_LABEL,
+        members,
+        (member) =>
+          member.religion ===
+          BUDDHIST_LABEL,
       ),
 
       islamGrowth: calcGrowth(
-        activeMembersList,
-        (member) => member.religion === ISLAM_LABEL,
+        members,
+        (member) =>
+          member.religion ===
+          ISLAM_LABEL,
       ),
     };
-  }, [activeMembersList]);
+  }, [members]);
 
   /*
    * Search and filter table data.
    */
-  const filteredMembers = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+  const filteredMembers =
+    useMemo(() => {
+      const normalizedQuery =
+        query
+          .trim()
+          .toLowerCase();
 
-    return activeMembersList.filter((member) => {
-      const memberNameKh = String(
-        member.name_kh ?? "",
-      ).toLowerCase();
+      return members.filter(
+        (member) => {
+          const memberNameKh =
+            String(
+              member.name_kh ??
+                "",
+            ).toLowerCase();
 
-      const memberNameEn = String(
-        member.name_en ?? "",
-      ).toLowerCase();
+          const memberNameEn =
+            String(
+              member.name_en ??
+                "",
+            ).toLowerCase();
 
-      const memberPhone = String(
-        member.phone ?? "",
-      ).toLowerCase();
+          const memberPhone =
+            String(
+              member.phone ?? "",
+            ).toLowerCase();
 
-      const memberEmail = String(
-        member.email ?? "",
-      ).toLowerCase();
+          const memberEmail =
+            String(
+              member.email ?? "",
+            ).toLowerCase();
 
-      const matchesQuery =
-        !normalizedQuery ||
-        memberNameKh.includes(normalizedQuery) ||
-        memberNameEn.includes(normalizedQuery) ||
-        memberPhone.includes(normalizedQuery) ||
-        memberEmail.includes(normalizedQuery);
+          const matchesQuery =
+            !normalizedQuery ||
+            memberNameKh.includes(
+              normalizedQuery,
+            ) ||
+            memberNameEn.includes(
+              normalizedQuery,
+            ) ||
+            memberPhone.includes(
+              normalizedQuery,
+            ) ||
+            memberEmail.includes(
+              normalizedQuery,
+            );
 
-      const matchesBranch =
-        !branchFilter ||
-        member.branch === branchFilter;
+          const matchesBranch =
+            !branchFilter ||
+            member.branch ===
+              branchFilter;
 
-      const matchesStatus =
-        !statusFilter ||
-        member.status === statusFilter;
+          const matchesStatus =
+            !statusFilter ||
+            member.status ===
+              statusFilter;
 
-      const matchesGender =
-        !genderFilter ||
-        member.gender === genderFilter;
+          const matchesGender =
+            !genderFilter ||
+            member.gender ===
+              genderFilter;
 
-      return (
-        matchesQuery &&
-        matchesBranch &&
-        matchesStatus &&
-        matchesGender
+          return (
+            matchesQuery &&
+            matchesBranch &&
+            matchesStatus &&
+            matchesGender
+          );
+        },
       );
-    });
-  }, [
-    activeMembersList,
-    query,
-    branchFilter,
-    statusFilter,
-    genderFilter,
-  ]);
+    }, [
+      members,
+      query,
+      branchFilter,
+      statusFilter,
+      genderFilter,
+    ]);
 
   /*
-   * Create branch dropdown options from current member data.
+   * Create branch dropdown options
+   * from the current member data.
    */
   const branches = useMemo(() => {
     const uniqueBranches = [
       ...new Set(
         members
-          .map((member) => member.branch)
+          .map(
+            (member) =>
+              member.branch,
+          )
           .filter(Boolean),
       ),
     ];
@@ -332,17 +411,22 @@ export default function MembersPage() {
         value: "",
       },
 
-      ...uniqueBranches.map((branch) => ({
-        label: branch,
-        value: branch,
-      })),
+      ...uniqueBranches.map(
+        (branch) => ({
+          label: branch,
+          value: branch,
+        }),
+      ),
     ];
   }, [members]);
 
   /*
-   * Receive form data from CreateMemberModal.
+   * Receive form data from
+   * CreateMemberModal.
    */
-  const handleCreateMember = (formData) => {
+  const handleCreateMember = (
+    formData,
+  ) => {
     if (!formData) {
       return;
     }
@@ -360,13 +444,21 @@ export default function MembersPage() {
       "level",
     ];
 
-    const isValid = requiredFields.every((field) => {
-      return String(formData[field] ?? "").trim() !== "";
-    });
+    const isValid =
+      requiredFields.every(
+        (field) => {
+          return (
+            String(
+              formData[field] ??
+                "",
+            ).trim() !== ""
+          );
+        },
+      );
 
     /*
      * Extra protection:
-     * Do not save when the modal sends incomplete data.
+     * Do not save incomplete data.
      */
     if (!isValid) {
       return;
@@ -375,51 +467,62 @@ export default function MembersPage() {
     const newMember = {
       id: crypto.randomUUID(),
 
-      name_kh: formData.nameKh.trim(),
-      name_en: formData.nameEn.trim(),
+      name_kh:
+        formData.nameKh.trim(),
 
-      gender: formData.gender,
-      status: formData.status,
+      name_en:
+        formData.nameEn.trim(),
 
-      phone: formData.phone.trim(),
-      email: formData.email?.trim() || "",
+      gender:
+        formData.gender,
 
-      branch: formData.branch,
-      role: formData.role,
+      status:
+        formData.status,
 
-      dob: formatDateToKhmer(formData.dob),
-      joinedAt: formatDateToKhmer(formData.joinedAt),
+      phone:
+        formData.phone.trim(),
 
-      level: formData.level,
+      email:
+        formData.email?.trim() ||
+        "",
+
+      branch:
+        formData.branch,
+
+      role:
+        formData.role,
+
+      dob: formatDateToKhmer(
+        formData.dob,
+      ),
+
+      joinedAt:
+        formatDateToKhmer(
+          formData.joinedAt,
+        ),
+
+      level:
+        formData.level,
 
       /*
-       * Your modal does not currently contain a religion field.
+       * The modal currently does not
+       * contain a religion field.
        */
       religion: "",
     };
 
     /*
-     * Add the new member to the first row of the table.
+     * Add the new member to
+     * the first row of the table.
      */
-    setMembers((previousMembers) => [
-      newMember,
-      ...previousMembers,
-    ]);
+    setMembers(
+      (previousMembers) => [
+        newMember,
+        ...previousMembers,
+      ],
+    );
 
     setIsCreateOpen(false);
-  };
-
-  const handleConfirmDelete = () => {
-    if (!deleteTarget?.id) {
-      return;
-    }
-
-    setDeletedIds((previousIds) => [
-      ...previousIds,
-      deleteTarget.id,
-    ]);
-
-    setDeleteTarget(null);
   };
 
   const tableColumns = [
@@ -427,7 +530,8 @@ export default function MembersPage() {
       header: "ល.រ",
       width: "w-[6%]",
       align: "center",
-      render: (_, index) => index,
+      render: (_, index) =>
+        index ,
     },
     {
       header: "សមាជិក",
@@ -462,16 +566,27 @@ export default function MembersPage() {
       render: (member) => (
         <span
           className={`
-            inline-flex max-w-full items-center justify-center
-            truncate whitespace-nowrap rounded-full px-2 py-1
+            inline-flex
+            max-w-full
+            items-center
+            justify-center
+            truncate
+            whitespace-nowrap
+            rounded-full
+            px-2
+            py-1
             text-[11px]
             ${
-              ROLE_BADGE_STYLES[member.role] ||
+              ROLE_BADGE_STYLES[
+                member.role
+              ] ||
               "bg-gray-100 text-text-secondary"
             }
           `}
         >
-          {ROLE_LABELS[member.role] || member.role}
+          {ROLE_LABELS[
+            member.role
+          ] || member.role}
         </span>
       ),
     },
@@ -482,11 +597,20 @@ export default function MembersPage() {
       render: (member) => (
         <span
           className={`
-            inline-flex max-w-full items-center justify-center
-            truncate whitespace-nowrap rounded-full px-2 py-1
+            inline-flex
+            max-w-full
+            items-center
+            justify-center
+            truncate
+            whitespace-nowrap
+            rounded-full
+            px-2
+            py-1
             text-[11px]
             ${
-              STATUS_BADGE_STYLES[member.status] ||
+              STATUS_BADGE_STYLES[
+                member.status
+              ] ||
               "bg-gray-100 text-text-secondary"
             }
           `}
@@ -510,25 +634,14 @@ export default function MembersPage() {
       width: "w-[14%]",
       align: "center",
       render: (member) => (
-        <div className="flex w-full min-w-0 items-center justify-center gap-1">
+        <div className="flex w-full items-center justify-center">
           <ButtonSeeDetail
             onClick={() =>
-              router.push(`/member/memberInfo/${member.id}`)
+              router.push(
+                `/member/memberInfo/${member.id}`,
+              )
             }
           />
-
-          <button
-            type="button"
-            onClick={() => setDeleteTarget(member)}
-            className="
-              shrink-0 rounded-md p-1.5
-              text-red-500 transition
-              hover:bg-red-50 hover:text-red-600
-            "
-            aria-label={`លុប ${member.name_kh}`}
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
         </div>
       ),
     },
@@ -538,14 +651,16 @@ export default function MembersPage() {
     {
       name: "branch",
       value: branchFilter,
-      onChange: setBranchFilter,
+      onChange:
+        setBranchFilter,
       options: branches,
       placeholder: "សាខា",
     },
     {
       name: "status",
       value: statusFilter,
-      onChange: setStatusFilter,
+      onChange:
+        setStatusFilter,
       options: [
         {
           label: "ស្ថានភាព",
@@ -565,7 +680,8 @@ export default function MembersPage() {
     {
       name: "gender",
       value: genderFilter,
-      onChange: setGenderFilter,
+      onChange:
+        setGenderFilter,
       options: [
         {
           label: "ភេទ",
@@ -590,9 +706,14 @@ export default function MembersPage() {
 
   return (
     <div className="flex min-h-full flex-col gap-4">
+      {/* Statistic cards */}
+
       <div
         className="
-          grid shrink-0 grid-cols-2 gap-4
+          grid
+          shrink-0
+          grid-cols-2
+          gap-4
           sm:grid-cols-3
           lg:grid-cols-5
         "
@@ -600,8 +721,12 @@ export default function MembersPage() {
         <StatCard
           icon={Users}
           label="សមាជិកសរុប"
-          value={String(stats.total)}
-          growth={String(stats.totalGrowth)}
+          value={String(
+            stats.total,
+          )}
+          growth={String(
+            stats.totalGrowth,
+          )}
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -609,8 +734,12 @@ export default function MembersPage() {
         <StatCard
           icon={AiOutlineWoman}
           label="ភេទស្រី"
-          value={String(stats.female)}
-          growth={String(stats.femaleGrowth)}
+          value={String(
+            stats.female,
+          )}
+          growth={String(
+            stats.femaleGrowth,
+          )}
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -618,8 +747,12 @@ export default function MembersPage() {
         <StatCard
           icon={Landmark}
           label="ចំនួនព្រះសង្ឃ"
-          value={String(stats.monk)}
-          growth={String(stats.monkGrowth)}
+          value={String(
+            stats.monk,
+          )}
+          growth={String(
+            stats.monkGrowth,
+          )}
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -627,8 +760,12 @@ export default function MembersPage() {
         <StatCard
           icon={FaDharmachakra}
           label="ព្រះពុទ្ធ"
-          value={String(stats.buddhist)}
-          growth={String(stats.buddhistGrowth)}
+          value={String(
+            stats.buddhist,
+          )}
+          growth={String(
+            stats.buddhistGrowth,
+          )}
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -636,12 +773,18 @@ export default function MembersPage() {
         <StatCard
           icon={Moon}
           label="អ៊ីស្លាម"
-          value={String(stats.islam)}
-          growth={String(stats.islamGrowth)}
+          value={String(
+            stats.islam,
+          )}
+          growth={String(
+            stats.islamGrowth,
+          )}
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
       </div>
+
+      {/* Member table */}
 
       <div className="w-full">
         <DataTable
@@ -650,45 +793,58 @@ export default function MembersPage() {
           columns={tableColumns}
           filters={filterConfig}
           searchQuery={query}
-          onSearchChange={setQuery}
+          onSearchChange={
+            setQuery
+          }
           searchPlaceholder="ស្វែងរកតាមរយៈឈ្មោះ ឬលេខទូរស័ព្ទ..."
           pageSize={20}
           actionButton={
             <button
               type="button"
-              onClick={() => setIsCreateOpen(true)}
+              onClick={() =>
+                setIsCreateOpen(
+                  true,
+                )
+              }
               className="
-                inline-flex items-center gap-2 whitespace-nowrap
-                rounded-lg bg-success px-3 py-2
-                text-sm font-medium text-white
-                transition hover:opacity-90
+                inline-flex
+                items-center
+                gap-2
+                whitespace-nowrap
+                rounded-lg
+                bg-success
+                px-3
+                py-2
+                text-sm
+                font-medium
+                text-white
+                transition
+                hover:opacity-90
               "
             >
               <RiAddCircleLine className="h-4 w-4 shrink-0" />
 
-              <span>បន្ថែមសមាជិកថ្មី</span>
+              <span>
+                បន្ថែមសមាជិកថ្មី
+              </span>
             </button>
           }
         />
       </div>
 
-      <ConfirmDeleteModal
-        open={Boolean(deleteTarget)}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleConfirmDelete}
-        description={
-          deleteTarget
-            ? `តើអ្នកប្រាកដថានឹងលុប "${deleteTarget.name_kh}" ចេញពីបញ្ជីសមាជិកទេ?`
-            : undefined
-        }
-      />
+      {/* Create member modal */}
 
       <CreateMemberModal
         open={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        onSave={handleCreateMember}
+        onClose={() =>
+          setIsCreateOpen(false)
+        }
+        onSave={
+          handleCreateMember
+        }
         branches={branches.filter(
-          (branch) => branch.value !== "",
+          (branch) =>
+            branch.value !== "",
         )}
       />
     </div>

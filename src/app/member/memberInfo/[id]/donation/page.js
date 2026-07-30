@@ -1,65 +1,84 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
 
 import DataTable from "@/components/table/DataTable.js";
-import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal.js";
 
 import donationData from "@/data/donation.json";
 
 export default function DonationPage() {
-  const [donations, setDonations] = useState(donationData);
+  const [donations] = useState(donationData);
 
   const [query, setQuery] = useState("");
 
   const [methodFilter, setMethodFilter] = useState("");
 
-  const [deleteModal, setDeleteModal] = useState(false);
-
-  const [selectedDonation, setSelectedDonation] = useState(null);
-
   const paymentMethods = useMemo(() => {
-    return [...new Set(donations.map((item) => item.paymentMethod))];
+    return [
+      ...new Set(
+        donations
+          .map((item) => item.paymentMethod)
+          .filter(Boolean),
+      ),
+    ];
   }, [donations]);
 
   const filteredData = useMemo(() => {
+    const normalizedQuery = query
+      .trim()
+      .toLowerCase();
+
     return donations.filter((item) => {
-      const search = query.toLowerCase();
+      const month = String(
+        item.month ?? "",
+      ).toLowerCase();
+
+      const year = String(
+        item.year ?? "",
+      ).toLowerCase();
+
+      const amount = String(
+        item.amount ?? "",
+      ).toLowerCase();
+
+      const recordedBy = String(
+        item.recordedBy ?? "",
+      ).toLowerCase();
+
+      const paymentMethod = String(
+        item.paymentMethod ?? "",
+      ).toLowerCase();
 
       const matchesQuery =
-        item.month.toLowerCase().includes(search);
+        !normalizedQuery ||
+        month.includes(normalizedQuery) ||
+        year.includes(normalizedQuery) ||
+        amount.includes(normalizedQuery) ||
+        recordedBy.includes(normalizedQuery) ||
+        paymentMethod.includes(normalizedQuery);
 
       const matchesMethod =
-        !methodFilter || item.paymentMethod === methodFilter;
+        !methodFilter ||
+        item.paymentMethod === methodFilter;
 
       return matchesQuery && matchesMethod;
     });
-  }, [donations, query, methodFilter]);
-
-  const handleDelete = () => {
-    if (!selectedDonation) return;
-
-    setDonations((prev) =>
-      prev.filter((item) => item.id !== selectedDonation.id),
-    );
-
-    setDeleteModal(false);
-
-    setSelectedDonation(null);
-  };
+  }, [
+    donations,
+    query,
+    methodFilter,
+  ]);
 
   const columns = [
     {
       header: "ល.រ",
-      width: "w-[6%]",
+      width: "w-[7%]",
       align: "center",
-      render: (_, index) => index,
+      render: (_, index) => index + 1,
     },
-
     {
       header: "ប្រចាំខែ",
-      width: "w-[16%]",
+      width: "w-[18%]",
       align: "left",
       render: (item) => (
         <span>
@@ -67,69 +86,43 @@ export default function DonationPage() {
         </span>
       ),
     },
-
     {
       header: "ចំនួន",
-      width: "w-[14%]",
+      width: "w-[16%]",
       align: "left",
       accessor: "amount",
     },
-
     {
       header: "ថ្ងៃបរិច្ឆេទ",
-      width: "w-[18%]",
+      width: "w-[19%]",
       align: "left",
       accessor: "date",
     },
-
     {
       header: "កត់ត្រាដោយ",
-      width: "w-[18%]",
+      width: "w-[20%]",
       align: "left",
       accessor: "recordedBy",
     },
-
     {
       header: "វិធីសាស្រ្តទូទាត់",
-      width: "w-[18%]",
+      width: "w-[20%]",
       align: "left",
       accessor: "paymentMethod",
-    },
-
-    {
-      header: "សកម្មភាព",
-      width: "w-[10%]",
-      align: "center",
-
-      render: (item) => (
-        <button
-          onClick={() => {
-            setSelectedDonation(item);
-
-            setDeleteModal(true);
-          }}
-          className="
-          inline-flex
-          items-center
-          justify-center
-          text-red-500
-          hover:text-red-600
-          "
-        >
-          <Trash2 className="h-5 w-5" />
-        </button>
-      ),
     },
   ];
 
   const filters = [
     {
+      name: "paymentMethod",
       value: methodFilter,
-
       onChange: setMethodFilter,
-
-      options: paymentMethods,
-
+      options: paymentMethods.map(
+        (method) => ({
+          label: method,
+          value: method,
+        }),
+      ),
       placeholder: "វិធីសាស្រ្តទូទាត់",
     },
   ];
@@ -148,24 +141,6 @@ export default function DonationPage() {
         onSearchChange={setQuery}
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
-      />
-
-      <ConfirmDeleteModal
-        open={deleteModal}
-        onClose={() => {
-          setDeleteModal(false);
-
-          setSelectedDonation(null);
-        }}
-        onConfirm={handleDelete}
-        title="លុបវិភាគទាន?"
-        description={
-          selectedDonation
-            ? `តើអ្នកប្រាកដថាចង់លុបវិភាគទាន ${selectedDonation.amount} នេះទេ?`
-            : "តើអ្នកប្រាកដថាចង់លុបទិន្នន័យនេះទេ?"
-        }
-        cancelLabel="បោះបង់"
-        confirmLabel="លុប"
       />
     </div>
   );

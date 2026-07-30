@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState,useRef } from "react";
 import { Search } from "lucide-react";
 
 import FormSelect from "@/components/forms/FormSelect.js";
@@ -19,13 +19,16 @@ export default function DataTable({
   actionButton,
   emptyMessage = "មិនមានទិន្នន័យត្រូវនឹងលក្ខខណ្ឌស្វែងរកទេ",
   pageSize = 10,
-  downloadFilename = "table-data.csv",
+  downloadFilename =  "table-data.pdf",
 }) {
   const [currentPage, setCurrentPage] = useState(1);
+  const tableRef = useRef(null);
+  
 
   useEffect(() => {
     setCurrentPage(1);
   }, [data.length, searchQuery]);
+  
 
   const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
@@ -35,6 +38,7 @@ export default function DataTable({
 
     return data.slice(start, start + pageSize);
   }, [data, safePage, pageSize]);
+  
 
   const getAlignment = (align) => {
     if (align === "center") return "text-center";
@@ -42,6 +46,7 @@ export default function DataTable({
 
     return "text-left";
   };
+  
 
   return (
     <div className="w-full">
@@ -133,7 +138,8 @@ export default function DataTable({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-sm border border-[#e5eaf0] bg-white">
+      <div ref={tableRef}
+  data-pdf-table className="overflow-x-auto rounded-sm border border-[#e5eaf0] bg-white">
         <table className="w-full min-w-[980px] table-fixed border-collapse text-sm">
           <colgroup>
             {columns.map((column, index) => (
@@ -226,7 +232,10 @@ export default function DataTable({
           />
 
           <div className="mt-3 flex justify-end">
-            <DownloadButton data={data} filename={downloadFilename} />
+            <DownloadButton
+  targetRef={tableRef}
+  filename={downloadFilename}
+/>
           </div>
         </div>
       )}

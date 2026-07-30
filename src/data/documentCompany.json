@@ -5,7 +5,7 @@
     "branch": "សាខាភ្នំពេញ",
     "date": "2026-01-06",
     "size": "2MB",
-    "type": "PDF",
+    "type": "របាយការណ៍ប្រចាំឆ្នាំ",
     "image": "/document.jpg"
   },
   {
@@ -14,7 +14,7 @@
     "branch": "សាខាសៀមរាប",
     "date": "2026-02-10",
     "size": "5MB",
-    "type": "PDF",
+    "type": "ប្រកាស",
     "image": "/document.jpg"
   },
   {
@@ -23,7 +23,7 @@
     "branch": "សាខាបាត់ដំបង",
     "date": "2026-03-15",
     "size": "3MB",
-    "type": "PDF",
+    "type": "ផែនការសកម្មភាព",
     "image": "/document.jpg"
   },
   {
@@ -32,7 +32,7 @@
     "branch": "សាខាកំពង់ចាម",
     "date": "2026-04-05",
     "size": "4MB",
-    "type": "Excel",
+    "type": "ហិរញ្ញវត្ថុ",
     "image": "/document.jpg"
   },
   {
@@ -41,7 +41,7 @@
     "branch": "សាខាកណ្តាល",
     "date": "2026-05-20",
     "size": "1MB",
-    "type": "PDF",
+    "type": "គម្រោង",
     "image": "/document.jpg"
   },
   {
@@ -50,7 +50,7 @@
     "branch": "សាខាកំពត",
     "date": "2026-06-12",
     "size": "6MB",
-    "type": "PDF",
+    "type": "ការបណ្តុះបណ្តាល",
     "image": "/document.jpg"
   },
   {
@@ -59,7 +59,7 @@
     "branch": "សាខាព្រះសីហនុ",
     "date": "2026-07-08",
     "size": "8MB",
-    "type": "Word",
+    "type": "កិច្ចប្រជុំ",
     "image": "/document.jpg"
   },
   {
@@ -68,7 +68,7 @@
     "branch": "សាខាកែប",
     "date": "2026-08-18",
     "size": "2MB",
-    "type": "PDF",
+    "type": "សេចក្តីជូនដំណឹង",
     "image": "/document.jpg"
   },
   {
@@ -77,7 +77,7 @@
     "branch": "សាខាកំពង់ស្ពឺ",
     "date": "2026-09-25",
     "size": "7MB",
-    "type": "PDF",
+    "type": "តាមដានគម្រោង",
     "image": "/document.jpg"
   },
   {
@@ -86,7 +86,7 @@
     "branch": "សាខាមណ្ឌលគិរី",
     "date": "2026-10-30",
     "size": "10MB",
-    "type": "Word",
+    "type": "គោលការណ៍",
     "image": "/document.jpg"
   }
 ]

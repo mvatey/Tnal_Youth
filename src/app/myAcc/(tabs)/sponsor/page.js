@@ -1,34 +1,38 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
 
 import DataTable from "@/components/table/DataTable";
-import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal";
 
 import sponsorData from "@/data/sponsor.json";
 
 export default function SponsorDonationPage() {
-  const [sponsors, setSponsors] = useState(sponsorData);
+  const [sponsors] = useState(sponsorData);
 
   const [query, setQuery] = useState("");
 
   const [methodFilter, setMethodFilter] = useState("");
 
-  const [deleteModal, setDeleteModal] = useState(false);
-
-  const [selectedSponsor, setSelectedSponsor] = useState(null);
-
   const paymentMethods = useMemo(() => {
-    return [...new Set(sponsors.map((item) => item.paymentMethod))];
+    return [
+      ...new Set(
+        sponsors
+          .map((item) => item.paymentMethod)
+          .filter(Boolean),
+      ),
+    ];
   }, [sponsors]);
 
   const filteredData = useMemo(() => {
-    return sponsors.filter((item) => {
-      const search = query.toLowerCase();
+    const search = query.trim().toLowerCase();
 
+    return sponsors.filter((item) => {
       const matchesQuery =
-        item.amount.toLowerCase().includes(search);
+        !search ||
+        item.amount?.toLowerCase().includes(search) ||
+        item.recordedBy?.toLowerCase().includes(search) ||
+        item.paymentMethod?.toLowerCase().includes(search) ||
+        item.date?.toLowerCase().includes(search);
 
       const matchesMethod =
         !methodFilter ||
@@ -38,89 +42,52 @@ export default function SponsorDonationPage() {
     });
   }, [sponsors, query, methodFilter]);
 
-  const handleDelete = () => {
-    if (!selectedSponsor) return;
-
-    setSponsors((previous) =>
-      previous.filter(
-        (item) => item.id !== selectedSponsor.id,
-      ),
-    );
-
-    setDeleteModal(false);
-
-    setSelectedSponsor(null);
-  };
-
   const columns = [
     {
-    header: "ល.រ",
-    width: "w-[6%]",
-    align: "center",
-    render: (_, index) => index ,
-  },
-
+      header: "ល.រ",
+      width: "w-[6%]",
+      align: "center",
+      render: (_, index) => index + 1,
+    },
 
     {
       header: "ចំនួន",
-      width: "w-[15%]",
+      width: "w-[18%]",
       align: "left",
       accessor: "amount",
     },
 
     {
       header: "ថ្ងៃបរិច្ឆេទ",
-      width: "w-[18%]",
+      width: "w-[22%]",
       align: "left",
       accessor: "date",
     },
 
     {
       header: "កត់ត្រាដោយ",
-      width: "w-[18%]",
+      width: "w-[24%]",
       align: "left",
       accessor: "recordedBy",
     },
 
     {
       header: "វិធីសាស្រ្តទូទាត់",
-      width: "w-[19%]",
+      width: "w-[30%]",
       align: "left",
       accessor: "paymentMethod",
-    },
-
-    {
-      header: "សកម្មភាព",
-      width: "w-[10%]",
-      align: "center",
-
-      render: (item) => (
-        <button
-          type="button"
-          onClick={() => {
-            setSelectedSponsor(item);
-            setDeleteModal(true);
-          }}
-          className="
-            inline-flex
-            items-center
-            justify-center
-            text-red-500
-            transition
-            hover:text-red-600
-          "
-        >
-          <Trash2 className="h-5 w-5" />
-        </button>
-      ),
     },
   ];
 
   const filters = [
     {
+      name: "paymentMethod",
       value: methodFilter,
       onChange: setMethodFilter,
-      options: paymentMethods,
+      options: paymentMethods.map((method) => ({
+        label: method,
+        value: method,
+      })),
       placeholder: "វិធីសាស្រ្តទូទាត់",
     },
   ];
@@ -140,23 +107,6 @@ export default function SponsorDonationPage() {
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
         downloadFilename="sponsor-donation.csv"
-      />
-
-      <ConfirmDeleteModal
-        open={deleteModal}
-        onClose={() => {
-          setDeleteModal(false);
-          setSelectedSponsor(null);
-        }}
-        onConfirm={handleDelete}
-        title="លុបវិភាគទាន?"
-        description={
-          selectedSponsor
-            ? `តើអ្នកប្រាកដថាចង់លុបវិភាគទាន ${selectedSponsor.amount} នេះទេ?`
-            : "តើអ្នកប្រាកដថាចង់លុបទិន្នន័យនេះទេ?"
-        }
-        cancelLabel="បោះបង់"
-        confirmLabel="លុប"
       />
     </div>
   );
