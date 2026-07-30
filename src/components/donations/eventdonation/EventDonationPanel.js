@@ -7,6 +7,7 @@ import AddAlert from "@/components/forms/addalert";
 import { downloadCsv } from "@/utils/downloadCsv";
 import donationData from "@/data/donation/donationData.json";
 import eventDonationData from "@/data/donation/eventDonationData.json";
+import SaveAlert from "@/components/forms/savealert";
 
 const EVENT_DONATION_SAVE_ALERT_KEY = "tnal-youth:event-donation-save-alert";
 const rowsPerPage = 12;
@@ -56,6 +57,7 @@ export default function EventDonationPanel({
   const [currentPage, setCurrentPage] = useState(1);
   const [deletedIds, setDeletedIds] = useState([]);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
+  const [showSaveAlert, setShowSaveAlert] = useState(false);
   const [moneySort, setMoneySort] = useState(null);
 
   const selectedBranch = controlledSelectedBranch ?? internalSelectedBranch;

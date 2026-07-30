@@ -6,10 +6,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight, Download } from "lucide-react";
 import { RiDownloadCloud2Line } from "react-icons/ri";
 
-import Pagination from "@/components/dashboard/Pagination";
+import Pagination from "@/components/navigation/Pagination";
 import { ReceiptIcon } from "@/components/donations/monthlydonation/AddDonationTableRow";
 import members from "@/data/members.json";
-import activities from "@/data/activity.json";
+import activities from "@/data/activityRecords.json";
 
 const ROWS_PER_PAGE = 10;
 const KHR_PER_USD = 4000;
@@ -17,7 +17,12 @@ const KHR_PER_USD = 4000;
 function createInitialRows() {
   const getMemberIdentity = (member) =>
     String(
-      member.email || member.phone || member.name || member.id
+      member.email ||
+        member.phone ||
+        member.name_kh ||
+        member.name_en ||
+        member.name ||
+        member.id
     )
       .trim()
       .toLowerCase();
@@ -33,7 +38,13 @@ function createInitialRows() {
 
   return uniqueMembers.map((member) => ({
     id: member.id,
-    name: member.name || "",
+    name:
+      member.name_kh ||
+      member.fullNameKm ||
+      member.name ||
+      member.name_en ||
+      member.fullNameEn ||
+      "",
     gender: member.gender || "",
     joinedDate:
       member.joinedDate ||
@@ -289,7 +300,7 @@ export default function IncomePage() {
         <div className="mb-4 flex justify-end">
           <button
             type="button"
-            className="flex h-10 items-center gap-2 rounded-lg bg-secondary px-5 text-sm font-semibold text-white transition hover:bg-secondary-hover"
+            className="flex h-[34px] items-center gap-2 rounded-lg bg-secondary px-5 text-sm font-semibold text-white transition hover:bg-secondary-hover"
           >
             <RiDownloadCloud2Line
               size={18}

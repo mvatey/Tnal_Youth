@@ -1,9 +1,16 @@
-import activityData from "@/data/activity.json";
+import activityData from "@/data/activityRecords.json";
+import participantData from "@/data/participantRecords.json";
+import {
+  InfoIcon,
+  InfoItem,
+  StatusRow,
+  SummaryCard,
+} from "@/components/activity/ActivityDetailItems";
 import Image from "next/image";
 import Link from "next/link";
 import { FaUsers } from "react-icons/fa";
+import { notFound } from "next/navigation";
 import {
-  ArrowLeft,
   Banknote,
   CalendarDays,
   CheckCircle2,
@@ -20,14 +27,32 @@ import {
   UserCheck,
   UserX,
   Users,
+  ChevronRight
 } from "lucide-react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default async function ActivityDetailPage({ params }) {
   const { id } = await params;
   const activity = activityData.find((item) => String(item.id) === id);
 
-  if (!activity) return <div className="text-text-secondary">រកមិនឃើញកម្មវិធី</div>;
+  if (!activity) {
+  notFound();
+  }
+  const activityParticipants = participantData.filter(
+  (participant) =>
+    String(participant.activityId) === String(activity.id)
+);
+
+const attendedCount = activityParticipants.filter(
+  (participant) =>
+    participant.status === "បានចូលរួម"
+).length;
+
+const absentCount = activityParticipants.filter(
+  (participant) =>
+    participant.status === "មិនបានចូលរួម"
+).length;
+
+const totalParticipantCount = activityParticipants.length;
 
   const statusLabel = activity.status === "completed" ? "បានបញ្ចប់" : "នាពេលខាងមុខ";
   const statusStyle = activity.status === "completed" ? "bg-success-bg text-success" : "bg-secondary-light text-secondary";
@@ -54,7 +79,7 @@ export default async function ActivityDetailPage({ params }) {
               </span>
             </div>
           </div>
-          <h1 className="text-xl font-bold text-secondary">ពត៌មានកម្មវិធី</h1>
+          <h1 className="text-xl font-bold text-secondary">ព័ត៌មានកម្មវិធី</h1>
         </div>
 
         <Link href={`/activity/create?edit=${activity.id}`} className="flex h-[34px] items-center gap-2 rounded-lg bg-secondary px-4 text-sm font-medium text-white hover:bg-secondary-hover">
@@ -66,8 +91,8 @@ export default async function ActivityDetailPage({ params }) {
       {/* SECTION 1: Hero + status summary */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         <div className="xl:col-span-2 rounded-xl border border-border bg-white p-5">
-          <div className="flex gap-5">
-            <Image src={activity.image} width={300} height={200} className="h-[200px] w-[300px] shrink-0 rounded-lg object-cover" alt={activity.name} />
+          <div className="flex flex-col gap-5 md:flex-row">
+            <Image src={activity.image} width={300} height={200} className="h-[200px] w-full shrink-0 rounded-lg object-cover md:w-[300px]" alt={activity.name} />
 
             {/* no more justify-between — content hugs the top, icon row sits right under description */}
             <div className="flex flex-1 flex-col">
@@ -94,7 +119,7 @@ export default async function ActivityDetailPage({ params }) {
                   </div>
                 </div>
                 <InfoIcon icon={MapPin} label={activity.branch} sub={activity.location} />
-                <InfoIcon icon={Users} label={activity.participants} sub="បានចូលរួម" />
+                <InfoIcon icon={Users}  label={activity.participants} sub="បានចូលរួម"/>
                 <InfoIcon icon={Sprout} label="បរិស្ថាន" sub="ប្រភេទវិស័យ" />
               </div>
             </div>
@@ -132,7 +157,7 @@ export default async function ActivityDetailPage({ params }) {
               <InfoItem icon={Clock} label="រយៈពេលចូលរួម" value={activity.duration} />
               <InfoItem icon={MapPin} label="វិស័យ" value={activity.sector} />
               <InfoItem icon={Users} label="អ្នកគ្រប់គ្រង" value={activity.leader} />
-              <InfoItem icon={Users} label="ចំនួនអ្នកចូលរួម" value={activity.participants} />
+              <InfoItem icon={Users} label="ចំនួនអ្នកចូលរួម" value={`${attendedCount}/${totalParticipantCount} នាក់`}/>
               <InfoItem icon={Phone} label="លេខទំនាក់ទំនង" value={activity.phone} />
             </div>
           </div>
@@ -162,7 +187,7 @@ export default async function ActivityDetailPage({ params }) {
       </div>
 
       {/* SECTION 3: Membership + Finance + Documents */}
-<div className="grid grid-cols-3 gap-5">
+<div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
   {/* Member */}
   <div className="rounded-xl border border-border bg-white p-5">
     <h3 className="mb-4 text-base font-bold text-secondary">សមាសភាព</h3>
@@ -172,7 +197,7 @@ export default async function ActivityDetailPage({ params }) {
         icon={UserCheck}
         iconClass="bg-success-bg text-success"
         label="បានចូលរួម"
-        value={activity.participants?.split("/")[0] || "0"}
+        value={attendedCount}
         unit="នាក់"
       />
 
@@ -180,9 +205,13 @@ export default async function ActivityDetailPage({ params }) {
         icon={UserX}
         iconClass="bg-error-bg text-error"
         label="មិនបានចូលរួម"
-        value="0"
+        value={absentCount}
         unit="នាក់"
-      />
+      /><InfoIcon
+  icon={Users}
+  label={`${attendedCount}/${totalParticipantCount}`}
+  sub="បានចូលរួម"
+/>
     </div>
 
       <Link
@@ -281,68 +310,4 @@ export default async function ActivityDetailPage({ params }) {
 </div>
 </div>
 );
-}
-
-function InfoIcon({ icon: Icon, label, sub }) {
-  return (
-    <div className="flex min-w-0 items-start gap-2">
-      <Icon size={15} className="mt-0.5 shrink-0 text-text-secondary" />
-      <div className="min-w-0">
-        <p className="whitespace-nowrap font-semibold text-text-primary">{label || "-"}</p>
-        <p className="mt-1 whitespace-nowrap overflow-hidden text-ellipsis text-text-secondary">{sub || "-"}</p>
-      </div>
-    </div>
-  );
-}
-
-function StatusRow({ icon: Icon, label, last, children }) {
-  return (
-    <div
-      className={`grid grid-cols-[1fr_140px] items-center text-sm ${
-        last ? "" : "mb-4"
-      }`}
-    >
-      <span className="flex items-center gap-2 font-medium text-text-primary">
-        {Icon && <Icon size={14} className="text-text-primary" />}
-        {label}
-      </span>
-
-      <div className="flex justify-center">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function InfoItem({ icon: Icon, label, value }) {
-  return (
-    <div className="grid grid-cols-2">
-      <span className="flex items-center gap-2 font-semibold text-text-secondary">
-        {Icon && <Icon size={14} className="text-text-secondary" />}
-        {label}
-      </span>
-      <span className="text-text-primary">{value || "-"}</span>
-    </div>
-  );
-}
-
-function SummaryCard({ icon: Icon, iconClass, label, value, unit }) {
-  return (
-    <div className="flex min-h-[120px] flex-col items-start rounded-lg border border-border bg-white px-4 py-3 text-left shadow-sm">
-      <div
-        className={`mb-3 flex h-8 w-8 items-center justify-center rounded-md ${iconClass}`}
-      >
-        <Icon size={16} />
-      </div>
-
-      <p className="flex items-baseline gap-1 text-2xl font-bold leading-none text-text-primary">
-        {value}
-        {unit && <span className="text-[11px] font-semibold">{unit}</span>}
-      </p>
-
-      <p className="mt-2 text-[11px] text-text-secondary">
-        {label}
-      </p>
-    </div>
-  );
 }

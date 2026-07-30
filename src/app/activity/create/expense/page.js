@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { RiDownloadCloud2Line } from "react-icons/ri";
 
-import activities from "@/data/activity.json";
+import activities from "@/data/activityRecords.json";
 import QuantityInput from "@/components/forms/QuantityInput";
 
 const KHR_PER_USD = 4000;
@@ -317,7 +317,7 @@ export default function ExpensePage() {
         <div className="mb-4 flex justify-end">
           <button
             type="button"
-            className="flex h-10 items-center gap-2 rounded-lg bg-secondary px-5 text-sm font-semibold text-white transition hover:bg-secondary-hover"
+            className="flex h-[34px] items-center gap-2 rounded-lg bg-secondary px-5 text-sm font-semibold text-white transition hover:bg-secondary-hover"
           >
             <RiDownloadCloud2Line
               size={18}

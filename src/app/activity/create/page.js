@@ -22,12 +22,13 @@ import {
 } from "lucide-react";
 
 import FormField from "@/components/forms/FormField";
+import FormControl from "@/components/forms/FormControl";
 import FormSelect from "@/components/forms/FormSelect";
-import DateInput from "@/components/forms/DateInput";
-import Button from "@/components/forms/button";
+import DatePickerField from "@/components/forms/DatePickerField";
+import FormActionButton from "@/components/ui/actions/FormActionButton";
 import MemberSelectModal from "@/components/activity/MemberSelectModal";
 
-import activities from "@/data/activity.json";
+import activities from "@/data/activityRecords.json";
 
 const BRANCH_OPTIONS = [
   "ភ្នំពេញ",
@@ -264,11 +265,11 @@ function SearchableBranchMultiSelect({
 
   return (
     <div ref={wrapperRef} className="relative">
-      <label className="mb-2 block text-sm font-medium text-text-secondary">
+      <label className="mb-2 block text-sm font-semibold text-text-primary">
         {label}
       </label>
 
-      <button type="button" onClick={() => setOpen((current) => !current)} className={`flex min-h-11 w-full items-center justify-between rounded-lg border bg-white px-3 py-2 text-left text-sm outline-none transition ${open ? "border-secondary ring-1 ring-secondary/20" : "border-border hover:border-secondary"}`}>
+      <button type="button" onClick={() => setOpen((current) => !current)} className={`flex h-[34px] w-full items-center justify-between rounded-lg border bg-white px-3 py-2 text-left text-sm outline-none transition ${open ? "border-secondary ring-1 ring-secondary/20" : "border-border hover:border-secondary"}`}>
         <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
           {values.length === 0 ? (
             <span className="text-text-secondary">{placeholder}</span>
@@ -448,7 +449,7 @@ function MultipleFileUpload({
 
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-text-secondary">
+      <label className="mb-2 block text-sm font-semibold text-text-primary">
         {label}
       </label>
 
@@ -758,8 +759,8 @@ export default function CreateActivityPage() {
           </h2>
 
           <div className="space-y-5">
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-              <FormField
+            <div className="grid grid-cols-1 items-end gap-5 md:grid-cols-2 xl:grid-cols-3">
+              <FormControl
                 label="ឈ្មោះកម្មវិធី"
                 value={form.name}
                 onChange={(value) => setValue("name", value)}
@@ -803,28 +804,45 @@ export default function CreateActivityPage() {
           </div>
 
           <div className="mt-5">
-            <FormField label="ការពិពណ៌នា">
-              <textarea value={form.description} onChange={(event) => setValue("description", event.target.value)} placeholder={form.description ? "" : "ពិពណ៌នាអំពីកម្មវិធី..."} className="h-32 w-full resize-none rounded-lg border border-border bg-white px-4 py-3 text-sm outline-none transition focus:border-secondary" />
-            </FormField>
+            <label
+              htmlFor="activity-description"
+              className="mb-2 block text-sm font-semibold text-text-primary"
+            >
+              ការពិពណ៌នា
+            </label>
+
+            <textarea
+              id="activity-description"
+              value={form.description}
+              onChange={(event) =>
+                setValue("description", event.target.value)
+              }
+              placeholder={
+                form.description
+                  ? ""
+                  : "ពិពណ៌នាអំពីកម្មវិធី..."
+              }
+              className="h-32 w-full resize-none rounded-lg border border-border bg-white px-4 py-3 text-sm text-text-primary outline-none transition placeholder:text-text-secondary focus:border-primary"
+            />
           </div>
         </section>
 
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <div className="rounded-xl border border-border bg-white p-5">
-            <h2 className="mb-6 flex items-center gap-2 text-base font-bold text-secondary">
+            <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
               <CalendarDays size={18} />
               កាលបរិច្ឆេទ និង ពេលវេលា
             </h2>
 
             <div className="grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2">
-              <DateInput
+              <DatePickerField
                 label="កាលបរិច្ឆេទចាប់ផ្តើម"
                 value={form.startDate}
                 onChange={(date) => setValue("startDate", date)}
                 variant="start"
               />
 
-              <DateInput
+              <DatePickerField
                 label="កាលបរិច្ឆេទបញ្ចប់"
                 value={form.endDate}
                 min={formatDate(form.startDate)}
@@ -832,18 +850,20 @@ export default function CreateActivityPage() {
                 variant="end"
               />
 
-              <FormField
+              <FormControl
                 label="ពេលវេលាចាប់ផ្តើម"
                 type="time"
                 value={form.startTime}
                 onChange={(value) => setValue("startTime", value)}
+                className = "h-[34px]"
               />
 
-              <FormField
+              <FormControl
                 label="ពេលវេលាបញ្ចប់"
                 type="time"
                 value={form.endTime}
                 onChange={(value) => setValue("endTime", value)}
+                className = "h-[34px]"
               />
             </div>
           </div>
@@ -863,13 +883,13 @@ export default function CreateActivityPage() {
                 options={LOCATION_OPTIONS}
               />
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-text-secondary">
+              <div >
+                <label className="mb-2 block text-sm font-semibold text-text-primary">
                   ទីតាំងផែនទី
                 </label>
 
                 <div className="relative">
-                  <input type="url" value={form.mapLink} onChange={(event) => setValue("mapLink", event.target.value)} placeholder={form.mapLink ? "" : "បញ្ចូល Google Maps link"} className="h-11 w-full rounded-lg border border-border bg-white pl-4 pr-11 text-sm outline-none transition focus:border-secondary" />
+                  <input type="url" value={form.mapLink} onChange={(event) => setValue("mapLink", event.target.value)} placeholder={form.mapLink ? "" : "បញ្ចូល Google Maps link"} className="h-[34px] w-full rounded-lg border border-border bg-white pl-4 pr-11 text-sm outline-none transition focus:border-secondary" />
 
                   {form.mapLink ? (
                     <a href={form.mapLink} target="_blank" rel="noopener noreferrer" className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary transition hover:text-primary">
@@ -882,7 +902,7 @@ export default function CreateActivityPage() {
               </div>
 
               <div className="md:col-span-2">
-                <FormField
+                <FormControl
                   label="អាសយដ្ឋានលម្អិត"
                   value={form.address}
                   onChange={(value) => setValue("address", value)}
@@ -1007,13 +1027,13 @@ export default function CreateActivityPage() {
           )}
 
         <div className="flex items-center justify-between gap-3">
-          <Button
+          <FormActionButton
             action="cancel"
             onClick={handleCancel}
             disabled={isSaving}
           />
 
-          <Button
+          <FormActionButton
             action="save"
             type="submit"
             disabled={isSaving}
