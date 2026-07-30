@@ -58,18 +58,18 @@ const FONT_OPTIONS = [
   },
 ];
 
-const FONT_SIZE_OPTIONS = [
+const CARD_SIZE_OPTIONS = [
   {
-    label: "តូច",
-    value: "small",
+    label: "650 px",
+    value: "650",
   },
   {
-    label: "មធ្យម",
-    value: "medium",
+    label: "780 px",
+    value: "780",
   },
   {
-    label: "ធំ",
-    value: "large",
+    label: "900 px",
+    value: "900",
   },
 ];
 
@@ -574,34 +574,34 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
 
             <FormSelect
               label="ទំហំ"
-              name="fontSize"
-              value={form.fontSize || "medium"}
-              onChange={updateField("fontSize")}
-              options={FONT_SIZE_OPTIONS}
+              name="cardSize"
+              value={form.cardSize || "780"}
+              onChange={updateField("cardSize")}
+              options={CARD_SIZE_OPTIONS}
             />
 
             {/* Colors */}
 
             <div className="flex flex-col">
-  <label className="mb-2 block text-sm font-semibold text-text-primary">
-    ពណ៌
-  </label>
+              <label className="mb-2 block text-sm font-semibold text-text-primary">
+                ពណ៌
+              </label>
 
-  <div className="flex h-11 items-center gap-3">
-    {COLORS.map((color) => {
-      const selected = selectedColor === color;
+              <div className="flex h-11 items-center gap-3">
+                {COLORS.map((color) => {
+                  const selected = selectedColor === color;
 
-      return (
-        <button
-          key={color}
-          type="button"
-          onClick={() =>
-            setForm((previous) => ({
-              ...previous,
-              color,
-            }))
-          }
-          className={`
+                  return (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() =>
+                        setForm((previous) => ({
+                          ...previous,
+                          color,
+                        }))
+                      }
+                      className={`
             h-5
             w-5
             shrink-0
@@ -615,15 +615,15 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
                 : "border-transparent"
             }
           `}
-          style={{
-            backgroundColor: color,
-          }}
-          aria-label={`ជ្រើសរើសពណ៌ ${color}`}
-        />
-      );
-    })}
-  </div>
-</div>
+                      style={{
+                        backgroundColor: color,
+                      }}
+                      aria-label={`ជ្រើសរើសពណ៌ ${color}`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
 
             <FormSelect
               label="ភាសា"
@@ -693,7 +693,7 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
                   language={language}
                   color={selectedColor}
                   font={form.font || "Noto Sans"}
-                  fontSize={form.fontSize || "medium"}
+                  cardSize={form.cardSize || "780"}
                   description={form.description || ""}
                   templatePreview={form.templatePreview}
                 />
@@ -723,7 +723,7 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
                       language={language}
                       color={selectedColor}
                       font={form.font || "Noto Sans"}
-                      fontSize={form.fontSize || "medium"}
+                      cardSize={form.cardSize || "780"}
                       description={form.description || ""}
                       templatePreview={form.templatePreview}
                     />

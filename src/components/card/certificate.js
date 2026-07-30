@@ -6,28 +6,33 @@ const TEXT_COLOR = "#12224c";
 const DESCRIPTION_COLOR = "#4b5563";
 const DEFAULT_BORDER_COLOR = "#12224c";
 
-const SIZE_STYLES = {
-  small: {
-    name: "text-[23px]",
-  },
+const BASE_CARD_WIDTH = 780;
+const BASE_CARD_HEIGHT = 439;
 
-  medium: {
-    name: "text-[28px]",
-  },
-
-  large: {
-    name: "text-[34px]",
-  },
+const CARD_WIDTHS = {
+  650: 650,
+  780: 780,
+  900: 900,
 };
 
 const FONT_FAMILIES = {
-  "Noto Sans": "var(--font-noto-sans-khmer)",
-  "Kantumruy Pro": "var(--font-kantumruy-pro)",
-  Battambang: "var(--font-battambang)",
-  Moul: "var(--font-moul)",
+  "Noto Sans":
+    "var(--font-noto-sans-khmer)",
+
+  "Kantumruy Pro":
+    "var(--font-kantumruy-pro)",
+
+  Battambang:
+    "var(--font-battambang)",
+
+  Moul:
+    "var(--font-moul)",
 };
 
-function getMemberName(member, language) {
+function getMemberName(
+  member,
+  language,
+) {
   if (language === "en") {
     return (
       member?.name_en ||
@@ -51,9 +56,15 @@ export default function CertificateCard({
   member,
   activity,
   language = "km",
-  color = DEFAULT_BORDER_COLOR,
+
+  // This color affects only the recipient name.
+  color = TEXT_COLOR,
+
   font = "Noto Sans",
-  fontSize = "medium",
+
+  // Whole certificate width.
+  cardSize = "780",
+
   description = "",
   templatePreview = "",
 }) {
@@ -63,12 +74,24 @@ export default function CertificateCard({
   const hasCustomTemplate =
     Boolean(templatePreview);
 
-  const sizeStyle =
-    SIZE_STYLES[fontSize] ||
-    SIZE_STYLES.medium;
+  const selectedWidth =
+    CARD_WIDTHS[
+      String(cardSize)
+    ] || BASE_CARD_WIDTH;
+
+  const scale =
+    selectedWidth /
+    BASE_CARD_WIDTH;
+
+  const selectedHeight =
+    BASE_CARD_HEIGHT *
+    scale;
 
   const recipientName =
-    getMemberName(member, language);
+    getMemberName(
+      member,
+      language,
+    );
 
   const memberNameFont =
     FONT_FAMILIES[font] ||
@@ -100,9 +123,10 @@ export default function CertificateCard({
     activity?.branch ||
     "";
 
-  const defaultDescription = isActivity
-    ? "សម្រាប់ការចូលរួមយ៉ាងសកម្ម និងការរួមចំណែកដ៏មានតម្លៃក្នុងសកម្មភាពនេះ។"
-    : "សម្រាប់ការចូលរួមយ៉ាងសកម្ម និងការរួមចំណែកដ៏មានតម្លៃដល់សមាគមថ្នាលយុវជនកម្ពុជា។";
+  const defaultDescription =
+    isActivity
+      ? "សម្រាប់ការចូលរួមយ៉ាងសកម្ម និងការរួមចំណែកដ៏មានតម្លៃក្នុងសកម្មភាពនេះ។"
+      : "សម្រាប់ការចូលរួមយ៉ាងសកម្ម និងការរួមចំណែកដ៏មានតម្លៃដល់សមាគមថ្នាលយុវជនកម្ពុជា។";
 
   const displayedDescription =
     description?.trim() ||
@@ -110,323 +134,344 @@ export default function CertificateCard({
 
   return (
     <div className="flex w-full justify-center py-4">
+      {/* Scaled visible area */}
+
       <div
         className="
           relative
-          h-[439px]
-          w-[780px]
           shrink-0
-          overflow-hidden
-          rounded-xl
-          bg-white
-          shadow-xl
         "
+        style={{
+          width: `${selectedWidth}px`,
+          height: `${selectedHeight}px`,
+        }}
       >
-        {/* Background */}
-
-        {hasCustomTemplate ? (
-          <>
-            <img
-              src={templatePreview}
-              alt="Certificate template"
-              className="
-                absolute
-                inset-0
-                h-full
-                w-full
-                object-fill
-              "
-            />
-
-            <div className="absolute inset-0 bg-white/5" />
-          </>
-        ) : (
-          <DefaultCertificateBackground />
-        )}
-
-        {/* Outer border */}
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            inset-0
-            z-30
-            rounded-2xl
-            border-[10px]
-          "
-          style={{
-            borderColor: color,
-          }}
-        />
-
-        {/* Main certificate content */}
+        {/* Base certificate scaled as one complete card */}
 
         <div
           className="
             absolute
-            inset-0
-            z-10
-            flex
-            flex-col
-            items-center
-            px-14
-            pb-[92px]
-            pt-5
-            text-center
+            left-0
+            top-0
+            h-[439px]
+            w-[780px]
+            origin-top-left
+            overflow-hidden
+            rounded-xl
+            bg-white
+            shadow-xl
           "
           style={{
-            fontFamily:
-              certificateTextFont,
+            transform: `scale(${scale})`,
           }}
         >
-          <Image
-            src="/logo.png"
-            alt="Organization logo"
-            width={68}
-            height={68}
-            className="object-contain"
-            priority
+          {/* Background */}
+
+          {hasCustomTemplate ? (
+            <>
+              <img
+                src={templatePreview}
+                alt="Certificate template"
+                className="
+                  absolute
+                  inset-0
+                  h-full
+                  w-full
+                  object-fill
+                "
+              />
+
+              <div className="absolute inset-0 bg-white/5" />
+            </>
+          ) : (
+            <DefaultCertificateBackground />
+          )}
+
+          {/* Fixed outer border
+              The user-selected color does not affect this. */}
+
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-0
+              z-30
+              rounded-2xl
+              border-[10px]
+            "
+            style={{
+              borderColor:
+                DEFAULT_BORDER_COLOR,
+            }}
           />
 
-          <h2
-            className="mt-2 text-lg font-bold"
-            style={{
-              color: TEXT_COLOR,
-            }}
-          >
-            សមាគមថ្នាលយុវជនកម្ពុជា
-          </h2>
+          {/* Main certificate content */}
 
-          <h1
+          <div
             className="
-              mt-3
-              text-[36px]
-              font-bold
-              tracking-wide
+              absolute
+              inset-0
+              z-10
+              flex
+              flex-col
+              items-center
+              px-14
+              pb-[92px]
+              pt-5
+              text-center
             "
             style={{
-              color: TEXT_COLOR,
-            }}
-          >
-            បណ្ណសរសើរ
-          </h1>
-
-          <p
-            className="
-              mt-1
-              text-sm
-              font-medium
-              tracking-[0.2em]
-            "
-            style={{
-              color: TEXT_COLOR,
-            }}
-          >
-            លិខិតបញ្ជាក់នៃការកោតសរសើរ
-          </p>
-
-          <p
-            className="mt-3 text-sm"
-            style={{
-              color:
-                DESCRIPTION_COLOR,
-            }}
-          >
-            បណ្ណសរសើរនេះត្រូវបានប្រគល់ជូន
-          </p>
-
-          {/* Recipient name */}
-
-          <h3
-            className={`
-              mt-2
-              max-w-[650px]
-              border-b-2
-              px-10
-              pb-1
-              leading-relaxed
-              ${sizeStyle.name}
-            `}
-            style={{
-              color: TEXT_COLOR,
-              borderColor:
-                TEXT_COLOR,
               fontFamily:
-                memberNameFont,
-              fontWeight:
-                font === "Moul"
-                  ? 400
-                  : font ===
-                      "Battambang"
-                    ? 700
-                    : 600,
+                certificateTextFont,
             }}
           >
-            {recipientName}
-          </h3>
-
-          <p
-            className="
-              mt-3
-              max-w-[620px]
-              text-xs
-              leading-5
-            "
-            style={{
-              color:
-                DESCRIPTION_COLOR,
-            }}
-          >
-            {displayedDescription}
-          </p>
-
-          {isActivity &&
-            activity && (
-              <div
-                className="
-                  mt-2
-                  flex
-                  max-w-[650px]
-                  flex-wrap
-                  justify-center
-                  gap-x-5
-                  gap-y-1
-                  text-[10px]
-                "
-                style={{
-                  color:
-                    TEXT_COLOR,
-                  fontFamily:
-                    memberNameFont,
-                  fontWeight:
-                    font === "Moul"
-                      ? 400
-                      : font ===
-                          "Battambang"
-                        ? 700
-                        : 600,
-                }}
-              >
-                {activityTitle && (
-                  <span>
-                    សកម្មភាព៖{" "}
-                    {activityTitle}
-                  </span>
-                )}
-
-                {activityLocation && (
-                  <span>
-                    ទីតាំង៖{" "}
-                    {activityLocation}
-                  </span>
-                )}
-
-                {activityDate && (
-                  <span>
-                    កាលបរិច្ឆេទ៖{" "}
-                    {activityDate}
-                  </span>
-                )}
-
-                {activityBranch && (
-                  <span>
-                    សាខា៖{" "}
-                    {activityBranch}
-                  </span>
-                )}
-              </div>
-            )}
-        </div>
-
-        {/* Bottom left and right signatures */}
-
-        <div
-          className="
-            absolute
-            bottom-5
-            left-0
-            right-0
-            z-20
-            flex
-            items-end
-            justify-between
-            px-[110px]
-          "
-          style={{
-            fontFamily:
-              certificateTextFont,
-          }}
-        >
-          {/* Left signature */}
-
-          <div className="w-[150px] text-center">
-            <div
-              className="
-                mx-auto
-                mb-1
-                h-7
-                w-24
-                border-b
-                border-[#d6a42e]
-              "
+            <Image
+              src="/logo.png"
+              alt="Organization logo"
+              width={68}
+              height={68}
+              className="object-contain"
+              priority
             />
 
-            <p
-              className="text-[10px] font-bold"
+            <h2
+              className="
+                mt-2
+                text-lg
+                font-bold
+              "
               style={{
-                color: TEXT_COLOR,
+                color:
+                  TEXT_COLOR,
               }}
             >
-              ប្រធានសមាគម
+              សមាគមថ្នាលយុវជនកម្ពុជា
+            </h2>
+
+            <h1
+              className="
+                mt-3
+                text-[36px]
+                font-bold
+                tracking-wide
+              "
+              style={{
+                color:
+                  TEXT_COLOR,
+              }}
+            >
+              បណ្ណសរសើរ
+            </h1>
+
+            <p
+              className="
+                mt-1
+                text-sm
+                font-medium
+                tracking-[0.2em]
+              "
+              style={{
+                color:
+                  TEXT_COLOR,
+              }}
+            >
+              លិខិតបញ្ជាក់នៃការកោតសរសើរ
             </p>
 
             <p
-              className="mt-0.5 text-[8px]"
+              className="mt-3 text-sm"
               style={{
                 color:
                   DESCRIPTION_COLOR,
               }}
             >
-              សមាគមថ្នាលយុវជនកម្ពុជា
+              បណ្ណសរសើរនេះត្រូវបានប្រគល់ជូន
             </p>
+
+            {/* Recipient name
+                Only this text changes color. */}
+
+            <h3
+              className="
+                mt-2
+                max-w-[650px]
+                border-b-2
+                px-10
+                pb-1
+                text-[28px]
+                leading-relaxed
+              "
+              style={{
+                color,
+
+                // Underline stays dark blue.
+                borderColor:
+                  TEXT_COLOR,
+
+                fontFamily:
+                  memberNameFont,
+
+                fontWeight:
+                  font === "Moul"
+                    ? 400
+                    : font ===
+                        "Battambang"
+                      ? 700
+                      : 600,
+              }}
+            >
+              {recipientName}
+            </h3>
+
+            <p
+              className="
+                mt-3
+                max-w-[620px]
+                text-xs
+                leading-5
+              "
+              style={{
+                color:
+                  DESCRIPTION_COLOR,
+              }}
+            >
+              {displayedDescription}
+            </p>
+
+            {isActivity &&
+              activity && (
+                <div
+                  className="
+                    mt-2
+                    flex
+                    max-w-[650px]
+                    flex-wrap
+                    justify-center
+                    gap-x-5
+                    gap-y-1
+                    text-[10px]
+                  "
+                  style={{
+                    color:
+                      TEXT_COLOR,
+
+                    fontFamily:
+                      memberNameFont,
+
+                    fontWeight:
+                      font ===
+                      "Moul"
+                        ? 400
+                        : font ===
+                            "Battambang"
+                          ? 700
+                          : 600,
+                  }}
+                >
+                  {activityTitle && (
+                    <span>
+                      សកម្មភាព៖{" "}
+                      {activityTitle}
+                    </span>
+                  )}
+
+                  {activityLocation && (
+                    <span>
+                      ទីតាំង៖{" "}
+                      {activityLocation}
+                    </span>
+                  )}
+
+                  {activityDate && (
+                    <span>
+                      កាលបរិច្ឆេទ៖{" "}
+                      {activityDate}
+                    </span>
+                  )}
+
+                  {activityBranch && (
+                    <span>
+                      សាខា៖{" "}
+                      {activityBranch}
+                    </span>
+                  )}
+                </div>
+              )}
           </div>
 
-          {/* Right signature */}
+          {/* Signatures */}
 
-          <div className="w-[150px] text-center">
-            <div
-              className="
-                mx-auto
-                mb-1
-                h-7
-                w-24
-                border-b
-                border-[#d6a42e]
-              "
+          <div
+            className="
+              absolute
+              bottom-5
+              left-0
+              right-0
+              z-20
+              flex
+              items-end
+              justify-between
+              px-[110px]
+            "
+            style={{
+              fontFamily:
+                certificateTextFont,
+            }}
+          >
+            <Signature
+              title="ប្រធានសមាគម"
             />
 
-            <p
-              className="text-[10px] font-bold"
-              style={{
-                color: TEXT_COLOR,
-              }}
-            >
-              អគ្គលេខាធិការ
-            </p>
-
-            <p
-              className="mt-0.5 text-[8px]"
-              style={{
-                color:
-                  DESCRIPTION_COLOR,
-              }}
-            >
-              សមាគមថ្នាលយុវជនកម្ពុជា
-            </p>
+            <Signature
+              title="អគ្គលេខាធិការ"
+            />
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Signature({
+  title,
+}) {
+  return (
+    <div className="w-[150px] text-center">
+      <div
+        className="
+          mx-auto
+          mb-1
+          h-7
+          w-24
+          border-b
+          border-[#d6a42e]
+        "
+      />
+
+      <p
+        className="
+          text-[10px]
+          font-bold
+        "
+        style={{
+          color: TEXT_COLOR,
+        }}
+      >
+        {title}
+      </p>
+
+      <p
+        className="
+          mt-0.5
+          text-[8px]
+        "
+        style={{
+          color:
+            DESCRIPTION_COLOR,
+        }}
+      >
+        សមាគមថ្នាលយុវជនកម្ពុជា
+      </p>
     </div>
   );
 }
