@@ -1,265 +1,436 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
 import {
-  AreaChart,
   Area,
-  XAxis,
-  YAxis,
+  AreaChart,
   CartesianGrid,
   ResponsiveContainer,
   Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 import { ChevronDown } from "lucide-react";
 
-const MONTHS_KM_SHORT = [
-  "ខែមករា", "ខែកុម្ភៈ", "ខែមីនា", "ខែមេសា", "ខែឧសភា", "ខែមិថុនា",
-  "ខែកក្កដា", "ខែសីហា", "ខែកញ្ញា", "ខែតុលា", "ខែវិច្ឆិកា", "ខែធ្នូ",
+const CURRENT_YEAR =
+  new Date().getFullYear();
+
+const YEAR_OPTIONS = [
+  CURRENT_YEAR - 2,
+  CURRENT_YEAR - 1,
+  CURRENT_YEAR,
+  CURRENT_YEAR + 1,
 ];
 
-const TODAY = new Date();
-const CURRENT_CALENDAR_YEAR = TODAY.getFullYear();
-
-// School-year style options, e.g. "2024-2025", "2025-2026", "2026-2027".
-// Static for now per our earlier call — revisit with an
-// /dashboard/available-years endpoint if empty years become confusing.
-const YEAR_OPTIONS = [-2, -1, 0].map((offset) => {
-  const start = CURRENT_CALENDAR_YEAR + offset;
-  return `${start}-${start + 1}`;
-});
-const DEFAULT_YEAR = YEAR_OPTIONS[YEAR_OPTIONS.length - 1];
-
-import dashboardParticipationTrend from "@/data/dashboard/participationSummary.json";
-
-// ---- DATA LAYER ----
-// Imported directly since data now lives under src/ (not browser-
-// fetchable). Kept as `async function` so downstream loading logic
-// doesn't need to change. Swap for a real fetch() call once the
-// backend endpoint exists.
-async function fetchParticipationTrend(year) {
-  const match = dashboardParticipationTrend.find((entry) => entry.year === year);
-
-  if (match) {
-    return match;
-  }
-
-  // No recorded data for this year yet — same "empty, not an error" rule
-  // as the donut widget.
-  return {
-    year,
-    data: MONTHS_KM_SHORT.map((month) => ({ month, participant_count: 0 })),
-  };
-}
-// --------------------------------------------------------------------
+const MONTH_LABELS_KM = {
+  1: "មករា",
+  2: "កុម្ភៈ",
+  3: "មីនា",
+  4: "មេសា",
+  5: "ឧសភា",
+  6: "មិថុនា",
+  7: "កក្កដា",
+  8: "សីហា",
+  9: "កញ្ញា",
+  10: "តុលា",
+  11: "វិច្ឆិកា",
+  12: "ធ្នូ",
+};
 
 const LINE_COLOR = "#7B6EF6";
 
-function ChartTooltip({ active, payload, label }) {
-  if (!active || !payload || !payload.length) return null;
+function getMonthNumber(item) {
+  const directMonth =
+    Number(item?.month);
+
+  if (
+    Number.isInteger(directMonth) &&
+    directMonth >= 1 &&
+    directMonth <= 12
+  ) {
+    return directMonth;
+  }
+
+  const period =
+    String(item?.period ?? "");
+
+  const periodMonth =
+    Number(period.slice(5, 7));
+
+  if (
+    Number.isInteger(periodMonth) &&
+    periodMonth >= 1 &&
+    periodMonth <= 12
+  ) {
+    return periodMonth;
+  }
+
+  return null;
+}
+
+function normalizeParticipationMonths(
+  months,
+  year
+) {
+  const monthMap = new Map();
+
+  if (Array.isArray(months)) {
+    months.forEach((item) => {
+      const monthNumber =
+        getMonthNumber(item);
+
+      if (!monthNumber) {
+        return;
+      }
+
+      monthMap.set(monthNumber, {
+        monthNumber,
+        month:
+          MONTH_LABELS_KM[
+            monthNumber
+          ],
+        period:
+          item?.period ??
+          `${year}-${String(
+            monthNumber
+          ).padStart(2, "0")}`,
+        participantCount:
+          Number(
+            item?.participationCount ??
+              item?.participant_count ??
+              item?.count
+          ) || 0,
+      });
+    });
+  }
+
+  /*
+   * Always create 12 points so the chart keeps
+   * the same shape even when some months have
+   * no records.
+   */
+  return Array.from(
+    { length: 12 },
+    (_, index) => {
+      const monthNumber =
+        index + 1;
+
+      return (
+        monthMap.get(monthNumber) ?? {
+          monthNumber,
+          month:
+            MONTH_LABELS_KM[
+              monthNumber
+            ],
+          period: `${year}-${String(
+            monthNumber
+          ).padStart(2, "0")}`,
+          participantCount: 0,
+        }
+      );
+    }
+  );
+}
+
+function ChartTooltip({
+  active,
+  payload,
+}) {
+  if (
+    !active ||
+    !payload ||
+    payload.length === 0
+  ) {
+    return null;
+  }
+
+  const item =
+    payload[0]?.payload;
+
   return (
     <div
-      style={{
-        background: "#FFFFFF",
-        border: "1px solid #E7E9EE",
-        borderRadius: 8,
-        padding: "8px 12px",
-        boxShadow: "0 2px 8px rgba(16,24,40,0.08)",
-        fontSize: 12,
-      }}
+      className="
+        rounded-lg
+        border
+        border-[#E7E9EE]
+        bg-white
+        px-3
+        py-2
+        text-xs
+        shadow-[0_2px_8px_rgba(16,24,40,0.08)]
+      "
     >
-      <div style={{ color: "#9AA0A8", marginBottom: 2 }}>{label}</div>
-      <div style={{ color: "#232629", fontWeight: 600 }}>
-        {payload[0].value.toLocaleString()} នាក់
+      <div className="mb-0.5 text-[#9AA0A8]">
+        {item?.month} {item?.period?.slice(0, 4)}
+      </div>
+
+      <div className="font-semibold text-[#232629]">
+        {Number(
+          item?.participantCount || 0
+        ).toLocaleString()}{" "}
+        នាក់
       </div>
     </div>
   );
 }
 
-function YearDropdown({ value, onChange }) {
+function YearDropdown({
+  value,
+  onChange,
+  disabled = false,
+}) {
+  const normalizedValue =
+    Number(value) || CURRENT_YEAR;
+
+  const availableYears =
+    Array.from(
+      new Set([
+        ...YEAR_OPTIONS,
+        normalizedValue,
+      ])
+    ).sort((a, b) => a - b);
+
   return (
-    <div style={{ position: "relative" }}>
+    <div className="relative">
       <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        style={{
-          appearance: "none",
-          WebkitAppearance: "none",
-          background: "#F7F8FA",
-          border: "1px solid #E7E9EE",
-          borderRadius: 8,
-          padding: "6px 30px 6px 12px",
-          fontSize: 13,
-          color: "#4A4F59",
-          fontFamily: "inherit",
-          cursor: "pointer",
-          outline: "none",
-        }}
+        value={normalizedValue}
+        onChange={(event) =>
+          onChange?.(
+            Number(event.target.value)
+          )
+        }
+        disabled={disabled}
+        className="
+          appearance-none
+          rounded-lg
+          border
+          border-[#E7E9EE]
+          bg-[#F7F8FA]
+          py-1.5
+          pl-3
+          pr-8
+          text-[13px]
+          text-[#4A4F59]
+          outline-none
+          transition
+          hover:border-gray-300
+          disabled:cursor-not-allowed
+          disabled:opacity-60
+        "
       >
-        {YEAR_OPTIONS.map((y) => (
-          <option key={y} value={y}>
-            {y}
-          </option>
-        ))}
+        {availableYears.map(
+          (yearOption) => (
+            <option
+              key={yearOption}
+              value={yearOption}
+            >
+              {yearOption}
+            </option>
+          )
+        )}
       </select>
+
       <ChevronDown
         size={14}
-        color="#8A8F98"
-        style={{
-          position: "absolute",
-          right: 10,
-          top: "50%",
-          transform: "translateY(-50%)",
-          pointerEvents: "none",
-        }}
+        className="
+          pointer-events-none
+          absolute
+          right-2.5
+          top-1/2
+          -translate-y-1/2
+          text-[#8A8F98]
+        "
       />
     </div>
   );
 }
 
-export default function ParticipationChart() {
-  const [year, setYear] = useState(DEFAULT_YEAR);
-  const [chartData, setChartData] = useState(
-    MONTHS_KM_SHORT.map((month) => ({ month, participant_count: 0 }))
+function ChartSkeleton() {
+  return (
+    <div className="flex flex-1 animate-pulse items-end gap-4 px-8 pb-8">
+      {[
+        55, 35, 68, 48, 78, 58,
+        82, 63, 74, 52, 70, 45,
+      ].map((height, index) => (
+        <div
+          key={index}
+          className="flex-1 rounded-t bg-gray-100"
+          style={{
+            height: `${height}%`,
+          }}
+        />
+      ))}
+    </div>
   );
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+}
 
-  const loadData = useCallback((selectedYear) => {
-    setIsLoading(true);
-    setError(null);
-    fetchParticipationTrend(selectedYear)
-      .then((res) => {
-        setChartData(res.data);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setError("មិនអាចទាញយកទិន្នន័យបានទេ");
-        setIsLoading(false);
-      });
-  }, []);
+export default function ParticipationChart({
+  data,
+  year,
+  onYearChange,
+  loading = false,
+}) {
+  /*
+   * Backend response:
+   *
+   * {
+   *   "year": 2026,
+   *   "months": [
+   *     {
+   *       "month": 1,
+   *       "period": "2026-01",
+   *       "participationCount": 10
+   *     }
+   *   ]
+   * }
+   */
 
-  useEffect(() => {
-    loadData(year);
-  }, [year, loadData]);
+  const selectedYear =
+    Number(year) ||
+    Number(data?.year) ||
+    CURRENT_YEAR;
 
-  const hasAnyData = chartData.some((d) => d.participant_count > 0);
+  const chartData =
+    normalizeParticipationMonths(
+      data?.months,
+      selectedYear
+    );
+
+  const hasAnyData =
+    chartData.some(
+      (item) =>
+        item.participantCount > 0
+    );
 
   return (
-    <div
-      style={{
-        // Fills the full width/height of whatever grid cell it's placed
-        // in (matches DonutChart's root sizing so both cards stretch
-        // together via the parent grid's `items-stretch`).
-        background: "#FFFFFF",
-        borderRadius: 14,
-        padding: "16px 18px",
-        boxShadow: "0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)",
-        width: "100%",
-        height: "100%",
-        minHeight: 340,
-        boxSizing: "border-box",
-        display: "flex",
-        flexDirection: "column",
-      }}
+    <section
+      className="
+        flex
+        h-full
+        min-h-[340px]
+        w-full
+        flex-col
+        rounded-[14px]
+        bg-white
+        px-[18px]
+        py-4
+        shadow-[0_1px_2px_rgba(16,24,40,0.04),0_1px_3px_rgba(16,24,40,0.06)]
+      "
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 12,
-        }}
-      >
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#232629" }}>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="m-0 text-[15px] font-semibold text-[#232629]">
           ការចូលរួមប្រចាំខែ
         </h3>
-        <YearDropdown value={year} onChange={setYear} />
+
+        <YearDropdown
+          value={selectedYear}
+          onChange={onYearChange}
+          disabled={loading}
+        />
       </div>
 
-      {error ? (
-        <div style={{ padding: "30px 0", textAlign: "center", color: "#B3261E", fontSize: 13 }}>
-          {error}
-        </div>
+      {loading && !data ? (
+        <ChartSkeleton />
       ) : (
-        <div style={{ position: "relative", flex: 1, minHeight: 0, paddingBottom: 8 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 12 }}>
-              <CartesianGrid stroke="#F3F4F6" vertical={false} />
-              <Tooltip content={<ChartTooltip />} cursor={{ stroke: "#E4E5EA", strokeWidth: 1 }} />
+        <div className="relative min-h-0 flex-1 pb-2">
+          <ResponsiveContainer
+            width="100%"
+            height="100%"
+          >
+            <AreaChart
+              data={chartData}
+              margin={{
+                top: 8,
+                right: 16,
+                left: 8,
+                bottom: 12,
+              }}
+            >
+              <CartesianGrid
+                stroke="#F3F4F6"
+                vertical={false}
+              />
+
+              <Tooltip
+                content={
+                  <ChartTooltip />
+                }
+                cursor={{
+                  stroke: "#E4E5EA",
+                  strokeWidth: 1,
+                }}
+              />
+
               <XAxis
                 dataKey="month"
-                tick={{ fontSize: 10, fill: "#9AA0A8" }}
+                tick={{
+                  fontSize: 10,
+                  fill: "#9AA0A8",
+                }}
                 axisLine={false}
                 tickLine={false}
                 interval={0}
-                tickFormatter={(m) => m.replace("ខែ", "")}
-                tickMargin={4}
-                padding={{ left: 16, right: 16 }}
+                tickMargin={6}
+                padding={{
+                  left: 12,
+                  right: 12,
+                }}
               />
+
               <YAxis
-                tick={{ fontSize: 11, fill: "#9AA0A8" }}
+                allowDecimals={false}
+                tick={{
+                  fontSize: 11,
+                  fill: "#9AA0A8",
+                }}
                 axisLine={false}
                 tickLine={false}
                 width={40}
               />
+
               <Area
                 type="monotone"
-                dataKey="participant_count"
-                stroke={isLoading ? "#E4E5EA" : LINE_COLOR}
-                strokeWidth={1.8}
+                dataKey="participantCount"
+                stroke={
+                  loading
+                    ? "#E4E5EA"
+                    : LINE_COLOR
+                }
+                strokeWidth={2}
                 strokeLinecap="round"
+                strokeLinejoin="round"
                 fill="none"
                 dot={false}
-                activeDot={{ r: 4, fill: LINE_COLOR, strokeWidth: 0 }}
-                isAnimationActive={!isLoading}
+                activeDot={{
+                  r: 4,
+                  fill: LINE_COLOR,
+                  stroke: "#FFFFFF",
+                  strokeWidth: 2,
+                }}
+                isAnimationActive={
+                  !loading
+                }
               />
             </AreaChart>
           </ResponsiveContainer>
 
-          {!isLoading && !hasAnyData && (
+          {!loading && !hasAnyData && (
             <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 12,
-                color: "#9AA0A8",
-                background: "rgba(255,255,255,0.6)",
-              }}
+              className="
+                absolute
+                inset-0
+                flex
+                items-center
+                justify-center
+                bg-white/60
+                text-xs
+                text-[#9AA0A8]
+              "
             >
               មិនទាន់មានទិន្នន័យសម្រាប់ឆ្នាំនេះ
             </div>
           )}
         </div>
       )}
-    </div>
+    </section>
   );
 }
-
-
-/**
- * ParticipationTrendLine
- * -----------------------
- * Renders the "ការចូលរួមប្រចាំខែ" (monthly participation trend) line chart.
- *
- * Wired to match this API contract:
- *
- *   GET /dashboard/participation-trend?year=2025-2026
- *
- *   Response:
- *   {
- *     "year": "2025-2026",
- *     "data": [
- *       { "month": "មករា", "participant_count": 78 },
- *       { "month": "កុម្ភៈ", "participant_count": 52 },
- *       ...
- *     ]
- *   }
- *
- * Data source: same static data/dashboard.json file as the donut widget,
- * under a "participationTrend" key (array of { year, data }). Swap
- * DASHBOARD_DATA_URL for the real API base once backend ships it — the
- * lookup-by-year logic doesn't need to change.
- */

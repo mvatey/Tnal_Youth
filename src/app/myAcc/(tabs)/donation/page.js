@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Trash2 } from "lucide-react";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
 
@@ -9,12 +10,8 @@ import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal.js";
 
 import donationData from "@/data/donation.json";
 
-<<<<<<< HEAD
 export default function DonationPage() {
   const { member, loading, error } = useCurrentMember();
-=======
-import DataTable from "@/components/table/DataTable";
->>>>>>> origin/feature/member
 
   const [donations, setDonations] = useState(donationData);
   const [query, setQuery] = useState("");
@@ -22,11 +19,7 @@ import DataTable from "@/components/table/DataTable";
   const [deleteModal, setDeleteModal] = useState(false);
   const [selectedDonation, setSelectedDonation] = useState(null);
 
-<<<<<<< HEAD
   const memberDonations = useMemo(() => {
-=======
-  const donations = useMemo(() => {
->>>>>>> origin/feature/member
     if (!member) return [];
 
     return donations.filter((item) => {
@@ -42,20 +35,10 @@ import DataTable from "@/components/table/DataTable";
     });
   }, [donations, member]);
 
-<<<<<<< HEAD
   const paymentMethods = useMemo(() => {
     return [
       ...new Set(
         memberDonations
-=======
-  const [query, setQuery] = useState("");
-  const [methodFilter, setMethodFilter] = useState("");
-
-  const paymentMethods = useMemo(
-    () => [
-      ...new Set(
-        donations
->>>>>>> origin/feature/member
           .map((item) => item.paymentMethod)
           .filter(Boolean),
       ),
@@ -106,7 +89,7 @@ import DataTable from "@/components/table/DataTable";
       header: "ល.រ",
       width: "w-[6%]",
       align: "center",
-      render: (_, index) => index + 1,
+      render: (_, index) => index,
     },
     {
       header: "ប្រចាំខែ",
@@ -142,7 +125,6 @@ import DataTable from "@/components/table/DataTable";
       align: "left",
       accessor: "paymentMethod",
     },
-<<<<<<< HEAD
     {
       header: "សកម្មភាព",
       width: "w-[10%]",
@@ -161,8 +143,6 @@ import DataTable from "@/components/table/DataTable";
         </button>
       ),
     },
-=======
->>>>>>> origin/feature/member
   ];
 
   const filters = [
@@ -212,29 +192,13 @@ import DataTable from "@/components/table/DataTable";
       <DataTable
         data={filteredData}
         columns={columns}
-<<<<<<< HEAD
         filters={filters}
-=======
-        filters={[
-          {
-            name: "paymentMethod",
-            value: methodFilter,
-            onChange: setMethodFilter,
-            placeholder: "វិធីសាស្ត្រទូទាត់",
-            options: paymentMethods.map((method) => ({
-              label: method,
-              value: method,
-            })),
-          },
-        ]}
->>>>>>> origin/feature/member
         searchQuery={query}
         onSearchChange={setQuery}
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
         downloadFilename={`donations-${member.id}.csv`}
       />
-<<<<<<< HEAD
 
       <ConfirmDeleteModal
         open={deleteModal}
@@ -252,8 +216,6 @@ import DataTable from "@/components/table/DataTable";
         cancelLabel="បោះបង់"
         confirmLabel="លុប"
       />
-=======
->>>>>>> origin/feature/member
     </div>
   );
 }

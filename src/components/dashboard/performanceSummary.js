@@ -1,93 +1,162 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
-import branchStats from "@/data/donation/branchPerformance.json";
 
-// Placeholder until real per-branch data exists — see note above.
-const PLACEHOLDER_BRANCHES = [{ id: "default", name: "សាខាក្រុងភ្នំពេញ" }];
+function normalizeBranchOptions(branches = []) {
+  if (!Array.isArray(branches)) {
+    return [];
+  }
 
-// ---- DATA LAYER ----
-async function fetchPerformanceStats() {
-  return branchStats ?? [];
+  return branches.map((branch) => ({
+    id:
+      branch.id ??
+      branch.branchId ??
+      branch.branch_id,
+
+    name:
+      branch.nameKm ??
+      branch.name_km ??
+      branch.branchNameKm ??
+      branch.branch_name_km ??
+      branch.name ??
+      branch.label ??
+      "-",
+  }));
 }
-// --------------------------------------------------------------------
 
-function BranchDropdown({ branches, value, onChange }) {
+function BranchDropdown({
+  branches,
+  value,
+  onChange,
+  disabled = false,
+}) {
   return (
-    <div style={{ position: "relative" }}>
+    <div className="relative">
       <select
         value={value ?? ""}
-        onChange={(e) => onChange(e.target.value)}
-        style={{
-          appearance: "none",
-          WebkitAppearance: "none",
-          background: "#FFFFFF",
-          border: "1px solid #E7E9EE",
-          borderRadius: 8,
-          padding: "7px 32px 7px 14px",
-          fontSize: 13,
-          color: "#4A4F59",
-          fontFamily: "inherit",
-          cursor: "pointer",
-          outline: "none",
-        }}
+        onChange={(event) =>
+          onChange?.(event.target.value)
+        }
+        disabled={disabled}
+        className="
+          appearance-none
+          rounded-lg
+          border
+          border-[#E7E9EE]
+          bg-white
+          py-[7px]
+          pl-[14px]
+          pr-8
+          text-[13px]
+          text-[#4A4F59]
+          outline-none
+          transition
+          hover:border-gray-300
+          disabled:cursor-not-allowed
+          disabled:opacity-60
+        "
       >
-        {branches.map((b) => (
-          <option key={b.id} value={b.id}>
-            {b.name}
+        {branches.length === 0 ? (
+          <option value="">
+            មិនមានសាខា
           </option>
-        ))}
+        ) : (
+          branches.map((branch) => (
+            <option
+              key={branch.id}
+              value={branch.id}
+            >
+              {branch.name}
+            </option>
+          ))
+        )}
       </select>
+
       <ChevronDown
         size={14}
-        color="#8A8F98"
-        style={{
-          position: "absolute",
-          right: 12,
-          top: "50%",
-          transform: "translateY(-50%)",
-          pointerEvents: "none",
-        }}
+        className="
+          pointer-events-none
+          absolute
+          right-3
+          top-1/2
+          -translate-y-1/2
+          text-[#8A8F98]
+        "
       />
     </div>
   );
 }
 
-function StatMiniCard({ label, value, growth, isLoading }) {
-  const growthNum = Number(growth);
-  const isUp = growthNum >= 0;
+function StatMiniCard({
+  label,
+  value,
+  growth,
+  loading,
+}) {
+  const growthNumber =
+    Number(growth) || 0;
+
+  const isUp =
+    growthNumber >= 0;
 
   return (
     <div
       className="app-card"
       style={{
-        background: "#F7F8FA",
-        border: "1px solid #EEF0F3",
-        borderRadius: 10,
-        padding: "12px 14px",
-        height: "100%",
-        boxSizing: "border-box",
         display: "flex",
+        height: "100%",
         flexDirection: "column",
+        boxSizing: "border-box",
+        border:
+          "1px solid #EEF0F3",
+        borderRadius: 10,
+        background: "#F7F8FA",
+        padding: "12px 14px",
       }}
     >
-      <span style={{ fontSize: 12, color: "#6B7280" }}>{label}</span>
+      <span
+        style={{
+          color: "#6B7280",
+          fontSize: 12,
+        }}
+      >
+        {label}
+      </span>
 
-      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 20, fontWeight: 700, color: "#1F2329" }}>
-          {isLoading ? "···" : value}
+      <div
+        style={{
+          display: "flex",
+          flex: 1,
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <span
+          style={{
+            color: "#1F2329",
+            fontSize: 20,
+            fontWeight: 700,
+          }}
+        >
+          {loading ? "···" : value}
         </span>
-        {!isLoading && (
+
+        {!loading && (
           <span
             style={{
+              color: isUp
+                ? "#22A35A"
+                : "#D14343",
               fontSize: 11,
               fontWeight: 600,
-              color: isUp ? "#22A35A" : "#D14343",
               whiteSpace: "nowrap",
             }}
           >
-            {isUp ? "↑" : "↓"} {Math.abs(growthNum)}%
+            {isUp ? "↑" : "↓"}{" "}
+            {Math.abs(
+              growthNumber
+            )}
+            %
           </span>
         )}
       </div>
@@ -95,98 +164,193 @@ function StatMiniCard({ label, value, growth, isLoading }) {
   );
 }
 
-export default function PerformanceSummary() {
-  const [selectedBranchId, setSelectedBranchId] = useState(PLACEHOLDER_BRANCHES[0].id);
-  const [stats, setStats] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+function formatDonationValue(
+  donations
+) {
+  const amountUsd =
+    Number(
+      donations?.amountUsd ??
+      donations?.amount_usd
+    ) || 0;
 
-  useEffect(() => {
-    fetchPerformanceStats()
-      .then((res) => {
-        setStats(res);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setError("មិនអាចទាញយកទិន្នន័យបានទេ");
-        setIsLoading(false);
-      });
-  }, []);
+  const amountKhr =
+    Number(
+      donations?.amountKhr ??
+      donations?.amount_khr
+    ) || 0;
 
-  return (
-    <div
-      className="app-card"
-      style={{
-        background: "#FFFFFF",
-        border: "1px solid #EEF0F3",
-        borderRadius: 14,
-        padding: "18px 20px",
-        height: "100%",
-        boxSizing: "border-box",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h3 style={{ margin: "0 0 16px 0", fontSize: 14, fontWeight: 600, color: "#232629" }}>
-          សមិទ្ធផលសរុបរបស់សាខា
-        </h3>
-        <BranchDropdown
-          branches={PLACEHOLDER_BRANCHES}
-          value={selectedBranchId}
-          onChange={setSelectedBranchId}
-        />
-      </div>
+  if (amountUsd > 0) {
+    return `$${amountUsd.toLocaleString()}`;
+  }
 
-      {error ? (
-        <div style={{ padding: "16px 0", textAlign: "center", color: "#B3261E", fontSize: 13 }}>
-          {error}
-        </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, flex: 1, alignItems: "stretch" }}>
-          {(isLoading ? [0, 1, 2] : stats).map((item, i) =>
-            isLoading ? (
-              <StatMiniCard key={i} label="" value="" growth="0" isLoading />
-            ) : (
-              <StatMiniCard
-                key={item.label}
-                label={item.label}
-                value={item.value}
-                growth={item.growth}
-                isLoading={false}
-              />
-            )
-          )}
-        </div>
-      )}
-    </div>
-  );
+  return `${amountKhr.toLocaleString()}៛`;
 }
 
+export default function PerformanceSummary({
+  data,
+  branches = [],
+  selectedBranchId,
+  onBranchChange,
+  loading = false,
+  showBranchDropdown = true,
+}) {
+  /*
+   * Expected backend response:
+   *
+   * {
+   *   "period": "2026-07",
+   *   "scope": {
+   *     "branchId": 1,
+   *     "branchNameKm": "...",
+   *     "branchNameEn": "..."
+   *   },
+   *   "activities": {
+   *     "value": 58,
+   *     "changePercent": 8
+   *   },
+   *   "donations": {
+   *     "amountKhr": 0,
+   *     "amountUsd": 1200,
+   *     "changePercentKhr": 0,
+   *     "changePercentUsd": 23
+   *   },
+   *   "members": {
+   *     "value": 86,
+   *     "changePercent": 12
+   *   }
+   * }
+   */
 
+  const branchOptions =
+    normalizeBranchOptions(
+      branches
+    );
 
-/**
- * PerformanceSummary
- * --------------------
- * Renders "សម្ថភពលសរុបរបស់សាខា" (branch performance summary) — a branch
- * dropdown plus three mini stat cards.
- *
- * ⚠️ IMPORTANT — CURRENT LIMITATION:
- * branch-performance.json is currently a flat array of 3 stats with NO
- * per-branch data (no branch_id, branch_name, or grouping at all):
- *
- *   [
- *     { "label": "កម្មវិធីសរុប",       "value": "58",   "growth": "8" },
- *     { "label": "វិភាគទានសរុប",       "value": "$1200", "growth": "23" },
- *     { "label": "អ្នកចូលរួមថ្មីបន្ថែម", "value": "86",   "growth": "12" }
- *   ]
- *
- * That means: the dropdown below currently shows a single hardcoded
- * placeholder branch and CANNOT actually switch between real branches'
- * data yet, because there's nothing in this file to switch to. This is
- * a stopgap, not the final behavior — once backend provides real
- * per-branch data (e.g. a "branches" array, each with its own stats),
- * this component needs its dropdown wired back to that, similar to how
- * the month/year dropdowns select from already-loaded data elsewhere in
- * this dashboard.
- */
+  const activities =
+    data?.activities ?? {};
+
+  const donations =
+    data?.donations ?? {};
+
+  const members =
+    data?.members ?? {};
+
+  const stats = [
+    {
+      key: "activities",
+      label: "កម្មវិធីសរុប",
+      value: (
+        Number(
+          activities?.value
+        ) || 0
+      ).toLocaleString(),
+      growth:
+        Number(
+          activities?.changePercent
+        ) || 0,
+    },
+    {
+      key: "donations",
+      label: "វិភាគទានសរុប",
+      value:
+        formatDonationValue(
+          donations
+        ),
+      growth:
+        Number(
+          donations?.changePercentUsd ??
+          donations?.changePercentKhr
+        ) || 0,
+    },
+    {
+      key: "members",
+      label: "សមាជិកថ្មី",
+      value: (
+        Number(
+          members?.value
+        ) || 0
+      ).toLocaleString(),
+      growth:
+        Number(
+          members?.changePercent
+        ) || 0,
+    },
+  ];
+
+  const resolvedBranchId =
+    selectedBranchId ??
+    data?.scope?.branchId ??
+    data?.scope?.branch_id ??
+    "";
+
+  return (
+    <section
+      className="app-card"
+      style={{
+        display: "flex",
+        height: "100%",
+        flexDirection: "column",
+        boxSizing: "border-box",
+        border:
+          "1px solid #EEF0F3",
+        borderRadius: 14,
+        background: "#FFFFFF",
+        padding: "18px 20px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent:
+            "space-between",
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            color: "#232629",
+            fontSize: 14,
+            fontWeight: 600,
+          }}
+        >
+          សមិទ្ធផលសរុបរបស់សាខា
+        </h3>
+
+        {showBranchDropdown && (
+          <BranchDropdown
+            branches={branchOptions}
+            value={resolvedBranchId}
+            onChange={
+              onBranchChange
+            }
+            disabled={loading}
+          />
+        )}
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(3, minmax(0, 1fr))",
+          flex: 1,
+          alignItems: "stretch",
+          gap: 12,
+        }}
+      >
+        {stats.map((item) => (
+          <StatMiniCard
+            key={item.key}
+            label={item.label}
+            value={item.value}
+            growth={item.growth}
+            loading={loading}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}

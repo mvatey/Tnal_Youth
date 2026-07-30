@@ -11,8 +11,7 @@ const AUTH_ROLE_TO_JSON_ROLE = {
  * Temporary mapping:
  * backend user ID -> members.json member ID
  *
- * Replace these IDs with your real backend user IDs
- * and matching mock member IDs.
+ * Remove this after the backend returns a real memberId.
  */
 const TEMP_MEMBER_MAP = {
   9: "1",
@@ -20,57 +19,79 @@ const TEMP_MEMBER_MAP = {
   // 11: "3",
 };
 
+const AUTH_STORAGE_KEYS = [
+  "user",
+  "currentUser",
+  "authUser",
+  "tnal-user",
+];
+
 function normalize(value) {
   return String(value ?? "")
     .trim()
     .toLowerCase();
 }
 
-export function combineAuthUserWithMember(authUser) {
-  if (!authUser) return null;
-
-  const normalizedRole =
-    AUTH_ROLE_TO_JSON_ROLE[authUser.role] ||
-    normalize(authUser.role);
+function findJsonMember(authUser) {
+  if (!authUser) return {};
 
   const mappedMemberId = TEMP_MEMBER_MAP[authUser.id];
 
-  const jsonMember =
-    // 1. Explicit temporary mapping
+  return (
     members.find(
       (item) =>
         mappedMemberId &&
         String(item.id) === String(mappedMemberId),
     ) ||
-
-    // 2. Match by email
     members.find(
       (item) =>
         authUser.email &&
         normalize(item.email) === normalize(authUser.email),
     ) ||
-
-    // 3. Match by phone
     members.find(
       (item) =>
         authUser.phone &&
         normalize(item.phone) === normalize(authUser.phone),
     ) ||
-
-    // 4. Match by same ID
+    members.find(
+      (item) =>
+        authUser.memberId &&
+        String(item.id) === String(authUser.memberId),
+    ) ||
     members.find(
       (item) =>
         authUser.id &&
         String(item.id) === String(authUser.id),
     ) ||
+    {}
+  );
+}
 
-    // No matching temporary member
-    {};
+export function combineAuthUserWithMember(authUser) {
+  if (!authUser) return null;
+
+  const jsonMember = findJsonMember(authUser);
+
+  const normalizedRole =
+    AUTH_ROLE_TO_JSON_ROLE[authUser.role] ||
+    normalize(authUser.role) ||
+    jsonMember.role ||
+    "member";
 
   return {
     ...jsonMember,
 
-    id: authUser.id ?? jsonMember.id,
+    /*
+     * Prefer memberId because authUser.id is normally the user-account ID,
+     * not necessarily the member ID.
+     */
+    id:
+      authUser.memberId ??
+      jsonMember.id ??
+      authUser.id ??
+      null,
+
+    userId: authUser.id ?? null,
 
     name_kh:
       authUser.fullNameKm ||
@@ -92,15 +113,12 @@ export function combineAuthUserWithMember(authUser) {
       jsonMember.email ||
       "-",
 
-    role:
-      normalizedRole ||
-      jsonMember.role ||
-      "member",
+    role: normalizedRole,
 
     profile_photo:
-    authUser.profileImage ||
-    jsonMember.profile_photo ||
-    "/member.png",
+      authUser.profileImage ||
+      jsonMember.profile_photo ||
+      "/member.png",
 
     status:
       jsonMember.status ||
@@ -146,4 +164,47 @@ export function combineAuthUserWithMember(authUser) {
       jsonMember.educationHistory ||
       [],
   };
+}
+
+function readStoredAuthUser() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  for (const key of AUTH_STORAGE_KEYS) {
+    const storedValue = localStorage.getItem(key);
+
+    if (!storedValue) continue;
+
+    try {
+      const parsedValue = JSON.parse(storedValue);
+
+      /*
+       * Supports structures such as:
+       * { user: {...} }
+       * { data: {...} }
+       * or a direct user object.
+       */
+      return (
+        parsedValue?.user ||
+        parsedValue?.data?.user ||
+        parsedValue?.data ||
+        parsedValue
+      );
+    } catch (error) {
+      console.warn(
+        `Cannot parse auth user from localStorage key "${key}":`,
+        error,
+      );
+    }
+  }
+
+  return null;
+}
+
+export default function getCurrentMember(authUser = null) {
+  const resolvedAuthUser =
+    authUser || readStoredAuthUser();
+
+  return combineAuthUserWithMember(resolvedAuthUser);
 }

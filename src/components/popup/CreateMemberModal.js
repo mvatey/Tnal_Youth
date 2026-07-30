@@ -1,176 +1,504 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { HiSaveAs } from "react-icons/hi";
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
-import FormActionButton from "@/components/forms/FormActionButton";
-
-import memberOptions from "@/data/donation/memberOptions.json";
-import membersData from "@/data/members.json";
-
-const { genderOptions, statusOptions } = memberOptions;
-
-const ROLE_LABELS = {
-  branch_leader: "ប្រធានសាខា",
-  secretary: "លេខាធិការ",
-  member: "សមាជិក",
-};
-
-const LEVEL_OPTIONS = ["ក", "ខ", "គ", "ឃ", "ង"];
 
 const EMPTY_FORM = {
-  nameKh: "",
-  nameEn: "",
+  fullNameKm: "",
+  fullNameEn: "",
   gender: "",
-  status: "",
+  statusId: "",
   phone: "",
   email: "",
-  branch: "",
-  role: "",
-  dob: "",
-  joinedAt: "",
-  level: "",
+  branchId: "",
+  dateOfBirth: "",
+  joinedOn: "",
+  levelId: "",
 };
 
-function normalizeRole(role) {
-  const normalizedRole = String(role ?? "").trim();
+async function parseJsonSafely(response) {
+  const text = await response.text();
 
-  const roleMap = {
-    admin: "admin",
-    អ្នកគ្រប់គ្រង: "admin",
+  if (!text) return null;
 
-    branch_leader: "branch_leader",
-    ប្រធានសាខា: "branch_leader",
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      message: text,
+    };
+  }
+}
 
-    secretary: "secretary",
-    លេខាធិការ: "secretary",
+function normalizeOptions(
+  items,
+  {
+    valueKey = "id",
+    labelKey = "label_km",
+  } = {}
+) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
 
-    member: "member",
-    សមាជិក: "member",
-  };
+  return items.map((item) => {
+    if (
+      typeof item === "string" ||
+      typeof item === "number"
+    ) {
+      return {
+        label: String(item),
+        value: item,
+      };
+    }
 
-  return roleMap[normalizedRole] || normalizedRole;
+    return {
+      label:
+        item.label ??
+        item[labelKey] ??
+        item.labelKm ??
+        item.name_km ??
+        item.nameKm ??
+        String(item[valueKey] ?? ""),
+
+      value:
+        item.value ??
+        item[valueKey],
+    };
+  });
 }
 
 export default function CreateMemberModal({
   open,
   onClose,
   onSave,
+
   branches = [],
+  statuses = [],
+  levels = [],
+  genders = [
+    {
+      label: "ប្រុស",
+      value: "MALE",
+    },
+    {
+      label: "ស្រី",
+      value: "FEMALE",
+    },
+    {
+      label: "ផ្សេងៗ",
+      value: "OTHER",
+    },
+  ],
 }) {
-  const [mounted, setMounted] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [showValidationError, setShowValidationError] = useState(false);
+  const [mounted, setMounted] =
+    useState(false);
 
-  const roleOptions = useMemo(() => {
-    const roleMap = new Map();
+  const [form, setForm] =
+    useState(EMPTY_FORM);
 
-    membersData.forEach((member) => {
-      const role = normalizeRole(member.role);
+  const [submitting, setSubmitting] =
+    useState(false);
 
-      if (!role || !ROLE_LABELS[role]) {
-        return;
-      }
+  const [submitError, setSubmitError] =
+    useState("");
 
-      roleMap.set(role, {
-        label: ROLE_LABELS[role],
-        value: role,
-      });
-    });
-
-    return Array.from(roleMap.values());
-  }, []);
+  const [
+    createdResult,
+    setCreatedResult,
+  ] = useState(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (open) {
-      setForm(EMPTY_FORM);
-      setShowValidationError(false);
-    }
+    if (!open) return;
+
+    setForm(EMPTY_FORM);
+    setSubmitError("");
+    setCreatedResult(null);
   }, [open]);
 
   useEffect(() => {
     if (!open) return undefined;
 
-    const handleEscape = (event) => {
+    function handleEscape(event) {
       if (event.key === "Escape") {
         onClose?.();
       }
-    };
+    }
 
-    window.addEventListener("keydown", handleEscape);
+    window.addEventListener(
+      "keydown",
+      handleEscape
+    );
 
     return () => {
-      window.removeEventListener("keydown", handleEscape);
+      window.removeEventListener(
+        "keydown",
+        handleEscape
+      );
     };
   }, [open, onClose]);
 
   useEffect(() => {
-    if (!open) {
-      return undefined;
-    }
+    if (!open) return undefined;
 
-    const oldOverflow = document.body.style.overflow;
+    const previousOverflow =
+      document.body.style.overflow;
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow =
+      "hidden";
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.body.style.overflow =
+        previousOverflow;
     };
   }, [open]);
 
-  const update = (field) => (event) => {
-    const value = event.target.value;
+  const branchOptions =
+    normalizeOptions(branches, {
+      valueKey: "id",
+      labelKey: "name_km",
+    });
 
-    setForm((previousForm) => ({
-      ...previousForm,
-      [field]: value,
-    }));
+  const statusOptions =
+    normalizeOptions(statuses, {
+      valueKey: "id",
+      labelKey: "label_km",
+    });
 
-    setShowValidationError(false);
-  };
+  const levelOptions =
+    normalizeOptions(levels, {
+      valueKey: "id",
+      labelKey: "label_km",
+    });
 
-  const submit = (event) => {
+  const genderOptions =
+    normalizeOptions(genders, {
+      valueKey: "value",
+      labelKey: "label",
+    });
+
+  function update(field) {
+    return (event) => {
+      setForm((previous) => ({
+        ...previous,
+        [field]: event.target.value,
+      }));
+
+      setSubmitError("");
+    };
+  }
+
+  function validateForm() {
+    if (!form.fullNameKm.trim()) {
+      return "សូមបញ្ចូលឈ្មោះជាភាសាខ្មែរ";
+    }
+
+    if (!form.gender) {
+      return "សូមជ្រើសរើសភេទ";
+    }
+
+    if (!form.statusId) {
+      return "សូមជ្រើសរើសស្ថានភាព";
+    }
+
+    if (!form.phone.trim()) {
+      return "សូមបញ្ចូលលេខទូរស័ព្ទ";
+    }
+
+    if (!form.branchId) {
+      return "សូមជ្រើសរើសសាខា";
+    }
+
+    return null;
+  }
+
+  async function submit(event) {
     event.preventDefault();
-    onSave?.(form);
-  };
 
-  if (!open || !mounted) return null;
+    const validationError =
+      validateForm();
+
+    if (validationError) {
+      setSubmitError(validationError);
+      return;
+    }
+
+    const payload = {
+      full_name_km:
+        form.fullNameKm.trim(),
+
+      full_name_en:
+        form.fullNameEn.trim() || null,
+
+      branch_id:
+        Number(form.branchId),
+
+      status_id:
+        Number(form.statusId),
+
+      level_id:
+        form.levelId
+          ? Number(form.levelId)
+          : null,
+
+      religion_id: null,
+
+      nationality_id: null,
+
+      gender: form.gender,
+
+      date_of_birth:
+        form.dateOfBirth || null,
+
+      place_of_birth: null,
+
+      phone:
+        form.phone.trim(),
+
+      email:
+        form.email.trim() || null,
+
+      current_address: null,
+
+      permanent_address: null,
+
+      profile_photo_id: null,
+
+      cv_file_id: null,
+
+      joined_on:
+        form.joinedOn || null,
+
+      bio: null,
+    };
+
+    try {
+      setSubmitting(true);
+      setSubmitError("");
+      setCreatedResult(null);
+
+      const createResponse =
+        await fetch("/api/members", {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        });
+
+      const createResult =
+        await parseJsonSafely(
+          createResponse
+        );
+
+      if (!createResponse.ok) {
+        throw new Error(
+          createResult?.message ??
+            createResult?.error ??
+            "មិនអាចបង្កើតសមាជិកបានទេ"
+        );
+      }
+
+      const createdMember =
+        createResult?.data ??
+        createResult;
+
+      const memberId =
+        createdMember?.id;
+
+      if (!memberId) {
+        throw new Error(
+          "Member was created, but the API did not return its ID."
+        );
+      }
+
+      const accountResponse =
+        await fetch(
+          `/api/members/${memberId}/account/status`,
+          {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+          }
+        );
+
+      const accountResult =
+        await parseJsonSafely(
+          accountResponse
+        );
+
+      if (!accountResponse.ok) {
+        throw new Error(
+          accountResult?.message ??
+            "Member created, but account status could not be loaded."
+        );
+      }
+
+      setCreatedResult({
+        member: createdMember,
+        account: accountResult,
+      });
+
+      onSave?.({
+        member: createdMember,
+        account: accountResult,
+      });
+
+      /*
+       * Keep modal open while testing activation.
+       * Later, you can close it here:
+       *
+       * onClose?.();
+       */
+    } catch (error) {
+      console.error(
+        "Create member error:",
+        error
+      );
+
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "មិនអាចបង្កើតសមាជិកបានទេ"
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!open || !mounted) {
+    return null;
+  }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 bg-black/40"
+      onClick={onClose}
+    >
       <div className="fixed bottom-0 left-0 right-0 top-[72px] flex items-center justify-center p-4 lg:left-[365px] lg:p-6">
-        <div className="flex max-h-[calc(100vh-120px)] w-full max-w-[640px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+        <div
+          className="flex max-h-[calc(100vh-120px)] w-full max-w-[640px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+          onClick={(event) =>
+            event.stopPropagation()
+          }
+        >
           <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-6 py-5">
-            <h2 className="text-lg font-bold text-primary">បង្កើតសមាជិកថ្មី</h2>
+            <h2 className="text-lg font-bold text-primary">
+              បង្កើតសមាជិកថ្មី
+            </h2>
 
-            <button type="button" onClick={onClose} className="rounded-full p-1.5 text-gray-700 transition hover:bg-gray-100" aria-label="បិទផ្ទាំង">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full p-1.5 text-gray-700 transition hover:bg-gray-100"
+              aria-label="បិទផ្ទាំង"
+            >
               <X size={20} />
             </button>
           </div>
 
-          <form id="create-member-form" onSubmit={submit} className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          <form
+            id="create-member-form"
+            onSubmit={submit}
+            className="min-h-0 flex-1 overflow-y-auto px-6 py-5"
+          >
+            {submitError && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {submitError}
+              </div>
+            )}
+
+            {createdResult && (
+              <div className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-4">
+                <p className="font-semibold text-green-700">
+                  បង្កើតសមាជិក និងគណនីបានជោគជ័យ
+                </p>
+
+                <div className="mt-3 space-y-1 text-sm text-gray-700">
+                  <p>
+                    Member ID:{" "}
+                    {
+                      createdResult.account
+                        ?.member_id
+                    }
+                  </p>
+
+                  <p>
+                    User ID:{" "}
+                    {
+                      createdResult.account
+                        ?.user_id
+                    }
+                  </p>
+
+                  <p>
+                    Has account:{" "}
+                    {createdResult.account
+                      ?.has_account
+                      ? "Yes"
+                      : "No"}
+                  </p>
+
+                  <p>
+                    Activated:{" "}
+                    {createdResult.account
+                      ?.is_activated
+                      ? "Yes"
+                      : "No"}
+                  </p>
+
+                  <p>
+                    Status:{" "}
+                    {createdResult.account
+                      ?.status ?? "-"}
+                  </p>
+
+                  <p>
+                    Email:{" "}
+                    {createdResult.account
+                      ?.email ?? "-"}
+                  </p>
+
+                  <p>
+                    Phone:{" "}
+                    {createdResult.account
+                      ?.phone ?? "-"}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
               <BoxFill
                 label="ឈ្មោះជាភាសាខ្មែរ"
                 placeholder="បញ្ចូលឈ្មោះ"
-                value={form.nameKh}
-                onChange={update("nameKh")}
+                value={form.fullNameKm}
+                onChange={update(
+                  "fullNameKm"
+                )}
               />
 
               <BoxFill
                 label="ឈ្មោះជាអក្សរឡាតាំង"
                 placeholder="បញ្ចូលឈ្មោះ"
-                value={form.nameEn}
-                onChange={update("nameEn")}
+                value={form.fullNameEn}
+                onChange={update(
+                  "fullNameEn"
+                )}
               />
 
               <FormSelect
@@ -187,8 +515,10 @@ export default function CreateMemberModal({
                 type="select"
                 placeholder="ជ្រើសរើសស្ថានភាព"
                 options={statusOptions}
-                value={form.status}
-                onChange={update("status")}
+                value={form.statusId}
+                onChange={update(
+                  "statusId"
+                )}
               />
 
               <BoxFill
@@ -210,59 +540,65 @@ export default function CreateMemberModal({
                 label="សាខា"
                 type="select"
                 placeholder="ជ្រើសរើសសាខា"
-                options={branches.map((branch) => ({
-                  label: branch.label ?? branch,
-                  value: branch.value ?? branch,
-                }))}
-                value={form.branch}
-                onChange={update("branch")}
+                options={branchOptions}
+                value={form.branchId}
+                onChange={update(
+                  "branchId"
+                )}
               />
 
               <FormSelect
-                label="តួនាទី"
+                label="កម្រិត"
                 type="select"
-                placeholder="ជ្រើសរើសតួនាទី"
-                options={roleOptions}
-                value={form.role}
-                onChange={update("role")}
+                placeholder="ជ្រើសរើសកម្រិត"
+                options={levelOptions}
+                value={form.levelId}
+                onChange={update(
+                  "levelId"
+                )}
               />
 
               <BoxFill
                 label="ថ្ងៃខែឆ្នាំកំណើត"
                 type="date"
-                value={form.dob}
-                onChange={update("dob")}
+                value={form.dateOfBirth}
+                onChange={update(
+                  "dateOfBirth"
+                )}
               />
 
               <BoxFill
                 label="ថ្ងៃខែឆ្នាំចូលរួម"
                 type="date"
-                value={form.joinedAt}
-                onChange={update("joinedAt")}
-              />
-
-              <FormSelect
-                label="កាំ"
-                type="select"
-                placeholder="ជ្រើសរើសកាំ"
-                options={LEVEL_OPTIONS.map((level) => ({
-                  label: `កាំ ${level}`,
-                  value: level,
-                }))}
-                value={form.level}
-                onChange={update("level")}
+                value={form.joinedOn}
+                onChange={update(
+                  "joinedOn"
+                )}
               />
             </div>
           </form>
 
           <div className="flex shrink-0 items-center gap-3 border-t border-gray-100 bg-white px-6 py-4">
-            <button type="button" onClick={onClose} className="rounded-full bg-gray-100 px-6 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-200">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={submitting}
+              className="rounded-full bg-gray-100 px-6 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-200 disabled:opacity-60"
+            >
               បោះបង់
             </button>
 
-            <button type="submit" form="create-member-form" className="flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition hover:opacity-90">
+            <button
+              type="submit"
+              form="create-member-form"
+              disabled={submitting}
+              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
               <HiSaveAs size={17} />
-              រក្សាទុក
+
+              {submitting
+                ? "កំពុងរក្សាទុក..."
+                : "រក្សាទុក"}
             </button>
           </div>
         </div>
