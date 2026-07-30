@@ -2,12 +2,12 @@
 
 import { useMemo, useState } from "react";
 
-import DataTable from "@/components/table/DataTable.js";
+import DataTable from "@/components/table/DataTable";
 
-import donationData from "@/data/donation.json";
+import sponsorData from "@/data/sponsor.json";
 
-export default function DonationPage() {
-  const [donations] = useState(donationData);
+export default function SponsorDonationPage() {
+  const [sponsors] = useState(sponsorData);
 
   const [query, setQuery] = useState("");
 
@@ -16,46 +16,23 @@ export default function DonationPage() {
   const paymentMethods = useMemo(() => {
     return [
       ...new Set(
-        donations
+        sponsors
           .map((item) => item.paymentMethod)
           .filter(Boolean),
       ),
     ];
-  }, [donations]);
+  }, [sponsors]);
 
   const filteredData = useMemo(() => {
-    const normalizedQuery = query
-      .trim()
-      .toLowerCase();
+    const search = query.trim().toLowerCase();
 
-    return donations.filter((item) => {
-      const month = String(
-        item.month ?? "",
-      ).toLowerCase();
-
-      const year = String(
-        item.year ?? "",
-      ).toLowerCase();
-
-      const amount = String(
-        item.amount ?? "",
-      ).toLowerCase();
-
-      const recordedBy = String(
-        item.recordedBy ?? "",
-      ).toLowerCase();
-
-      const paymentMethod = String(
-        item.paymentMethod ?? "",
-      ).toLowerCase();
-
+    return sponsors.filter((item) => {
       const matchesQuery =
-        !normalizedQuery ||
-        month.includes(normalizedQuery) ||
-        year.includes(normalizedQuery) ||
-        amount.includes(normalizedQuery) ||
-        recordedBy.includes(normalizedQuery) ||
-        paymentMethod.includes(normalizedQuery);
+        !search ||
+        item.amount?.toLowerCase().includes(search) ||
+        item.recordedBy?.toLowerCase().includes(search) ||
+        item.paymentMethod?.toLowerCase().includes(search) ||
+        item.date?.toLowerCase().includes(search);
 
       const matchesMethod =
         !methodFilter ||
@@ -63,50 +40,40 @@ export default function DonationPage() {
 
       return matchesQuery && matchesMethod;
     });
-  }, [
-    donations,
-    query,
-    methodFilter,
-  ]);
+  }, [sponsors, query, methodFilter]);
 
   const columns = [
     {
       header: "ល.រ",
-      width: "w-[7%]",
+      width: "w-[6%]",
       align: "center",
       render: (_, index) => index + 1,
     },
-    {
-      header: "ប្រចាំខែ",
-      width: "w-[18%]",
-      align: "left",
-      render: (item) => (
-        <span>
-          {item.month}, {item.year}
-        </span>
-      ),
-    },
+
     {
       header: "ចំនួន",
-      width: "w-[16%]",
+      width: "w-[18%]",
       align: "left",
       accessor: "amount",
     },
+
     {
       header: "ថ្ងៃបរិច្ឆេទ",
-      width: "w-[19%]",
+      width: "w-[22%]",
       align: "left",
       accessor: "date",
     },
+
     {
       header: "កត់ត្រាដោយ",
-      width: "w-[20%]",
+      width: "w-[24%]",
       align: "left",
       accessor: "recordedBy",
     },
+
     {
       header: "វិធីសាស្រ្តទូទាត់",
-      width: "w-[20%]",
+      width: "w-[30%]",
       align: "left",
       accessor: "paymentMethod",
     },
@@ -117,12 +84,10 @@ export default function DonationPage() {
       name: "paymentMethod",
       value: methodFilter,
       onChange: setMethodFilter,
-      options: paymentMethods.map(
-        (method) => ({
-          label: method,
-          value: method,
-        }),
-      ),
+      options: paymentMethods.map((method) => ({
+        label: method,
+        value: method,
+      })),
       placeholder: "វិធីសាស្រ្តទូទាត់",
     },
   ];
@@ -130,7 +95,7 @@ export default function DonationPage() {
   return (
     <div className="space-y-3">
       <h2 className="text-lg font-semibold text-text-primary">
-        បញ្ជីការធ្វើវិភាគទាន
+        បញ្ជីវិភាគទានអ្នកឧបត្ថម្ភ
       </h2>
 
       <DataTable
@@ -141,6 +106,7 @@ export default function DonationPage() {
         onSearchChange={setQuery}
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
+        downloadFilename="sponsor-donation.csv"
       />
     </div>
   );

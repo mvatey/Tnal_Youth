@@ -1,17 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { HiSaveAs } from "react-icons/hi";
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
+import FormActionButton from "@/components/forms/FormActionButton";
+
 import memberOptions from "@/data/donation/memberOptions.json";
+import membersData from "@/data/members.json";
 
-const { genderOptions, roleOptions, statusOptions } = memberOptions;
+const { genderOptions, statusOptions } = memberOptions;
 
-const LEVEL_OPTIONS = ["1", "2", "3", "4", "5"];
+const ROLE_LABELS = {
+  branch_leader: "ប្រធានសាខា",
+  secretary: "លេខាធិការ",
+  member: "សមាជិក",
+};
+
+const LEVEL_OPTIONS = ["ក", "ខ", "គ", "ឃ", "ង"];
 
 const EMPTY_FORM = {
   nameKh: "",
@@ -27,6 +36,26 @@ const EMPTY_FORM = {
   level: "",
 };
 
+function normalizeRole(role) {
+  const normalizedRole = String(role ?? "").trim();
+
+  const roleMap = {
+    admin: "admin",
+    អ្នកគ្រប់គ្រង: "admin",
+
+    branch_leader: "branch_leader",
+    ប្រធានសាខា: "branch_leader",
+
+    secretary: "secretary",
+    លេខាធិការ: "secretary",
+
+    member: "member",
+    សមាជិក: "member",
+  };
+
+  return roleMap[normalizedRole] || normalizedRole;
+}
+
 export default function CreateMemberModal({
   open,
   onClose,
@@ -35,6 +64,26 @@ export default function CreateMemberModal({
 }) {
   const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [showValidationError, setShowValidationError] = useState(false);
+
+  const roleOptions = useMemo(() => {
+    const roleMap = new Map();
+
+    membersData.forEach((member) => {
+      const role = normalizeRole(member.role);
+
+      if (!role || !ROLE_LABELS[role]) {
+        return;
+      }
+
+      roleMap.set(role, {
+        label: ROLE_LABELS[role],
+        value: role,
+      });
+    });
+
+    return Array.from(roleMap.values());
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -43,6 +92,7 @@ export default function CreateMemberModal({
   useEffect(() => {
     if (open) {
       setForm(EMPTY_FORM);
+      setShowValidationError(false);
     }
   }, [open]);
 
@@ -63,7 +113,11 @@ export default function CreateMemberModal({
   }, [open, onClose]);
 
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open) {
+      return undefined;
+    }
+
+    const oldOverflow = document.body.style.overflow;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -74,10 +128,14 @@ export default function CreateMemberModal({
   }, [open]);
 
   const update = (field) => (event) => {
+    const value = event.target.value;
+
     setForm((previousForm) => ({
       ...previousForm,
-      [field]: event.target.value,
+      [field]: value,
     }));
+
+    setShowValidationError(false);
   };
 
   const submit = (event) => {

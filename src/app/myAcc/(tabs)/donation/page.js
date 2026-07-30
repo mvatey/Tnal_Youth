@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
 
@@ -10,8 +9,12 @@ import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal.js";
 
 import donationData from "@/data/donation.json";
 
+<<<<<<< HEAD
 export default function DonationPage() {
   const { member, loading, error } = useCurrentMember();
+=======
+import DataTable from "@/components/table/DataTable";
+>>>>>>> origin/feature/member
 
   const [donations, setDonations] = useState(donationData);
   const [query, setQuery] = useState("");
@@ -19,7 +22,11 @@ export default function DonationPage() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [selectedDonation, setSelectedDonation] = useState(null);
 
+<<<<<<< HEAD
   const memberDonations = useMemo(() => {
+=======
+  const donations = useMemo(() => {
+>>>>>>> origin/feature/member
     if (!member) return [];
 
     return donations.filter((item) => {
@@ -35,10 +42,20 @@ export default function DonationPage() {
     });
   }, [donations, member]);
 
+<<<<<<< HEAD
   const paymentMethods = useMemo(() => {
     return [
       ...new Set(
         memberDonations
+=======
+  const [query, setQuery] = useState("");
+  const [methodFilter, setMethodFilter] = useState("");
+
+  const paymentMethods = useMemo(
+    () => [
+      ...new Set(
+        donations
+>>>>>>> origin/feature/member
           .map((item) => item.paymentMethod)
           .filter(Boolean),
       ),
@@ -89,7 +106,7 @@ export default function DonationPage() {
       header: "ល.រ",
       width: "w-[6%]",
       align: "center",
-      render: (_, index) => index,
+      render: (_, index) => index + 1,
     },
     {
       header: "ប្រចាំខែ",
@@ -125,6 +142,7 @@ export default function DonationPage() {
       align: "left",
       accessor: "paymentMethod",
     },
+<<<<<<< HEAD
     {
       header: "សកម្មភាព",
       width: "w-[10%]",
@@ -143,6 +161,8 @@ export default function DonationPage() {
         </button>
       ),
     },
+=======
+>>>>>>> origin/feature/member
   ];
 
   const filters = [
@@ -192,13 +212,29 @@ export default function DonationPage() {
       <DataTable
         data={filteredData}
         columns={columns}
+<<<<<<< HEAD
         filters={filters}
+=======
+        filters={[
+          {
+            name: "paymentMethod",
+            value: methodFilter,
+            onChange: setMethodFilter,
+            placeholder: "វិធីសាស្ត្រទូទាត់",
+            options: paymentMethods.map((method) => ({
+              label: method,
+              value: method,
+            })),
+          },
+        ]}
+>>>>>>> origin/feature/member
         searchQuery={query}
         onSearchChange={setQuery}
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
         downloadFilename={`donations-${member.id}.csv`}
       />
+<<<<<<< HEAD
 
       <ConfirmDeleteModal
         open={deleteModal}
@@ -216,6 +252,8 @@ export default function DonationPage() {
         cancelLabel="បោះបង់"
         confirmLabel="លុប"
       />
+=======
+>>>>>>> origin/feature/member
     </div>
   );
 }

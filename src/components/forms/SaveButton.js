@@ -22,7 +22,7 @@ export default function SaveButton({
   return (
     <button
       onClick={handleClick}
-      className="inline-flex h-10 items-center gap-2 rounded-lg bg-secondary px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-secondary-hover"
+      className="inline-flex  h-[34px] items-center gap-2 rounded-lg bg-secondary px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-secondary-hover"
     >
       <HiSaveAs size={17} />
       {children}

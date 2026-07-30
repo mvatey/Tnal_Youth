@@ -1,66 +1,67 @@
 "use client";
 
-import { Calendar } from "lucide-react";
 import { useRef } from "react";
+import { Calendar } from "lucide-react";
+
 import calendarData from "@/data/calendar.json";
 
+function getTodayLocalDate() {
+  const now = new Date();
+
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
 
 function convertKhmerDateToInputDate(date) {
-  if (!date) return "";
+  if (!date) {
+    return "";
+  }
 
-
-  // already yyyy-mm-dd
+  // Already formatted as yyyy-mm-dd
   if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return date;
   }
 
+  const parts = date.trim().split(/\s+/);
 
-  const parts = date.split(" ");
-
-
-  if (parts.length < 3) return "";
-
+  if (parts.length < 3) {
+    return "";
+  }
 
   const day = parts[0];
-
   const monthKh = parts[1].replace(",", "");
-
   const year = parts[2];
-
 
   const month = calendarData.months[monthKh];
 
+  if (!month) {
+    return "";
+  }
 
-  if (!month) return "";
-
-
-  return `${year}-${month}-${day.padStart(2, "0")}`;
+  return `${year}-${month}-${String(day).padStart(2, "0")}`;
 }
 
-
-
-
 function formatKhmerDisplayDate(date) {
-  if (!date) return "";
-
+  if (!date) {
+    return "";
+  }
 
   const [year, month, day] = date.split("-");
 
-
-  if (!year || !month || !day) return "";
-
+  if (!year || !month || !day) {
+    return "";
+  }
 
   const monthName =
     Object.keys(calendarData.months).find(
-      (key) => calendarData.months[key] === month
+      (key) => calendarData.months[key] === month,
     ) || "";
-
 
   return `${Number(day)} ${monthName}, ${year}`;
 }
-
-
-
 
 export default function FormDate({
   label,
@@ -68,47 +69,78 @@ export default function FormDate({
   value,
   onChange,
   required = false,
+  maxDate = getTodayLocalDate(),
+  minDate,
+  disabled = false,
 }) {
-
   const inputRef = useRef(null);
 
-
-  const formattedValue = convertKhmerDateToInputDate(value);
-
-
+  const formattedValue =
+    convertKhmerDateToInputDate(value);
 
   const openPicker = () => {
+    if (disabled) {
+      return;
+    }
 
     if (inputRef.current?.showPicker) {
       inputRef.current.showPicker();
+      return;
     }
 
+    inputRef.current?.click();
   };
 
+  const handleDateChange = (event) => {
+    const selectedDate = event.target.value;
 
+    if (
+      maxDate &&
+      selectedDate &&
+      selectedDate > maxDate
+    ) {
+      return;
+    }
+
+    onChange?.(event);
+  };
 
   return (
     <div>
-
       {label && (
-        <label className="mb-2 block text-sm font-semibold text-text-primary">
+        <label
+          htmlFor={`${name}-display`}
+          className="mb-2 block text-sm font-semibold text-text-primary"
+        >
           {label}
+
+          {required && (
+            <span className="ml-1 text-red-500">
+              *
+            </span>
+          )}
         </label>
       )}
 
-
-
       <div
-        className="relative cursor-pointer"
+        className={`
+          relative
+          ${disabled
+            ? "cursor-not-allowed opacity-60"
+            : "cursor-pointer"}
+        `}
         onClick={openPicker}
       >
+        {/* Visible display input */}
 
-
-        {/* Display */}
         <input
+          id={`${name}-display`}
           type="text"
           readOnly
-          value={formatKhmerDisplayDate(formattedValue)}
+          disabled={disabled}
+          value={formatKhmerDisplayDate(
+            formattedValue,
+          )}
           placeholder="ថ្ងៃ/ខែ/ឆ្នាំ"
           className="
             h-11
@@ -117,33 +149,42 @@ export default function FormDate({
             rounded-lg
             border
             border-gray-200
-            px-4
+            bg-white
+            px-3
             pr-10
             text-sm
             text-gray-600
             outline-none
+            transition
+            placeholder:text-gray-400
             focus:border-primary
+            disabled:cursor-not-allowed
           "
         />
 
+        {/* Hidden native date picker */}
 
-
-        {/* Real picker */}
         <input
           ref={inputRef}
           type="date"
           name={name}
           value={formattedValue}
-          onChange={onChange}
+          onChange={handleDateChange}
           required={required}
+          max={maxDate}
+          min={minDate}
+          disabled={disabled}
+          tabIndex={-1}
           className="
-            absolute
-            opacity-0
             pointer-events-none
+            absolute
+            inset-0
+            h-full
+            w-full
+            opacity-0
           "
+          aria-hidden="true"
         />
-
-
 
         <Calendar
           size={18}
@@ -156,9 +197,7 @@ export default function FormDate({
             text-gray-400
           "
         />
-
       </div>
-
     </div>
   );
 }
