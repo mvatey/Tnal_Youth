@@ -23,7 +23,7 @@ export default function DocumentTabs() {
   ];
 
   return (
-    <div className="flex shrink-0 gap-5">
+    <div className="grid w-full shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5 lg:max-w-[540px]">
 
       {tabs.map((tab) => (
 
@@ -33,7 +33,7 @@ export default function DocumentTabs() {
 
           className={`
             h-[50px]
-            w-[260px]
+            w-full
             rounded-md
             text-sm
             font-medium

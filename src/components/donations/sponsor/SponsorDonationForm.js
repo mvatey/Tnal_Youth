@@ -719,18 +719,18 @@ export default function SponsorDonationForm({ initialData = null }) {
         </div>
       )}
 
-      <section className="min-h-[650px] rounded-md border border-border bg-[#fbfcfe] px-7 py-4 shadow-sm">
+      <section className="min-h-[650px] rounded-md border border-border bg-[#fbfcfe] px-3 py-4 shadow-sm sm:px-5 lg:px-7">
         <h1 className="mb-7 text-base font-semibold text-secondary">
           ការកត់ត្រាថវិការឧបត្ថម្ភ
         </h1>
 
-        <div className="flex w-full flex-nowrap justify-between gap-10 overflow-x-auto">
-          <div className="w-[466px] shrink-0 space-y-4 focus:placeholder:text-transparent">
+        <div className="grid w-full grid-cols-1 gap-8 xl:grid-cols-2 xl:gap-10">
+          <div className="min-w-0 space-y-4 focus:placeholder:text-transparent">
             <h2 className="text-[15px] font-semibold text-secondary">
               ១. ព័ត៌មានអ្នកឧបត្ថម្ភ
             </h2>
 
-            <fieldset className="flex gap-8 text-[13px] font-medium text-text-secondary">
+            <fieldset className="flex flex-wrap gap-4 text-[13px] font-medium text-text-secondary sm:gap-8">
   {sponsorTypes.map((option) => (
     <label
       key={option.value}
@@ -797,14 +797,14 @@ export default function SponsorDonationForm({ initialData = null }) {
             />
           </div>
 
-          <div className="w-[455px] shrink-0 space-y-4">
+          <div className="min-w-0 space-y-4">
             <h2 className="text-[15px] font-semibold text-secondary">
               ២. ព័ត៌មានវិភាគទានឧបត្ថម្ភ
             </h2>
 
             <div className="h-5" aria-hidden="true" />
 
-            <div className="flex items-end gap-4">
+            <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
               <DateField
                 label="កាលបរិច្ឆេទនៃការឧបត្ថម្ភ"
                 value={form.date}
@@ -819,7 +819,7 @@ export default function SponsorDonationForm({ initialData = null }) {
               />
             </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
   <TextField
     label="ចំនួនទឹកប្រាក់ (រៀល)"
     value={form.amountRiel}
@@ -859,7 +859,7 @@ export default function SponsorDonationForm({ initialData = null }) {
   />
 </div>
 
-            <div className="flex items-end gap-4">
+            <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
                 <fieldset className="flex h-[34px] items-center text-[13px] font-medium text-text-secondary">
                   <label className="inline-flex items-center gap-2">
                     <input
@@ -890,7 +890,7 @@ export default function SponsorDonationForm({ initialData = null }) {
                 />
               </div>
 
-            <div className="flex items-end gap-4">
+            <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
               <SelectField
                 label="សាខា(Optional)"
                 value={form.branch}
@@ -920,18 +920,18 @@ export default function SponsorDonationForm({ initialData = null }) {
           </div>
         </div>
 
-        <div className="mt-28 flex items-center justify-between gap-4">
+        <div className="mt-10 flex flex-col-reverse items-stretch justify-between gap-3 sm:mt-16 sm:flex-row sm:items-center lg:mt-28">
           <button
             type="button"
             onClick={() => router.push(listPath)}
-            className="inline-flex h-[34px] w-[196px] items-center justify-center rounded-lg border border-[#CBD0D8] bg-[#F3F5FC] px-3 text-[14px] font-semibold text-text-primary shadow-sm transition hover:bg-bg-page-gray"
+            className="inline-flex h-[34px] w-full items-center justify-center rounded-lg border border-[#CBD0D8] bg-[#F3F5FC] px-3 text-[14px] font-semibold text-text-primary shadow-sm transition hover:bg-bg-page-gray sm:w-[196px]"
           >
             បោះបង់
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="inline-flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary px-3 text-[14px] font-semibold text-white shadow-sm transition hover:bg-secondary-hover"
+            className="inline-flex h-[34px] w-full items-center justify-center gap-2 rounded-lg bg-secondary px-3 text-[14px] font-semibold text-white shadow-sm transition hover:bg-secondary-hover sm:w-[196px]"
           >
             <ImportIcon size={16} />
             រក្សាទុក

@@ -111,6 +111,7 @@ export default function KhmerDateField({
           value={formatKhmerDisplayDate(formattedValue)}
           placeholder="ថ្ងៃ/ខែ/ឆ្នាំ"
           className="
+            h-[34px]
             py-2
             w-full
             cursor-pointer

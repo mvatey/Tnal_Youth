@@ -47,9 +47,9 @@ export default function MemberDetailNav(){
 
   return (
 
-    <div className="rounded-lg bg-white shadow-sm overflow-hidden">
+    <div className="overflow-x-auto rounded-lg bg-white shadow-sm">
 
-      <div className="grid grid-cols-6">
+      <div className="grid min-w-[820px] grid-cols-6">
 
 
         {

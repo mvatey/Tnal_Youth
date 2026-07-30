@@ -134,7 +134,7 @@ export default function MemberDocumentPage() {
     <button
       type="button"
       onClick={() => router.push("/document/create")}
-      className="flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+      className=" flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
     >
       <RiAddCircleLine size={18} />
       បង្កើតឯកសារ

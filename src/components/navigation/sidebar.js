@@ -129,7 +129,7 @@ export default function Sidebar() {
 
   if (authLoading) {
     return (
-      <aside className="flex h-screen w-72 shrink-0 items-center justify-center bg-primary-sidebar text-white">
+      <aside className="flex h-screen w-16 shrink-0 items-center justify-center bg-primary-sidebar text-white sm:w-20 lg:w-72">
         <span className="text-sm text-white/60">
           កំពុងដំណើរការ...
         </span>
@@ -142,10 +142,10 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="flex h-screen w-72 shrink-0 flex-col justify-between bg-primary-sidebar text-white">
+    <aside className="flex h-screen w-16 shrink-0 flex-col justify-between bg-primary-sidebar text-white sm:w-20 lg:w-72">
       <div>
         {/* Logo */}
-        <div className="flex flex-col items-center px-6 pb-5 pt-6 text-center">
+        <div className="flex flex-col items-center px-2 pb-4 pt-4 text-center lg:px-6 lg:pb-5 lg:pt-6">
           <div className="mb-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white">
             <Image
               src="/logo.png"
@@ -157,17 +157,17 @@ export default function Sidebar() {
             />
           </div>
 
-          <h3 className="text-sm font-bold leading-snug">
+          <h3 className="hidden text-sm font-bold leading-snug lg:block">
             សមាគមថ្នាលយុវជនកម្ពុជា
           </h3>
 
-          <p className="mt-1 text-xs text-white/60">
+          <p className="mt-1 hidden text-xs text-white/60 lg:block">
             ការគ្រប់គ្រងប្រព័ន្ធយុវជន
           </p>
         </div>
 
         {/* Branch */}
-        <div className="mb-2 px-3">
+        <div className="mb-2 hidden px-3 lg:block">
           <div className="relative">
             <FaUniversity
               size={16}
@@ -224,7 +224,7 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="space-y-1 px-3">
+        <nav className="space-y-1 px-2 lg:px-3">
           {visibleItems.map((item) => {
             const Icon =
               ICON_MAP[item.icon];
@@ -245,7 +245,7 @@ export default function Sidebar() {
                   setProfileOpen(false);
                   router.push(item.href);
                 }}
-                className={`flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition ${
+                className={`flex items-center justify-center gap-3 rounded-lg px-2 py-2.5 text-sm font-medium transition lg:justify-start lg:px-4 ${
                   active
                     ? "bg-white/15 text-white"
                     : "text-white/70 hover:bg-white/5 hover:text-white"
@@ -255,7 +255,7 @@ export default function Sidebar() {
                   <Icon size={16} />
                 )}
 
-                <span>{item.label}</span>
+                <span className="hidden lg:inline">{item.label}</span>
               </Link>
             );
           })}
@@ -265,10 +265,10 @@ export default function Sidebar() {
       {/* Profile */}
       <div
         ref={profileRef}
-        className="relative border-t border-white/10 px-4 py-4"
+        className="relative border-t border-white/10 px-2 py-3 lg:px-4 lg:py-4"
       >
         {profileOpen && (
-          <div className="absolute bottom-full left-4 mb-2 w-[calc(100%-2rem)] overflow-hidden rounded-xl border border-white/10 bg-primary-sidebar py-1.5 shadow-xl">
+          <div className="absolute bottom-full left-2 z-50 mb-2 w-48 overflow-hidden rounded-xl border border-white/10 bg-primary-sidebar py-1.5 shadow-xl lg:left-4 lg:w-[calc(100%-2rem)]">
             <button
               type="button"
               onClick={handleLogout}
@@ -288,7 +288,7 @@ export default function Sidebar() {
             )
           }
           aria-expanded={profileOpen}
-          className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 transition hover:bg-white/10"
+          className="flex w-full items-center justify-center gap-2 rounded-lg px-1 py-2 transition hover:bg-white/10 lg:justify-between lg:px-2"
         >
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10">
@@ -301,7 +301,7 @@ export default function Sidebar() {
               />
             </div>
 
-            <div className="min-w-0 text-left">
+            <div className="hidden min-w-0 text-left lg:block">
               <div className="truncate text-sm font-medium">
                 {userName}
               </div>
@@ -314,7 +314,7 @@ export default function Sidebar() {
 
           <FaChevronDown
             size={12}
-            className={`shrink-0 text-white/50 transition-transform duration-200 ${
+            className={`hidden shrink-0 text-white/50 transition-transform duration-200 lg:block ${
               profileOpen
                 ? "rotate-180"
                 : ""

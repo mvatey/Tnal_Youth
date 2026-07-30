@@ -21,7 +21,7 @@ export default function DonationLayout({ children }) {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <Topbar title={PAGE_TITLE} icon="donation" />
 
-        <main className="donation-ui min-h-0 flex-1 overflow-y-auto p-6">
+        <main className="donation-ui min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
           {children}
         </main>
       </div>

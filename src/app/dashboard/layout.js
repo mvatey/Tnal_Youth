@@ -19,7 +19,7 @@ export default function DashboardLayout({ children }) {
         {/* The only scrollable element on the page. flex-1 lets it fill
             the remaining height below Topbar; overflow-y-auto gives it
             its own scrollbar instead of scrolling the whole window. */}
-        <main className="flex-1 min-h-0 overflow-y-auto p-5 bg-bg-page-gray no-scrollbar">
+        <main className="no-scrollbar min-h-0 flex-1 overflow-y-auto bg-bg-page-gray p-3 sm:p-4 lg:p-5">
           {children}
         </main>
       </div>

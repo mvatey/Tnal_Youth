@@ -30,8 +30,8 @@ export default function MyAccountTabNav() {
   const pathname = usePathname();
 
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="grid grid-cols-5">
+    <div className="overflow-x-auto rounded-lg bg-white shadow-sm">
+      <div className="grid min-w-[720px] grid-cols-5">
         {TABS.map((tab) => {
           const active =
             pathname === "/myAcc"

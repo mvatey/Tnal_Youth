@@ -15,14 +15,14 @@ export default function AddDonationFilters({
   onSearchChange,
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end gap-4">
+    <div className="mb-6 grid grid-cols-1 items-end gap-4 sm:grid-cols-2 xl:flex xl:flex-wrap [&>*]:w-full xl:[&>*]:w-auto">
       <DonationFilterSelect
         label="សាខា"
         value={selectedBranch}
         onChange={onBranchChange}
         options={branches}
         allLabel="ជ្រើសរើសសាខា"
-        className="w-[158px]"
+        className="w-full xl:w-[158px]"
         required
       />
       <DonationFilterSelect
@@ -31,7 +31,7 @@ export default function AddDonationFilters({
         onChange={onMonthChange}
         options={months}
         allLabel="ជ្រើសរើសខែ"
-        className="w-[160px]"
+        className="w-full xl:w-[160px]"
         required
       />
       <DonationFilterSelect
@@ -40,7 +40,7 @@ export default function AddDonationFilters({
         onChange={onYearChange}
         options={years}
         allLabel="ជ្រើសរើសឆ្នាំ"
-        className="w-[160px]"
+        className="w-full xl:w-[160px]"
         required
       />
       <DonationSearchInput value={searchQuery} onChange={onSearchChange} showLabel={false} />

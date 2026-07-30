@@ -30,6 +30,7 @@ export default function AddDocumentForm({ form, setForm, onSave, onClose }) {
         text-lg
         font-bold
         text-primary
+
         "
       >
         បញ្ចូលឯកសារ
@@ -38,7 +39,7 @@ export default function AddDocumentForm({ form, setForm, onSave, onClose }) {
       <div className="space-y-4">
         {/* Title + Branch */}
 
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
           <div>
             <label
               className="
@@ -56,7 +57,7 @@ export default function AddDocumentForm({ form, setForm, onSave, onClose }) {
               onChange={updateField("title")}
               placeholder="បញ្ចូលឈ្មោះឯកសារ"
               className="
-              h-11
+              h-[34px]
               w-full
               rounded-lg
               border
@@ -171,16 +172,21 @@ export default function AddDocumentForm({ form, setForm, onSave, onClose }) {
         className="
   mt-5
   flex
+  flex-col-reverse
   justify-end
-  gap-4
+  gap-3
+  sm:flex-row
+  sm:gap-4
+
   "
       >
         <button
           type="button"
           onClick={onClose}
           className="
-    h-10
-    w-[120px]
+    h-[34px]
+    w-full
+    sm:w-[120px]
     rounded-lg
     border
     border-gray-200

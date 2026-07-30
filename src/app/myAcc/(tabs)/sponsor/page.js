@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 
-import DataTable from "@/components/table/DataTable";
-import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal";
+import DataTable from "@/components/tables/DataTable";
+import ConfirmDeleteModal from "@/components/modals/Confirmdeletemodal";
 
 import sponsorData from "@/data/sponsor.json";
 

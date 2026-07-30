@@ -48,7 +48,7 @@ export default function MemberInfoLayout({ children, params }) {
       />
 
       {!isDetailPage && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <StatCard icon={Users} label="ចំនួនសកម្មភាពចូលរួម" value="25" growth="12" iconColor="text-primary" iconBg="bg-secondary-light" />
           <StatCard icon={InfoIcon} label="ចំនួនមិនបានចូលរួម" value="150" growth="8" iconColor="text-error" iconBg="bg-error-bg" />
           <StatCard icon={FaHandHoldingDollar} label="ចំនួនវិភាគទាន" value="12" growth="5" iconColor="text-warning" iconBg="bg-warning-bg" />

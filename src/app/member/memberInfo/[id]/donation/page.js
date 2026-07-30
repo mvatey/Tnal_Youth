@@ -4,8 +4,6 @@ import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 
 import DataTable from "@/components/tables/DataTable.js";
-import ConfirmDeleteModal from "@/components/modals/Confirmdeletemodal.js";
-
 import donationData from "@/data/donationRecords.json";
 
 export default function DonationPage() {
@@ -95,31 +93,6 @@ export default function DonationPage() {
       align: "left",
       accessor: "paymentMethod",
     },
-
-    {
-      header: "សកម្មភាព",
-      width: "w-[10%]",
-      align: "center",
-
-      render: (item) => (
-        <button
-          onClick={() => {
-            setSelectedDonation(item);
-
-            setDeleteModal(true);
-          }}
-          className="
-          inline-flex
-          items-center
-          justify-center
-          text-red-500
-          hover:text-red-600
-          "
-        >
-          <Trash2 className="h-5 w-5" />
-        </button>
-      ),
-    },
   ];
 
   const filters = [
@@ -150,23 +123,6 @@ export default function DonationPage() {
         pageSize={10}
       />
 
-      <ConfirmDeleteModal
-        open={deleteModal}
-        onClose={() => {
-          setDeleteModal(false);
-
-          setSelectedDonation(null);
-        }}
-        onConfirm={handleDelete}
-        title="លុបវិភាគទាន?"
-        description={
-          selectedDonation
-            ? `តើអ្នកប្រាកដថាចង់លុបវិភាគទាន ${selectedDonation.amount} នេះទេ?`
-            : "តើអ្នកប្រាកដថាចង់លុបទិន្នន័យនេះទេ?"
-        }
-        cancelLabel="បោះបង់"
-        confirmLabel="លុប"
-      />
     </div>
   );
 }

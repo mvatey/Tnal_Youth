@@ -17,7 +17,7 @@ export default function DonationFilterBar({
       <h3 className="text-base font-semibold text-secondary">
         វិភាគទានប្រចាំខែ
       </h3>
-      <div className="flex flex-wrap items-center justify-end gap-5">
+      <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end lg:gap-5 [&>*]:w-full lg:[&>*]:w-auto">
         <DonationFilterSelect
           label="សាខា"
           value={selectedBranch}

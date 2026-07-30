@@ -89,31 +89,6 @@ export default function SponsorDonationPage() {
       accessor: "paymentMethod",
     },
 
-    {
-      header: "សកម្មភាព",
-      width: "w-[10%]",
-      align: "center",
-
-      render: (item) => (
-        <button
-          type="button"
-          onClick={() => {
-            setSelectedSponsor(item);
-            setDeleteModal(true);
-          }}
-          className="
-            inline-flex
-            items-center
-            justify-center
-            text-red-500
-            transition
-            hover:text-red-600
-          "
-        >
-          <Trash2 className="h-5 w-5" />
-        </button>
-      ),
-    },
   ];
 
   const filters = [

@@ -9,7 +9,7 @@ export default function NotificationLayout({ children }) {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <Topbar title="ការជូនដំណឹង" />
 
-        <main className="min-h-0 flex-1 overflow-y-auto bg-bg-page-gray p-5 no-scrollbar">
+        <main className="no-scrollbar min-h-0 flex-1 overflow-y-auto bg-bg-page-gray p-3 sm:p-4 lg:p-5">
           {children}
         </main>
       </div>

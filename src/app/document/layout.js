@@ -16,7 +16,7 @@ export default function DocumentLayout({ children }) {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar title="ឯកសារ" />
 
-        <main className="no-scrollbar flex-1 overflow-y-auto p-5">
+        <main className="no-scrollbar flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
           {children}
         </main>
       </div>

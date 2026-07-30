@@ -6,8 +6,6 @@ import { FolderPlus, UploadCloud, X } from "lucide-react";
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
-import CertificateCard from "@/components/card/certificate";
-
 import membersData from "@/data/members.json";
 import activities from "@/data/activity.json";
 import participantsData from "@/data/participants.json";

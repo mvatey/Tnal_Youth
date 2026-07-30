@@ -13,7 +13,7 @@ export default function DonationTabs() {
   const monthlyHref = routePrefix;
 
   return (
-    <nav className="flex grid-cols gap-[80px] sm:grid-cols-3" aria-label="Donation categories">
+    <nav className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-5" aria-label="Donation categories">
       {donationTabs.map((tab) => {
         const href =
           tab.href === "/donation"
@@ -32,7 +32,7 @@ export default function DonationTabs() {
           <Link
             key={href}
             href={href}
-            className={`flex h-[58px] w-[224px] items-center justify-center rounded-sm text-14 font-medium transition ${
+            className={`flex h-[58px] w-full items-center justify-center rounded-sm px-3 text-center text-sm font-medium transition ${
               active
                 ? "border-t-4 border-secondary bg-secondary-light text-secondary"
                 : "text-text-primary hover:bg-primary-lighter"

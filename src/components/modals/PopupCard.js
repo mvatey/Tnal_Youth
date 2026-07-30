@@ -1,10 +1,10 @@
 "use client";
 
 const SIZE = {
-  sm: "w-[380px]",
-  md: "w-[520px]",
-  lg: "w-[700px]",
-  xl: "w-[900px]",
+  sm: "w-full sm:max-w-[380px]",
+  md: "w-full sm:max-w-[520px]",
+  lg: "w-full sm:max-w-[700px]",
+  xl: "w-full sm:max-w-[900px]",
 };
 
 export default function PopupCard({
@@ -27,14 +27,15 @@ export default function PopupCard({
       <div
         className="
         fixed
-        left-64
-        top-16
-        right-0
-        bottom-0
+        inset-0
+        md:left-20
+        lg:left-72
+        md:top-16
         flex
         items-center
         justify-center
-        p-4
+        p-3
+        sm:p-4
         "
       >
 
@@ -42,11 +43,12 @@ export default function PopupCard({
           onClick={(e)=>e.stopPropagation()}
           className={`
           ${SIZE[size]}
-          max-h-[90vh]
-          overflow-hidden
+          max-h-[calc(100dvh-1.5rem)]
+          overflow-y-auto
           rounded-2xl
           bg-white
-          p-6
+          p-4
+          sm:p-6
           shadow-xl
           ${className}
           `}

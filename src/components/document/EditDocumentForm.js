@@ -76,15 +76,15 @@ export default function EditDocumentForm({
         {/* Title + Branch */}
         <div className="grid grid-cols-2 gap-5">
           <div>
-            <label className="mb-2 block text-sm font-semibold text-text-primary">
+            <label className="mb-2 block text-sm font-semibold text-text-primary ">
               ឈ្មោះឯកសារ
             </label>
             <input
               value={form.title || ""}
               onChange={updateField("title")}
               className="
-              h-11
-              w-full
+               h-[34px]
+               w-full
               rounded-lg
               border
               border-gray-200
@@ -154,7 +154,7 @@ export default function EditDocumentForm({
                 key={index}
                 className="
                 flex
-                h-12
+                h-11
                 items-center
                 justify-between
                 rounded-lg

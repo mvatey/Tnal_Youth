@@ -86,10 +86,10 @@ export default function PersonalPage() {
       <div className="rounded-xl border border-gray-200 bg-white p-6">
         <h2 className="text-lg font-bold text-primary">ព័ត៌មានផ្ទាល់ខ្លួន</h2>
 
-        <div className="mt-6 grid grid-cols-3 gap-6">
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* FORM */}
 
-          <div className="col-span-2 grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:col-span-2">
             <FormControl
               label="ឈ្មោះជាភាសាខ្មែរ"
               value={member.name_kh || ""}

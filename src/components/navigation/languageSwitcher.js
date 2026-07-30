@@ -17,11 +17,11 @@ export default function LanguageSwitcher() {
   return (
     <button
       onClick={toggleLang}
-      className="flex items-center h-9 bg-white border border-border rounded-full p-1 gap-1 hover:shadow transition-shadow"
+      className="flex h-9 items-center gap-0 rounded-full border border-border bg-white p-1 transition-shadow hover:shadow sm:gap-1"
     >
       {/* KM side */}
       <span
-        className={`flex items-center h-full gap-1.5 rounded-full px-3 text-sm transition-all duration-200 ${
+        className={`flex h-full items-center gap-1.5 rounded-full px-1.5 text-xs transition-all duration-200 sm:px-3 sm:text-sm ${
           lang === "km"
             ? "bg-white shadow-md border border-gray-100 text-text-primary font-medium"
             : "text-gray-400"
@@ -37,7 +37,7 @@ export default function LanguageSwitcher() {
 
       {/* EN side */}
       <span
-        className={`flex items-center h-full gap-1.5 rounded-full px-3 text-sm transition-all duration-200 ${
+        className={`hidden h-full items-center gap-1.5 rounded-full px-3 text-sm transition-all duration-200 sm:flex ${
           lang === "en"
             ? "bg-white shadow-md border border-gray-100 text-text-primary font-medium"
             : "text-gray-400"

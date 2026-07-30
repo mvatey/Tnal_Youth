@@ -4,7 +4,7 @@ export default function AddSuccessAlert({
   message = "ការទាញយកវិភាគទានប្រចាំខែជោគជ័យ!",
 }) {
   return (
-    <div className="h-[42px] w-[461px] rounded-[8px] bg-white px-5 shadow-sm">
+    <div className="min-h-[42px] w-[calc(100vw-2rem)] max-w-[461px] rounded-[8px] bg-white px-3 py-2 shadow-sm sm:px-5">
       <div className="flex h-full items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-600 text-white">

@@ -167,6 +167,7 @@ export default function CompanyDocumentPage() {
       text-white
       transition
       hover:opacity-90
+      h-[34px]
     "
   >
     <RiAddCircleLine className="h-4 w-4 shrink-0" />

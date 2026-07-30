@@ -17,7 +17,7 @@ function FilterInput({
 
   if (type === "date") {
     return (
-      <div className="relative w-[140px]">
+      <div className="relative w-full sm:w-[140px]">
         <DatePicker
           selected={value}
           onChange={(date) => onChange?.(date)}
@@ -36,9 +36,9 @@ function FilterInput({
 
 
   return (
-    <div className="relative">
+    <div className="relative w-full sm:w-auto">
 
-      <select value={value} onChange={(e) => onChange?.(e.target.value)} className="h-[34px] min-w-[130px] appearance-none rounded-lg border border-border bg-white px-3 pr-9 text-[12px] font-medium text-text-primary outline-none">
+      <select value={value} onChange={(e) => onChange?.(e.target.value)} className="h-[34px] w-full min-w-0 appearance-none rounded-lg border border-border bg-white px-3 pr-9 text-[12px] font-medium text-text-primary outline-none sm:min-w-[130px]">
 
         <option value="all" hidden={value !== "all"}>
           {placeholder}
@@ -70,7 +70,7 @@ function FilterInput({
 
 export default function FilterBar({ filters = [], className = "" }) {
   return (
-    <div className={`flex flex-wrap items-center gap-3 ${className}`}>
+    <div className={`grid w-full grid-cols-1 items-center gap-3 sm:flex sm:flex-wrap ${className}`}>
       {filters.map(({ key, ...filter }) => (
         <FilterInput
           key={key}

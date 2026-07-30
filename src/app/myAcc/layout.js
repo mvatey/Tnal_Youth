@@ -59,7 +59,7 @@ export default function MyAccountLayout({ children }) {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar title="គណនីរបស់ខ្ញុំ" />
 
-        <main className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-5">
+        <main className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
           {loading && (
             <div className="rounded-xl border border-border bg-white p-6">
               កំពុងទាញយកព័ត៌មានគណនី...
