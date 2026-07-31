@@ -588,7 +588,7 @@ export default function BranchDetailPage() {
               className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg bg-success px-4 text-sm font-semibold text-white transition hover:bg-emerald-700"
             >
               <PlusCircle size={15} />
-              បន្ថែមប្រធានសាខា
+              ជ្រើសរើសប្រធានសាខា
             </button>
           </div>
         )}

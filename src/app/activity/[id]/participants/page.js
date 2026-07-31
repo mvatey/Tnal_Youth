@@ -14,6 +14,8 @@ import Button from "@/components/tables/Button";
 import Table from "@/components/tables/GenericTable";
 import ParticipantStats, { ParticipantStatusBadge as StatusBadge } from "@/components/activity/ParticipantStats";
 import ParticipationEditModal from "@/components/activity/ParticipantEditModal";
+import { useAuth } from "@/context/AuthContext";
+import { normalizeRole } from "@/lib/navigation";
 
 const roles = ["ប្រធាន", "លេខាធិការ", "សមាជិក"];
 const branches = ["ភ្នំពេញ", "កណ្ដាល"];
@@ -49,6 +51,14 @@ function isCompletedActivity(activity) {
 
 export default function ActivityParticipantsPage({ params }) {
   const { id } = use(params);
+
+  const { user } = useAuth();
+
+  const role = normalizeRole(user?.role);
+
+  const canEditParticipation =
+    role === "secretary" ||
+    role === "branch_leader";
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
@@ -302,7 +312,7 @@ export default function ActivityParticipantsPage({ params }) {
           />
 
           <div className="ml-auto flex items-center gap-3">
-            {completed && (
+            {completed && canEditParticipation && (
               <button
                 type="button"
                 onClick={() => setIsEditOpen(true)}
@@ -317,7 +327,7 @@ export default function ActivityParticipantsPage({ params }) {
               ទាញយករបាយការណ៍
             </Button>
           </div>
-        </div>
+          </div>
 
         {!completed && (
           <div className="mb-4 rounded-lg border border-warning/30 bg-warning-bg px-4 py-3 text-sm text-warning">

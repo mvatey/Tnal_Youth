@@ -615,7 +615,7 @@ function LoginContent() {
             </label>
 
             <a
-              href="/auth/forgot-password"
+              href="/auth/forget-password"
               className="text-sm font-medium text-blue-700 hover:underline"
             >
               ភ្លេចលេខសម្ងាត់?

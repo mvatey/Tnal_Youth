@@ -13,6 +13,8 @@ import PrimaryActionButton from "@/components/ui/actions/PrimaryActionButton";
 import { useBranch } from "@/context/BranchContext";
 import activities from "@/data/activityRecords.json";
 import { downloadCsv } from "@/utils/downloadCsv";
+import { useAuth } from "@/context/AuthContext";
+import { normalizeRole } from "@/lib/navigation";
 
 const branches = ["ភ្នំពេញ", "កណ្ដាល"];
 
@@ -65,6 +67,13 @@ function StatusBadge({ status }) {
 }
 
 export default function ActivityPage() {
+  const { user } = useAuth();
+  const role = normalizeRole(user?.role);
+
+  const canCreateActivity =
+  role === "secretary" ||
+  role === "branch_leader";
+
   const {
     selectedBranch = "all",
     setSelectedBranch = () => {},
@@ -287,13 +296,16 @@ export default function ActivityPage() {
   <div className="ml-auto flex shrink-0 items-center gap-3">
     <PrimaryActionButton onClick={handleDownload} />
 
-    <Link
-      href="/activity/create"
-      className="flex h-[34px] items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-success px-4 text-md font-regular text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-sm active:translate-y-0"
-    >
-      <PlusCircle size={16} />
-      បង្កើតកម្មវិធីថ្មី
-    </Link>
+    {canCreateActivity && (
+        <Link href="/activity/create">
+          <Button
+            type="button"
+            variant="success"
+          >
+            បង្កើតកម្មវិធី
+          </Button>
+        </Link>
+      )}
   </div>
 </div>
 
