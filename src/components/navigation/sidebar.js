@@ -78,6 +78,10 @@ export default function Sidebar() {
 
   const role = normalizeRole(user?.role);
 
+  const canSelectBranch =
+  role === "secretary" ||
+  role === "branch_leader";
+
   const visibleItems =
     getNavigationForRole(role);
 
@@ -166,62 +170,44 @@ export default function Sidebar() {
           </p>
         </div>
 
-        {/* Branch */}
-        <div className="mb-2 px-3">
-          <div className="relative">
-            <FaUniversity
-              size={16}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white"
-            />
+        {/* Branch selector is only shown for secretary and branch leader */}
+        {canSelectBranch && (
+          <div className="mb-2 px-3">
+            <div className="relative">
+              <FaUniversity size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white" />
 
-            <select
-              value={selectedBranch}
-              onChange={(event) =>
-                setSelectedBranch(
-                  event.target.value
-                )
-              }
-              className="w-full appearance-none rounded-lg bg-white/10 py-2.5 pl-11 pr-8 text-sm font-medium text-white outline-none transition hover:bg-white/15"
-            >
-              <option
-                value="all"
-                className="text-black"
+              <select
+                value={selectedBranch}
+                onChange={(event) => setSelectedBranch(event.target.value)}
+                className="w-full appearance-none rounded-lg bg-white/10 py-2.5 pl-11 pr-8 text-sm font-medium text-white outline-none transition hover:bg-white/15"
               >
-                ជ្រើសរើសសាខា
-              </option>
+                <option value="all" className="text-black">
+                  ជ្រើសរើសសាខា
+                </option>
 
-              {branches.map((branch) => {
-                const branchValue =
-                  typeof branch === "string"
-                    ? branch
-                    : branch.id;
+                {branches.map((branch) => {
+                  const branchValue = typeof branch === "string" ? branch : branch.id;
 
-                const branchLabel =
-                  typeof branch === "string"
-                    ? branch
-                    : branch.nameKm ||
-                      branch.nameEn ||
-                      branch.name ||
-                      `សាខា ${branch.id}`;
+                  const branchLabel =
+                    typeof branch === "string"
+                      ? branch
+                      : branch.nameKm ||
+                        branch.nameEn ||
+                        branch.name ||
+                        `សាខា ${branch.id}`;
 
-                return (
-                  <option
-                    key={branchValue}
-                    value={branchValue}
-                    className="text-black"
-                  >
-                    {branchLabel}
-                  </option>
-                );
-              })}
-            </select>
+                  return (
+                    <option key={branchValue} value={branchValue} className="text-black">
+                      {branchLabel}
+                    </option>
+                  );
+                })}
+              </select>
 
-            <FaChevronDown
-              size={12}
-              className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/60"
-            />
+              <FaChevronDown size={12} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/60" />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Navigation */}
         <nav className="space-y-1 px-3">
