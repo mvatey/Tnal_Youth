@@ -283,7 +283,7 @@ export default function VariablePage() {
                 icon={<PlusCircle size={16} />}
                 onClick={openCreateModal}
               >
-                បង្កើតអថេរថ្មី
+                បង្កើត{selectedType?.label || "អថេរ"}ថ្មី
               </Button>
             </div>
           </div>
