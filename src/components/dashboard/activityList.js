@@ -75,13 +75,8 @@ function formatDateTime(value) {
   ).format(date);
 }
 
-function ActivityThumbnail({
-  activity,
-}) {
+function ActivityThumbnail({ activity }) {
   const imageUrl =
-    activity?.coverImageUrl ??
-    activity?.cover_image_url ??
-    activity?.imageUrl ??
     activity?.image ??
     "/activity-placeholder.svg";
 

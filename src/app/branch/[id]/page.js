@@ -1,41 +1,37 @@
-//app/branch/[id]/page.js
-
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Banknote,
+  Building2,
   CalendarDays,
-  Navigation,
+  ChevronRight,
   List,
   Mail,
   MapPin,
+  Mars,
+  Navigation,
+  Pencil,
   Phone,
   PlusCircle,
   Users,
-  ChevronRight,
-  Mars,
-  Building2
 } from "lucide-react";
 
 import SearchBar from "@/components/table-items/SearchBar";
 import FilterBar from "@/components/table-items/FilterBar";
 import Table from "@/components/table-items/Table";
 import Button from "@/components/ui/Button";
+import CreateBranchModal from "@/components/branch/CreateBranchModal";
 
 import branches from "@/data/branch/branches.json";
 import branchMembers from "@/data/branch/branchMembers.json";
 
 const ALL_OPTION = "ទាំងអស់";
 
-const STATUS_OPTIONS = [
-  ALL_OPTION,
-  "សកម្ម",
-  "អសកម្ម",
-];
+const STATUS_OPTIONS = [ALL_OPTION, "សកម្ម", "អសកម្ម"];
 
 function StatusBadge({ status }) {
   const isActive = status === "ACTIVE";
@@ -73,18 +69,14 @@ function DetailStatCard({
         </div>
 
         <div className="min-w-0">
-          <p className="text-xs text-text-secondary">
-            {title}
-          </p>
+          <p className="text-xs text-text-secondary">{title}</p>
 
           <p className="mt-1 truncate text-xl font-bold text-text-primary">
             {value}
           </p>
 
           {helper && (
-            <p className="mt-1 text-[11px] text-success">
-              {helper}
-            </p>
+            <p className="mt-1 text-[11px] text-success">{helper}</p>
           )}
         </div>
       </div>
@@ -96,43 +88,55 @@ export default function BranchDetailPage() {
   const params = useParams();
   const branchId = String(params.id);
 
-  const branch = useMemo(
-    () =>
-      branches.find(
-        (item) => String(item.id) === branchId,
-      ),
+  const initialBranch = useMemo(
+    () => branches.find((item) => String(item.id) === branchId),
     [branchId],
   );
 
-  const [searchQuery, setSearchQuery] =
-    useState("");
+  const [branch, setBranch] = useState(initialBranch || null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState(ALL_OPTION);
 
-  const [selectedStatus, setSelectedStatus] =
-    useState(ALL_OPTION);
+  useEffect(() => {
+    setBranch(initialBranch || null);
+  }, [initialBranch]);
 
   const members = useMemo(
     () =>
       branchMembers.filter(
-        (member) =>
-          String(member.branchId) === branchId,
+        (member) => String(member.branchId) === branchId,
       ),
     [branchId],
   );
 
+  const leaderOptions = useMemo(
+    () =>
+      members
+        .filter((member) => member.status === "ACTIVE")
+        .map((member) => ({
+          label:
+            member.nameKm ||
+            member.nameEn ||
+            `សមាជិក ${member.id}`,
+          value: String(member.id),
+          member: {
+            ...member,
+            role: "ប្រធានសាខា",
+          },
+        })),
+    [members],
+  );
+
   const filteredMembers = useMemo(() => {
-    const query = searchQuery
-      .trim()
-      .toLowerCase();
+    const query = searchQuery.trim().toLowerCase();
 
     return members.filter((member) => {
       const matchesSearch =
         !query ||
-        member.nameKm
-          ?.toLowerCase()
-          .includes(query) ||
-        member.role
-          ?.toLowerCase()
-          .includes(query);
+        member.nameKm?.toLowerCase().includes(query) ||
+        member.nameEn?.toLowerCase().includes(query) ||
+        member.role?.toLowerCase().includes(query);
 
       const statusValue =
         selectedStatus === "សកម្ម"
@@ -147,11 +151,7 @@ export default function BranchDetailPage() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [
-    members,
-    searchQuery,
-    selectedStatus,
-  ]);
+  }, [members, searchQuery, selectedStatus]);
 
   if (!branch) {
     return (
@@ -180,10 +180,7 @@ export default function BranchDetailPage() {
         <div className="flex min-w-0 items-center gap-3">
           <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full">
             <Image
-              src={
-                row.profileImage ||
-                "/member.png"
-              }
+              src={row.profileImage || "/member.png"}
               alt={row.nameKm || "Member"}
               fill
               sizes="32px"
@@ -214,9 +211,7 @@ export default function BranchDetailPage() {
       label: "ស្ថានភាព",
       width: "13%",
       align: "center",
-      render: (row) => (
-        <StatusBadge status={row.status} />
-      ),
+      render: (row) => <StatusBadge status={row.status} />,
     },
     {
       key: "joinedAt",
@@ -254,7 +249,6 @@ export default function BranchDetailPage() {
   return (
     <div className="min-w-0 space-y-5 overflow-x-hidden">
       <div className="space-y-1">
-        {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm">
           <Link
             href="/branch"
@@ -273,8 +267,7 @@ export default function BranchDetailPage() {
           </span>
         </div>
 
-        {/* Page Title */}
-        <h1 className="text-xl  font-bold leading-tight text-primary">
+        <h1 className="text-xl font-bold leading-tight text-primary">
           {branch.name}
         </h1>
       </div>
@@ -313,13 +306,23 @@ export default function BranchDetailPage() {
       </div>
 
       <section>
-        <h2 className="mb-2 text-lg font-semibold text-primary">
-          ព័ត៌មានសាខា
-        </h2>
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-primary">
+            ព័ត៌មានសាខា
+          </h2>
+
+          <button
+            type="button"
+            onClick={() => setIsEditModalOpen(true)}
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-secondary px-4 text-sm font-semibold text-white transition hover:opacity-90"
+          >
+            <Pencil size={15} />
+            កែប្រែ
+          </button>
+        </div>
 
         <div className="rounded-lg border border-secondary bg-primary-sidebar px-6 py-4 text-white">
           <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-2 xl:grid-cols-[1.1fr_1fr_1.15fr_1.5fr]">
-            {/* Branch name */}
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">
                 {branch.name || "-"}
@@ -330,7 +333,6 @@ export default function BranchDetailPage() {
               </p>
             </div>
 
-            {/* Phone */}
             <div className="flex min-w-0 items-center gap-3 xl:border-l xl:border-white/35 xl:pl-5">
               <Phone
                 size={17}
@@ -348,7 +350,6 @@ export default function BranchDetailPage() {
               </div>
             </div>
 
-            {/* Email */}
             <div className="flex min-w-0 items-center gap-3 xl:border-l xl:border-white/35 xl:pl-5">
               <Mail
                 size={17}
@@ -366,7 +367,6 @@ export default function BranchDetailPage() {
               </div>
             </div>
 
-            {/* Location */}
             <div className="flex min-w-0 items-center gap-3 xl:border-l xl:border-white/35 xl:pl-5">
               <MapPin
                 size={17}
@@ -404,15 +404,32 @@ export default function BranchDetailPage() {
         </div>
       </section>
 
-      {branch.leader && (
-        <section>
-          <h2 className="mb-2 text-lg font-semibold text-primary">
+      <section>
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-primary">
             ប្រធានសាខា
           </h2>
 
+          <button
+            type="button"
+            onClick={() => setIsEditModalOpen(true)}
+            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-secondary px-3 text-xs font-semibold text-secondary transition hover:bg-secondary-light"
+          >
+            {branch.leader ? (
+              <Pencil size={14} />
+            ) : (
+              <PlusCircle size={14} />
+            )}
+
+            {branch.leader
+              ? "ផ្លាស់ប្តូរប្រធាន"
+              : "បន្ថែមប្រធាន"}
+          </button>
+        </div>
+
+        {branch.leader ? (
           <div className="min-w-0 overflow-x-auto rounded-lg border border-border bg-white px-5 py-4 shadow-sm">
             <div className="grid grid-cols-1 items-center gap-4 lg:grid-cols-[250px_150px_240px_150px_150px_auto]">
-              {/* Profile */}
               <div className="flex min-w-0 items-center gap-4">
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
                   <Image
@@ -447,7 +464,6 @@ export default function BranchDetailPage() {
                 </div>
               </div>
 
-              {/* Gender + Role */}
               <div className="min-w-0 lg:border-l lg:border-border lg:pl-5">
                 <div className="flex items-center gap-2">
                   <Mars
@@ -475,12 +491,11 @@ export default function BranchDetailPage() {
                   </span>
 
                   <span className="truncate text-sm font-medium text-text-primary">
-                    {branch.leader.role || "-"}
+                    {branch.leader.role || "ប្រធានសាខា"}
                   </span>
                 </div>
               </div>
 
-              {/* Phone + Email */}
               <div className="min-w-0 lg:border-l lg:border-border lg:pl-5">
                 <div className="flex items-center gap-2">
                   <Phone
@@ -505,25 +520,23 @@ export default function BranchDetailPage() {
                 </div>
               </div>
 
-              {/* Birth date */}
-                  <div className="min-w-0 lg:border-l lg:border-border lg:pl-5">
-                    <div className="flex items-center gap-2">
-                      <CalendarDays
-                        size={15}
-                        className="shrink-0 text-text-secondary"
-                      />
+              <div className="min-w-0 lg:border-l lg:border-border lg:pl-5">
+                <div className="flex items-center gap-2">
+                  <CalendarDays
+                    size={15}
+                    className="shrink-0 text-text-secondary"
+                  />
 
-                      <span className="text-xs text-text-secondary">
-                        ថ្ងៃខែឆ្នាំកំណើត
-                      </span>
-                    </div>
+                  <span className="text-xs text-text-secondary">
+                    ថ្ងៃខែឆ្នាំកំណើត
+                  </span>
+                </div>
 
-                    <p className="mt-2 text-sm font-medium text-text-primary">
-                      {branch.leader.dateOfBirth || "-"}
-                    </p>
-                  </div>
+                <p className="mt-2 text-sm font-medium text-text-primary">
+                  {branch.leader.dateOfBirth || "-"}
+                </p>
+              </div>
 
-              {/* Joined date */}
               <div className="min-w-0 lg:border-l lg:border-border lg:pl-5">
                 <div className="flex items-start gap-2">
                   <CalendarDays
@@ -543,7 +556,6 @@ export default function BranchDetailPage() {
                 </div>
               </div>
 
-              {/* Detail button */}
               <div className="flex shrink-0 justify-start lg:justify-end">
                 <Link
                   href={`/member/memberInfo/${branch.leader.id}/documents`}
@@ -555,8 +567,32 @@ export default function BranchDetailPage() {
               </div>
             </div>
           </div>
-        </section>
-      )}
+        ) : (
+          <div className="rounded-lg border border-dashed border-border bg-white p-6 text-center shadow-sm">
+            <Building2
+              size={30}
+              className="mx-auto text-text-secondary"
+            />
+
+            <p className="mt-2 text-sm font-semibold text-text-primary">
+              សាខានេះមិនទាន់មានប្រធានសាខា
+            </p>
+
+            <p className="mt-1 text-xs text-text-secondary">
+              បង្កើតសមាជិកក្នុងសាខានេះជាមុន ហើយបន្ទាប់មកកែប្រែសាខាដើម្បីកំណត់ប្រធាន។
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setIsEditModalOpen(true)}
+              className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg bg-success px-4 text-sm font-semibold text-white transition hover:bg-emerald-700"
+            >
+              <PlusCircle size={15} />
+              បន្ថែមប្រធានសាខា
+            </button>
+          </div>
+        )}
+      </section>
 
       <section className="rounded-xl border border-border bg-white p-4 shadow-sm">
         <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -590,6 +626,16 @@ export default function BranchDetailPage() {
           emptyMessage="មិនមានសមាជិកក្នុងសាខានេះទេ"
         />
       </section>
+
+      <CreateBranchModal
+        open={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        initialData={branch}
+        leaderOptions={leaderOptions}
+        onSave={(updatedBranch) => {
+          setBranch(updatedBranch);
+        }}
+      />
     </div>
   );
 }

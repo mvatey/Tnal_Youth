@@ -149,7 +149,7 @@ export default function MemberSelectModal({ onClose }) {
 
                     <td className="text-center">
                       <span className={`rounded-full px-3 py-1 text-[11px] ${isSelected ? "bg-success-bg text-success" : "bg-warning-bg text-warning"}`}>
-                        {isSelected ? "បានចូលរួម" : "មិនបានចូលរួម"}
+                        {isSelected ? "បានអញ្ជើញ" : "មិនបានអញ្ជើញ"}
                       </span>
                     </td>
 

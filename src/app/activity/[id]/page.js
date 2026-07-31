@@ -207,11 +207,7 @@ const totalParticipantCount = activityParticipants.length;
         label="មិនបានចូលរួម"
         value={absentCount}
         unit="នាក់"
-      /><InfoIcon
-  icon={Users}
-  label={`${attendedCount}/${totalParticipantCount}`}
-  sub="បានចូលរួម"
-/>
+      />
     </div>
 
       <Link
