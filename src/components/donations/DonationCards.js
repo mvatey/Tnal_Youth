@@ -13,7 +13,7 @@ export default function DonationCards() {
   );
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 [&>*]:w-full">
+    <div className="flex flex-wrap gap-4 sm:gap-[50px]">
       <DonationCard
         {...donationStats[0]}
         value={`$${monthlyTotal.toLocaleString()}`}
