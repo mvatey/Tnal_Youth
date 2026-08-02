@@ -224,18 +224,7 @@ export default function FamilyPage() {
             }
           />
 
-          <BoxFill
-            label="មុខរបរឪពុក"
-            placeholder="បញ្ចូលមុខរបរ"
-            value={family.father.occupation}
-            onChange={(event) =>
-              handleFamilyChange(
-                "father",
-                "occupation",
-                event.target.value,
-              )
-            }
-          />
+          
 
           <RadioGroup
             label="ស្ថានភាពឪពុក"
@@ -246,6 +235,18 @@ export default function FamilyPage() {
                 "father",
                 "status",
                 value,
+              )
+            }
+          />
+          <BoxFill
+            label="មុខរបរឪពុក"
+            placeholder="បញ្ចូលមុខរបរ"
+            value={family.father.occupation}
+            onChange={(event) =>
+              handleFamilyChange(
+                "father",
+                "occupation",
+                event.target.value,
               )
             }
           />
@@ -293,18 +294,7 @@ export default function FamilyPage() {
             }
           />
 
-          <BoxFill
-            label="មុខរបរម្តាយ"
-            placeholder="បញ្ចូលមុខរបរ"
-            value={family.mother.occupation}
-            onChange={(event) =>
-              handleFamilyChange(
-                "mother",
-                "occupation",
-                event.target.value,
-              )
-            }
-          />
+          
 
           <RadioGroup
             label="ស្ថានភាពម្តាយ"
@@ -315,6 +305,18 @@ export default function FamilyPage() {
                 "mother",
                 "status",
                 value,
+              )
+            }
+          />
+          <BoxFill
+            label="មុខរបរម្តាយ"
+            placeholder="បញ្ចូលមុខរបរ"
+            value={family.mother.occupation}
+            onChange={(event) =>
+              handleFamilyChange(
+                "mother",
+                "occupation",
+                event.target.value,
               )
             }
           />

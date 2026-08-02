@@ -21,6 +21,7 @@ const ROLE_LABELS = {
 };
 
 const LEVEL_OPTIONS = ["ក", "ខ", "គ", "ឃ", "ង"];
+const Nationality_OPTIONS = ["ខ្មែរ", "វៀតណាម", "ចិន", "បារាំង"];
 
 const EMPTY_FORM = {
   nameKh: "",
@@ -150,6 +151,8 @@ export default function CreateMemberModal({
     "dob",
     "joinedAt",
     "level",
+    "nationality",
+
   ];
 
   const isFormValid = requiredFields.every((field) => {
@@ -230,11 +233,20 @@ export default function CreateMemberModal({
             name="level"
             placeholder="ជ្រើសរើសកាំ"
             options={LEVEL_OPTIONS.map((level) => ({
-              label: `កាំ ${level}`,
               value: level,
             }))}
             value={form.level}
             onChange={update("level")}
+          />
+          <FormSelect
+            label="សញ្ជាតិ"
+            name="nationality"
+            placeholder="ជ្រើសរើសសញ្ជាតិ"
+            options={Nationality_OPTIONS.map((nationality) => ({
+              value: nationality,
+            }))}
+            value={form.nationality}
+            onChange={update("nationality")}
           />
         </div>
 

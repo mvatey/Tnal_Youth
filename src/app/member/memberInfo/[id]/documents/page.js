@@ -415,7 +415,7 @@ export default function DocumentPage() {
       className="
         grid
         grid-cols-1
-        gap-8
+        gap-10
         p-6
         lg:grid-cols-2
         2xl:grid-cols-3

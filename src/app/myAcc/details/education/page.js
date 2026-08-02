@@ -205,8 +205,8 @@ function EducationGroup({
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
   <BoxFill
-    label="សាលា ឬ ស្ថាប័ន"
-    placeholder="បញ្ចូលឈ្មោះសាលា"
+    label="ស្ថាប័ន"
+    placeholder="បញ្ចូលឈ្មោះស្ថាប័ន"
     value={education.school || ""}
     onChange={(event) =>
       onChange("school", event.target.value)
@@ -223,14 +223,13 @@ function EducationGroup({
     options={provinces}
   />
 
-  <FormSelect
+  <BoxFill
     label="ប្រទេស"
-    placeholder="ជ្រើសរើស"
+    placeholder="បំពេញឈ្មោះប្រទេស"
     value={education.country || ""}
     onChange={(event) =>
       onChange("country", event.target.value)
     }
-    options={countries}
   />
 
   <FormSelect

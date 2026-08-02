@@ -61,7 +61,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ក",
+    "shirtSize": "S"
   },
   {
     "id": "2",
@@ -125,7 +127,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ខ",
+    "shirtSize": "M"
   },
   {
     "id": "3",
@@ -189,7 +193,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "គ",
+    "shirtSize": "L"
   },
   {
     "id": "4",
@@ -253,7 +259,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ឃ",
+    "shirtSize": "XL"
   },
   {
     "id": "5",
@@ -317,7 +325,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ង",
+    "shirtSize": "2XL"
   },
   {
     "id": "6",
@@ -381,7 +391,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ក",
+    "shirtSize": "S"
   },
   {
     "id": "7",
@@ -445,7 +457,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ខ",
+    "shirtSize": "M"
   },
   {
     "id": "8",
@@ -509,7 +523,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "គ",
+    "shirtSize": "L"
   },
   {
     "id": "9",
@@ -573,7 +589,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ឃ",
+    "shirtSize": "XL"
   },
   {
     "id": "10",
@@ -637,7 +655,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ង",
+    "shirtSize": "2XL"
   },
   {
     "id": "11",
@@ -701,7 +721,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ក",
+    "shirtSize": "S"
   },
   {
     "id": "12",
@@ -765,7 +787,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ខ",
+    "shirtSize": "M"
   },
   {
     "id": "13",
@@ -829,7 +853,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "គ",
+    "shirtSize": "L"
   },
   {
     "id": "14",
@@ -893,7 +919,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ឃ",
+    "shirtSize": "XL"
   },
   {
     "id": "15",
@@ -957,6 +985,8 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ង",
+    "shirtSize": "2XL"
   }
 ]

@@ -16,58 +16,121 @@ export default function DocumentsPage() {
 
   if (loading) {
     return (
-      <div className="rounded-xl bg-white p-6">
-        កំពុងទាញយកព័ត៌មានសមាជិក...
+      <div
+        className="
+          flex
+          min-h-[300px]
+          items-center
+          justify-center
+        "
+      >
+        <p className="text-sm text-gray-500">
+          កំពុងទាញយកឯកសារ...
+        </p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-xl bg-white p-6 text-error">
-        {error}
+      <div
+        className="
+          rounded-xl
+          border
+          border-red-200
+          bg-white
+          p-6
+          text-center
+        "
+      >
+        <p className="text-sm text-red-500">
+          {error}
+        </p>
       </div>
     );
   }
 
   if (!member) {
     return (
-      <div className="rounded-xl bg-white p-6">
-        រកមិនឃើញព័ត៌មានសមាជិក
+      <div
+        className="
+          rounded-xl
+          border
+          border-gray-200
+          bg-white
+          p-6
+          text-center
+        "
+      >
+        <p className="text-sm text-gray-500">
+          រកមិនឃើញព័ត៌មានសមាជិក
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="flex justify-center gap-8 p-6">
-      {/* ID CARD */}
+    <div
+      className="
+        grid
+        grid-cols-1
+        gap-10
+        p-6
+        lg:grid-cols-2
+        2xl:grid-cols-3
+      "
+    >
+      {/* =====================================
+          ID CARD — PRINT
+      ===================================== */}
+
       <DocumentPreviewCard
         title="ប័ណ្ណសម្គាល់សមាជិក"
-        data={[member]}
-        filename="member-card.csv"
+        actionType="print"
+        printText="បោះពុម្ព"
         previewClass="scale-[0.55]"
       >
-        <IdCard user={member} />
+        <IdCard
+          user={member}
+          templatePreview=""
+        />
       </DocumentPreviewCard>
 
-      {/* LETTER */}
+      {/* =====================================
+          LETTER OF APPOINTMENT — PDF
+      ===================================== */}
+
       <DocumentPreviewCard
         title="លិខិតតែងតាំង"
-        data={[member]}
-        filename="letter_of_appointment.csv"
+        actionType="download"
+        downloadText="ទាញយក"
+        filename={`letter-of-appointment-${member.id}.pdf`}
+        orientation="landscape"
         previewClass="scale-[0.35]"
       >
-        <LetterOfAppointment user={member} />
+        <LetterOfAppointment
+          user={member}
+          templatePreview=""
+        />
       </DocumentPreviewCard>
 
-      {/* CERTIFICATE */}
+      {/* =====================================
+          CERTIFICATE — PDF
+      ===================================== */}
+
       <DocumentPreviewCard
         title="បណ្ណសរសើរ"
-        data={[member]}
-        filename="certificate.csv"
+        actionType="download"
+        downloadText="ទាញយក"
+        filename={`certificate-${member.id}.pdf`}
+        orientation="landscape"
         previewClass="scale-[0.35]"
       >
-        <CertificateCard user={member} />
+        <CertificateCard
+          recipientType="member"
+          member={member}
+          templatePreview=""
+        />
       </DocumentPreviewCard>
     </div>
   );

@@ -96,9 +96,9 @@ export default function WorkPage() {
 
                 <BoxFill label="អាស័យដ្ឋាន" placeholder="បញ្ចូលអាស័យដ្ឋាន" value={work.address} onChange={(event) => handleWorkChange(work.id, "address", event.target.value)} />
 
-                <FormSelect label="តួនាទី" placeholder="ជ្រើសរើសតួនាទី" value={work.position} onChange={(event) => handleWorkChange(work.id, "position", event.target.value)} options={["ពេញម៉ោង", "ក្រៅម៉ោង", "កិច្ចសន្យា", "ស្ម័គ្រចិត្ត"]} />
+                <BoxFill label="តួនាទី" placeholder="តួនាទី" value={work.position} onChange={(event) => handleWorkChange(work.id, "position", event.target.value)}  />
 
-                <FormSelect label="ការតែងតាំងមុខតំណែង" placeholder="ជ្រើសរើសការតែងតាំង" value={work.appointment} onChange={(event) => handleWorkChange(work.id, "appointment", event.target.value)} options={["បញ្ចប់កិច្ចសន្យា", "ផ្លាស់ប្ដូរការងារ", "បន្តការសិក្សា", "ផ្សេងៗ"]} />
+                <BoxFill label="មុខតំណែង" placeholder="មុខតំណែង" value={work.appointment} onChange={(event) => handleWorkChange(work.id, "appointment", event.target.value)}  />
 
                 <FormDate label="ថ្ងៃខែចាប់ផ្ដើម" name={`startDate-${work.id}`} value={work.startDate} onChange={(event) => handleWorkChange(work.id, "startDate", event.target.value)} />
 

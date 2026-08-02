@@ -151,6 +151,16 @@ export default function FamilyPage() {
             }
           />
 
+          
+
+          <RadioGroup
+            label="ស្ថានភាពឪពុក"
+            name="fatherStatus"
+            value={family.father.status}
+            onChange={(value) =>
+              handleFamilyChange("father", "status", value)
+            }
+          />
           <BoxFill
             label="មុខរបរឪពុក"
             placeholder="បញ្ចូលមុខរបរឪពុក"
@@ -161,15 +171,6 @@ export default function FamilyPage() {
                 "occupation",
                 event.target.value
               )
-            }
-          />
-
-          <RadioGroup
-            label="ស្ថានភាពឪពុក"
-            name="fatherStatus"
-            value={family.father.status}
-            onChange={(value) =>
-              handleFamilyChange("father", "status", value)
             }
           />
 
@@ -214,6 +215,16 @@ export default function FamilyPage() {
             }
           />
 
+          
+
+          <RadioGroup
+            label="ស្ថានភាពម្តាយ"
+            name="motherStatus"
+            value={family.mother.status}
+            onChange={(value) =>
+              handleFamilyChange("mother", "status", value)
+            }
+          />
           <BoxFill
             label="មុខរបរម្តាយ"
             placeholder="បញ្ចូលមុខរបរម្តាយ"
@@ -224,15 +235,6 @@ export default function FamilyPage() {
                 "occupation",
                 event.target.value
               )
-            }
-          />
-
-          <RadioGroup
-            label="ស្ថានភាពម្តាយ"
-            name="motherStatus"
-            value={family.mother.status}
-            onChange={(value) =>
-              handleFamilyChange("mother", "status", value)
             }
           />
 
