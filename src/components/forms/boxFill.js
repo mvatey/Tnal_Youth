@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Calendar } from "lucide-react";
-import SelectArrow from "@/components/forms/SelectArrow.js";
+
+import SelectArrow from "@/components/forms/SelectArrow";
 
 export default function BoxFill({
   label,
@@ -22,18 +23,25 @@ export default function BoxFill({
   const isControlled = value !== undefined;
 
   const sharedValueProps = isControlled
-    ? { value, onChange }
-    : { defaultValue, onChange };
+    ? {
+        value,
+        onChange,
+      }
+    : {
+        defaultValue,
+        onChange,
+      };
 
   const baseFieldClass = `
-    h-11
+    box-border
+    h-[34px]
     w-full
     rounded-lg
     border
     border-gray-200
     bg-white
     text-sm
-    leading-6
+    leading-none
     text-gray-600
     outline-none
     transition
@@ -48,7 +56,13 @@ export default function BoxFill({
       {label && (
         <label
           htmlFor={name}
-          className="mb-2 block text-sm font-semibold leading-6 text-text-primary"
+          className="
+            mb-2
+            block
+            text-sm
+            font-semibold
+            text-text-primary
+          "
         >
           {label}
         </label>
@@ -64,8 +78,8 @@ export default function BoxFill({
             className={`
               ${baseFieldClass}
               appearance-none
-              pl-4
-              pr-10
+              pl-3
+              pr-9
             `}
           >
             {placeholder && (
@@ -111,19 +125,39 @@ export default function BoxFill({
             disabled={disabled}
             className={`
               ${baseFieldClass}
-              px-4
-              pr-10
+              pl-3
+              pr-9
             `}
           />
 
           <Calendar
-            size={18}
-            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+            size={16}
+            className="
+              pointer-events-none
+              absolute
+              right-3
+              top-1/2
+              -translate-y-1/2
+              text-gray-400
+            "
           />
         </div>
       ) : (
         <div className="relative">
-          {leadingIcon}
+          {leadingIcon && (
+            <div
+              className="
+                pointer-events-none
+                absolute
+                left-3
+                top-1/2
+                -translate-y-1/2
+                text-gray-400
+              "
+            >
+              {leadingIcon}
+            </div>
+          )}
 
           <input
             id={name}
@@ -132,18 +166,15 @@ export default function BoxFill({
             {...sharedValueProps}
             readOnly={readOnly}
             disabled={disabled}
-            placeholder={
-              focused ? "" : placeholder
-            }
+            placeholder={focused ? "" : placeholder}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
             className={`
               ${baseFieldClass}
-              py-2.5
               ${
                 leadingIcon
-                  ? "pl-11 pr-4"
-                  : "px-4"
+                  ? "pl-10 pr-3"
+                  : "px-3"
               }
             `}
           />

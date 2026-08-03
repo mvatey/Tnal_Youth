@@ -75,10 +75,7 @@ const MONK_GENDER = "ព្រះសង្ឃ";
  * into a JavaScript Date object.
  */
 function parseKhmerDate(value) {
-  if (
-    typeof value !== "string" ||
-    !value.trim()
-  ) {
+  if (typeof value !== "string" || !value.trim()) {
     return null;
   }
 
@@ -86,44 +83,29 @@ function parseKhmerDate(value) {
    * Also support an HTML date input value:
    * yyyy-mm-dd
    */
-  const isoDateMatch = value.match(
-    /^(\d{4})-(\d{2})-(\d{2})$/,
-  );
+  const isoDateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 
   if (isoDateMatch) {
-    const [, year, month, day] =
-      isoDateMatch;
+    const [, year, month, day] = isoDateMatch;
 
-    return new Date(
-      Number(year),
-      Number(month) - 1,
-      Number(day),
-    );
+    return new Date(Number(year), Number(month) - 1, Number(day));
   }
 
-  const khmerDateMatch = value.match(
-    /(\d+)\s+([^\s,]+),?\s*(\d+)/,
-  );
+  const khmerDateMatch = value.match(/(\d+)\s+([^\s,]+),?\s*(\d+)/);
 
   if (!khmerDateMatch) {
     return null;
   }
 
-  const [, day, monthName, year] =
-    khmerDateMatch;
+  const [, day, monthName, year] = khmerDateMatch;
 
-  const month =
-    KHMER_MONTHS[monthName];
+  const month = KHMER_MONTHS[monthName];
 
   if (month === undefined) {
     return null;
   }
 
-  return new Date(
-    Number(year),
-    month,
-    Number(day),
-  );
+  return new Date(Number(year), month, Number(day));
 }
 
 /**
@@ -131,16 +113,11 @@ function parseKhmerDate(value) {
  * the same display format used by members.json.
  */
 function formatDateToKhmer(value) {
-  if (
-    typeof value !== "string" ||
-    !value.trim()
-  ) {
+  if (typeof value !== "string" || !value.trim()) {
     return "";
   }
 
-  const match = value.match(
-    /^(\d{4})-(\d{2})-(\d{2})$/,
-  );
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 
   if (!match) {
     return value;
@@ -148,11 +125,9 @@ function formatDateToKhmer(value) {
 
   const [, year, month, day] = match;
 
-  const monthIndex =
-    Number(month) - 1;
+  const monthIndex = Number(month) - 1;
 
-  const monthName =
-    KHMER_MONTH_NAMES[monthIndex];
+  const monthName = KHMER_MONTH_NAMES[monthIndex];
 
   if (!monthName) {
     return value;
@@ -164,45 +139,26 @@ function formatDateToKhmer(value) {
 function calcGrowth(members, filterFn) {
   const today = new Date();
 
-  const oneMonthAgo =
-    new Date(today);
+  const oneMonthAgo = new Date(today);
 
-  oneMonthAgo.setMonth(
-    oneMonthAgo.getMonth() - 1,
-  );
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
   const countUpTo = (cutoff) =>
     members.filter((member) => {
-      const joinedDate =
-        parseKhmerDate(
-          member.joinedAt,
-        );
+      const joinedDate = parseKhmerDate(member.joinedAt);
 
-      return (
-        joinedDate &&
-        joinedDate <= cutoff &&
-        filterFn(member)
-      );
+      return joinedDate && joinedDate <= cutoff && filterFn(member);
     }).length;
 
-  const currentCount =
-    countUpTo(today);
+  const currentCount = countUpTo(today);
 
-  const previousCount =
-    countUpTo(oneMonthAgo);
+  const previousCount = countUpTo(oneMonthAgo);
 
   if (previousCount === 0) {
-    return currentCount > 0
-      ? 100
-      : 0;
+    return currentCount > 0 ? 100 : 0;
   }
 
-  return Math.round(
-    ((currentCount -
-      previousCount) /
-      previousCount) *
-      100,
-  );
+  return Math.round(((currentCount - previousCount) / previousCount) * 100);
 }
 
 export default function MembersPage() {
@@ -213,31 +169,17 @@ export default function MembersPage() {
    * This allows newly created members
    * to appear immediately.
    */
-  const [members, setMembers] =
-    useState(initialMembers);
+  const [members, setMembers] = useState(initialMembers);
 
-  const [query, setQuery] =
-    useState("");
+  const [query, setQuery] = useState("");
 
-  const [
-    branchFilter,
-    setBranchFilter,
-  ] = useState("");
+  const [branchFilter, setBranchFilter] = useState("");
 
-  const [
-    statusFilter,
-    setStatusFilter,
-  ] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
-  const [
-    genderFilter,
-    setGenderFilter,
-  ] = useState("");
+  const [genderFilter, setGenderFilter] = useState("");
 
-  const [
-    isCreateOpen,
-    setIsCreateOpen,
-  ] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   /*
    * Statistic card values.
@@ -245,27 +187,18 @@ export default function MembersPage() {
   const stats = useMemo(() => {
     const total = members.length;
 
-    const female = members.filter(
-      (member) =>
-        member.gender === "ស្រី",
-    ).length;
+    const female = members.filter((member) => member.gender === "ស្រី").length;
 
     const monk = members.filter(
-      (member) =>
-        member.gender ===
-        MONK_GENDER,
+      (member) => member.gender === MONK_GENDER,
     ).length;
 
     const buddhist = members.filter(
-      (member) =>
-        member.religion ===
-        BUDDHIST_LABEL,
+      (member) => member.religion === BUDDHIST_LABEL,
     ).length;
 
     const islam = members.filter(
-      (member) =>
-        member.religion ===
-        ISLAM_LABEL,
+      (member) => member.religion === ISLAM_LABEL,
     ).length;
 
     return {
@@ -275,36 +208,23 @@ export default function MembersPage() {
       buddhist,
       islam,
 
-      totalGrowth: calcGrowth(
-        members,
-        () => true,
-      ),
+      totalGrowth: calcGrowth(members, () => true),
 
-      femaleGrowth: calcGrowth(
-        members,
-        (member) =>
-          member.gender === "ស្រី",
-      ),
+      femaleGrowth: calcGrowth(members, (member) => member.gender === "ស្រី"),
 
       monkGrowth: calcGrowth(
         members,
-        (member) =>
-          member.gender ===
-          MONK_GENDER,
+        (member) => member.gender === MONK_GENDER,
       ),
 
       buddhistGrowth: calcGrowth(
         members,
-        (member) =>
-          member.religion ===
-          BUDDHIST_LABEL,
+        (member) => member.religion === BUDDHIST_LABEL,
       ),
 
       islamGrowth: calcGrowth(
         members,
-        (member) =>
-          member.religion ===
-          ISLAM_LABEL,
+        (member) => member.religion === ISLAM_LABEL,
       ),
     };
   }, [members]);
@@ -312,82 +232,34 @@ export default function MembersPage() {
   /*
    * Search and filter table data.
    */
-  const filteredMembers =
-    useMemo(() => {
-      const normalizedQuery =
-        query
-          .trim()
-          .toLowerCase();
+  const filteredMembers = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
 
-      return members.filter(
-        (member) => {
-          const memberNameKh =
-            String(
-              member.name_kh ??
-                "",
-            ).toLowerCase();
+    return members.filter((member) => {
+      const memberNameKh = String(member.name_kh ?? "").toLowerCase();
 
-          const memberNameEn =
-            String(
-              member.name_en ??
-                "",
-            ).toLowerCase();
+      const memberNameEn = String(member.name_en ?? "").toLowerCase();
 
-          const memberPhone =
-            String(
-              member.phone ?? "",
-            ).toLowerCase();
+      const memberPhone = String(member.phone ?? "").toLowerCase();
 
-          const memberEmail =
-            String(
-              member.email ?? "",
-            ).toLowerCase();
+      const memberEmail = String(member.email ?? "").toLowerCase();
 
-          const matchesQuery =
-            !normalizedQuery ||
-            memberNameKh.includes(
-              normalizedQuery,
-            ) ||
-            memberNameEn.includes(
-              normalizedQuery,
-            ) ||
-            memberPhone.includes(
-              normalizedQuery,
-            ) ||
-            memberEmail.includes(
-              normalizedQuery,
-            );
+      const matchesQuery =
+        !normalizedQuery ||
+        memberNameKh.includes(normalizedQuery) ||
+        memberNameEn.includes(normalizedQuery) ||
+        memberPhone.includes(normalizedQuery) ||
+        memberEmail.includes(normalizedQuery);
 
-          const matchesBranch =
-            !branchFilter ||
-            member.branch ===
-              branchFilter;
+      const matchesBranch = !branchFilter || member.branch === branchFilter;
 
-          const matchesStatus =
-            !statusFilter ||
-            member.status ===
-              statusFilter;
+      const matchesStatus = !statusFilter || member.status === statusFilter;
 
-          const matchesGender =
-            !genderFilter ||
-            member.gender ===
-              genderFilter;
+      const matchesGender = !genderFilter || member.gender === genderFilter;
 
-          return (
-            matchesQuery &&
-            matchesBranch &&
-            matchesStatus &&
-            matchesGender
-          );
-        },
-      );
-    }, [
-      members,
-      query,
-      branchFilter,
-      statusFilter,
-      genderFilter,
-    ]);
+      return matchesQuery && matchesBranch && matchesStatus && matchesGender;
+    });
+  }, [members, query, branchFilter, statusFilter, genderFilter]);
 
   /*
    * Create branch dropdown options
@@ -395,14 +267,7 @@ export default function MembersPage() {
    */
   const branches = useMemo(() => {
     const uniqueBranches = [
-      ...new Set(
-        members
-          .map(
-            (member) =>
-              member.branch,
-          )
-          .filter(Boolean),
-      ),
+      ...new Set(members.map((member) => member.branch).filter(Boolean)),
     ];
 
     return [
@@ -411,12 +276,10 @@ export default function MembersPage() {
         value: "",
       },
 
-      ...uniqueBranches.map(
-        (branch) => ({
-          label: branch,
-          value: branch,
-        }),
-      ),
+      ...uniqueBranches.map((branch) => ({
+        label: branch,
+        value: branch,
+      })),
     ];
   }, [members]);
 
@@ -424,9 +287,7 @@ export default function MembersPage() {
    * Receive form data from
    * CreateMemberModal.
    */
-  const handleCreateMember = (
-    formData,
-  ) => {
+  const handleCreateMember = (formData) => {
     if (!formData) {
       return;
     }
@@ -444,17 +305,9 @@ export default function MembersPage() {
       "level",
     ];
 
-    const isValid =
-      requiredFields.every(
-        (field) => {
-          return (
-            String(
-              formData[field] ??
-                "",
-            ).trim() !== ""
-          );
-        },
-      );
+    const isValid = requiredFields.every((field) => {
+      return String(formData[field] ?? "").trim() !== "";
+    });
 
     /*
      * Extra protection:
@@ -467,42 +320,27 @@ export default function MembersPage() {
     const newMember = {
       id: crypto.randomUUID(),
 
-      name_kh:
-        formData.nameKh.trim(),
+      name_kh: formData.nameKh.trim(),
 
-      name_en:
-        formData.nameEn.trim(),
+      name_en: formData.nameEn.trim(),
 
-      gender:
-        formData.gender,
+      gender: formData.gender,
 
-      status:
-        formData.status,
+      status: formData.status,
 
-      phone:
-        formData.phone.trim(),
+      phone: formData.phone.trim(),
 
-      email:
-        formData.email?.trim() ||
-        "",
+      email: formData.email?.trim() || "",
 
-      branch:
-        formData.branch,
+      branch: formData.branch,
 
-      role:
-        formData.role,
+      role: formData.role,
 
-      dob: formatDateToKhmer(
-        formData.dob,
-      ),
+      dob: formatDateToKhmer(formData.dob),
 
-      joinedAt:
-        formatDateToKhmer(
-          formData.joinedAt,
-        ),
+      joinedAt: formatDateToKhmer(formData.joinedAt),
 
-      level:
-        formData.level,
+      level: formData.level,
 
       /*
        * The modal currently does not
@@ -515,12 +353,7 @@ export default function MembersPage() {
      * Add the new member to
      * the first row of the table.
      */
-    setMembers(
-      (previousMembers) => [
-        newMember,
-        ...previousMembers,
-      ],
-    );
+    setMembers((previousMembers) => [newMember, ...previousMembers]);
 
     setIsCreateOpen(false);
   };
@@ -530,8 +363,7 @@ export default function MembersPage() {
       header: "ល.រ",
       width: "w-[6%]",
       align: "center",
-      render: (_, index) =>
-        index ,
+      render: (_, index) => index,
     },
     {
       header: "សមាជិក",
@@ -554,9 +386,7 @@ export default function MembersPage() {
       width: "w-[14%]",
       align: "left",
       render: (member) => (
-        <span className="block w-full truncate">
-          {member.branch}
-        </span>
+        <span className="block w-full truncate">{member.branch}</span>
       ),
     },
     {
@@ -577,16 +407,12 @@ export default function MembersPage() {
             py-1
             text-[11px]
             ${
-              ROLE_BADGE_STYLES[
-                member.role
-              ] ||
+              ROLE_BADGE_STYLES[member.role] ||
               "bg-gray-100 text-text-secondary"
             }
           `}
         >
-          {ROLE_LABELS[
-            member.role
-          ] || member.role}
+          {ROLE_LABELS[member.role] || member.role}
         </span>
       ),
     },
@@ -608,9 +434,7 @@ export default function MembersPage() {
             py-1
             text-[11px]
             ${
-              STATUS_BADGE_STYLES[
-                member.status
-              ] ||
+              STATUS_BADGE_STYLES[member.status] ||
               "bg-gray-100 text-text-secondary"
             }
           `}
@@ -624,9 +448,7 @@ export default function MembersPage() {
       width: "w-[14%]",
       align: "left",
       render: (member) => (
-        <span className="block w-full truncate">
-          {member.joinedAt}
-        </span>
+        <span className="block w-full truncate">{member.joinedAt}</span>
       ),
     },
     {
@@ -636,11 +458,7 @@ export default function MembersPage() {
       render: (member) => (
         <div className="flex w-full items-center justify-center">
           <ButtonSeeDetail
-            onClick={() =>
-              router.push(
-                `/member/memberInfo/${member.id}`,
-              )
-            }
+            onClick={() => router.push(`/member/memberInfo/${member.id}`)}
           />
         </div>
       ),
@@ -651,16 +469,14 @@ export default function MembersPage() {
     {
       name: "branch",
       value: branchFilter,
-      onChange:
-        setBranchFilter,
+      onChange: setBranchFilter,
       options: branches,
       placeholder: "សាខា",
     },
     {
       name: "status",
       value: statusFilter,
-      onChange:
-        setStatusFilter,
+      onChange: setStatusFilter,
       options: [
         {
           label: "ស្ថានភាព",
@@ -680,8 +496,7 @@ export default function MembersPage() {
     {
       name: "gender",
       value: genderFilter,
-      onChange:
-        setGenderFilter,
+      onChange: setGenderFilter,
       options: [
         {
           label: "ភេទ",
@@ -705,28 +520,25 @@ export default function MembersPage() {
   ];
 
   return (
-    <div className="flex min-h-full flex-col gap-4">
+    <div className="flex min-h-full min-w-0 flex-col gap-4 overflow-hidden">
       {/* Statistic cards */}
 
       <div
         className="
-          grid
-          shrink-0
-          grid-cols-2
-          gap-4
-          sm:grid-cols-3
-          lg:grid-cols-5
-        "
+    grid
+    shrink-0
+    grid-cols-1
+    gap-3
+    sm:grid-cols-2
+    xl:grid-cols-3
+    2xl:grid-cols-5
+  "
       >
         <StatCard
           icon={Users}
           label="សមាជិកសរុប"
-          value={String(
-            stats.total,
-          )}
-          growth={String(
-            stats.totalGrowth,
-          )}
+          value={String(stats.total)}
+          growth={String(stats.totalGrowth)}
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -734,12 +546,8 @@ export default function MembersPage() {
         <StatCard
           icon={AiOutlineWoman}
           label="ភេទស្រី"
-          value={String(
-            stats.female,
-          )}
-          growth={String(
-            stats.femaleGrowth,
-          )}
+          value={String(stats.female)}
+          growth={String(stats.femaleGrowth)}
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -747,12 +555,8 @@ export default function MembersPage() {
         <StatCard
           icon={Landmark}
           label="ចំនួនព្រះសង្ឃ"
-          value={String(
-            stats.monk,
-          )}
-          growth={String(
-            stats.monkGrowth,
-          )}
+          value={String(stats.monk)}
+          growth={String(stats.monkGrowth)}
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -760,12 +564,8 @@ export default function MembersPage() {
         <StatCard
           icon={FaDharmachakra}
           label="ព្រះពុទ្ធ"
-          value={String(
-            stats.buddhist,
-          )}
-          growth={String(
-            stats.buddhistGrowth,
-          )}
+          value={String(stats.buddhist)}
+          growth={String(stats.buddhistGrowth)}
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -773,12 +573,8 @@ export default function MembersPage() {
         <StatCard
           icon={Moon}
           label="អ៊ីស្លាម"
-          value={String(
-            stats.islam,
-          )}
-          growth={String(
-            stats.islamGrowth,
-          )}
+          value={String(stats.islam)}
+          growth={String(stats.islamGrowth)}
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -786,47 +582,41 @@ export default function MembersPage() {
 
       {/* Member table */}
 
-      <div className="w-full">
+      <div className="min-w-0 w-full">
         <DataTable
           title="បញ្ជីសមាជិក"
           data={filteredMembers}
           columns={tableColumns}
           filters={filterConfig}
           searchQuery={query}
-          onSearchChange={
-            setQuery
-          }
+          onSearchChange={setQuery}
           searchPlaceholder="ស្វែងរកតាមរយៈឈ្មោះ ឬលេខទូរស័ព្ទ..."
           pageSize={20}
           actionButton={
             <button
               type="button"
-              onClick={() =>
-                setIsCreateOpen(
-                  true,
-                )
-              }
+              onClick={() => setIsCreateOpen(true)}
               className="
-                inline-flex
-                items-center
-                gap-2
-                whitespace-nowrap
-                rounded-lg
-                bg-success
-                px-18
-                py-2
-                text-sm
-                font-medium
-                text-white
-                transition
-                hover:opacity-90
-              "
+  inline-flex
+  h-[34px]
+  w-full
+  items-center
+  justify-center
+  gap-2
+  whitespace-nowrap
+  rounded-lg
+  bg-success
+  px-4
+  text-sm
+  font-medium
+  text-white
+  transition
+  hover:opacity-90
+"
             >
               <RiAddCircleLine className="h-4 w-4 shrink-0 " />
 
-              <span>
-                បន្ថែមសមាជិកថ្មី
-              </span>
+              <span>បន្ថែមសមាជិកថ្មី</span>
             </button>
           }
         />
@@ -836,16 +626,9 @@ export default function MembersPage() {
 
       <CreateMemberModal
         open={isCreateOpen}
-        onClose={() =>
-          setIsCreateOpen(false)
-        }
-        onSave={
-          handleCreateMember
-        }
-        branches={branches.filter(
-          (branch) =>
-            branch.value !== "",
-        )}
+        onClose={() => setIsCreateOpen(false)}
+        onSave={handleCreateMember}
+        branches={branches.filter((branch) => branch.value !== "")}
       />
     </div>
   );

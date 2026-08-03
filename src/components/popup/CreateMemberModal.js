@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import { HiSaveAs } from "react-icons/hi";
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
@@ -12,7 +16,10 @@ import FormActionButton from "@/components/forms/FormActionButton";
 import memberOptions from "@/data/donation/memberOptions.json";
 import membersData from "@/data/members.json";
 
-const { genderOptions, statusOptions } = memberOptions;
+const {
+  genderOptions,
+  statusOptions,
+} = memberOptions;
 
 const ROLE_LABELS = {
   branch_leader: "ប្រធានសាខា",
@@ -20,8 +27,20 @@ const ROLE_LABELS = {
   member: "សមាជិក",
 };
 
-const LEVEL_OPTIONS = ["ក", "ខ", "គ", "ឃ", "ង"];
-const Nationality_OPTIONS = ["ខ្មែរ", "វៀតណាម", "ចិន", "បារាំង"];
+const LEVEL_OPTIONS = [
+  "ក",
+  "ខ",
+  "គ",
+  "ឃ",
+  "ង",
+];
+
+const NATIONALITY_OPTIONS = [
+  "ខ្មែរ",
+  "វៀតណាម",
+  "ចិន",
+  "បារាំង",
+];
 
 const EMPTY_FORM = {
   nameKh: "",
@@ -35,26 +54,35 @@ const EMPTY_FORM = {
   dob: "",
   joinedAt: "",
   level: "",
+  nationality: "",
 };
 
 function normalizeRole(role) {
-  const normalizedRole = String(role ?? "").trim();
+  const normalizedRole = String(
+    role ?? "",
+  ).trim();
 
   const roleMap = {
     admin: "admin",
     អ្នកគ្រប់គ្រង: "admin",
 
-    branch_leader: "branch_leader",
-    ប្រធានសាខា: "branch_leader",
+    branch_leader:
+      "branch_leader",
+    ប្រធានសាខា:
+      "branch_leader",
 
     secretary: "secretary",
-    លេខាធិការ: "secretary",
+    លេខាធិការ:
+      "secretary",
 
     member: "member",
     សមាជិក: "member",
   };
 
-  return roleMap[normalizedRole] || normalizedRole;
+  return (
+    roleMap[normalizedRole] ||
+    normalizedRole
+  );
 }
 
 export default function CreateMemberModal({
@@ -63,27 +91,43 @@ export default function CreateMemberModal({
   onSave,
   branches = [],
 }) {
-  const [mounted, setMounted] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [showValidationError, setShowValidationError] = useState(false);
+  const [mounted, setMounted] =
+    useState(false);
+
+  const [form, setForm] =
+    useState(EMPTY_FORM);
+
+  const [
+    showValidationError,
+    setShowValidationError,
+  ] = useState(false);
 
   const roleOptions = useMemo(() => {
     const roleMap = new Map();
 
-    membersData.forEach((member) => {
-      const role = normalizeRole(member.role);
+    membersData.forEach(
+      (member) => {
+        const role = normalizeRole(
+          member.role,
+        );
 
-      if (!role || !ROLE_LABELS[role]) {
-        return;
-      }
+        if (
+          !role ||
+          !ROLE_LABELS[role]
+        ) {
+          return;
+        }
 
-      roleMap.set(role, {
-        label: ROLE_LABELS[role],
-        value: role,
-      });
-    });
+        roleMap.set(role, {
+          label: ROLE_LABELS[role],
+          value: role,
+        });
+      },
+    );
 
-    return Array.from(roleMap.values());
+    return Array.from(
+      roleMap.values(),
+    );
   }, []);
 
   useEffect(() => {
@@ -91,10 +135,13 @@ export default function CreateMemberModal({
   }, []);
 
   useEffect(() => {
-    if (open) {
-      setForm(EMPTY_FORM);
-      setShowValidationError(false);
-    }
+    if (!open) return;
+
+    setForm(EMPTY_FORM);
+
+    setShowValidationError(
+      false,
+    );
   }, [open]);
 
   useEffect(() => {
@@ -102,16 +149,26 @@ export default function CreateMemberModal({
       return undefined;
     }
 
-    const handleEscape = (event) => {
-      if (event.key === "Escape") {
+    const handleEscape = (
+      event,
+    ) => {
+      if (
+        event.key === "Escape"
+      ) {
         onClose?.();
       }
     };
 
-    window.addEventListener("keydown", handleEscape);
+    window.addEventListener(
+      "keydown",
+      handleEscape,
+    );
 
     return () => {
-      window.removeEventListener("keydown", handleEscape);
+      window.removeEventListener(
+        "keydown",
+        handleEscape,
+      );
     };
   }, [open, onClose]);
 
@@ -120,25 +177,34 @@ export default function CreateMemberModal({
       return undefined;
     }
 
-    const oldOverflow = document.body.style.overflow;
+    const oldOverflow =
+      document.body.style.overflow;
 
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow =
+      "hidden";
 
     return () => {
-      document.body.style.overflow = oldOverflow;
+      document.body.style.overflow =
+        oldOverflow;
     };
   }, [open]);
 
-  const update = (field) => (event) => {
-    const value = event.target.value;
+  const update =
+    (field) => (event) => {
+      const value =
+        event.target.value;
 
-    setForm((previousForm) => ({
-      ...previousForm,
-      [field]: value,
-    }));
+      setForm(
+        (previousForm) => ({
+          ...previousForm,
+          [field]: value,
+        }),
+      );
 
-    setShowValidationError(false);
-  };
+      setShowValidationError(
+        false,
+      );
+    };
 
   const requiredFields = [
     "nameKh",
@@ -152,33 +218,59 @@ export default function CreateMemberModal({
     "joinedAt",
     "level",
     "nationality",
-
   ];
 
-  const isFormValid = requiredFields.every((field) => {
-    return String(form[field] ?? "").trim() !== "";
-  });
+  const isFormValid =
+    requiredFields.every(
+      (field) =>
+        String(
+          form[field] ?? "",
+        ).trim() !== "",
+    );
 
-  const submit = async (event) => {
+  const submit = async (
+    event,
+  ) => {
     event.preventDefault();
 
     if (!isFormValid) {
-      setShowValidationError(true);
+      setShowValidationError(
+        true,
+      );
+
       return;
     }
 
-    setShowValidationError(false);
+    setShowValidationError(
+      false,
+    );
 
     const newMember = {
-      id: crypto.randomUUID(),
+      id:
+        typeof crypto !==
+          "undefined" &&
+        typeof crypto.randomUUID ===
+          "function"
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random()
+              .toString(36)
+              .slice(2)}`,
+
       ...form,
     };
 
-    await onSave?.(newMember);
+    try {
+      await onSave?.(newMember);
 
-    setForm(EMPTY_FORM);
-    setShowValidationError(false);
-    onClose?.();
+      setForm(EMPTY_FORM);
+
+      onClose?.();
+    } catch (error) {
+      console.error(
+        "Cannot create member:",
+        error,
+      );
+    }
   };
 
   if (!open || !mounted) {
@@ -186,211 +278,316 @@ export default function CreateMemberModal({
   }
 
   return createPortal(
-  <div
-    className="
-      fixed
-      inset-0
-      z-[9999]
-      bg-black/40
-    "
-    onMouseDown={(event) => {
-      if (event.target === event.currentTarget) {
-        onClose?.();
-      }
-    }}
-  >
     <div
       className="
-        absolute
-        bottom-0
-        left-0
-        right-0
-        top-0
-        flex
-        items-center
-        justify-center
-        p-4
-        lg:left-64
-        lg:top-16
+        fixed
+        inset-0
+        z-[9999]
+        bg-black/40
       "
+      onMouseDown={(event) => {
+        if (
+          event.target ===
+          event.currentTarget
+        ) {
+          onClose?.();
+        }
+      }}
     >
       <div
         className="
-          no-scrollbar
-          max-h-[calc(100vh-6rem)]
-          w-full
-          max-w-[720px]
-          overflow-y-auto
-          rounded-2xl
-          bg-white
-          shadow-2xl
+          absolute
+          inset-0
+          flex
+          items-center
+          justify-center
+          p-3
+          sm:p-4
+          lg:bottom-0
+          lg:left-64
+          lg:right-0
+          lg:top-16
         "
-        onMouseDown={(event) =>
-          event.stopPropagation()
-        }
       >
-        <div className="flex items-center justify-between border-b border-border px-7 py-5">
-          <h2 className="text-xl font-bold text-primary">
-            បង្កើតសមាជិកថ្មី
-          </h2>
+        <div
+          className="
+            no-scrollbar
+            max-h-[calc(100vh-1.5rem)]
+            w-full
+            max-w-[620px]
+            overflow-y-auto
+            rounded-xl
+            bg-white
+            shadow-2xl
+            sm:max-w-[660px]
+            sm:rounded-2xl
+            lg:max-h-[calc(100vh-5rem)]
+            xl:max-w-[680px]
+            2xl:max-w-[720px]
+          "
+          onMouseDown={(event) =>
+            event.stopPropagation()
+          }
+        >
+          {/* Header */}
 
-          <button
-            type="button"
-            onClick={onClose}
+          <div
             className="
               flex
-              h-8
-              w-8
               items-center
-              justify-center
-              rounded-full
-              text-text-secondary
-              transition
-              hover:bg-gray-100
-              hover:text-text-primary
+              justify-between
+              border-b
+              border-border
+              px-4
+              py-3
+              sm:px-5
+              sm:py-4
+              2xl:px-7
+              2xl:py-5
             "
-            aria-label="បិទ"
           >
-            <X size={18} />
-          </button>
+            <h2
+              className="
+                text-base
+                font-bold
+                text-primary
+                sm:text-lg
+                2xl:text-xl
+              "
+            >
+              បង្កើតសមាជិកថ្មី
+            </h2>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="បិទ"
+              className="
+                flex
+                h-8
+                w-8
+                items-center
+                justify-center
+                rounded-full
+                text-text-secondary
+                transition
+                hover:bg-gray-100
+                hover:text-text-primary
+              "
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Form */}
+
+          <form
+            onSubmit={submit}
+            className="
+              px-4
+              pb-4
+              pt-4
+              sm:px-5
+              sm:pb-5
+              2xl:px-7
+              2xl:pb-7
+              2xl:pt-5
+            "
+          >
+            <div
+              className="
+                grid
+                grid-cols-1
+                gap-x-4
+                gap-y-3
+                sm:grid-cols-2
+                2xl:gap-y-5
+              "
+            >
+              <BoxFill
+                label="ឈ្មោះជាភាសាខ្មែរ"
+                name="nameKh"
+                placeholder="បញ្ចូលឈ្មោះ"
+                value={form.nameKh}
+                onChange={update(
+                  "nameKh",
+                )}
+              />
+
+              <BoxFill
+                label="ឈ្មោះជាអក្សរឡាតាំង"
+                name="nameEn"
+                placeholder="បញ្ចូលឈ្មោះ"
+                value={form.nameEn}
+                onChange={update(
+                  "nameEn",
+                )}
+              />
+
+              <FormSelect
+                label="ភេទ"
+                name="gender"
+                placeholder="ជ្រើសរើសភេទ"
+                options={
+                  genderOptions
+                }
+                value={form.gender}
+                onChange={update(
+                  "gender",
+                )}
+              />
+
+              <FormSelect
+                label="ស្ថានភាព"
+                name="status"
+                placeholder="ជ្រើសរើសស្ថានភាព"
+                options={
+                  statusOptions
+                }
+                value={form.status}
+                onChange={update(
+                  "status",
+                )}
+              />
+
+              <BoxFill
+                label="លេខទូរស័ព្ទ"
+                name="phone"
+                type="tel"
+                placeholder="បញ្ចូលលេខទូរស័ព្ទ"
+                value={form.phone}
+                onChange={update(
+                  "phone",
+                )}
+              />
+
+              <BoxFill
+                label="អ៊ីមែល"
+                name="email"
+                type="email"
+                placeholder="បញ្ចូលអ៊ីមែល"
+                value={form.email}
+                onChange={update(
+                  "email",
+                )}
+              />
+
+              <FormSelect
+                label="សាខា"
+                name="branch"
+                placeholder="ជ្រើសរើសសាខា"
+                options={branches.map(
+                  (branch) => ({
+                    label:
+                      branch.label ??
+                      branch.nameKm ??
+                      branch.name ??
+                      branch,
+
+                    value:
+                      branch.value ??
+                      branch.id ??
+                      branch,
+                  }),
+                )}
+                value={form.branch}
+                onChange={update(
+                  "branch",
+                )}
+              />
+
+              <FormSelect
+                label="តួនាទី"
+                name="role"
+                placeholder="ជ្រើសរើសតួនាទី"
+                options={roleOptions}
+                value={form.role}
+                onChange={update(
+                  "role",
+                )}
+              />
+
+              <BoxFill
+                label="ថ្ងៃខែឆ្នាំកំណើត"
+                name="dob"
+                type="date"
+                value={form.dob}
+                onChange={update(
+                  "dob",
+                )}
+              />
+
+              <BoxFill
+                label="ថ្ងៃខែឆ្នាំចូលរួម"
+                name="joinedAt"
+                type="date"
+                value={
+                  form.joinedAt
+                }
+                onChange={update(
+                  "joinedAt",
+                )}
+              />
+
+              <FormSelect
+                label="កាំ"
+                name="level"
+                placeholder="ជ្រើសរើសកាំ"
+                options={LEVEL_OPTIONS.map(
+                  (level) => ({
+                    label: level,
+                    value: level,
+                  }),
+                )}
+                value={form.level}
+                onChange={update(
+                  "level",
+                )}
+              />
+
+              <FormSelect
+                label="សញ្ជាតិ"
+                name="nationality"
+                placeholder="ជ្រើសរើសសញ្ជាតិ"
+                options={NATIONALITY_OPTIONS.map(
+                  (nationality) => ({
+                    label:
+                      nationality,
+
+                    value:
+                      nationality,
+                  }),
+                )}
+                value={
+                  form.nationality
+                }
+                onChange={update(
+                  "nationality",
+                )}
+              />
+            </div>
+
+            {showValidationError &&
+              !isFormValid && (
+                <p className="mt-4 text-xs font-medium text-red-500">
+                  សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
+                </p>
+              )}
+
+            <div className="mt-4 2xl:mt-6">
+              <FormActionButton
+                onCancel={onClose}
+                isValid={
+                  isFormValid
+                }
+                saveText="រក្សាទុក"
+                cancelText="បោះបង់"
+              />
+            </div>
+          </form>
         </div>
-
-        <form onSubmit={submit} className="px-7 pb-7 pt-5">
-          <div className="grid grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2">
-            <BoxFill
-              label="ឈ្មោះជាភាសាខ្មែរ"
-              placeholder="បញ្ចូលឈ្មោះ"
-              value={form.nameKh}
-              onChange={update("nameKh")}
-            />
-
-            <BoxFill
-              label="ឈ្មោះជាអក្សរឡាតាំង"
-              placeholder="បញ្ចូលឈ្មោះ"
-              value={form.nameEn}
-              onChange={update("nameEn")}
-            />
-
-            <FormSelect
-              label="ភេទ"
-              name="gender"
-              placeholder="ជ្រើសរើសភេទ"
-              options={genderOptions}
-              value={form.gender}
-              onChange={update("gender")}
-            />
-
-            <FormSelect
-              label="ស្ថានភាព"
-              name="status"
-              placeholder="ជ្រើសរើសស្ថានភាព"
-              options={statusOptions}
-              value={form.status}
-              onChange={update("status")}
-            />
-
-            <BoxFill
-              label="លេខទូរស័ព្ទ"
-              type="tel"
-              placeholder="បញ្ចូលលេខទូរស័ព្ទ"
-              value={form.phone}
-              onChange={update("phone")}
-            />
-
-            <BoxFill
-              label="អ៊ីមែល"
-              type="email"
-              placeholder="បញ្ចូលអ៊ីមែល"
-              value={form.email}
-              onChange={update("email")}
-            />
-
-            <FormSelect
-              label="សាខា"
-              name="branch"
-              placeholder="ជ្រើសរើសសាខា"
-              options={branches.map((branch) => ({
-                label:
-                  branch.label ??
-                  branch.nameKm ??
-                  branch.name ??
-                  branch,
-                value:
-                  branch.value ??
-                  branch.id ??
-                  branch,
-              }))}
-              value={form.branch}
-              onChange={update("branch")}
-            />
-
-            <FormSelect
-              label="តួនាទី"
-              name="role"
-              placeholder="ជ្រើសរើសតួនាទី"
-              options={roleOptions}
-              value={form.role}
-              onChange={update("role")}
-            />
-
-            <BoxFill
-              label="ថ្ងៃខែឆ្នាំកំណើត"
-              type="date"
-              value={form.dob}
-              onChange={update("dob")}
-            />
-
-            <BoxFill
-              label="ថ្ងៃខែឆ្នាំចូលរួម"
-              type="date"
-              value={form.joinedAt}
-              onChange={update("joinedAt")}
-            />
-
-            <FormSelect
-              label="កាំ"
-              name="level"
-              placeholder="ជ្រើសរើសកាំ"
-              options={LEVEL_OPTIONS.map((level) => ({
-                label: level,
-                value: level,
-              }))}
-              value={form.level}
-              onChange={update("level")}
-            />
-
-            <FormSelect
-              label="សញ្ជាតិ"
-              name="nationality"
-              placeholder="ជ្រើសរើសសញ្ជាតិ"
-              options={Nationality_OPTIONS.map((nationality) => ({
-                label: nationality,
-                value: nationality,
-              }))}
-              value={form.nationality}
-              onChange={update("nationality")}
-            />
-          </div>
-
-          {showValidationError && !isFormValid && (
-            <p className="mt-4 text-xs font-medium text-red-500">
-              សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
-            </p>
-          )}
-
-          <div className="mt-6">
-            <FormActionButton
-              onCancel={onClose}
-              isValid={isFormValid}
-              saveText="រក្សាទុក"
-              cancelText="បោះបង់"
-            />
-          </div>
-        </form>
       </div>
-    </div>
-  </div>,
-  document.body,
-);
+    </div>,
+    document.body,
+  );
 }
-

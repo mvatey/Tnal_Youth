@@ -9,58 +9,91 @@ function getTodayLocalDate() {
   const now = new Date();
 
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
+  const month = String(
+    now.getMonth() + 1,
+  ).padStart(2, "0");
+  const day = String(
+    now.getDate(),
+  ).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
 
-function convertKhmerDateToInputDate(date) {
+function convertKhmerDateToInputDate(
+  date,
+) {
   if (!date) {
     return "";
   }
 
-  // Already formatted as yyyy-mm-dd
-  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+  if (
+    /^\d{4}-\d{2}-\d{2}$/.test(
+      date,
+    )
+  ) {
     return date;
   }
 
-  const parts = date.trim().split(/\s+/);
+  const parts = date
+    .trim()
+    .split(/\s+/);
 
   if (parts.length < 3) {
     return "";
   }
 
   const day = parts[0];
-  const monthKh = parts[1].replace(",", "");
+
+  const monthKh =
+    parts[1].replace(",", "");
+
   const year = parts[2];
 
-  const month = calendarData.months[monthKh];
+  const month =
+    calendarData.months[
+      monthKh
+    ];
 
   if (!month) {
     return "";
   }
 
-  return `${year}-${month}-${String(day).padStart(2, "0")}`;
+  return `${year}-${month}-${String(
+    day,
+  ).padStart(2, "0")}`;
 }
 
-function formatKhmerDisplayDate(date) {
+function formatKhmerDisplayDate(
+  date,
+) {
   if (!date) {
     return "";
   }
 
-  const [year, month, day] = date.split("-");
+  const [year, month, day] =
+    date.split("-");
 
-  if (!year || !month || !day) {
+  if (
+    !year ||
+    !month ||
+    !day
+  ) {
     return "";
   }
 
   const monthName =
-    Object.keys(calendarData.months).find(
-      (key) => calendarData.months[key] === month,
+    Object.keys(
+      calendarData.months,
+    ).find(
+      (key) =>
+        calendarData.months[
+          key
+        ] === month,
     ) || "";
 
-  return `${Number(day)} ${monthName}, ${year}`;
+  return `${Number(
+    day,
+  )} ${monthName}, ${year}`;
 }
 
 export default function FormDate({
@@ -76,14 +109,18 @@ export default function FormDate({
   const inputRef = useRef(null);
 
   const formattedValue =
-    convertKhmerDateToInputDate(value);
+    convertKhmerDateToInputDate(
+      value,
+    );
 
   const openPicker = () => {
     if (disabled) {
       return;
     }
 
-    if (inputRef.current?.showPicker) {
+    if (
+      inputRef.current?.showPicker
+    ) {
       inputRef.current.showPicker();
       return;
     }
@@ -91,8 +128,11 @@ export default function FormDate({
     inputRef.current?.click();
   };
 
-  const handleDateChange = (event) => {
-    const selectedDate = event.target.value;
+  const handleDateChange = (
+    event,
+  ) => {
+    const selectedDate =
+      event.target.value;
 
     if (
       maxDate &&
@@ -106,11 +146,17 @@ export default function FormDate({
   };
 
   return (
-    <div>
+    <div className="min-w-0">
       {label && (
         <label
           htmlFor={`${name}-display`}
-          className="mb-2 block text-sm font-semibold text-text-primary"
+          className="
+            mb-2
+            block
+            text-sm
+            font-semibold
+            text-text-primary
+          "
         >
           {label}
 
@@ -125,9 +171,11 @@ export default function FormDate({
       <div
         className={`
           relative
-          ${disabled
-            ? "cursor-not-allowed opacity-60"
-            : "cursor-pointer"}
+          ${
+            disabled
+              ? "cursor-not-allowed opacity-60"
+              : "cursor-pointer"
+          }
         `}
         onClick={openPicker}
       >
@@ -143,7 +191,8 @@ export default function FormDate({
           )}
           placeholder="ថ្ងៃ/ខែ/ឆ្នាំ"
           className="
-            h-11
+            box-border
+            h-[34px]
             w-full
             cursor-pointer
             rounded-lg
@@ -153,6 +202,7 @@ export default function FormDate({
             px-3
             pr-10
             text-sm
+            leading-none
             text-gray-600
             outline-none
             transition
@@ -169,7 +219,9 @@ export default function FormDate({
           type="date"
           name={name}
           value={formattedValue}
-          onChange={handleDateChange}
+          onChange={
+            handleDateChange
+          }
           required={required}
           max={maxDate}
           min={minDate}
@@ -179,7 +231,7 @@ export default function FormDate({
             pointer-events-none
             absolute
             inset-0
-            h-full
+            h-[34px]
             w-full
             opacity-0
           "
@@ -187,7 +239,7 @@ export default function FormDate({
         />
 
         <Calendar
-          size={18}
+          size={16}
           className="
             pointer-events-none
             absolute

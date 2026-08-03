@@ -64,17 +64,27 @@ export default function FormSelect({
 
   const hasEmptyOption =
     normalizedOptions.some(
-      (option) => option.value === "",
+      (option) =>
+        option.value === "",
     );
 
-  const isDisabled = disabled || loading;
+  const isDisabled =
+    disabled || loading;
 
   return (
-    <div className={`min-w-0 ${className}`}>
+    <div
+      className={`min-w-0 ${className}`}
+    >
       {label && (
         <label
           htmlFor={name}
-          className="mb-2 block text-sm font-semibold text-text-primary"
+          className="
+            mb-2
+            block
+            text-sm
+            font-semibold
+            text-text-primary
+          "
         >
           {label}
 
@@ -102,15 +112,17 @@ export default function FormSelect({
           }
           {...selectProps}
           className={`
-            h-10
+            box-border
+            h-[34px]
             w-full
             appearance-none
             rounded-lg
             border
             bg-white
             pl-3
-            pr-11
+            pr-10
             text-sm
+            leading-none
             outline-none
             transition
             ${
@@ -124,41 +136,50 @@ export default function FormSelect({
             ${selectClassName}
           `}
         >
-          {placeholder && !hasEmptyOption && (
-            <option value="">
-              {loading
-                ? "កំពុងទាញយក..."
-                : placeholder}
-            </option>
-          )}
+          {placeholder &&
+            !hasEmptyOption && (
+              <option value="">
+                {loading
+                  ? "កំពុងទាញយក..."
+                  : placeholder}
+              </option>
+            )}
 
           {!loading &&
-            normalizedOptions.length === 0 &&
+            normalizedOptions.length ===
+              0 &&
             !placeholder && (
-              <option value="" disabled>
+              <option
+                value=""
+                disabled
+              >
                 {emptyLabel}
               </option>
             )}
 
           {!loading &&
-            normalizedOptions.map((option) => (
-              <option
-                key={`${name || "select"}-${option.key}`}
-                value={option.value}
-                disabled={option.disabled}
-              >
-                {option.label}
-              </option>
-            ))}
+            normalizedOptions.map(
+              (option) => (
+                <option
+                  key={`${name || "select"}-${option.key}`}
+                  value={option.value}
+                  disabled={
+                    option.disabled
+                  }
+                >
+                  {option.label}
+                </option>
+              ),
+            )}
         </select>
 
         <ChevronDown
-          size={16}
+          size={15}
           aria-hidden="true"
           className="
             pointer-events-none
             absolute
-            right-4
+            right-3
             top-1/2
             -translate-y-1/2
             text-text-secondary
