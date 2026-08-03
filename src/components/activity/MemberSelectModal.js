@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download, Eye, Search } from "lucide-react";
+import { Eye, Search } from "lucide-react";
+import { HiSaveAs } from "react-icons/hi";
 import FilterBar from "@/components/table-items/FilterBar";
 
 const members = [
@@ -173,7 +174,7 @@ export default function MemberSelectModal({ onClose }) {
           <button type="button" onClick={onClose} className="h-[34px] w-[91px] rounded-lg border border-border bg-white text-sm font-semibold text-text-secondary">បោះបង់</button>
 
           <button type="button" onClick={handleSave} className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white">
-            <Download size={16} />
+            <HiSaveAs size={16} />
             រក្សាទុក
           </button>
         </div>

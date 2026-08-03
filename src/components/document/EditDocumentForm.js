@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { UploadCloud, X } from "lucide-react";
+import { HiSaveAs } from "react-icons/hi";
 
 import PopupCard from "@/components/popup/PopupCard";
 import FormDate from "@/components/forms/FormDate";
@@ -238,8 +239,12 @@ export default function EditDocumentForm({ form, setForm, onSave, onClose }) {
         <button
           onClick={onClose}
           className="
+          flex
           h-10
           flex-1
+          items-center
+          justify-center
+          gap-2
           rounded-lg
           border
           border-gray-200
@@ -268,6 +273,7 @@ export default function EditDocumentForm({ form, setForm, onSave, onClose }) {
           text-white
           "
         >
+          <HiSaveAs size={17} />
           រក្សាទុក
         </button>
       </div>

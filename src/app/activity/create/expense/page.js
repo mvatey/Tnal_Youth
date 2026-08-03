@@ -10,11 +10,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ChevronRight,
-  Download,
   PlusCircle,
   Trash2,
 } from "lucide-react";
 import { RiDownloadCloud2Line } from "react-icons/ri";
+import { HiSaveAs } from "react-icons/hi";
 
 import activities from "@/data/activityRecords.json";
 import QuantityInput from "@/components/forms/QuantityInput";
@@ -609,7 +609,7 @@ export default function ExpensePage() {
             onClick={handleSave}
             className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white hover:bg-secondary-hover"
           >
-            <Download size={16} />
+            <HiSaveAs size={16} />
 
             រក្សាទុក
           </button>

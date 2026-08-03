@@ -1,8 +1,51 @@
+"use client";
+
 import Image from "next/image";
 import { CircleHelp } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+
+const navigationItems = [
+  { id: "home", label: "ទំព័រដើម" },
+  { id: "charity", label: "សកម្មភាពសប្បុរសធម៌" },
+  { id: "programs", label: "កម្មវិធី" },
+];
 
 export default function Header() {
+  const [activeSection, setActiveSection] = useState("home");
+
+  useEffect(() => {
+    const updateActiveSection = () => {
+      const headerOffset = 100;
+      let currentSection = "home";
+
+      navigationItems.forEach(({ id }) => {
+        const section = document.getElementById(id);
+        if (section && section.getBoundingClientRect().top <= headerOffset) {
+          currentSection = id;
+        }
+      });
+
+      setActiveSection(currentSection);
+    };
+
+    updateActiveSection();
+    window.addEventListener("scroll", updateActiveSection, { passive: true });
+    window.addEventListener("resize", updateActiveSection);
+
+    return () => {
+      window.removeEventListener("scroll", updateActiveSection);
+      window.removeEventListener("resize", updateActiveSection);
+    };
+  }, []);
+
+  const scrollToSection = (id) => {
+    document.getElementById(id)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
   return (
     <header className="sticky top-0 z-40 flex h-[82px] items-center justify-between border-b border-gray-100 bg-white/90 px-12 backdrop-blur">
       <div
@@ -20,15 +63,21 @@ export default function Header() {
       </div>
 
       <nav className=" hidden items-center gap-10 md:flex">
-        <a className=" text-sm font-medium text-[#4b3192]" >
-          ទំព័រដើម
-        </a>
-        <a className=" text-sm font-medium text-gray-600 hover:text-[#4b3192]">
-          សកម្មភាពសប្បុរសធម៍
-        </a>
-        <a className=" text-sm font-medium text-gray-600 hover:text-[#4b3192]" >
-          កម្មវិធី
-        </a>
+        {navigationItems.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => scrollToSection(id)}
+            aria-current={activeSection === id ? "page" : undefined}
+            className={`cursor-pointer text-sm font-medium transition-colors ${
+              activeSection === id
+                ? "text-[#4b3192]"
+                : "text-gray-600 hover:text-[#4b3192]"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </nav>
       <div className="flex items-center gap-8">
         <button

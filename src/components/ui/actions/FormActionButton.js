@@ -1,4 +1,5 @@
-import { Download, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
+import { HiSaveAs } from "react-icons/hi";
 
 const BUTTONS = {
   reset: {
@@ -8,7 +9,7 @@ const BUTTONS = {
   },
   save: {
     label: "រក្សាទុក",
-    Icon: Download,
+    Icon: HiSaveAs,
     className: "bg-[#1F285A] text-white text-center hover:bg-[#182149] w-[196px] h-[34px]",
   },
   cancel: {

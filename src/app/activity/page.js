@@ -8,6 +8,7 @@ import SearchBar from "@/components/tables/SearchBar";
 import FilterBar from "@/components/tables/FilterBar";
 import Table from "@/components/tables/GenericTable";
 import ActivityStats from "@/components/activity/ActivityStats";
+import Button from "@/components/ui/Button";
 import PrimaryActionButton from "@/components/ui/actions/PrimaryActionButton";
 
 import { useBranch } from "@/context/BranchContext";

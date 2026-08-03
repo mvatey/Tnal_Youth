@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
+import { HiSaveAs } from "react-icons/hi";
 
 import FilterBar from "@/components/tables/FilterBar";
 
@@ -305,7 +306,7 @@ export default function ParticipationEditModal({
             onClick={handleSave}
             className="flex h-10 min-w-[190px] items-center justify-center gap-2 rounded-lg bg-secondary px-5 text-sm font-semibold text-white transition hover:opacity-90"
           >
-            <CheckCircle2 size={17} />
+            <HiSaveAs size={17} />
             រក្សាទុកការចូលរួម
           </button>
         </div>

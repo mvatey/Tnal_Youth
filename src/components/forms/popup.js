@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileText, ImportIcon, X, UploadCloud } from "lucide-react";
+import { FileText, X, UploadCloud } from "lucide-react";
+import { HiSaveAs } from "react-icons/hi";
 
 export default function UploadPopup({
   onClose,
@@ -157,7 +158,7 @@ export default function UploadPopup({
             onClick={handleSave}
             className="flex h-[34px] flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#4B3391] text-[14px] font-semibold text-white shadow-md transition hover:bg-[#3f2b7d]"
           >
-            <ImportIcon size={18} />
+            <HiSaveAs size={18} />
             រក្សាទុក
           </button>
         </div>
