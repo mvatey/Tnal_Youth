@@ -35,12 +35,6 @@ export default function PasswordPage() {
 
         <div className="space-y-5">
 
-          <BoxFill
-            label="ពាក្យសម្ងាត់បច្ចុប្បន្ន"
-            show={showCurrent}
-            setShow={setShowCurrent}
-          />
-
 
           <BoxFill
             label="ពាក្យសម្ងាត់ថ្មី"

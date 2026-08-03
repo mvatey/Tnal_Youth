@@ -4,7 +4,7 @@ import { List } from "lucide-react";
 
 export default function ButtonSeeDetail({
   onClick,
-  children = "លម្អិត",
+  children = "ព័ត៌មានលម្អិត",
   className = "",
 }) {
   return (

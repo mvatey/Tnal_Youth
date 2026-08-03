@@ -186,78 +186,208 @@ export default function CreateMemberModal({
   }
 
   return createPortal(
-  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose?.(); }}>
-    <div className="no-scrollbar max-h-[calc(100vh-2rem)] w-full max-w-[720px] overflow-y-auto rounded-2xl bg-white shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
-      <div className="flex items-center justify-between border-b border-border px-7 py-5">
-        <h2 className="text-xl font-bold text-primary">បង្កើតសមាជិកថ្មី</h2>
+  <div
+    className="
+      fixed
+      inset-0
+      z-[9999]
+      bg-black/40
+    "
+    onMouseDown={(event) => {
+      if (event.target === event.currentTarget) {
+        onClose?.();
+      }
+    }}
+  >
+    <div
+      className="
+        absolute
+        bottom-0
+        left-0
+        right-0
+        top-0
+        flex
+        items-center
+        justify-center
+        p-4
+        lg:left-64
+        lg:top-16
+      "
+    >
+      <div
+        className="
+          no-scrollbar
+          max-h-[calc(100vh-6rem)]
+          w-full
+          max-w-[720px]
+          overflow-y-auto
+          rounded-2xl
+          bg-white
+          shadow-2xl
+        "
+        onMouseDown={(event) =>
+          event.stopPropagation()
+        }
+      >
+        <div className="flex items-center justify-between border-b border-border px-7 py-5">
+          <h2 className="text-xl font-bold text-primary">
+            បង្កើតសមាជិកថ្មី
+          </h2>
 
-        <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition hover:bg-gray-100 hover:text-text-primary" aria-label="បិទ">
-          <X size={18} />
-        </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="
+              flex
+              h-8
+              w-8
+              items-center
+              justify-center
+              rounded-full
+              text-text-secondary
+              transition
+              hover:bg-gray-100
+              hover:text-text-primary
+            "
+            aria-label="បិទ"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={submit} className="px-7 pb-7 pt-5">
+          <div className="grid grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2">
+            <BoxFill
+              label="ឈ្មោះជាភាសាខ្មែរ"
+              placeholder="បញ្ចូលឈ្មោះ"
+              value={form.nameKh}
+              onChange={update("nameKh")}
+            />
+
+            <BoxFill
+              label="ឈ្មោះជាអក្សរឡាតាំង"
+              placeholder="បញ្ចូលឈ្មោះ"
+              value={form.nameEn}
+              onChange={update("nameEn")}
+            />
+
+            <FormSelect
+              label="ភេទ"
+              name="gender"
+              placeholder="ជ្រើសរើសភេទ"
+              options={genderOptions}
+              value={form.gender}
+              onChange={update("gender")}
+            />
+
+            <FormSelect
+              label="ស្ថានភាព"
+              name="status"
+              placeholder="ជ្រើសរើសស្ថានភាព"
+              options={statusOptions}
+              value={form.status}
+              onChange={update("status")}
+            />
+
+            <BoxFill
+              label="លេខទូរស័ព្ទ"
+              type="tel"
+              placeholder="បញ្ចូលលេខទូរស័ព្ទ"
+              value={form.phone}
+              onChange={update("phone")}
+            />
+
+            <BoxFill
+              label="អ៊ីមែល"
+              type="email"
+              placeholder="បញ្ចូលអ៊ីមែល"
+              value={form.email}
+              onChange={update("email")}
+            />
+
+            <FormSelect
+              label="សាខា"
+              name="branch"
+              placeholder="ជ្រើសរើសសាខា"
+              options={branches.map((branch) => ({
+                label:
+                  branch.label ??
+                  branch.nameKm ??
+                  branch.name ??
+                  branch,
+                value:
+                  branch.value ??
+                  branch.id ??
+                  branch,
+              }))}
+              value={form.branch}
+              onChange={update("branch")}
+            />
+
+            <FormSelect
+              label="តួនាទី"
+              name="role"
+              placeholder="ជ្រើសរើសតួនាទី"
+              options={roleOptions}
+              value={form.role}
+              onChange={update("role")}
+            />
+
+            <BoxFill
+              label="ថ្ងៃខែឆ្នាំកំណើត"
+              type="date"
+              value={form.dob}
+              onChange={update("dob")}
+            />
+
+            <BoxFill
+              label="ថ្ងៃខែឆ្នាំចូលរួម"
+              type="date"
+              value={form.joinedAt}
+              onChange={update("joinedAt")}
+            />
+
+            <FormSelect
+              label="កាំ"
+              name="level"
+              placeholder="ជ្រើសរើសកាំ"
+              options={LEVEL_OPTIONS.map((level) => ({
+                label: level,
+                value: level,
+              }))}
+              value={form.level}
+              onChange={update("level")}
+            />
+
+            <FormSelect
+              label="សញ្ជាតិ"
+              name="nationality"
+              placeholder="ជ្រើសរើសសញ្ជាតិ"
+              options={Nationality_OPTIONS.map((nationality) => ({
+                label: nationality,
+                value: nationality,
+              }))}
+              value={form.nationality}
+              onChange={update("nationality")}
+            />
+          </div>
+
+          {showValidationError && !isFormValid && (
+            <p className="mt-4 text-xs font-medium text-red-500">
+              សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
+            </p>
+          )}
+
+          <div className="mt-6">
+            <FormActionButton
+              onCancel={onClose}
+              isValid={isFormValid}
+              saveText="រក្សាទុក"
+              cancelText="បោះបង់"
+            />
+          </div>
+        </form>
       </div>
-
-      <form onSubmit={submit} className="px-7 pb-7 pt-5">
-        <div className="grid grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2">
-          <BoxFill label="ឈ្មោះជាភាសាខ្មែរ" placeholder="បញ្ចូលឈ្មោះ" value={form.nameKh} onChange={update("nameKh")} />
-
-          <BoxFill label="ឈ្មោះជាអក្សរឡាតាំង" placeholder="បញ្ចូលឈ្មោះ" value={form.nameEn} onChange={update("nameEn")} />
-
-          <FormSelect label="ភេទ" name="gender" placeholder="ជ្រើសរើសភេទ" options={genderOptions} value={form.gender} onChange={update("gender")} />
-
-          <FormSelect label="ស្ថានភាព" name="status" placeholder="ជ្រើសរើសស្ថានភាព" options={statusOptions} value={form.status} onChange={update("status")} />
-
-          <BoxFill label="លេខទូរស័ព្ទ" type="tel" placeholder="បញ្ចូលលេខទូរស័ព្ទ" value={form.phone} onChange={update("phone")} />
-
-          <BoxFill label="អ៊ីមែល" type="email" placeholder="បញ្ចូលអ៊ីមែល" value={form.email} onChange={update("email")} />
-
-          <FormSelect
-            label="សាខា"
-            name="branch"
-            placeholder="ជ្រើសរើសសាខា"
-            options={branches.map((branch) => ({
-              label: branch.label ?? branch.nameKm ?? branch.name ?? branch,
-              value: branch.value ?? branch.id ?? branch,
-            }))}
-            value={form.branch}
-            onChange={update("branch")}
-          />
-
-          <FormSelect label="តួនាទី" name="role" placeholder="ជ្រើសរើសតួនាទី" options={roleOptions} value={form.role} onChange={update("role")} />
-
-          <BoxFill label="ថ្ងៃខែឆ្នាំកំណើត" type="date" value={form.dob} onChange={update("dob")} />
-
-          <BoxFill label="ថ្ងៃខែឆ្នាំចូលរួម" type="date" value={form.joinedAt} onChange={update("joinedAt")} />
-
-          <FormSelect
-            label="កាំ"
-            name="level"
-            placeholder="ជ្រើសរើសកាំ"
-            options={LEVEL_OPTIONS.map((level) => ({
-              value: level,
-            }))}
-            value={form.level}
-            onChange={update("level")}
-          />
-          <FormSelect
-            label="សញ្ជាតិ"
-            name="nationality"
-            placeholder="ជ្រើសរើសសញ្ជាតិ"
-            options={Nationality_OPTIONS.map((nationality) => ({
-              value: nationality,
-            }))}
-            value={form.nationality}
-            onChange={update("nationality")}
-          />
-        </div>
-
-        {showValidationError && !isFormValid && (
-          <p className="mt-4 text-xs font-medium text-red-500">សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។</p>
-        )}
-
-        <div className="mt-6">
-          <FormActionButton onCancel={onClose} isValid={isFormValid} saveText="រក្សាទុក" cancelText="បោះបង់" />
-        </div>
-      </form>
     </div>
   </div>,
   document.body,

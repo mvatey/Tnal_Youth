@@ -16,48 +16,45 @@ export default function PopupCard({
   return (
     <div
       className="
-      fixed
-      inset-0
-      z-[999]
-      bg-black/40
+        fixed
+        inset-0
+        z-[999]
+        bg-black/40
       "
       onClick={onClose}
     >
-
       <div
         className="
-        fixed
-        left-64
-        top-16
-        right-0
-        bottom-0
-        flex
-        items-center
-        justify-center
-        p-4
+          fixed
+          bottom-0
+          left-64
+          right-0
+          top-16
+          flex
+          items-center
+          justify-center
+          p-4
         "
       >
-
         <div
-          onClick={(e)=>e.stopPropagation()}
+          onClick={(event) =>
+            event.stopPropagation()
+          }
           className={`
-          ${SIZE[size]}
-          max-h-[90vh]
-          overflow-hidden
-          rounded-2xl
-          bg-white
-          p-6
-          shadow-xl
-          ${className}
+            relative
+            ${SIZE[size]}
+            max-h-[90vh]
+            overflow-y-auto
+            rounded-2xl
+            bg-white
+            p-6
+            shadow-xl
+            ${className}
           `}
         >
-
           {children}
-
         </div>
-
       </div>
-
     </div>
   );
 }

@@ -193,7 +193,7 @@ export default function CompanyDocumentPage() {
       whitespace-nowrap
       rounded-lg
       bg-success
-      px-3
+      px-18
       py-2
       text-sm
       font-medium

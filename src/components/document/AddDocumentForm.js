@@ -284,8 +284,8 @@ export default function AddDocumentForm({
           right-4
           top-4
           flex
-          h-9
-          w-9
+          h-8
+          w-8
           items-center
           justify-center
           rounded-full
@@ -295,7 +295,7 @@ export default function AddDocumentForm({
         "
       >
         <X
-          size={21}
+          size={18}
           className="text-gray-700"
         />
       </button>
@@ -385,7 +385,7 @@ export default function AddDocumentForm({
               grid
               grid-cols-1
               gap-5
-              md:grid-cols-2
+              md:grid-cols-1
             "
           >
             <FormSelect
@@ -403,45 +403,6 @@ export default function AddDocumentForm({
                 DOCUMENT_TYPE_OPTIONS
               }
             />
-
-            <div>
-              <label
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-semibold
-                "
-              >
-                កាលបរិច្ឆេទ
-              </label>
-
-              <input
-                type="date"
-                value={
-                  form.date || ""
-                }
-                onChange={
-                  updateField(
-                    "date",
-                  )
-                }
-                max={
-                  getTodayLocalDate()
-                }
-                className="
-                  h-11
-                  w-full
-                  rounded-lg
-                  border
-                  border-gray-200
-                  px-4
-                  text-sm
-                  outline-none
-                  focus:border-primary
-                "
-              />
-            </div>
           </div>
 
           <div>

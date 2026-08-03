@@ -24,6 +24,16 @@ const BRANCH_OPTIONS = [
   label: branch,
   value: branch,
 }));
+const DOCUMENT_TYPE_OPTIONS = [
+  {
+    label: "លិខិតបញ្ជាក់",
+    value: "លិខិតបញ្ជាក់",
+  },
+  {
+    label: "បណ្ណសរសើរ",
+    value: "បណ្ណសរសើរ",
+  },
+];
 
 const MEMBER_OPTIONS = membersData
   .filter((member) => member?.name_kh)
@@ -148,11 +158,19 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
       ? Boolean(form.memberId)
       : Boolean(form.activityId);
 
-  const isFormValid =
-    hasTitle &&
-    hasRecipient &&
-    Boolean(form.templatePreview) &&
-    (recipientType !== "activity" || selectedActivityMembers.length > 0);
+  const hasDocumentType = Boolean(
+  form.documentType?.trim(),
+);
+
+const isFormValid =
+  hasTitle &&
+  hasDocumentType &&
+  hasRecipient &&
+  Boolean(form.templatePreview) &&
+  (
+    recipientType !== "activity" ||
+    selectedActivityMembers.length > 0
+  );
 
   const updateField = (field) => (event) => {
     setForm((previous) => ({
@@ -334,12 +352,16 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
 
     try {
       await onSave?.({
-        ...form,
-        recipientType,
-        selectedMember,
-        selectedActivity,
-        selectedActivityMembers,
-      });
+  ...form,
+
+  type: form.documentType,
+  documentType: form.documentType,
+
+  recipientType,
+  selectedMember,
+  selectedActivity,
+  selectedActivityMembers,
+});
     } catch (error) {
       console.error(error);
 
@@ -371,6 +393,14 @@ export default function CertificateForm({ form, setForm, onSave, onClose }) {
             placeholder="ជ្រើសរើសសាខា"
             options={BRANCH_OPTIONS}
           />
+          <FormSelect
+  label="ប្រភេទឯកសារ"
+  name="documentType"
+  value={form.documentType || ""}
+  onChange={updateField("documentType")}
+  placeholder="ជ្រើសរើសប្រភេទឯកសារ"
+  options={DOCUMENT_TYPE_OPTIONS}
+/>
 
           {/* Recipient type */}
 

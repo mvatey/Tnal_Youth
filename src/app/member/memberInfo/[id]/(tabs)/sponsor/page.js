@@ -55,6 +55,16 @@ export default function SponsorDonationPage() {
       render: (_, index) => index + 1,
     },
     {
+      header: "ប្រចាំខែ",
+      width: "w-[16%]",
+      align: "left",
+      render: (item) => (
+        <span>
+          {item.month}, {item.year}
+        </span>
+      ),
+    },
+    {
       header: "ចំនួន",
       width: "w-[20%]",
       align: "left",

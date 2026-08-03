@@ -813,7 +813,7 @@ export default function MembersPage() {
                 whitespace-nowrap
                 rounded-lg
                 bg-success
-                px-3
+                px-18
                 py-2
                 text-sm
                 font-medium
@@ -822,7 +822,7 @@ export default function MembersPage() {
                 hover:opacity-90
               "
             >
-              <RiAddCircleLine className="h-4 w-4 shrink-0" />
+              <RiAddCircleLine className="h-4 w-4 shrink-0 " />
 
               <span>
                 បន្ថែមសមាជិកថ្មី
