@@ -25,6 +25,8 @@ const LOGIN_STEP = {
   PASSWORD: "PASSWORD",
 };
 
+const REMEMBERED_EMAIL_KEY = "tnal-auth:remembered-email";
+
 async function parseResponse(response) {
   const responseText = await response.text();
 
@@ -82,6 +84,19 @@ function LoginContent() {
 
   const [loading, setLoading] =
     useState(false);
+
+    useEffect(() => {
+  try {
+    const rememberedEmail = localStorage.getItem(REMEMBERED_EMAIL_KEY);
+
+    if (rememberedEmail) {
+      setPhoneOrEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+  } catch (error) {
+    console.error("Cannot load remembered email:", error);
+  }
+}, []);
 
   useEffect(() => {
     if (identifierFromUrl) {
@@ -482,6 +497,17 @@ function LoginContent() {
           meData;
       }
 
+      if (rememberMe) {
+        localStorage.setItem(
+          REMEMBERED_EMAIL_KEY,
+          normalizedLogin,
+        );
+      } else {
+        localStorage.removeItem(
+          REMEMBERED_EMAIL_KEY,
+        );
+      }
+
       setUser(authenticatedUser);
 
       const role =
@@ -551,10 +577,11 @@ function LoginContent() {
       </p>
 
       <form
-        onSubmit={handleSubmit}
-        className="space-y-5"
-        noValidate
-      >
+          onSubmit={handleSubmit}
+          className="space-y-5"
+          autoComplete="on"
+          noValidate
+        >
         {successMessage && (
           <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-center text-sm leading-6 text-green-700">
             {successMessage}
@@ -603,11 +630,17 @@ function LoginContent() {
               <input
                 type="checkbox"
                 checked={rememberMe}
-                onChange={(event) =>
-                  setRememberMe(
-                    event.target.checked
-                  )
-                }
+                onChange={(event) => {
+                  const checked = event.target.checked;
+
+                  setRememberMe(checked);
+
+                  if (!checked) {
+                    localStorage.removeItem(
+                      REMEMBERED_EMAIL_KEY,
+                    );
+                  }
+                }}
                 className="h-4 w-4 rounded border-slate-300"
               />
 

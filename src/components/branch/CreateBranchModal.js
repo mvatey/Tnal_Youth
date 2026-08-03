@@ -298,12 +298,7 @@ export default function CreateBranchModal({
                 value={form.nameKm}
                 onChange={updateField("nameKm")}
                 placeholder="បញ្ចូលឈ្មោះសាខា"
-                leadingIcon={
-                  <Building2
-                    size={16}
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
-                  />
-                }
+                leadingIcon={<Building2 size={16} />}
               />
 
               <BoxFill
@@ -312,12 +307,7 @@ export default function CreateBranchModal({
                 value={form.nameEn}
                 onChange={updateField("nameEn")}
                 placeholder="បញ្ចូលឈ្មោះសាខា"
-                leadingIcon={
-                  <Building2
-                    size={16}
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
-                  />
-                }
+                leadingIcon={<Building2 size={16} />}
               />
             </div>
 
@@ -369,12 +359,7 @@ export default function CreateBranchModal({
               value={form.addressLine}
               onChange={updateField("addressLine")}
               placeholder="ឧ. អគារលេខ ផ្លូវ ភូមិ..."
-              leadingIcon={
-                <MapPin
-                  size={16}
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
-                />
-              }
+              leadingIcon={<MapPin size={16} />}
             />
 
             <div className="flex items-end gap-3">
@@ -385,12 +370,7 @@ export default function CreateBranchModal({
                   value={form.googleMapUrl}
                   onChange={updateField("googleMapUrl")}
                   placeholder="បញ្ចូលតំណ Google Maps"
-                  leadingIcon={
-                    <Navigation
-                      size={16}
-                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
-                    />
-                  }
+                  leadingIcon={<Navigation size={16} />}
                 />
               </div>
 
@@ -420,12 +400,7 @@ export default function CreateBranchModal({
               value={form.phone}
               onChange={updateField("phone")}
               placeholder="បញ្ចូលលេខទូរស័ព្ទ"
-              leadingIcon={
-                <Phone
-                  size={16}
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
-                />
-              }
+              leadingIcon={<Phone size={16} />}
             />
 
             <BoxFill
@@ -435,12 +410,7 @@ export default function CreateBranchModal({
               value={form.email}
               onChange={updateField("email")}
               placeholder="បញ្ចូលអ៊ីម៉ែល"
-              leadingIcon={
-                <Mail
-                  size={16}
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
-                />
-              }
+              leadingIcon={<Mail size={16} />}
             />
 
             <FormSelect

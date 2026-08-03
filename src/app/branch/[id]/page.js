@@ -25,6 +25,7 @@ import FilterBar from "@/components/table-items/FilterBar";
 import Table from "@/components/table-items/Table";
 import Button from "@/components/ui/Button";
 import CreateBranchModal from "@/components/branch/CreateBranchModal";
+import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
 
 import branches from "@/data/branch/branches.json";
 import branchMembers from "@/data/branch/branchMembers.json";
@@ -85,6 +86,15 @@ function DetailStatCard({
 }
 
 export default function BranchDetailPage() {
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const handleCreateMember = (newMember) => {
+  console.log("Created member:", newMember);
+
+  // Later:
+  // call backend API
+  // then refresh/update the member list
+};
+
   const params = useParams();
   const branchId = String(params.id);
 
@@ -410,21 +420,6 @@ export default function BranchDetailPage() {
             ប្រធានសាខា
           </h2>
 
-          <button
-            type="button"
-            onClick={() => setIsEditModalOpen(true)}
-            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-secondary px-3 text-xs font-semibold text-secondary transition hover:bg-secondary-light"
-          >
-            {branch.leader ? (
-              <Pencil size={14} />
-            ) : (
-              <PlusCircle size={14} />
-            )}
-
-            {branch.leader
-              ? "ផ្លាស់ប្តូរប្រធាន"
-              : "បន្ថែមប្រធាន"}
-          </button>
         </div>
 
         {branch.leader ? (
@@ -612,6 +607,7 @@ export default function BranchDetailPage() {
               type="button"
               variant="success"
               icon={<PlusCircle size={16} />}
+              onClick={() => setIsCreateOpen(true)}
             >
               បន្ថែមសមាជិកថ្មី
             </Button>
@@ -636,6 +632,13 @@ export default function BranchDetailPage() {
           setBranch(updatedBranch);
         }}
       />
+
+      <CreateMemberModal
+          open={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          onSave={handleCreateMember}
+          branches={branches.filter((branch) => branch.value !== "")}
+        />
     </div>
   );
 }
