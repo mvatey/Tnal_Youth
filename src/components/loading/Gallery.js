@@ -3,7 +3,9 @@ import { gallery } from "./data";
 export default function Gallery() {
   return (
     <section
+      id="charity"
       className="
+      scroll-mt-[82px]
       px-10
       py-12
       "
@@ -17,7 +19,7 @@ export default function Gallery() {
         text-[#17194d]
         "
       >
-        សកម្មភាពសប្បុរសធម៍របស់យើង
+        សកម្មភាពសប្បុរសធម៌របស់យើង
       </h2>
       <p
         className="

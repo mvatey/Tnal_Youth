@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, ChevronDown, ChevronUp, CloudUpload, FileText, ImportIcon, X } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronUp, CloudUpload, FileText, X } from "lucide-react";
+import { HiSaveAs } from "react-icons/hi";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import SaveAlert from "@/components/forms/savealert";
@@ -20,7 +21,7 @@ const {
   sponsorTypes,
 } = sponsorOptions;
 const members = memberRecords.filter((member) => member.role === "member");
-const memberNames = members.map((member) => member.name);
+const memberNames = [...new Set(members.map((member) => member.name))];
 
 function toKhmerNumber(value) {
   return String(value).replace(/\d/g, (digit) => khmerDigits[Number(digit)]);
@@ -832,7 +833,7 @@ export default function SponsorDonationForm({ initialData = null }) {
             onClick={handleSave}
             className="inline-flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary px-3 text-[14px] font-semibold text-white shadow-sm transition hover:bg-secondary-hover"
           >
-            <ImportIcon size={16} />
+            <HiSaveAs size={16} />
             រក្សាទុក
           </button>
         </div>

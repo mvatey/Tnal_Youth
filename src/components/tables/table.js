@@ -67,9 +67,18 @@ export default function Table({
     safePage * ROWS_PER_PAGE,
   );
 
-const updateRow = (id, values) => {
-  setRows((currentRows) => {
-    const nextRows = currentRows.map((member) =>
+  const notifyRowsChange = (nextRows) => {
+    onRowsChange?.(nextRows);
+
+    window.dispatchEvent(
+      new CustomEvent(DONATION_ROWS_CHANGE_EVENT, {
+        detail: nextRows,
+      }),
+    );
+  };
+
+  const updateRow = (id, values) => {
+    const nextRows = rows.map((member) =>
       member.id === id
         ? {
             ...member,
@@ -78,17 +87,9 @@ const updateRow = (id, values) => {
         : member,
     );
 
-    onRowsChange?.(nextRows);
-
-    window.dispatchEvent(
-      new CustomEvent(DONATION_ROWS_CHANGE_EVENT, {
-        detail: nextRows,
-      }),
-    );
-
-    return nextRows;
-  });
-};
+    setRows(nextRows);
+    notifyRowsChange(nextRows);
+  };
 
   const handleReceiptSave = async (id, file) => {
     if (!file) {
@@ -164,27 +165,18 @@ const updateRow = (id, values) => {
       dollarAmount: "0",
     }));
 
-    setRows((currentRows) => {
-  const nextRows = currentRows.map((member) =>
-    resetIds.has(member.id)
-      ? {
-          ...member,
-          realAmount: "0",
-          dollarAmount: "0",
-        }
-      : member,
-  );
+    const nextRows = rows.map((member) =>
+      resetIds.has(member.id)
+        ? {
+            ...member,
+            realAmount: "0",
+            dollarAmount: "0",
+          }
+        : member,
+    );
 
-  onRowsChange?.(nextRows);
-
-  window.dispatchEvent(
-    new CustomEvent(DONATION_ROWS_CHANGE_EVENT, {
-      detail: nextRows,
-    }),
-  );
-
-  return nextRows;
-});
+    setRows(nextRows);
+    notifyRowsChange(nextRows);
 
     onReset?.(resetRows);
   };

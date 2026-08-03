@@ -1,6 +1,7 @@
 "use client";
 
 import { FolderPlus } from "lucide-react";
+import { HiSaveAs } from "react-icons/hi";
 
 export default function DocumentActionButton({
   onCancel,
@@ -13,6 +14,7 @@ export default function DocumentActionButton({
   createIcon: CreateIcon = FolderPlus,
 }) {
   const cannotCreate = !isValid || saving;
+  const ActionIcon = createText.includes("រក្សាទុក") ? HiSaveAs : CreateIcon;
 
   return (
     <div className="mt-5 flex items-center gap-4">
@@ -75,7 +77,7 @@ export default function DocumentActionButton({
           }
         `}
       >
-        <CreateIcon size={19} />
+        <ActionIcon size={19} />
 
         {saving ? savingText : createText}
       </button>

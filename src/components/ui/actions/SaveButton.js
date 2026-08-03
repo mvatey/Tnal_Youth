@@ -1,6 +1,6 @@
 "use client";
 
-import { ImportIcon } from "lucide-react";
+import { HiSaveAs } from "react-icons/hi";
 
 export default function SaveButton({
   onClick,
@@ -24,7 +24,7 @@ export default function SaveButton({
       onClick={handleClick}
       className="inline-flex h-[34px] w-full items-center justify-center gap-2 rounded-lg bg-secondary px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-secondary-hover sm:w-auto"
     >
-      <ImportIcon size={17} />
+      <HiSaveAs size={17} />
       {children}
     </button>
   );
