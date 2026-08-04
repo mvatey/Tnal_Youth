@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+
 import {
   Building2,
   Calendar,
@@ -18,6 +19,11 @@ import {
   useState,
 } from "react";
 
+import {
+  getSavedProfileImage,
+  saveProfileImage,
+} from "@/lib/member/profileImageStorage";
+
 const ROLE_LABELS = {
   ADMIN: "អ្នកគ្រប់គ្រង",
   SECRETARY: "លេខាធិការ",
@@ -28,11 +34,20 @@ const ROLE_LABELS = {
   secretary: "លេខាធិការ",
   branch_leader: "ប្រធានសាខា",
   member: "សមាជិក",
+
+  អ្នកគ្រប់គ្រង: "អ្នកគ្រប់គ្រង",
+  លេខាធិការ: "លេខាធិការ",
+  ប្រធានសាខា: "ប្រធានសាខា",
+  សមាជិក: "សមាជិក",
 };
 
 const STATUS_BADGE_STYLES = {
   ACTIVE: "bg-success-bg text-success",
   INACTIVE: "bg-error-bg text-error",
+
+  active: "bg-success-bg text-success",
+  inactive: "bg-error-bg text-error",
+
   សកម្ម: "bg-success-bg text-success",
   អសកម្ម: "bg-error-bg text-error",
 };
@@ -40,6 +55,10 @@ const STATUS_BADGE_STYLES = {
 const STATUS_LABELS = {
   ACTIVE: "សកម្ម",
   INACTIVE: "អសកម្ម",
+
+  active: "សកម្ម",
+  inactive: "អសកម្ម",
+
   សកម្ម: "សកម្ម",
   អសកម្ម: "អសកម្ម",
 };
@@ -48,41 +67,52 @@ const MAX_PROFILE_IMAGE_SIZE =
   5 * 1024 * 1024;
 
 function getGenderDisplay(gender) {
+  const normalizedGender =
+    String(gender || "").trim();
+
   if (
-    gender === "ស្រី" ||
-    gender === "FEMALE"
+    normalizedGender === "ស្រី" ||
+    normalizedGender === "FEMALE" ||
+    normalizedGender === "female"
   ) {
     return "ភេទ ស្រី";
   }
 
   if (
-    gender === "ប្រុស" ||
-    gender === "MALE"
+    normalizedGender === "ប្រុស" ||
+    normalizedGender === "MALE" ||
+    normalizedGender === "male"
   ) {
     return "ភេទ ប្រុស";
   }
 
   if (
-    gender === "ព្រះសង្ឃ" ||
-    gender === "MONK"
+    normalizedGender === "ព្រះសង្ឃ" ||
+    normalizedGender === "MONK" ||
+    normalizedGender === "monk"
   ) {
     return "ព្រះសង្ឃ";
   }
 
-  return gender || "-";
+  return normalizedGender || "-";
 }
 
 function getGenderIcon(gender) {
+  const normalizedGender =
+    String(gender || "").trim();
+
   if (
-    gender === "ស្រី" ||
-    gender === "FEMALE"
+    normalizedGender === "ស្រី" ||
+    normalizedGender === "FEMALE" ||
+    normalizedGender === "female"
   ) {
     return "♀";
   }
 
   if (
-    gender === "ប្រុស" ||
-    gender === "MALE"
+    normalizedGender === "ប្រុស" ||
+    normalizedGender === "MALE" ||
+    normalizedGender === "male"
   ) {
     return "♂";
   }
@@ -90,10 +120,23 @@ function getGenderIcon(gender) {
   return "•";
 }
 
-function getProfileStorageKey(
-  memberId,
-) {
-  return `tnal-member-profile-image-${memberId}`;
+function getMemberId(member) {
+  return (
+    member?.memberId ??
+    member?.id ??
+    member?.member_id ??
+    null
+  );
+}
+
+function getDefaultProfileImage(member) {
+  return (
+    member?.profile_photo ||
+    member?.profileImage ||
+    member?.profile_image ||
+    member?.profilePhoto ||
+    "/member.png"
+  );
 }
 
 export default function MemberInfoCard({
@@ -104,12 +147,80 @@ export default function MemberInfoCard({
     useRef(null);
 
   const [profilePreview, setProfilePreview] =
-    useState("");
+    useState("/member.png");
 
   const [imageError, setImageError] =
     useState("");
 
-  if (!member) return null;
+  const memberId =
+    getMemberId(member);
+
+  const defaultProfileImage =
+    getDefaultProfileImage(member);
+
+  /*
+   * Load the saved image for the exact member ID.
+   *
+   * My Account:
+   * member comes from useCurrentMember().
+   *
+   * Member detail:
+   * member comes from members.json by URL ID.
+   */
+  useEffect(() => {
+    if (!memberId) {
+      setProfilePreview(
+        defaultProfileImage,
+      );
+
+      return undefined;
+    }
+
+    setProfilePreview(
+      getSavedProfileImage(
+        memberId,
+        defaultProfileImage,
+      ),
+    );
+
+    const handleProfileImageChange = (
+      event,
+    ) => {
+      const changedMemberId =
+        event.detail?.memberId;
+
+      if (
+        String(changedMemberId) !==
+        String(memberId)
+      ) {
+        return;
+      }
+
+      setProfilePreview(
+        event.detail?.imageData ||
+          defaultProfileImage,
+      );
+    };
+
+    window.addEventListener(
+      "tnal-profile-image-change",
+      handleProfileImageChange,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "tnal-profile-image-change",
+        handleProfileImageChange,
+      );
+    };
+  }, [
+    memberId,
+    defaultProfileImage,
+  ]);
+
+  if (!member) {
+    return null;
+  }
 
   const displayName =
     member.fullNameKm ||
@@ -124,21 +235,33 @@ export default function MemberInfoCard({
     member.full_name_en ||
     "-";
 
-  const defaultProfileImage =
-    member.profileImage ||
-    member.profile_photo ||
-    member.profile_image ||
-    "/member.png";
-
   const role =
     member.role || "MEMBER";
+
+  const roleLabel =
+    ROLE_LABELS[role] ||
+    ROLE_LABELS[
+      String(role).toLowerCase()
+    ] ||
+    role ||
+    ROLE_LABELS.member;
 
   const status =
     member.status || "ACTIVE";
 
   const statusLabel =
     STATUS_LABELS[status] ||
+    STATUS_LABELS[
+      String(status).toLowerCase()
+    ] ||
     status;
+
+  const statusStyle =
+    STATUS_BADGE_STYLES[status] ||
+    STATUS_BADGE_STYLES[
+      String(status).toLowerCase()
+    ] ||
+    "bg-gray-100 text-text-secondary";
 
   const branch =
     member.branch?.nameKm ||
@@ -158,41 +281,11 @@ export default function MemberInfoCard({
     member.joinedOn ||
     "-";
 
-  const memberId =
-    member.id ||
-    member.memberId ||
-    member.member_id ||
-    "current";
-
-  useEffect(() => {
-    try {
-      const savedImage =
-        localStorage.getItem(
-          getProfileStorageKey(
-            memberId,
-          ),
-        );
-
-      setProfilePreview(
-        savedImage ||
-          defaultProfileImage,
-      );
-    } catch (error) {
-      console.error(
-        "Cannot load profile image:",
-        error,
-      );
-
-      setProfilePreview(
-        defaultProfileImage,
-      );
-    }
-  }, [
-    memberId,
-    defaultProfileImage,
-  ]);
-
   const handleChooseImage = () => {
+    if (!allowProfileChange) {
+      return;
+    }
+
     fileInputRef.current?.click();
   };
 
@@ -204,7 +297,9 @@ export default function MemberInfoCard({
 
     setImageError("");
 
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     if (
       !file.type.startsWith(
@@ -216,6 +311,7 @@ export default function MemberInfoCard({
       );
 
       event.target.value = "";
+
       return;
     }
 
@@ -228,6 +324,17 @@ export default function MemberInfoCard({
       );
 
       event.target.value = "";
+
+      return;
+    }
+
+    if (!memberId) {
+      setImageError(
+        "រកមិនឃើញលេខសម្គាល់សមាជិក។",
+      );
+
+      event.target.value = "";
+
       return;
     }
 
@@ -240,27 +347,31 @@ export default function MemberInfoCard({
           reader.result || "",
         );
 
-      setProfilePreview(
-        imageData,
-      );
+      if (!imageData) {
+        setImageError(
+          "មិនអាចអានរូបភាពបានទេ។",
+        );
 
-      try {
-        localStorage.setItem(
-          getProfileStorageKey(
-            memberId,
-          ),
+        return;
+      }
+
+      const saved =
+        saveProfileImage(
+          memberId,
           imageData,
         );
-      } catch (error) {
-        console.error(
-          "Cannot save profile image:",
-          error,
-        );
 
+      if (!saved) {
         setImageError(
           "មិនអាចរក្សាទុករូបភាពបានទេ។ រូបភាពអាចមានទំហំធំពេក។",
         );
+
+        return;
       }
+
+      setProfilePreview(
+        imageData,
+      );
     };
 
     reader.onerror = () => {
@@ -270,6 +381,11 @@ export default function MemberInfoCard({
     };
 
     reader.readAsDataURL(file);
+
+    /*
+     * Allow selecting the same file again.
+     */
+    event.target.value = "";
   };
 
   return (
@@ -281,32 +397,37 @@ export default function MemberInfoCard({
         bg-gradient-to-r
         from-primary
         to-primary-sidebar
-        p-8
+        p-4
         shadow-lg
+        sm:p-6
+        xl:p-8
       "
     >
       <div
         className="
-          flex
-          flex-col
-          items-start
+          grid
+          min-w-0
+          grid-cols-1
           gap-6
-          lg:flex-row
-          lg:items-center
-          lg:gap-8
+          lg:grid-cols-2
+          xl:grid-cols-[auto_1px_repeat(4,minmax(0,1fr))]
+          xl:items-center
+          xl:gap-6
         "
       >
         {/* Profile */}
 
-        <div className="flex shrink-0 items-start gap-5">
-          <div>
+        <div className="flex min-w-0 items-start gap-4 sm:gap-5">
+          <div className="shrink-0">
             <div
               className="
                 group
                 relative
-                h-24
-                w-24
+                h-20
+                w-20
                 overflow-visible
+                sm:h-24
+                sm:w-24
               "
             >
               <div
@@ -329,19 +450,29 @@ export default function MemberInfoCard({
                   }
                   alt={displayName}
                   fill
-                  sizes="96px"
+                  sizes="
+                    (max-width: 640px) 80px,
+                    96px
+                  "
                   className="object-cover"
+                  onError={() =>
+                    setProfilePreview(
+                      "/member.png",
+                    )
+                  }
                 />
               </div>
 
               {allowProfileChange && (
                 <>
                   <input
-                    ref={
-                      fileInputRef
-                    }
+                    ref={fileInputRef}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="
+                      image/jpeg,
+                      image/png,
+                      image/webp
+                    "
                     className="hidden"
                     onChange={
                       handleProfileImageChange
@@ -379,9 +510,7 @@ export default function MemberInfoCard({
                       focus:ring-white/70
                     "
                   >
-                    <Camera
-                      size={16}
-                    />
+                    <Camera size={16} />
                   </button>
                 </>
               )}
@@ -391,7 +520,7 @@ export default function MemberInfoCard({
               <p
                 className="
                   mt-3
-                  max-w-40
+                  max-w-[150px]
                   text-xs
                   font-medium
                   text-red-200
@@ -402,20 +531,44 @@ export default function MemberInfoCard({
             )}
           </div>
 
-          <div className="pr-20 pt-0.5 text-white">
-            <h2 className="mb-1 text-2xl font-bold">
+          <div className="min-w-0 pt-0.5 text-white">
+            <h2
+              className="
+                truncate
+                text-lg
+                font-bold
+                sm:text-2xl
+              "
+              title={displayName}
+            >
               {displayName}
             </h2>
 
-            <p className="text-sm text-gray-200">
+            <p
+              className="
+                mt-1
+                truncate
+                text-xs
+                text-gray-200
+                sm:text-sm
+              "
+              title={englishName}
+            >
               {englishName}
             </p>
 
-            <div className="mt-3 flex items-center gap-3">
-              <span className="text-sm text-gray-200">
-                {ROLE_LABELS[
-                  role
-                ] || role}
+            <div
+              className="
+                mt-3
+                flex
+                flex-wrap
+                items-center
+                gap-2
+                sm:gap-3
+              "
+            >
+              <span className="text-xs text-gray-200 sm:text-sm">
+                {roleLabel}
               </span>
 
               <span
@@ -425,12 +578,7 @@ export default function MemberInfoCard({
                   py-1
                   text-xs
                   font-medium
-                  ${
-                    STATUS_BADGE_STYLES[
-                      status
-                    ] ||
-                    "bg-gray-100 text-text-secondary"
-                  }
+                  ${statusStyle}
                 `}
               >
                 {statusLabel}
@@ -439,151 +587,165 @@ export default function MemberInfoCard({
           </div>
         </div>
 
-        <div className="hidden h-24 w-px bg-white/40 lg:block" />
+        <div className="hidden h-24 w-px bg-white/40 xl:block" />
 
         {/* Gender and branch */}
 
-        <div className="min-w-0 flex-1 text-white">
-          <div className="mb-3.5">
-            <p className="mb-0.5 text-xs uppercase tracking-wider text-gray-200">
-              ភេទ
-            </p>
-
-            <div className="flex items-center gap-2">
-              <span className="text-sm">
-                {getGenderIcon(
-                  member.gender,
-                )}
-              </span>
-
-              <p className="text-sm font-semibold">
-                {getGenderDisplay(
-                  member.gender,
-                )}
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <p className="mb-0.5 text-xs uppercase tracking-wider text-gray-200">
-              សាខា
-            </p>
-
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 shrink-0 text-white" />
-
-              <p className="truncate text-sm font-semibold">
-                {branch}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="hidden h-24 w-px bg-white/40 lg:block" />
+        <InfoGroup
+          firstLabel="ភេទ"
+          firstValue={getGenderDisplay(
+            member.gender,
+          )}
+          firstIcon={
+            <span className="text-sm">
+              {getGenderIcon(
+                member.gender,
+              )}
+            </span>
+          }
+          secondLabel="សាខា"
+          secondValue={branch}
+          secondIcon={
+            <Building2 className="h-4 w-4 shrink-0" />
+          }
+        />
 
         {/* Phone and email */}
 
-        <div className="min-w-0 flex-1 text-white">
-          <div className="mb-3.5">
-            <p className="mb-0.5 text-xs uppercase tracking-wider text-gray-200">
-              លេខទូរស័ព្ទ
-            </p>
-
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 shrink-0 text-white" />
-
-              <p className="text-sm font-semibold">
-                {member.phone ||
-                  "-"}
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <p className="mb-0.5 text-xs uppercase tracking-wider text-gray-200">
-              អ៊ីមែល
-            </p>
-
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 shrink-0 text-white" />
-
-              <p className="truncate text-sm font-semibold">
-                {member.email ||
-                  "-"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="hidden h-24 w-px bg-white/40 lg:block" />
+        <InfoGroup
+          firstLabel="លេខទូរស័ព្ទ"
+          firstValue={
+            member.phone || "-"
+          }
+          firstIcon={
+            <Phone className="h-4 w-4 shrink-0" />
+          }
+          secondLabel="អ៊ីមែល"
+          secondValue={
+            member.email || "-"
+          }
+          secondIcon={
+            <Mail className="h-4 w-4 shrink-0" />
+          }
+        />
 
         {/* Dates */}
 
-        <div className="min-w-0 flex-1 text-white">
-          <div className="mb-3.5">
-            <p className="mb-0.5 text-xs uppercase tracking-wider text-gray-200">
-              ថ្ងៃកំណើត
-            </p>
-
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 shrink-0 text-white" />
-
-              <p className="text-sm font-semibold">
-                {dateOfBirth}
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <p className="mb-0.5 text-xs uppercase tracking-wider text-gray-200">
-              ថ្ងៃចូលរួម
-            </p>
-
-            <div className="flex items-center gap-2">
-              <CalendarCheck className="h-4 w-4 shrink-0 text-white" />
-
-              <p className="text-sm font-semibold">
-                {joinedDate}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="hidden h-24 w-px bg-white/40 lg:block" />
+        <InfoGroup
+          firstLabel="ថ្ងៃកំណើត"
+          firstValue={dateOfBirth}
+          firstIcon={
+            <Calendar className="h-4 w-4 shrink-0" />
+          }
+          secondLabel="ថ្ងៃចូលរួម"
+          secondValue={joinedDate}
+          secondIcon={
+            <CalendarCheck className="h-4 w-4 shrink-0" />
+          }
+        />
 
         {/* Nationality and ethnicity */}
 
-        <div className="min-w-0 flex-1 text-white">
-          <div className="mb-3.5">
-            <p className="mb-0.5 text-xs uppercase tracking-wider text-gray-200">
-              សញ្ជាតិ
-            </p>
+        <InfoGroup
+          firstLabel="សញ្ជាតិ"
+          firstValue={
+            member.nationality ||
+            "-"
+          }
+          firstIcon={
+            <Globe className="h-4 w-4 shrink-0" />
+          }
+          secondLabel="ជនជាតិ"
+          secondValue={
+            member.ethnicity ||
+            "-"
+          }
+          secondIcon={
+            <Users className="h-4 w-4 shrink-0" />
+          }
+        />
+      </div>
+    </div>
+  );
+}
 
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 shrink-0 text-white" />
+function InfoGroup({
+  firstLabel,
+  firstValue,
+  firstIcon,
+  secondLabel,
+  secondValue,
+  secondIcon,
+}) {
+  return (
+    <div
+      className="
+        min-w-0
+        rounded-xl
+        bg-white/5
+        p-3
+        text-white
+        xl:rounded-none
+        xl:bg-transparent
+        xl:p-0
+      "
+    >
+      <InfoItem
+        label={firstLabel}
+        value={firstValue}
+        icon={firstIcon}
+      />
 
-              <p className="text-sm font-semibold">
-                {member.nationality ||
-                  "-"}
-              </p>
-            </div>
-          </div>
+      <div className="mt-3.5">
+        <InfoItem
+          label={secondLabel}
+          value={secondValue}
+          icon={secondIcon}
+        />
+      </div>
+    </div>
+  );
+}
 
-          <div>
-            <p className="mb-0.5 text-xs uppercase tracking-wider text-gray-200">
-              ជនជាតិ
-            </p>
+function InfoItem({
+  label,
+  value,
+  icon,
+}) {
+  return (
+    <div className="min-w-0">
+      <p
+        className="
+          mb-0.5
+          text-xs
+          uppercase
+          tracking-wider
+          text-gray-200
+        "
+      >
+        {label}
+      </p>
 
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 shrink-0 text-white" />
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="shrink-0 text-white">
+          {icon}
+        </span>
 
-              <p className="text-sm font-semibold">
-                {member.ethnicity ||
-                  "-"}
-              </p>
-            </div>
-          </div>
-        </div>
+        <p
+          className="
+            min-w-0
+            truncate
+            text-sm
+            font-semibold
+          "
+          title={
+            typeof value === "string"
+              ? value
+              : ""
+          }
+        >
+          {value || "-"}
+        </p>
       </div>
     </div>
   );

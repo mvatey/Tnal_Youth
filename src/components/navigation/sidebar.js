@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
+
 import {
   usePathname,
   useRouter,
 } from "next/navigation";
+
 import {
   useEffect,
   useRef,
@@ -13,6 +15,7 @@ import {
 } from "react";
 
 import {
+  FaBell,
   FaCalendarAlt,
   FaChevronDown,
   FaCog,
@@ -22,16 +25,21 @@ import {
   FaUniversity,
   FaUserCircle,
   FaUsers,
-  FaBell
 } from "react-icons/fa";
 
 import { useAuth } from "@/context/AuthContext";
 import { useBranch } from "@/context/BranchContext";
 
+import useCurrentMember from "@/hooks/useCurrentMember";
+
 import {
   getNavigationForRole,
   normalizeRole,
 } from "@/lib/navigation";
+
+import {
+  getSavedProfileImage,
+} from "@/lib/member/profileImageStorage";
 
 import ChartIcon from "@/components/ui/icons/chartIcon";
 
@@ -48,15 +56,69 @@ const ICON_MAP = {
 };
 
 const ROLE_LABELS = {
+  ADMIN: "អ្នកគ្រប់គ្រងប្រព័ន្ធ",
+  SECRETARY: "លេខាធិការ",
+  BRANCH_LEADER: "ប្រធានសាខា",
+  MEMBER: "សមាជិក",
+
   admin: "អ្នកគ្រប់គ្រងប្រព័ន្ធ",
   secretary: "លេខាធិការ",
   branch_leader: "ប្រធានសាខា",
   member: "សមាជិក",
+
+  អ្នកគ្រប់គ្រង: "អ្នកគ្រប់គ្រងប្រព័ន្ធ",
+  លេខាធិការ: "លេខាធិការ",
+  ប្រធានសាខា: "ប្រធានសាខា",
+  សមាជិក: "សមាជិក",
 };
 
+function getMemberId(member) {
+  return (
+    member?.memberId ??
+    member?.id ??
+    member?.member_id ??
+    null
+  );
+}
+
+function getDefaultAvatar(
+  member,
+  user,
+) {
+  return (
+    member?.profile_photo ||
+    member?.profileImage ||
+    member?.profile_image ||
+    member?.profilePhoto ||
+    user?.profileImage ||
+    user?.profile_photo ||
+    "/profiles/default-avatar.jpg"
+  );
+}
+
+function getDisplayName(
+  member,
+  user,
+) {
+  return (
+    member?.name_kh ||
+    member?.fullNameKm ||
+    member?.full_name_km ||
+    member?.name_en ||
+    member?.fullNameEn ||
+    member?.full_name_en ||
+    user?.fullNameKm ||
+    user?.fullNameEn ||
+    "អ្នកប្រើប្រាស់"
+  );
+}
+
 export default function Sidebar() {
-  const pathname = usePathname();
-  const router = useRouter();
+  const pathname =
+    usePathname();
+
+  const router =
+    useRouter();
 
   const {
     user,
@@ -66,43 +128,139 @@ export default function Sidebar() {
   } = useAuth();
 
   const {
+    member: currentMember,
+  } = useCurrentMember();
+
+  const {
     branches = [],
     selectedBranch = "all",
     setSelectedBranch = () => {},
   } = useBranch();
 
-  const [profileOpen, setProfileOpen] =
-    useState(false);
+  const [
+    profileOpen,
+    setProfileOpen,
+  ] = useState(false);
 
-  const profileRef = useRef(null);
+  const [
+    userAvatar,
+    setUserAvatar,
+  ] = useState(
+    "/profiles/default-avatar.jpg",
+  );
 
-  const role = normalizeRole(user?.role);
+  const profileRef =
+    useRef(null);
+
+  const currentMemberId =
+    getMemberId(
+      currentMember,
+    );
+
+  const role =
+    normalizeRole(
+      currentMember?.role ||
+        user?.role,
+    );
 
   const canSelectBranch =
-  role === "secretary" ||
-  role === "branch_leader";
+    role === "secretary" ||
+    role === "branch_leader";
 
   const visibleItems =
-    getNavigationForRole(role);
+    getNavigationForRole(
+      role,
+    );
 
   const userName =
-    user?.fullNameKm ||
-    user?.fullNameEn ||
-    "អ្នកប្រើប្រាស់";
+    getDisplayName(
+      currentMember,
+      user,
+    );
 
   const userTitle =
-    ROLE_LABELS[role] || "";
+    ROLE_LABELS[
+      currentMember?.role
+    ] ||
+    ROLE_LABELS[
+      user?.role
+    ] ||
+    ROLE_LABELS[role] ||
+    role ||
+    "";
 
-  const userAvatar =
-    user?.profileImage ||
-    "/profiles/default-avatar.jpg";
+  const defaultUserAvatar =
+    getDefaultAvatar(
+      currentMember,
+      user,
+    );
 
+  /*
+   * Load the profile image saved
+   * for the current logged-in member.
+   *
+   * This keeps Sidebar, My Account,
+   * MemberInfoCard and ID Card synchronized.
+   */
   useEffect(() => {
-    function handleOutsideClick(event) {
+    setUserAvatar(
+      getSavedProfileImage(
+        currentMemberId,
+        defaultUserAvatar,
+      ),
+    );
+
+    const handleProfileImageChange = (
+      event,
+    ) => {
+      const changedMemberId =
+        event.detail?.memberId;
+
+      if (
+        String(
+          changedMemberId,
+        ) !==
+        String(
+          currentMemberId,
+        )
+      ) {
+        return;
+      }
+
+      setUserAvatar(
+        event.detail?.imageData ||
+          defaultUserAvatar,
+      );
+    };
+
+    window.addEventListener(
+      "tnal-profile-image-change",
+      handleProfileImageChange,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "tnal-profile-image-change",
+        handleProfileImageChange,
+      );
+    };
+  }, [
+    currentMemberId,
+    defaultUserAvatar,
+  ]);
+
+  /*
+   * Close the profile menu
+   * when clicking outside it.
+   */
+  useEffect(() => {
+    function handleOutsideClick(
+      event,
+    ) {
       if (
         profileRef.current &&
         !profileRef.current.contains(
-          event.target
+          event.target,
         )
       ) {
         setProfileOpen(false);
@@ -111,13 +269,13 @@ export default function Sidebar() {
 
     document.addEventListener(
       "mousedown",
-      handleOutsideClick
+      handleOutsideClick,
     );
 
     return () => {
       document.removeEventListener(
         "mousedown",
-        handleOutsideClick
+        handleOutsideClick,
       );
     };
   }, []);
@@ -127,13 +285,27 @@ export default function Sidebar() {
 
     await logout();
 
-    router.replace("/auth/login");
+    router.replace(
+      "/auth/login",
+    );
+
     router.refresh();
   }
 
   if (authLoading) {
     return (
-      <aside className="flex h-screen w-72 shrink-0 items-center justify-center bg-primary-sidebar text-white">
+      <aside
+        className="
+          flex
+          h-screen
+          w-72
+          shrink-0
+          items-center
+          justify-center
+          bg-primary-sidebar
+          text-white
+        "
+      >
         <span className="text-sm text-white/60">
           កំពុងដំណើរការ...
         </span>
@@ -141,16 +313,53 @@ export default function Sidebar() {
     );
   }
 
-  if (!isLoggedIn || !user) {
+  if (
+    !isLoggedIn ||
+    !user
+  ) {
     return null;
   }
 
   return (
-    <aside className="flex h-screen w-72 shrink-0 flex-col justify-between bg-primary-sidebar text-white">
-      <div>
+    <aside
+      className="
+        flex
+        h-screen
+        w-72
+        shrink-0
+        flex-col
+        justify-between
+        bg-primary-sidebar
+        text-white
+      "
+    >
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {/* Logo */}
-        <div className="flex flex-col items-center px-6 pb-5 pt-6 text-center">
-          <div className="mb-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white">
+
+        <div
+          className="
+            flex
+            flex-col
+            items-center
+            px-6
+            pb-5
+            pt-6
+            text-center
+          "
+        >
+          <div
+            className="
+              mb-3
+              flex
+              h-14
+              w-14
+              items-center
+              justify-center
+              overflow-hidden
+              rounded-full
+              bg-white
+            "
+          >
             <Image
               src="/logo.png"
               alt="Logo"
@@ -170,91 +379,222 @@ export default function Sidebar() {
           </p>
         </div>
 
-        {/* Branch selector is only shown for secretary and branch leader */}
+        {/* Branch selector */}
+
         {canSelectBranch && (
           <div className="mb-2 px-3">
             <div className="relative">
-              <FaUniversity size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white" />
+              <FaUniversity
+                size={16}
+                className="
+                  pointer-events-none
+                  absolute
+                  left-4
+                  top-1/2
+                  -translate-y-1/2
+                  text-white
+                "
+              />
 
               <select
-                value={selectedBranch}
-                onChange={(event) => setSelectedBranch(event.target.value)}
-                className="w-full appearance-none rounded-lg bg-white/10 py-2.5 pl-11 pr-8 text-sm font-medium text-white outline-none transition hover:bg-white/15"
+                value={
+                  selectedBranch
+                }
+                onChange={(
+                  event,
+                ) =>
+                  setSelectedBranch(
+                    event.target
+                      .value,
+                  )
+                }
+                className="
+                  h-[38px]
+                  w-full
+                  appearance-none
+                  rounded-lg
+                  bg-white/10
+                  pl-11
+                  pr-8
+                  text-sm
+                  font-medium
+                  text-white
+                  outline-none
+                  transition
+                  hover:bg-white/15
+                "
               >
-                <option value="all" className="text-black">
+                <option
+                  value="all"
+                  className="text-black"
+                >
                   ជ្រើសរើសសាខា
                 </option>
 
-                {branches.map((branch) => {
-                  const branchValue = typeof branch === "string" ? branch : branch.id;
+                {branches.map(
+                  (branch) => {
+                    const branchValue =
+                      typeof branch ===
+                      "string"
+                        ? branch
+                        : branch.id;
 
-                  const branchLabel =
-                    typeof branch === "string"
-                      ? branch
-                      : branch.nameKm ||
-                        branch.nameEn ||
-                        branch.name ||
-                        `សាខា ${branch.id}`;
+                    const branchLabel =
+                      typeof branch ===
+                      "string"
+                        ? branch
+                        : branch.nameKm ||
+                          branch.nameEn ||
+                          branch.name ||
+                          `សាខា ${branch.id}`;
 
-                  return (
-                    <option key={branchValue} value={branchValue} className="text-black">
-                      {branchLabel}
-                    </option>
-                  );
-                })}
+                    return (
+                      <option
+                        key={
+                          branchValue
+                        }
+                        value={
+                          branchValue
+                        }
+                        className="text-black"
+                      >
+                        {branchLabel}
+                      </option>
+                    );
+                  },
+                )}
               </select>
 
-              <FaChevronDown size={12} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/60" />
+              <FaChevronDown
+                size={12}
+                className="
+                  pointer-events-none
+                  absolute
+                  right-4
+                  top-1/2
+                  -translate-y-1/2
+                  text-white/60
+                "
+              />
             </div>
           </div>
         )}
 
         {/* Navigation */}
+
         <nav className="space-y-1 px-3">
-          {visibleItems.map((item) => {
-            const Icon =
-              ICON_MAP[item.icon];
+          {visibleItems.map(
+            (item) => {
+              const Icon =
+                ICON_MAP[
+                  item.icon
+                ];
 
-            const active =
-              pathname === item.href ||
-              pathname?.startsWith(
-                `${item.href}/`
+              const active =
+                pathname ===
+                  item.href ||
+                pathname?.startsWith(
+                  `${item.href}/`,
+                );
+
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className={`
+                    flex
+                    items-center
+                    gap-3
+                    rounded-lg
+                    px-4
+                    py-2.5
+                    text-sm
+                    font-medium
+                    transition
+                    ${
+                      active
+                        ? `
+                          bg-white/15
+                          text-white
+                        `
+                        : `
+                          text-white/70
+                          hover:bg-white/5
+                          hover:text-white
+                        `
+                    }
+                  `}
+                >
+                  {Icon && (
+                    <Icon
+                      size={16}
+                    />
+                  )}
+
+                  <span>
+                    {item.label}
+                  </span>
+                </Link>
               );
-
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                className={`flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition ${
-                  active
-                    ? "bg-white/15 text-white"
-                    : "text-white/70 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                {Icon && (
-                  <Icon size={16} />
-                )}
-
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
+            },
+          )}
         </nav>
       </div>
 
       {/* Profile */}
+
       <div
         ref={profileRef}
-        className="relative border-t border-white/10 px-4 py-4"
+        className="
+          relative
+          shrink-0
+          border-t
+          border-white/10
+          px-4
+          py-4
+        "
       >
         {profileOpen && (
-          <div className="absolute bottom-full left-4 mb-2 w-[calc(100%-2rem)] overflow-hidden rounded-xl border border-white/10 bg-primary-sidebar py-1.5 shadow-xl">
+          <div
+            className="
+              absolute
+              bottom-full
+              left-4
+              mb-2
+              w-[calc(100%-2rem)]
+              overflow-hidden
+              rounded-xl
+              border
+              border-white/10
+              bg-primary-sidebar
+              py-1.5
+              shadow-xl
+            "
+          >
             <button
               type="button"
-              onClick={handleLogout}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-red-300 transition hover:bg-white/10 hover:text-red-200"
+              onClick={
+                handleLogout
+              }
+              className="
+                flex
+                w-full
+                items-center
+                gap-3
+                px-4
+                py-3
+                text-left
+                text-sm
+                text-red-300
+                transition
+                hover:bg-white/10
+                hover:text-red-200
+              "
             >
-              <FaSignOutAlt size={15} />
+              <FaSignOutAlt
+                size={15}
+              />
+
               ចាកចេញ
             </button>
           </div>
@@ -264,29 +604,77 @@ export default function Sidebar() {
           type="button"
           onClick={() =>
             setProfileOpen(
-              (current) => !current
+              (current) =>
+                !current,
             )
           }
-          aria-expanded={profileOpen}
-          className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 transition hover:bg-white/10"
+          aria-expanded={
+            profileOpen
+          }
+          className="
+            flex
+            w-full
+            items-center
+            justify-between
+            gap-2
+            rounded-lg
+            px-2
+            py-2
+            transition
+            hover:bg-white/10
+          "
         >
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10">
+            <div
+              className="
+                relative
+                flex
+                h-9
+                w-9
+                shrink-0
+                items-center
+                justify-center
+                overflow-hidden
+                rounded-full
+                bg-white/10
+              "
+            >
               <Image
-                src={userAvatar}
+                src={
+                  userAvatar
+                }
                 alt={userName}
-                width={36}
-                height={36}
-                className="h-full w-full object-cover"
+                fill
+                sizes="36px"
+                className="object-cover"
+                onError={() =>
+                  setUserAvatar(
+                    "/profiles/default-avatar.jpg",
+                  )
+                }
               />
             </div>
 
             <div className="min-w-0 text-left">
-              <div className="truncate text-sm font-medium">
+              <div
+                className="
+                  truncate
+                  text-sm
+                  font-medium
+                "
+                title={userName}
+              >
                 {userName}
               </div>
 
-              <div className="truncate text-xs text-white/50">
+              <div
+                className="
+                  truncate
+                  text-xs
+                  text-white/50
+                "
+                title={userTitle}
+              >
                 {userTitle}
               </div>
             </div>
@@ -294,11 +682,17 @@ export default function Sidebar() {
 
           <FaChevronDown
             size={12}
-            className={`shrink-0 text-white/50 transition-transform duration-200 ${
-              profileOpen
-                ? "rotate-180"
-                : ""
-            }`}
+            className={`
+              shrink-0
+              text-white/50
+              transition-transform
+              duration-200
+              ${
+                profileOpen
+                  ? "rotate-180"
+                  : ""
+              }
+            `}
           />
         </button>
       </div>

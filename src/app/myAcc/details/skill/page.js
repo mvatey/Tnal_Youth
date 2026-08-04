@@ -9,23 +9,65 @@ import educationData from "@/data/education.json";
 import SaveButton from "@/components/forms/SaveButton";
 import DeleteButton from "@/components/forms/DeleteButton";
 import FormSelect from "@/components/forms/FormSelect";
+import ButtonDropLink from "@/components/forms/ButtonDropLink";
+
+function createId(prefix) {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+
+  return `${prefix}-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2)}`;
+}
 
 function createLanguageSkill() {
   return {
-    id: `language-${Date.now()}-${Math.random()}`,
+    id: createId("language"),
     language: "",
     listening: "",
     reading: "",
     speaking: "",
     writing: "",
+    documentLink: "",
   };
 }
 
 function createComputerSkill() {
   return {
-    id: `computer-${Date.now()}-${Math.random()}`,
+    id: createId("computer"),
     skill: "",
     level: "",
+    documentLink: "",
+  };
+}
+
+function normalizeLanguageSkill(item) {
+  return {
+    ...createLanguageSkill(),
+    ...(item || {}),
+
+    documentLink:
+      item?.documentLink ||
+      item?.document_link ||
+      item?.attachmentLink ||
+      "",
+  };
+}
+
+function normalizeComputerSkill(item) {
+  return {
+    ...createComputerSkill(),
+    ...(item || {}),
+
+    documentLink:
+      item?.documentLink ||
+      item?.document_link ||
+      item?.attachmentLink ||
+      "",
   };
 }
 
@@ -36,8 +78,15 @@ export default function MyAccountSkillPage() {
     error,
   } = useCurrentMember();
 
-  const [languageSkills, setLanguageSkills] = useState([]);
-  const [computerSkills, setComputerSkills] = useState([]);
+  const [
+    languageSkills,
+    setLanguageSkills,
+  ] = useState([]);
+
+  const [
+    computerSkills,
+    setComputerSkills,
+  ] = useState([]);
 
   useEffect(() => {
     if (!member) {
@@ -46,79 +95,130 @@ export default function MyAccountSkillPage() {
       return;
     }
 
-    const memberLanguages = Array.isArray(member.languageSkills)
-      ? member.languageSkills
-      : [];
+    const memberLanguages =
+      Array.isArray(
+        member.languageSkills,
+      )
+        ? member.languageSkills
+        : [];
 
-    const memberComputers = Array.isArray(member.computerSkills)
-      ? member.computerSkills
-      : [];
+    const memberComputers =
+      Array.isArray(
+        member.computerSkills,
+      )
+        ? member.computerSkills
+        : [];
 
     setLanguageSkills(
       memberLanguages.length > 0
-        ? memberLanguages
+        ? memberLanguages.map(
+            normalizeLanguageSkill,
+          )
         : [createLanguageSkill()],
     );
 
     setComputerSkills(
       memberComputers.length > 0
-        ? memberComputers
+        ? memberComputers.map(
+            normalizeComputerSkill,
+          )
         : [createComputerSkill()],
     );
   }, [member]);
 
-  const updateLanguage = (id, field, value) => {
-    setLanguageSkills((previous) =>
-      previous.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              [field]: value,
-            }
-          : item,
-      ),
+  const updateLanguage = (
+    id,
+    field,
+    value,
+  ) => {
+    setLanguageSkills(
+      (previous) =>
+        previous.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                [field]: value,
+              }
+            : item,
+        ),
     );
   };
 
-  const updateComputer = (id, field, value) => {
-    setComputerSkills((previous) =>
-      previous.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              [field]: value,
-            }
-          : item,
-      ),
+  const updateComputer = (
+    id,
+    field,
+    value,
+  ) => {
+    setComputerSkills(
+      (previous) =>
+        previous.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                [field]: value,
+              }
+            : item,
+        ),
+    );
+  };
+
+  const addLanguage = () => {
+    setLanguageSkills(
+      (previous) => [
+        ...previous,
+        createLanguageSkill(),
+      ],
+    );
+  };
+
+  const addComputer = () => {
+    setComputerSkills(
+      (previous) => [
+        ...previous,
+        createComputerSkill(),
+      ],
     );
   };
 
   const removeLanguage = (id) => {
-    setLanguageSkills((previous) =>
-      previous.length === 1
-        ? previous
-        : previous.filter(
-            (item) => item.id !== id,
-          ),
+    setLanguageSkills(
+      (previous) =>
+        previous.length === 1
+          ? previous
+          : previous.filter(
+              (item) =>
+                item.id !== id,
+            ),
     );
   };
 
   const removeComputer = (id) => {
-    setComputerSkills((previous) =>
-      previous.length === 1
-        ? previous
-        : previous.filter(
-            (item) => item.id !== id,
-          ),
+    setComputerSkills(
+      (previous) =>
+        previous.length === 1
+          ? previous
+          : previous.filter(
+              (item) =>
+                item.id !== id,
+            ),
     );
   };
 
   const handleSave = () => {
-    console.log({
-      memberId: member?.id,
+    const updatedMember = {
+      ...member,
       languageSkills,
       computerSkills,
-    });
+    };
+
+    console.log(
+      "Updated member skills:",
+      updatedMember,
+    );
+
+    alert(
+      "រក្សាទុកព័ត៌មានបានជោគជ័យ",
+    );
   };
 
   if (loading) {
@@ -143,178 +243,340 @@ export default function MyAccountSkillPage() {
     return <NotFound />;
   }
 
-  const levels = educationData.proficiencyLevels || [
-    "ខ្សោយ",
-    "មធ្យម",
-    "ល្អ",
-    "ល្អណាស់",
-  ];
+  const levels =
+    educationData.proficiencyLevels || [
+      "ខ្សោយ",
+      "មធ្យម",
+      "ល្អ",
+      "ល្អណាស់",
+    ];
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
+      {/* Language skills */}
+
+      <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
         <h2 className="text-lg font-bold text-primary">
           ការប្រើប្រាស់ភាសាបរទេស
         </h2>
 
         <div className="mt-5 space-y-5">
-          {languageSkills.map((item) => (
-            <div
-              key={item.id}
-              className="rounded-xl border border-gray-300 p-6"
-            >
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-5">
-                <FormSelect
-                  label="ភាសា"
-                  value={item.language || ""}
-                  onChange={(event) =>
-                    updateLanguage(
-                      item.id,
-                      "language",
-                      event.target.value,
-                    )
-                  }
-                  placeholder="ជ្រើសរើសភាសា"
-                  options={educationData.languages || []}
-                />
-
-                {[
-                  "listening",
-                  "reading",
-                  "speaking",
-                  "writing",
-                ].map((field) => {
-                  const labels = {
-                    listening: "ការស្ដាប់",
-                    reading: "ការអាន",
-                    speaking: "ការនិយាយ",
-                    writing: "ការសរសេរ",
-                  };
-
-                  return (
-                    <FormSelect
-                      key={field}
-                      label={labels[field]}
-                      value={item[field] || ""}
-                      onChange={(event) =>
-                        updateLanguage(
-                          item.id,
-                          field,
-                          event.target.value,
-                        )
-                      }
-                      placeholder="ជ្រើសរើសកម្រិត"
-                      options={levels}
-                    />
-                  );
-                })}
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <DeleteButton
-                  canDelete={languageSkills.length > 1}
-                  onClick={() =>
-                    removeLanguage(item.id)
-                  }
-                />
-              </div>
-            </div>
-          ))}
+          {languageSkills.map(
+            (item, index) => (
+              <LanguageSkillCard
+                key={item.id}
+                index={index}
+                item={item}
+                levels={levels}
+                canDelete={
+                  languageSkills.length >
+                  1
+                }
+                onChange={(
+                  field,
+                  value,
+                ) =>
+                  updateLanguage(
+                    item.id,
+                    field,
+                    value,
+                  )
+                }
+                onDelete={() =>
+                  removeLanguage(
+                    item.id,
+                  )
+                }
+              />
+            ),
+          )}
         </div>
 
-        <div className="mt-6 flex justify-center">
-          <button
-            type="button"
-            onClick={() =>
-              setLanguageSkills((previous) => [
-                ...previous,
-                createLanguageSkill(),
-              ])
-            }
-            className="inline-flex items-center gap-2 rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white hover:bg-green-700"
-          >
-            <RiAddCircleLine size={17} />
-            បន្ថែម
-          </button>
-        </div>
-      </div>
+        <AddButton
+          onClick={addLanguage}
+        />
+      </section>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
+      {/* Computer skills */}
+
+      <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
         <h2 className="text-lg font-bold text-primary">
           ការប្រើប្រាស់កម្មវិធីកុំព្យូទ័រ
         </h2>
 
         <div className="mt-5 space-y-5">
-          {computerSkills.map((item) => (
-            <div
-              key={item.id}
-              className="rounded-xl border border-gray-300 p-6"
-            >
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <FormSelect
-                  label="ជំនាញ"
-                  value={item.skill || ""}
-                  onChange={(event) =>
-                    updateComputer(
-                      item.id,
-                      "skill",
-                      event.target.value,
-                    )
-                  }
-                  placeholder="ជ្រើសរើសកម្មវិធី"
-                  options={educationData.computerSkills || []}
-                />
-
-                <FormSelect
-                  label="កម្រិតជំនាញ"
-                  value={item.level || ""}
-                  onChange={(event) =>
-                    updateComputer(
-                      item.id,
-                      "level",
-                      event.target.value,
-                    )
-                  }
-                  placeholder="ជ្រើសរើសកម្រិត"
-                  options={
-                    educationData.computerSkillLevels ||
-                    levels
-                  }
-                />
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <DeleteButton
-                  canDelete={computerSkills.length > 1}
-                  onClick={() =>
-                    removeComputer(item.id)
-                  }
-                />
-              </div>
-            </div>
-          ))}
+          {computerSkills.map(
+            (item, index) => (
+              <ComputerSkillCard
+                key={item.id}
+                index={index}
+                item={item}
+                levels={levels}
+                canDelete={
+                  computerSkills.length >
+                  1
+                }
+                onChange={(
+                  field,
+                  value,
+                ) =>
+                  updateComputer(
+                    item.id,
+                    field,
+                    value,
+                  )
+                }
+                onDelete={() =>
+                  removeComputer(
+                    item.id,
+                  )
+                }
+              />
+            ),
+          )}
         </div>
 
-        <div className="mt-6 flex justify-center">
-          <button
-            type="button"
-            onClick={() =>
-              setComputerSkills((previous) => [
-                ...previous,
-                createComputerSkill(),
-              ])
-            }
-            className="inline-flex items-center gap-2 rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white hover:bg-green-700"
-          >
-            <RiAddCircleLine size={17} />
-            បន្ថែម
-          </button>
-        </div>
-      </div>
+        <AddButton
+          onClick={addComputer}
+        />
+      </section>
 
       <div className="flex justify-end">
-        <SaveButton onClick={handleSave} />
+        <SaveButton
+          onClick={handleSave}
+        />
       </div>
+    </div>
+  );
+}
+
+function LanguageSkillCard({
+  index,
+  item,
+  levels,
+  canDelete,
+  onChange,
+  onDelete,
+}) {
+  const skillFields = [
+    {
+      key: "listening",
+      label: "ការស្ដាប់",
+    },
+    {
+      key: "reading",
+      label: "ការអាន",
+    },
+    {
+      key: "speaking",
+      label: "ការនិយាយ",
+    },
+    {
+      key: "writing",
+      label: "ការសរសេរ",
+    },
+  ];
+
+  return (
+    <div className="rounded-xl border border-gray-300 p-4 sm:p-5 lg:p-6">
+      <h3 className="mb-5 text-sm font-semibold text-text-primary">
+        ភាសាបរទេស ទី{" "}
+        {index + 1}
+      </h3>
+
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-5">
+        <FormSelect
+          label="ភាសា"
+          name={`language-${item.id}`}
+          value={
+            item.language || ""
+          }
+          onChange={(event) =>
+            onChange(
+              "language",
+              event.target.value,
+            )
+          }
+          placeholder="ជ្រើសរើសភាសា"
+          options={
+            educationData.languages ||
+            []
+          }
+        />
+
+        {skillFields.map(
+          (field) => (
+            <FormSelect
+              key={field.key}
+              label={field.label}
+              name={`${field.key}-${item.id}`}
+              value={
+                item[field.key] ||
+                ""
+              }
+              onChange={(event) =>
+                onChange(
+                  field.key,
+                  event.target.value,
+                )
+              }
+              placeholder="ជ្រើសរើសកម្រិត"
+              options={levels}
+            />
+          ),
+        )}
+      </div>
+
+      <div className="mt-5">
+        <label className="mb-2 block text-sm font-semibold text-text-primary">
+          តំណភ្ជាប់ឯកសារ
+        </label>
+
+        <ButtonDropLink
+          value={
+            item.documentLink ||
+            ""
+          }
+          onChange={(value) =>
+            onChange(
+              "documentLink",
+              value,
+            )
+          }
+          placeholder="បញ្ចូលតំណភ្ជាប់វិញ្ញាបនបត្រភាសា"
+        />
+      </div>
+
+      <div className="mt-6 flex justify-end">
+        <DeleteButton
+          canDelete={
+            canDelete
+          }
+          onClick={onDelete}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ComputerSkillCard({
+  index,
+  item,
+  levels,
+  canDelete,
+  onChange,
+  onDelete,
+}) {
+  return (
+    <div className="rounded-xl border border-gray-300 p-4 sm:p-5 lg:p-6">
+      <h3 className="mb-5 text-sm font-semibold text-text-primary">
+        ជំនាញកុំព្យូទ័រ ទី{" "}
+        {index + 1}
+      </h3>
+
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <FormSelect
+          label="ជំនាញ"
+          name={`computer-skill-${item.id}`}
+          value={
+            item.skill || ""
+          }
+          onChange={(event) =>
+            onChange(
+              "skill",
+              event.target.value,
+            )
+          }
+          placeholder="ជ្រើសរើសកម្មវិធី"
+          options={
+            educationData.computerSkills ||
+            []
+          }
+        />
+
+        <FormSelect
+          label="កម្រិតជំនាញ"
+          name={`computer-level-${item.id}`}
+          value={
+            item.level || ""
+          }
+          onChange={(event) =>
+            onChange(
+              "level",
+              event.target.value,
+            )
+          }
+          placeholder="ជ្រើសរើសកម្រិត"
+          options={
+            educationData.computerSkillLevels ||
+            levels
+          }
+        />
+      </div>
+
+      <div className="mt-5">
+        <label className="mb-2 block text-sm font-semibold text-text-primary">
+          តំណភ្ជាប់ឯកសារ
+        </label>
+
+        <ButtonDropLink
+          value={
+            item.documentLink ||
+            ""
+          }
+          onChange={(value) =>
+            onChange(
+              "documentLink",
+              value,
+            )
+          }
+          placeholder="បញ្ចូលតំណភ្ជាប់វិញ្ញាបនបត្រជំនាញ"
+        />
+      </div>
+
+      <div className="mt-6 flex justify-end">
+        <DeleteButton
+          canDelete={
+            canDelete
+          }
+          onClick={onDelete}
+        />
+      </div>
+    </div>
+  );
+}
+
+function AddButton({
+  onClick,
+}) {
+  return (
+    <div className="mt-6 flex justify-center">
+      <button
+        type="button"
+        onClick={onClick}
+        className="
+          inline-flex
+          h-[34px]
+          items-center
+          justify-center
+          gap-2
+          rounded-lg
+          bg-success
+          px-5
+          text-sm
+          font-semibold
+          text-white
+          transition
+          hover:bg-green-700
+          active:scale-[0.99]
+        "
+      >
+        <RiAddCircleLine
+          size={17}
+        />
+
+        បន្ថែម
+      </button>
     </div>
   );
 }

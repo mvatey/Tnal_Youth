@@ -23,7 +23,7 @@ export default function ButtonDropLink({
         <button
           type="button"
           onClick={() => setShowInput(true)}
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition hover:opacity-90"
+          className="inline-flex h-[34px]  items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition hover:opacity-90"
         >
           <Link2 size={17} />
           តំណភ្ជាប់ឯកសារ

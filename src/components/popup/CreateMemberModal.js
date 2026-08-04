@@ -323,9 +323,9 @@ export default function CreateMemberModal({
               <BoxFill label="ថ្ងៃខែឆ្នាំចូលរួម" name="joinedAt" type="date" value={form.joinedAt} onChange={update("joinedAt")} />
 
               <FormSelect
-                label="កាំ"
+                label="កម្រិតសមាជិក​ (កាំ)"
                 name="level"
-                placeholder="ជ្រើសរើសកាំ"
+                placeholder="ជ្រើសរើសកម្រិតសមាជិក"
                 options={LEVEL_OPTIONS.map((level) => ({
                   label: level,
                   value: level,

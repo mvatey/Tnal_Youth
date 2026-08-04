@@ -8,15 +8,20 @@ const AUTH_ROLE_TO_JSON_ROLE = {
 };
 
 /*
- * Temporary mapping:
- * backend user ID -> members.json member ID
+ * Temporary backend user ID -> members.json member ID.
  *
- * Remove this after the backend returns a real memberId.
+ * IMPORTANT:
+ * Set the correct mapping for each login account.
+ *
+ * Example:
+ * backend user 9 = member JSON 3 (Phan Rithy)
  */
 const TEMP_MEMBER_MAP = {
-  9: "1",
-  // 10: "2",
-  // 11: "3",
+  9: "3",
+
+  // Add the real mappings for your test users:
+  // 10: "1",
+  // 11: "2",
 };
 
 const AUTH_STORAGE_KEYS = [
@@ -33,158 +38,227 @@ function normalize(value) {
 }
 
 function findJsonMember(authUser) {
-  if (!authUser) return {};
+  if (!authUser) {
+    return null;
+  }
 
-  const mappedMemberId = TEMP_MEMBER_MAP[authUser.id];
+  /*
+   * 1. Prefer the actual memberId returned by backend.
+   */
+  if (authUser.memberId !== undefined && authUser.memberId !== null) {
+    const memberByMemberId = members.find(
+      (member) =>
+        String(member.id) ===
+        String(authUser.memberId),
+    );
 
-  return (
-    members.find(
-      (item) =>
-        mappedMemberId &&
-        String(item.id) === String(mappedMemberId),
-    ) ||
-    members.find(
-      (item) =>
-        authUser.email &&
-        normalize(item.email) === normalize(authUser.email),
-    ) ||
-    members.find(
-      (item) =>
-        authUser.phone &&
-        normalize(item.phone) === normalize(authUser.phone),
-    ) ||
-    members.find(
-      (item) =>
-        authUser.memberId &&
-        String(item.id) === String(authUser.memberId),
-    ) ||
-    members.find(
-      (item) =>
-        authUser.id &&
-        String(item.id) === String(authUser.id),
-    ) ||
-    {}
-  );
+    if (memberByMemberId) {
+      return memberByMemberId;
+    }
+  }
+
+  /*
+   * 2. Temporary test mapping.
+   */
+  const mappedMemberId =
+    TEMP_MEMBER_MAP[authUser.id];
+
+  if (mappedMemberId) {
+    const mappedMember = members.find(
+      (member) =>
+        String(member.id) ===
+        String(mappedMemberId),
+    );
+
+    if (mappedMember) {
+      return mappedMember;
+    }
+  }
+
+  /*
+   * 3. Match unique email.
+   */
+  if (authUser.email) {
+    const memberByEmail = members.find(
+      (member) =>
+        normalize(member.email) ===
+        normalize(authUser.email),
+    );
+
+    if (memberByEmail) {
+      return memberByEmail;
+    }
+  }
+
+  /*
+   * 4. Match phone.
+   */
+  if (authUser.phone) {
+    const memberByPhone = members.find(
+      (member) =>
+        normalize(member.phone) ===
+        normalize(authUser.phone),
+    );
+
+    if (memberByPhone) {
+      return memberByPhone;
+    }
+  }
+
+  /*
+   * Do not match authUser.id directly to member.id.
+   *
+   * Backend user ID and member ID are different entities.
+   */
+  return null;
 }
 
 export function combineAuthUserWithMember(authUser) {
-  if (!authUser) return null;
+  if (!authUser) {
+    return null;
+  }
 
-  const jsonMember = findJsonMember(authUser);
+  const jsonMember =
+    findJsonMember(authUser);
 
   const normalizedRole =
-    AUTH_ROLE_TO_JSON_ROLE[authUser.role] ||
+    AUTH_ROLE_TO_JSON_ROLE[
+      authUser.role
+    ] ||
     normalize(authUser.role) ||
-    jsonMember.role ||
+    jsonMember?.role ||
     "member";
 
+  /*
+   * When a JSON member is successfully matched,
+   * use that member as the main source for all
+   * profile information.
+   *
+   * Backend auth data is only fallback data.
+   */
   return {
-    ...jsonMember,
+    ...(jsonMember || {}),
 
-    /*
-     * Prefer memberId because authUser.id is normally the user-account ID,
-     * not necessarily the member ID.
-     */
     id:
+      jsonMember?.id ??
       authUser.memberId ??
-      jsonMember.id ??
-      authUser.id ??
       null,
 
-    userId: authUser.id ?? null,
+    memberId:
+      jsonMember?.id ??
+      authUser.memberId ??
+      null,
+
+    userId:
+      authUser.id ?? null,
 
     name_kh:
+      jsonMember?.name_kh ||
       authUser.fullNameKm ||
-      jsonMember.name_kh ||
       "-",
 
     name_en:
+      jsonMember?.name_en ||
       authUser.fullNameEn ||
-      jsonMember.name_en ||
       "-",
 
     phone:
+      jsonMember?.phone ||
       authUser.phone ||
-      jsonMember.phone ||
       "-",
 
     email:
+      jsonMember?.email ||
       authUser.email ||
-      jsonMember.email ||
       "-",
 
-    role: normalizedRole,
+    role:
+      jsonMember?.role ||
+      normalizedRole,
 
     profile_photo:
+      jsonMember?.profile_photo ||
       authUser.profileImage ||
-      jsonMember.profile_photo ||
+      "/member.png",
+
+    profileImage:
+      jsonMember?.profile_photo ||
+      authUser.profileImage ||
       "/member.png",
 
     status:
-      jsonMember.status ||
+      jsonMember?.status ||
       "សកម្ម",
 
     branch:
-      jsonMember.branch ||
+      jsonMember?.branch ||
       "-",
 
     gender:
-      jsonMember.gender ||
+      jsonMember?.gender ||
       "-",
 
     religion:
-      jsonMember.religion ||
+      jsonMember?.religion ||
       "-",
 
     joinedAt:
-      jsonMember.joinedAt ||
+      jsonMember?.joinedAt ||
       "-",
 
     date_of_birth:
-      jsonMember.date_of_birth ||
+      jsonMember?.date_of_birth ||
       "-",
 
     nationality:
-      jsonMember.nationality ||
+      jsonMember?.nationality ||
       "-",
 
     ethnicity:
-      jsonMember.ethnicity ||
+      jsonMember?.ethnicity ||
+      "-",
+
+    level:
+      jsonMember?.level ||
+      "-",
+
+    shirtSize:
+      jsonMember?.shirtSize ||
       "-",
 
     family:
-      jsonMember.family ||
+      jsonMember?.family ||
       null,
 
     workHistory:
-      jsonMember.workHistory ||
+      jsonMember?.workHistory ||
       [],
 
     educationHistory:
-      jsonMember.educationHistory ||
+      jsonMember?.educationHistory ||
       [],
   };
 }
 
 function readStoredAuthUser() {
-  if (typeof window === "undefined") {
+  if (
+    typeof window === "undefined"
+  ) {
     return null;
   }
 
   for (const key of AUTH_STORAGE_KEYS) {
-    const storedValue = localStorage.getItem(key);
+    const storedValue =
+      localStorage.getItem(key);
 
-    if (!storedValue) continue;
+    if (!storedValue) {
+      continue;
+    }
 
     try {
-      const parsedValue = JSON.parse(storedValue);
+      const parsedValue =
+        JSON.parse(storedValue);
 
-      /*
-       * Supports structures such as:
-       * { user: {...} }
-       * { data: {...} }
-       * or a direct user object.
-       */
       return (
         parsedValue?.user ||
         parsedValue?.data?.user ||
@@ -202,9 +276,14 @@ function readStoredAuthUser() {
   return null;
 }
 
-export default function getCurrentMember(authUser = null) {
+export default function getCurrentMember(
+  authUser = null,
+) {
   const resolvedAuthUser =
-    authUser || readStoredAuthUser();
+    authUser ||
+    readStoredAuthUser();
 
-  return combineAuthUserWithMember(resolvedAuthUser);
+  return combineAuthUserWithMember(
+    resolvedAuthUser,
+  );
 }

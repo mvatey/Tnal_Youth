@@ -57,8 +57,31 @@ export default function FamilyPage() {
         <h2 className="text-lg font-bold text-primary">
           ព័ត៌មានគ្រួសារ
         </h2>
+        <div className="mt-6">
+  <RadioGroup
+    label="ស្ថានភាពគ្រួសារ"
+    name="familyStatus"
+    value={family.status || ""}
+    options={[
+      {
+        label: "នៅលីវ",
+        value: "នៅលីវ",
+      },
+      {
+        label: "មានគ្រួសារ",
+        value: "មានគ្រួសារ",
+      },
+    ]}
+    onChange={(value) =>
+      setFamily((previous) => ({
+        ...previous,
+        status: value,
+      }))
+    }
+  />
+</div>
 
-        <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-5 grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2 xl:grid-cols-3">
           <BoxFill
             label="ឈ្មោះ ប្ដី/ប្រពន្ធ (ខ្មែរ)"
             placeholder="បញ្ចូលឈ្មោះប្ដីប្រពន្ធជាភាសាខ្មែរ"
@@ -267,6 +290,16 @@ function RadioGroup({
   name,
   value,
   onChange,
+  options = [
+    {
+      label: "នៅរស់",
+      value: "នៅរស់",
+    },
+    {
+      label: "ស្លាប់",
+      value: "ស្លាប់",
+    },
+  ],
 }) {
   return (
     <div>
@@ -274,22 +307,17 @@ function RadioGroup({
         {label}
       </label>
 
-      <div className="flex gap-8 pt-2">
-        <Radio
-          name={name}
-          label="នៅរស់"
-          value="នៅរស់"
-          checked={value === "នៅរស់"}
-          onChange={onChange}
-        />
-
-        <Radio
-          name={name}
-          label="ស្លាប់"
-          value="ស្លាប់"
-          checked={value === "ស្លាប់"}
-          onChange={onChange}
-        />
+      <div className="flex flex-wrap gap-x-8 gap-y-3 pt-2">
+        {options.map((option) => (
+          <Radio
+            key={`${name}-${option.value}`}
+            name={name}
+            label={option.label}
+            value={option.value}
+            checked={value === option.value}
+            onChange={onChange}
+          />
+        ))}
       </div>
     </div>
   );
