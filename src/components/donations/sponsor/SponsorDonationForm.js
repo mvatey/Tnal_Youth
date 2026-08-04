@@ -21,7 +21,7 @@ const {
   sponsorTypes,
 } = sponsorOptions;
 const members = memberRecords.filter((member) => member.role === "member");
-const memberNames = [...new Set(members.map((member) => member.name))];
+const memberBranches = [...new Set(members.map((member) => member.branch))];
 
 function toKhmerNumber(value) {
   return String(value).replace(/\d/g, (digit) => khmerDigits[Number(digit)]);
@@ -77,12 +77,12 @@ function QuantityField({ label, value, onChange, disabled = false }) {
   };
 
   return (
-    <label className="block w-[100px] shrink-0">
+    <label className="block w-[80px] shrink-0">
       <span className="mb-2 block whitespace-nowrap text-[13px] font-semibold leading-5 text-text-secondary">
         {label}
       </span>
       <span
-        className={`flex h-[34px] w-[100px] overflow-hidden rounded-xl border border-[#CBD0D8] focus-within:border-secondary ${
+        className={`flex h-[34px] w-[80px] overflow-hidden rounded-xl border border-[#CBD0D8] focus-within:border-secondary ${
           disabled ? "bg-[#F3F4F6] opacity-60" : "bg-white"
         }`}
       >
@@ -487,7 +487,10 @@ export default function SponsorDonationForm({ initialData = null }) {
   };
 
   const handleMemberChange = (memberName) => {
-    const selectedMember = members.find((member) => member.name === memberName);
+    const selectedMember = members.find(
+      (member) =>
+        member.name === memberName && member.branch === form.branch,
+    );
 
     setForm((currentForm) => ({
       ...currentForm,
@@ -496,6 +499,26 @@ export default function SponsorDonationForm({ initialData = null }) {
       email: selectedMember?.email || "",
     }));
   };
+
+  const handleMemberBranchChange = (branch) => {
+    setForm((currentForm) => ({
+      ...currentForm,
+      branch,
+      sponsorName: "",
+      phone: "",
+      email: "",
+    }));
+  };
+
+  const branchMemberNames = form.branch
+    ? [
+        ...new Set(
+          members
+            .filter((member) => member.branch === form.branch)
+            .map((member) => member.name),
+        ),
+      ]
+    : [];
 
   const handleEquipmentChange = (event) => {
     const isChecked = event.target.checked;
@@ -650,15 +673,31 @@ export default function SponsorDonationForm({ initialData = null }) {
             </fieldset>
 
             {form.sponsorType === "សមាជិក" ? (
-              <MemberSelectField
-                label="ឈ្មោះអ្នកឧបត្ថម្ភ"
-                required
-                value={form.sponsorName}
-                onChange={handleMemberChange}
-                options={memberNames}
-                placeholder="ជ្រើសរើសសមាជិក"
-                className="focus:placeholder-transparent"
-              />
+              <div className="flex items-end gap-3">
+                <SelectField
+                  label="សាខា"
+                   required
+                  value={form.branch}
+                  onChange={handleMemberBranchChange}
+                  options={memberBranches}
+                  placeholder="ជ្រើសរើសសាខា"
+                  className="min-w-0 flex-1"
+                />
+                <div className="min-w-0 flex-1">
+                  <MemberSelectField
+                    label="ឈ្មោះអ្នកឧបត្ថម្ភ"
+                    required
+                    value={form.sponsorName}
+                    onChange={handleMemberChange}
+                    options={branchMemberNames}
+                    placeholder={
+                      form.branch
+                        ? "ជ្រើសរើសសមាជិក"
+                        : "សូមជ្រើសរើសសាខាជាមុន"
+                    }
+                  />
+                </div>
+              </div>
             ) : (
               <TextField
                 label="ឈ្មោះអ្នកឧបត្ថម្ភ"
@@ -758,9 +797,7 @@ export default function SponsorDonationForm({ initialData = null }) {
     className="min-w-0"
   />
 </div>
-
-            <div className="flex items-end gap-4">
-                <fieldset className="flex h-[34px] items-center text-[13px] font-medium text-text-secondary">
+     <fieldset className="flex h-[34px] items-center text-[13px] font-medium text-text-secondary">
                   <label className="inline-flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -773,6 +810,9 @@ export default function SponsorDonationForm({ initialData = null }) {
                     សម្ភារៈ
                   </label>
                 </fieldset>
+
+            <div className="flex items-end gap-4">
+          
                 <TextField
                   label="ប្រភេទសម្ភារៈ"
                   value={form.equipmentType}
@@ -782,11 +822,20 @@ export default function SponsorDonationForm({ initialData = null }) {
                   placeholder="បញ្ចូលនូវឈ្មោះសម្ភារៈ"
                   className="min-w-0 flex-1"
                 />
-                 <QuantityField
+                <QuantityField
                   label="ចំនួនសម្ភារៈ"
                   value={form.equipmentCount}
                   onChange={updateField("equipmentCount")}
                   disabled={form.equipment !== "សម្ភារៈ"}
+                />
+                <TextField
+                  label="ឯកតាសម្ភារៈ"
+                  value={form.equipmentType}
+                  onChange={updateField("equipmentType")}
+                  disabled={form.equipment !== "សម្ភារៈ"}
+                  options={equipmentTypes}
+                  placeholder="ឯកតាសម្ភារៈ"
+                  className="w-[100px] shrink-0"
                 />
               </div>
 

@@ -6,9 +6,18 @@ import donationData from "@/data/donation/donationData.json";
 import AddDonationFilters from "./AddDonationFilters";
 import Table from "../../tables/table";
 import SaveAlert from "../../forms/savealert";
+import MemberCard from "../eventdonation/membercard";
+import CashCard from "./cashcard";
+import BankCard from "./bankcard";
 
 const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
 const { addDonationRows } = donationData;
+const BANK_PAYMENT_METHODS = new Set([
+  "Bank Transfer",
+  "ABA",
+  "Wing",
+  "ACLEDA",
+]);
 
 const getSavedRowKey = (row) =>
   [row.branch, row.month, row.year, row.id].join("|");
@@ -100,6 +109,16 @@ const summary = useMemo(() => {
     totalDollar: dollar + riel / KHR_PER_USD,
   };
 }, [editableRows]);
+
+const paymentSummary = useMemo(
+  () => ({
+    cash: editableRows.filter((row) => row.paymentMethod === "Cash").length,
+    bank: editableRows.filter((row) =>
+      BANK_PAYMENT_METHODS.has(row.paymentMethod),
+    ).length,
+  }),
+  [editableRows],
+);
 
 
   useEffect(() => {
@@ -231,6 +250,27 @@ const summary = useMemo(() => {
           <SaveAlert message="អបអរសាទរ វិភាគទានត្រូវបានបន្ថែមដោយជោគជ័យ" />
         </div>
       )}
+
+      <div className="mb-4 flex flex-wrap gap-6 lg:gap-[50px]">
+        <MemberCard
+          label="សមាជិក"
+          value={`${editableRows.length} នាក់`}
+          growth="+15%"
+          note="ក្នុងខែនេះ"
+        />
+        <CashCard
+          label="ទូទាត់ដោយផ្ទាល់"
+          value={`${paymentSummary.cash} នាក់`}
+          growth="+15%"
+          note="ក្នុងខែនេះ"
+        />
+        <BankCard
+          label="ទូតាត់តាមធនាគារ"
+          value={`${paymentSummary.bank} នាក់`}
+          growth="+15%"
+          note="ក្នុងខែនេះ"
+        />
+      </div>
 
       <section className="min-h-[545px] rounded-md border border-border bg-[#fbfbfd] p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
