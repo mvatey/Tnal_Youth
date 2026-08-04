@@ -16,11 +16,10 @@ const STAT_CONFIG = [
     borderClass: "border-t-secondary",
   },
   {
-    key: "activeBranches",
-    label: "ចំនួនសាខាសកម្ម",
+    key: "subBranches",
+    label: "ចំនួនអនុសាខា",
     Icon: BadgeCheck,
-    iconClass:
-      "bg-warning-bg text-warning",
+    iconClass: "bg-warning-bg text-warning",
     borderClass: "border-t-warning",
   },
   {
@@ -34,11 +33,26 @@ const STAT_CONFIG = [
 ];
 
 export default function BranchStats({ branches = [] }) {
+  const isProvincialLevel = (branch) => {
+    const level = String(
+      branch.levelCode ||
+      branch.level ||
+      "",
+    )
+      .trim()
+      .toUpperCase();
+
+    return (
+      level === "PROVINCE" ||
+      level === "រាជធានី/ខេត្ត"
+    );
+  };
+
   const values = {
     totalBranches: branches.length,
 
-    activeBranches: branches.filter(
-      (branch) => branch.status === "ACTIVE",
+    subBranches: branches.filter(
+      (branch) => !isProvincialLevel(branch),
     ).length,
 
     totalMembers: branches.reduce(
@@ -47,6 +61,7 @@ export default function BranchStats({ branches = [] }) {
       0,
     ),
   };
+
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
