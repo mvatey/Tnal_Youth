@@ -2,15 +2,35 @@
 
 import Image from "next/image";
 
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  getSavedProfileImage,
+} from "@/lib/member/profileImageStorage";
+
 const ROLE_LABELS = {
   admin: "អ្នកគ្រប់គ្រង",
   branch_leader: "ប្រធានសាខា",
   secretary: "លេខាធិការ",
   member: "សមាជិក",
+
+  ADMIN: "អ្នកគ្រប់គ្រង",
+  BRANCH_LEADER: "ប្រធានសាខា",
+  SECRETARY: "លេខាធិការ",
+  MEMBER: "សមាជិក",
+
+  អ្នកគ្រប់គ្រង: "អ្នកគ្រប់គ្រង",
+  ប្រធានសាខា: "ប្រធានសាខា",
+  លេខាធិការ: "លេខាធិការ",
+  សមាជិក: "សមាជិក",
 };
 
 const DEFAULT_USER = {
-  id: "",
+  id: null,
+  memberId: null,
   role: "member",
   name_kh: "",
   name_en: "",
@@ -19,8 +39,58 @@ const DEFAULT_USER = {
   phone: "",
   date_of_birth: "",
   branch: "",
-  profile_photo: "/profile.png",
+  profile_photo: "",
 };
+
+function getMemberId(user) {
+  const possibleIds = [
+    user?.memberId,
+    user?.id,
+    user?.member_id,
+  ];
+
+  const validId = possibleIds.find(
+    (value) =>
+      value !== undefined &&
+      value !== null &&
+      String(value).trim() !== "",
+  );
+
+  return validId ?? null;
+}
+
+function getDefaultProfilePhoto(user) {
+  const possibleImages = [
+    user?.profile_photo,
+    user?.profileImage,
+    user?.profile_image,
+    user?.profilePhoto,
+  ];
+
+  const validImage = possibleImages.find(
+    (value) =>
+      typeof value === "string" &&
+      value.trim() !== "",
+  );
+
+  return validImage || "/profile.png";
+}
+
+function getRoleLabel(role) {
+  if (!role) {
+    return ROLE_LABELS.member;
+  }
+
+  return (
+    ROLE_LABELS[role] ||
+    ROLE_LABELS[
+      String(role)
+        .trim()
+        .toLowerCase()
+    ] ||
+    role
+  );
+}
 
 export default function IdCard({
   user,
@@ -31,27 +101,92 @@ export default function IdCard({
     ...(user || {}),
   };
 
-  const hasSelectedUser = Boolean(displayUser.id);
-  const hasCustomTemplate = Boolean(templatePreview);
+  const profileMemberId =
+    getMemberId(displayUser);
+
+  const defaultProfilePhoto =
+    getDefaultProfilePhoto(
+      displayUser,
+    );
+
+  const [
+    profilePhoto,
+    setProfilePhoto,
+  ] = useState(
+    defaultProfilePhoto,
+  );
+
+  const hasSelectedUser =
+    Boolean(profileMemberId);
+
+  const hasCustomTemplate =
+    Boolean(templatePreview);
 
   const memberId = hasSelectedUser
-    ? String(displayUser.id).padStart(4, "0")
+    ? String(
+        profileMemberId,
+      ).padStart(4, "0")
     : "0000";
 
-  const roleKey =
-    typeof displayUser.role === "string"
-      ? displayUser.role.toLowerCase()
-      : "member";
-
   const roleLabel =
-    ROLE_LABELS[roleKey] ||
-    displayUser.role ||
-    ROLE_LABELS.member;
+    getRoleLabel(
+      displayUser.role,
+    );
 
-  const profilePhoto =
-    displayUser.profile_photo ||
-    displayUser.profilePhoto ||
-    "/profile.png";
+  useEffect(() => {
+    if (!profileMemberId) {
+      setProfilePhoto(
+        defaultProfilePhoto,
+      );
+
+      return undefined;
+    }
+
+    setProfilePhoto(
+      getSavedProfileImage(
+        profileMemberId,
+        defaultProfilePhoto,
+      ),
+    );
+
+    const handleProfileImageChange = (
+      event,
+    ) => {
+      const changedMemberId =
+        event.detail?.memberId;
+
+      if (
+        String(
+          changedMemberId,
+        ) !==
+        String(
+          profileMemberId,
+        )
+      ) {
+        return;
+      }
+
+      setProfilePhoto(
+        event.detail?.imageData ||
+          defaultProfilePhoto,
+      );
+    };
+
+    window.addEventListener(
+      "tnal-profile-image-change",
+      handleProfileImageChange,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "tnal-profile-image-change",
+        handleProfileImageChange,
+      );
+    };
+  }, [
+    profileMemberId,
+    defaultProfilePhoto,
+  ]);
 
   return (
     <div className="flex w-full justify-center py-4">
@@ -67,9 +202,7 @@ export default function IdCard({
           shadow-lg
         "
       >
-        {/* ====================================
-            BACKGROUND
-        ==================================== */}
+        {/* Background */}
 
         {hasCustomTemplate ? (
           <>
@@ -91,9 +224,7 @@ export default function IdCard({
           <DefaultIdCardBackground />
         )}
 
-        {/* ====================================
-            FOOTER
-        ==================================== */}
+        {/* Footer */}
 
         <div
           className="
@@ -117,9 +248,7 @@ export default function IdCard({
           Member ID : NAS-{memberId}
         </div>
 
-        {/* ====================================
-            CARD CONTENT
-        ==================================== */}
+        {/* Card content */}
 
         <div
           className="
@@ -201,6 +330,11 @@ export default function IdCard({
                 fill
                 sizes="125px"
                 className="object-cover"
+                onError={() =>
+                  setProfilePhoto(
+                    "/profile.png",
+                  )
+                }
               />
             </div>
 
@@ -215,6 +349,7 @@ export default function IdCard({
                   font-medium
                   text-[#062f6b]
                 "
+                title={roleLabel}
               >
                 {roleLabel}
               </h2>
@@ -269,7 +404,8 @@ export default function IdCard({
                   label="ថ្ងៃកំណើត"
                   value={
                     hasSelectedUser
-                      ? displayUser.date_of_birth
+                      ? displayUser.date_of_birth ||
+                        displayUser.dateOfBirth
                       : ""
                   }
                 />
@@ -278,7 +414,16 @@ export default function IdCard({
                   label="សាខា"
                   value={
                     hasSelectedUser
-                      ? displayUser.branch
+                      ? typeof displayUser.branch ===
+                        "object"
+                        ? displayUser.branch
+                            ?.nameKm ||
+                          displayUser.branch
+                            ?.name_km ||
+                          displayUser.branch
+                            ?.name ||
+                          ""
+                        : displayUser.branch
                       : ""
                   }
                 />
@@ -287,9 +432,7 @@ export default function IdCard({
           </div>
         </div>
 
-        {/* ====================================
-            DEFAULT INNER BORDER
-        ==================================== */}
+        {/* Default inner border */}
 
         {!hasCustomTemplate && (
           <div
@@ -312,8 +455,6 @@ export default function IdCard({
 function DefaultIdCardBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden bg-white">
-      {/* Main light background */}
-
       <div
         className="
           absolute
@@ -325,8 +466,6 @@ function DefaultIdCardBackground() {
         "
       />
 
-      {/* Dark left section */}
-
       <div
         className="
           absolute
@@ -337,8 +476,6 @@ function DefaultIdCardBackground() {
           bg-[#062f6b]
         "
       />
-
-      {/* White curved area */}
 
       <div
         className="
@@ -353,8 +490,6 @@ function DefaultIdCardBackground() {
         "
       />
 
-      {/* Top-right circle */}
-
       <div
         className="
           absolute
@@ -367,8 +502,6 @@ function DefaultIdCardBackground() {
           opacity-20
         "
       />
-
-      {/* Bottom-right circle */}
 
       <div
         className="
@@ -383,8 +516,6 @@ function DefaultIdCardBackground() {
         "
       />
 
-      {/* Left decorative circle */}
-
       <div
         className="
           absolute
@@ -396,8 +527,6 @@ function DefaultIdCardBackground() {
           bg-white/10
         "
       />
-
-      {/* Bottom-left outline circle */}
 
       <div
         className="
@@ -419,6 +548,9 @@ function Info({
   label,
   value,
 }) {
+  const displayValue =
+    value || "";
+
   return (
     <div className="min-w-0">
       <p className="text-[10px] text-gray-500">
@@ -434,9 +566,14 @@ function Info({
           font-bold
           text-[#062f6b]
         "
-        title={value || ""}
+        title={
+          typeof displayValue ===
+          "string"
+            ? displayValue
+            : ""
+        }
       >
-        {value || ""}
+        {displayValue}
       </p>
     </div>
   );

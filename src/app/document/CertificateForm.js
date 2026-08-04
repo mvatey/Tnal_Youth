@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
-import { useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
-import { UploadCloud, X } from "lucide-react";
+import {
+  UploadCloud,
+  X,
+} from "lucide-react";
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
+import MultiSelect from "@/components/forms/multiselect";
 import CertificateCard from "@/components/card/certificate";
 import DocumentActionButton from "@/components/forms/documentActionbutton";
 
@@ -14,16 +20,26 @@ import membersData from "@/data/members.json";
 import activities from "@/data/activity.json";
 import participantsData from "@/data/participants.json";
 
-const MAX_TEMPLATE_SIZE = 5 * 1024 * 1024;
+const MAX_TEMPLATE_SIZE =
+  5 * 1024 * 1024;
 
-const ALLOWED_TEMPLATE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_TEMPLATE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+];
 
 const BRANCH_OPTIONS = [
-  ...new Set(membersData.map((member) => member.branch).filter(Boolean)),
+  ...new Set(
+    membersData
+      .map((member) => member.branch)
+      .filter(Boolean),
+  ),
 ].map((branch) => ({
   label: branch,
   value: branch,
 }));
+
 const DOCUMENT_TYPE_OPTIONS = [
   {
     label: "លិខិតបញ្ជាក់",
@@ -36,14 +52,22 @@ const DOCUMENT_TYPE_OPTIONS = [
 ];
 
 const MEMBER_OPTIONS = membersData
-  .filter((member) => member?.name_kh)
+  .filter(
+    (member) =>
+      member?.id &&
+      member?.name_kh,
+  )
   .map((member) => ({
     label: member.name_kh,
     value: String(member.id),
   }));
 
 const ACTIVITY_OPTIONS = activities
-  .filter((activity) => activity?.title_kh)
+  .filter(
+    (activity) =>
+      activity?.id &&
+      activity?.title_kh,
+  )
   .map((activity) => ({
     label: activity.title_kh,
     value: String(activity.id),
@@ -104,371 +128,735 @@ const COLORS = [
   "#000000",
 ];
 
-export default function CertificateForm({ form, setForm, onSave, onClose }) {
-  const recipientType = form.recipientType || "member";
-
-  const language = form.language || "km";
-
-  const selectedColor = form.color || "#12224c";
-
-  const selectedMember = membersData.find(
-    (member) => String(member.id) === String(form.memberId),
-  );
-
-  const selectedActivity = activities.find(
-    (activity) => String(activity.id) === String(form.activityId),
-  );
+function normalizeSelectedMemberIds(
+  form,
+) {
+  if (
+    Array.isArray(
+      form.memberIds,
+    )
+  ) {
+    return form.memberIds.map(
+      String,
+    );
+  }
 
   /*
-   * Find every active participant
-   * for the selected activity.
+   * Supports old form data
+   * that still has memberId.
+   */
+  if (form.memberId) {
+    return [
+      String(
+        form.memberId,
+      ),
+    ];
+  }
+
+  return [];
+}
+
+export default function CertificateForm({
+  form,
+  setForm,
+  onSave,
+  onClose,
+}) {
+  const recipientType =
+    form.recipientType ||
+    "member";
+
+  const language =
+    form.language || "km";
+
+  const selectedColor =
+    form.color || "#12224c";
+
+  const [
+    showValidationError,
+    setShowValidationError,
+  ] = useState(false);
+
+  /*
+   * Multi-member IDs.
+   */
+  const selectedMemberIds =
+    normalizeSelectedMemberIds(
+      form,
+    );
+
+  /*
+   * Full member objects selected
+   * through the multi-select.
+   */
+  const selectedMembers =
+    membersData.filter(
+      (member) =>
+        selectedMemberIds.includes(
+          String(member.id),
+        ),
+    );
+
+  /*
+   * Keep first selected member
+   * for compatibility with older logic.
+   */
+  const selectedMember =
+    selectedMembers[0] ||
+    null;
+
+  const selectedActivity =
+    activities.find(
+      (activity) =>
+        String(activity.id) ===
+        String(
+          form.activityId,
+        ),
+    );
+
+  /*
+   * Members participating in
+   * the selected activity.
    */
   const selectedActivityMembers =
     recipientType === "activity"
       ? participantsData
           .filter(
             (participant) =>
-              String(participant.activityId) === String(form.activityId) &&
-              participant.status !== "CANCELLED",
+              String(
+                participant.activityId,
+              ) ===
+                String(
+                  form.activityId,
+                ) &&
+              participant.status !==
+                "CANCELLED",
           )
-          .map((participant) =>
-            membersData.find(
-              (member) => String(member.id) === String(participant.memberId),
-            ),
+          .map(
+            (participant) =>
+              membersData.find(
+                (member) =>
+                  String(
+                    member.id,
+                  ) ===
+                  String(
+                    participant.memberId,
+                  ),
+              ),
           )
           .filter(Boolean)
       : [];
 
-  /*
-   * Clean the temporary browser URL
-   * when the component is removed.
-   */
-  useEffect(() => {
-    return () => {
-      if (form.templatePreview?.startsWith("blob:")) {
-        URL.revokeObjectURL(form.templatePreview);
-      }
-    };
-  }, [form.templatePreview]);
-  const [showValidationError, setShowValidationError] = useState(false);
-  const hasTitle = Boolean(form.title?.trim());
+  const hasTitle =
+    Boolean(
+      form.title?.trim(),
+    );
+
+  const hasDocumentType =
+    Boolean(
+      form.documentType?.trim(),
+    );
 
   const hasRecipient =
     recipientType === "member"
-      ? Boolean(form.memberId)
-      : Boolean(form.activityId);
+      ? selectedMembers.length > 0
+      : Boolean(
+          form.activityId,
+        );
 
-  const hasDocumentType = Boolean(
-  form.documentType?.trim(),
-);
+  const hasValidActivityMembers =
+    recipientType !==
+      "activity" ||
+    selectedActivityMembers.length >
+      0;
 
-const isFormValid =
-  hasTitle &&
-  hasDocumentType &&
-  hasRecipient &&
-  Boolean(form.templatePreview) &&
-  (
-    recipientType !== "activity" ||
-    selectedActivityMembers.length > 0
-  );
-
-  const updateField = (field) => (event) => {
-    setForm((previous) => ({
-      ...previous,
-      [field]: event.target.value,
-    }));
-
-    setShowValidationError(false);
-  };
+  const isFormValid =
+    hasTitle &&
+    hasDocumentType &&
+    hasRecipient &&
+    Boolean(
+      form.templatePreview,
+    ) &&
+    hasValidActivityMembers;
 
   /*
-   * Switch between single-member
-   * certificate and activity certificates.
+   * Remove temporary template URL
+   * when component is unmounted.
    */
-  const handleRecipientTypeChange = (event) => {
-    const selectedType = event.target.value;
+  useEffect(() => {
+    return () => {
+      if (
+        form.templatePreview?.startsWith(
+          "blob:",
+        )
+      ) {
+        URL.revokeObjectURL(
+          form.templatePreview,
+        );
+      }
+    };
+  }, [
+    form.templatePreview,
+  ]);
 
-    setForm((previous) => ({
-      ...previous,
+  const updateField =
+    (field) => (event) => {
+      setForm(
+        (previous) => ({
+          ...previous,
+          [field]:
+            event.target.value,
+        }),
+      );
 
-      recipientType: selectedType,
-
-      memberId: "",
-      member: "",
-
-      activityId: "",
-      activity: "",
-
-      branch: "",
-    }));
-  };
+      setShowValidationError(
+        false,
+      );
+    };
 
   /*
-   * Select a single member.
+   * Switch between:
+   * - multiple selected members
+   * - one activity
    */
-  const handleMemberChange = (event) => {
-    const memberId = event.target.value;
+  const handleRecipientTypeChange =
+    (event) => {
+      const selectedType =
+        event.target.value;
 
-    const member = membersData.find(
-      (item) => String(item.id) === String(memberId),
-    );
+      setForm(
+        (previous) => ({
+          ...previous,
 
-    if (!member) {
-      setForm((previous) => ({
-        ...previous,
+          recipientType:
+            selectedType,
 
-        memberId: "",
-        member: "",
-        branch: "",
-      }));
+          /*
+           * Reset member values.
+           */
+          memberId: "",
+          memberIds: [],
+          member: "",
+          members: [],
 
-      return;
-    }
+          /*
+           * Reset activity values.
+           */
+          activityId: "",
+          activity: "",
 
-    setForm((previous) => ({
-      ...previous,
+          branch: "",
+        }),
+      );
 
-      memberId: String(member.id),
-
-      member: member.name_kh || "",
-
-      branch: member.branch || previous.branch || "",
-    }));
-  };
-
-  /*
-   * Select an activity.
-   */
-  const handleActivityChange = (event) => {
-    const activityId = event.target.value;
-
-    const activity = activities.find(
-      (item) => String(item.id) === String(activityId),
-    );
-
-    if (!activity) {
-      setForm((previous) => ({
-        ...previous,
-
-        activityId: "",
-        activity: "",
-        branch: "",
-      }));
-
-      return;
-    }
-
-    setForm((previous) => ({
-      ...previous,
-
-      activityId: String(activity.id),
-
-      activity: activity.title_kh || "",
-
-      branch: activity.branch || previous.branch || "",
-    }));
-  };
+      setShowValidationError(
+        false,
+      );
+    };
 
   /*
-   * Upload blank certificate template.
+   * Select multiple members.
    *
-   * This only replaces the certificate
-   * background. Certificate information
-   * stays above the image.
+   * memberIds stores all IDs.
+   * memberId stores the first selected ID
+   * for compatibility with old code.
    */
-  const handleTemplateUpload = (event) => {
-    const selectedFile = event.target.files?.[0];
+  const handleMemberChange = (
+    memberIds,
+  ) => {
+    const normalizedIds =
+      Array.isArray(memberIds)
+        ? memberIds.map(
+            String,
+          )
+        : [];
 
-    if (!selectedFile) return;
+    const members =
+      membersData.filter(
+        (member) =>
+          normalizedIds.includes(
+            String(member.id),
+          ),
+      );
 
-    if (!ALLOWED_TEMPLATE_TYPES.includes(selectedFile.type)) {
-      alert("សូមជ្រើសរើសរូបភាព JPG, PNG ឬ WEBP");
+    const firstMember =
+      members[0] || null;
 
-      event.target.value = "";
+    setForm(
+      (previous) => ({
+        ...previous,
 
-      return;
-    }
+        memberIds:
+          normalizedIds,
 
-    if (selectedFile.size > MAX_TEMPLATE_SIZE) {
-      alert("ទំហំរូបភាពមិនអាចលើស 5MB");
+        /*
+         * Compatibility with
+         * old single-member code.
+         */
+        memberId:
+          normalizedIds[0] ||
+          "",
 
-      event.target.value = "";
+        members:
+          members.map(
+            (member) =>
+              member.name_kh ||
+              "",
+          ),
 
-      return;
-    }
+        member:
+          firstMember
+            ?.name_kh ||
+          "",
 
-    /*
-     * Delete the previous temporary URL
-     * before creating a new one.
-     */
-    if (form.templatePreview?.startsWith("blob:")) {
-      URL.revokeObjectURL(form.templatePreview);
-    }
+        /*
+         * Use the first selected
+         * member's branch.
+         */
+        branch:
+          firstMember?.branch ||
+          "",
+      }),
+    );
 
-    const previewUrl = URL.createObjectURL(selectedFile);
-
-    setForm((previous) => ({
-      ...previous,
-
-      templateFile: selectedFile,
-
-      templatePreview: previewUrl,
-    }));
-
-    /*
-     * Allows the same image to be
-     * selected again later.
-     */
-    event.target.value = "";
+    setShowValidationError(
+      false,
+    );
   };
 
   /*
-   * Remove uploaded template and
-   * return to the default design.
+   * Select one activity.
    */
+  const handleActivityChange =
+    (event) => {
+      const activityId =
+        event.target.value;
+
+      const activity =
+        activities.find(
+          (item) =>
+            String(
+              item.id,
+            ) ===
+            String(
+              activityId,
+            ),
+        );
+
+      if (!activity) {
+        setForm(
+          (previous) => ({
+            ...previous,
+
+            activityId: "",
+            activity: "",
+            branch: "",
+          }),
+        );
+
+        return;
+      }
+
+      setForm(
+        (previous) => ({
+          ...previous,
+
+          activityId:
+            String(
+              activity.id,
+            ),
+
+          activity:
+            activity.title_kh ||
+            "",
+
+          branch:
+            activity.branch ||
+            previous.branch ||
+            "",
+        }),
+      );
+
+      setShowValidationError(
+        false,
+      );
+    };
+
+  /*
+   * Upload certificate
+   * background template.
+   */
+  const handleTemplateUpload =
+    (event) => {
+      const selectedFile =
+        event.target
+          .files?.[0];
+
+      if (!selectedFile) {
+        return;
+      }
+
+      if (
+        !ALLOWED_TEMPLATE_TYPES.includes(
+          selectedFile.type,
+        )
+      ) {
+        alert(
+          "សូមជ្រើសរើសរូបភាព JPG, PNG ឬ WEBP",
+        );
+
+        event.target.value =
+          "";
+
+        return;
+      }
+
+      if (
+        selectedFile.size >
+        MAX_TEMPLATE_SIZE
+      ) {
+        alert(
+          "ទំហំរូបភាពមិនអាចលើស 5MB",
+        );
+
+        event.target.value =
+          "";
+
+        return;
+      }
+
+      if (
+        form.templatePreview?.startsWith(
+          "blob:",
+        )
+      ) {
+        URL.revokeObjectURL(
+          form.templatePreview,
+        );
+      }
+
+      const previewUrl =
+        URL.createObjectURL(
+          selectedFile,
+        );
+
+      setForm(
+        (previous) => ({
+          ...previous,
+
+          templateFile:
+            selectedFile,
+
+          templatePreview:
+            previewUrl,
+        }),
+      );
+
+      setShowValidationError(
+        false,
+      );
+
+      /*
+       * Allows selecting
+       * the same file again.
+       */
+      event.target.value =
+        "";
+    };
+
   const removeTemplate = () => {
-    if (form.templatePreview?.startsWith("blob:")) {
-      URL.revokeObjectURL(form.templatePreview);
+    if (
+      form.templatePreview?.startsWith(
+        "blob:",
+      )
+    ) {
+      URL.revokeObjectURL(
+        form.templatePreview,
+      );
     }
 
-    setForm((previous) => ({
-      ...previous,
+    setForm(
+      (previous) => ({
+        ...previous,
 
-      templateFile: null,
-      templatePreview: "",
-    }));
+        templateFile: null,
+        templatePreview: "",
+      }),
+    );
   };
 
   /*
-   * Save certificate data.
+   * Save document data.
+   *
+   * For member recipient:
+   * selectedMembers contains
+   * every selected member.
+   *
+   * For activity recipient:
+   * selectedActivityMembers contains
+   * every activity participant.
    */
-  const handleSave = async () => {
-    if (!isFormValid) {
-      setShowValidationError(true);
-      return;
-    }
+  const handleSave =
+    async () => {
+      if (!isFormValid) {
+        setShowValidationError(
+          true,
+        );
 
-    setShowValidationError(false);
+        return;
+      }
 
-    try {
-      await onSave?.({
-  ...form,
+      setShowValidationError(
+        false,
+      );
 
-  type: form.documentType,
-  documentType: form.documentType,
+      try {
+        await onSave?.({
+          ...form,
 
-  recipientType,
-  selectedMember,
-  selectedActivity,
-  selectedActivityMembers,
-});
-    } catch (error) {
-      console.error(error);
+          type:
+            form.documentType,
 
-      alert("មានបញ្ហាក្នុងការបង្កើតវិញ្ញាបនបត្រ");
-    }
-  };
+          documentType:
+            form.documentType,
+
+          recipientType,
+
+          /*
+           * Multiple-member data.
+           */
+          memberIds:
+            selectedMembers.map(
+              (member) =>
+                String(
+                  member.id,
+                ),
+            ),
+
+          selectedMembers,
+
+          /*
+           * Keep first member
+           * for old single-member code.
+           */
+          selectedMember,
+
+          /*
+           * Activity data.
+           */
+          selectedActivity,
+          selectedActivityMembers,
+        });
+      } catch (error) {
+        console.error(
+          "Cannot create certificate:",
+          error,
+        );
+
+        alert(
+          "មានបញ្ហាក្នុងការបង្កើតវិញ្ញាបនបត្រ",
+        );
+      }
+    };
 
   return (
-    <div className="w-full rounded-xl border border-[#e5eaf0] bg-white p-6">
-      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[330px_minmax(0,1fr)]">
-        {/* =====================================
-            LEFT FORM
-        ===================================== */}
+    <div
+      className="
+        w-full
+        rounded-xl
+        border
+        border-[#e5eaf0]
+        bg-white
+        p-4
+        sm:p-5
+        lg:p-6
+      "
+    >
+      <div
+        className="
+          grid
+          grid-cols-1
+          gap-8
+          xl:grid-cols-[330px_minmax(0,1fr)]
+        "
+      >
+        {/* Left form */}
 
         <div className="space-y-5">
           <BoxFill
             label="ឈ្មោះឯកសារ"
             name="title"
-            value={form.title || ""}
-            onChange={updateField("title")}
+            value={
+              form.title || ""
+            }
+            onChange={updateField(
+              "title",
+            )}
             placeholder="បញ្ចូលឈ្មោះឯកសារ"
           />
 
           <FormSelect
             label="សាខា"
             name="branch"
-            value={form.branch || ""}
-            onChange={updateField("branch")}
+            value={
+              form.branch || ""
+            }
+            onChange={updateField(
+              "branch",
+            )}
             placeholder="ជ្រើសរើសសាខា"
-            options={BRANCH_OPTIONS}
+            options={
+              BRANCH_OPTIONS
+            }
           />
+
           <FormSelect
-  label="ប្រភេទឯកសារ"
-  name="documentType"
-  value={form.documentType || ""}
-  onChange={updateField("documentType")}
-  placeholder="ជ្រើសរើសប្រភេទឯកសារ"
-  options={DOCUMENT_TYPE_OPTIONS}
-/>
+            label="ប្រភេទឯកសារ"
+            name="documentType"
+            value={
+              form.documentType ||
+              ""
+            }
+            onChange={updateField(
+              "documentType",
+            )}
+            placeholder="ជ្រើសរើសប្រភេទឯកសារ"
+            options={
+              DOCUMENT_TYPE_OPTIONS
+            }
+          />
 
           {/* Recipient type */}
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-text-primary">
+            <label
+              className="
+                mb-2
+                block
+                text-sm
+                font-semibold
+                text-text-primary
+              "
+            >
               ប្រភេទ
             </label>
 
-            <div className="flex items-center gap-6">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-text-primary">
+            <div className="flex flex-wrap items-center gap-6">
+              <label
+                className="
+                  flex
+                  cursor-pointer
+                  items-center
+                  gap-2
+                  text-sm
+                  text-text-primary
+                "
+              >
                 <input
                   type="radio"
                   name="recipientType"
                   value="member"
-                  checked={recipientType === "member"}
-                  onChange={handleRecipientTypeChange}
+                  checked={
+                    recipientType ===
+                    "member"
+                  }
+                  onChange={
+                    handleRecipientTypeChange
+                  }
                   className="h-4 w-4 accent-primary"
                 />
+
                 សមាជិក
               </label>
 
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-text-primary">
+              <label
+                className="
+                  flex
+                  cursor-pointer
+                  items-center
+                  gap-2
+                  text-sm
+                  text-text-primary
+                "
+              >
                 <input
                   type="radio"
                   name="recipientType"
                   value="activity"
-                  checked={recipientType === "activity"}
-                  onChange={handleRecipientTypeChange}
+                  checked={
+                    recipientType ===
+                    "activity"
+                  }
+                  onChange={
+                    handleRecipientTypeChange
+                  }
                   className="h-4 w-4 accent-primary"
                 />
+
                 កម្មវិធី
               </label>
             </div>
           </div>
 
-          {/* Dynamic selector */}
+          {/* Dynamic recipient selector */}
 
-          {recipientType === "member" ? (
-            <FormSelect
+          {recipientType ===
+          "member" ? (
+            <MultiSelect
               label="សមាជិក"
-              name="memberId"
-              value={form.memberId || ""}
-              onChange={handleMemberChange}
+              value={
+                selectedMemberIds
+              }
+              onChange={
+                handleMemberChange
+              }
               placeholder="ជ្រើសរើសសមាជិក"
-              options={MEMBER_OPTIONS}
+              options={
+                MEMBER_OPTIONS
+              }
             />
           ) : (
             <FormSelect
               label="កម្មវិធី"
               name="activityId"
-              value={form.activityId || ""}
-              onChange={handleActivityChange}
+              value={
+                form.activityId ||
+                ""
+              }
+              onChange={
+                handleActivityChange
+              }
               placeholder="ជ្រើសរើសកម្មវិធី"
-              options={ACTIVITY_OPTIONS}
+              options={
+                ACTIVITY_OPTIONS
+              }
             />
           )}
 
           {/* Description */}
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-text-primary">
+            <label
+              className="
+                mb-2
+                block
+                text-sm
+                font-semibold
+                text-text-primary
+              "
+            >
               សេចក្តីពិពណ៌នា
             </label>
 
             <textarea
               name="description"
-              value={form.description || ""}
-              onChange={updateField("description")}
+              value={
+                form.description ||
+                ""
+              }
+              onChange={updateField(
+                "description",
+              )}
               placeholder="បញ្ចូលសេចក្តីពិពណ៌នា"
               className="
                 h-[105px]
@@ -482,18 +870,25 @@ const isFormValid =
                 text-sm
                 text-text-primary
                 outline-none
+                transition
                 placeholder:text-gray-400
                 focus:border-primary
               "
             />
           </div>
 
-          {/* =====================================
-              UPLOAD CERTIFICATE TEMPLATE
-          ===================================== */}
+          {/* Template upload */}
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-text-primary">
+            <label
+              className="
+                mb-2
+                block
+                text-sm
+                font-semibold
+                text-text-primary
+              "
+            >
               រូបភាពគំរូវិញ្ញាបនបត្រ
             </label>
 
@@ -509,7 +904,9 @@ const isFormValid =
                 "
               >
                 <img
-                  src={form.templatePreview}
+                  src={
+                    form.templatePreview
+                  }
                   alt="uploaded certificate template"
                   className="
                     aspect-[16/9]
@@ -520,7 +917,10 @@ const isFormValid =
 
                 <button
                   type="button"
-                  onClick={removeTemplate}
+                  onClick={
+                    removeTemplate
+                  }
+                  aria-label="លុបគំរូ"
                   className="
                     absolute
                     right-2
@@ -537,7 +937,6 @@ const isFormValid =
                     transition
                     hover:bg-red-50
                   "
-                  aria-label="លុបគំរូ"
                 >
                   <X size={17} />
                 </button>
@@ -561,97 +960,153 @@ const isFormValid =
                   hover:bg-secondary-light/30
                 "
               >
-                <UploadCloud size={27} className="mb-2 text-[#62708f]" />
+                <UploadCloud
+                  size={27}
+                  className="mb-2 text-[#62708f]"
+                />
 
                 <p className="text-xs font-semibold text-primary">
                   បញ្ចូលរូបភាពគំរូ
                 </p>
 
                 <p className="mt-1 text-[10px] text-gray-400">
-                  JPG, PNG, WEBP — មិនលើស 5MB
+                  JPG, PNG, WEBP —
+                  មិនលើស 5MB
                 </p>
 
                 <p className="text-[10px] text-gray-400">
-                  ទំហំគំរូណែនាំ 1600 × 900 px
+                  ទំហំគំរូណែនាំ
+                  1600 × 900 px
                 </p>
 
                 <input
                   type="file"
                   hidden
                   accept=".jpg,.jpeg,.png,.webp"
-                  onChange={handleTemplateUpload}
+                  onChange={
+                    handleTemplateUpload
+                  }
                 />
               </label>
             )}
           </div>
         </div>
 
-        {/* =====================================
-            RIGHT SIDE
-        ===================================== */}
+        {/* Right side */}
 
         <div className="min-w-0">
           {/* Design controls */}
 
-          <div className="mb-5 grid grid-cols-1 items-end gap-4  md:grid-cols-[180px_140px_minmax(220px,1fr)_160px]  md:items-start">
+          <div
+            className="
+              mb-5
+              grid
+              grid-cols-1
+              items-end
+              gap-4
+              md:grid-cols-[180px_140px_minmax(220px,1fr)_160px]
+              md:items-start
+            "
+          >
             <FormSelect
               label="ពុម្ពអក្សរ"
               name="font"
-              value={form.font || "Noto Sans"}
-              onChange={updateField("font")}
-              options={FONT_OPTIONS}
+              value={
+                form.font ||
+                "Noto Sans"
+              }
+              onChange={updateField(
+                "font",
+              )}
+              options={
+                FONT_OPTIONS
+              }
             />
 
             <FormSelect
               label="ទំហំ"
               name="cardSize"
-              value={form.cardSize || "780"}
-              onChange={updateField("cardSize")}
-              options={CARD_SIZE_OPTIONS}
+              value={
+                form.cardSize ||
+                "780"
+              }
+              onChange={updateField(
+                "cardSize",
+              )}
+              options={
+                CARD_SIZE_OPTIONS
+              }
             />
 
             {/* Colors */}
 
             <div className="flex flex-col">
-              <label className="mb-2 block text-sm font-semibold text-text-primary">
+              <label
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-semibold
+                  text-text-primary
+                "
+              >
                 ពណ៌
               </label>
 
-              <div className="flex h-11 items-center gap-3">
-                {COLORS.map((color) => {
-                  const selected = selectedColor === color;
+              <div className="flex h-[34px] items-center gap-3">
+                {COLORS.map(
+                  (color) => {
+                    const selected =
+                      selectedColor ===
+                      color;
 
-                  return (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() =>
-                        setForm((previous) => ({
-                          ...previous,
-                          color,
-                        }))
-                      }
-                      className={`
-            h-5
-            w-5
-            shrink-0
-            rounded-full
-            border-2
-            transition
-            hover:scale-110
-            ${
-              selected
-                ? "border-gray-800 ring-2 ring-gray-300"
-                : "border-transparent"
-            }
-          `}
-                      style={{
-                        backgroundColor: color,
-                      }}
-                      aria-label={`ជ្រើសរើសពណ៌ ${color}`}
-                    />
-                  );
-                })}
+                    return (
+                      <button
+                        key={
+                          color
+                        }
+                        type="button"
+                        onClick={() => {
+                          setForm(
+                            (
+                              previous,
+                            ) => ({
+                              ...previous,
+                              color,
+                            }),
+                          );
+
+                          setShowValidationError(
+                            false,
+                          );
+                        }}
+                        className={`
+                          h-5
+                          w-5
+                          shrink-0
+                          rounded-full
+                          border-2
+                          transition
+                          hover:scale-110
+                          ${
+                            selected
+                              ? `
+                                border-gray-800
+                                ring-2
+                                ring-gray-300
+                              `
+                              : "border-transparent"
+                          }
+                        `}
+                        style={{
+                          backgroundColor:
+                            color,
+                        }}
+                        aria-label={`ជ្រើសរើសពណ៌ ${color}`}
+                      />
+                    );
+                  },
+                )}
               </div>
             </div>
 
@@ -659,125 +1114,247 @@ const isFormValid =
               label="ភាសា"
               name="language"
               value={language}
-              onChange={updateField("language")}
-              options={LANGUAGE_OPTIONS}
+              onChange={updateField(
+                "language",
+              )}
+              options={
+                LANGUAGE_OPTIONS
+              }
             />
           </div>
 
-          {/* =====================================
-              LIVE CERTIFICATE PREVIEW
-          ===================================== */}
+          {/* Scrollable certificate preview */}
 
           <div
             className="
-    h-[560px]
-    overflow-y-auto
-    overflow-x-hidden
-    
-    rounded-xl
-    border
-    border-gray-200
-    bg-gray-100
-    p-5
-  "
+              h-[560px]
+              overflow-y-auto
+              overflow-x-hidden
+              rounded-xl
+              border
+              border-gray-200
+              bg-gray-100
+              p-5
+            "
           >
             {!form.templatePreview ? (
-              <div
-                className="
-      flex
-      h-full
-      items-center
-      justify-center
-    "
-              >
-                <div
-                  className="
-        w-full
-        max-w-[360px]
-        rounded-3xl
-        border
-        border-gray-200
-        bg-white
-        px-10
-        py-8
-        text-center
-        shadow-sm
-      "
-                >
-                  <p className="text-xl font-bold text-text-primary">
-                    មិនទាន់មានគំរូវិញ្ញាបនបត្រ
-                  </p>
-
-                  <p className="mt-3 text-sm leading-6 text-gray-500">
-                    សូមបញ្ចូលរូបភាពគំរូវិញ្ញាបនបត្រជាមុនសិន
-                  </p>
-                </div>
-              </div>
-            ) : recipientType === "member" ? (
-              <div className="flex min-h-full items-center justify-center">
-                <CertificateCard
-                  title={form.title || ""}
-                  recipientType="member"
-                  member={selectedMember}
-                  activity={null}
-                  language={language}
-                  color={selectedColor}
-                  font={form.font || "Noto Sans"}
-                  cardSize={form.cardSize || "780"}
-                  description={form.description || ""}
-                  templatePreview={form.templatePreview}
+              <EmptyPreview
+                title="មិនទាន់មានគំរូវិញ្ញាបនបត្រ"
+                message="សូមបញ្ចូលរូបភាពគំរូវិញ្ញាបនបត្រជាមុនសិន"
+              />
+            ) : recipientType ===
+              "member" ? (
+              selectedMembers.length ===
+              0 ? (
+                <EmptyPreview
+                  title="មិនទាន់ជ្រើសរើសសមាជិក"
+                  message="សូមជ្រើសរើសសមាជិកយ៉ាងតិចម្នាក់"
                 />
-              </div>
+              ) : (
+                <div className="space-y-6">
+                  {selectedMembers.map(
+                    (
+                      member,
+                      index,
+                    ) => (
+                      <CertificatePreviewItem
+                        key={`member-certificate-${member.id}`}
+                        index={
+                          index
+                        }
+                        total={
+                          selectedMembers.length
+                        }
+                      >
+                        <CertificateCard
+                          title={
+                            form.title ||
+                            ""
+                          }
+                          recipientType="member"
+                          member={
+                            member
+                          }
+                          activity={
+                            null
+                          }
+                          language={
+                            language
+                          }
+                          color={
+                            selectedColor
+                          }
+                          font={
+                            form.font ||
+                            "Noto Sans"
+                          }
+                          cardSize={
+                            form.cardSize ||
+                            "780"
+                          }
+                          description={
+                            form.description ||
+                            ""
+                          }
+                          templatePreview={
+                            form.templatePreview
+                          }
+                        />
+                      </CertificatePreviewItem>
+                    ),
+                  )}
+                </div>
+              )
             ) : !form.activityId ? (
-              <div className="flex h-full items-center justify-center text-sm text-gray-500">
-                សូមជ្រើសរើសកម្មវិធី
-              </div>
-            ) : selectedActivityMembers.length === 0 ? (
-              <div className="flex h-full items-center justify-center text-sm text-gray-500">
-                មិនមានសមាជិកចូលរួមក្នុងកម្មវិធីនេះទេ
-              </div>
+              <EmptyPreview
+                title="មិនទាន់ជ្រើសរើសកម្មវិធី"
+                message="សូមជ្រើសរើសកម្មវិធី"
+              />
+            ) : selectedActivityMembers.length ===
+              0 ? (
+              <EmptyPreview
+                title="មិនមានសមាជិក"
+                message="មិនមានសមាជិកចូលរួមក្នុងកម្មវិធីនេះទេ"
+              />
             ) : (
               <div className="space-y-6">
-                {selectedActivityMembers.map((member, index) => (
-                  <div key={`${form.activityId}-${member.id}`}>
-                    <div className="mb-2 text-sm font-semibold text-text-primary">
-                      វិញ្ញាបនបត្រ {index + 1} /{" "}
-                      {selectedActivityMembers.length}
-                    </div>
-
-                    <CertificateCard
-                      title={form.title || ""}
-                      recipientType="activity"
-                      member={member}
-                      activity={selectedActivity}
-                      language={language}
-                      color={selectedColor}
-                      font={form.font || "Noto Sans"}
-                      cardSize={form.cardSize || "780"}
-                      description={form.description || ""}
-                      templatePreview={form.templatePreview}
-                    />
-                  </div>
-                ))}
+                {selectedActivityMembers.map(
+                  (
+                    member,
+                    index,
+                  ) => (
+                    <CertificatePreviewItem
+                      key={`activity-certificate-${form.activityId}-${member.id}`}
+                      index={
+                        index
+                      }
+                      total={
+                        selectedActivityMembers.length
+                      }
+                    >
+                      <CertificateCard
+                        title={
+                          form.title ||
+                          ""
+                        }
+                        recipientType="activity"
+                        member={
+                          member
+                        }
+                        activity={
+                          selectedActivity
+                        }
+                        language={
+                          language
+                        }
+                        color={
+                          selectedColor
+                        }
+                        font={
+                          form.font ||
+                          "Noto Sans"
+                        }
+                        cardSize={
+                          form.cardSize ||
+                          "780"
+                        }
+                        description={
+                          form.description ||
+                          ""
+                        }
+                        templatePreview={
+                          form.templatePreview
+                        }
+                      />
+                    </CertificatePreviewItem>
+                  ),
+                )}
               </div>
             )}
           </div>
-          {/* Buttons */}
 
-          {showValidationError && !isFormValid && (
-            <p className="mt-4 text-xs font-medium text-red-500">
-              សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
-            </p>
-          )}
+          {showValidationError &&
+            !isFormValid && (
+              <p className="mt-4 text-xs font-medium text-red-500">
+                សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
+              </p>
+            )}
 
           <DocumentActionButton
             onCancel={onClose}
             onCreate={handleSave}
-            isValid={isFormValid}
+            isValid={
+              isFormValid
+            }
             cancelText="បោះបង់"
             createText="បង្កើតឯកសារ"
           />
         </div>
+      </div>
+    </div>
+  );
+}
+
+function CertificatePreviewItem({
+  index,
+  total,
+  children,
+}) {
+  return (
+    <div>
+      <div
+        className="
+          mb-2
+          text-sm
+          font-semibold
+          text-text-primary
+        "
+      >
+        វិញ្ញាបនបត្រ{" "}
+        {index + 1} / {total}
+      </div>
+
+      <div className="flex min-h-full items-center justify-center">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function EmptyPreview({
+  title,
+  message,
+}) {
+  return (
+    <div
+      className="
+        flex
+        h-full
+        items-center
+        justify-center
+      "
+    >
+      <div
+        className="
+          w-full
+          max-w-[360px]
+          rounded-3xl
+          border
+          border-gray-200
+          bg-white
+          px-10
+          py-8
+          text-center
+          shadow-sm
+        "
+      >
+        <p className="text-xl font-bold text-text-primary">
+          {title}
+        </p>
+
+        <p className="mt-3 text-sm leading-6 text-gray-500">
+          {message}
+        </p>
       </div>
     </div>
   );

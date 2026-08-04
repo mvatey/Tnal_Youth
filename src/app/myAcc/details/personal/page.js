@@ -187,6 +187,13 @@ export default function MyAccountPersonalPage() {
     }
   }, [member]);
 
+  const handleChange = (field) => (event) => {
+  setForm((previousForm) => ({
+    ...previousForm,
+    [field]: event.target.value,
+  }));
+};
+
   const handleFileChange = (
     event,
   ) => {
@@ -241,94 +248,36 @@ export default function MyAccountPersonalPage() {
   };
 
   const handleSave = async () => {
-    if (!cvFile) {
-      setFileError(
-        "សូមជ្រើសរើសឯកសារ CV ជាមុនសិន។",
-      );
+  setSaving(true);
 
-      return;
-    }
+  try {
+    const formData = new FormData();
 
-    setSaving(true);
-
-    try {
-      const formData =
-        new FormData();
-
-      formData.append(
-        "memberId",
-        String(member.id),
-      );
-
-      formData.append(
-        "cv",
-        cvFile,
-      );
-
-      /*
-       * Replace this console section with
-       * your backend API when it is ready.
-       *
-       * Example:
-       *
-       * await fetch(
-       *   `/api/members/${member.id}/cv`,
-       *   {
-       *     method: "POST",
-       *     body: formData,
-       *   },
-       * );
-       */
-
-      console.log(
-        "Current member:",
-        member,
-      );
-
-      console.log(
-        "Uploaded CV:",
-        cvFile,
-      );
-
-      console.log(
-        "FormData:",
-        formData,
-      );
-
-      alert(
-        "បញ្ចូលឯកសារ CV បានជោគជ័យ",
-      );
-    } catch (saveError) {
-      console.error(
-        "Cannot upload CV:",
-        saveError,
-      );
-
-      alert(
-        "មានបញ្ហាក្នុងការបញ្ចូលឯកសារ CV",
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div
-        className="
-          rounded-xl
-          border
-          border-gray-200
-          bg-white
-          p-6
-          text-sm
-          text-gray-500
-        "
-      >
-        កំពុងទាញយកព័ត៌មានសមាជិក...
-      </div>
+    formData.append(
+      "memberId",
+      String(member.id),
     );
+
+    if (cvFile) {
+      formData.append("cv", cvFile);
+    }
+
+    // TODO:
+    // Replace this with your backend API later.
+
+    console.log("Member:", member);
+    console.log("Form:", form);
+    console.log("CV:", cvFile);
+
+    alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+  } catch (error) {
+    console.error(error);
+
+    alert("រក្សាទុកព័ត៌មានមិនបានជោគជ័យ");
+  } finally {
+    setSaving(false);
   }
+};
 
   if (error) {
     return (
@@ -395,137 +344,140 @@ export default function MyAccountPersonalPage() {
           {/* Read-only member information */}
 
           <div
-            className="
-              grid
-              grid-cols-1
-              gap-5
-              md:grid-cols-2
-            "
-          >
-            <BoxFill
-              label="ឈ្មោះជាភាសាខ្មែរ"
-              value={
-                form.name_kh || "-"
-              }
-              readOnly
-            />
+  className="
+    grid
+    grid-cols-1
+    gap-5
+    md:grid-cols-2
+  "
+>
+  {/* Read only */}
 
-            <BoxFill
-              label="ឈ្មោះជាអក្សរឡាតាំង"
-              value={
-                form.name_en || "-"
-              }
-              readOnly
-            />
+  <BoxFill
+    label="ឈ្មោះជាភាសាខ្មែរ"
+    name="name_kh"
+    value={form.name_kh || "-"}
+    readOnly
+  />
 
-            <BoxFill
-              label="សាខា"
-              value={
-                form.branch || "-"
-              }
-              readOnly
-            />
+  <BoxFill
+    label="ឈ្មោះជាអក្សរឡាតាំង"
+    name="name_en"
+    value={form.name_en || "-"}
+    readOnly
+  />
 
-            <BoxFill
-              label="ភេទ"
-              value={
-                form.gender || "-"
-              }
-              readOnly
-            />
+  {/* Editable */}
 
-            <BoxFill
-              label="អ៊ីមែល"
-              type="email"
-              value={
-                form.email || "-"
-              }
-              readOnly
-            />
+  <BoxFill
+    label="ភេទ"
+    name="gender"
+    value={form.gender || ""}
+    placeholder="បញ្ចូលភេទ"
+    onChange={handleChange("gender")}
+  />
 
-            <BoxFill
-              label="លេខទូរស័ព្ទ"
-              type="tel"
-              value={
-                form.phone || "-"
-              }
-              readOnly
-            />
+  <BoxFill
+    label="ថ្ងៃខែឆ្នាំកំណើត"
+    name="date_of_birth"
+    type="date"
+    value={form.date_of_birth || ""}
+    onChange={handleChange("date_of_birth")}
+  />
 
-            <BoxFill
-              label="ថ្ងៃខែឆ្នាំកំណើត"
-              value={
-                form.date_of_birth ||
-                "-"
-              }
-              readOnly
-            />
+  {/* Read only */}
 
-            <BoxFill
-              label="ថ្ងៃខែឆ្នាំចូលរួម"
-              value={
-                form.joinedAt || "-"
-              }
-              readOnly
-            />
+  <BoxFill
+    label="អ៊ីមែល"
+    name="email"
+    type="email"
+    value={form.email || "-"}
+    readOnly
+  />
 
-            <BoxFill
-              label="សញ្ជាតិ"
-              value={
-                form.nationality ||
-                "-"
-              }
-              readOnly
-            />
+  <BoxFill
+    label="លេខទូរស័ព្ទ"
+    name="phone"
+    type="tel"
+    value={form.phone || "-"}
+    readOnly
+  />
 
-            <BoxFill
-              label="ជនជាតិ"
-              value={
-                form.ethnicity || "-"
-              }
-              readOnly
-            />
+  {/* Editable */}
 
-            <BoxFill
-              label="តួនាទី"
-              value={
-                form.role || "-"
-              }
-              readOnly
-            />
+  <BoxFill
+    label="ជនជាតិ"
+    name="ethnicity"
+    value={form.ethnicity || ""}
+    placeholder="បញ្ចូលជនជាតិ"
+    onChange={handleChange("ethnicity")}
+  />
 
-            <BoxFill
-              label="កាំ"
-              value={
-                form.level || "-"
-              }
-              readOnly
-            />
+  <BoxFill
+    label="សញ្ជាតិ"
+    name="nationality"
+    value={form.nationality || ""}
+    placeholder="បញ្ចូលសញ្ជាតិ"
+    onChange={handleChange("nationality")}
+  />
 
-            <BoxFill
-              label="ទំហំអាវ"
-              value={
-                form.shirtSize || "-"
-              }
-              readOnly
-            />
+  <BoxFill
+    label="សាសនា"
+    name="religion"
+    value={form.religion || ""}
+    placeholder="បញ្ចូលសាសនា"
+    onChange={handleChange("religion")}
+  />
 
-            <BoxFill
-              label="ស្ថានភាព"
-              value={
-                form.status || "-"
-              }
-              readOnly
-            />
+  {/* Read only */}
 
-            <BoxFill
-              label="សាសនា"
-              value={
-                form.religion || "-"
-              }
-              readOnly
-            />
-          </div>
+  <BoxFill
+    label="ថ្ងៃខែឆ្នាំចូលរួម"
+    name="joinedAt"
+    value={form.joinedAt || "-"}
+    readOnly
+  />
+
+  <BoxFill
+    label="សាខា"
+    name="branch"
+    value={form.branch || "-"}
+    readOnly
+  />
+
+  <BoxFill
+    label="តួនាទី"
+    name="role"
+    value={form.role || "-"}
+    readOnly
+  />
+
+  <BoxFill
+    label="កម្រិតសមាជិក (កាំ)"
+    name="level"
+    value={form.level || "-"}
+    readOnly
+  />
+
+  {/* Editable */}
+
+  <BoxFill
+    label="ទំហំអាវ"
+    name="shirtSize"
+    value={form.shirtSize || ""}
+    placeholder="បញ្ចូលទំហំអាវ"
+    onChange={handleChange("shirtSize")}
+  />
+
+  {/* Read only */}
+
+  <BoxFill
+    label="ស្ថានភាព"
+    name="status"
+    value={form.status || "-"}
+    readOnly
+  />
+</div>
 
           {/* CV upload remains editable */}
 
@@ -660,7 +612,7 @@ export default function MyAccountPersonalPage() {
                 >
                   <FileText
                     size={24}
-                    className="text-primary"
+                    className="text-secondary"
                   />
                 </div>
 
