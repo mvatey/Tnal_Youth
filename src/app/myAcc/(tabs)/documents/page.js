@@ -16,14 +16,7 @@ export default function DocumentsPage() {
 
   if (loading) {
     return (
-      <div
-        className="
-          flex
-          min-h-[300px]
-          items-center
-          justify-center
-        "
-      >
+      <div className="flex min-h-[300px] items-center justify-center">
         <p className="text-sm text-gray-500">
           កំពុងទាញយកឯកសារ...
         </p>
@@ -33,16 +26,7 @@ export default function DocumentsPage() {
 
   if (error) {
     return (
-      <div
-        className="
-          rounded-xl
-          border
-          border-red-200
-          bg-white
-          p-6
-          text-center
-        "
-      >
+      <div className="rounded-xl border border-red-200 bg-white p-6 text-center">
         <p className="text-sm text-red-500">
           {error}
         </p>
@@ -52,16 +36,7 @@ export default function DocumentsPage() {
 
   if (!member) {
     return (
-      <div
-        className="
-          rounded-xl
-          border
-          border-gray-200
-          bg-white
-          p-6
-          text-center
-        "
-      >
+      <div className="rounded-xl border border-gray-200 bg-white p-6 text-center">
         <p className="text-sm text-gray-500">
           រកមិនឃើញព័ត៌មានសមាជិក
         </p>
@@ -80,10 +55,6 @@ export default function DocumentsPage() {
         2xl:grid-cols-3
       "
     >
-      {/* =====================================
-          ID CARD — PRINT
-      ===================================== */}
-
       <DocumentPreviewCard
         title="ប័ណ្ណសម្គាល់សមាជិក"
         actionType="print"
@@ -95,10 +66,6 @@ export default function DocumentsPage() {
           templatePreview=""
         />
       </DocumentPreviewCard>
-
-      {/* =====================================
-          LETTER OF APPOINTMENT — PDF
-      ===================================== */}
 
       <DocumentPreviewCard
         title="លិខិតតែងតាំង"
@@ -113,10 +80,6 @@ export default function DocumentsPage() {
           templatePreview=""
         />
       </DocumentPreviewCard>
-
-      {/* =====================================
-          CERTIFICATE — PDF
-      ===================================== */}
 
       <DocumentPreviewCard
         title="បណ្ណសរសើរ"

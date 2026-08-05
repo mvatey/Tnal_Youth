@@ -18,11 +18,11 @@ const MY_ACCOUNT_DETAIL_TABS = [
     href: "/myAcc/details/work",
   },
   {
-    label: "ការសិក្សា",
+    label: "ការអប់រំ/បណ្ដុះបណ្ដាល",
     href: "/myAcc/details/education",
   },
   {
-    label: "ជំនាញ",
+    label: "ជំនាញបច្ចេកទេស",
     href: "/myAcc/details/skill",
   },
   {
