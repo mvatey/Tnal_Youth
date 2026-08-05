@@ -19,7 +19,7 @@ import {
   getTemplateUrl,
 } from "@/lib/documentStorage";
 
-import users from "@/data/members.json";
+import members from "@/data/members.json";
 
 const STORAGE_KEY =
   "tnal-member-documents";
@@ -71,22 +71,31 @@ function normalizeOldDocuments(
   };
 }
 
-export default function DocumentPage() {
+export default function DocumentsPage() {
   const params = useParams();
 
-  const id = Array.isArray(
+  const memberId = Array.isArray(
     params?.id,
   )
     ? params.id[0]
     : params?.id;
 
-  const user = useMemo(() => {
-    return users.find(
+  /*
+   * This page must use the member ID
+   * from the URL.
+   *
+   * Do not use useCurrentMember() here,
+   * because that would return the
+   * currently logged-in member instead
+   * of the selected member.
+   */
+  const member = useMemo(() => {
+    return members.find(
       (item) =>
         String(item.id) ===
-        String(id),
+        String(memberId),
     );
-  }, [id]);
+  }, [memberId]);
 
   const [
     savedDocuments,
@@ -100,13 +109,15 @@ export default function DocumentPage() {
     setTemplateUrls,
   ] = useState({});
 
-  const [loading, setLoading] =
-    useState(true);
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
   useEffect(() => {
-    if (!id) {
+    if (!memberId) {
       setLoading(false);
-      return;
+      return undefined;
     }
 
     let active = true;
@@ -126,7 +137,7 @@ export default function DocumentPage() {
 
         const memberDocuments =
           allDocuments[
-            String(id)
+            String(memberId)
           ] || {};
 
         const normalizedDocuments =
@@ -208,9 +219,7 @@ export default function DocumentPage() {
             DEFAULT_SAVED_DOCUMENTS,
           );
 
-          setTemplateUrls(
-            {},
-          );
+          setTemplateUrls({});
         }
       } finally {
         if (active) {
@@ -232,7 +241,7 @@ export default function DocumentPage() {
         },
       );
     };
-  }, [id]);
+  }, [memberId]);
 
   const handleDeleteDocument =
     async ({
@@ -241,7 +250,12 @@ export default function DocumentPage() {
       documentIndex,
       templateStorageId,
     }) => {
-      if (!group) return;
+      if (
+        !group ||
+        !memberId
+      ) {
+        return;
+      }
 
       setSavedDocuments(
         (previousDocuments) => {
@@ -293,7 +307,7 @@ export default function DocumentPage() {
 
             const currentMemberDocuments =
               allDocuments[
-                String(id)
+                String(memberId)
               ] || {};
 
             localStorage.setItem(
@@ -301,7 +315,7 @@ export default function DocumentPage() {
               JSON.stringify({
                 ...allDocuments,
 
-                [String(id)]: {
+                [String(memberId)]: {
                   ...currentMemberDocuments,
 
                   idCards:
@@ -310,9 +324,12 @@ export default function DocumentPage() {
                   certificates:
                     updatedDocuments.certificates,
 
+                  /*
+                   * Clear old single-document
+                   * storage fields.
+                   */
                   idCard: null,
-                  certificate:
-                    null,
+                  certificate: null,
                 },
               }),
             );
@@ -385,7 +402,7 @@ export default function DocumentPage() {
     );
   }
 
-  if (!user) {
+  if (!member) {
     return (
       <div
         className="
@@ -414,14 +431,19 @@ export default function DocumentPage() {
     <div
       className="
         grid
+        min-w-0
         grid-cols-1
-        gap-10
-        p-6
-        lg:grid-cols-2
+        gap-6
+        p-4
+        md:p-6
+        xl:grid-cols-2
         2xl:grid-cols-3
+        2xl:gap-10
       "
     >
-      {/* DEFAULT ID CARD */}
+      {/* =====================================
+          DEFAULT ID CARD
+      ===================================== */}
 
       <DocumentPreviewCard
         title="ប័ណ្ណសម្គាល់សមាជិក"
@@ -430,12 +452,14 @@ export default function DocumentPage() {
         previewClass="scale-[0.55]"
       >
         <IdCard
-          user={user}
+          user={member}
           templatePreview=""
         />
       </DocumentPreviewCard>
 
-      {/* CREATED ID CARDS */}
+      {/* =====================================
+          CREATED ID CARDS
+      ===================================== */}
 
       {customIdCards.map(
         (
@@ -443,46 +467,56 @@ export default function DocumentPage() {
           index,
         ) => {
           const idCardUser = {
+            ...member,
+
             id:
               customIdCard.memberId ||
-              user.id,
+              member.id,
+
+            memberId:
+              customIdCard.memberId ||
+              member.id,
 
             name_kh:
               customIdCard.member ||
-              user.name_kh,
+              customIdCard.name_kh ||
+              member.name_kh,
 
             name_en:
               customIdCard.memberNameEn ||
-              user.name_en,
+              customIdCard.name_en ||
+              member.name_en,
 
             gender:
               customIdCard.gender ||
-              user.gender,
+              member.gender,
 
             email:
               customIdCard.email ||
-              user.email,
+              member.email,
 
             phone:
               customIdCard.phone ||
-              user.phone,
+              member.phone,
 
             date_of_birth:
               customIdCard.dateOfBirth ||
-              user.date_of_birth,
+              customIdCard.date_of_birth ||
+              member.date_of_birth,
 
             branch:
               customIdCard.branch ||
-              user.branch,
+              member.branch,
 
             role:
               customIdCard.role ||
-              user.role ||
+              member.role ||
               "member",
 
             profile_photo:
               customIdCard.profilePhoto ||
-              user.profile_photo ||
+              customIdCard.profile_photo ||
+              member.profile_photo ||
               "/profile.png",
           };
 
@@ -499,7 +533,7 @@ export default function DocumentPage() {
               className="
                 group
                 relative
-                w-fit
+                min-w-0
               "
             >
               <button
@@ -541,6 +575,7 @@ export default function DocumentPage() {
                   hover:scale-105
                   hover:bg-red-600
                   group-hover:opacity-100
+                  group-focus-within:opacity-100
                 "
               >
                 <Minus
@@ -571,43 +606,46 @@ export default function DocumentPage() {
         },
       )}
 
-      {/* LETTER OF APPOINTMENT — PDF */}
+      {/* =====================================
+          LETTER OF APPOINTMENT
+      ===================================== */}
 
       <DocumentPreviewCard
         title="លិខិតតែងតាំង"
         actionType="download"
         downloadText="ទាញយក"
-        filename={`letter-of-appointment-${
-          user.id
-        }.pdf`}
+        filename={`letter-of-appointment-${member.id}.pdf`}
         orientation="landscape"
         previewClass="scale-[0.35]"
       >
         <LetterOfAppointment
-          user={user}
+          user={member}
+          templatePreview=""
         />
       </DocumentPreviewCard>
 
-      {/* DEFAULT CERTIFICATE — PDF */}
+      {/* =====================================
+          DEFAULT CERTIFICATE
+      ===================================== */}
 
       <DocumentPreviewCard
         title="បណ្ណសរសើរ"
         actionType="download"
         downloadText="ទាញយក"
-        filename={`certificate-${
-          user.id
-        }.pdf`}
+        filename={`certificate-${member.id}.pdf`}
         orientation="landscape"
         previewClass="scale-[0.35]"
       >
         <CertificateCard
           recipientType="member"
-          member={user}
+          member={member}
           templatePreview=""
         />
       </DocumentPreviewCard>
 
-      {/* CREATED CERTIFICATES — PDF */}
+      {/* =====================================
+          CREATED CERTIFICATES
+      ===================================== */}
 
       {customCertificates.map(
         (
@@ -615,23 +653,34 @@ export default function DocumentPage() {
           index,
         ) => {
           const certificateMember = {
-            ...user,
+            ...member,
 
             id:
               customCertificate.memberId ||
-              user.id,
+              member.id,
+
+            memberId:
+              customCertificate.memberId ||
+              member.id,
 
             name_kh:
               customCertificate.member ||
-              user.name_kh,
+              customCertificate.name_kh ||
+              member.name_kh,
 
             name_en:
               customCertificate.memberNameEn ||
-              user.name_en,
+              customCertificate.name_en ||
+              member.name_en,
 
             branch:
               customCertificate.branch ||
-              user.branch,
+              member.branch,
+
+            profile_photo:
+              customCertificate.profilePhoto ||
+              customCertificate.profile_photo ||
+              member.profile_photo,
           };
 
           const templateStorageId =
@@ -647,7 +696,7 @@ export default function DocumentPage() {
               className="
                 group
                 relative
-                w-fit
+                min-w-0
               "
             >
               <button
@@ -689,6 +738,7 @@ export default function DocumentPage() {
                   hover:scale-105
                   hover:bg-red-600
                   group-hover:opacity-100
+                  group-focus-within:opacity-100
                 "
               >
                 <Minus
