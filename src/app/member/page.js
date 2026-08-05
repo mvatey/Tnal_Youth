@@ -517,35 +517,41 @@ export default function MembersPage() {
       [branchLookups],
     );
 
-  const memberStatuses = useMemo(
-    () => [
-      {
-        label: "ស្ថានភាព",
-        value: "",
-      },
-
-      ...statusLookups.map(
-        (status) => {
-          const code = String(
-            status?.code || "",
-          ).toUpperCase();
-
-          return {
-            label:
-              status?.label_km ||
-              status?.labelKm ||
-              STATUS_LABELS_KM[code] ||
-              "-",
-
-            value: String(
-              status?.id ?? "",
-            ),
-          };
+    const memberStatuses = useMemo(
+      () => [
+        {
+          label: "ស្ថានភាព",
+          value: "",
         },
-      ),
-    ],
-    [statusLookups],
-  );
+
+        ...statusLookups
+          .map((status) => {
+            const statusId =
+              status?.id ??
+              status?.status_id ??
+              status?.statusId ??
+              status?.value ??
+              "";
+
+            return {
+              label:
+                status?.label_km ||
+                status?.labelKm ||
+                status?.label_en ||
+                status?.labelEn ||
+                status?.code ||
+                "-",
+
+              value: String(statusId),
+            };
+          })
+          .filter(
+            (status) =>
+              status.value !== "",
+          ),
+      ],
+      [statusLookups],
+    );
 
   const genders = useMemo(
     () => [
