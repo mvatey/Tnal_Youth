@@ -1104,8 +1104,16 @@ export default function MembersPage() {
       <div className="min-w-0 w-full">
 =======
       {/* Statistic cards */}
-<div className="flex w-full min-w-0 flex-wrap items-stretch gap-3">
-  <div className="h-[125px] min-w-[210px] flex-1">
+<div
+  className="
+    grid
+    w-full
+    min-w-0
+    grid-cols-[repeat(auto-fit,minmax(210px,1fr))]
+    gap-3
+  "
+>
+  <div className="h-[125px] min-w-0">
     <StatCard
       icon={Users}
       label="សមាជិកសរុប"
@@ -1116,7 +1124,7 @@ export default function MembersPage() {
     />
   </div>
 
-  <div className="h-[125px] min-w-[210px] flex-1">
+  <div className="h-[125px] min-w-0">
     <StatCard
       icon={AiOutlineWoman}
       label="ភេទស្រី"
@@ -1127,7 +1135,7 @@ export default function MembersPage() {
     />
   </div>
 
-  <div className="h-[125px] min-w-[210px] flex-1">
+  <div className="h-[125px] min-w-0">
     <StatCard
       icon={Landmark}
       label="ចំនួនព្រះសង្ឃ"
@@ -1138,7 +1146,7 @@ export default function MembersPage() {
     />
   </div>
 
-  <div className="h-[125px] min-w-[210px] flex-1">
+  <div className="h-[125px] min-w-0">
     <StatCard
       icon={FaDharmachakra}
       label="ព្រះពុទ្ធ"
@@ -1149,7 +1157,7 @@ export default function MembersPage() {
     />
   </div>
 
-  <div className="h-[125px] min-w-[210px] flex-1">
+  <div className="h-[125px] min-w-0">
     <StatCard
       icon={Moon}
       label="អ៊ីស្លាម"
