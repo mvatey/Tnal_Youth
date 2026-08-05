@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import PopupCard from "@/components/popup/PopupCard";
+import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
 import FormActionButtons from "@/components/forms/FormActionButton";
 
@@ -323,44 +324,13 @@ export default function AddDocumentForm({
               md:grid-cols-2
             "
           >
-            <div>
-              <label
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-semibold
-                "
-              >
-                ឈ្មោះឯកសារ
-              </label>
-
-              <input
-                type="text"
-                value={
-                  form.title ||
-                  ""
-                }
-                onChange={
-                  updateField(
-                    "title",
-                  )
-                }
-                placeholder="បញ្ចូលឈ្មោះឯកសារ"
-                className="
-                  h-11
-                  w-full
-                  rounded-lg
-                  border
-                  border-gray-200
-                  px-4
-                  text-sm
-                  outline-none
-                  placeholder:text-gray-400
-                  focus:border-primary
-                "
-              />
-            </div>
+            <BoxFill
+  label="ឈ្មោះឯកសារ"
+  name="title"
+  placeholder="បញ្ចូលឈ្មោះឯកសារ"
+  value={form.title || ""}
+  onChange={updateField("title")}
+/>
 
             <FormSelect
               label="សាខា"

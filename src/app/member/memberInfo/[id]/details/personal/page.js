@@ -345,19 +345,6 @@ export default function PersonalPage() {
               )}
               placeholder="បញ្ចូលឈ្មោះជាអក្សរឡាតាំង"
             />
-
-            <FormSelect
-              label="សាខា"
-              value={
-                member.branch || ""
-              }
-              onChange={handleChange(
-                "branch",
-              )}
-              placeholder="ជ្រើសរើសសាខា"
-              options={branchOptions}
-            />
-
             <FormSelect
               label="ភេទ"
               value={
@@ -369,7 +356,19 @@ export default function PersonalPage() {
               placeholder="ជ្រើសរើសភេទ"
               options={GENDER_OPTIONS}
             />
+            <FormDate
+              label="ថ្ងៃខែឆ្នាំកំណើត"
+              name="date_of_birth"
+              value={
+                member.date_of_birth ||
+                ""
+              }
+              onChange={handleChange(
+                "date_of_birth",
+              )}
+            />
 
+            
             <BoxFill
               label="អ៊ីមែល"
               type="email"
@@ -394,17 +393,7 @@ export default function PersonalPage() {
               placeholder="បញ្ចូលលេខទូរស័ព្ទ"
             />
 
-            <FormDate
-              label="ថ្ងៃខែឆ្នាំកំណើត"
-              name="date_of_birth"
-              value={
-                member.date_of_birth ||
-                ""
-              }
-              onChange={handleChange(
-                "date_of_birth",
-              )}
-            />
+            
 
             <BoxFill
               label="សញ្ជាតិ"
@@ -428,6 +417,30 @@ export default function PersonalPage() {
               )}
               placeholder="បញ្ចូលជនជាតិ"
             />
+            <FormSelect
+              label="សាសនា"
+              value={
+                member.religion || ""
+              }
+              onChange={handleChange(
+                "religion",
+              )}
+              placeholder="ជ្រើសរើសសាសនា"
+              options={
+                RELIGION_OPTIONS
+              }
+            />
+            <FormSelect
+              label="សាខា"
+              value={
+                member.branch || ""
+              }
+              onChange={handleChange(
+                "branch",
+              )}
+              placeholder="ជ្រើសរើសសាខា"
+              options={branchOptions}
+            />
 
             <FormSelect
               label="តួនាទី"
@@ -442,14 +455,14 @@ export default function PersonalPage() {
             />
 
             <FormSelect
-              label="កាំ"
+              label="កម្រិតសមាជិក(កាំ)"
               value={
                 member.level || ""
               }
               onChange={handleChange(
                 "level",
               )}
-              placeholder="ជ្រើសរើសកាំ"
+              placeholder="ជ្រើសរើសកម្រិតសមាជិក"
               options={LEVEL_OPTIONS}
             />
 
@@ -478,20 +491,6 @@ export default function PersonalPage() {
               )}
               placeholder="ជ្រើសរើសស្ថានភាព"
               options={STATUS_OPTIONS}
-            />
-
-            <FormSelect
-              label="សាសនា"
-              value={
-                member.religion || ""
-              }
-              onChange={handleChange(
-                "religion",
-              )}
-              placeholder="ជ្រើសរើសសាសនា"
-              options={
-                RELIGION_OPTIONS
-              }
             />
           </div>
 

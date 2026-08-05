@@ -126,6 +126,29 @@ export default function FamilyPage() {
         <h2 className="text-lg font-bold text-primary">
           ព័ត៌មានគ្រួសារ
         </h2>
+        <div className="mt-6">
+  <RadioGroup
+    label="ស្ថានភាពគ្រួសារ"
+    name="familyStatus"
+    value={family.status || ""}
+    options={[
+      {
+        label: "នៅលីវ",
+        value: "នៅលីវ",
+      },
+      {
+        label: "មានគ្រួសារ",
+        value: "មានគ្រួសារ",
+      },
+    ]}
+    onChange={(value) =>
+      setFamily((previous) => ({
+        ...previous,
+        status: value,
+      }))
+    }
+  />
+</div>
 
         <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2 xl:grid-cols-3">
           {/* SPOUSE */}
