@@ -79,6 +79,7 @@ async function fetchJson(path, signal) {
 
   let body = null;
 
+<<<<<<< HEAD
   if (text) {
     try {
       body = JSON.parse(text);
@@ -105,6 +106,55 @@ async function fetchJson(path, signal) {
 function formatJoinedDate(value) {
   if (!value) {
     return "-";
+=======
+const ISLAM_LABEL = "អ៊ីស្លាម";
+const BUDDHIST_LABEL = "ព្រះពុទ្ធ";
+const MONK_GENDER = "ព្រះសង្ឃ";
+
+function parseKhmerDate(value) {
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
+  }
+
+  const isoDateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (isoDateMatch) {
+    const [, year, month, day] = isoDateMatch;
+
+    return new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+    );
+  }
+
+  const khmerDateMatch = value.match(
+    /(\d+)\s+([^\s,]+),?\s*(\d+)/,
+  );
+
+  if (!khmerDateMatch) {
+    return null;
+  }
+
+  const [, day, monthName, year] = khmerDateMatch;
+
+  const month = KHMER_MONTHS[monthName];
+
+  if (month === undefined) {
+    return null;
+  }
+
+  return new Date(
+    Number(year),
+    month,
+    Number(day),
+  );
+}
+
+function formatDateToKhmer(value) {
+  if (typeof value !== "string" || !value.trim()) {
+    return "";
+>>>>>>> 2609dff (save local changes before merging member-merge)
   }
 
   const match = String(value).match(
@@ -140,6 +190,7 @@ function getGenderLabel(gender) {
   );
 }
 
+<<<<<<< HEAD
 function getStatusLabel(status) {
   const code = String(
     status?.code || "",
@@ -164,6 +215,24 @@ function getBranchLabel(branch) {
     "-"
   );
 }
+=======
+  oneMonthAgo.setMonth(
+    oneMonthAgo.getMonth() - 1,
+  );
+
+  const countUpTo = (cutoff) =>
+    members.filter((member) => {
+      const joinedDate = parseKhmerDate(
+        member.joinedAt,
+      );
+
+      return (
+        joinedDate &&
+        joinedDate <= cutoff &&
+        filterFn(member)
+      );
+    }).length;
+>>>>>>> 2609dff (save local changes before merging member-merge)
 
 function mapMember(member) {
   return {
@@ -178,6 +247,7 @@ function mapMember(member) {
       member?.gender,
     ),
 
+<<<<<<< HEAD
     genderCode: String(
       member?.gender?.code || "",
     ).toUpperCase(),
@@ -208,11 +278,19 @@ function mapMember(member) {
       member?.joined_on,
     ),
   };
+=======
+  return Math.round(
+    ((currentCount - previousCount) /
+      previousCount) *
+      100,
+  );
+>>>>>>> 2609dff (save local changes before merging member-merge)
 }
 
 export default function MembersPage() {
   const router = useRouter();
 
+<<<<<<< HEAD
   const [members, setMembers] = useState([]);
 
   const [summary, setSummary] =
@@ -270,9 +348,85 @@ export default function MembersPage() {
 
     return () => {
       window.clearTimeout(timeoutId);
+=======
+  const [members, setMembers] =
+    useState(initialMembers);
+
+  const [query, setQuery] = useState("");
+
+  const [branchFilter, setBranchFilter] =
+    useState("");
+
+  const [statusFilter, setStatusFilter] =
+    useState("");
+
+  const [genderFilter, setGenderFilter] =
+    useState("");
+
+  const [isCreateOpen, setIsCreateOpen] =
+    useState(false);
+
+  const stats = useMemo(() => {
+    const total = members.length;
+
+    const female = members.filter(
+      (member) => member.gender === "ស្រី",
+    ).length;
+
+    const monk = members.filter(
+      (member) =>
+        member.gender === MONK_GENDER,
+    ).length;
+
+    const buddhist = members.filter(
+      (member) =>
+        member.religion === BUDDHIST_LABEL,
+    ).length;
+
+    const islam = members.filter(
+      (member) =>
+        member.religion === ISLAM_LABEL,
+    ).length;
+
+    return {
+      total,
+      female,
+      monk,
+      buddhist,
+      islam,
+
+      totalGrowth: calcGrowth(
+        members,
+        () => true,
+      ),
+
+      femaleGrowth: calcGrowth(
+        members,
+        (member) => member.gender === "ស្រី",
+      ),
+
+      monkGrowth: calcGrowth(
+        members,
+        (member) =>
+          member.gender === MONK_GENDER,
+      ),
+
+      buddhistGrowth: calcGrowth(
+        members,
+        (member) =>
+          member.religion === BUDDHIST_LABEL,
+      ),
+
+      islamGrowth: calcGrowth(
+        members,
+        (member) =>
+          member.religion === ISLAM_LABEL,
+      ),
+>>>>>>> 2609dff (save local changes before merging member-merge)
     };
   }, [query]);
 
+<<<<<<< HEAD
   const loadSummary = useCallback(
     async (signal) => {
       const data = await fetchJson(
@@ -292,6 +446,29 @@ export default function MembersPage() {
 
         buddhist_members:
           Number(data?.buddhist_members) || 0,
+=======
+  const filteredMembers = useMemo(() => {
+    const normalizedQuery = query
+      .trim()
+      .toLowerCase();
+
+    return members.filter((member) => {
+      const memberNameKh = String(
+        member.name_kh ?? "",
+      ).toLowerCase();
+
+      const memberNameEn = String(
+        member.name_en ?? "",
+      ).toLowerCase();
+
+      const memberPhone = String(
+        member.phone ?? "",
+      ).toLowerCase();
+
+      const memberEmail = String(
+        member.email ?? "",
+      ).toLowerCase();
+>>>>>>> 2609dff (save local changes before merging member-merge)
 
         islam_members:
           Number(data?.islam_members) || 0,
@@ -300,6 +477,7 @@ export default function MembersPage() {
     [],
   );
 
+<<<<<<< HEAD
   const loadLookups = useCallback(
     async (signal) => {
       const [
@@ -459,6 +637,43 @@ export default function MembersPage() {
     loadLookups,
     loadSummary,
   ]);
+=======
+      const matchesBranch =
+        !branchFilter ||
+        member.branch === branchFilter;
+
+      const matchesStatus =
+        !statusFilter ||
+        member.status === statusFilter;
+
+      const matchesGender =
+        !genderFilter ||
+        member.gender === genderFilter;
+
+      return (
+        matchesQuery &&
+        matchesBranch &&
+        matchesStatus &&
+        matchesGender
+      );
+    });
+  }, [
+    members,
+    query,
+    branchFilter,
+    statusFilter,
+    genderFilter,
+  ]);
+
+  const branches = useMemo(() => {
+    const uniqueBranches = [
+      ...new Set(
+        members
+          .map((member) => member.branch)
+          .filter(Boolean),
+      ),
+    ];
+>>>>>>> 2609dff (save local changes before merging member-merge)
 
   useEffect(() => {
     const controller =
@@ -530,12 +745,19 @@ export default function MembersPage() {
             status?.code || "",
           ).toUpperCase();
 
+<<<<<<< HEAD
           return {
             label:
               status?.label_km ||
               status?.labelKm ||
               STATUS_LABELS_KM[code] ||
               "-",
+=======
+  const handleCreateMember = (formData) => {
+    if (!formData) {
+      return;
+    }
+>>>>>>> 2609dff (save local changes before merging member-merge)
 
             value: String(
               status?.id ?? "",
@@ -547,6 +769,7 @@ export default function MembersPage() {
     [statusLookups],
   );
 
+<<<<<<< HEAD
   const genders = useMemo(
     () => [
       {
@@ -559,6 +782,20 @@ export default function MembersPage() {
           const code = String(
             gender?.code || "",
           ).toUpperCase();
+=======
+    const isValid = requiredFields.every(
+      (field) => {
+        return (
+          String(formData[field] ?? "").trim() !==
+          ""
+        );
+      },
+    );
+
+    if (!isValid) {
+      return;
+    }
+>>>>>>> 2609dff (save local changes before merging member-merge)
 
           return {
             label:
@@ -588,6 +825,7 @@ export default function MembersPage() {
             controller.signal,
           ),
 
+<<<<<<< HEAD
           loadMembers(
             controller.signal,
           ),
@@ -604,12 +842,41 @@ export default function MembersPage() {
       }
     };
 
+=======
+      phone: formData.phone.trim(),
+
+      email: formData.email?.trim() || "",
+
+      branch: formData.branch,
+
+      role: formData.role,
+
+      dob: formatDateToKhmer(formData.dob),
+
+      joinedAt: formatDateToKhmer(
+        formData.joinedAt,
+      ),
+
+      level: formData.level,
+
+      religion: "",
+    };
+
+    setMembers((previousMembers) => [
+      newMember,
+      ...previousMembers,
+    ]);
+
+    setIsCreateOpen(false);
+  };
+
+>>>>>>> 2609dff (save local changes before merging member-merge)
   const tableColumns = [
     {
       header: "ល.រ",
       width: "w-[6%]",
       align: "center",
-      render: (_, index) => index,
+      render: (_, index) => index + 1,
     },
 
     {
@@ -643,7 +910,41 @@ export default function MembersPage() {
 
       render: (member) => (
         <span className="block w-full truncate">
+<<<<<<< HEAD
           {member.branchLabel}
+=======
+          {member.branch}
+        </span>
+      ),
+    },
+    {
+      header: "តួនាទី",
+      width: "w-[14%]",
+      align: "center",
+      render: (member) => (
+        <span
+          className={`
+            inline-flex
+            max-w-full
+            items-center
+            justify-center
+            truncate
+            whitespace-nowrap
+            rounded-full
+            px-2
+            py-1
+            text-[11px]
+            ${
+              ROLE_BADGE_STYLES[
+                member.role
+              ] ||
+              "bg-gray-100 text-text-secondary"
+            }
+          `}
+        >
+          {ROLE_LABELS[member.role] ||
+            member.role}
+>>>>>>> 2609dff (save local changes before merging member-merge)
         </span>
       ),
     },
@@ -668,7 +969,11 @@ export default function MembersPage() {
             text-[11px]
             ${
               STATUS_BADGE_STYLES[
+<<<<<<< HEAD
                 member.statusCode
+=======
+                member.status
+>>>>>>> 2609dff (save local changes before merging member-merge)
               ] ||
               "bg-gray-100 text-text-secondary"
             }
@@ -738,6 +1043,7 @@ export default function MembersPage() {
 
   return (
     <div className="flex min-h-full min-w-0 flex-col gap-4 overflow-hidden">
+<<<<<<< HEAD
       <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         <StatCard
           icon={Users}
@@ -796,6 +1102,67 @@ export default function MembersPage() {
       </div>
 
       <div className="min-w-0 w-full">
+=======
+      {/* Statistic cards */}
+<div className="flex w-full min-w-0 flex-wrap items-stretch gap-3">
+  <div className="h-[125px] min-w-[210px] flex-1">
+    <StatCard
+      icon={Users}
+      label="សមាជិកសរុប"
+      value={String(stats.total)}
+      growth={String(stats.totalGrowth)}
+      iconColor="text-secondary"
+      iconBg="bg-secondary-light"
+    />
+  </div>
+
+  <div className="h-[125px] min-w-[210px] flex-1">
+    <StatCard
+      icon={AiOutlineWoman}
+      label="ភេទស្រី"
+      value={String(stats.female)}
+      growth={String(stats.femaleGrowth)}
+      iconColor="text-secondary"
+      iconBg="bg-secondary-light"
+    />
+  </div>
+
+  <div className="h-[125px] min-w-[210px] flex-1">
+    <StatCard
+      icon={Landmark}
+      label="ចំនួនព្រះសង្ឃ"
+      value={String(stats.monk)}
+      growth={String(stats.monkGrowth)}
+      iconColor="text-secondary"
+      iconBg="bg-secondary-light"
+    />
+  </div>
+
+  <div className="h-[125px] min-w-[210px] flex-1">
+    <StatCard
+      icon={FaDharmachakra}
+      label="ព្រះពុទ្ធ"
+      value={String(stats.buddhist)}
+      growth={String(stats.buddhistGrowth)}
+      iconColor="text-secondary"
+      iconBg="bg-secondary-light"
+    />
+  </div>
+
+  <div className="h-[125px] min-w-[210px] flex-1">
+    <StatCard
+      icon={Moon}
+      label="អ៊ីស្លាម"
+      value={String(stats.islam)}
+      growth={String(stats.islamGrowth)}
+      iconColor="text-secondary"
+      iconBg="bg-secondary-light"
+    />
+  </div>
+</div>
+
+      <div className="w-full min-w-0">
+>>>>>>> 2609dff (save local changes before merging member-merge)
         <DataTable
           title="បញ្ជីសមាជិក"
           data={members}
@@ -845,6 +1212,12 @@ export default function MembersPage() {
           setIsCreateOpen(false)
         }
         onSave={handleCreateMember}
+<<<<<<< HEAD
+=======
+        branches={branches.filter(
+          (branch) => branch.value !== "",
+        )}
+>>>>>>> 2609dff (save local changes before merging member-merge)
       />
     </div>
   );
