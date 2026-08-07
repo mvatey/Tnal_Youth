@@ -20,6 +20,7 @@ import {
 } from "react";
 
 import {
+  getSavedProfileImage,
   saveProfileImage,
 } from "@/lib/member/profileImageStorage";
 
@@ -40,11 +41,16 @@ const ROLE_LABELS = {
   secretary: "លេខាធិការ",
   branch_leader: "ប្រធានសាខា",
   member: "សមាជិក",
+};
 
-  អ្នកគ្រប់គ្រង: "អ្នកគ្រប់គ្រង",
-  លេខាធិការ: "លេខាធិការ",
-  ប្រធានសាខា: "ប្រធានសាខា",
-  សមាជិក: "សមាជិក",
+const STATUS_LABELS = {
+  ACTIVE: "សកម្ម",
+  INACTIVE: "អសកម្ម",
+  SUSPENDED: "បានផ្អាក",
+  RESIGNED: "បានលាលែង",
+
+  active: "សកម្ម",
+  inactive: "អសកម្ម",
 };
 
 const STATUS_BADGE_STYLES = {
@@ -65,29 +71,123 @@ const STATUS_BADGE_STYLES = {
 
   inactive:
     "bg-error-bg text-error",
-
-  សកម្ម:
-    "bg-success-bg text-success",
-
-  អសកម្ម:
-    "bg-error-bg text-error",
-};
-
-const STATUS_LABELS = {
-  ACTIVE: "សកម្ម",
-  INACTIVE: "អសកម្ម",
-  SUSPENDED: "បានផ្អាក",
-  RESIGNED: "បានលាលែង",
-
-  active: "សកម្ម",
-  inactive: "អសកម្ម",
-
-  សកម្ម: "សកម្ម",
-  អសកម្ម: "អសកម្ម",
 };
 
 const MAX_PROFILE_IMAGE_SIZE =
   5 * 1024 * 1024;
+
+/*
+ * =========================================
+ * MEMBER ID
+ * =========================================
+ */
+
+function getMemberId(member) {
+  return (
+    member?.memberId ??
+    member?.member_id ??
+    member?.id ??
+    null
+  );
+}
+
+/*
+ * =========================================
+ * PROFILE IMAGE
+ * =========================================
+ */
+
+function normalizeImageUrl(value) {
+  if (!value) {
+    return DEFAULT_PROFILE_IMAGE;
+  }
+
+  if (
+    typeof value === "object"
+  ) {
+    return normalizeImageUrl(
+      value?.url ||
+        value?.path ||
+        value?.file_url ||
+        value?.fileUrl ||
+        "",
+    );
+  }
+
+  const imagePath =
+    String(value).trim();
+
+  if (!imagePath) {
+    return DEFAULT_PROFILE_IMAGE;
+  }
+
+  /*
+   * Local preview saved as base64/blob.
+   */
+  if (
+    imagePath.startsWith("data:") ||
+    imagePath.startsWith("blob:")
+  ) {
+    return imagePath;
+  }
+
+  /*
+   * Full backend URL.
+   */
+  if (
+    imagePath.startsWith("http://") ||
+    imagePath.startsWith("https://")
+  ) {
+    return imagePath;
+  }
+
+  /*
+   * Local public image.
+   */
+  if (
+    imagePath.startsWith("/profiles/") ||
+    imagePath.startsWith("/images/")
+  ) {
+    return imagePath;
+  }
+
+  /*
+   * Backend relative upload:
+   *
+   * uploads/member-profiles/xxx.jpg
+   */
+  const normalizedPath =
+    imagePath.startsWith("/")
+      ? imagePath
+      : `/${imagePath}`;
+
+  return `${BACKEND_ORIGIN}${normalizedPath}`;
+}
+
+function getDefaultProfileImage(
+  member,
+) {
+  const value =
+    member?.profile_photo?.url ||
+    member?.profilePhoto?.url ||
+    member?.profile_photo_url ||
+    member?.profilePhotoUrl ||
+    member?.profile_photo ||
+    member?.profileImage ||
+    member?.profile_image ||
+    member?.profilePhoto ||
+    "";
+
+  return normalizeImageUrl(
+    value,
+  );
+}
+
+/*
+ * =========================================
+ * GENDER
+ * =========================================
+ */
 
 function getGenderCode(gender) {
   if (
@@ -125,24 +225,15 @@ function getGenderDisplay(gender) {
   const code =
     getGenderCode(gender);
 
-  if (
-    code === "FEMALE" ||
-    gender === "ស្រី"
-  ) {
+  if (code === "FEMALE") {
     return "ភេទ ស្រី";
   }
 
-  if (
-    code === "MALE" ||
-    gender === "ប្រុស"
-  ) {
+  if (code === "MALE") {
     return "ភេទ ប្រុស";
   }
 
-  if (
-    code === "MONK" ||
-    gender === "ព្រះសង្ឃ"
-  ) {
+  if (code === "MONK") {
     return "ព្រះសង្ឃ";
   }
 
@@ -153,100 +244,22 @@ function getGenderIcon(gender) {
   const code =
     getGenderCode(gender);
 
-  if (
-    code === "FEMALE" ||
-    gender === "ស្រី"
-  ) {
+  if (code === "FEMALE") {
     return "♀";
   }
 
-  if (
-    code === "MALE" ||
-    gender === "ប្រុស"
-  ) {
+  if (code === "MALE") {
     return "♂";
   }
 
   return "•";
 }
 
-function getMemberId(member) {
-  return (
-    member?.memberId ??
-    member?.id ??
-    member?.member_id ??
-    null
-  );
-}
-
-function normalizeImageUrl(value) {
-  if (!value) {
-    return DEFAULT_PROFILE_IMAGE;
-  }
-
-  if (
-    typeof value === "object"
-  ) {
-    return normalizeImageUrl(
-      value?.url ||
-        value?.path ||
-        value?.file_url ||
-        value?.fileUrl ||
-        "",
-    );
-  }
-
-  const imagePath =
-    String(value).trim();
-
-  if (!imagePath) {
-    return DEFAULT_PROFILE_IMAGE;
-  }
-
-  if (
-    imagePath.startsWith("data:") ||
-    imagePath.startsWith("blob:")
-  ) {
-    return imagePath;
-  }
-
-  if (
-    imagePath.startsWith("http://") ||
-    imagePath.startsWith("https://")
-  ) {
-    return imagePath;
-  }
-
-  if (
-    imagePath.startsWith(
-      "/profiles/",
-    )
-  ) {
-    return imagePath;
-  }
-
-  const normalizedPath =
-    imagePath.startsWith("/")
-      ? imagePath
-      : `/${imagePath}`;
-
-  return `${BACKEND_ORIGIN}${normalizedPath}`;
-}
-
-function getDefaultProfileImage(member) {
-  const value =
-    member?.profile_photo?.url ||
-    member?.profilePhoto?.url ||
-    member?.profile_photo_url ||
-    member?.profilePhotoUrl ||
-    member?.profile_photo ||
-    member?.profileImage ||
-    member?.profile_image ||
-    member?.profilePhoto ||
-    "";
-
-  return normalizeImageUrl(value);
-}
+/*
+ * =========================================
+ * ROLE
+ * =========================================
+ */
 
 function getRoleCode(role) {
   if (
@@ -296,6 +309,12 @@ function getRoleLabel(role) {
     ROLE_LABELS.MEMBER
   );
 }
+
+/*
+ * =========================================
+ * STATUS
+ * =========================================
+ */
 
 function getStatusCode(status) {
   if (
@@ -348,24 +367,39 @@ function getStatusLabel(status) {
   );
 }
 
-function getBranchLabel(branch) {
-  if (!branch) {
-    return "-";
-  }
+/*
+ * =========================================
+ * BRANCH / LOOKUPS
+ * =========================================
+ */
+
+function getBranchLabel(
+  member,
+) {
+  const branch =
+    member?.branch;
 
   if (
-    typeof branch === "string"
+    branch &&
+    typeof branch === "object"
   ) {
-    return branch;
+    return (
+      branch?.name_km ||
+      branch?.nameKm ||
+      branch?.label_km ||
+      branch?.labelKm ||
+      branch?.name_en ||
+      branch?.nameEn ||
+      "-"
+    );
   }
 
   return (
-    branch?.label_km ||
-    branch?.labelKm ||
-    branch?.name_km ||
-    branch?.nameKm ||
-    branch?.name_en ||
-    branch?.nameEn ||
+    member?.branch_name_km ||
+    member?.branchNameKm ||
+    member?.branch_name_en ||
+    member?.branchNameEn ||
+    branch ||
     "-"
   );
 }
@@ -395,6 +429,12 @@ function getLookupLabel(value) {
   );
 }
 
+/*
+ * =========================================
+ * COMPONENT
+ * =========================================
+ */
+
 export default function MemberInfoCard({
   member,
   allowProfileChange = true,
@@ -422,39 +462,56 @@ export default function MemberInfoCard({
       member,
     );
 
-  useEffect(() => {
-    setProfilePreview(
-      defaultProfileImage,
-    );
-  }, [
-    memberId,
-    defaultProfileImage,
-  ]);
-
+  /*
+   * IMPORTANT:
+   *
+   * Use the same local saved profile
+   * image as IdCard.
+   *
+   * This fixes:
+   *
+   * Blue card  -> default avatar
+   * ID card    -> uploaded face
+   */
   useEffect(() => {
     if (!memberId) {
+      setProfilePreview(
+        defaultProfileImage,
+      );
+
       return undefined;
     }
+
+    const savedImage =
+      getSavedProfileImage(
+        memberId,
+        defaultProfileImage,
+      );
+
+    setProfilePreview(
+      savedImage ||
+        defaultProfileImage,
+    );
 
     const handleImageChange = (
       event,
     ) => {
+      const changedMemberId =
+        event.detail?.memberId;
+
       if (
         String(
-          event.detail?.memberId,
+          changedMemberId,
         ) !==
         String(memberId)
       ) {
         return;
       }
 
-      if (
-        event.detail?.imageData
-      ) {
-        setProfilePreview(
-          event.detail.imageData,
-        );
-      }
+      setProfilePreview(
+        event.detail?.imageData ||
+          defaultProfileImage,
+      );
     };
 
     window.addEventListener(
@@ -468,28 +525,48 @@ export default function MemberInfoCard({
         handleImageChange,
       );
     };
-  }, [memberId]);
+  }, [
+    memberId,
+    defaultProfileImage,
+  ]);
 
   if (!member) {
     return null;
   }
 
+  /*
+   * =========================================
+   * DISPLAY DATA
+   * =========================================
+   */
+
   const displayName =
-    member?.fullNameKm ||
     member?.full_name_km ||
+    member?.fullNameKm ||
     member?.name_kh ||
     member?.nameKm ||
     member?.name ||
     "-";
 
   const englishName =
-    member?.fullNameEn ||
     member?.full_name_en ||
+    member?.fullNameEn ||
     member?.name_en ||
     member?.nameEn ||
     "-";
 
+  /*
+   * IMPORTANT:
+   *
+   * Personal info returns:
+   *
+   * account_role
+   *
+   * So check it BEFORE generic role.
+   */
   const role =
+    member?.account_role ||
+    member?.accountRole ||
     member?.role ||
     member?.user_role ||
     member?.userRole ||
@@ -498,7 +575,14 @@ export default function MemberInfoCard({
   const roleLabel =
     getRoleLabel(role);
 
+  /*
+   * Personal info returns:
+   *
+   * account_status
+   */
   const status =
+    member?.account_status ||
+    member?.accountStatus ||
     member?.status ||
     member?.status_code ||
     member?.statusCode ||
@@ -521,11 +605,7 @@ export default function MemberInfoCard({
     "bg-gray-100 text-text-secondary";
 
   const branch =
-    getBranchLabel(
-      member?.branch ||
-        member?.branch_name_km ||
-        member?.branchNameKm,
-    );
+    getBranchLabel(member);
 
   const dateOfBirth =
     member?.date_of_birth ||
@@ -540,13 +620,23 @@ export default function MemberInfoCard({
 
   const nationality =
     getLookupLabel(
-      member?.nationality,
+      member?.nationality ||
+        member?.nationality_name_km ||
+        member?.nationalityNameKm,
     );
 
   const ethnicity =
     getLookupLabel(
-      member?.ethnicity,
+      member?.ethnicity ||
+        member?.ethnicity_name_km ||
+        member?.ethnicityNameKm,
     );
+
+  /*
+   * =========================================
+   * PROFILE IMAGE UPLOAD
+   * =========================================
+   */
 
   const handleChooseImage = () => {
     if (!allowProfileChange) {
@@ -635,6 +725,9 @@ export default function MemberInfoCard({
           return;
         }
 
+        /*
+         * Update this card immediately.
+         */
         setProfilePreview(
           imageData,
         );
@@ -650,6 +743,10 @@ export default function MemberInfoCard({
         file,
       );
 
+      /*
+       * Allows selecting the same
+       * file again.
+       */
       event.target.value = "";
     };
 
@@ -680,7 +777,9 @@ export default function MemberInfoCard({
           xl:gap-6
         "
       >
-        {/* PROFILE */}
+        {/* =================================
+            PROFILE
+        ================================= */}
 
         <div className="flex min-w-0 items-start gap-4 sm:gap-5">
           <div className="shrink-0">
@@ -720,17 +819,7 @@ export default function MemberInfoCard({
                     96px
                   "
                   className="object-cover"
-
-                  /*
-                   * Important:
-                   * This allows backend images such as:
-                   *
-                   * http://localhost:8081/uploads/...
-                   *
-                   * without Next.js image host validation.
-                   */
                   unoptimized
-
                   onError={() =>
                     setProfilePreview(
                       DEFAULT_PROFILE_IMAGE,
@@ -805,6 +894,8 @@ export default function MemberInfoCard({
             )}
           </div>
 
+          {/* NAME / ROLE / STATUS */}
+
           <div className="min-w-0 pt-0.5 text-white">
             <h2
               className="
@@ -813,9 +904,7 @@ export default function MemberInfoCard({
                 font-bold
                 sm:text-2xl
               "
-              title={
-                displayName
-              }
+              title={displayName}
             >
               {displayName}
             </h2>
@@ -828,9 +917,7 @@ export default function MemberInfoCard({
                 text-gray-200
                 sm:text-sm
               "
-              title={
-                englishName
-              }
+              title={englishName}
             >
               {englishName}
             </p>
@@ -867,7 +954,9 @@ export default function MemberInfoCard({
 
         <div className="hidden h-24 w-px bg-white/40 xl:block" />
 
-        {/* GENDER + BRANCH */}
+        {/* =================================
+            GENDER + BRANCH
+        ================================= */}
 
         <InfoGroup
           firstLabel="ភេទ"
@@ -888,28 +977,30 @@ export default function MemberInfoCard({
           }
         />
 
-        {/* PHONE + EMAIL */}
+        {/* =================================
+            PHONE + EMAIL
+        ================================= */}
 
         <InfoGroup
           firstLabel="លេខទូរស័ព្ទ"
           firstValue={
-            member?.phone ||
-            "-"
+            member?.phone || "-"
           }
           firstIcon={
             <Phone className="h-4 w-4 shrink-0" />
           }
           secondLabel="អ៊ីមែល"
           secondValue={
-            member?.email ||
-            "-"
+            member?.email || "-"
           }
           secondIcon={
             <Mail className="h-4 w-4 shrink-0" />
           }
         />
 
-        {/* DATES */}
+        {/* =================================
+            DATES
+        ================================= */}
 
         <InfoGroup
           firstLabel="ថ្ងៃកំណើត"
@@ -928,7 +1019,9 @@ export default function MemberInfoCard({
           }
         />
 
-        {/* NATIONALITY + ETHNICITY */}
+        {/* =================================
+            NATIONALITY + ETHNICITY
+        ================================= */}
 
         <InfoGroup
           firstLabel="សញ្ជាតិ"
@@ -950,6 +1043,12 @@ export default function MemberInfoCard({
     </div>
   );
 }
+
+/*
+ * =========================================
+ * INFO GROUP
+ * =========================================
+ */
 
 function InfoGroup({
   firstLabel,
@@ -988,6 +1087,12 @@ function InfoGroup({
     </div>
   );
 }
+
+/*
+ * =========================================
+ * INFO ITEM
+ * =========================================
+ */
 
 function InfoItem({
   label,

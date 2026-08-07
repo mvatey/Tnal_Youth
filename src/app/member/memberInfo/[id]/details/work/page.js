@@ -8,7 +8,8 @@ import BoxFill from "@/components/forms/boxFill.js";
 import FormDate from "@/components/forms/FormDate.js";
 import FormSelect from "@/components/forms/FormSelect";
 import DeleteButton from "@/components/forms/DeleteButton";
-import membersData from "@/data/members.json";
+import { deleteMemberRecord, loadMemberRecords, saveMemberRecords } from "@/lib/memberRecords";
+import useMemberPermissions from "@/hooks/useMemberPermissions";
 
 function createEmptyWork() {
   return {
@@ -23,27 +24,31 @@ function createEmptyWork() {
 }
 
 export default function WorkPage() {
+  const { isAdmin } = useMemberPermissions();
   const params = useParams();
   const memberId = String(params?.id ?? "");
   const [member, setMember] = useState(null);
   const [works, setWorks] = useState([]);
 
   useEffect(() => {
-    const selectedMember = membersData.find((item) => String(item.id) === memberId);
-
-    if (!selectedMember) {
-      setMember(null);
-      setWorks([]);
-      return;
-    }
-
-    setMember(selectedMember);
-
-    if (Array.isArray(selectedMember.workHistory) && selectedMember.workHistory.length > 0) {
-      setWorks(selectedMember.workHistory);
-    } else {
-      setWorks([createEmptyWork()]);
-    }
+    const controller = new AbortController();
+    loadMemberRecords(memberId, "work-history", controller.signal)
+      .then((rows) => {
+        setMember({ id: memberId });
+        setWorks(rows.length ? rows.map((row) => ({
+          id: row.id,
+          company: row.organization_name || "",
+          address: row.address || "",
+          position: row.position_title || "",
+          appointment: row.role_title || "",
+          startDate: row.start_date || "",
+          endDate: row.end_date || "",
+        })) : [createEmptyWork()]);
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") setMember(null);
+      });
+    return () => controller.abort();
   }, [memberId]);
 
   function handleWorkChange(id, field, value) {
@@ -54,22 +59,26 @@ export default function WorkPage() {
     setWorks((previousWorks) => [...previousWorks, createEmptyWork()]);
   }
 
-  function removeWork(id) {
+  async function removeWork(id) {
+    await deleteMemberRecord(memberId, "work-history", id);
     setWorks((previousWorks) => {
       if (previousWorks.length === 1) return previousWorks;
       return previousWorks.filter((work) => work.id !== id);
     });
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
-    const updatedMember = {
-      ...member,
-      workHistory: works,
-    };
-
-    console.log("Updated member:", updatedMember);
+    const rows = await saveMemberRecords(memberId, "work-history", works, (item) => ({
+      organization_name: item.company,
+      position_title: item.position,
+      role_title: item.appointment || null,
+      address: item.address || null,
+      start_date: item.startDate || null,
+      end_date: item.endDate || null,
+    }));
+    setWorks(rows.map((row) => ({ id: row.id, company: row.organization_name || "", address: row.address || "", position: row.position_title || "", appointment: row.role_title || "", startDate: row.start_date || "", endDate: row.end_date || "" })));
     alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
   }
 
@@ -83,6 +92,7 @@ export default function WorkPage() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <fieldset disabled={isAdmin} className={isAdmin ? "member-readonly contents [&_button]:hidden" : "contents"}>
       <div className="rounded-xl border border-gray-200 bg-white p-6">
         <h2 className="text-lg font-bold text-primary">ប្រវត្តិការងារ</h2>
 
@@ -123,6 +133,7 @@ export default function WorkPage() {
       <div className="flex justify-end">
         <SaveButton />
       </div>
+      </fieldset>
     </form>
   );
 }

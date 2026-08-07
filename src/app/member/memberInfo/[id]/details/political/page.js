@@ -10,9 +10,8 @@ import FormDate from "@/components/forms/FormDate.js";
 import FormSelect from "@/components/forms/FormSelect";
 import DeleteButton from "@/components/forms/DeleteButton";
 
-import membersData from "@/data/members.json";
-import locationData from "@/data/location.json";
-import politicalData from "@/data/political.json";
+import { deleteMemberRecord, loadMemberRecords, saveMemberRecords } from "@/lib/memberRecords";
+import useMemberPermissions from "@/hooks/useMemberPermissions";
 
 function createEmptyPolitical() {
   return {
@@ -22,32 +21,27 @@ function createEmptyPolitical() {
 }
 
 export default function PoliticalPage() {
+  const { isAdmin } = useMemberPermissions();
   const params = useParams();
   const memberId = String(params?.id ?? "");
 
   const [member, setMember] = useState(null);
   const [politicals, setPoliticals] = useState([]);
+  const [parties, setParties] = useState([]);
 
   useEffect(() => {
-    const selectedMember = membersData.find(
-      (item) => String(item.id) === memberId,
-    );
-
-    if (!selectedMember) {
-      setMember(null);
-      setPoliticals([]);
-      return;
-    }
-
-    setMember(selectedMember);
-
-    const politicalHistory = Array.isArray(selectedMember.politicalHistory)
-      ? selectedMember.politicalHistory
-      : [];
-
-    setPoliticals(
-      politicalHistory.length > 0 ? politicalHistory : [createEmptyPolitical()],
-    );
+    const controller = new AbortController();
+    Promise.all([
+      loadMemberRecords(memberId, "political-affiliations", controller.signal),
+      fetch("/api/lookups/political-parties", { cache: "no-store", signal: controller.signal })
+        .then((response) => response.ok ? response.json() : []),
+    ]).then(([rows, partyOptions]) => {
+        setParties(Array.isArray(partyOptions) ? partyOptions : partyOptions?.content || []);
+        setMember({ id: memberId });
+        setPoliticals(rows.length ? rows.map((row) => ({ id: row.id, organization: row.party_id || "", workLocation: row.location || "", country: row.country || "", position: row.position_title || "", cardNumber: row.card_no || "", joinedDate: row.start_date || "", leftDate: row.end_date || "" })) : [createEmptyPolitical()]);
+      })
+      .catch((error) => { if (error.name !== "AbortError") setMember(null); });
+    return () => controller.abort();
   }, [memberId]);
 
   function handlePoliticalChange(id, field, value) {
@@ -67,7 +61,8 @@ export default function PoliticalPage() {
     setPoliticals((previous) => [...previous, createEmptyPolitical()]);
   }
 
-  function removePolitical(id) {
+  async function removePolitical(id) {
+    await deleteMemberRecord(memberId, "political-affiliations", id);
     setPoliticals((previous) => {
       if (previous.length === 1) {
         return previous;
@@ -77,17 +72,23 @@ export default function PoliticalPage() {
     });
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!member) return;
 
-    const updatedMember = {
-      ...member,
-      politicalHistory: politicals,
-    };
-
-    console.log("Updated member:", updatedMember);
+    const rows = await saveMemberRecords(memberId, "political-affiliations", politicals, (item) => ({
+      party_id: Number(item.organization),
+      country: item.country || null,
+      location: item.workLocation || null,
+      position_title: item.position || null,
+      card_no: item.cardNumber || null,
+      start_date: item.joinedDate || null,
+      end_date: item.leftDate || null,
+      is_current: !item.leftDate,
+      note: item.note || null,
+    }));
+    setPoliticals(rows.map((row) => ({ id: row.id, organization: row.party_id || "", workLocation: row.location || "", country: row.country || "", position: row.position_title || "", cardNumber: row.card_no || "", joinedDate: row.start_date || "", leftDate: row.end_date || "" })));
     alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
   }
 
@@ -101,6 +102,7 @@ export default function PoliticalPage() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <fieldset disabled={isAdmin} className={isAdmin ? "member-readonly contents [&_button]:hidden" : "contents"}>
       <div className="rounded-xl border border-gray-200 bg-white p-5">
         <h2 className="text-lg font-bold text-primary">កិច្ចការនយោបាយ</h2>
 
@@ -110,6 +112,7 @@ export default function PoliticalPage() {
               key={item.id}
               index={index}
               item={item}
+              parties={parties}
               canDelete={politicals.length > 1}
               onChange={(field, value) =>
                 handlePoliticalChange(item.id, field, value)
@@ -134,21 +137,12 @@ export default function PoliticalPage() {
       <div className="flex justify-end">
         <SaveButton type="submit" />
       </div>
+      </fieldset>
     </form>
   );
 }
 
-function PoliticalGroup({ index, item, canDelete, onChange, onDelete }) {
-  const countries = Array.isArray(locationData.countries)
-    ? locationData.countries
-    : [];
-
-  const workLocations = Array.isArray(politicalData.workLocations)
-    ? politicalData.workLocations
-    : [];
-
-  const roles = Array.isArray(politicalData.roles) ? politicalData.roles : [];
-
+function PoliticalGroup({ index, item, parties, canDelete, onChange, onDelete }) {
   return (
     <div className="rounded-xl border border-gray-300 p-6">
       <h3 className="mb-5 text-sm font-semibold text-text-primary">
@@ -156,19 +150,19 @@ function PoliticalGroup({ index, item, canDelete, onChange, onDelete }) {
       </h3>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-        <BoxFill
-          label="ឈ្មោះ ស្ថាប័ន"
-          placeholder="បញ្ចូលឈ្មោះស្ថាប័ន"
+        <FormSelect
+          label="បក្ស័"
+          placeholder="ជ្រើសរើសបក្ស័"
           value={item.organization ?? ""}
           onChange={(event) => onChange("organization", event.target.value)}
+          options={parties}
         />
 
-        <FormSelect
+        <BoxFill
           label="ទីកន្លែងបំពេញការងារ"
-          placeholder="ជ្រើសរើសទីកន្លែងបំពេញការងារ"
+          placeholder="បញ្ចូលទីកន្លែងបំពេញការងារ"
           value={item.workLocation ?? ""}
           onChange={(event) => onChange("workLocation", event.target.value)}
-          options={workLocations}
         />
 
         <BoxFill

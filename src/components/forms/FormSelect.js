@@ -73,7 +73,7 @@ export default function FormSelect({
 
   return (
     <div
-      className={`min-w-0 ${className}`}
+      className={`min-w-0 ${isDisabled ? "[&_label]:text-gray-400" : ""} ${className}`}
     >
       {label && (
         <label

@@ -6,37 +6,43 @@ const BACKEND_URL =
   process.env.BACKEND_API_URL ||
   "http://localhost:8081/api";
 
-const ALLOWED_ACTIONS =
-  new Set([
-    "enable",
-    "disable",
-  ]);
-
-export async function PATCH(
+export async function GET(
   request,
-  context,
+  { params },
 ) {
   const {
     memberId,
-    action,
-  } = await context.params;
+  } = await params;
 
-  if (
-    !ALLOWED_ACTIONS.has(
-      action,
-    )
-  ) {
-    return Response.json(
-      {
-        message:
-          "Invalid account action",
-      },
-      {
-        status: 404,
-      },
-    );
-  }
+  return proxyFamily(
+    memberId,
+    "GET",
+  );
+}
 
+export async function PUT(
+  request,
+  { params },
+) {
+  const {
+    memberId,
+  } = await params;
+
+  const body =
+    await request.text();
+
+  return proxyFamily(
+    memberId,
+    "PUT",
+    body,
+  );
+}
+
+async function proxyFamily(
+  memberId,
+  method,
+  body,
+) {
   const cookieStore =
     await cookies();
 
@@ -60,9 +66,9 @@ export async function PATCH(
   try {
     const backendResponse =
       await fetch(
-        `${BACKEND_URL}/members/${memberId}/account/${action}`,
+        `${BACKEND_URL}/members/${memberId}/family`,
         {
-          method: "PATCH",
+          method,
 
           headers: {
             Accept:
@@ -70,7 +76,20 @@ export async function PATCH(
 
             Authorization:
               `Bearer ${accessToken}`,
+
+            ...(method === "PUT"
+              ? {
+                  "Content-Type":
+                    "application/json",
+                }
+              : {}),
           },
+
+          ...(method === "PUT"
+            ? {
+                body,
+              }
+            : {}),
 
           cache: "no-store",
         },
@@ -96,14 +115,14 @@ export async function PATCH(
     );
   } catch (error) {
     console.error(
-      "Account status proxy:",
+      "Family proxy error:",
       error,
     );
 
     return Response.json(
       {
         message:
-          "Could not update account status",
+          "Could not process family information",
       },
       {
         status: 502,

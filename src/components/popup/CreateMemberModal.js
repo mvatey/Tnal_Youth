@@ -29,15 +29,21 @@ const EMPTY_FORM = {
 };
 
 async function fetchJson(path) {
-  const response = await fetch(`/api${path}`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-    cache: "no-store",
-  });
+  const response = await fetch(
+    `/api${path}`,
+    {
+      method: "GET",
 
-  const text = await response.text();
+      headers: {
+        Accept: "application/json",
+      },
+
+      cache: "no-store",
+    },
+  );
+
+  const text =
+    await response.text();
 
   let body = null;
 
@@ -52,7 +58,9 @@ async function fetchJson(path) {
   if (!response.ok) {
     const message =
       typeof body === "object"
-        ? body?.message || body?.error
+        ? body?.message ||
+          body?.detail ||
+          body?.error
         : body;
 
     throw new Error(
@@ -64,17 +72,29 @@ async function fetchJson(path) {
   return body;
 }
 
-async function createMember(payload) {
-  const response = await fetch("/api/members", {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+async function createMember(
+  payload,
+) {
+  const response = await fetch(
+    "/api/members",
+    {
+      method: "POST",
 
-  const text = await response.text();
+      headers: {
+        Accept: "application/json",
+        "Content-Type":
+          "application/json",
+      },
+
+      body:
+        JSON.stringify(
+          payload,
+        ),
+    },
+  );
+
+  const text =
+    await response.text();
 
   let body = null;
 
@@ -89,7 +109,9 @@ async function createMember(payload) {
   if (!response.ok) {
     const message =
       typeof body === "object"
-        ? body?.message || body?.error
+        ? body?.message ||
+          body?.detail ||
+          body?.error
         : body;
 
     throw new Error(
@@ -99,6 +121,30 @@ async function createMember(payload) {
   }
 
   return body;
+}
+
+function normalizeArray(data) {
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (
+    Array.isArray(
+      data?.data,
+    )
+  ) {
+    return data.data;
+  }
+
+  if (
+    Array.isArray(
+      data?.content,
+    )
+  ) {
+    return data.content;
+  }
+
+  return [];
 }
 
 export default function CreateMemberModal({
@@ -106,172 +152,202 @@ export default function CreateMemberModal({
   onClose,
   onSave,
 }) {
-  const [mounted, setMounted] =
-    useState(false);
+  const [
+    mounted,
+    setMounted,
+  ] = useState(false);
 
-  const [form, setForm] =
-    useState(EMPTY_FORM);
+  const [
+    form,
+    setForm,
+  ] = useState(
+    EMPTY_FORM,
+  );
 
-  const [branchLookups, setBranchLookups] =
-  useState([]);
+  const [
+    branchLookups,
+    setBranchLookups,
+  ] = useState([]);
 
-  const [statusLookups, setStatusLookups] =
-    useState([]);
+  const [
+    statusLookups,
+    setStatusLookups,
+  ] = useState([]);
 
-  const [genderLookups, setGenderLookups] =
-    useState([]);
+  const [
+    genderLookups,
+    setGenderLookups,
+  ] = useState([]);
 
   const [
     nationalityLookups,
     setNationalityLookups,
   ] = useState([]);
 
-  const [levelLookups, setLevelLookups] =
-    useState([]);
+  const [
+    levelLookups,
+    setLevelLookups,
+  ] = useState([]);
 
-  const [roleLookups, setRoleLookups] =
-    useState([]);
+  const [
+    roleLookups,
+    setRoleLookups,
+  ] = useState([]);
 
-  const [isSubmitting, setIsSubmitting] =
-    useState(false);
+  const [
+    isSubmitting,
+    setIsSubmitting,
+  ] = useState(false);
 
   const [
     showValidationError,
     setShowValidationError,
   ] = useState(false);
 
-  const [submitError, setSubmitError] =
-    useState("");
+  const [
+    submitError,
+    setSubmitError,
+  ] = useState("");
+
+  /*
+   * =========================================
+   * MOUNT
+   * =========================================
+   */
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  /*
+   * =========================================
+   * RESET WHEN MODAL OPENS
+   * =========================================
+   */
+
   useEffect(() => {
     if (!open) {
       return;
     }
 
-    setForm(EMPTY_FORM);
+    setForm(
+      EMPTY_FORM,
+    );
 
-    setShowValidationError(false);
+    setShowValidationError(
+      false,
+    );
 
     setSubmitError("");
   }, [open]);
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    let cancelled = false;
-
-    async function loadLookups() {
-      try {
-        const [
-        branches,
-        statuses,
-        genders,
-        nationalities,
-        levels,
-        roles,
-      ] = await Promise.all([
-        fetchJson("/lookups/branches"),
-
-        fetchJson(
-          "/lookups/member-statuses",
-        ),
-
-        fetchJson("/lookups/genders"),
-
-        fetchJson(
-          "/lookups/nationalities",
-        ),
-
-        fetchJson(
-          "/lookups/member-levels",
-        ),
-
-        fetchJson(
-          "/lookups/user-roles",
-        ),
-      ]);
-
-        if (cancelled) {
-          return;
-        }
-
-        const branchData =
-          Array.isArray(branches)
-            ? branches
-            : Array.isArray(branches?.data)
-              ? branches.data
-              : Array.isArray(branches?.content)
-                ? branches.content
-                : [];
-
-        setBranchLookups(branchData);
-
-          setStatusLookups(
-            Array.isArray(statuses)
-              ? statuses
-              : [],
-          );
-
-        setGenderLookups(
-          Array.isArray(genders)
-            ? genders
-            : [],
-        );
-
-        setNationalityLookups(
-          Array.isArray(nationalities)
-            ? nationalities
-            : [],
-        );
-
-        setLevelLookups(
-          Array.isArray(levels)
-            ? levels
-            : [],
-        );
-
-        setRoleLookups(
-          Array.isArray(roles)
-            ? roles
-            : [],
-        );
-      } catch (error) {
-        if (!cancelled) {
-          console.warn(
-            "Failed to load create-member lookups:",
-            error.message,
-          );
-
-          setSubmitError(
-            "មិនអាចទាញយកទិន្នន័យសម្រាប់បង្កើតសមាជិកបានទេ។",
-          );
-        }
-      }
-    }
-
-    loadLookups();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [open]);
+  /*
+   * =========================================
+   * LOAD LOOKUPS
+   * =========================================
+   */
 
   useEffect(() => {
     if (!open) {
       return undefined;
     }
 
-    const handleEscape = (event) => {
-      if (event.key === "Escape") {
-        onClose?.();
+    let cancelled =
+      false;
+
+    async function loadLookup(
+      path,
+      setter,
+    ) {
+      try {
+        const data =
+          await fetchJson(
+            path,
+          );
+
+        if (cancelled) {
+          return;
+        }
+
+        setter(
+          normalizeArray(
+            data,
+          ),
+        );
+      } catch (error) {
+        if (!cancelled) {
+          console.error(
+            `Cannot load ${path}:`,
+            error,
+          );
+
+          setter([]);
+        }
       }
+    }
+
+    /*
+     * Load independently.
+     *
+     * One failed lookup should not
+     * make every dropdown empty.
+     */
+
+    loadLookup(
+      "/lookups/branches",
+      setBranchLookups,
+    );
+
+    loadLookup(
+      "/lookups/member-statuses",
+      setStatusLookups,
+    );
+
+    loadLookup(
+      "/lookups/genders",
+      setGenderLookups,
+    );
+
+    loadLookup(
+      "/lookups/nationalities",
+      setNationalityLookups,
+    );
+
+    loadLookup(
+      "/lookups/member-levels",
+      setLevelLookups,
+    );
+
+    loadLookup(
+      "/lookups/user-roles",
+      setRoleLookups,
+    );
+
+    return () => {
+      cancelled = true;
     };
+  }, [open]);
+
+  /*
+   * =========================================
+   * ESCAPE
+   * =========================================
+   */
+
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    const handleEscape =
+      (event) => {
+        if (
+          event.key ===
+          "Escape"
+        ) {
+          onClose?.();
+        }
+      };
 
     window.addEventListener(
       "keydown",
@@ -284,7 +360,16 @@ export default function CreateMemberModal({
         handleEscape,
       );
     };
-  }, [open, onClose]);
+  }, [
+    open,
+    onClose,
+  ]);
+
+  /*
+   * =========================================
+   * LOCK PAGE SCROLL
+   * =========================================
+   */
 
   useEffect(() => {
     if (!open) {
@@ -292,138 +377,338 @@ export default function CreateMemberModal({
     }
 
     const previousOverflow =
-      document.body.style.overflow;
+      document.body.style
+        .overflow;
 
-    document.body.style.overflow =
-      "hidden";
+    document.body.style
+      .overflow = "hidden";
 
     return () => {
-      document.body.style.overflow =
+      document.body.style
+        .overflow =
         previousOverflow;
     };
   }, [open]);
+
+  /*
+   * =========================================
+   * FORM CHANGE
+   * =========================================
+   */
 
   const update =
     (field) => (event) => {
       const value =
         event.target.value;
 
-      setForm((previousForm) => ({
-        ...previousForm,
-        [field]: value,
-      }));
+      setForm(
+        (previousForm) => ({
+          ...previousForm,
+          [field]: value,
+        }),
+      );
 
-      setShowValidationError(false);
+      setShowValidationError(
+        false,
+      );
 
       setSubmitError("");
     };
 
-  const genderOptions = useMemo(
-    () =>
-      genderLookups.map((gender) => ({
-        label:
-          gender.labelKm ||
-          gender.label_km ||
-          gender.labelEn ||
-          gender.code,
+  /*
+   * =========================================
+   * GENDER OPTIONS
+   * =========================================
+   */
 
-        value: gender.code,
-      })),
-    [genderLookups],
-  );
+  const genderOptions =
+    useMemo(
+      () =>
+        genderLookups
+          .map(
+            (gender) => {
+              const code =
+                String(
+                  gender?.code ??
+                    gender?.value ??
+                    "",
+                ).toUpperCase();
 
-  const nationalityOptions = useMemo(
-    () =>
-      nationalityLookups.map(
-        (nationality) => ({
-          label:
-            nationality.labelKm ||
-            nationality.label_km ||
-            nationality.labelEn ||
-            nationality.code,
+              const label =
+                gender?.labelKm ||
+                gender?.label_km ||
+                gender?.labelEn ||
+                gender?.label_en ||
+                gender?.code ||
+                "";
 
-          value: String(
-            nationality.id,
-          ),
-        }),
-      ),
-    [nationalityLookups],
-  );
-
-  const levelOptions = useMemo(
-    () =>
-      levelLookups.map((level) => ({
-        label:
-          level.labelKm ||
-          level.label_km ||
-          level.labelEn ||
-          level.code,
-
-        value: String(level.id),
-      })),
-    [levelLookups],
-  );
-
-  const roleOptions = useMemo(
-    () =>
-      roleLookups.map((role) => ({
-        label:
-          role.labelKm ||
-          role.label_km ||
-          role.labelEn ||
-          role.code,
-
-        value: role.code,
-      })),
-    [roleLookups],
-  );
-
-  const branchOptions = useMemo(
-    () =>
-        branchLookups
-          .map((branch) => ({
-            label:
-              branch?.label_km ||
-              branch?.labelKm ||
-              branch?.name_km ||
-              branch?.nameKm ||
-              branch?.name_en ||
-              branch?.nameEn ||
-              branch?.branch_code ||
-              branch?.branchCode ||
-              "",
-
-            value: String(
-              branch?.id ??
-              branch?.value ??
-              "",
-            ),
-          }))
+              return {
+                label,
+                value: code,
+              };
+            },
+          )
           .filter(
-            (branch) =>
-              branch.value !== "" &&
-              branch.label !== "",
+            (option) =>
+              option.value !==
+                "" &&
+              option.label !==
+                "",
+          ),
+      [genderLookups],
+    );
+
+  /*
+   * =========================================
+   * NATIONALITY OPTIONS
+   * =========================================
+   */
+
+  const nationalityOptions =
+    useMemo(
+      () =>
+        nationalityLookups
+          .map(
+            (
+              nationality,
+            ) => {
+              const id =
+                nationality?.id ??
+                nationality?.value ??
+                "";
+
+              const label =
+                nationality?.labelKm ||
+                nationality?.label_km ||
+                nationality?.labelEn ||
+                nationality?.label_en ||
+                nationality?.code ||
+                "";
+
+              return {
+                label,
+
+                value:
+                  id !== null &&
+                  id !==
+                    undefined
+                    ? String(
+                        id,
+                      )
+                    : "",
+              };
+            },
+          )
+          .filter(
+            (option) =>
+              option.value !==
+                "" &&
+              option.label !==
+                "",
+          ),
+      [
+        nationalityLookups,
+      ],
+    );
+
+  /*
+   * =========================================
+   * MEMBER LEVEL OPTIONS
+   * =========================================
+   */
+
+  const levelOptions =
+    useMemo(
+      () =>
+        levelLookups
+          .map(
+            (level) => {
+              const id =
+                level?.id ??
+                level?.value ??
+                "";
+
+              const label =
+                level?.labelKm ||
+                level?.label_km ||
+                level?.labelEn ||
+                level?.label_en ||
+                level?.code ||
+                "";
+
+              return {
+                label,
+
+                value:
+                  id !== null &&
+                  id !==
+                    undefined
+                    ? String(
+                        id,
+                      )
+                    : "",
+              };
+            },
+          )
+          .filter(
+            (option) =>
+              option.value !==
+                "" &&
+              option.label !==
+                "",
+          ),
+      [levelLookups],
+    );
+
+  /*
+   * =========================================
+   * ROLE OPTIONS
+   * =========================================
+   */
+
+  const roleOptions =
+    useMemo(
+      () =>
+        roleLookups
+          .map(
+            (role) => {
+              const code =
+                String(
+                  role?.code ??
+                    role?.value ??
+                    "",
+                ).toUpperCase();
+
+              const label =
+                role?.labelKm ||
+                role?.label_km ||
+                role?.labelEn ||
+                role?.label_en ||
+                role?.code ||
+                "";
+
+              return {
+                label,
+                value: code,
+              };
+            },
+          )
+          .filter(
+            (option) =>
+              option.value !==
+                "" &&
+              option.label !==
+                "",
+          ),
+      [roleLookups],
+    );
+
+  /*
+   * =========================================
+   * BRANCH OPTIONS
+   * =========================================
+   */
+
+  const branchOptions =
+    useMemo(
+      () =>
+        branchLookups
+          .map(
+            (branch) => {
+              const id =
+                branch?.id ??
+                branch?.value ??
+                "";
+
+              const label =
+                branch?.label_km ||
+                branch?.labelKm ||
+                branch?.name_km ||
+                branch?.nameKm ||
+                branch?.name_en ||
+                branch?.nameEn ||
+                branch?.branch_code ||
+                branch?.branchCode ||
+                "";
+
+              return {
+                label,
+
+                value:
+                  id !== null &&
+                  id !==
+                    undefined
+                    ? String(
+                        id,
+                      )
+                    : "",
+              };
+            },
+          )
+          .filter(
+            (option) =>
+              option.value !==
+                "" &&
+              option.label !==
+                "",
           ),
       [branchLookups],
-    );``
+    );
 
-  const statusOptions = useMemo(
-    () =>
-      statusLookups.map((status) => ({
-        label:
-          status?.labelKm ||
-          status?.label_km ||
-          status?.labelEn ||
-          status?.label_en ||
-          status?.code ||
-          "-",
+  /*
+   * =========================================
+   * STATUS OPTIONS
+   * =========================================
+   */
 
-        value: String(
-          status?.id ?? "",
-        ),
-      })),
-    [statusLookups],
-  );
+  const statusOptions =
+    useMemo(
+      () =>
+        statusLookups
+          .map(
+            (status) => {
+              const id =
+                status?.id ??
+                status?.value ??
+                "";
+
+              const label =
+                status?.labelKm ||
+                status?.label_km ||
+                status?.labelEn ||
+                status?.label_en ||
+                status?.code ||
+                "";
+
+              return {
+                label,
+
+                value:
+                  id !== null &&
+                  id !==
+                    undefined
+                    ? String(
+                        id,
+                      )
+                    : "",
+              };
+            },
+          )
+          .filter(
+            (option) =>
+              option.value !==
+                "" &&
+              option.label !==
+                "",
+          ),
+      [statusLookups],
+    );
+
+  /*
+   * =========================================
+   * VALIDATION
+   * =========================================
+   */
 
   const requiredFields = [
     "fullNameKm",
@@ -440,101 +725,134 @@ export default function CreateMemberModal({
   ];
 
   const isFormValid =
-    requiredFields.every((field) => {
-      return (
-        String(form[field] ?? "").trim() !==
-        ""
+    requiredFields.every(
+      (field) =>
+        String(
+          form[field] ?? "",
+        ).trim() !== "",
+    );
+
+  /*
+   * =========================================
+   * SUBMIT
+   * =========================================
+   */
+
+  const submit =
+    async (event) => {
+      event.preventDefault();
+
+      if (
+        !isFormValid ||
+        isSubmitting
+      ) {
+        setShowValidationError(
+          true,
+        );
+
+        return;
+      }
+
+      setShowValidationError(
+        false,
       );
-    });
 
-  const submit = async (event) => {
-    event.preventDefault();
+      setSubmitError("");
 
-    if (
-      !isFormValid ||
-      isSubmitting
-    ) {
-      setShowValidationError(true);
+      setIsSubmitting(true);
 
-      return;
-    }
+      const payload = {
+        full_name_km:
+          form.fullNameKm.trim(),
 
-    setShowValidationError(false);
+        full_name_en:
+          form.fullNameEn.trim(),
 
-    setSubmitError("");
+        gender:
+          form.gender,
 
-    setIsSubmitting(true);
+        nationality_id:
+          Number(
+            form.nationalityId,
+          ),
 
-    const payload = {
-      full_name_km:
-        form.fullNameKm.trim(),
+        date_of_birth:
+          form.dateOfBirth,
 
-      full_name_en:
-        form.fullNameEn.trim(),
+        phone:
+          form.phone.trim(),
 
-      gender: form.gender,
+        email:
+          form.email.trim() ||
+          null,
 
-      nationality_id: Number(
-        form.nationalityId,
-      ),
+        branch_id:
+          Number(
+            form.branchId,
+          ),
 
-      date_of_birth:
-        form.dateOfBirth,
+        level_id:
+          Number(
+            form.levelId,
+          ),
 
-      phone: form.phone.trim(),
+        role:
+          form.role,
 
-      email:
-        form.email.trim() || null,
+        joined_on:
+          form.joinedOn,
 
-      branch_id: Number(
-        form.branchId,
-      ),
+        status_id:
+          Number(
+            form.statusId,
+          ),
+      };
 
-      level_id: Number(
-        form.levelId,
-      ),
+      try {
+        const createdMember =
+          await createMember(
+            payload,
+          );
 
-      role: form.role,
+        await onSave?.(
+          createdMember,
+        );
 
-      joined_on: form.joinedOn,
+        setForm(
+          EMPTY_FORM,
+        );
 
-      status_id: Number(
-        form.statusId,
-      ),
+        onClose?.();
+      } catch (error) {
+        console.error(
+          "Cannot create member:",
+          error,
+        );
+
+        setSubmitError(
+          error.message ||
+            "មិនអាចបង្កើតសមាជិកបានទេ។",
+        );
+      } finally {
+        setIsSubmitting(
+          false,
+        );
+      }
     };
 
-    try {
-      const createdMember =
-        await createMember(payload);
-
-      await onSave?.(createdMember);
-
-      setForm(EMPTY_FORM);
-
-      onClose?.();
-    } catch (error) {
-      console.warn(
-        "Cannot create member:",
-        error.message,
-      );
-
-      setSubmitError(
-        error.message ||
-          "មិនអាចបង្កើតសមាជិកបានទេ។",
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  if (!open || !mounted) {
+  if (
+    !open ||
+    !mounted
+  ) {
     return null;
   }
 
   return createPortal(
     <div
       className="fixed inset-0 z-[9999] bg-black/40"
-      onMouseDown={(event) => {
+      onMouseDown={(
+        event,
+      ) => {
         if (
           event.target ===
           event.currentTarget
@@ -543,13 +861,63 @@ export default function CreateMemberModal({
         }
       }}
     >
-        <div className="absolute inset-0 flex items-start justify-center overflow-y-auto p-3 pt-5 sm:p-4 sm:pt-6 lg:bottom-0 lg:left-72 lg:right-0 lg:top-16 lg:items-start lg:pt-5">        <div
-          className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[680px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:rounded-2xl lg:max-h-[calc(100dvh-5rem)]"
-          onMouseDown={(event) =>
+      <div
+        className="
+          absolute
+          inset-0
+          flex
+          items-start
+          justify-center
+          overflow-y-auto
+          p-3
+          pt-5
+          sm:p-4
+          sm:pt-6
+          lg:bottom-0
+          lg:left-72
+          lg:right-0
+          lg:top-16
+          lg:items-start
+          lg:pt-5
+        "
+      >
+        <div
+          className="
+            flex
+            max-h-[calc(100dvh-1.5rem)]
+            w-full
+            max-w-[680px]
+            flex-col
+            overflow-hidden
+            rounded-xl
+            bg-white
+            shadow-2xl
+            sm:max-h-[calc(100dvh-2rem)]
+            sm:rounded-2xl
+            lg:max-h-[calc(100dvh-5rem)]
+          "
+          onMouseDown={(
+            event,
+          ) =>
             event.stopPropagation()
           }
         >
-          <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3 sm:px-5 sm:py-4">
+          {/* HEADER */}
+
+          <div
+            className="
+              flex
+              shrink-0
+              items-center
+              justify-between
+              border-b
+              border-border
+              px-4
+              py-3
+              sm:px-5
+              sm:py-4
+            "
+          >
             <h2 className="text-lg font-bold text-primary">
               បង្កើតសមាជិកថ្មី
             </h2>
@@ -558,56 +926,94 @@ export default function CreateMemberModal({
               type="button"
               onClick={onClose}
               aria-label="បិទ"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition hover:bg-gray-100 hover:text-text-primary"
+              className="
+                flex
+                h-8
+                w-8
+                items-center
+                justify-center
+                rounded-full
+                text-text-secondary
+                transition
+                hover:bg-gray-100
+                hover:text-text-primary
+              "
             >
               <X size={18} />
             </button>
           </div>
 
-          <form
-            onSubmit={submit}
-            className="flex min-h-0 flex-1 flex-col"
-          >
-            <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
-              <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
-                {/* 1. full_name_km */}
+          {/* FORM */}
 
+          <form
+            onSubmit={
+              submit
+            }
+            className="
+              flex
+              min-h-0
+              flex-1
+              flex-col
+            "
+          >
+            <div
+              className="
+                no-scrollbar
+                min-h-0
+                flex-1
+                overflow-y-auto
+                px-4
+                py-4
+                sm:px-5
+              "
+            >
+              <div
+                className="
+                  grid
+                  grid-cols-1
+                  gap-x-4
+                  gap-y-3
+                  sm:grid-cols-2
+                "
+              >
                 <BoxFill
                   label="ឈ្មោះជាភាសាខ្មែរ"
                   name="fullNameKm"
                   placeholder="បញ្ចូលឈ្មោះ"
-                  value={form.fullNameKm}
+                  value={
+                    form.fullNameKm
+                  }
                   onChange={update(
                     "fullNameKm",
                   )}
                 />
 
-                {/* 2. full_name_en */}
-
                 <BoxFill
                   label="ឈ្មោះជាអក្សរឡាតាំង"
                   name="fullNameEn"
                   placeholder="បញ្ចូលឈ្មោះ"
-                  value={form.fullNameEn}
+                  value={
+                    form.fullNameEn
+                  }
                   onChange={update(
                     "fullNameEn",
                   )}
                 />
 
-                {/* 3. gender */}
-
                 <FormSelect
                   label="ភេទ"
                   name="gender"
                   placeholder="ជ្រើសរើសភេទ"
-                  options={genderOptions}
-                  value={form.gender}
+                  options={
+                    genderOptions
+                  }
+                  value={
+                    form.gender
+                  }
                   onChange={update(
                     "gender",
                   )}
                 />
-
-                {/* 4. nationality_id */}
 
                 <FormSelect
                   label="សញ្ជាតិ"
@@ -624,97 +1030,111 @@ export default function CreateMemberModal({
                   )}
                 />
 
-                {/* 5. date_of_birth */}
-
                 <BoxFill
                   label="ថ្ងៃខែឆ្នាំកំណើត"
                   name="dateOfBirth"
                   type="date"
-                  value={form.dateOfBirth}
+                  value={
+                    form.dateOfBirth
+                  }
                   onChange={update(
                     "dateOfBirth",
                   )}
                 />
-
-                {/* 6. phone */}
 
                 <BoxFill
                   label="លេខទូរស័ព្ទ"
                   name="phone"
                   type="tel"
                   placeholder="បញ្ចូលលេខទូរស័ព្ទ"
-                  value={form.phone}
-                  onChange={update("phone")}
+                  value={
+                    form.phone
+                  }
+                  onChange={update(
+                    "phone",
+                  )}
                 />
-
-                {/* 7. email */}
 
                 <BoxFill
                   label="អ៊ីមែល"
                   name="email"
                   type="email"
                   placeholder="បញ្ចូលអ៊ីមែល"
-                  value={form.email}
-                  onChange={update("email")}
+                  value={
+                    form.email
+                  }
+                  onChange={update(
+                    "email",
+                  )}
                 />
-
-                {/* 8. branch_id */}
 
                 <FormSelect
                   label="សាខា"
                   name="branchId"
                   placeholder="ជ្រើសរើសសាខា"
-                  options={branchOptions}
-                  value={form.branchId}
+                  options={
+                    branchOptions
+                  }
+                  value={
+                    form.branchId
+                  }
                   onChange={update(
                     "branchId",
                   )}
                 />
 
-                {/* 9. level_id */}
-
                 <FormSelect
                   label="កាំ"
                   name="levelId"
                   placeholder="ជ្រើសរើសកាំ"
-                  options={levelOptions}
-                  value={form.levelId}
+                  options={
+                    levelOptions
+                  }
+                  value={
+                    form.levelId
+                  }
                   onChange={update(
                     "levelId",
                   )}
                 />
 
-                {/* 10. role */}
-
                 <FormSelect
                   label="តួនាទី"
                   name="role"
                   placeholder="ជ្រើសរើសតួនាទី"
-                  options={roleOptions}
-                  value={form.role}
-                  onChange={update("role")}
+                  options={
+                    roleOptions
+                  }
+                  value={
+                    form.role
+                  }
+                  onChange={update(
+                    "role",
+                  )}
                 />
-
-                {/* 11. joined_on */}
 
                 <BoxFill
                   label="ថ្ងៃខែឆ្នាំចូលរួម"
                   name="joinedOn"
                   type="date"
-                  value={form.joinedOn}
+                  value={
+                    form.joinedOn
+                  }
                   onChange={update(
                     "joinedOn",
                   )}
                 />
 
-                {/* 12. status_id */}
-
                 <FormSelect
                   label="ស្ថានភាព"
                   name="statusId"
                   placeholder="ជ្រើសរើសស្ថានភាព"
-                  options={statusOptions}
-                  value={form.statusId}
+                  options={
+                    statusOptions
+                  }
+                  value={
+                    form.statusId
+                  }
                   onChange={update(
                     "statusId",
                   )}
@@ -735,9 +1155,24 @@ export default function CreateMemberModal({
               )}
             </div>
 
-            <div className="shrink-0 border-t border-border bg-white px-4 py-3 sm:px-5 sm:py-4">
+            {/* ACTIONS */}
+
+            <div
+              className="
+                shrink-0
+                border-t
+                border-border
+                bg-white
+                px-4
+                py-3
+                sm:px-5
+                sm:py-4
+              "
+            >
               <FormActionButton
-                onCancel={onClose}
+                onCancel={
+                  onClose
+                }
                 isValid={
                   isFormValid &&
                   !isSubmitting

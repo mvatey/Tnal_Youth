@@ -7,10 +7,6 @@ import {
   useState,
 } from "react";
 
-import {
-  getSavedProfileImage,
-} from "@/lib/member/profileImageStorage";
-
 const ROLE_LABELS = {
   admin: "អ្នកគ្រប់គ្រង",
   branch_leader: "ប្រធានសាខា",
@@ -31,64 +27,194 @@ const ROLE_LABELS = {
 const DEFAULT_USER = {
   id: null,
   memberId: null,
-  role: "member",
+
+  role: "MEMBER",
+  account_role: "",
+
   name_kh: "",
   name_en: "",
+
   gender: "",
+
   email: "",
   phone: "",
+
   date_of_birth: "",
+
   branch: "",
+
   profile_photo: "",
 };
 
 function getMemberId(user) {
   const possibleIds = [
     user?.memberId,
-    user?.id,
     user?.member_id,
+    user?.id,
   ];
 
-  const validId = possibleIds.find(
-    (value) =>
-      value !== undefined &&
-      value !== null &&
-      String(value).trim() !== "",
-  );
+  const validId =
+    possibleIds.find(
+      (value) =>
+        value !== undefined &&
+        value !== null &&
+        String(value).trim() !== "",
+    );
 
   return validId ?? null;
 }
 
+function normalizeProfilePhoto(value) {
+  if (
+    typeof value !== "string" ||
+    !value.trim()
+  ) {
+    return "/profiles/default-avatar.jpg";
+  }
+
+  const trimmed =
+    value.trim();
+
+  /*
+   * Already usable URL/path.
+   */
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("/") ||
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("blob:")
+  ) {
+    return trimmed;
+  }
+
+  /*
+   * Backend relative file path:
+   *
+   * uploads/member-profiles/xxx.jpg
+   */
+  const backendOrigin =
+    process.env
+      .NEXT_PUBLIC_BACKEND_ORIGIN ||
+    "http://localhost:8081";
+
+  return `${backendOrigin}/${trimmed}`;
+}
+
 function getDefaultProfilePhoto(user) {
   const possibleImages = [
+    user?.profile_photo?.url,
+    user?.profilePhoto?.url,
+
     user?.profile_photo,
+    user?.profilePhoto,
     user?.profileImage,
     user?.profile_image,
-    user?.profilePhoto,
+
+    user?.photo_url,
+    user?.photoUrl,
   ];
 
-  const validImage = possibleImages.find(
-    (value) =>
-      typeof value === "string" &&
-      value.trim() !== "",
-  );
+  const validImage =
+    possibleImages.find(
+      (value) =>
+        typeof value === "string" &&
+        value.trim() !== "",
+    );
 
-  return validImage || "/profile.png";
+  return normalizeProfilePhoto(
+    validImage,
+  );
+}
+
+function getRole(user) {
+  return (
+    user?.account_role ||
+    user?.accountRole ||
+    user?.role ||
+    "MEMBER"
+  );
 }
 
 function getRoleLabel(role) {
   if (!role) {
-    return ROLE_LABELS.member;
+    return ROLE_LABELS.MEMBER;
+  }
+
+  const normalized =
+    String(role).trim();
+
+  return (
+    ROLE_LABELS[normalized] ||
+    ROLE_LABELS[
+      normalized.toLowerCase()
+    ] ||
+    normalized
+  );
+}
+
+function getNameKm(user) {
+  return (
+    user?.name_kh ||
+    user?.full_name_km ||
+    user?.fullNameKm ||
+    ""
+  );
+}
+
+function getNameEn(user) {
+  return (
+    user?.name_en ||
+    user?.full_name_en ||
+    user?.fullNameEn ||
+    ""
+  );
+}
+
+function getGender(user) {
+  const gender =
+    user?.gender;
+
+  if (
+    gender &&
+    typeof gender === "object"
+  ) {
+    return (
+      gender?.labelKm ||
+      gender?.label_km ||
+      gender?.labelEn ||
+      gender?.code ||
+      ""
+    );
+  }
+
+  return gender || "";
+}
+
+function getBranch(user) {
+  const branch =
+    user?.branch;
+
+  if (
+    branch &&
+    typeof branch === "object"
+  ) {
+    return (
+      branch?.nameKm ||
+      branch?.name_km ||
+      branch?.labelKm ||
+      branch?.label_km ||
+      branch?.nameEn ||
+      branch?.name_en ||
+      ""
+    );
   }
 
   return (
-    ROLE_LABELS[role] ||
-    ROLE_LABELS[
-      String(role)
-        .trim()
-        .toLowerCase()
-    ] ||
-    role
+    branch ||
+    user?.branch_name_km ||
+    user?.branchNameKm ||
+    ""
   );
 }
 
@@ -102,9 +228,11 @@ export default function IdCard({
   };
 
   const profileMemberId =
-    getMemberId(displayUser);
+    getMemberId(
+      displayUser,
+    );
 
-  const defaultProfilePhoto =
+  const backendProfilePhoto =
     getDefaultProfilePhoto(
       displayUser,
     );
@@ -113,64 +241,99 @@ export default function IdCard({
     profilePhoto,
     setProfilePhoto,
   ] = useState(
-    defaultProfilePhoto,
+    backendProfilePhoto,
   );
 
   const hasSelectedUser =
-    Boolean(profileMemberId);
+    Boolean(
+      profileMemberId,
+    );
 
   const hasCustomTemplate =
-    Boolean(templatePreview);
+    Boolean(
+      templatePreview,
+    );
 
-  const memberId = hasSelectedUser
-    ? String(
-        profileMemberId,
-      ).padStart(4, "0")
-    : "0000";
+  const memberId =
+    hasSelectedUser
+      ? String(
+          profileMemberId,
+        ).padStart(
+          4,
+          "0",
+        )
+      : "0000";
+
+  const role =
+    getRole(
+      displayUser,
+    );
 
   const roleLabel =
     getRoleLabel(
-      displayUser.role,
+      role,
     );
+
+  const nameKm =
+    getNameKm(
+      displayUser,
+    );
+
+  const nameEn =
+    getNameEn(
+      displayUser,
+    );
+
+  const gender =
+    getGender(
+      displayUser,
+    );
+
+  const branch =
+    getBranch(
+      displayUser,
+    );
+
+  /*
+   * =========================================
+   * PROFILE PHOTO
+   *
+   * Backend/member data is now the source
+   * of truth.
+   *
+   * We no longer read an old saved image
+   * from localStorage.
+   * =========================================
+   */
 
   useEffect(() => {
-    if (!profileMemberId) {
-      setProfilePhoto(
-        defaultProfilePhoto,
-      );
-
-      return undefined;
-    }
-
     setProfilePhoto(
-      getSavedProfileImage(
-        profileMemberId,
-        defaultProfilePhoto,
-      ),
+      backendProfilePhoto,
     );
 
-    const handleProfileImageChange = (
-      event,
-    ) => {
-      const changedMemberId =
-        event.detail?.memberId;
+    const handleProfileImageChange =
+      (event) => {
+        const changedMemberId =
+          event.detail?.memberId;
 
-      if (
-        String(
-          changedMemberId,
-        ) !==
-        String(
-          profileMemberId,
-        )
-      ) {
-        return;
-      }
+        if (
+          String(
+            changedMemberId,
+          ) !==
+          String(
+            profileMemberId,
+          )
+        ) {
+          return;
+        }
 
-      setProfilePhoto(
-        event.detail?.imageData ||
-          defaultProfilePhoto,
-      );
-    };
+        setProfilePhoto(
+          normalizeProfilePhoto(
+            event.detail
+              ?.imageData,
+          ),
+        );
+      };
 
     window.addEventListener(
       "tnal-profile-image-change",
@@ -185,7 +348,7 @@ export default function IdCard({
     };
   }, [
     profileMemberId,
-    defaultProfilePhoto,
+    backendProfilePhoto,
   ]);
 
   return (
@@ -207,7 +370,9 @@ export default function IdCard({
         {hasCustomTemplate ? (
           <>
             <img
-              src={templatePreview}
+              src={
+                templatePreview
+              }
               alt="ID card background template"
               className="
                 absolute
@@ -320,19 +485,20 @@ export default function IdCard({
                 src={
                   hasSelectedUser
                     ? profilePhoto
-                    : "/profile.png"
+                    : "/profiles/default-avatar.jpg"
                 }
                 alt={
-                  displayUser.name_kh ||
-                  displayUser.name_en ||
+                  nameKm ||
+                  nameEn ||
                   "រូបថតសមាជិក"
                 }
                 fill
                 sizes="125px"
                 className="object-cover"
+                unoptimized
                 onError={() =>
                   setProfilePhoto(
-                    "/profile.png",
+                    "/profiles/default-avatar.jpg",
                   )
                 }
               />
@@ -349,7 +515,9 @@ export default function IdCard({
                   font-medium
                   text-[#062f6b]
                 "
-                title={roleLabel}
+                title={
+                  roleLabel
+                }
               >
                 {roleLabel}
               </h2>
@@ -359,7 +527,7 @@ export default function IdCard({
                   label="ឈ្មោះ"
                   value={
                     hasSelectedUser
-                      ? displayUser.name_kh
+                      ? nameKm
                       : ""
                   }
                 />
@@ -368,7 +536,7 @@ export default function IdCard({
                   label="ឈ្មោះអង់គ្លេស"
                   value={
                     hasSelectedUser
-                      ? displayUser.name_en
+                      ? nameEn
                       : ""
                   }
                 />
@@ -377,7 +545,7 @@ export default function IdCard({
                   label="ភេទ"
                   value={
                     hasSelectedUser
-                      ? displayUser.gender
+                      ? gender
                       : ""
                   }
                 />
@@ -404,8 +572,10 @@ export default function IdCard({
                   label="ថ្ងៃកំណើត"
                   value={
                     hasSelectedUser
-                      ? displayUser.date_of_birth ||
-                        displayUser.dateOfBirth
+                      ? displayUser
+                            .date_of_birth ||
+                        displayUser
+                          .dateOfBirth
                       : ""
                   }
                 />
@@ -414,16 +584,7 @@ export default function IdCard({
                   label="សាខា"
                   value={
                     hasSelectedUser
-                      ? typeof displayUser.branch ===
-                        "object"
-                        ? displayUser.branch
-                            ?.nameKm ||
-                          displayUser.branch
-                            ?.name_km ||
-                          displayUser.branch
-                            ?.name ||
-                          ""
-                        : displayUser.branch
+                      ? branch
                       : ""
                   }
                 />
@@ -431,8 +592,6 @@ export default function IdCard({
             </div>
           </div>
         </div>
-
-        {/* Default inner border */}
 
         {!hasCustomTemplate && (
           <div

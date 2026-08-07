@@ -146,7 +146,7 @@ export default function FormDate({
   };
 
   return (
-    <div className="min-w-0">
+    <div className={`min-w-0 ${disabled ? "[&_label]:text-gray-400" : ""}`}>
       {label && (
         <label
           htmlFor={`${name}-display`}

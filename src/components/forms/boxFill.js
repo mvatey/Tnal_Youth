@@ -52,7 +52,7 @@ export default function BoxFill({
   `;
 
   return (
-    <div className="min-w-0">
+    <div className={`min-w-0 ${disabled || readOnly ? "[&_label]:text-gray-400" : ""}`}>
       {label && (
         <label
           htmlFor={name}

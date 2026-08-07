@@ -12,10 +12,11 @@ import FormDate from "@/components/forms/FormDate.js";
 import SelectArrow from "@/components/forms/SelectArrow";
 import DeleteButton from "@/components/forms/DeleteButton";
 import ButtonDropLink from "@/components/forms/ButtonDropLink";
+import useMemberPermissions from "@/hooks/useMemberPermissions";
 
 import locationData from "@/data/location.json";
 import educationData from "@/data/education.json";
-import membersData from "@/data/members.json";
+import { deleteMemberRecord, loadMemberRecords, saveMemberRecords } from "@/lib/memberRecords";
 
 function createEmptyEducation() {
   return {
@@ -25,6 +26,7 @@ function createEmptyEducation() {
 }
 
 export default function EducationPage() {
+  const { isAdmin } = useMemberPermissions();
   const params = useParams();
   const memberId = String(params?.id ?? "");
 
@@ -32,29 +34,14 @@ export default function EducationPage() {
   const [educations, setEducations] = useState([]);
 
   useEffect(() => {
-    const selectedMember = membersData.find(
-      (item) => String(item.id) === memberId,
-    );
-
-    if (!selectedMember) {
-      setMember(null);
-      setEducations([]);
-      return;
-    }
-
-    setMember(selectedMember);
-
-    const educationHistory = Array.isArray(
-      selectedMember.educationHistory,
-    )
-      ? selectedMember.educationHistory
-      : [];
-
-    setEducations(
-      educationHistory.length > 0
-        ? educationHistory
-        : [createEmptyEducation()],
-    );
+    const controller = new AbortController();
+    loadMemberRecords(memberId, "education", controller.signal)
+      .then((rows) => {
+        setMember({ id: memberId });
+        setEducations(rows.length ? rows.map((row) => ({ id: row.id, school: row.school_name || "", province: row.province_name || "", country: row.country_name || "", degree: row.education_level_id || "", startDate: row.start_date || "", endDate: row.end_date || "", documentLink: row.certificate_file?.file_path || "" })) : [createEmptyEducation()]);
+      })
+      .catch((error) => { if (error.name !== "AbortError") setMember(null); });
+    return () => controller.abort();
   }, [memberId]);
 
   function handleEducationChange(id, field, value) {
@@ -77,7 +64,8 @@ export default function EducationPage() {
     ]);
   }
 
-  function removeEducation(id) {
+  async function removeEducation(id) {
+    await deleteMemberRecord(memberId, "education", id);
     setEducations((previous) => {
       if (previous.length === 1) {
         return previous;
@@ -89,17 +77,21 @@ export default function EducationPage() {
     });
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!member) return;
 
-    const updatedMember = {
-      ...member,
-      educationHistory: educations,
-    };
-
-    console.log("Updated member:", updatedMember);
+    const rows = await saveMemberRecords(memberId, "education", educations, (item) => ({
+      school_name: item.school,
+      education_level_id: Number(item.degree),
+      field_of_study: item.fieldOfStudy || null,
+      country_name: item.country || null,
+      province_name: item.province || null,
+      start_date: item.startDate || null,
+      end_date: item.endDate || null,
+    }));
+    setEducations(rows.map((row) => ({ id: row.id, school: row.school_name || "", province: row.province_name || "", country: row.country_name || "", degree: row.education_level_id || "", fieldOfStudy: row.field_of_study || "", startDate: row.start_date || "", endDate: row.end_date || "", documentLink: row.certificate_file?.file_path || "" })));
   }
 
   if (!member) {
@@ -114,6 +106,7 @@ export default function EducationPage() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <fieldset disabled={isAdmin} className={isAdmin ? "member-readonly contents [&_button]:hidden" : "contents"}>
       <div className="rounded-xl border border-gray-200 bg-white p-5">
         <div>
           <h2 className="text-lg font-bold text-primary">
@@ -157,6 +150,7 @@ export default function EducationPage() {
       <div className="flex justify-end">
         <SaveButton type="submit" />
       </div>
+      </fieldset>
     </form>
   );
 }

@@ -17,6 +17,12 @@ const ALLOWED_LOOKUPS =
     "ethnicities",
     "religions",
 
+    "education-levels",
+    "languages",
+    "skills",
+    "proficiency-levels",
+    "political-parties",
+
     "user-roles",
     "tshirt-sizes",
 

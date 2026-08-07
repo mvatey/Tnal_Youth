@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import { RiAddCircleLine } from "react-icons/ri";
 
 import SaveButton from "@/components/forms/SaveButton";
@@ -9,6 +10,8 @@ import DeleteButton from "@/components/forms/DeleteButton";
 import ButtonDropLink from "@/components/forms/ButtonDropLink";
 
 import educationData from "@/data/education.json";
+import { deleteMemberRecord, loadMemberRecords, saveMemberRecords } from "@/lib/memberRecords";
+import useMemberPermissions from "@/hooks/useMemberPermissions";
 
 function createId(prefix) {
   if (
@@ -65,6 +68,8 @@ function createComputerSkill() {
 }
 
 export default function SkillPage() {
+  const { isAdmin } = useMemberPermissions();
+  const memberId = String(useParams()?.id ?? "");
   const [languageSkills, setLanguageSkills] = useState([
     createLanguageSkill(),
   ]);
@@ -72,6 +77,18 @@ export default function SkillPage() {
   const [computerSkills, setComputerSkills] = useState([
     createComputerSkill(),
   ]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    Promise.all([
+      loadMemberRecords(memberId, "languages", controller.signal),
+      loadMemberRecords(memberId, "skills", controller.signal),
+    ]).then(([languages, skills]) => {
+      setLanguageSkills(languages.length ? languages.map((row) => ({ id: row.id, language: row.language_name || "", listening: row.listening_level_id || "", speaking: row.speaking_level_id || "", reading: row.reading_level_id || "", writing: row.writing_level_id || "", documentLink: row.certificate_file?.file_path || "" })) : [createLanguageSkill()]);
+      setComputerSkills(skills.length ? skills.map((row) => ({ id: row.id, skill: row.skill_name || "", level: row.proficiency_level_id || "", documentLink: row.certificate_file?.file_path || "" })) : [createComputerSkill()]);
+    }).catch((error) => { if (error.name !== "AbortError") console.error(error); });
+    return () => controller.abort();
+  }, [memberId]);
 
   const updateLanguageSkill = (
     id,
@@ -97,7 +114,8 @@ export default function SkillPage() {
     ]);
   };
 
-  const removeLanguageSkill = (id) => {
+  const removeLanguageSkill = async (id) => {
+    await deleteMemberRecord(memberId, "languages", id);
     setLanguageSkills((previousSkills) => {
       if (previousSkills.length <= 1) {
         return previousSkills;
@@ -133,7 +151,8 @@ export default function SkillPage() {
     ]);
   };
 
-  const removeComputerSkill = (id) => {
+  const removeComputerSkill = async (id) => {
+    await deleteMemberRecord(memberId, "skills", id);
     setComputerSkills((previousSkills) => {
       if (previousSkills.length <= 1) {
         return previousSkills;
@@ -145,19 +164,20 @@ export default function SkillPage() {
     });
   };
 
-  const handleSave = () => {
-    const skillData = {
-      languageSkills,
-      computerSkills,
-    };
-
-    console.log("Skill data:", skillData);
+  const handleSave = async () => {
+    const [languages, skills] = await Promise.all([
+      saveMemberRecords(memberId, "languages", languageSkills, (item) => ({ language_name: item.language, listening_level_id: Number(item.listening) || null, speaking_level_id: Number(item.speaking) || null, reading_level_id: Number(item.reading) || null, writing_level_id: Number(item.writing) || null })),
+      saveMemberRecords(memberId, "skills", computerSkills, (item) => ({ skill_name: item.skill, proficiency_level_id: Number(item.level) })),
+    ]);
+    setLanguageSkills(languages.map((row) => ({ id: row.id, language: row.language_name || "", listening: row.listening_level_id || "", speaking: row.speaking_level_id || "", reading: row.reading_level_id || "", writing: row.writing_level_id || "", documentLink: row.certificate_file?.file_path || "" })));
+    setComputerSkills(skills.map((row) => ({ id: row.id, skill: row.skill_name || "", level: row.proficiency_level_id || "", documentLink: row.certificate_file?.file_path || "" })));
 
     alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
   };
 
   return (
     <div className="space-y-4">
+      <fieldset disabled={isAdmin} className={isAdmin ? "member-readonly contents [&_button]:hidden" : "contents"}>
       {/* =====================================
           LANGUAGE SKILLS
       ===================================== */}
@@ -245,6 +265,7 @@ export default function SkillPage() {
       <div className="flex justify-end">
         <SaveButton onClick={handleSave} />
       </div>
+      </fieldset>
     </div>
   );
 }

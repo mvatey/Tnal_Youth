@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { DeleteIcon, Link2, X } from "lucide-react";
-import { Trash2 } from "lucide-react";
-import { IoRemove, IoRemoveCircle, IoRemoveSharp } from "react-icons/io5";
+import { ExternalLink, Link2, Trash2 } from "lucide-react";
 
 export default function ButtonDropLink({
   value = "",
   onChange,
   placeholder = "បញ្ចូលតំណភ្ជាប់ឯកសារ",
+  readOnly = false,
 }) {
   const [showInput, setShowInput] = useState(Boolean(value));
 
@@ -19,6 +18,14 @@ export default function ButtonDropLink({
 
   return (
     <div className="w-full">
+      {value && (
+        <a href={value} target="_blank" rel="noreferrer" className="mb-2 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+          <ExternalLink size={16} />
+          មើលឯកសារ
+        </a>
+      )}
+      {readOnly ? null : (
+      <>
       {!showInput ? (
         <button
           type="button"
@@ -53,6 +60,8 @@ export default function ButtonDropLink({
             <Trash2 size={18} />
           </button>
         </div>
+      )}
+      </>
       )}
     </div>
   );

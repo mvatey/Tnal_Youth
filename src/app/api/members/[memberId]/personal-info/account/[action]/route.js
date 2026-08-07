@@ -1,12 +1,33 @@
-import {
-  cookies,
-} from "next/headers";
+import { cookies } from "next/headers";
 
 const BACKEND_URL =
   process.env.BACKEND_API_URL ||
   "http://localhost:8081/api";
 
-export async function GET() {
+export async function PATCH(
+  request,
+  { params },
+) {
+  const {
+    memberId,
+    action,
+  } = await params;
+
+  if (
+    action !== "enable" &&
+    action !== "disable"
+  ) {
+    return Response.json(
+      {
+        message:
+          "Invalid account action",
+      },
+      {
+        status: 400,
+      },
+    );
+  }
+
   const cookieStore =
     await cookies();
 
@@ -30,9 +51,9 @@ export async function GET() {
   try {
     const backendResponse =
       await fetch(
-        `${BACKEND_URL}/branches/options`,
+        `${BACKEND_URL}/members/${memberId}/personal-info/account/${action}`,
         {
-          method: "GET",
+          method: "PATCH",
 
           headers: {
             Accept:
@@ -66,14 +87,14 @@ export async function GET() {
     );
   } catch (error) {
     console.error(
-      "Branch options proxy:",
+      "Account status proxy error:",
       error,
     );
 
     return Response.json(
       {
         message:
-          "Could not load branch options",
+          "Could not update account status",
       },
       {
         status: 502,

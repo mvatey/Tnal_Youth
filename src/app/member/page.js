@@ -6,12 +6,15 @@ import {
   useMemo,
   useState,
 } from "react";
+
 import { useRouter } from "next/navigation";
+
 import {
   Landmark,
   Moon,
   Users,
 } from "lucide-react";
+
 import { AiOutlineWoman } from "react-icons/ai";
 import { FaDharmachakra } from "react-icons/fa";
 import { RiAddCircleLine } from "react-icons/ri";
@@ -44,10 +47,17 @@ const STATUS_LABELS_KM = {
 };
 
 const STATUS_BADGE_STYLES = {
-  ACTIVE: "bg-success-bg text-success",
-  INACTIVE: "bg-red-50 text-red-600",
-  SUSPENDED: "bg-warning-bg text-warning",
-  RESIGNED: "bg-gray-100 text-text-secondary",
+  ACTIVE:
+    "bg-success-bg text-success",
+
+  INACTIVE:
+    "bg-red-50 text-red-600",
+
+  SUSPENDED:
+    "bg-warning-bg text-warning",
+
+  RESIGNED:
+    "bg-gray-100 text-text-secondary",
 };
 
 const KHMER_MONTHS = [
@@ -65,23 +75,34 @@ const KHMER_MONTHS = [
   "ធ្នូ",
 ];
 
-async function fetchJson(path, signal) {
-  const response = await fetch(`/api${path}`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-    cache: "no-store",
-    signal,
-  });
+async function fetchJson(
+  path,
+  signal,
+) {
+  const response = await fetch(
+    `/api${path}`,
+    {
+      method: "GET",
 
-  const text = await response.text();
+      headers: {
+        Accept:
+          "application/json",
+      },
+
+      cache: "no-store",
+      signal,
+    },
+  );
+
+  const text =
+    await response.text();
 
   let body = null;
 
   if (text) {
     try {
-      body = JSON.parse(text);
+      body =
+        JSON.parse(text);
     } catch {
       body = text;
     }
@@ -89,8 +110,11 @@ async function fetchJson(path, signal) {
 
   if (!response.ok) {
     const message =
-      typeof body === "object"
-        ? body?.message || body?.error
+      typeof body ===
+      "object"
+        ? body?.message ||
+          body?.detail ||
+          body?.error
         : body;
 
     throw new Error(
@@ -102,58 +126,110 @@ async function fetchJson(path, signal) {
   return body;
 }
 
-function formatJoinedDate(value) {
+function normalizeArray(data) {
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (
+    Array.isArray(
+      data?.data,
+    )
+  ) {
+    return data.data;
+  }
+
+  if (
+    Array.isArray(
+      data?.content,
+    )
+  ) {
+    return data.content;
+  }
+
+  return [];
+}
+
+function formatJoinedDate(
+  value,
+) {
   if (!value) {
     return "-";
   }
 
-  const match = String(value).match(
-    /^(\d{4})-(\d{2})-(\d{2})$/,
-  );
+  const match =
+    String(value).match(
+      /^(\d{4})-(\d{2})-(\d{2})$/,
+    );
 
   if (!match) {
     return String(value);
   }
 
-  const [, year, month, day] = match;
+  const [
+    ,
+    year,
+    month,
+    day,
+  ] = match;
 
   const monthName =
-    KHMER_MONTHS[Number(month) - 1];
+    KHMER_MONTHS[
+      Number(month) - 1
+    ];
 
   if (!monthName) {
     return String(value);
   }
 
-  return `${Number(day)} ${monthName}, ${year}`;
+  return `${Number(
+    day,
+  )} ${monthName}, ${year}`;
 }
 
-function getGenderLabel(gender) {
-  const code = String(
-    gender?.code || "",
-  ).toUpperCase();
+function getGenderLabel(
+  gender,
+) {
+  const code =
+    String(
+      gender?.code || "",
+    ).toUpperCase();
 
   return (
     gender?.label_km ||
     gender?.labelKm ||
-    GENDER_LABELS_KM[code] ||
+    gender?.label_en ||
+    gender?.labelEn ||
+    GENDER_LABELS_KM[
+      code
+    ] ||
     "-"
   );
 }
 
-function getStatusLabel(status) {
-  const code = String(
-    status?.code || "",
-  ).toUpperCase();
+function getStatusLabel(
+  status,
+) {
+  const code =
+    String(
+      status?.code || "",
+    ).toUpperCase();
 
   return (
     status?.label_km ||
     status?.labelKm ||
-    STATUS_LABELS_KM[code] ||
+    status?.label_en ||
+    status?.labelEn ||
+    STATUS_LABELS_KM[
+      code
+    ] ||
     "-"
   );
 }
 
-function getBranchLabel(branch) {
+function getBranchLabel(
+  branch,
+) {
   return (
     branch?.label_km ||
     branch?.labelKm ||
@@ -165,58 +241,77 @@ function getBranchLabel(branch) {
   );
 }
 
-function mapMember(member) {
+function mapMember(
+  member,
+) {
   return {
-    id: member?.id,
+    id:
+      member?.id,
 
     nameKh:
       member?.full_name_km ||
       member?.full_name_en ||
       "-",
 
-    genderLabel: getGenderLabel(
-      member?.gender,
-    ),
+    genderLabel:
+      getGenderLabel(
+        member?.gender,
+      ),
 
-    genderCode: String(
-      member?.gender?.code || "",
-    ).toUpperCase(),
+    genderCode:
+      String(
+        member?.gender?.code ||
+          "",
+      ).toUpperCase(),
 
-    branchLabel: getBranchLabel(
-      member?.branch,
-    ),
+    branchLabel:
+      getBranchLabel(
+        member?.branch,
+      ),
 
     branchId:
       member?.branch?.id ??
       member?.branch_id ??
       "",
 
-    statusLabel: getStatusLabel(
-      member?.status,
-    ),
+    statusLabel:
+      getStatusLabel(
+        member?.status,
+      ),
 
-    statusCode: String(
-      member?.status?.code || "",
-    ).toUpperCase(),
+    statusCode:
+      String(
+        member?.status?.code ||
+          "",
+      ).toUpperCase(),
 
     statusId:
       member?.status?.id ??
       member?.status_id ??
       "",
 
-    joinedAt: formatJoinedDate(
-      member?.joined_on,
-    ),
+    joinedAt:
+      formatJoinedDate(
+        member?.joined_on,
+      ),
   };
 }
 
 export default function MembersPage() {
-  const router = useRouter();
+  const router =
+    useRouter();
 
-  const [members, setMembers] = useState([]);
+  const [
+    members,
+    setMembers,
+  ] = useState([]);
 
-  const [summary, setSummary] =
-    useState(EMPTY_SUMMARY);
+  const [
+    summary,
+    setSummary,
+  ] = useState(
+    EMPTY_SUMMARY,
+  );
 
   const [
     branchLookups,
@@ -233,7 +328,10 @@ export default function MembersPage() {
     setGenderLookups,
   ] = useState([]);
 
-  const [query, setQuery] = useState("");
+  const [
+    query,
+    setQuery,
+  ] = useState("");
 
   const [
     debouncedQuery,
@@ -260,197 +358,364 @@ export default function MembersPage() {
     setIsCreateOpen,
   ] = useState(false);
 
+  /*
+   * =========================================
+   * SEARCH DEBOUNCE
+   * =========================================
+   */
+
   useEffect(() => {
-    const timeoutId = window.setTimeout(
-      () => {
-        setDebouncedQuery(query.trim());
-      },
-      350,
-    );
+    const timeoutId =
+      window.setTimeout(
+        () => {
+          setDebouncedQuery(
+            query.trim(),
+          );
+        },
+        350,
+      );
 
     return () => {
-      window.clearTimeout(timeoutId);
+      window.clearTimeout(
+        timeoutId,
+      );
     };
   }, [query]);
 
-  const loadSummary = useCallback(
-    async (signal) => {
-      const data = await fetchJson(
-        "/members/summary",
-        signal,
-      );
+  /*
+   * =========================================
+   * SUMMARY
+   * =========================================
+   */
 
-      setSummary({
-        total_members:
-          Number(data?.total_members) || 0,
+  const loadSummary =
+    useCallback(
+      async (signal) => {
+        const data =
+          await fetchJson(
+            "/members/summary",
+            signal,
+          );
 
-        female_members:
-          Number(data?.female_members) || 0,
+        setSummary({
+          total_members:
+            Number(
+              data?.total_members,
+            ) || 0,
 
-        monk_members:
-          Number(data?.monk_members) || 0,
+          female_members:
+            Number(
+              data?.female_members,
+            ) || 0,
 
-        buddhist_members:
-          Number(data?.buddhist_members) || 0,
+          monk_members:
+            Number(
+              data?.monk_members,
+            ) || 0,
 
-        islam_members:
-          Number(data?.islam_members) || 0,
-      });
-    },
-    [],
-  );
+          buddhist_members:
+            Number(
+              data?.buddhist_members,
+            ) || 0,
 
-  const loadLookups = useCallback(
-    async (signal) => {
-      const [
-        branches,
-        statuses,
-        genders,
-      ] = await Promise.all([
-        fetchJson(
-          "/lookups/branches",
-          signal,
-        ),
-
-        fetchJson(
-          "/lookups/member-statuses",
-          signal,
-        ),
-
-        fetchJson(
-          "/lookups/genders",
-          signal,
-        ),
-      ]);
-
-      const normalizedBranches =
-        Array.isArray(branches)
-          ? branches
-          : Array.isArray(branches?.data)
-            ? branches.data
-            : Array.isArray(branches?.content)
-              ? branches.content
-              : [];
-
-      setBranchLookups(normalizedBranches);
-
-      setStatusLookups(
-        Array.isArray(statuses)
-          ? statuses
-          : [],
-      );
-
-      setGenderLookups(
-        Array.isArray(genders)
-          ? genders
-          : [],
-      );
-    },
-    [],
-  );
-
-  const loadMembers = useCallback(
-    async (signal) => {
-      const baseParams =
-        new URLSearchParams({
-          page: "0",
-          size: "20",
-          search: debouncedQuery,
-          branchId: branchFilter,
-          statusId: statusFilter,
-          gender: genderFilter,
+          islam_members:
+            Number(
+              data?.islam_members,
+            ) || 0,
         });
+      },
+      [],
+    );
 
-      const firstPage = await fetchJson(
-        `/members?${baseParams.toString()}`,
-        signal,
-      );
+  /*
+   * =========================================
+   * LOOKUPS
+   *
+   * Important:
+   * load each lookup independently.
+   * One failure won't break all dropdowns.
+   * =========================================
+   */
 
-      const firstContent = Array.isArray(
-        firstPage?.content,
-      )
-        ? firstPage.content
-        : [];
-
-      const totalPages = Math.max(
-        Number(firstPage?.totalPages) || 1,
-        1,
-      );
-
-      if (totalPages === 1) {
-        setMembers(
-          firstContent.map(mapMember),
-        );
-
-        return;
-      }
-
-      const remainingRequests =
-        Array.from(
-          {
-            length: totalPages - 1,
-          },
-          (_, index) => {
-            const pageParams =
-              new URLSearchParams(
-                baseParams,
-              );
-
-            pageParams.set(
-              "page",
-              String(index + 1),
-            );
-
-            return fetchJson(
-              `/members?${pageParams.toString()}`,
+  const loadLookups =
+    useCallback(
+      async (signal) => {
+        /*
+         * BRANCHES
+         */
+        try {
+          const data =
+            await fetchJson(
+              "/lookups/branches",
               signal,
             );
-          },
+
+          setBranchLookups(
+            normalizeArray(data),
+          );
+        } catch (error) {
+          if (
+            error.name !==
+            "AbortError"
+          ) {
+            console.error(
+              "Cannot load branch options:",
+              error,
+            );
+
+            setBranchLookups([]);
+          }
+        }
+
+        /*
+         * MEMBER STATUSES
+         */
+        try {
+          const data =
+            await fetchJson(
+              "/lookups/member-statuses",
+              signal,
+            );
+
+          setStatusLookups(
+            normalizeArray(
+              data,
+            ),
+          );
+        } catch (error) {
+          if (
+            error.name !==
+            "AbortError"
+          ) {
+            console.error(
+              "Cannot load member statuses:",
+              error,
+            );
+
+            setStatusLookups(
+              [],
+            );
+          }
+        }
+
+        /*
+         * GENDERS
+         */
+        try {
+          const data =
+            await fetchJson(
+              "/lookups/genders",
+              signal,
+            );
+
+          setGenderLookups(
+            normalizeArray(
+              data,
+            ),
+          );
+        } catch (error) {
+          if (
+            error.name !==
+            "AbortError"
+          ) {
+            console.error(
+              "Cannot load genders:",
+              error,
+            );
+
+            setGenderLookups(
+              [],
+            );
+          }
+        }
+      },
+      [],
+    );
+
+  /*
+   * =========================================
+   * MEMBERS
+   * =========================================
+   */
+
+  const loadMembers =
+    useCallback(
+      async (signal) => {
+        const baseParams =
+          new URLSearchParams();
+
+        baseParams.set(
+          "page",
+          "0",
         );
 
-      const remainingPages =
-        await Promise.all(
-          remainingRequests,
+        baseParams.set(
+          "size",
+          "20",
         );
 
-      const allContent = [
-        ...firstContent,
+        if (
+          debouncedQuery
+        ) {
+          baseParams.set(
+            "search",
+            debouncedQuery,
+          );
+        }
 
-        ...remainingPages.flatMap(
-          (page) =>
-            Array.isArray(page?.content)
-              ? page.content
-              : [],
-        ),
-      ];
+        if (
+          branchFilter
+        ) {
+          baseParams.set(
+            "branchId",
+            branchFilter,
+          );
+        }
 
-      setMembers(
-        allContent.map(mapMember),
-      );
-    },
-    [
-      branchFilter,
-      debouncedQuery,
-      genderFilter,
-      statusFilter,
-    ],
-  );
+        if (
+          statusFilter
+        ) {
+          baseParams.set(
+            "statusId",
+            statusFilter,
+          );
+        }
+
+        if (
+          genderFilter
+        ) {
+          baseParams.set(
+            "gender",
+            genderFilter,
+          );
+        }
+
+        const firstPage =
+          await fetchJson(
+            `/members?${baseParams.toString()}`,
+            signal,
+          );
+
+        const firstContent =
+          Array.isArray(
+            firstPage?.content,
+          )
+            ? firstPage.content
+            : [];
+
+        const totalPages =
+          Math.max(
+            Number(
+              firstPage?.totalPages,
+            ) || 1,
+            1,
+          );
+
+        /*
+         * Only one page
+         */
+        if (
+          totalPages === 1
+        ) {
+          setMembers(
+            firstContent.map(
+              mapMember,
+            ),
+          );
+
+          return;
+        }
+
+        /*
+         * Load remaining pages
+         */
+        const requests =
+          Array.from(
+            {
+              length:
+                totalPages -
+                1,
+            },
+
+            (_, index) => {
+              const params =
+                new URLSearchParams(
+                  baseParams,
+                );
+
+              params.set(
+                "page",
+                String(
+                  index + 1,
+                ),
+              );
+
+              return fetchJson(
+                `/members?${params.toString()}`,
+                signal,
+              );
+            },
+          );
+
+        const remainingPages =
+          await Promise.all(
+            requests,
+          );
+
+        const allMembers = [
+          ...firstContent,
+
+          ...remainingPages.flatMap(
+            (page) =>
+              Array.isArray(
+                page?.content,
+              )
+                ? page.content
+                : [],
+          ),
+        ];
+
+        setMembers(
+          allMembers.map(
+            mapMember,
+          ),
+        );
+      },
+      [
+        branchFilter,
+        debouncedQuery,
+        genderFilter,
+        statusFilter,
+      ],
+    );
+
+  /*
+   * =========================================
+   * LOAD SUMMARY + LOOKUPS
+   * =========================================
+   */
 
   useEffect(() => {
     const controller =
       new AbortController();
 
-    Promise.all([
-      loadSummary(controller.signal),
-      loadLookups(controller.signal),
-    ]).catch((error) => {
-      if (error.name !== "AbortError") {
+    loadSummary(
+      controller.signal,
+    ).catch((error) => {
+      if (
+        error.name !==
+        "AbortError"
+      ) {
         console.warn(
-          "Failed to load member page:",
+          "Failed to load member summary:",
           error.message,
         );
       }
     });
+
+    loadLookups(
+      controller.signal,
+    );
 
     return () => {
       controller.abort();
@@ -460,6 +725,12 @@ export default function MembersPage() {
     loadSummary,
   ]);
 
+  /*
+   * =========================================
+   * LOAD MEMBERS
+   * =========================================
+   */
+
   useEffect(() => {
     const controller =
       new AbortController();
@@ -467,7 +738,10 @@ export default function MembersPage() {
     loadMembers(
       controller.signal,
     ).catch((error) => {
-      if (error.name !== "AbortError") {
+      if (
+        error.name !==
+        "AbortError"
+      ) {
         console.warn(
           "Failed to load members:",
           error.message,
@@ -482,7 +756,14 @@ export default function MembersPage() {
     };
   }, [loadMembers]);
 
-  const branches = useMemo(
+  /*
+   * =========================================
+   * BRANCH OPTIONS
+   * =========================================
+   */
+
+  const branches =
+    useMemo(
       () => [
         {
           label: "សាខា",
@@ -490,100 +771,175 @@ export default function MembersPage() {
         },
 
         ...branchLookups
-          .map((branch) => ({
-            label:
-              branch?.label_km ||
-              branch?.labelKm ||
-              branch?.name_km ||
-              branch?.nameKm ||
-              branch?.name_en ||
-              branch?.nameEn ||
-              branch?.branch_code ||
-              branch?.branchCode ||
-              "",
+          .map(
+            (branch) => {
+              const id =
+                branch?.id ??
+                branch?.value ??
+                "";
 
-            value: String(
-              branch?.id ??
-              branch?.value ??
-              "",
-            ),
-          }))
+              const label =
+                branch?.label_km ||
+                branch?.labelKm ||
+                branch?.name_km ||
+                branch?.nameKm ||
+                branch?.name_en ||
+                branch?.nameEn ||
+                branch?.branch_code ||
+                branch?.branchCode ||
+                "";
+
+              return {
+                label,
+
+                value:
+                  id !== null &&
+                  id !==
+                    undefined
+                    ? String(
+                        id,
+                      )
+                    : "",
+              };
+            },
+          )
           .filter(
             (branch) =>
-              branch.value !== "" &&
-              branch.label !== "",
+              branch.value !==
+                "" &&
+              branch.label !==
+                "",
           ),
       ],
       [branchLookups],
     );
 
-    const memberStatuses = useMemo(
+  /*
+   * =========================================
+   * STATUS OPTIONS
+   * =========================================
+   */
+
+  const memberStatuses =
+    useMemo(
       () => [
         {
-          label: "ស្ថានភាព",
+          label:
+            "ស្ថានភាព",
+
           value: "",
         },
 
         ...statusLookups
-          .map((status) => {
-            const statusId =
-              status?.id ??
-              status?.status_id ??
-              status?.statusId ??
-              status?.value ??
-              "";
+          .map(
+            (status) => {
+              const id =
+                status?.id ??
+                status?.status_id ??
+                status?.statusId ??
+                status?.value ??
+                "";
 
-            return {
-              label:
+              const code =
+                String(
+                  status?.code ||
+                    "",
+                ).toUpperCase();
+
+              const label =
                 status?.label_km ||
                 status?.labelKm ||
                 status?.label_en ||
                 status?.labelEn ||
+                STATUS_LABELS_KM[
+                  code
+                ] ||
                 status?.code ||
-                "-",
+                "-";
 
-              value: String(statusId),
-            };
-          })
+              return {
+                label,
+
+                value:
+                  id !== null &&
+                  id !==
+                    undefined
+                    ? String(
+                        id,
+                      )
+                    : "",
+              };
+            },
+          )
           .filter(
             (status) =>
-              status.value !== "",
+              status.value !==
+              "",
           ),
       ],
       [statusLookups],
     );
 
-  const genders = useMemo(
-    () => [
-      {
-        label: "ភេទ",
-        value: "",
-      },
+  /*
+   * =========================================
+   * GENDER OPTIONS
+   * =========================================
+   */
 
-      ...genderLookups.map(
-        (gender) => {
-          const code = String(
-            gender?.code || "",
-          ).toUpperCase();
-
-          return {
-            label:
-              gender?.label_km ||
-              gender?.labelKm ||
-              GENDER_LABELS_KM[code] ||
-              "-",
-
-            value: code,
-          };
+  const genders =
+    useMemo(
+      () => [
+        {
+          label: "ភេទ",
+          value: "",
         },
-      ),
-    ],
-    [genderLookups],
-  );
+
+        ...genderLookups
+          .map(
+            (gender) => {
+              const code =
+                String(
+                  gender?.code ||
+                    gender?.value ||
+                    "",
+                ).toUpperCase();
+
+              const label =
+                gender?.label_km ||
+                gender?.labelKm ||
+                gender?.label_en ||
+                gender?.labelEn ||
+                GENDER_LABELS_KM[
+                  code
+                ] ||
+                code;
+
+              return {
+                label,
+                value: code,
+              };
+            },
+          )
+          .filter(
+            (gender) =>
+              gender.value !==
+              "",
+          ),
+      ],
+      [genderLookups],
+    );
+
+  /*
+   * =========================================
+   * CREATE MEMBER CALLBACK
+   * =========================================
+   */
 
   const handleCreateMember =
     async () => {
-      setIsCreateOpen(false);
+      setIsCreateOpen(
+        false,
+      );
 
       const controller =
         new AbortController();
@@ -600,7 +956,8 @@ export default function MembersPage() {
         ]);
       } catch (error) {
         if (
-          error.name !== "AbortError"
+          error.name !==
+          "AbortError"
         ) {
           console.warn(
             "Failed to refresh members:",
@@ -610,12 +967,22 @@ export default function MembersPage() {
       }
     };
 
+  /*
+   * =========================================
+   * TABLE
+   * =========================================
+   */
+
   const tableColumns = [
     {
       header: "ល.រ",
       width: "w-[6%]",
       align: "center",
-      render: (_, index) => index,
+
+      render: (
+        _,
+        index,
+      ) => index + 1,
     },
 
     {
@@ -637,7 +1004,9 @@ export default function MembersPage() {
 
       render: (member) => (
         <span>
-          {member.genderLabel}
+          {
+            member.genderLabel
+          }
         </span>
       ),
     },
@@ -649,7 +1018,9 @@ export default function MembersPage() {
 
       render: (member) => (
         <span className="block w-full truncate">
-          {member.branchLabel}
+          {
+            member.branchLabel
+          }
         </span>
       ),
     },
@@ -674,25 +1045,32 @@ export default function MembersPage() {
             text-[11px]
             ${
               STATUS_BADGE_STYLES[
-                member.statusCode
+                member
+                  .statusCode
               ] ||
               "bg-gray-100 text-text-secondary"
             }
           `}
         >
-          {member.statusLabel}
+          {
+            member.statusLabel
+          }
         </span>
       ),
     },
 
     {
-      header: "ថ្ងៃចូលរួម",
+      header:
+        "ថ្ងៃចូលរួម",
+
       width: "w-[16%]",
       align: "left",
 
       render: (member) => (
         <span className="block w-full truncate">
-          {member.joinedAt}
+          {
+            member.joinedAt
+          }
         </span>
       ),
     },
@@ -716,34 +1094,66 @@ export default function MembersPage() {
     },
   ];
 
+  /*
+   * =========================================
+   * FILTERS
+   * =========================================
+   */
+
   const filterConfig = [
     {
       name: "branch",
-      value: branchFilter,
-      onChange: setBranchFilter,
-      options: branches,
-      placeholder: "សាខា",
+
+      value:
+        branchFilter,
+
+      onChange:
+        setBranchFilter,
+
+      options:
+        branches,
+
+      placeholder:
+        "សាខា",
     },
 
     {
       name: "status",
-      value: statusFilter,
-      onChange: setStatusFilter,
-      options: memberStatuses,
-      placeholder: "ស្ថានភាព",
+
+      value:
+        statusFilter,
+
+      onChange:
+        setStatusFilter,
+
+      options:
+        memberStatuses,
+
+      placeholder:
+        "ស្ថានភាព",
     },
 
     {
       name: "gender",
-      value: genderFilter,
-      onChange: setGenderFilter,
-      options: genders,
-      placeholder: "ភេទ",
+
+      value:
+        genderFilter,
+
+      onChange:
+        setGenderFilter,
+
+      options:
+        genders,
+
+      placeholder:
+        "ភេទ",
     },
   ];
 
   return (
     <div className="flex min-h-full min-w-0 flex-col gap-4 overflow-hidden">
+      {/* SUMMARY */}
+
       <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         <StatCard
           icon={Users}
@@ -801,21 +1211,33 @@ export default function MembersPage() {
         />
       </div>
 
+      {/* TABLE */}
+
       <div className="min-w-0 w-full">
         <DataTable
           title="បញ្ជីសមាជិក"
           data={members}
-          columns={tableColumns}
-          filters={filterConfig}
-          searchQuery={query}
-          onSearchChange={setQuery}
+          columns={
+            tableColumns
+          }
+          filters={
+            filterConfig
+          }
+          searchQuery={
+            query
+          }
+          onSearchChange={
+            setQuery
+          }
           searchPlaceholder="ស្វែងរកតាមរយៈឈ្មោះ..."
           pageSize={20}
           actionButton={
             <button
               type="button"
               onClick={() =>
-                setIsCreateOpen(true)
+                setIsCreateOpen(
+                  true,
+                )
               }
               className="
                 inline-flex
@@ -845,12 +1267,20 @@ export default function MembersPage() {
         />
       </div>
 
+      {/* CREATE MODAL */}
+
       <CreateMemberModal
-        open={isCreateOpen}
-        onClose={() =>
-          setIsCreateOpen(false)
+        open={
+          isCreateOpen
         }
-        onSave={handleCreateMember}
+        onClose={() =>
+          setIsCreateOpen(
+            false,
+          )
+        }
+        onSave={
+          handleCreateMember
+        }
       />
     </div>
   );
