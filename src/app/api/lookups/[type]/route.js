@@ -4,18 +4,28 @@ const BACKEND_URL =
   process.env.BACKEND_API_URL ||
   "http://localhost:8081/api";
 
-const ALLOWED_LOOKUPS = new Set([
-  "branches",
-  "branch-statuses",
-  "member-statuses",
-  "genders",
-  "member-levels",
-  "nationalities",
-  "user-roles",
-  "provinces",
-  "districts",
-  "communes",
-]);
+const ALLOWED_LOOKUPS =
+  new Set([
+    "branches",
+
+    "branch-statuses",
+    "member-statuses",
+
+    "genders",
+    "member-levels",
+    "nationalities",
+    "ethnicities",
+    "religions",
+
+    "user-roles",
+    "tshirt-sizes",
+
+    "activity-types",
+
+    "provinces",
+    "districts",
+    "communes",
+  ]);
 
 export async function GET(request, context) {
   const { type } = await context.params;

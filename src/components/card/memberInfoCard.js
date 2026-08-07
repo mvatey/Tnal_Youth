@@ -20,9 +20,15 @@ import {
 } from "react";
 
 import {
-  getSavedProfileImage,
   saveProfileImage,
 } from "@/lib/member/profileImageStorage";
+
+const BACKEND_ORIGIN =
+  process.env.NEXT_PUBLIC_BACKEND_ORIGIN ||
+  "http://localhost:8081";
+
+const DEFAULT_PROFILE_IMAGE =
+  "/profiles/default-avatar.jpg";
 
 const ROLE_LABELS = {
   ADMIN: "អ្នកគ្រប់គ្រង",
@@ -42,19 +48,36 @@ const ROLE_LABELS = {
 };
 
 const STATUS_BADGE_STYLES = {
-  ACTIVE: "bg-success-bg text-success",
-  INACTIVE: "bg-error-bg text-error",
+  ACTIVE:
+    "bg-success-bg text-success",
 
-  active: "bg-success-bg text-success",
-  inactive: "bg-error-bg text-error",
+  INACTIVE:
+    "bg-error-bg text-error",
 
-  សកម្ម: "bg-success-bg text-success",
-  អសកម្ម: "bg-error-bg text-error",
+  SUSPENDED:
+    "bg-warning-bg text-warning",
+
+  RESIGNED:
+    "bg-gray-100 text-text-secondary",
+
+  active:
+    "bg-success-bg text-success",
+
+  inactive:
+    "bg-error-bg text-error",
+
+  សកម្ម:
+    "bg-success-bg text-success",
+
+  អសកម្ម:
+    "bg-error-bg text-error",
 };
 
 const STATUS_LABELS = {
   ACTIVE: "សកម្ម",
   INACTIVE: "អសកម្ម",
+  SUSPENDED: "បានផ្អាក",
+  RESIGNED: "បានលាលែង",
 
   active: "សកម្ម",
   inactive: "អសកម្ម",
@@ -66,53 +89,80 @@ const STATUS_LABELS = {
 const MAX_PROFILE_IMAGE_SIZE =
   5 * 1024 * 1024;
 
+function getGenderCode(gender) {
+  if (
+    gender &&
+    typeof gender === "object"
+  ) {
+    return String(
+      gender?.code ||
+        gender?.value ||
+        "",
+    ).toUpperCase();
+  }
+
+  return String(
+    gender || "",
+  ).toUpperCase();
+}
+
 function getGenderDisplay(gender) {
-  const normalizedGender =
-    String(gender || "").trim();
+  if (
+    gender &&
+    typeof gender === "object"
+  ) {
+    const label =
+      gender?.label_km ||
+      gender?.labelKm ||
+      gender?.label_en ||
+      gender?.labelEn;
+
+    if (label) {
+      return `ភេទ ${label}`;
+    }
+  }
+
+  const code =
+    getGenderCode(gender);
 
   if (
-    normalizedGender === "ស្រី" ||
-    normalizedGender === "FEMALE" ||
-    normalizedGender === "female"
+    code === "FEMALE" ||
+    gender === "ស្រី"
   ) {
     return "ភេទ ស្រី";
   }
 
   if (
-    normalizedGender === "ប្រុស" ||
-    normalizedGender === "MALE" ||
-    normalizedGender === "male"
+    code === "MALE" ||
+    gender === "ប្រុស"
   ) {
     return "ភេទ ប្រុស";
   }
 
   if (
-    normalizedGender === "ព្រះសង្ឃ" ||
-    normalizedGender === "MONK" ||
-    normalizedGender === "monk"
+    code === "MONK" ||
+    gender === "ព្រះសង្ឃ"
   ) {
     return "ព្រះសង្ឃ";
   }
 
-  return normalizedGender || "-";
+  return gender || "-";
 }
 
 function getGenderIcon(gender) {
-  const normalizedGender =
-    String(gender || "").trim();
+  const code =
+    getGenderCode(gender);
 
   if (
-    normalizedGender === "ស្រី" ||
-    normalizedGender === "FEMALE" ||
-    normalizedGender === "female"
+    code === "FEMALE" ||
+    gender === "ស្រី"
   ) {
     return "♀";
   }
 
   if (
-    normalizedGender === "ប្រុស" ||
-    normalizedGender === "MALE" ||
-    normalizedGender === "male"
+    code === "MALE" ||
+    gender === "ប្រុស"
   ) {
     return "♂";
   }
@@ -129,13 +179,219 @@ function getMemberId(member) {
   );
 }
 
+function normalizeImageUrl(value) {
+  if (!value) {
+    return DEFAULT_PROFILE_IMAGE;
+  }
+
+  if (
+    typeof value === "object"
+  ) {
+    return normalizeImageUrl(
+      value?.url ||
+        value?.path ||
+        value?.file_url ||
+        value?.fileUrl ||
+        "",
+    );
+  }
+
+  const imagePath =
+    String(value).trim();
+
+  if (!imagePath) {
+    return DEFAULT_PROFILE_IMAGE;
+  }
+
+  if (
+    imagePath.startsWith("data:") ||
+    imagePath.startsWith("blob:")
+  ) {
+    return imagePath;
+  }
+
+  if (
+    imagePath.startsWith("http://") ||
+    imagePath.startsWith("https://")
+  ) {
+    return imagePath;
+  }
+
+  if (
+    imagePath.startsWith(
+      "/profiles/",
+    )
+  ) {
+    return imagePath;
+  }
+
+  const normalizedPath =
+    imagePath.startsWith("/")
+      ? imagePath
+      : `/${imagePath}`;
+
+  return `${BACKEND_ORIGIN}${normalizedPath}`;
+}
+
 function getDefaultProfileImage(member) {
-  return (
+  const value =
+    member?.profile_photo?.url ||
+    member?.profilePhoto?.url ||
+    member?.profile_photo_url ||
+    member?.profilePhotoUrl ||
     member?.profile_photo ||
     member?.profileImage ||
     member?.profile_image ||
     member?.profilePhoto ||
-    "/member.png"
+    "";
+
+  return normalizeImageUrl(value);
+}
+
+function getRoleCode(role) {
+  if (
+    role &&
+    typeof role === "object"
+  ) {
+    return String(
+      role?.code ||
+        role?.value ||
+        "",
+    ).toUpperCase();
+  }
+
+  return String(
+    role || "",
+  ).toUpperCase();
+}
+
+function getRoleLabel(role) {
+  if (
+    role &&
+    typeof role === "object"
+  ) {
+    return (
+      role?.label_km ||
+      role?.labelKm ||
+      role?.label_en ||
+      role?.labelEn ||
+      ROLE_LABELS[
+        getRoleCode(role)
+      ] ||
+      "-"
+    );
+  }
+
+  const code =
+    getRoleCode(role);
+
+  return (
+    ROLE_LABELS[code] ||
+    ROLE_LABELS[
+      String(role || "")
+        .trim()
+        .toLowerCase()
+    ] ||
+    role ||
+    ROLE_LABELS.MEMBER
+  );
+}
+
+function getStatusCode(status) {
+  if (
+    status &&
+    typeof status === "object"
+  ) {
+    return String(
+      status?.code ||
+        status?.value ||
+        "",
+    ).toUpperCase();
+  }
+
+  return String(
+    status || "",
+  ).toUpperCase();
+}
+
+function getStatusLabel(status) {
+  if (
+    status &&
+    typeof status === "object"
+  ) {
+    return (
+      status?.label_km ||
+      status?.labelKm ||
+      status?.name_km ||
+      status?.nameKm ||
+      status?.label_en ||
+      status?.labelEn ||
+      STATUS_LABELS[
+        getStatusCode(status)
+      ] ||
+      "-"
+    );
+  }
+
+  const code =
+    getStatusCode(status);
+
+  return (
+    STATUS_LABELS[code] ||
+    STATUS_LABELS[
+      String(status || "")
+        .trim()
+        .toLowerCase()
+    ] ||
+    status ||
+    "-"
+  );
+}
+
+function getBranchLabel(branch) {
+  if (!branch) {
+    return "-";
+  }
+
+  if (
+    typeof branch === "string"
+  ) {
+    return branch;
+  }
+
+  return (
+    branch?.label_km ||
+    branch?.labelKm ||
+    branch?.name_km ||
+    branch?.nameKm ||
+    branch?.name_en ||
+    branch?.nameEn ||
+    "-"
+  );
+}
+
+function getLookupLabel(value) {
+  if (!value) {
+    return "-";
+  }
+
+  if (
+    typeof value === "string"
+  ) {
+    return value;
+  }
+
+  return (
+    value?.label_km ||
+    value?.labelKm ||
+    value?.name_km ||
+    value?.nameKm ||
+    value?.label_en ||
+    value?.labelEn ||
+    value?.name_en ||
+    value?.nameEn ||
+    value?.code ||
+    "-"
   );
 }
 
@@ -146,140 +402,151 @@ export default function MemberInfoCard({
   const fileInputRef =
     useRef(null);
 
-  const [profilePreview, setProfilePreview] =
-    useState("/member.png");
+  const [
+    profilePreview,
+    setProfilePreview,
+  ] = useState(
+    DEFAULT_PROFILE_IMAGE,
+  );
 
-  const [imageError, setImageError] =
-    useState("");
+  const [
+    imageError,
+    setImageError,
+  ] = useState("");
 
   const memberId =
     getMemberId(member);
 
   const defaultProfileImage =
-    getDefaultProfileImage(member);
+    getDefaultProfileImage(
+      member,
+    );
 
-  /*
-   * Load the saved image for the exact member ID.
-   *
-   * My Account:
-   * member comes from useCurrentMember().
-   *
-   * Member detail:
-   * member comes from members.json by URL ID.
-   */
+  useEffect(() => {
+    setProfilePreview(
+      defaultProfileImage,
+    );
+  }, [
+    memberId,
+    defaultProfileImage,
+  ]);
+
   useEffect(() => {
     if (!memberId) {
-      setProfilePreview(
-        defaultProfileImage,
-      );
-
       return undefined;
     }
 
-    setProfilePreview(
-      getSavedProfileImage(
-        memberId,
-        defaultProfileImage,
-      ),
-    );
-
-    const handleProfileImageChange = (
+    const handleImageChange = (
       event,
     ) => {
-      const changedMemberId =
-        event.detail?.memberId;
-
       if (
-        String(changedMemberId) !==
+        String(
+          event.detail?.memberId,
+        ) !==
         String(memberId)
       ) {
         return;
       }
 
-      setProfilePreview(
-        event.detail?.imageData ||
-          defaultProfileImage,
-      );
+      if (
+        event.detail?.imageData
+      ) {
+        setProfilePreview(
+          event.detail.imageData,
+        );
+      }
     };
 
     window.addEventListener(
       "tnal-profile-image-change",
-      handleProfileImageChange,
+      handleImageChange,
     );
 
     return () => {
       window.removeEventListener(
         "tnal-profile-image-change",
-        handleProfileImageChange,
+        handleImageChange,
       );
     };
-  }, [
-    memberId,
-    defaultProfileImage,
-  ]);
+  }, [memberId]);
 
   if (!member) {
     return null;
   }
 
   const displayName =
-    member.fullNameKm ||
-    member.name_kh ||
-    member.full_name_km ||
-    member.name ||
+    member?.fullNameKm ||
+    member?.full_name_km ||
+    member?.name_kh ||
+    member?.nameKm ||
+    member?.name ||
     "-";
 
   const englishName =
-    member.fullNameEn ||
-    member.name_en ||
-    member.full_name_en ||
+    member?.fullNameEn ||
+    member?.full_name_en ||
+    member?.name_en ||
+    member?.nameEn ||
     "-";
 
   const role =
-    member.role || "MEMBER";
+    member?.role ||
+    member?.user_role ||
+    member?.userRole ||
+    "MEMBER";
 
   const roleLabel =
-    ROLE_LABELS[role] ||
-    ROLE_LABELS[
-      String(role).toLowerCase()
-    ] ||
-    role ||
-    ROLE_LABELS.member;
+    getRoleLabel(role);
 
   const status =
-    member.status || "ACTIVE";
+    member?.status ||
+    member?.status_code ||
+    member?.statusCode ||
+    "ACTIVE";
+
+  const statusCode =
+    getStatusCode(status);
 
   const statusLabel =
-    STATUS_LABELS[status] ||
-    STATUS_LABELS[
-      String(status).toLowerCase()
-    ] ||
-    status;
+    getStatusLabel(status);
 
   const statusStyle =
-    STATUS_BADGE_STYLES[status] ||
     STATUS_BADGE_STYLES[
-      String(status).toLowerCase()
+      statusCode
+    ] ||
+    STATUS_BADGE_STYLES[
+      String(status || "")
+        .toLowerCase()
     ] ||
     "bg-gray-100 text-text-secondary";
 
   const branch =
-    member.branch?.nameKm ||
-    member.branch?.name_km ||
-    member.branch?.name ||
-    member.branch ||
-    "-";
+    getBranchLabel(
+      member?.branch ||
+        member?.branch_name_km ||
+        member?.branchNameKm,
+    );
 
   const dateOfBirth =
-    member.dateOfBirth ||
-    member.date_of_birth ||
+    member?.date_of_birth ||
+    member?.dateOfBirth ||
     "-";
 
   const joinedDate =
-    member.joinedAt ||
-    member.joined_on ||
-    member.joinedOn ||
+    member?.joined_on ||
+    member?.joinedOn ||
+    member?.joinedAt ||
     "-";
+
+  const nationality =
+    getLookupLabel(
+      member?.nationality,
+    );
+
+  const ethnicity =
+    getLookupLabel(
+      member?.ethnicity,
+    );
 
   const handleChooseImage = () => {
     if (!allowProfileChange) {
@@ -289,104 +556,102 @@ export default function MemberInfoCard({
     fileInputRef.current?.click();
   };
 
-  const handleProfileImageChange = (
-    event,
-  ) => {
-    const file =
-      event.target.files?.[0];
+  const handleProfileImageChange =
+    (event) => {
+      const file =
+        event.target.files?.[0];
 
-    setImageError("");
+      setImageError("");
 
-    if (!file) {
-      return;
-    }
+      if (!file) {
+        return;
+      }
 
-    if (
-      !file.type.startsWith(
-        "image/",
-      )
-    ) {
-      setImageError(
-        "សូមជ្រើសរើសឯកសាររូបភាពប៉ុណ្ណោះ។",
-      );
-
-      event.target.value = "";
-
-      return;
-    }
-
-    if (
-      file.size >
-      MAX_PROFILE_IMAGE_SIZE
-    ) {
-      setImageError(
-        "ទំហំរូបភាពមិនត្រូវលើស 5MB។",
-      );
-
-      event.target.value = "";
-
-      return;
-    }
-
-    if (!memberId) {
-      setImageError(
-        "រកមិនឃើញលេខសម្គាល់សមាជិក។",
-      );
-
-      event.target.value = "";
-
-      return;
-    }
-
-    const reader =
-      new FileReader();
-
-    reader.onload = () => {
-      const imageData =
-        String(
-          reader.result || "",
-        );
-
-      if (!imageData) {
+      if (
+        !file.type.startsWith(
+          "image/",
+        )
+      ) {
         setImageError(
-          "មិនអាចអានរូបភាពបានទេ។",
+          "សូមជ្រើសរើសឯកសាររូបភាពប៉ុណ្ណោះ។",
         );
+
+        event.target.value = "";
 
         return;
       }
 
-      const saved =
-        saveProfileImage(
-          memberId,
+      if (
+        file.size >
+        MAX_PROFILE_IMAGE_SIZE
+      ) {
+        setImageError(
+          "ទំហំរូបភាពមិនត្រូវលើស 5MB។",
+        );
+
+        event.target.value = "";
+
+        return;
+      }
+
+      if (!memberId) {
+        setImageError(
+          "រកមិនឃើញលេខសម្គាល់សមាជិក។",
+        );
+
+        event.target.value = "";
+
+        return;
+      }
+
+      const reader =
+        new FileReader();
+
+      reader.onload = () => {
+        const imageData =
+          String(
+            reader.result || "",
+          );
+
+        if (!imageData) {
+          setImageError(
+            "មិនអាចអានរូបភាពបានទេ។",
+          );
+
+          return;
+        }
+
+        const saved =
+          saveProfileImage(
+            memberId,
+            imageData,
+          );
+
+        if (!saved) {
+          setImageError(
+            "មិនអាចរក្សាទុករូបភាពបានទេ។ រូបភាពអាចមានទំហំធំពេក។",
+          );
+
+          return;
+        }
+
+        setProfilePreview(
           imageData,
         );
+      };
 
-      if (!saved) {
+      reader.onerror = () => {
         setImageError(
-          "មិនអាចរក្សាទុករូបភាពបានទេ។ រូបភាពអាចមានទំហំធំពេក។",
+          "មិនអាចអានឯកសាររូបភាពបានទេ។",
         );
+      };
 
-        return;
-      }
-
-      setProfilePreview(
-        imageData,
+      reader.readAsDataURL(
+        file,
       );
+
+      event.target.value = "";
     };
-
-    reader.onerror = () => {
-      setImageError(
-        "មិនអាចអានឯកសាររូបភាពបានទេ។",
-      );
-    };
-
-    reader.readAsDataURL(file);
-
-    /*
-     * Allow selecting the same file again.
-     */
-    event.target.value = "";
-  };
 
   return (
     <div
@@ -415,7 +680,7 @@ export default function MemberInfoCard({
           xl:gap-6
         "
       >
-        {/* Profile */}
+        {/* PROFILE */}
 
         <div className="flex min-w-0 items-start gap-4 sm:gap-5">
           <div className="shrink-0">
@@ -446,7 +711,7 @@ export default function MemberInfoCard({
                 <Image
                   src={
                     profilePreview ||
-                    defaultProfileImage
+                    DEFAULT_PROFILE_IMAGE
                   }
                   alt={displayName}
                   fill
@@ -455,9 +720,20 @@ export default function MemberInfoCard({
                     96px
                   "
                   className="object-cover"
+
+                  /*
+                   * Important:
+                   * This allows backend images such as:
+                   *
+                   * http://localhost:8081/uploads/...
+                   *
+                   * without Next.js image host validation.
+                   */
+                  unoptimized
+
                   onError={() =>
                     setProfilePreview(
-                      "/member.png",
+                      DEFAULT_PROFILE_IMAGE,
                     )
                   }
                 />
@@ -468,11 +744,7 @@ export default function MemberInfoCard({
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="
-                      image/jpeg,
-                      image/png,
-                      image/webp
-                    "
+                    accept="image/jpeg,image/png,image/webp"
                     className="hidden"
                     onChange={
                       handleProfileImageChange
@@ -510,7 +782,9 @@ export default function MemberInfoCard({
                       focus:ring-white/70
                     "
                   >
-                    <Camera size={16} />
+                    <Camera
+                      size={16}
+                    />
                   </button>
                 </>
               )}
@@ -539,7 +813,9 @@ export default function MemberInfoCard({
                 font-bold
                 sm:text-2xl
               "
-              title={displayName}
+              title={
+                displayName
+              }
             >
               {displayName}
             </h2>
@@ -552,7 +828,9 @@ export default function MemberInfoCard({
                 text-gray-200
                 sm:text-sm
               "
-              title={englishName}
+              title={
+                englishName
+              }
             >
               {englishName}
             </p>
@@ -589,17 +867,17 @@ export default function MemberInfoCard({
 
         <div className="hidden h-24 w-px bg-white/40 xl:block" />
 
-        {/* Gender and branch */}
+        {/* GENDER + BRANCH */}
 
         <InfoGroup
           firstLabel="ភេទ"
           firstValue={getGenderDisplay(
-            member.gender,
+            member?.gender,
           )}
           firstIcon={
             <span className="text-sm">
               {getGenderIcon(
-                member.gender,
+                member?.gender,
               )}
             </span>
           }
@@ -610,55 +888,59 @@ export default function MemberInfoCard({
           }
         />
 
-        {/* Phone and email */}
+        {/* PHONE + EMAIL */}
 
         <InfoGroup
           firstLabel="លេខទូរស័ព្ទ"
           firstValue={
-            member.phone || "-"
+            member?.phone ||
+            "-"
           }
           firstIcon={
             <Phone className="h-4 w-4 shrink-0" />
           }
           secondLabel="អ៊ីមែល"
           secondValue={
-            member.email || "-"
+            member?.email ||
+            "-"
           }
           secondIcon={
             <Mail className="h-4 w-4 shrink-0" />
           }
         />
 
-        {/* Dates */}
+        {/* DATES */}
 
         <InfoGroup
           firstLabel="ថ្ងៃកំណើត"
-          firstValue={dateOfBirth}
+          firstValue={
+            dateOfBirth
+          }
           firstIcon={
             <Calendar className="h-4 w-4 shrink-0" />
           }
           secondLabel="ថ្ងៃចូលរួម"
-          secondValue={joinedDate}
+          secondValue={
+            joinedDate
+          }
           secondIcon={
             <CalendarCheck className="h-4 w-4 shrink-0" />
           }
         />
 
-        {/* Nationality and ethnicity */}
+        {/* NATIONALITY + ETHNICITY */}
 
         <InfoGroup
           firstLabel="សញ្ជាតិ"
           firstValue={
-            member.nationality ||
-            "-"
+            nationality
           }
           firstIcon={
             <Globe className="h-4 w-4 shrink-0" />
           }
           secondLabel="ជនជាតិ"
           secondValue={
-            member.ethnicity ||
-            "-"
+            ethnicity
           }
           secondIcon={
             <Users className="h-4 w-4 shrink-0" />
@@ -739,7 +1021,8 @@ function InfoItem({
             font-semibold
           "
           title={
-            typeof value === "string"
+            typeof value ===
+            "string"
               ? value
               : ""
           }

@@ -1,8 +1,9 @@
+// src/app/member/memberInfo/[id]/details/personal/page.js
+
 "use client";
 
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -15,220 +16,608 @@ import BoxFill from "@/components/forms/boxFill.js";
 import SelectArrow from "@/components/forms/SelectArrow";
 import FormDate from "@/components/forms/FormDate.js";
 
-import members from "@/data/members.json";
+const EMPTY_FORM = {
+  full_name_km: "",
+  full_name_en: "",
+  gender: "",
+  date_of_birth: "",
 
-const ROLE_OPTIONS = [
-  {
-    label: "ប្រធានសាខា",
-    value: "branch_leader",
-  },
-  {
-    label: "លេខាធិការ",
-    value: "secretary",
-  },
-  {
-    label: "សមាជិក",
-    value: "member",
-  },
-];
+  email: "",
+  phone: "",
 
-const LEVEL_OPTIONS = [
-  {
-    label: "កាំ ក",
-    value: "ក",
-  },
-  {
-    label: "កាំ ខ",
-    value: "ខ",
-  },
-  {
-    label: "កាំ គ",
-    value: "គ",
-  },
-  {
-    label: "កាំ ឃ",
-    value: "ឃ",
-  },
-  {
-    label: "កាំ ង",
-    value: "ង",
-  },
-];
+  nationality_id: "",
+  ethnicity_id: "",
+  religion_id: "",
 
-const SHIRT_SIZE_OPTIONS = [
-  {
-    label: "XS",
-    value: "XS",
-  },
-  {
-    label: "S",
-    value: "S",
-  },
-  {
-    label: "M",
-    value: "M",
-  },
-  {
-    label: "L",
-    value: "L",
-  },
-  {
-    label: "XL",
-    value: "XL",
-  },
-  {
-    label: "2XL",
-    value: "2XL",
-  },
-  {
-    label: "3XL",
-    value: "3XL",
-  },
-];
+  branch_id: "",
+  account_role: "",
 
-const STATUS_OPTIONS = [
-  {
-    label: "សកម្ម",
-    value: "សកម្ម",
-  },
-  {
-    label: "អសកម្ម",
-    value: "អសកម្ម",
-  },
-];
+  member_level_id: "",
+  tshirt_size: "",
 
-const RELIGION_OPTIONS = [
-  {
-    label: "ព្រះពុទ្ធ",
-    value: "ព្រះពុទ្ធ",
-  },
-  {
-    label: "អ៊ីស្លាម",
-    value: "អ៊ីស្លាម",
-  },
-  {
-    label: "គ្រីស្ទ",
-    value: "គ្រីស្ទ",
-  },
-  {
-    label: "មិនមានសាសនា",
-    value: "មិនមានសាសនា",
-  },
-  {
-    label: "ផ្សេងៗ",
-    value: "ផ្សេងៗ",
-  },
-];
+  current_address: "",
+  permanent_address: "",
 
-const GENDER_OPTIONS = [
+  account_status: "",
+
+  has_account: false,
+  account_id: null,
+
+  cv_file_id: null,
+};
+
+async function requestJson(
+  path,
+  options = {},
+) {
+  const isFormData =
+    options.body instanceof FormData;
+
+  const response = await fetch(
+    `/api${path}`,
+    {
+      ...options,
+
+      headers: {
+        Accept: "application/json",
+
+        ...(!isFormData
+          ? {
+              "Content-Type":
+                "application/json",
+            }
+          : {}),
+
+        ...(options.headers || {}),
+      },
+
+      cache: "no-store",
+    },
+  );
+
+  const text =
+    await response.text();
+
+  let body = null;
+
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = text;
+    }
+  }
+
+  if (!response.ok) {
+    const message =
+      typeof body === "object"
+        ? body?.message ||
+          body?.detail ||
+          body?.error ||
+          body?.title
+        : body;
+
+    throw new Error(
+      message ||
+        `Request failed with status ${response.status}`,
+    );
+  }
+
+  return body;
+}
+
+/*
+ * Generic lookup mapper.
+ *
+ * Examples supported:
+ *
+ * { id: 1, nameKm: "..." }
+ * { value: 1, code: "KHMER", labelKm: "ខ្មែរ" }
+ */
+function normalizeLookup(
+  data,
   {
-    label: "ប្រុស",
-    value: "ប្រុស",
-  },
-  {
-    label: "ស្រី",
-    value: "ស្រី",
-  },
-  {
-    label: "ព្រះសង្ឃ",
-    value: "ព្រះសង្ឃ",
-  },
-];
+    valueMode = "id",
+  } = {},
+) {
+  const list =
+    Array.isArray(data)
+      ? data
+      : Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(
+              data?.content,
+            )
+          ? data.content
+          : [];
 
-function normalizeRole(role) {
-  const value = String(role || "").trim();
+  return list
+    .map((item) => {
+      let rawValue = "";
 
-  const roleMap = {
-    admin: "admin",
-    អ្នកគ្រប់គ្រង: "admin",
+      if (valueMode === "code") {
+        rawValue =
+          item?.code ??
+          item?.value ??
+          item?.id ??
+          "";
+      } else if (
+        valueMode === "value"
+      ) {
+        rawValue =
+          item?.value ??
+          item?.code ??
+          item?.id ??
+          "";
+      } else {
+        rawValue =
+          item?.id ??
+          item?.value ??
+          item?.code ??
+          "";
+      }
 
-    branch_leader: "branch_leader",
-    ប្រធានសាខា: "branch_leader",
+      const label =
+        item?.labelKm ||
+        item?.label_km ||
+        item?.nameKm ||
+        item?.name_km ||
+        item?.labelEn ||
+        item?.label_en ||
+        item?.nameEn ||
+        item?.name_en ||
+        item?.branch_code ||
+        item?.branchCode ||
+        item?.code ||
+        "";
 
-    secretary: "secretary",
-    លេខាធិការ: "secretary",
+      return {
+        label,
+        value:
+          rawValue !== null &&
+          rawValue !== undefined
+            ? String(rawValue)
+            : "",
+      };
+    })
+    .filter(
+      (option) =>
+        option.value !== "" &&
+        option.label !== "",
+    );
+}
 
-    member: "member",
-    សមាជិក: "member",
+function normalizePersonalInfo(
+  data,
+) {
+  return {
+    ...EMPTY_FORM,
+
+    full_name_km:
+      data?.full_name_km ||
+      data?.fullNameKm ||
+      "",
+
+    full_name_en:
+      data?.full_name_en ||
+      data?.fullNameEn ||
+      "",
+
+    gender:
+      data?.gender
+        ? String(data.gender)
+        : "",
+
+    date_of_birth:
+      data?.date_of_birth ||
+      data?.dateOfBirth ||
+      "",
+
+    email:
+      data?.email || "",
+
+    phone:
+      data?.phone || "",
+
+    religion_id:
+      data?.religion_id != null
+        ? String(
+            data.religion_id,
+          )
+        : "",
+
+    ethnicity_id:
+      data?.ethnicity_id != null
+        ? String(
+            data.ethnicity_id,
+          )
+        : "",
+
+    nationality_id:
+      data?.nationality_id != null
+        ? String(
+            data.nationality_id,
+          )
+        : "",
+
+    member_level_id:
+      data?.member_level_id != null
+        ? String(
+            data.member_level_id,
+          )
+        : "",
+
+    branch_id:
+      data?.branch_id != null
+        ? String(
+            data.branch_id,
+          )
+        : "",
+
+    tshirt_size:
+      data?.tshirt_size || "",
+
+    current_address:
+      data?.current_address || "",
+
+    permanent_address:
+      data?.permanent_address || "",
+
+    cv_file_id:
+      data?.cv_file_id ?? null,
+
+    account_id:
+      data?.account_id ?? null,
+
+    has_account:
+      Boolean(
+        data?.has_account,
+      ),
+
+    account_role:
+      data?.account_role
+        ? String(
+            data.account_role,
+          )
+        : "",
+
+    account_status:
+      data?.account_status
+        ? String(
+            data.account_status,
+          )
+        : "",
   };
-
-  return roleMap[value] || value;
 }
 
 export default function PersonalPage() {
-  const params = useParams();
+  const params =
+    useParams();
 
-  const id = Array.isArray(params?.id)
-    ? params.id[0]
-    : params?.id;
+  const memberId =
+    Array.isArray(params?.id)
+      ? params.id[0]
+      : params?.id;
 
-  const fileRef = useRef(null);
+  const fileRef =
+    useRef(null);
 
-  const [member, setMember] =
-    useState(null);
+  const [
+    form,
+    setForm,
+  ] = useState(
+    EMPTY_FORM,
+  );
 
-  const [fileName, setFileName] =
-    useState("");
+  const [
+    originalRole,
+    setOriginalRole,
+  ] = useState("");
 
-  const branchOptions = useMemo(() => {
-    return [
-      ...new Set(
-        members
-          .map((item) => item.branch)
-          .filter(Boolean),
-      ),
-    ].map((branch) => ({
-      label: branch,
-      value: branch,
-    }));
-  }, []);
+  const [
+    cvFile,
+    setCvFile,
+  ] = useState(null);
+
+  const [
+    fileName,
+    setFileName,
+  ] = useState("");
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+  const [
+    saving,
+    setSaving,
+  ] = useState(false);
+
+  const [
+    changingStatus,
+    setChangingStatus,
+  ] = useState(false);
+
+  const [
+    error,
+    setError,
+  ] = useState("");
+
+  const [
+    success,
+    setSuccess,
+  ] = useState("");
+
+  /*
+   * ===============================
+   * LOOKUPS
+   * ===============================
+   */
+
+  const [
+    genders,
+    setGenders,
+  ] = useState([]);
+
+  const [
+    nationalities,
+    setNationalities,
+  ] = useState([]);
+
+  const [
+    ethnicities,
+    setEthnicities,
+  ] = useState([]);
+
+  const [
+    religions,
+    setReligions,
+  ] = useState([]);
+
+  const [
+    branches,
+    setBranches,
+  ] = useState([]);
+
+  const [
+    roles,
+    setRoles,
+  ] = useState([]);
+
+  const [
+    levels,
+    setLevels,
+  ] = useState([]);
+
+  const [
+    tshirtSizes,
+    setTshirtSizes,
+  ] = useState([]);
+
+  /*
+   * ===============================
+   * LOAD PERSONAL INFO
+   * ===============================
+   */
 
   useEffect(() => {
-    const selectedMember =
-      members.find(
-        (item) =>
-          String(item.id) ===
-          String(id),
-      );
-
-    if (!selectedMember) {
-      setMember(null);
+    if (!memberId) {
+      setLoading(false);
       return;
     }
 
-    setMember({
-      ...selectedMember,
+    let active = true;
 
-      role: normalizeRole(
-        selectedMember.role,
-      ),
+    async function loadPersonalInfo() {
+      try {
+        setLoading(true);
+        setError("");
 
-      level:
-        selectedMember.level ||
-        selectedMember.memberLevel ||
-        selectedMember.rank ||
-        "",
+        const data =
+          await requestJson(
+            `/members/${memberId}/personal-info`,
+          );
 
-      shirtSize:
-        selectedMember.shirtSize ||
-        selectedMember.shirt_size ||
-        selectedMember.tshirtSize ||
-        "",
-    });
-  }, [id]);
+        if (!active) {
+          return;
+        }
+
+        const normalized =
+          normalizePersonalInfo(
+            data,
+          );
+
+        setForm(normalized);
+
+        setOriginalRole(
+          normalized.account_role,
+        );
+
+        if (
+          normalized.cv_file_id
+        ) {
+          setFileName(
+            `CV #${normalized.cv_file_id}`,
+          );
+        }
+      } catch (loadError) {
+        console.error(
+          "Cannot load personal info:",
+          loadError,
+        );
+
+        if (active) {
+          setError(
+            loadError.message ||
+              "មិនអាចទាញយកព័ត៌មានផ្ទាល់ខ្លួនបានទេ។",
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadPersonalInfo();
+
+    return () => {
+      active = false;
+    };
+  }, [memberId]);
+
+  /*
+   * ===============================
+   * LOAD LOOKUPS
+   *
+   * Load them independently.
+   * One failed lookup must not
+   * break every other dropdown.
+   * ===============================
+   */
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadLookup(
+      path,
+      setter,
+      options,
+    ) {
+      try {
+        const data =
+          await requestJson(
+            path,
+          );
+
+        if (!active) {
+          return;
+        }
+
+        setter(
+          normalizeLookup(
+            data,
+            options,
+          ),
+        );
+      } catch (lookupError) {
+        console.error(
+          `Cannot load ${path}:`,
+          lookupError,
+        );
+
+        if (active) {
+          setter([]);
+        }
+      }
+    }
+
+    loadLookup(
+      "/lookups/genders",
+      setGenders,
+      {
+        valueMode: "code",
+      },
+    );
+
+    loadLookup(
+      "/lookups/nationalities",
+      setNationalities,
+      {
+        valueMode: "id",
+      },
+    );
+
+    loadLookup(
+      "/lookups/ethnicities",
+      setEthnicities,
+      {
+        valueMode: "id",
+      },
+    );
+
+    loadLookup(
+      "/lookups/religions",
+      setReligions,
+      {
+        valueMode: "id",
+      },
+    );
+
+    loadLookup(
+      "/branches/options",
+      setBranches,
+      {
+        valueMode: "id",
+      },
+    );
+
+    loadLookup(
+      "/lookups/user-roles",
+      setRoles,
+      {
+        valueMode: "code",
+      },
+    );
+
+    loadLookup(
+      "/lookups/member-levels",
+      setLevels,
+      {
+        valueMode: "id",
+      },
+    );
+
+    /*
+     * T-shirt is special.
+     *
+     * Backend returns:
+     * value = "2XL"
+     * code  = "TWO_XL"
+     *
+     * Personal info expects "2XL".
+     */
+    loadLookup(
+      "/lookups/tshirt-sizes",
+      setTshirtSizes,
+      {
+        valueMode: "value",
+      },
+    );
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  /*
+   * ===============================
+   * FIELD CHANGE
+   * ===============================
+   */
 
   const handleChange =
     (field) => (event) => {
       const value =
         event.target.value;
 
-      setMember(
-        (previousMember) => ({
-          ...previousMember,
+      setError("");
+      setSuccess("");
+
+      setForm(
+        (previous) => ({
+          ...previous,
           [field]: value,
         }),
       );
     };
+
+  /*
+   * ===============================
+   * CV
+   * ===============================
+   */
 
   const handleFileChange = (
     event,
@@ -236,53 +625,443 @@ export default function PersonalPage() {
     const file =
       event.target.files?.[0];
 
-    if (!file) return;
+    if (!file) {
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+
+    const allowedExtensions = [
+      "pdf",
+      "docx",
+      "jpg",
+      "jpeg",
+      "png",
+    ];
+
+    const extension =
+      file.name
+        .split(".")
+        .pop()
+        ?.toLowerCase();
+
+    if (
+      !allowedExtensions.includes(
+        extension,
+      )
+    ) {
+      setError(
+        "អនុញ្ញាតតែ PDF, DOCX, JPG, JPEG និង PNG ប៉ុណ្ណោះ។",
+      );
+
+      event.target.value = "";
+
+      return;
+    }
 
     if (
       file.size >
       5 * 1024 * 1024
     ) {
-      alert(
-        "ទំហំឯកសារមិនត្រូវលើស 5MB",
+      setError(
+        "ទំហំឯកសារមិនត្រូវលើស 5MB។",
       );
 
       event.target.value = "";
+
       return;
     }
 
+    setCvFile(file);
     setFileName(file.name);
   };
 
-  const handleSave = () => {
-    const cvFile =
-      fileRef.current
-        ?.files?.[0] || null;
+  /*
+   * ===============================
+   * ACCOUNT STATUS
+   *
+   * Backend remains the source
+   * of truth for:
+   *
+   * ADMIN:
+   * Leader / Secretary / Member
+   *
+   * BRANCH_LEADER:
+   * Secretary / Member
+   *
+   * SECRETARY:
+   * Member only
+   * ===============================
+   */
 
-    console.log(
-      "Member ID:",
-      id,
-    );
+  const handleAccountStatusChange =
+    async (event) => {
+      const nextStatus =
+        event.target.value;
 
-    console.log(
-      "Updated member:",
-      member,
-    );
+      if (
+        !memberId ||
+        !form.has_account ||
+        !nextStatus
+      ) {
+        return;
+      }
 
-    console.log(
-      "CV:",
-      cvFile,
-    );
+      if (
+        nextStatus ===
+        form.account_status
+      ) {
+        return;
+      }
 
-    alert(
-      "រក្សាទុកព័ត៌មានបានជោគជ័យ",
-    );
-  };
+      const oldStatus =
+        form.account_status;
 
-  if (!member) {
+      setError("");
+      setSuccess("");
+
+      /*
+       * Optimistic UI
+       */
+      setForm(
+        (previous) => ({
+          ...previous,
+          account_status:
+            nextStatus,
+        }),
+      );
+
+      try {
+        setChangingStatus(
+          true,
+        );
+
+        const action =
+          nextStatus === "ACTIVE"
+            ? "enable"
+            : "disable";
+
+        const response =
+          await requestJson(
+            `/members/${memberId}/account/${action}`,
+            {
+              method: "PATCH",
+            },
+          );
+
+        setForm(
+          (previous) => ({
+            ...previous,
+
+            account_status:
+              response?.status ||
+              nextStatus,
+          }),
+        );
+
+        setSuccess(
+          nextStatus === "ACTIVE"
+            ? "បានបើកដំណើរការគណនីដោយជោគជ័យ។"
+            : "បានបិទដំណើរការគណនីដោយជោគជ័យ។",
+        );
+      } catch (statusError) {
+        console.error(
+          "Cannot change account status:",
+          statusError,
+        );
+
+        /*
+         * Restore previous state
+         * when backend rejects it.
+         */
+        setForm(
+          (previous) => ({
+            ...previous,
+            account_status:
+              oldStatus,
+          }),
+        );
+
+        setError(
+          statusError.message ||
+            "អ្នកមិនមានសិទ្ធិផ្លាស់ប្ដូរស្ថានភាពគណនីនេះទេ។",
+        );
+      } finally {
+        setChangingStatus(
+          false,
+        );
+      }
+    };
+
+  /*
+   * ===============================
+   * SAVE
+   * ===============================
+   */
+
+  const handleSave =
+    async () => {
+      if (!memberId) {
+        setError(
+          "រកមិនឃើញលេខសម្គាល់សមាជិក។",
+        );
+
+        return;
+      }
+
+      if (
+        !form.full_name_km.trim()
+      ) {
+        setError(
+          "សូមបញ្ចូលឈ្មោះជាភាសាខ្មែរ។",
+        );
+
+        return;
+      }
+
+      if (!form.gender) {
+        setError(
+          "សូមជ្រើសរើសភេទ។",
+        );
+
+        return;
+      }
+
+      if (!form.branch_id) {
+        setError(
+          "សូមជ្រើសរើសសាខា។",
+        );
+
+        return;
+      }
+
+      try {
+        setSaving(true);
+        setError("");
+        setSuccess("");
+
+        /*
+         * Normal personal information.
+         *
+         * account_role and
+         * account_status are NOT
+         * included because they use
+         * dedicated endpoints.
+         */
+        const payload = {
+          full_name_km:
+            form.full_name_km.trim(),
+
+          full_name_en:
+            form.full_name_en.trim() ||
+            null,
+
+          gender:
+            form.gender,
+
+          date_of_birth:
+            form.date_of_birth ||
+            null,
+
+          email:
+            form.email.trim() ||
+            null,
+
+          phone:
+            form.phone.trim() ||
+            null,
+
+          religion_id:
+            form.religion_id
+              ? Number(
+                  form.religion_id,
+                )
+              : null,
+
+          ethnicity_id:
+            form.ethnicity_id
+              ? Number(
+                  form.ethnicity_id,
+                )
+              : null,
+
+          nationality_id:
+            form.nationality_id
+              ? Number(
+                  form.nationality_id,
+                )
+              : null,
+
+          member_level_id:
+            form.member_level_id
+              ? Number(
+                  form.member_level_id,
+                )
+              : null,
+
+          branch_id:
+            Number(
+              form.branch_id,
+            ),
+
+          tshirt_size:
+            form.tshirt_size ||
+            null,
+
+          current_address:
+            form.current_address.trim() ||
+            null,
+
+          permanent_address:
+            form.permanent_address.trim() ||
+            null,
+        };
+
+        const updatedPersonalInfo =
+          await requestJson(
+            `/members/${memberId}/personal-info`,
+            {
+              method: "PUT",
+
+              body:
+                JSON.stringify(
+                  payload,
+                ),
+            },
+          );
+
+        /*
+         * Role uses its own endpoint.
+         */
+        let updatedRole =
+          form.account_role;
+
+        if (
+          form.has_account &&
+          form.account_role &&
+          form.account_role !==
+            originalRole
+        ) {
+          const accountResponse =
+            await requestJson(
+              `/members/${memberId}/personal-info/account/role`,
+              {
+                method: "PATCH",
+
+                body:
+                  JSON.stringify({
+                    role:
+                      form.account_role,
+                  }),
+              },
+            );
+
+          updatedRole =
+            accountResponse?.role ||
+            form.account_role;
+
+          setOriginalRole(
+            updatedRole,
+          );
+        }
+
+        /*
+         * CV uses multipart upload.
+         */
+        let cvResponse = null;
+
+        if (cvFile) {
+          const formData =
+            new FormData();
+
+          formData.append(
+            "file",
+            cvFile,
+          );
+
+          cvResponse =
+            await requestJson(
+              `/members/${memberId}/personal-info/cv`,
+              {
+                method: "PUT",
+                body: formData,
+              },
+            );
+
+          setCvFile(null);
+
+          if (
+            fileRef.current
+          ) {
+            fileRef.current.value =
+              "";
+          }
+        }
+
+        /*
+         * Use the latest available
+         * response to refresh fields.
+         */
+        const latest =
+          cvResponse ||
+          updatedPersonalInfo;
+
+        const normalized =
+          normalizePersonalInfo(
+            latest,
+          );
+
+        setForm(
+          (previous) => ({
+            ...previous,
+            ...normalized,
+
+            account_role:
+              updatedRole,
+
+            /*
+             * Preserve current status
+             * in case the PUT response
+             * does not contain it.
+             */
+            account_status:
+              normalized.account_status ||
+              previous.account_status,
+          }),
+        );
+
+        if (
+          normalized.cv_file_id
+        ) {
+          setFileName(
+            `CV #${normalized.cv_file_id}`,
+          );
+        }
+
+        setSuccess(
+          "រក្សាទុកព័ត៌មានបានជោគជ័យ។",
+        );
+      } catch (saveError) {
+        console.error(
+          "Cannot save personal info:",
+          saveError,
+        );
+
+        setError(
+          saveError.message ||
+            "មិនអាចរក្សាទុកព័ត៌មានបានទេ។",
+        );
+      } finally {
+        setSaving(false);
+      }
+    };
+
+  if (loading) {
     return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">
-          រកមិនឃើញព័ត៌មានសមាជិក
+      <div className="flex min-h-[300px] items-center justify-center">
+        <p className="text-sm text-gray-500">
+          កំពុងទាញយកព័ត៌មានផ្ទាល់ខ្លួន...
         </p>
       </div>
     );
@@ -314,7 +1093,9 @@ export default function PersonalPage() {
             xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]
           "
         >
-          {/* Form fields */}
+          {/* =========================
+              FORM
+          ========================= */}
 
           <div
             className="
@@ -327,10 +1108,10 @@ export default function PersonalPage() {
             <BoxFill
               label="ឈ្មោះជាភាសាខ្មែរ"
               value={
-                member.name_kh || ""
+                form.full_name_km
               }
               onChange={handleChange(
-                "name_kh",
+                "full_name_km",
               )}
               placeholder="បញ្ចូលឈ្មោះជាភាសាខ្មែរ"
             />
@@ -338,42 +1119,44 @@ export default function PersonalPage() {
             <BoxFill
               label="ឈ្មោះជាអក្សរឡាតាំង"
               value={
-                member.name_en || ""
+                form.full_name_en
               }
               onChange={handleChange(
-                "name_en",
+                "full_name_en",
               )}
               placeholder="បញ្ចូលឈ្មោះជាអក្សរឡាតាំង"
             />
+
             <FormSelect
               label="ភេទ"
               value={
-                member.gender || ""
+                form.gender
               }
               onChange={handleChange(
                 "gender",
               )}
               placeholder="ជ្រើសរើសភេទ"
-              options={GENDER_OPTIONS}
+              options={
+                genders
+              }
             />
+
             <FormDate
               label="ថ្ងៃខែឆ្នាំកំណើត"
               name="date_of_birth"
               value={
-                member.date_of_birth ||
-                ""
+                form.date_of_birth
               }
               onChange={handleChange(
                 "date_of_birth",
               )}
             />
 
-            
             <BoxFill
               label="អ៊ីមែល"
               type="email"
               value={
-                member.email || ""
+                form.email
               }
               onChange={handleChange(
                 "email",
@@ -385,7 +1168,7 @@ export default function PersonalPage() {
               label="លេខទូរស័ព្ទ"
               type="tel"
               value={
-                member.phone || ""
+                form.phone
               }
               onChange={handleChange(
                 "phone",
@@ -393,108 +1176,171 @@ export default function PersonalPage() {
               placeholder="បញ្ចូលលេខទូរស័ព្ទ"
             />
 
-            
-
-            <BoxFill
+            <FormSelect
               label="សញ្ជាតិ"
               value={
-                member.nationality ||
-                ""
+                form.nationality_id
               }
               onChange={handleChange(
-                "nationality",
+                "nationality_id",
               )}
-              placeholder="បញ្ចូលសញ្ជាតិ"
+              placeholder="ជ្រើសរើសសញ្ជាតិ"
+              options={
+                nationalities
+              }
             />
 
-            <BoxFill
+            <FormSelect
               label="ជនជាតិ"
               value={
-                member.ethnicity || ""
+                form.ethnicity_id
               }
               onChange={handleChange(
-                "ethnicity",
+                "ethnicity_id",
               )}
-              placeholder="បញ្ចូលជនជាតិ"
+              placeholder="ជ្រើសរើសជនជាតិ"
+              options={
+                ethnicities
+              }
             />
+
             <FormSelect
               label="សាសនា"
               value={
-                member.religion || ""
+                form.religion_id
               }
               onChange={handleChange(
-                "religion",
+                "religion_id",
               )}
               placeholder="ជ្រើសរើសសាសនា"
               options={
-                RELIGION_OPTIONS
+                religions
               }
             />
+
             <FormSelect
               label="សាខា"
               value={
-                member.branch || ""
+                form.branch_id
               }
               onChange={handleChange(
-                "branch",
+                "branch_id",
               )}
               placeholder="ជ្រើសរើសសាខា"
-              options={branchOptions}
+              options={
+                branches
+              }
             />
 
             <FormSelect
               label="តួនាទី"
               value={
-                member.role || ""
+                form.account_role
               }
               onChange={handleChange(
-                "role",
+                "account_role",
               )}
-              placeholder="ជ្រើសរើសតួនាទី"
-              options={ROLE_OPTIONS}
+              placeholder={
+                form.has_account
+                  ? "ជ្រើសរើសតួនាទី"
+                  : "មិនមានគណនី"
+              }
+              options={
+                roles
+              }
+              disabled={
+                !form.has_account
+              }
             />
 
             <FormSelect
               label="កម្រិតសមាជិក(កាំ)"
               value={
-                member.level || ""
+                form.member_level_id
               }
               onChange={handleChange(
-                "level",
+                "member_level_id",
               )}
               placeholder="ជ្រើសរើសកម្រិតសមាជិក"
-              options={LEVEL_OPTIONS}
+              options={
+                levels
+              }
             />
 
             <FormSelect
               label="ទំហំអាវ"
               value={
-                member.shirtSize ||
-                ""
+                form.tshirt_size
               }
               onChange={handleChange(
-                "shirtSize",
+                "tshirt_size",
               )}
               placeholder="ជ្រើសរើសទំហំអាវ"
               options={
-                SHIRT_SIZE_OPTIONS
+                tshirtSizes
               }
             />
 
             <FormSelect
-              label="ស្ថានភាព"
+              label="ស្ថានភាពគណនី"
               value={
-                member.status || ""
+                form.account_status
+              }
+              onChange={
+                handleAccountStatusChange
+              }
+              placeholder={
+                form.has_account
+                  ? "ជ្រើសរើសស្ថានភាព"
+                  : "មិនមានគណនី"
+              }
+              options={[
+                {
+                  label:
+                    "សកម្ម",
+                  value:
+                    "ACTIVE",
+                },
+
+                {
+                  label:
+                    "អសកម្ម",
+                  value:
+                    "INACTIVE",
+                },
+              ]}
+              disabled={
+                !form.has_account ||
+                changingStatus
+              }
+            />
+
+            <BoxFill
+              label="អាសយដ្ឋានបច្ចុប្បន្ន"
+              value={
+                form.current_address
               }
               onChange={handleChange(
-                "status",
+                "current_address",
               )}
-              placeholder="ជ្រើសរើសស្ថានភាព"
-              options={STATUS_OPTIONS}
+              placeholder="បញ្ចូលអាសយដ្ឋានបច្ចុប្បន្ន"
+            />
+
+            <BoxFill
+              label="អាសយដ្ឋានអចិន្ត្រៃយ៍"
+              value={
+                form.permanent_address
+              }
+              onChange={handleChange(
+                "permanent_address",
+              )}
+              placeholder="បញ្ចូលអាសយដ្ឋានអចិន្ត្រៃយ៍"
             />
           </div>
 
-          {/* CV upload */}
+          {/* =========================
+              CV
+          ========================= */}
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
@@ -539,7 +1385,7 @@ export default function PersonalPage() {
               <input
                 ref={fileRef}
                 type="file"
-                accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                accept=".jpg,.jpeg,.png,.pdf,.docx"
                 className="hidden"
                 onChange={
                   handleFileChange
@@ -562,7 +1408,8 @@ export default function PersonalPage() {
               </button>
 
               <p className="mt-2 text-xs text-gray-400">
-                JPG, DOCX, PDF, PNG
+                JPG, JPEG, DOCX,
+                PDF, PNG
                 (មិនលើស 5MB)
               </p>
 
@@ -576,7 +1423,9 @@ export default function PersonalPage() {
                     font-medium
                     text-primary
                   "
-                  title={fileName}
+                  title={
+                    fileName
+                  }
                 >
                   {fileName}
                 </p>
@@ -586,14 +1435,50 @@ export default function PersonalPage() {
         </div>
       </div>
 
+      {/* MESSAGE */}
+
+      {error && (
+        <div className="rounded-lg bg-error-bg px-4 py-3">
+          <p className="text-sm font-medium text-error">
+            {error}
+          </p>
+        </div>
+      )}
+
+      {success && (
+        <div className="rounded-lg bg-success-bg px-4 py-3">
+          <p className="text-sm font-medium text-success">
+            {success}
+          </p>
+        </div>
+      )}
+
+      {/* SAVE */}
+
       <div className="flex justify-end">
         <SaveButton
-          onClick={handleSave}
-        />
+          onClick={
+            handleSave
+          }
+          disabled={
+            saving ||
+            changingStatus
+          }
+        >
+          {saving
+            ? "កំពុងរក្សាទុក..."
+            : "រក្សាទុក"}
+        </SaveButton>
       </div>
     </div>
   );
 }
+
+/*
+ * =========================================
+ * SELECT
+ * =========================================
+ */
 
 function FormSelect({
   label,
@@ -611,9 +1496,15 @@ function FormSelect({
 
       <div className="relative">
         <select
-          value={value}
-          onChange={onChange}
-          disabled={disabled}
+          value={
+            value ?? ""
+          }
+          onChange={
+            onChange
+          }
+          disabled={
+            disabled
+          }
           className="
             h-11
             w-full
@@ -634,37 +1525,27 @@ function FormSelect({
             disabled:opacity-60
           "
         >
-          <option value="" disabled>
+          <option value="">
             {placeholder}
           </option>
 
           {options.map(
-            (option) => {
-              const optionLabel =
-                typeof option ===
-                "object"
-                  ? option.label
-                  : option;
-
-              const optionValue =
-                typeof option ===
-                "object"
-                  ? option.value
-                  : option;
-
-              return (
-                <option
-                  key={
-                    optionValue
-                  }
-                  value={
-                    optionValue
-                  }
-                >
-                  {optionLabel}
-                </option>
-              );
-            },
+            (option) => (
+              <option
+                key={
+                  String(
+                    option.value,
+                  )
+                }
+                value={
+                  option.value
+                }
+              >
+                {
+                  option.label
+                }
+              </option>
+            ),
           )}
         </select>
 

@@ -2,7 +2,6 @@
 
 import {
   useEffect,
-  useMemo,
   useState,
 } from "react";
 
@@ -19,8 +18,6 @@ import {
   getTemplateUrl,
 } from "@/lib/documentStorage";
 
-import members from "@/data/members.json";
-
 const STORAGE_KEY =
   "tnal-member-documents";
 
@@ -28,6 +25,10 @@ const DEFAULT_SAVED_DOCUMENTS = {
   idCards: [],
   certificates: [],
 };
+
+const BACKEND_ORIGIN =
+  process.env.NEXT_PUBLIC_BACKEND_ORIGIN ||
+  "http://localhost:8081";
 
 function normalizeArray(value) {
   return Array.isArray(value)
@@ -71,31 +72,341 @@ function normalizeOldDocuments(
   };
 }
 
+async function fetchJson(
+  path,
+  signal,
+) {
+  const response = await fetch(
+    `/api${path}`,
+    {
+      method: "GET",
+
+      headers: {
+        Accept: "application/json",
+      },
+
+      cache: "no-store",
+      signal,
+    },
+  );
+
+  const responseText =
+    await response.text();
+
+  let responseBody = null;
+
+  if (responseText) {
+    try {
+      responseBody =
+        JSON.parse(responseText);
+    } catch {
+      responseBody =
+        responseText;
+    }
+  }
+
+  if (!response.ok) {
+    const message =
+      typeof responseBody ===
+      "object"
+        ? responseBody?.message ||
+          responseBody?.detail ||
+          responseBody?.error
+        : responseBody;
+
+    throw new Error(
+      message ||
+        `Request failed with status ${response.status}`,
+    );
+  }
+
+  return responseBody;
+}
+
+function getProfilePhotoUrl(
+  member,
+) {
+  const value =
+    member?.profile_photo?.url ||
+    member?.profilePhoto?.url ||
+    member?.profile_photo_url ||
+    member?.profilePhotoUrl ||
+    member?.profile_photo ||
+    member?.profilePhoto ||
+    "";
+
+  if (!value) {
+    return "/member.png";
+  }
+
+  /*
+   * Object containing an ID but no URL.
+   */
+  if (
+    typeof value === "object"
+  ) {
+    return (
+      value?.url ||
+      "/member.png"
+    );
+  }
+
+  const path = String(value);
+
+  if (
+    path.startsWith("http://") ||
+    path.startsWith("https://")
+  ) {
+    return path;
+  }
+
+  const normalizedPath =
+    path.startsWith("/")
+      ? path
+      : `/${path}`;
+
+  return `${BACKEND_ORIGIN}${normalizedPath}`;
+}
+
+function getGenderCode(value) {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  return (
+    value?.code ||
+    value?.value ||
+    ""
+  );
+}
+
+function getGenderLabel(value) {
+  if (
+    value &&
+    typeof value === "object"
+  ) {
+    return (
+      value?.label_km ||
+      value?.labelKm ||
+      value?.label_en ||
+      value?.labelEn ||
+      value?.code ||
+      "-"
+    );
+  }
+
+  const code = String(
+    value || "",
+  ).toUpperCase();
+
+  if (code === "MALE") {
+    return "ប្រុស";
+  }
+
+  if (code === "FEMALE") {
+    return "ស្រី";
+  }
+
+  if (code === "OTHER") {
+    return "ផ្សេងៗ";
+  }
+
+  return value || "-";
+}
+
+function getRoleLabel(value) {
+  const code = String(
+    typeof value === "object"
+      ? value?.code || ""
+      : value || "",
+  ).toUpperCase();
+
+  const labels = {
+    ADMIN:
+      "អ្នកគ្រប់គ្រង",
+
+    BRANCH_LEADER:
+      "ប្រធានសាខា",
+
+    SECRETARY:
+      "លេខាធិការ",
+
+    MEMBER:
+      "សមាជិក",
+  };
+
+  return (
+    value?.label_km ||
+    value?.labelKm ||
+    labels[code] ||
+    code ||
+    "-"
+  );
+}
+
+function getBranchLabel(value) {
+  if (!value) {
+    return "-";
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  return (
+    value?.name_km ||
+    value?.nameKm ||
+    value?.label_km ||
+    value?.labelKm ||
+    value?.name_en ||
+    value?.nameEn ||
+    "-"
+  );
+}
+
+function mapMemberFromApi(
+  data,
+) {
+  if (!data) {
+    return null;
+  }
+
+  const member =
+    data?.member || data;
+
+  const fullNameKm =
+    member?.full_name_km ||
+    member?.fullNameKm ||
+    member?.name_kh ||
+    member?.nameKm ||
+    "";
+
+  const fullNameEn =
+    member?.full_name_en ||
+    member?.fullNameEn ||
+    member?.name_en ||
+    member?.nameEn ||
+    "";
+
+  const joinedOn =
+    member?.joined_on ||
+    member?.joinedOn ||
+    member?.joined_at ||
+    member?.joinedAt ||
+    "";
+
+  const dateOfBirth =
+    member?.date_of_birth ||
+    member?.dateOfBirth ||
+    "";
+
+  const branch =
+    member?.branch ||
+    member?.branch_name_km ||
+    member?.branchNameKm ||
+    "";
+
+  const role =
+    member?.role ||
+    member?.user_role ||
+    member?.userRole ||
+    "MEMBER";
+
+  const gender =
+    member?.gender;
+
+  const profilePhoto =
+    getProfilePhotoUrl(
+      member,
+    );
+
+  /*
+   * Preserve both API-style and the old
+   * frontend field names because your
+   * document components may still use
+   * the old JSON structure.
+   */
+  return {
+    ...member,
+
+    id:
+      member?.id,
+
+    memberId:
+      member?.id,
+
+    full_name_km:
+      fullNameKm,
+
+    full_name_en:
+      fullNameEn,
+
+    name_kh:
+      fullNameKm,
+
+    nameKm:
+      fullNameKm,
+
+    name_en:
+      fullNameEn,
+
+    nameEn:
+      fullNameEn,
+
+    phone:
+      member?.phone || "",
+
+    email:
+      member?.email || "",
+
+    gender:
+      getGenderCode(gender),
+
+    genderLabel:
+      getGenderLabel(gender),
+
+    date_of_birth:
+      dateOfBirth,
+
+    dateOfBirth:
+      dateOfBirth,
+
+    joined_on:
+      joinedOn,
+
+    joinedAt:
+      joinedOn,
+
+    branch,
+
+    branchName:
+      getBranchLabel(branch),
+
+    role:
+      typeof role === "object"
+        ? role?.code || "MEMBER"
+        : role,
+
+    roleLabel:
+      getRoleLabel(role),
+
+    profile_photo:
+      profilePhoto,
+
+    profilePhoto,
+  };
+}
+
 export default function DocumentsPage() {
   const params = useParams();
 
-  const memberId = Array.isArray(
-    params?.id,
-  )
-    ? params.id[0]
-    : params?.id;
+  const memberId =
+    Array.isArray(params?.id)
+      ? params.id[0]
+      : params?.id;
 
-  /*
-   * This page must use the member ID
-   * from the URL.
-   *
-   * Do not use useCurrentMember() here,
-   * because that would return the
-   * currently logged-in member instead
-   * of the selected member.
-   */
-  const member = useMemo(() => {
-    return members.find(
-      (item) =>
-        String(item.id) ===
-        String(memberId),
-    );
-  }, [memberId]);
+  const [member, setMember] =
+    useState(null);
 
   const [
     savedDocuments,
@@ -114,9 +425,80 @@ export default function DocumentsPage() {
     setLoading,
   ] = useState(true);
 
+  const [
+    error,
+    setError,
+  ] = useState("");
+
+  /*
+   * =========================================
+   * FETCH SELECTED MEMBER FROM BACKEND
+   * =========================================
+   */
   useEffect(() => {
     if (!memberId) {
+      setMember(null);
       setLoading(false);
+
+      return undefined;
+    }
+
+    const controller =
+      new AbortController();
+
+    async function loadMember() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data =
+          await fetchJson(
+            `/members/${memberId}`,
+            controller.signal,
+          );
+
+        console.log(
+          "Member detail response:",
+          data,
+        );
+
+        setMember(
+          mapMemberFromApi(data),
+        );
+      } catch (fetchError) {
+        if (
+          fetchError.name !==
+          "AbortError"
+        ) {
+          console.error(
+            "Cannot load member:",
+            fetchError,
+          );
+
+          setMember(null);
+
+          setError(
+            fetchError.message ||
+              "មិនអាចទាញយកព័ត៌មានសមាជិកបានទេ",
+          );
+        }
+      }
+    }
+
+    loadMember();
+
+    return () => {
+      controller.abort();
+    };
+  }, [memberId]);
+
+  /*
+   * =========================================
+   * LOAD SAVED GENERATED DOCUMENTS
+   * =========================================
+   */
+  useEffect(() => {
+    if (!memberId) {
       return undefined;
     }
 
@@ -126,8 +508,6 @@ export default function DocumentsPage() {
 
     async function loadMemberDocuments() {
       try {
-        setLoading(true);
-
         const allDocuments =
           JSON.parse(
             localStorage.getItem(
@@ -157,8 +537,9 @@ export default function DocumentsPage() {
           of allCreatedDocuments
         ) {
           const templateStorageId =
-            document.templateStorageId ||
-            document.templateId;
+            document
+              ?.templateStorageId ||
+            document?.templateId;
 
           if (
             !document?.id ||
@@ -181,10 +562,12 @@ export default function DocumentsPage() {
                 url,
               );
             }
-          } catch (error) {
+          } catch (
+            templateError
+          ) {
             console.error(
               `Cannot load template ${templateStorageId}:`,
-              error,
+              templateError,
             );
           }
         }
@@ -208,10 +591,12 @@ export default function DocumentsPage() {
         setTemplateUrls(
           urls,
         );
-      } catch (error) {
+      } catch (
+        documentError
+      ) {
         console.error(
           "Cannot load member documents:",
-          error,
+          documentError,
         );
 
         if (active) {
@@ -220,10 +605,6 @@ export default function DocumentsPage() {
           );
 
           setTemplateUrls({});
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
         }
       }
     }
@@ -242,6 +623,16 @@ export default function DocumentsPage() {
       );
     };
   }, [memberId]);
+
+  /*
+   * Wait for both member request and
+   * initial document setup.
+   */
+  useEffect(() => {
+    if (member || error) {
+      setLoading(false);
+    }
+  }, [member, error]);
 
   const handleDeleteDocument =
     async ({
@@ -324,19 +715,17 @@ export default function DocumentsPage() {
                   certificates:
                     updatedDocuments.certificates,
 
-                  /*
-                   * Clear old single-document
-                   * storage fields.
-                   */
                   idCard: null,
                   certificate: null,
                 },
               }),
             );
-          } catch (error) {
+          } catch (
+            storageError
+          ) {
             console.error(
               "Cannot update saved documents:",
-              error,
+              storageError,
             );
           }
 
@@ -376,10 +765,12 @@ export default function DocumentsPage() {
           await deleteTemplateFile(
             templateStorageId,
           );
-        } catch (error) {
+        } catch (
+          deleteError
+        ) {
           console.error(
             "Cannot delete template file:",
-            error,
+            deleteError,
           );
         }
       }
@@ -387,16 +778,19 @@ export default function DocumentsPage() {
 
   if (loading) {
     return (
-      <div
-        className="
-          flex
-          min-h-[300px]
-          items-center
-          justify-center
-        "
-      >
+      <div className="flex min-h-[300px] items-center justify-center">
         <p className="text-sm text-gray-500">
-          កំពុងទាញយកឯកសារ...
+          កំពុងទាញយកព័ត៌មានសមាជិក...
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6 text-center">
+        <p className="text-sm text-error">
+          {error}
         </p>
       </div>
     );
@@ -404,18 +798,7 @@ export default function DocumentsPage() {
 
   if (!member) {
     return (
-      <div
-        className="
-          rounded-xl
-          border
-          border-gray-200
-          bg-white
-          p-6
-          text-center
-          text-sm
-          text-gray-500
-        "
-      >
+      <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-500">
         រកមិនឃើញព័ត៌មានសមាជិក
       </div>
     );
@@ -441,9 +824,7 @@ export default function DocumentsPage() {
         2xl:gap-10
       "
     >
-      {/* =====================================
-          DEFAULT ID CARD
-      ===================================== */}
+      {/* DEFAULT ID CARD */}
 
       <DocumentPreviewCard
         title="ប័ណ្ណសម្គាល់សមាជិក"
@@ -457,9 +838,7 @@ export default function DocumentsPage() {
         />
       </DocumentPreviewCard>
 
-      {/* =====================================
-          CREATED ID CARDS
-      ===================================== */}
+      {/* CREATED ID CARDS */}
 
       {customIdCards.map(
         (
@@ -470,11 +849,13 @@ export default function DocumentsPage() {
             ...member,
 
             id:
-              customIdCard.memberId ||
+              customIdCard
+                .memberId ||
               member.id,
 
             memberId:
-              customIdCard.memberId ||
+              customIdCard
+                .memberId ||
               member.id,
 
             name_kh:
@@ -483,7 +864,8 @@ export default function DocumentsPage() {
               member.name_kh,
 
             name_en:
-              customIdCard.memberNameEn ||
+              customIdCard
+                .memberNameEn ||
               customIdCard.name_en ||
               member.name_en,
 
@@ -500,8 +882,10 @@ export default function DocumentsPage() {
               member.phone,
 
             date_of_birth:
-              customIdCard.dateOfBirth ||
-              customIdCard.date_of_birth ||
+              customIdCard
+                .dateOfBirth ||
+              customIdCard
+                .date_of_birth ||
               member.date_of_birth,
 
             branch:
@@ -511,17 +895,20 @@ export default function DocumentsPage() {
             role:
               customIdCard.role ||
               member.role ||
-              "member",
+              "MEMBER",
 
             profile_photo:
-              customIdCard.profilePhoto ||
-              customIdCard.profile_photo ||
+              customIdCard
+                .profilePhoto ||
+              customIdCard
+                .profile_photo ||
               member.profile_photo ||
-              "/profile.png",
+              "/member.png",
           };
 
           const templateStorageId =
-            customIdCard.templateStorageId ||
+            customIdCard
+              .templateStorageId ||
             customIdCard.templateId;
 
           return (
@@ -530,28 +917,26 @@ export default function DocumentsPage() {
                 customIdCard.id ||
                 `id-card-${index}`
               }
-              className="
-                group
-                relative
-                min-w-0
-              "
+              className="group relative min-w-0"
             >
               <button
                 type="button"
                 onClick={() =>
-                  handleDeleteDocument({
-                    group:
-                      "idCards",
+                  handleDeleteDocument(
+                    {
+                      group:
+                        "idCards",
 
-                    documentId:
-                      customIdCard.id ||
-                      null,
+                      documentId:
+                        customIdCard.id ||
+                        null,
 
-                    documentIndex:
-                      index,
+                      documentIndex:
+                        index,
 
-                    templateStorageId,
-                  })
+                      templateStorageId,
+                    },
+                  )
                 }
                 aria-label="លុបប័ណ្ណសម្គាល់សមាជិក"
                 title="លុប"
@@ -606,9 +991,7 @@ export default function DocumentsPage() {
         },
       )}
 
-      {/* =====================================
-          LETTER OF APPOINTMENT
-      ===================================== */}
+      {/* LETTER OF APPOINTMENT */}
 
       <DocumentPreviewCard
         title="លិខិតតែងតាំង"
@@ -624,9 +1007,7 @@ export default function DocumentsPage() {
         />
       </DocumentPreviewCard>
 
-      {/* =====================================
-          DEFAULT CERTIFICATE
-      ===================================== */}
+      {/* DEFAULT CERTIFICATE */}
 
       <DocumentPreviewCard
         title="បណ្ណសរសើរ"
@@ -643,9 +1024,7 @@ export default function DocumentsPage() {
         />
       </DocumentPreviewCard>
 
-      {/* =====================================
-          CREATED CERTIFICATES
-      ===================================== */}
+      {/* CREATED CERTIFICATES */}
 
       {customCertificates.map(
         (
@@ -656,11 +1035,13 @@ export default function DocumentsPage() {
             ...member,
 
             id:
-              customCertificate.memberId ||
+              customCertificate
+                .memberId ||
               member.id,
 
             memberId:
-              customCertificate.memberId ||
+              customCertificate
+                .memberId ||
               member.id,
 
             name_kh:
@@ -669,7 +1050,8 @@ export default function DocumentsPage() {
               member.name_kh,
 
             name_en:
-              customCertificate.memberNameEn ||
+              customCertificate
+                .memberNameEn ||
               customCertificate.name_en ||
               member.name_en,
 
@@ -678,14 +1060,18 @@ export default function DocumentsPage() {
               member.branch,
 
             profile_photo:
-              customCertificate.profilePhoto ||
-              customCertificate.profile_photo ||
+              customCertificate
+                .profilePhoto ||
+              customCertificate
+                .profile_photo ||
               member.profile_photo,
           };
 
           const templateStorageId =
-            customCertificate.templateStorageId ||
-            customCertificate.templateId;
+            customCertificate
+              .templateStorageId ||
+            customCertificate
+              .templateId;
 
           return (
             <div
@@ -693,28 +1079,27 @@ export default function DocumentsPage() {
                 customCertificate.id ||
                 `certificate-${index}`
               }
-              className="
-                group
-                relative
-                min-w-0
-              "
+              className="group relative min-w-0"
             >
               <button
                 type="button"
                 onClick={() =>
-                  handleDeleteDocument({
-                    group:
-                      "certificates",
+                  handleDeleteDocument(
+                    {
+                      group:
+                        "certificates",
 
-                    documentId:
-                      customCertificate.id ||
-                      null,
+                      documentId:
+                        customCertificate
+                          .id ||
+                        null,
 
-                    documentIndex:
-                      index,
+                      documentIndex:
+                        index,
 
-                    templateStorageId,
-                  })
+                      templateStorageId,
+                    },
+                  )
                 }
                 aria-label="លុបវិញ្ញាបនបត្រ"
                 title="លុប"
@@ -749,13 +1134,15 @@ export default function DocumentsPage() {
 
               <DocumentPreviewCard
                 title={
-                  customCertificate.title ||
+                  customCertificate
+                    .title ||
                   "វិញ្ញាបនបត្រ"
                 }
                 actionType="download"
                 downloadText="ទាញយក"
                 filename={`certificate-${
-                  customCertificate.id ||
+                  customCertificate
+                    .id ||
                   index + 1
                 }.pdf`}
                 orientation="landscape"
@@ -763,34 +1150,41 @@ export default function DocumentsPage() {
               >
                 <CertificateCard
                   recipientType={
-                    customCertificate.recipientType ||
+                    customCertificate
+                      .recipientType ||
                     "member"
                   }
                   member={
                     certificateMember
                   }
                   activity={
-                    customCertificate.activity ||
+                    customCertificate
+                      .activity ||
                     null
                   }
                   language={
-                    customCertificate.language ||
+                    customCertificate
+                      .language ||
                     "km"
                   }
                   color={
-                    customCertificate.color ||
+                    customCertificate
+                      .color ||
                     "#12224c"
                   }
                   font={
-                    customCertificate.font ||
+                    customCertificate
+                      .font ||
                     "Noto Sans"
                   }
                   fontSize={
-                    customCertificate.fontSize ||
+                    customCertificate
+                      .fontSize ||
                     "medium"
                   }
                   description={
-                    customCertificate.description ||
+                    customCertificate
+                      .description ||
                     ""
                   }
                   templatePreview={

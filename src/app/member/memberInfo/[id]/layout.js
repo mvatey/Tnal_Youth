@@ -1,14 +1,14 @@
 "use client";
 
 import {
-  notFound,
   usePathname,
   useRouter,
 } from "next/navigation";
 
 import {
   use,
-  useMemo,
+  useEffect,
+  useState,
 } from "react";
 
 import {
@@ -20,18 +20,58 @@ import {
 } from "lucide-react";
 
 import { FaHandHoldingDollar } from "react-icons/fa6";
+import { HiCash } from "react-icons/hi";
 
 import MemberInfoCard from "@/components/card/memberInfoCard";
 import HeaderMemberInfo from "@/components/navigation/headerMemberInfo";
 import MemberTabNav from "@/components/navigation/MemberTabNav";
 import StatCard from "@/components/dashboard/statCard";
 
-import users from "@/data/members.json";
-import { RiFileTransferLine } from "react-icons/ri";
-import { BiTransfer } from "react-icons/bi";
-import { GiCash } from "react-icons/gi";
-import { BsCashCoin } from "react-icons/bs";
-import { HiCash } from "react-icons/hi";
+async function fetchJson(
+  path,
+  signal,
+) {
+  const response = await fetch(
+    `/api${path}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+      signal,
+    },
+  );
+
+  const text =
+    await response.text();
+
+  let body = null;
+
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = text;
+    }
+  }
+
+  if (!response.ok) {
+    const message =
+      typeof body === "object"
+        ? body?.message ||
+          body?.detail ||
+          body?.error
+        : body;
+
+    throw new Error(
+      message ||
+        `Request failed with status ${response.status}`,
+    );
+  }
+
+  return body;
+}
 
 export default function MemberInfoLayout({
   children,
@@ -41,6 +81,21 @@ export default function MemberInfoLayout({
   const pathname = usePathname();
 
   const { id } = use(params);
+
+  const [
+    member,
+    setMember,
+  ] = useState(null);
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+  const [
+    error,
+    setError,
+  ] = useState("");
 
   const isDetailPage =
     pathname.includes("/details");
@@ -65,16 +120,68 @@ export default function MemberInfoLayout({
     isParticipation ||
     isPassword;
 
-  const member = useMemo(() => {
-    return users.find(
-      (user) =>
-        String(user.id) === String(id),
-    );
-  }, [id]);
+  useEffect(() => {
+    if (!id) {
+      setMember(null);
+      setLoading(false);
 
-  if (!member) {
-    notFound();
-  }
+      return undefined;
+    }
+
+    const controller =
+      new AbortController();
+
+    async function loadMember() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data =
+          await fetchJson(
+            `/members/${id}`,
+            controller.signal,
+          );
+
+        console.log(
+          "Member info response:",
+          data,
+        );
+
+        setMember(
+          data?.member || data,
+        );
+      } catch (fetchError) {
+        if (
+          fetchError.name !==
+          "AbortError"
+        ) {
+          console.error(
+            "Cannot load member:",
+            fetchError,
+          );
+
+          setMember(null);
+
+          setError(
+            fetchError.message ||
+              "មិនអាចទាញយកព័ត៌មានសមាជិកបានទេ",
+          );
+        }
+      } finally {
+        if (
+          !controller.signal.aborted
+        ) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadMember();
+
+    return () => {
+      controller.abort();
+    };
+  }, [id]);
 
   const handleOpenDetails = () => {
     router.push(
@@ -93,6 +200,34 @@ export default function MemberInfoLayout({
 
     router.push("/member");
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[300px] items-center justify-center">
+        <p className="text-sm text-gray-500">
+          កំពុងទាញយកព័ត៌មានសមាជិក...
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6 text-center">
+        <p className="text-sm text-error">
+          {error}
+        </p>
+      </div>
+    );
+  }
+
+  if (!member) {
+    return (
+      <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-500">
+        រកមិនឃើញព័ត៌មានសមាជិក
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -124,8 +259,7 @@ export default function MemberInfoLayout({
         }
       />
 
-      {/* Default StatCards:
-          documents, participation, password */}
+      {/* Leave summary cards static for now */}
 
       {!isDetailPage &&
         showDefaultStats && (
@@ -166,8 +300,6 @@ export default function MemberInfoLayout({
             />
           </div>
         )}
-
-      {/* Donation StatCards */}
 
       {!isDetailPage &&
         isDonation && (
@@ -218,8 +350,6 @@ export default function MemberInfoLayout({
           </div>
         )}
 
-      {/* Sponsor StatCards */}
-
       {!isDetailPage &&
         isSponsor && (
           <div
@@ -257,6 +387,7 @@ export default function MemberInfoLayout({
               iconColor="text-warning"
               iconBg="bg-warning-bg"
             />
+
             <StatCard
               icon={CreditCard}
               label="ការទូទាត់តាម ធនាគារ"
@@ -268,13 +399,11 @@ export default function MemberInfoLayout({
           </div>
         )}
 
-      {/* Member information appears below StatCards */}
+      {/* Now receives real API member */}
 
       <MemberInfoCard
         member={member}
       />
-
-      {/* Tabs appear below MemberInfoCard */}
 
       {!isDetailPage && (
         <MemberTabNav
@@ -282,7 +411,9 @@ export default function MemberInfoLayout({
         />
       )}
 
-      <div>{children}</div>
+      <div>
+        {children}
+      </div>
     </div>
   );
 }
