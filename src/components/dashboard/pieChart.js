@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import {
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+} from "recharts";
 import { ChevronDown } from "lucide-react";
 
 const MONTHS_KM = [
@@ -19,231 +23,376 @@ const MONTHS_KM = [
   { value: "12", label: "ខែធ្នូ" },
 ];
 
-// Real "today" — reflects whenever the component actually renders.
-const TODAY = new Date();
-const CURRENT_YEAR = TODAY.getFullYear();
-const CURRENT_MONTH = String(TODAY.getMonth() + 1).padStart(2, "0");
-
-import dashboardActivityBreakdown from "@/data/dashboard/activitySummary.json";
-
-// ---- DATA LAYER ----
-// Imported directly since data now lives under src/ (not browser-
-// fetchable). Kept as `async function` so the .then()/.catch() loading
-// logic elsewhere in this component doesn't need to change. Swap for a
-// real fetch() call once the backend endpoint exists.
-async function fetchActivityBreakdown(month) {
-  const match = dashboardActivityBreakdown.find((entry) => entry.month === month);
-
-  if (match) {
-    return match;
-  }
-
-  // No entry for this month in the payload — treat the same as the
-  // zero-data case rather than erroring, since "no activities yet" is a
-  // normal, expected state (not a failure).
-  return {
-    month,
-    internal: { label: "កម្មវិធីខាងក្នុង", count: 0 },
-    external: { label: "កម្មវិធីខាងក្រៅ", count: 0 },
-  };
-}
-// --------------------------------------------------------------------
-
-// Legend dot colors (solid).
 const COLORS = {
   internal: "#4B5FD9",
   external: "#22C55E",
 };
 
-// Gradient stops for the donut slices — subtle vertical gradient,
-// dark at top fading to a lighter tint at the bottom, per reference image.
 const GRADIENT_IDS = {
   internal: "activityInternalGradient",
   external: "activityExternalGradient",
 };
+
 const GRADIENT_STOPS = {
-  internal: { from: "#3B4FC7", to: "#A5B4E8" },
-  external: { from: "#22C55E", to: "#6EE0A0" },
+  internal: {
+    from: "#3B4FC7",
+    to: "#A5B4E8",
+  },
+  external: {
+    from: "#22C55E",
+    to: "#6EE0A0",
+  },
 };
 
-// Donut pixel size — kept large to fill the taller card.
 const DONUT_SIZE = 190;
 const DONUT_INNER_RADIUS = 60;
 const DONUT_OUTER_RADIUS = 90;
 
+function getYearOptions(selectedMonth) {
+  const selectedYear =
+    Number(
+      String(selectedMonth ?? "").slice(
+        0,
+        4
+      )
+    ) || new Date().getFullYear();
 
-function MonthDropdown({ value, onChange }) {
+  return [
+    selectedYear - 1,
+    selectedYear,
+    selectedYear + 1,
+  ];
+}
+
+function MonthDropdown({
+  value,
+  onChange,
+  disabled = false,
+}) {
+  const yearOptions =
+    getYearOptions(value);
+
   return (
-    <div style={{ position: "relative" }}>
+    <div className="relative">
       <select
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        style={{
-          appearance: "none",
-          WebkitAppearance: "none",
-          background: "#F7F8FA",
-          border: "1px solid #E7E9EE",
-          borderRadius: 8,
-          padding: "6px 30px 6px 12px",
-          fontSize: 13,
-          color: "#4A4F59",
-          fontFamily: "inherit",
-          cursor: "pointer",
-          outline: "none",
-        }}
+        onChange={(event) =>
+          onChange?.(event.target.value)
+        }
+        disabled={disabled}
+        className="
+          appearance-none
+          rounded-lg
+          border
+          border-[#E7E9EE]
+          bg-[#F7F8FA]
+          py-1.5
+          pl-3
+          pr-8
+          text-[13px]
+          text-[#4A4F59]
+          outline-none
+          transition
+          hover:border-gray-300
+          disabled:cursor-not-allowed
+          disabled:opacity-60
+        "
       >
-        {MONTHS_KM.map((m) => (
-          <option key={m.value} value={`${CURRENT_YEAR}-${m.value}`}>
-            {m.label}
-          </option>
-        ))}
+        {yearOptions.flatMap((year) =>
+          MONTHS_KM.map((month) => (
+            <option
+              key={`${year}-${month.value}`}
+              value={`${year}-${month.value}`}
+            >
+              {month.label} {year}
+            </option>
+          ))
+        )}
       </select>
+
       <ChevronDown
         size={14}
-        color="#8A8F98"
-        style={{
-          position: "absolute",
-          right: 10,
-          top: "50%",
-          transform: "translateY(-50%)",
-          pointerEvents: "none",
-        }}
+        className="
+          pointer-events-none
+          absolute
+          right-2.5
+          top-1/2
+          -translate-y-1/2
+          text-[#8A8F98]
+        "
       />
     </div>
   );
 }
 
-function LegendRow({ color, label, count, isLoading }) {
+function LegendRow({
+  color,
+  label,
+  count,
+  loading,
+}) {
   return (
     <div
-      className="flex items-center gap-2 text-sm text-text-secondary"
-      style={{ marginBottom: 12, opacity: isLoading ? 0.4 : 1, transition: "opacity 0.2s" }}
+      className={`
+        mb-3
+        flex
+        items-center
+        gap-2
+        text-sm
+        text-text-secondary
+        transition-opacity
+        ${
+          loading
+            ? "opacity-40"
+            : "opacity-100"
+        }
+      `}
     >
       <span
-        className="w-2.5 h-2.5 rounded-full"
-        style={{ background: color, flexShrink: 0 }}
+        className="h-2.5 w-2.5 shrink-0 rounded-full"
+        style={{
+          backgroundColor: color,
+        }}
       />
+
       <span>{label}</span>
-      <span className="font-semibold text-text-primary">ចំនួន {count}</span>
+
+      <span className="font-semibold text-text-primary">
+        ចំនួន{" "}
+        {Number(count || 0).toLocaleString()}
+      </span>
     </div>
   );
 }
 
-export default function DonutChart() {
-  const [month, setMonth] = useState(`${CURRENT_YEAR}-${CURRENT_MONTH}`);
-  const [data, setData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+function ChartSkeleton() {
+  return (
+    <div className="flex flex-1 items-center justify-center gap-8">
+      <div className="h-[190px] w-[190px] animate-pulse rounded-full border-[30px] border-gray-100" />
 
-  const loadData = useCallback((selectedMonth) => {
-    setIsLoading(true);
-    setError(null);
-    fetchActivityBreakdown(selectedMonth)
-      .then((res) => {
-        setData(res);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setError("មិនអាចទាញយកទិន្នន័យបានទេ");
-        setIsLoading(false);
-      });
-  }, []);
+      <div className="space-y-4">
+        <div className="h-4 w-36 animate-pulse rounded bg-gray-100" />
+        <div className="h-4 w-36 animate-pulse rounded bg-gray-100" />
+      </div>
+    </div>
+  );
+}
 
-  useEffect(() => {
-    loadData(month);
-  }, [month, loadData]);
+export default function ActivitySummaryChart({
+  data,
+  month,
+  onMonthChange,
+  loading = false,
+}) {
+  /*
+   * Backend response:
+   *
+   * {
+   *   "period": "2026-07",
+   *   "internal": 5,
+   *   "external": 3,
+   *   "total": 8
+   * }
+   */
 
-  const total = data ? data.internal.count + data.external.count : 0;
+  const internalCount =
+    Number(data?.internal) || 0;
 
-  const chartData = data
+  const externalCount =
+    Number(data?.external) || 0;
+
+  const calculatedTotal =
+    internalCount + externalCount;
+
+  const total =
+    Number(data?.total) ||
+    calculatedTotal;
+
+  /*
+   * Recharts does not display a useful empty
+   * pie when both values are zero.
+   *
+   * During zero-data state, two temporary gray
+   * values preserve the donut shape.
+   */
+  const hasData = total > 0;
+
+  const chartData = hasData
     ? [
-        { name: data.internal.label, value: data.internal.count, key: "internal" },
-        { name: data.external.label, value: data.external.count, key: "external" },
+        {
+          name: "កម្មវិធីខាងក្នុង",
+          value: internalCount,
+          key: "internal",
+        },
+        {
+          name: "កម្មវិធីខាងក្រៅ",
+          value: externalCount,
+          key: "external",
+        },
       ]
     : [
-        { name: "internal", value: 1, key: "internal" },
-        { name: "external", value: 1, key: "external" },
+        {
+          name: "កម្មវិធីខាងក្នុង",
+          value: 1,
+          key: "internal",
+        },
+        {
+          name: "កម្មវិធីខាងក្រៅ",
+          value: 1,
+          key: "external",
+        },
       ];
 
   return (
-    <div
-      style={{
-        background: "#FFFFFF",
-        borderRadius: 14,
-        padding: "16px 18px",
-        boxShadow: "0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)",
-        width: "100%",
-        height: "100%",
-        minHeight: 340,
-        boxSizing: "border-box",
-        display: "flex",
-        flexDirection: "column",
-      }}
+    <section
+      className="
+        flex
+        h-full
+        min-h-[340px]
+        w-full
+        flex-col
+        rounded-[14px]
+        bg-white
+        px-[18px]
+        py-4
+        shadow-[0_1px_2px_rgba(16,24,40,0.04),0_1px_3px_rgba(16,24,40,0.06)]
+      "
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 12,
-        }}
-      >
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#232629" }}>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="m-0 text-[15px] font-semibold text-[#232629]">
           សង្ខេបកម្មវិធី
         </h3>
-        <MonthDropdown value={month} onChange={setMonth} />
+
+        <MonthDropdown
+          value={month}
+          onChange={onMonthChange}
+          disabled={loading}
+        />
       </div>
 
-      {error ? (
-        <div style={{ padding: "30px 0", textAlign: "center", color: "#B3261E", fontSize: 13 }}>
-          {error}
-        </div>
+      {loading && !data ? (
+        <ChartSkeleton />
       ) : (
-        <div className="flex items-center gap-8" style={{ justifyContent: "center", flex: 1 }}>
-          <div style={{ position: "relative", width: DONUT_SIZE, height: DONUT_SIZE, flexShrink: 0 }}>
-            <ResponsiveContainer width="100%" height="100%">
+        <div className="flex flex-1 flex-col items-center justify-center gap-6 sm:flex-row sm:gap-8">
+          <div
+            className="relative shrink-0"
+            style={{
+              width: DONUT_SIZE,
+              height: DONUT_SIZE,
+            }}
+          >
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+            >
               <PieChart>
                 <defs>
-                  <linearGradient id={GRADIENT_IDS.internal} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={GRADIENT_STOPS.internal.from} />
-                    <stop offset="100%" stopColor={GRADIENT_STOPS.internal.to} />
+                  <linearGradient
+                    id={
+                      GRADIENT_IDS.internal
+                    }
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="0%"
+                      stopColor={
+                        GRADIENT_STOPS
+                          .internal.from
+                      }
+                    />
+
+                    <stop
+                      offset="100%"
+                      stopColor={
+                        GRADIENT_STOPS
+                          .internal.to
+                      }
+                    />
                   </linearGradient>
-                  <linearGradient id={GRADIENT_IDS.external} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={GRADIENT_STOPS.external.from} />
-                    <stop offset="100%" stopColor={GRADIENT_STOPS.external.to} />
+
+                  <linearGradient
+                    id={
+                      GRADIENT_IDS.external
+                    }
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="0%"
+                      stopColor={
+                        GRADIENT_STOPS
+                          .external.from
+                      }
+                    />
+
+                    <stop
+                      offset="100%"
+                      stopColor={
+                        GRADIENT_STOPS
+                          .external.to
+                      }
+                    />
                   </linearGradient>
                 </defs>
+
                 <Pie
                   data={chartData}
                   dataKey="value"
-                  innerRadius={DONUT_INNER_RADIUS}
-                  outerRadius={DONUT_OUTER_RADIUS}
+                  nameKey="name"
+                  innerRadius={
+                    DONUT_INNER_RADIUS
+                  }
+                  outerRadius={
+                    DONUT_OUTER_RADIUS
+                  }
                   paddingAngle={2}
-                  isAnimationActive={!isLoading}
+                  stroke="#FFFFFF"
+                  strokeWidth={2}
+                  isAnimationActive={
+                    !loading && hasData
+                  }
                 >
-                  {chartData.map((entry) => (
-                    <Cell
-                      key={entry.key}
-                      fill={isLoading ? "#EDEEF2" : `url(#${GRADIENT_IDS[entry.key]})`}
-                      opacity={isLoading ? 0.6 : 1}
-                    />
-                  ))}
+                  {chartData.map(
+                    (entry) => (
+                      <Cell
+                        key={entry.key}
+                        fill={
+                          hasData
+                            ? `url(#${
+                                GRADIENT_IDS[
+                                  entry.key
+                                ]
+                              })`
+                            : "#EDEEF2"
+                        }
+                        opacity={
+                          loading ? 0.6 : 1
+                        }
+                      />
+                    )
+                  )}
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
-            {!isLoading && total === 0 && (
+
+            {!loading && !hasData && (
               <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 12,
-                  color: "#9AA0A8",
-                  textAlign: "center",
-                  padding: "0 24px",
-                }}
+                className="
+                  absolute
+                  inset-0
+                  flex
+                  items-center
+                  justify-center
+                  px-6
+                  text-center
+                  text-xs
+                  text-[#9AA0A8]
+                "
               >
                 មិនទាន់មានទិន្នន័យ
               </div>
@@ -253,41 +402,20 @@ export default function DonutChart() {
           <div>
             <LegendRow
               color={COLORS.internal}
-              label={data ? data.internal.label : "កម្មវិធីខាងក្នុង"}
-              count={data ? data.internal.count : 0}
-              isLoading={isLoading}
+              label="កម្មវិធីខាងក្នុង"
+              count={internalCount}
+              loading={loading}
             />
+
             <LegendRow
               color={COLORS.external}
-              label={data ? data.external.label : "កម្មវិធីខាងក្រៅ"}
-              count={data ? data.external.count : 0}
-              isLoading={isLoading}
+              label="កម្មវិធីខាងក្រៅ"
+              count={externalCount}
+              loading={loading}
             />
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }
-
-/**
- * ActivityBreakdownDonut
- * -----------------------
- * Renders the "សង្ខេបកម្មវិធី" (Program Summary) donut widget.
- *
- * Wired to match this API contract:
- *
- *   GET /dashboard/activities-breakdown?month=YYYY-MM
- *
- *   Response:
- *   {
- *     "month": "2026-07",
- *     "internal": { "label": "កម្មវិធីខាងក្នុង", "count": 280 },
- *     "external": { "label": "កម្មវិធីខាងក្រៅ", "count": 220 }
- *   }
- *
- * `fetchActivityBreakdown()` below is a MOCK standing in for the real
- * fetch call. Swap its internals for a real `fetch(...)` once the
- * backend endpoint exists — the component and its data shape don't
- * need to change at all.
- */

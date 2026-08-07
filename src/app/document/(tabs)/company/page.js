@@ -4,13 +4,13 @@ import { useState } from "react";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
-import DataTable from "@/components/tables/DataTable";
+import DataTable from "@/components/table/DataTable";
 import AddDocumentForm from "@/components/document/AddDocumentForm";
 import EditDocumentForm from "@/components/document/EditDocumentForm";
 import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
-import DeleteConfirmModal from "@/components/modals/Confirmdeletemodal";
+import DeleteConfirmModal from "@/components/popup/Confirmdeletemodal";
 
-import documentCompany from "@/data/companyDocuments.json";
+import documentCompany from "@/data/documentCompany.json";
 
 const EMPTY_FORM = {
   title: "",
@@ -19,6 +19,18 @@ const EMPTY_FORM = {
   date: "",
   files: [],
 };
+const DOCUMENT_TYPE_BADGE_STYLES = {
+  PDF: "bg-red-100 text-red-500",
+  Excel: "bg-success-bg text-success",
+  Word: "bg-blue-50 text-blue-600",
+  PowerPoint: "bg-orange-50 text-orange-600",
+  PNG: "bg-purple-50 text-purple-600",
+  JPG: "bg-yellow-50 text-yellow-600",
+  JPEG: "bg-yellow-50 text-yellow-600",
+};
+
+const DEFAULT_DOCUMENT_TYPE_STYLE =
+  "bg-gray-100 text-text-secondary";
 
 export default function CompanyDocumentPage() {
   const [documents, setDocuments] = useState(documentCompany);
@@ -82,20 +94,41 @@ export default function CompanyDocumentPage() {
       width: "w-[10%]",
     },
     {
-      header: "ប្រភេទឯកសារ",
-      width: "w-[10%]",
-      render: (item) => (
-        <span className="inline-flex rounded-md bg-red-100 px-3 py-1 text-xs font-medium text-red-500">
-          {item.type}
-        </span>
-      ),
-    },
+  header: "ប្រភេទឯកសារ",
+  width: "w-[10%]",
+  align: "center",
+  render: (item) => {
+    const badgeStyle =
+      DOCUMENT_TYPE_BADGE_STYLES[item.type] ||
+      DEFAULT_DOCUMENT_TYPE_STYLE;
+
+    return (
+      <span
+        className={`
+          inline-flex
+          max-w-full
+          items-center
+          justify-center
+          rounded-full
+          px-2
+          py-1
+          text-[11px]
+          truncate whitespace-nowrap
+          
+          ${badgeStyle}
+        `}
+      >
+        {item.type}
+      </span>
+    );
+  },
+},
     {
       header: "សកម្មភាព",
       width: "w-[11%]",
       align: "center",
       render: (item) => (
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center justify-center ">
           <button
             type="button"
             onClick={() => setSelectedDocument(item)}
@@ -160,7 +193,7 @@ export default function CompanyDocumentPage() {
       whitespace-nowrap
       rounded-lg
       bg-success
-      px-3
+      px-18
       py-2
       text-sm
       font-medium
@@ -175,29 +208,47 @@ export default function CompanyDocumentPage() {
   </button>
 );
 
-  const handleAddSave = () => {
-    const selectedFile = form.files?.[0];
+  const handleAddSave = (newDocumentFromForm) => {
 
-    const newDocument = {
-      id: Date.now(),
-      title: form.title,
-      branch: form.branch,
-      date: form.date || new Date().toISOString().slice(0, 10),
-      description: form.description,
-      size: selectedFile
-        ? `${(selectedFile.size / 1024 / 1024).toFixed(1)}MB`
-        : "-",
-      type: selectedFile
-        ? selectedFile.name.split(".").pop()?.toUpperCase()
-        : "PDF",
-      image: "/document.jpg",
-      files: form.files || [],
-    };
+  const newDocument = {
+    id: Date.now(),
 
-    setDocuments((previous) => [newDocument, ...previous]);
-    setForm(EMPTY_FORM);
-    setShowAddForm(false);
+    title: newDocumentFromForm.title,
+
+    branch: newDocumentFromForm.branch,
+
+    description: newDocumentFromForm.description,
+
+    date:
+      newDocumentFromForm.date ||
+      new Date().toISOString().slice(0,10),
+
+    size: newDocumentFromForm.size || "-",
+
+    // TAKE FROM CREATE FORM
+    type: newDocumentFromForm.type,
+
+    // FILE FORMAT ONLY
+    fileFormat:
+      newDocumentFromForm.fileFormat,
+
+    image:
+      newDocumentFromForm.image ||
+      "/document.jpg",
+
+    files:
+      newDocumentFromForm.files || [],
   };
+
+
+  setDocuments((previous)=>[
+    newDocument,
+    ...previous,
+  ]);
+
+  setForm(EMPTY_FORM);
+  setShowAddForm(false);
+};
 
   const handleEditSave = () => {
     setDocuments((previous) =>

@@ -1,6 +1,10 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import {
+  Suspense,
+  useEffect,
+  useState,
+} from "react";
 import {
   useRouter,
   useSearchParams,
@@ -13,16 +17,10 @@ function ResetPasswordContent() {
   const router = useRouter();
   const params = useSearchParams();
 
-  const phoneOrEmail =
-    params.get("phoneOrEmail") ||
-    params.get("phone") ||
-    params.get("email") ||
-    "";
+  const [phoneOrEmail, setPhoneOrEmail] =
+    useState("");
 
-  const otp =
-    params.get("otp") ||
-    params.get("code") ||
-    "";
+  const [otp, setOtp] = useState("");
 
   const [password, setPassword] =
     useState("");
@@ -38,6 +36,55 @@ function ResetPasswordContent() {
   const [loading, setLoading] =
     useState(false);
 
+  useEffect(() => {
+    const phoneOrEmailFromUrl =
+      params.get("phoneOrEmail") ||
+      params.get("phone") ||
+      params.get("email") ||
+      "";
+
+    const otpFromUrl =
+      params.get("otp") ||
+      params.get("code") ||
+      "";
+
+    if (phoneOrEmailFromUrl && otpFromUrl) {
+      setPhoneOrEmail(phoneOrEmailFromUrl);
+      setOtp(otpFromUrl);
+      return;
+    }
+
+    const savedData = sessionStorage.getItem(
+      "forgotPasswordData",
+    );
+
+    if (!savedData) {
+      setError(
+        "រកមិនឃើញព័ត៌មានសម្រាប់កំណត់លេខសម្ងាត់ឡើងវិញ",
+      );
+      return;
+    }
+
+    try {
+      const parsedData =
+        JSON.parse(savedData);
+
+      setPhoneOrEmail(
+        parsedData?.phoneOrEmail || "",
+      );
+
+      setOtp(parsedData?.otp || "");
+    } catch {
+      sessionStorage.removeItem(
+        "forgotPasswordData",
+      );
+
+      setError(
+        "ព័ត៌មានសម្រាប់កំណត់លេខសម្ងាត់ឡើងវិញមិនត្រឹមត្រូវ",
+      );
+    }
+  }, [params]);
+
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
@@ -50,12 +97,16 @@ function ResetPasswordContent() {
     }
 
     if (!password || !confirmPassword) {
-      setError("សូមបញ្ចូលលេខសម្ងាត់ថ្មី");
+      setError(
+        "សូមបញ្ចូលលេខសម្ងាត់ថ្មី",
+      );
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("លេខសម្ងាត់មិនត្រូវគ្នា");
+      setError(
+        "លេខសម្ងាត់ទាំងពីរមិនត្រូវគ្នា",
+      );
       return;
     }
 
@@ -67,7 +118,8 @@ function ResetPasswordContent() {
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
           body: JSON.stringify({
             phoneOrEmail,
@@ -101,7 +153,13 @@ function ResetPasswordContent() {
         return;
       }
 
-      router.replace("/auth/login");
+      sessionStorage.removeItem(
+        "forgotPasswordData",
+      );
+
+      router.replace(
+        "/auth/login?passwordReset=true",
+      );
       router.refresh();
     } catch (submitError) {
       console.error(
@@ -136,20 +194,24 @@ function ResetPasswordContent() {
           label="លេខសម្ងាត់ថ្មី"
           placeholder="បញ្ចូលលេខសម្ងាត់ថ្មី"
           value={password}
-          onChange={(event) =>
-            setPassword(event.target.value)
-          }
+          onChange={(event) => {
+            setPassword(
+              event.target.value,
+            );
+            setError("");
+          }}
         />
 
         <PasswordInput
           label="បញ្ជាក់លេខសម្ងាត់ថ្មី"
           placeholder="បញ្ចូលលេខសម្ងាត់ថ្មីម្តងទៀត"
           value={confirmPassword}
-          onChange={(event) =>
+          onChange={(event) => {
             setConfirmPassword(
               event.target.value,
-            )
-          }
+            );
+            setError("");
+          }}
         />
 
         {error && (
@@ -165,7 +227,9 @@ function ResetPasswordContent() {
         >
           <KeyRound size={18} />
 
-          {loading ? "..." : "បញ្ជូន"}
+          {loading
+            ? "កំពុងដំណើរការ..."
+            : "បញ្ជូន"}
         </button>
 
         <p className="pt-2 text-center text-sm text-slate-500">

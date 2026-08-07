@@ -1,15 +1,18 @@
 // components/dashboard/quickActions.jsx
 "use client";
 
-import { useRouter } from "next/navigation";
-import { CirclePlus } from "lucide-react";
 import Link from "next/link";
+import { CirclePlus, Eye } from "lucide-react";
 
-const ACTIONS = [
+import { useAuth } from "@/context/AuthContext";
+import { normalizeRole } from "@/lib/navigation";
+
+const DEFAULT_ACTIONS = [
   {
     id: "program",
     label: "បង្កើតកម្មវិធី",
     href: "/activity/create",
+    icon: CirclePlus,
     color: "text-primary",
     bg: "bg-gray-100",
   },
@@ -17,6 +20,7 @@ const ACTIONS = [
     id: "branch",
     label: "បង្កើតឯកសារ",
     href: "/document/create",
+    icon: CirclePlus,
     color: "text-primary",
     bg: "bg-gray-100",
   },
@@ -24,6 +28,7 @@ const ACTIONS = [
     id: "activity",
     label: "បង្កើតវិភាគទាន",
     href: "/donation/add",
+    icon: CirclePlus,
     color: "text-primary",
     bg: "bg-gray-100",
   },
@@ -31,6 +36,42 @@ const ACTIONS = [
     id: "member",
     label: "បង្កើតសមាជិក",
     href: "/member/create",
+    icon: CirclePlus,
+    color: "text-primary",
+    bg: "bg-gray-100",
+  },
+];
+
+const ADMIN_ACTIONS = [
+  {
+    id: "view-program",
+    label: "មើលកម្មវិធី",
+    href: "/activity",
+    icon: Eye,
+    color: "text-primary",
+    bg: "bg-gray-100",
+  },
+  {
+    id: "view-branch",
+    label: "មើលឯកសារ",
+    href: "/document",
+    icon: Eye,
+    color: "text-primary",
+    bg: "bg-gray-100",
+  },
+  {
+    id: "view-activity",
+    label: "មើលវិភាគទាន",
+    href: "/donation",
+    icon: Eye,
+    color: "text-primary",
+    bg: "bg-gray-100",
+  },
+  {
+    id: "member",
+    label: "បង្កើតសមាជិក",
+    href: "/member/create",
+    icon: CirclePlus,
     color: "text-primary",
     bg: "bg-gray-100",
   },
@@ -41,47 +82,49 @@ const HOVER_STYLES = {
   branch: "hover:bg-primary-light hover:text-primary",
   activity: "hover:bg-secondary-light hover:text-secondary",
   member: "hover:bg-warning-bg hover:text-warning",
+  "view-activities": "hover:bg-success-bg hover:text-success",
+
+  "view-branch": "hover:bg-primary-light hover:text-primary",
+  "view-activity": "hover:bg-secondary-light hover:text-secondary",
+  "view-program": "hover:bg-success-bg hover:text-success",
 };
 
 export default function QuickActions() {
-  const router = useRouter();
+  const { user, authLoading } = useAuth();
+
+  const role = normalizeRole(user?.role);
+
+  const actions = role === "admin" ? ADMIN_ACTIONS : DEFAULT_ACTIONS;
+
+  if (authLoading) {
+    return (
+      <div className="app-card flex h-full items-center justify-center rounded-xl border border-border bg-white p-4">
+        <p className="text-sm text-text-secondary">កំពុងផ្ទុក...</p>
+      </div>
+    );
+  }
 
   return (
-    <div
-      className="app-card bg-white rounded-xl border border-border"
-      style={{
-        padding: "16px",
-        height: "100%",
-        boxSizing: "border-box",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <h3
-        style={{
-          margin: "0 0 16px 0",
-          fontSize: 14,
-          fontWeight: 600,
-          color: "#232629",
-        }}
-      >
+    <div className="app-card flex h-full flex-col rounded-xl border border-border bg-white p-4">
+      <h3 className="mb-4 text-sm font-semibold text-[#232629]">
         មុខងារផ្សេងៗ
       </h3>
 
-      <div
-        className="grid grid-cols-2 gap-3"
-        style={{ flex: 1, alignContent: "center" }}
-      >
-        {ACTIONS.map((action) => (
-          <Link
-            key={action.id}
-            href={action.href}
-            className={`flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-xs font-medium ${action.bg} ${action.color} transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-sm ${HOVER_STYLES[action.id]}`}
-          >
-            <CirclePlus size={16} strokeWidth={2} />
-            {action.label}
-          </Link>
-        ))}
+      <div className={`grid flex-1 content-center gap-3 ${actions.length === 2 ? "grid-cols-1" : "grid-cols-2"}`}>
+        {actions.map((action) => {
+          const Icon = action.icon;
+
+          return (
+            <Link
+              key={action.id}
+              href={action.href}
+              className={`flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-xs font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-sm ${action.bg} ${action.color} ${HOVER_STYLES[action.id]}`}
+            >
+              <Icon size={16} strokeWidth={2} />
+              {action.label}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

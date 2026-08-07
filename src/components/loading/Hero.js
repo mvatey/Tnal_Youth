@@ -3,8 +3,10 @@ import Image from "next/image";
 export default function Hero() {
   return (
     <section
+      id="home"
       className="
 relative
+scroll-mt-[82px]
 grid
 grid-cols-2
 items-center

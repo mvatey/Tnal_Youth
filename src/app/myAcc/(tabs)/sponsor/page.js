@@ -1,134 +1,228 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
+import {
+  useMemo,
+  useState,
+} from "react";
+
+import useCurrentMember from "@/hooks/useCurrentMember";
 
 import DataTable from "@/components/table/DataTable";
-import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal";
 
 import sponsorData from "@/data/sponsor.json";
 
-export default function SponsorDonationPage() {
-  const [sponsors, setSponsors] = useState(sponsorData);
+export default function MyAccountSponsorPage() {
+  const {
+    member,
+    loading,
+    error,
+  } = useCurrentMember();
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] =
+    useState("");
 
-  const [methodFilter, setMethodFilter] = useState("");
+  const [
+    methodFilter,
+    setMethodFilter,
+  ] = useState("");
 
-  const [deleteModal, setDeleteModal] = useState(false);
+  /*
+   * Show only sponsor records belonging
+   * to the current logged-in member.
+   *
+   * Old records without memberId remain visible
+   * temporarily for your JSON testing.
+   */
+  const sponsors = useMemo(() => {
+    if (!member) {
+      return [];
+    }
 
-  const [selectedSponsor, setSelectedSponsor] = useState(null);
+    return sponsorData.filter(
+      (item) => {
+        if (
+          item.memberId ===
+            undefined ||
+          item.memberId === null
+        ) {
+          return true;
+        }
 
-  const paymentMethods = useMemo(() => {
-    return [...new Set(sponsors.map((item) => item.paymentMethod))];
-  }, [sponsors]);
-
-  const filteredData = useMemo(() => {
-    return sponsors.filter((item) => {
-      const search = query.toLowerCase();
-
-      const matchesQuery =
-        item.amount.toLowerCase().includes(search);
-
-      const matchesMethod =
-        !methodFilter ||
-        item.paymentMethod === methodFilter;
-
-      return matchesQuery && matchesMethod;
-    });
-  }, [sponsors, query, methodFilter]);
-
-  const handleDelete = () => {
-    if (!selectedSponsor) return;
-
-    setSponsors((previous) =>
-      previous.filter(
-        (item) => item.id !== selectedSponsor.id,
-      ),
+        return (
+          String(item.memberId) ===
+          String(member.id)
+        );
+      },
     );
+  }, [member]);
 
-    setDeleteModal(false);
+  const paymentMethods =
+    useMemo(() => {
+      return [
+        ...new Set(
+          sponsors
+            .map(
+              (item) =>
+                item.paymentMethod,
+            )
+            .filter(Boolean),
+        ),
+      ];
+    }, [sponsors]);
 
-    setSelectedSponsor(null);
-  };
+  const filteredData =
+    useMemo(() => {
+      const search = query
+        .trim()
+        .toLowerCase();
+
+      return sponsors.filter(
+        (item) => {
+          const amount = String(
+            item.amount ?? "",
+          ).toLowerCase();
+
+          const date = String(
+            item.date ?? "",
+          ).toLowerCase();
+
+          const recordedBy = String(
+            item.recordedBy ?? "",
+          ).toLowerCase();
+
+          const paymentMethod =
+            String(
+              item.paymentMethod ??
+                "",
+            ).toLowerCase();
+
+          const matchesQuery =
+            !search ||
+            amount.includes(search) ||
+            date.includes(search) ||
+            recordedBy.includes(
+              search,
+            ) ||
+            paymentMethod.includes(
+              search,
+            );
+
+          const matchesMethod =
+            !methodFilter ||
+            item.paymentMethod ===
+              methodFilter;
+
+          return (
+            matchesQuery &&
+            matchesMethod
+          );
+        },
+      );
+    }, [
+      sponsors,
+      query,
+      methodFilter,
+    ]);
 
   const columns = [
     {
-    header: "ល.រ",
-    width: "w-[6%]",
-    align: "center",
-    render: (_, index) => index ,
-  },
-
-
+      header: "ល.រ",
+      width: "w-[8%]",
+      align: "center",
+      render: (_, index) =>
+        index,
+    },
+    {
+      header: "ប្រចាំខែ",
+      width: "w-[16%]",
+      align: "left",
+      render: (item) => (
+        <span>
+          {item.month}, {item.year}
+        </span>
+      ),
+    },
     {
       header: "ចំនួន",
-      width: "w-[15%]",
+      width: "w-[20%]",
       align: "left",
       accessor: "amount",
     },
-
     {
       header: "ថ្ងៃបរិច្ឆេទ",
-      width: "w-[18%]",
+      width: "w-[22%]",
       align: "left",
       accessor: "date",
     },
-
     {
       header: "កត់ត្រាដោយ",
-      width: "w-[18%]",
+      width: "w-[24%]",
       align: "left",
       accessor: "recordedBy",
     },
-
     {
-      header: "វិធីសាស្រ្តទូទាត់",
-      width: "w-[19%]",
+      header:
+        "វិធីសាស្ត្រទូទាត់",
+      width: "w-[26%]",
       align: "left",
-      accessor: "paymentMethod",
-    },
-
-    {
-      header: "សកម្មភាព",
-      width: "w-[10%]",
-      align: "center",
-
-      render: (item) => (
-        <button
-          type="button"
-          onClick={() => {
-            setSelectedSponsor(item);
-            setDeleteModal(true);
-          }}
-          className="
-            inline-flex
-            items-center
-            justify-center
-            text-red-500
-            transition
-            hover:text-red-600
-          "
-        >
-          <Trash2 className="h-5 w-5" />
-        </button>
-      ),
+      accessor:
+        "paymentMethod",
     },
   ];
 
   const filters = [
     {
+      name:
+        "paymentMethod",
       value: methodFilter,
-      onChange: setMethodFilter,
-      options: paymentMethods,
-      placeholder: "វិធីសាស្រ្តទូទាត់",
+      onChange:
+        setMethodFilter,
+      options:
+        paymentMethods.map(
+          (method) => ({
+            label: method,
+            value: method,
+          }),
+        ),
+      placeholder:
+        "វិធីសាស្ត្រទូទាត់",
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-gray-200 bg-white p-6">
+        <p className="text-sm text-gray-500">
+          កំពុងទាញយកទិន្នន័យ...
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6">
+        <p className="text-sm text-red-500">
+          {error}
+        </p>
+      </div>
+    );
+  }
+
+  if (!member) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6">
+        <p className="text-sm text-red-500">
+          រកមិនឃើញព័ត៌មានសមាជិក
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
       <h2 className="text-lg font-semibold text-text-primary">
-        បញ្ជីវិភាគទានអ្នកឧបត្ថម្ភ
+        បញ្ជីការបរិច្ចាក
       </h2>
 
       <DataTable
@@ -139,24 +233,7 @@ export default function SponsorDonationPage() {
         onSearchChange={setQuery}
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
-        downloadFilename="sponsor-donation.csv"
-      />
-
-      <ConfirmDeleteModal
-        open={deleteModal}
-        onClose={() => {
-          setDeleteModal(false);
-          setSelectedSponsor(null);
-        }}
-        onConfirm={handleDelete}
-        title="លុបវិភាគទាន?"
-        description={
-          selectedSponsor
-            ? `តើអ្នកប្រាកដថាចង់លុបវិភាគទាន ${selectedSponsor.amount} នេះទេ?`
-            : "តើអ្នកប្រាកដថាចង់លុបទិន្នន័យនេះទេ?"
-        }
-        cancelLabel="បោះបង់"
-        confirmLabel="លុប"
+        downloadFilename={`sponsor-donation-${member.id}.pdf`}
       />
     </div>
   );

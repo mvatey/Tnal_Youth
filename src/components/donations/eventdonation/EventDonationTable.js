@@ -2,44 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  ArrowDown,
-  ArrowUp,
-  ChevronsUpDown,
-  List,
-  Trash2,
-} from "lucide-react";
-
+import { ArrowDown, ArrowUp, ChevronsUpDown, List, Trash2 } from "lucide-react";
 import Pagination from "@/components/navigation/Pagination";
-import PrimaryActionButton from "@/components/ui/actions/PrimaryActionButton";
+import SaveButton from "@/components/forms/save";
+import tableHeaders from "@/data/donation/tableHeaders.json";
 
-const EVENT_DONATION_HEADERS = [
-  "ល.រ",
-  "កម្មវិធី",
-  "សាខា",
-  "កាលបរិច្ឆេទចាប់ផ្តើម",
-  "កាលបរិច្ឆេទបញ្ចប់",
-  "ចំនួនថ្ងៃ",
-  "ចំនួនទឹកប្រាក់(រៀល)",
-  "ចំនួនទឹកប្រាក់(ដុល្លារ)",
-  "សកម្មភាព",
-];
-
-function formatKhr(value) {
-  return `៛ ${Number(value || 0).toLocaleString("en-US")}`;
-}
-
-function formatUsd(value) {
-  return `$ ${Number(value || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
-function formatDays(value) {
-  const days = Number(value) || 0;
-  return `${days} ថ្ងៃ`;
-}
+const { eventDonationHeaders: headers } = tableHeaders;
 
 export default function EventDonationTable({
   rows,
@@ -52,22 +20,9 @@ export default function EventDonationTable({
   onMoneySort,
 }) {
   const pathname = usePathname();
-
   const detailPath = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/eventdonation/detail"
     : "/donation/eventdonation/detail";
-
-  function renderSortIcon(field) {
-    if (moneySort?.field !== field) {
-      return <ChevronsUpDown size={14} />;
-    }
-
-    return moneySort.direction === "asc" ? (
-      <ArrowUp size={14} />
-    ) : (
-      <ArrowDown size={14} />
-    );
-  }
 
   return (
     <>
@@ -75,32 +30,26 @@ export default function EventDonationTable({
         <table className="w-full min-w-[980px] border-collapse border border-border">
           <thead>
             <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
-              {EVENT_DONATION_HEADERS.map((header, index) => {
-                const isKhrColumn = index === 6;
-                const isUsdColumn = index === 7;
-                const sortField = isKhrColumn
-                  ? "amountKhr"
-                  : isUsdColumn
-                    ? "amountUsd"
-                    : null;
-
-                return (
-                  <th key={header} className="px-4">
-                    {sortField ? (
-                      <button
-                        type="button"
-                        onClick={() => onMoneySort(sortField)}
-                        className="mx-auto inline-flex items-center justify-center gap-1.5 font-medium transition hover:text-primary"
-                      >
-                        {header}
-                        {renderSortIcon(sortField)}
-                      </button>
-                    ) : (
-                      header
-                    )}
-                  </th>
-                );
-              })}
+              {headers.map((header, index) => (
+                <th key={header} className="px-4">
+                  {index === 6 || index === 7 ? (
+                    <button
+                      type="button"
+                      onClick={() => onMoneySort(index === 6 ? "rielAmount" : "dollarAmount")}
+                      className="mx-auto inline-flex items-center justify-center gap-1.5 font-medium transition hover:text-primary"
+                    >
+                      {header}
+                      {moneySort?.field === (index === 6 ? "rielAmount" : "dollarAmount") && moneySort.direction === "asc" ? (
+                        <ArrowUp size={14} />
+                      ) : moneySort?.field === (index === 6 ? "rielAmount" : "dollarAmount") && moneySort.direction === "desc" ? (
+                        <ArrowDown size={14} />
+                      ) : (
+                        <ChevronsUpDown size={14} />
+                      )}
+                    </button>
+                  ) : header}
+                </th>
+              ))}
             </tr>
           </thead>
 
@@ -110,45 +59,21 @@ export default function EventDonationTable({
                 key={row.id}
                 className="h-11 border-b border-border text-center text-sm text-text-secondary last:border-b-0"
               >
-                <td className="px-4 font-normal">
-                  {row.rowNumber}
-                </td>
-
-                <td className="px-4">
-                  {row.eventName || "-"}
-                </td>
-
-                <td className="px-4">
-                  {row.branch || "-"}
-                </td>
-
-                <td className="whitespace-nowrap px-4">
-                  {row.startDate || "-"}
-                </td>
-
-                <td className="whitespace-nowrap px-4">
-                  {row.endDate || "-"}
-                </td>
-
-                <td className="px-4">
-                  {formatDays(row.days)}
-                </td>
-
-                <td className="whitespace-nowrap px-4">
-                  {formatKhr(row.amountKhr)}
-                </td>
-
-                <td className="whitespace-nowrap px-4">
-                  {formatUsd(row.amountUsd)}
-                </td>
-
+                <td className="px-4 font-normal">{row.rowNumber}</td>
+                <td className="px-4">{row.eventName}</td>
+                <td className="px-4">{row.branch}</td>
+                <td className="whitespace-nowrap px-4">{row.startDate}</td>
+                <td className="whitespace-nowrap px-4">{row.endDate}</td>
+                <td className="px-4">{row.days}</td>
+                <td className="px-4">{row.rielAmount}</td>
+                <td className="px-4">{row.dollarAmount}</td>
                 <td className="px-4">
                   <div className="flex items-center justify-center gap-[5px]">
                     <Link
                       href={{
                         pathname: detailPath,
                         query: {
-                          id: row.activityId ?? row.id,
+                          id: row.id,
                           branch: row.branch,
                           event: row.eventType,
                         },
@@ -158,11 +83,10 @@ export default function EventDonationTable({
                       <List size={11} strokeWidth={2.2} />
                       លម្អិត
                     </Link>
-
                     <button
                       type="button"
                       className="inline-flex h-[18px] w-[18px] items-center justify-center text-[#E92824] transition hover:text-red-700"
-                      aria-label={`លុបទិន្នន័យកម្មវិធី ${row.eventName || row.id}`}
+                      aria-label={`Delete event donation row ${row.id}`}
                       onClick={() => onDelete(row.id)}
                     >
                       <Trash2 size={18} />
@@ -175,7 +99,7 @@ export default function EventDonationTable({
             {rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={EVENT_DONATION_HEADERS.length}
+                  colSpan={headers.length}
                   className="px-4 py-8 text-center text-xs font-medium text-text-secondary"
                 >
                   មិនមានទិន្នន័យ
@@ -193,7 +117,7 @@ export default function EventDonationTable({
       />
 
       <div className="mt-10 flex justify-end">
-        <PrimaryActionButton onClick={onDownload} />
+        <SaveButton onClick={onDownload} />
       </div>
     </>
   );

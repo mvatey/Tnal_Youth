@@ -5,10 +5,10 @@ import { RiAddCircleLine } from "react-icons/ri";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
 
-import SaveButton from "@/components/ui/actions/SaveButton";
-import DeleteButton from "@/components/ui/actions/DeleteButton";
-import FormControl from "@/components/forms/FormControl";
-import KhmerDateField from "@/components/forms/KhmerDateField";
+import SaveButton from "@/components/forms/SaveButton";
+import DeleteButton from "@/components/forms/DeleteButton";
+import BoxFill from "@/components/forms/boxFill";
+import FormDate from "@/components/forms/FormDate";
 import FormSelect from "@/components/forms/FormSelect";
 
 function createEmptyWork() {
@@ -117,95 +117,17 @@ export default function MyAccountWorkPage() {
               </h3>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                <FormControl
-                  label="ឈ្មោះ ស្ថាប័ន"
-                  value={work.company || ""}
-                  onChange={(event) =>
-                    updateWork(
-                      work.id,
-                      "company",
-                      event.target.value,
-                    )
-                  }
-                  placeholder="បញ្ចូលឈ្មោះស្ថាប័ន"
-                />
-
-                <FormControl
-                  label="អាសយដ្ឋាន"
-                  value={work.address || ""}
-                  onChange={(event) =>
-                    updateWork(
-                      work.id,
-                      "address",
-                      event.target.value,
-                    )
-                  }
-                  placeholder="បញ្ចូលអាសយដ្ឋាន"
-                />
-
-                <FormSelect
-                  label="តួនាទី"
-                  value={work.position || ""}
-                  onChange={(event) =>
-                    updateWork(
-                      work.id,
-                      "position",
-                      event.target.value,
-                    )
-                  }
-                  placeholder="ជ្រើសរើសតួនាទី"
-                  options={[
-                    "ពេញម៉ោង",
-                    "ក្រៅម៉ោង",
-                    "កិច្ចសន្យា",
-                    "ស្ម័គ្រចិត្ត",
-                  ]}
-                />
-
-                <FormSelect
-                  label="មូលហេតុចាកចេញ"
-                  value={work.appointment || ""}
-                  onChange={(event) =>
-                    updateWork(
-                      work.id,
-                      "appointment",
-                      event.target.value,
-                    )
-                  }
-                  placeholder="ជ្រើសរើសមូលហេតុ"
-                  options={[
-                    "បញ្ចប់កិច្ចសន្យា",
-                    "ផ្លាស់ប្ដូរការងារ",
-                    "បន្តការសិក្សា",
-                    "ផ្សេងៗ",
-                  ]}
-                />
-
-                <KhmerDateField
-                  label="ថ្ងៃចាប់ផ្ដើម"
-                  name={`work-start-${work.id}`}
-                  value={work.startDate || ""}
-                  onChange={(event) =>
-                    updateWork(
-                      work.id,
-                      "startDate",
-                      event.target.value,
-                    )
-                  }
-                />
-
-                <KhmerDateField
-                  label="ថ្ងៃបញ្ចប់"
-                  name={`work-end-${work.id}`}
-                  value={work.endDate || ""}
-                  onChange={(event) =>
-                    updateWork(
-                      work.id,
-                      "endDate",
-                      event.target.value,
-                    )
-                  }
-                />
+                <BoxFill label="ឈ្មោះ ស្ថាប័ន" placeholder="បញ្ចូលឈ្មោះស្ថាប័ន" value={work.company} onChange={(event) => handleWorkChange(work.id, "company", event.target.value)} />
+                
+                                <BoxFill label="អាស័យដ្ឋាន" placeholder="បញ្ចូលអាស័យដ្ឋាន" value={work.address} onChange={(event) => handleWorkChange(work.id, "address", event.target.value)} />
+                
+                                <BoxFill label="តួនាទី" placeholder="តួនាទី" value={work.position} onChange={(event) => handleWorkChange(work.id, "position", event.target.value)}  />
+                
+                                <BoxFill label="មុខតំណែង" placeholder="មុខតំណែង" value={work.appointment} onChange={(event) => handleWorkChange(work.id, "appointment", event.target.value)}  />
+                
+                                <FormDate label="ថ្ងៃខែចាប់ផ្ដើម" name={`startDate-${work.id}`} value={work.startDate} onChange={(event) => handleWorkChange(work.id, "startDate", event.target.value)} />
+                
+                                <FormDate label="ថ្ងៃខែបញ្ចប់" name={`endDate-${work.id}`} value={work.endDate} onChange={(event) => handleWorkChange(work.id, "endDate", event.target.value)} />
               </div>
 
               <div className="mt-6 flex justify-end">

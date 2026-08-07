@@ -1,35 +1,57 @@
 "use client";
 
+export function StatCardGrid({
+  children,
+  minCardWidth = 210,
+  gap = 12,
+  className = "",
+}) {
+  return (
+    <div
+      className={`grid w-full min-w-0 ${className}`}
+      style={{
+        gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${minCardWidth}px), 1fr))`,
+        gap: `${gap}px`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export default function StatCard({
   icon: Icon,
-  label = "",
-  value = 0,
-  growth = 0,
-  iconColor = "text-primary",
-  iconBg = "bg-primary/10",
-  accentColor = "bg-primary",
+  label,
+  value,
+  growth,
+  iconColor = "text-secondary",
+  iconBg = "bg-secondary-light",
+  accent,
 }) {
   const growthNumber = Number(growth) || 0;
   const isUp = growthNumber >= 0;
+
+  const accentClass =
+    accent ||
+    (iconColor.startsWith("text-")
+      ? iconColor.replace("text-", "bg-")
+      : "bg-secondary");
 
   return (
     <div
       className="
         app-card
         relative
+        w-full
+        min-w-0
         overflow-hidden
         rounded-xl
         border
         border-border
         bg-bg-page-white
-        shadow-sm
-        transition-all
-        duration-200
-        hover:-translate-y-1
-        hover:shadow-lg
       "
     >
-      <div className={`h-[3px] w-full ${accentColor}`} />
+      <div className={`h-[3px] w-full ${accentClass}`} />
 
       <div className="flex items-center gap-3 p-4">
         <div
@@ -44,19 +66,11 @@ export default function StatCard({
             ${iconBg}
           `}
         >
-          {Icon && (
-            <Icon
-              className={`
-                h-5
-                w-5
-                ${iconColor}
-              `}
-            />
-          )}
+          <Icon className={`h-5 w-5 ${iconColor}`} />
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="mb-0.5 text-sm text-text-primary">
+          <div className="mb-0.5 truncate text-sm text-text-primary">
             {label}
           </div>
 
@@ -71,6 +85,7 @@ export default function StatCard({
               flex
               items-center
               gap-1
+              whitespace-nowrap
               text-sm
               font-semibold
               ${isUp ? "text-success" : "text-error"}
@@ -81,7 +96,7 @@ export default function StatCard({
             <span>{Math.abs(growthNumber)}%</span>
           </div>
 
-          <span className="text-xs text-text-mute">
+          <span className="whitespace-nowrap text-xs text-text-mute">
             ក្នុងខែនេះ
           </span>
         </div>

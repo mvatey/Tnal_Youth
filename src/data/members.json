@@ -2,14 +2,14 @@
   {
     "id": "1",
     "phone": "0126667666",
-    "email": "admin@example.com",
+    "email": "សមាជិក@example.com",
     "password": "000000",
     "name_kh": "ផល ថាវរីវតី",
     "name_en": "Phal Thavryvatey",
     "nationality": "ខ្មែរ",
     "ethnicity": "ខ្មែរ",
-    "role": "admin",
-    "branch": "កំពត",
+    "role": "ប្រធានសាខា",
+    "branch": "សាខា ខេត្តកំពត",
     "gender": "ស្រី",
     "religion": "ព្រះពុទ្ធ",
     "status": "សកម្ម",
@@ -61,7 +61,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ក",
+    "shirtSize": "S"
   },
   {
     "id": "2",
@@ -73,7 +75,7 @@
     "nationality": "ខ្មែរ",
     "ethnicity": "ខ្មែរ",
     "role": "branch_leader",
-    "branch": "បន្ទាយមានជ័យ",
+    "branch": "សាខា ខេត្តបន្ទាយមានជ័យ",
     "gender": "ស្រី",
     "religion": "ព្រះពុទ្ធ",
     "status": "សកម្ម",
@@ -125,7 +127,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ខ",
+    "shirtSize": "M"
   },
   {
     "id": "3",
@@ -137,7 +141,7 @@
     "nationality": "ខ្មែរ",
     "ethnicity": "ខ្មែរ",
     "role": "secretary",
-    "branch": "សៀមរាប",
+    "branch": "សាខា ខេត្តសៀមរាប",
     "gender": "ប្រុស",
     "religion": "ព្រះពុទ្ធ",
     "status": "សកម្ម",
@@ -189,25 +193,27 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "គ",
+    "shirtSize": "L"
   },
   {
     "id": "4",
     "phone": "0125556555",
-    "email": "member@example.com",
+    "email": "សមាជិក@example.com",
     "password": "12345",
     "name_kh": "ឌី រីយ៉ា",
     "name_en": "ឌី រីយ៉ា",
     "nationality": "ខ្មែរ",
     "ethnicity": "ខ្មែរ",
-    "role": "member",
-    "branch": "កំពង់ចាម",
+    "role": "សមាជិក",
+    "branch": "សាខា ខេត្តកំពង់ចាម",
     "gender": "ស្រី",
     "religion": "ព្រះពុទ្ធ",
     "status": "សកម្ម",
     "joinedAt": "12 កុម្ភៈ, 2026",
     "date_of_birth": "22 ធ្នូ, 1978",
-    "profile_photo": "/member.png",
+    "profile_photo": "/សមាជិក.png",
     "family": {
       "spouse": {
         "name_kh": "",
@@ -253,7 +259,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ឃ",
+    "shirtSize": "XL"
   },
   {
     "id": "5",
@@ -264,14 +272,14 @@
     "name_en": "សុខ វិសាល",
     "nationality": "ខ្មែរ",
     "ethnicity": "ខ្មែរ",
-    "role": "member",
-    "branch": "កំពត",
+    "role": "សមាជិក",
+    "branch": "សាខា ខេត្តកំពត",
     "gender": "ប្រុស",
     "religion": "អ៊ីស្លាម",
     "status": "សកម្ម",
     "joinedAt": "3 មិថុនា, 2026",
     "date_of_birth": "18 កុម្ភៈ, 2003",
-    "profile_photo": "/member1.jpg",
+    "profile_photo": "/សមាជិក1.jpg",
     "family": {
       "spouse": {
         "name_kh": "",
@@ -317,7 +325,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ង",
+    "shirtSize": "2XL"
   },
   {
     "id": "6",
@@ -328,14 +338,14 @@
     "name_en": "ចាន់ ស្រីមុំ",
     "nationality": "ខ្មែរ",
     "ethnicity": "ខ្មែរ",
-    "role": "member",
-    "branch": "សៀមរាប",
+    "role": "សមាជិក",
+    "branch": "សាខា ខេត្តសៀមរាប",
     "gender": "ស្រី",
     "religion": "ព្រះពុទ្ធ",
     "status": "អសកម្ម",
     "joinedAt": "8 មីនា, 2026",
     "date_of_birth": "14 មករា, 1993",
-    "profile_photo": "/member2.jpg",
+    "profile_photo": "/សមាជិក2.jpg",
     "family": {
       "spouse": {
         "name_kh": "",
@@ -381,7 +391,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ក",
+    "shirtSize": "S"
   },
   {
     "id": "7",
@@ -392,14 +404,14 @@
     "name_en": "វណ្ណៈ សុភាព",
     "nationality": "ខ្មែរ",
     "ethnicity": "ខ្មែរ",
-    "role": "member",
-    "branch": "បន្ទាយមានជ័យ",
+    "role": "សមាជិក",
+    "branch": "សាខា ខេត្តបន្ទាយមានជ័យ",
     "gender": "ប្រុស",
     "religion": "ព្រះពុទ្ធ",
     "status": "សកម្ម",
     "joinedAt": "19 កក្កដា, 2026",
     "date_of_birth": "3 មេសា, 1975",
-    "profile_photo": "/member.png",
+    "profile_photo": "/សមាជិក.png",
     "family": {
       "spouse": {
         "name_kh": "",
@@ -445,7 +457,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ខ",
+    "shirtSize": "M"
   },
   {
     "id": "8",
@@ -456,14 +470,14 @@
     "name_en": "ស្រី ពៅ",
     "nationality": "ខ្មែរ",
     "ethnicity": "ខ្មែរ",
-    "role": "member",
-    "branch": "កំពង់ចាម",
+    "role": "សមាជិក",
+    "branch": "សាខា ខេត្តកំពង់ចាម",
     "gender": "ស្រី",
     "religion": "គ្រីស្ទ",
     "status": "សកម្ម",
     "joinedAt": "27 មករា, 2026",
     "date_of_birth": "17 តុលា, 1982",
-    "profile_photo": "/member.png",
+    "profile_photo": "/សមាជិក.png",
     "family": {
       "spouse": {
         "name_kh": "",
@@ -509,7 +523,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "គ",
+    "shirtSize": "L"
   },
   {
     "id": "9",
@@ -520,14 +536,14 @@
     "name_en": "រស្មី សុវណ្ណារា",
     "nationality": "ខ្មែរ",
     "ethnicity": "ខ្មែរ",
-    "role": "member",
-    "branch": "កំពត",
+    "role": "សមាជិក",
+    "branch": "សាខា ខេត្តកំពត",
     "gender": "ស្រី",
     "religion": "ព្រះពុទ្ធ",
     "status": "អសកម្ម",
     "joinedAt": "30 មិថុនា, 2026",
     "date_of_birth": "18 មេសា, 1975",
-    "profile_photo": "/member.png",
+    "profile_photo": "/សមាជិក.png",
     "family": {
       "spouse": {
         "name_kh": "",
@@ -573,7 +589,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ឃ",
+    "shirtSize": "XL"
   },
   {
     "id": "10",
@@ -584,14 +602,14 @@
     "name_en": "ពិសិដ្ឋ ចន្ទសោភា",
     "nationality": "ខ្មែរ",
     "ethnicity": "ខ្មែរ",
-    "role": "member",
-    "branch": "សៀមរាប",
+    "role": "សមាជិក",
+    "branch": "សាខា ខេត្តសៀមរាប",
     "gender": "ប្រុស",
     "religion": "ព្រះពុទ្ធ",
     "status": "សកម្ម",
     "joinedAt": "14 ឧសភា, 2026",
     "date_of_birth": "21 ធ្នូ, 1997",
-    "profile_photo": "/member.png",
+    "profile_photo": "/សមាជិក.png",
     "family": {
       "spouse": {
         "name_kh": "",
@@ -637,7 +655,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ង",
+    "shirtSize": "2XL"
   },
   {
     "id": "11",
@@ -648,14 +668,14 @@
     "name_en": "សុភក្ត្រ សុវណ្ណារ៉ា",
     "nationality": "ខ្មែរ",
     "ethnicity": "ខ្មែរ",
-    "role": "member",
-    "branch": "បាត់ដំបង",
+    "role": "សមាជិក",
+    "branch": "សាខា ខេត្តបាត់ដំបង",
     "gender": "ប្រុស",
     "religion": "អ៊ីស្លាម",
     "status": "សកម្ម",
     "joinedAt": "5 មករា, 2026",
     "date_of_birth": "14 មេសា, 1992",
-    "profile_photo": "/member.png",
+    "profile_photo": "/សមាជិក.png",
     "family": {
       "spouse": {
         "name_kh": "",
@@ -701,7 +721,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ក",
+    "shirtSize": "S"
   },
   {
     "id": "12",
@@ -712,14 +734,14 @@
     "name_en": "ចាន់ណារី ស៊ុន",
     "nationality": "ខ្មែរ",
     "ethnicity": "ខ្មែរ",
-    "role": "member",
-    "branch": "បាត់ដំបង",
+    "role": "សមាជិក",
+    "branch": "សាខា ខេត្តបាត់ដំបង",
     "gender": "ស្រី",
     "religion": "ព្រះពុទ្ធ",
     "status": "សកម្ម",
     "joinedAt": "11 កុម្ភៈ, 2026",
     "date_of_birth": "19 ឧសភា, 1989",
-    "profile_photo": "/member.png",
+    "profile_photo": "/សមាជិក.png",
     "family": {
       "spouse": {
         "name_kh": "",
@@ -765,7 +787,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ខ",
+    "shirtSize": "M"
   },
   {
     "id": "13",
@@ -777,7 +801,7 @@
     "nationality": "ខ្មែរ",
     "ethnicity": "ខ្មែរ",
     "role": "branch_leader",
-    "branch": "កំពង់ចាម",
+    "branch": "សាខា ខេត្តកំពង់ចាម",
     "gender": "ប្រុស",
     "religion": "ព្រះពុទ្ធ",
     "status": "សកម្ម",
@@ -829,7 +853,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "គ",
+    "shirtSize": "L"
   },
   {
     "id": "14",
@@ -840,14 +866,14 @@
     "name_en": "ស្រីនាង ហេង",
     "nationality": "ខ្មែរ",
     "ethnicity": "ខ្មែរ",
-    "role": "member",
-    "branch": "កំពង់ចាម",
+    "role": "សមាជិក",
+    "branch": "សាខា ខេត្តកំពង់ចាម",
     "gender": "ស្រី",
     "religion": "គ្រីស្ទ",
     "status": "អសកម្ម",
     "joinedAt": "2 មីនា, 2026",
     "date_of_birth": "26 មីនា, 1999",
-    "profile_photo": "/member.png",
+    "profile_photo": "/សមាជិក.png",
     "family": {
       "spouse": {
         "name_kh": "",
@@ -893,7 +919,9 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ឃ",
+    "shirtSize": "XL"
   },
   {
     "id": "15",
@@ -904,14 +932,14 @@
     "name_en": "ចេត្រា ម៉ុន",
     "nationality": "ខ្មែរ",
     "ethnicity": "ខ្មែរ",
-    "role": "member",
-    "branch": "កំពត",
+    "role": "សមាជិក",
+    "branch": "សាខា ខេត្តកំពត",
     "gender": "ព្រះសង្ឃ",
     "religion": "ព្រះពុទ្ធ",
     "status": "សកម្ម",
     "joinedAt": "9 មីនា, 2026",
     "date_of_birth": "14 មិថុនា, 1997",
-    "profile_photo": "/member.png",
+    "profile_photo": "/សមាជិក.png",
     "family": {
       "spouse": {
         "name_kh": "",
@@ -957,6 +985,8 @@
         "startDate": "",
         "endDate": ""
       }
-    ]
+    ],
+    "level": "ង",
+    "shirtSize": "2XL"
   }
 ]

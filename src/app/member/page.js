@@ -1,348 +1,1167 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import { useRouter } from "next/navigation";
-import ConfirmDeleteModal from "@/components/modals/Confirmdeletemodal.js";
-import CreateMemberModal from "@/components/modals/CreateMemberModal.js";
-import DataTable from "@/components/tables/DataTable.js";
-import StatCard from "@/components/dashboard/statCard";
-import { FaMosque } from "react-icons/fa6";
 
-import { Users, Landmark, Moon, Sparkles, Trash2 } from "lucide-react";
-import users from "@/data/members.json";
+import {
+  Landmark,
+  Moon,
+  Users,
+} from "lucide-react";
+
 import { AiOutlineWoman } from "react-icons/ai";
-import { RiAddCircleLine } from "react-icons/ri";
-import DetailButton from "@/components/ui/actions/DetailButton";
 import { FaDharmachakra } from "react-icons/fa";
+import { RiAddCircleLine } from "react-icons/ri";
 
-const KHMER_MONTHS = {
-  មករា: 0,
-  កុម្ភៈ: 1,
-  កុម្ភះ: 1,
-  មីនា: 2,
-  មេសា: 3,
-  ឧសភា: 4,
-  មិថុនា: 5,
-  កក្កដា: 6,
-  សីហា: 7,
-  កញ្ញា: 8,
-  តុលា: 9,
-  វិច្ឆិកា: 10,
-  ធ្នូ: 11,
+import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
+import DataTable from "@/components/table/DataTable.js";
+import StatCard from "@/components/dashboard/statCard";
+import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail";
+
+const EMPTY_SUMMARY = {
+  total_members: 0,
+  female_members: 0,
+  monk_members: 0,
+  buddhist_members: 0,
+  islam_members: 0,
 };
 
-function parseKhmerDate(str) {
-  if (typeof str !== "string") return null;
-
-  const match = str.match(/(\d+)\s+([^\s,]+),?\s*(\d+)/);
-  if (!match) return null;
-
-  const [, day, monthName, year] = match;
-  const month = KHMER_MONTHS[monthName];
-
-  if (month === undefined) return null;
-
-  return new Date(Number(year), month, Number(day));
-}
-
-function calcGrowth(members, filterFn) {
-  const today = new Date();
-  const oneMonthAgo = new Date(today);
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-  const countUpTo = (cutoff) =>
-    members.filter((m) => {
-      const joined = parseKhmerDate(m.joinedAt);
-      return joined && joined <= cutoff && filterFn(m);
-    }).length;
-
-  const currentCount = countUpTo(today);
-  const previousCount = countUpTo(oneMonthAgo);
-
-  if (previousCount === 0) return currentCount > 0 ? 100 : 0;
-
-  return Math.round(((currentCount - previousCount) / previousCount) * 100);
-}
-
-const ROLE_LABELS = {
-  admin: "អ្នកគ្រប់គ្រង",
-  branch_leader: "ប្រធានសាខា",
-  secretary: "លេខាធិការ",
-  member: "សមាជិក",
+const GENDER_LABELS_KM = {
+  MALE: "ប្រុស",
+  FEMALE: "ស្រី",
+  MONK: "ព្រះសង្ឃ",
+  OTHER: "ផ្សេងៗ",
 };
 
-const ROLE_BADGE_STYLES = {
-  admin: "bg-secondary-light text-secondary",
-  branch_leader: "bg-warning-bg text-warning",
-  secretary: "bg-success-bg text-success",
-  member: "bg-gray-100 text-text-secondary",
+const STATUS_LABELS_KM = {
+  ACTIVE: "សកម្ម",
+  INACTIVE: "អសកម្ម",
+  SUSPENDED: "បានផ្អាក",
+  RESIGNED: "បានលាលែង",
 };
 
 const STATUS_BADGE_STYLES = {
-  សកម្ម: "bg-success-bg text-success",
-  អសកម្ម: "bg-red-50 text-red-600",
+  ACTIVE:
+    "bg-success-bg text-success",
+
+  INACTIVE:
+    "bg-red-50 text-red-600",
+
+  SUSPENDED:
+    "bg-warning-bg text-warning",
+
+  RESIGNED:
+    "bg-gray-100 text-text-secondary",
 };
 
-// religion / gender constants — must match the exact strings used in members.json
-const ISLAM_LABEL = "អ៊ីស្លាម";
-const BUDDHIST_LABEL = "ព្រះពុទ្ធ";
-const MONK_GENDER = "ព្រះសង្ឃ";
+const KHMER_MONTHS = [
+  "មករា",
+  "កុម្ភៈ",
+  "មីនា",
+  "មេសា",
+  "ឧសភា",
+  "មិថុនា",
+  "កក្កដា",
+  "សីហា",
+  "កញ្ញា",
+  "តុលា",
+  "វិច្ឆិកា",
+  "ធ្នូ",
+];
+
+async function fetchJson(
+  path,
+  signal,
+) {
+  const response = await fetch(
+    `/api${path}`,
+    {
+      method: "GET",
+
+      headers: {
+        Accept:
+          "application/json",
+      },
+
+      cache: "no-store",
+      signal,
+    },
+  );
+
+  const text =
+    await response.text();
+
+  let body = null;
+
+  if (text) {
+    try {
+      body =
+        JSON.parse(text);
+    } catch {
+      body = text;
+    }
+  }
+
+  if (!response.ok) {
+    const message =
+      typeof body ===
+      "object"
+        ? body?.message ||
+          body?.detail ||
+          body?.error
+        : body;
+
+    throw new Error(
+      message ||
+        `Request failed with status ${response.status}`,
+    );
+  }
+
+  return body;
+}
+
+function normalizeArray(data) {
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (
+    Array.isArray(
+      data?.data,
+    )
+  ) {
+    return data.data;
+  }
+
+  if (
+    Array.isArray(
+      data?.content,
+    )
+  ) {
+    return data.content;
+  }
+
+  return [];
+}
+
+function formatJoinedDate(
+  value,
+) {
+  if (!value) {
+    return "-";
+  }
+
+  const match =
+    String(value).match(
+      /^(\d{4})-(\d{2})-(\d{2})$/,
+    );
+
+  if (!match) {
+    return String(value);
+  }
+
+  const [
+    ,
+    year,
+    month,
+    day,
+  ] = match;
+
+  const monthName =
+    KHMER_MONTHS[
+      Number(month) - 1
+    ];
+
+  if (!monthName) {
+    return String(value);
+  }
+
+  return `${Number(
+    day,
+  )} ${monthName}, ${year}`;
+}
+
+function getGenderLabel(
+  gender,
+) {
+  const code =
+    String(
+      gender?.code || "",
+    ).toUpperCase();
+
+  return (
+    gender?.label_km ||
+    gender?.labelKm ||
+    gender?.label_en ||
+    gender?.labelEn ||
+    GENDER_LABELS_KM[
+      code
+    ] ||
+    "-"
+  );
+}
+
+function getStatusLabel(
+  status,
+) {
+  const code =
+    String(
+      status?.code || "",
+    ).toUpperCase();
+
+  return (
+    status?.label_km ||
+    status?.labelKm ||
+    status?.label_en ||
+    status?.labelEn ||
+    STATUS_LABELS_KM[
+      code
+    ] ||
+    "-"
+  );
+}
+
+function getBranchLabel(
+  branch,
+) {
+  return (
+    branch?.label_km ||
+    branch?.labelKm ||
+    branch?.name_km ||
+    branch?.nameKm ||
+    branch?.name_en ||
+    branch?.nameEn ||
+    "-"
+  );
+}
+
+function mapMember(
+  member,
+) {
+  return {
+    id:
+      member?.id,
+
+    nameKh:
+      member?.full_name_km ||
+      member?.full_name_en ||
+      "-",
+
+    genderLabel:
+      getGenderLabel(
+        member?.gender,
+      ),
+
+    genderCode:
+      String(
+        member?.gender?.code ||
+          "",
+      ).toUpperCase(),
+
+    branchLabel:
+      getBranchLabel(
+        member?.branch,
+      ),
+
+    branchId:
+      member?.branch?.id ??
+      member?.branch_id ??
+      "",
+
+    statusLabel:
+      getStatusLabel(
+        member?.status,
+      ),
+
+    statusCode:
+      String(
+        member?.status?.code ||
+          "",
+      ).toUpperCase(),
+
+    statusId:
+      member?.status?.id ??
+      member?.status_id ??
+      "",
+
+    joinedAt:
+      formatJoinedDate(
+        member?.joined_on,
+      ),
+  };
+}
 
 export default function MembersPage() {
-  const router = useRouter();
+  const router =
+    useRouter();
 
-  const [query, setQuery] = useState("");
-  const [branchFilter, setBranchFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [genderFilter, setGenderFilter] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [deletedIds, setDeletedIds] = useState([]);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [
+    members,
+    setMembers,
+  ] = useState([]);
 
-  const activeMembersList = useMemo(() => {
-    return users.filter((u) => !deletedIds.includes(u.id));
-  }, [deletedIds]);
+  const [
+    summary,
+    setSummary,
+  ] = useState(
+    EMPTY_SUMMARY,
+  );
 
-  const stats = useMemo(() => {
-    const total = activeMembersList.length;
-    const female = activeMembersList.filter((m) => m.gender === "ស្រី").length;
-    const monk = activeMembersList.filter(
-      (m) => m.gender === MONK_GENDER,
-    ).length;
-    const buddhist = activeMembersList.filter(
-      (m) => m.religion === BUDDHIST_LABEL,
-    ).length;
-    const islam = activeMembersList.filter(
-      (m) => m.religion === ISLAM_LABEL,
-    ).length;
-    // "សាសនាផ្សេង" = has a religion value, but it's neither ព្រះពុទ្ធ nor អ៊ីស្លាម
-    const otherReligion = activeMembersList.filter(
-      (m) =>
-        m.religion &&
-        m.religion !== BUDDHIST_LABEL &&
-        m.religion !== ISLAM_LABEL,
-    ).length;
+  const [
+    branchLookups,
+    setBranchLookups,
+  ] = useState([]);
 
-    return {
-      total,
-      female,
-      monk,
-      buddhist,
-      islam,
-      otherReligion,
-      totalGrowth: calcGrowth(activeMembersList, () => true),
-      femaleGrowth: calcGrowth(activeMembersList, (m) => m.gender === "ស្រី"),
-      monkGrowth: calcGrowth(
-        activeMembersList,
-        (m) => m.gender === MONK_GENDER,
-      ),
-      buddhistGrowth: calcGrowth(
-        activeMembersList,
-        (m) => m.religion === BUDDHIST_LABEL,
-      ),
-      islamGrowth: calcGrowth(
-        activeMembersList,
-        (m) => m.religion === ISLAM_LABEL,
-      ),
-      otherReligionGrowth: calcGrowth(
-        activeMembersList,
-        (m) =>
-          m.religion &&
-          m.religion !== BUDDHIST_LABEL &&
-          m.religion !== ISLAM_LABEL,
-      ),
+  const [
+    statusLookups,
+    setStatusLookups,
+  ] = useState([]);
+
+  const [
+    genderLookups,
+    setGenderLookups,
+  ] = useState([]);
+
+  const [
+    query,
+    setQuery,
+  ] = useState("");
+
+  const [
+    debouncedQuery,
+    setDebouncedQuery,
+  ] = useState("");
+
+  const [
+    branchFilter,
+    setBranchFilter,
+  ] = useState("");
+
+  const [
+    statusFilter,
+    setStatusFilter,
+  ] = useState("");
+
+  const [
+    genderFilter,
+    setGenderFilter,
+  ] = useState("");
+
+  const [
+    isCreateOpen,
+    setIsCreateOpen,
+  ] = useState(false);
+
+  /*
+   * =========================================
+   * SEARCH DEBOUNCE
+   * =========================================
+   */
+
+  useEffect(() => {
+    const timeoutId =
+      window.setTimeout(
+        () => {
+          setDebouncedQuery(
+            query.trim(),
+          );
+        },
+        350,
+      );
+
+    return () => {
+      window.clearTimeout(
+        timeoutId,
+      );
     };
-  }, [activeMembersList]);
+  }, [query]);
 
-  const filteredMembers = useMemo(() => {
-    return activeMembersList.filter((m) => {
-      const search = query.toLowerCase();
+  /*
+   * =========================================
+   * SUMMARY
+   * =========================================
+   */
 
-      const matchesQuery =
-        m.name_kh?.toLowerCase().includes(search) ;
+  const loadSummary =
+    useCallback(
+      async (signal) => {
+        const data =
+          await fetchJson(
+            "/members/summary",
+            signal,
+          );
 
-      const matchesBranch = !branchFilter || m.branch === branchFilter;
+        setSummary({
+          total_members:
+            Number(
+              data?.total_members,
+            ) || 0,
 
-      const matchesStatus = !statusFilter || m.status === statusFilter;
+          female_members:
+            Number(
+              data?.female_members,
+            ) || 0,
 
-      const matchesGender = !genderFilter || m.gender === genderFilter;
+          monk_members:
+            Number(
+              data?.monk_members,
+            ) || 0,
 
-      return matchesQuery && matchesBranch && matchesStatus && matchesGender;
-    });
-  }, [activeMembersList, query, branchFilter, statusFilter, genderFilter]);
+          buddhist_members:
+            Number(
+              data?.buddhist_members,
+            ) || 0,
 
-  const branches = useMemo(() => {
-    const uniqueBranches = [
-      ...new Set(users.map((member) => member.branch).filter(Boolean)),
-    ];
-
-    return [
-      {
-        label: "សាខា",
-        value: "",
+          islam_members:
+            Number(
+              data?.islam_members,
+            ) || 0,
+        });
       },
-      ...uniqueBranches.map((branch) => ({
-        label: branch,
-        value: branch,
-      })),
-    ];
-  }, []);
+      [],
+    );
+
+  /*
+   * =========================================
+   * LOOKUPS
+   *
+   * Important:
+   * load each lookup independently.
+   * One failure won't break all dropdowns.
+   * =========================================
+   */
+
+  const loadLookups =
+    useCallback(
+      async (signal) => {
+        /*
+         * BRANCHES
+         */
+        try {
+          const data =
+            await fetchJson(
+              "/lookups/branches",
+              signal,
+            );
+
+          setBranchLookups(
+            normalizeArray(data),
+          );
+        } catch (error) {
+          if (
+            error.name !==
+            "AbortError"
+          ) {
+            console.error(
+              "Cannot load branch options:",
+              error,
+            );
+
+            setBranchLookups([]);
+          }
+        }
+
+        /*
+         * MEMBER STATUSES
+         */
+        try {
+          const data =
+            await fetchJson(
+              "/lookups/member-statuses",
+              signal,
+            );
+
+          setStatusLookups(
+            normalizeArray(
+              data,
+            ),
+          );
+        } catch (error) {
+          if (
+            error.name !==
+            "AbortError"
+          ) {
+            console.error(
+              "Cannot load member statuses:",
+              error,
+            );
+
+            setStatusLookups(
+              [],
+            );
+          }
+        }
+
+        /*
+         * GENDERS
+         */
+        try {
+          const data =
+            await fetchJson(
+              "/lookups/genders",
+              signal,
+            );
+
+          setGenderLookups(
+            normalizeArray(
+              data,
+            ),
+          );
+        } catch (error) {
+          if (
+            error.name !==
+            "AbortError"
+          ) {
+            console.error(
+              "Cannot load genders:",
+              error,
+            );
+
+            setGenderLookups(
+              [],
+            );
+          }
+        }
+      },
+      [],
+    );
+
+  /*
+   * =========================================
+   * MEMBERS
+   * =========================================
+   */
+
+  const loadMembers =
+    useCallback(
+      async (signal) => {
+        const baseParams =
+          new URLSearchParams();
+
+        baseParams.set(
+          "page",
+          "0",
+        );
+
+        baseParams.set(
+          "size",
+          "20",
+        );
+
+        if (
+          debouncedQuery
+        ) {
+          baseParams.set(
+            "search",
+            debouncedQuery,
+          );
+        }
+
+        if (
+          branchFilter
+        ) {
+          baseParams.set(
+            "branchId",
+            branchFilter,
+          );
+        }
+
+        if (
+          statusFilter
+        ) {
+          baseParams.set(
+            "statusId",
+            statusFilter,
+          );
+        }
+
+        if (
+          genderFilter
+        ) {
+          baseParams.set(
+            "gender",
+            genderFilter,
+          );
+        }
+
+        const firstPage =
+          await fetchJson(
+            `/members?${baseParams.toString()}`,
+            signal,
+          );
+
+        const firstContent =
+          Array.isArray(
+            firstPage?.content,
+          )
+            ? firstPage.content
+            : [];
+
+        const totalPages =
+          Math.max(
+            Number(
+              firstPage?.totalPages,
+            ) || 1,
+            1,
+          );
+
+        /*
+         * Only one page
+         */
+        if (
+          totalPages === 1
+        ) {
+          setMembers(
+            firstContent.map(
+              mapMember,
+            ),
+          );
+
+          return;
+        }
+
+        /*
+         * Load remaining pages
+         */
+        const requests =
+          Array.from(
+            {
+              length:
+                totalPages -
+                1,
+            },
+
+            (_, index) => {
+              const params =
+                new URLSearchParams(
+                  baseParams,
+                );
+
+              params.set(
+                "page",
+                String(
+                  index + 1,
+                ),
+              );
+
+              return fetchJson(
+                `/members?${params.toString()}`,
+                signal,
+              );
+            },
+          );
+
+        const remainingPages =
+          await Promise.all(
+            requests,
+          );
+
+        const allMembers = [
+          ...firstContent,
+
+          ...remainingPages.flatMap(
+            (page) =>
+              Array.isArray(
+                page?.content,
+              )
+                ? page.content
+                : [],
+          ),
+        ];
+
+        setMembers(
+          allMembers.map(
+            mapMember,
+          ),
+        );
+      },
+      [
+        branchFilter,
+        debouncedQuery,
+        genderFilter,
+        statusFilter,
+      ],
+    );
+
+  /*
+   * =========================================
+   * LOAD SUMMARY + LOOKUPS
+   * =========================================
+   */
+
+  useEffect(() => {
+    const controller =
+      new AbortController();
+
+    loadSummary(
+      controller.signal,
+    ).catch((error) => {
+      if (
+        error.name !==
+        "AbortError"
+      ) {
+        console.warn(
+          "Failed to load member summary:",
+          error.message,
+        );
+      }
+    });
+
+    loadLookups(
+      controller.signal,
+    );
+
+    return () => {
+      controller.abort();
+    };
+  }, [
+    loadLookups,
+    loadSummary,
+  ]);
+
+  /*
+   * =========================================
+   * LOAD MEMBERS
+   * =========================================
+   */
+
+  useEffect(() => {
+    const controller =
+      new AbortController();
+
+    loadMembers(
+      controller.signal,
+    ).catch((error) => {
+      if (
+        error.name !==
+        "AbortError"
+      ) {
+        console.warn(
+          "Failed to load members:",
+          error.message,
+        );
+
+        setMembers([]);
+      }
+    });
+
+    return () => {
+      controller.abort();
+    };
+  }, [loadMembers]);
+
+  /*
+   * =========================================
+   * BRANCH OPTIONS
+   * =========================================
+   */
+
+  const branches =
+    useMemo(
+      () => [
+        {
+          label: "សាខា",
+          value: "",
+        },
+
+        ...branchLookups
+          .map(
+            (branch) => {
+              const id =
+                branch?.id ??
+                branch?.value ??
+                "";
+
+              const label =
+                branch?.label_km ||
+                branch?.labelKm ||
+                branch?.name_km ||
+                branch?.nameKm ||
+                branch?.name_en ||
+                branch?.nameEn ||
+                branch?.branch_code ||
+                branch?.branchCode ||
+                "";
+
+              return {
+                label,
+
+                value:
+                  id !== null &&
+                  id !==
+                    undefined
+                    ? String(
+                        id,
+                      )
+                    : "",
+              };
+            },
+          )
+          .filter(
+            (branch) =>
+              branch.value !==
+                "" &&
+              branch.label !==
+                "",
+          ),
+      ],
+      [branchLookups],
+    );
+
+  /*
+   * =========================================
+   * STATUS OPTIONS
+   * =========================================
+   */
+
+  const memberStatuses =
+    useMemo(
+      () => [
+        {
+          label:
+            "ស្ថានភាព",
+
+          value: "",
+        },
+
+        ...statusLookups
+          .map(
+            (status) => {
+              const id =
+                status?.id ??
+                status?.status_id ??
+                status?.statusId ??
+                status?.value ??
+                "";
+
+              const code =
+                String(
+                  status?.code ||
+                    "",
+                ).toUpperCase();
+
+              const label =
+                status?.label_km ||
+                status?.labelKm ||
+                status?.label_en ||
+                status?.labelEn ||
+                STATUS_LABELS_KM[
+                  code
+                ] ||
+                status?.code ||
+                "-";
+
+              return {
+                label,
+
+                value:
+                  id !== null &&
+                  id !==
+                    undefined
+                    ? String(
+                        id,
+                      )
+                    : "",
+              };
+            },
+          )
+          .filter(
+            (status) =>
+              status.value !==
+              "",
+          ),
+      ],
+      [statusLookups],
+    );
+
+  /*
+   * =========================================
+   * GENDER OPTIONS
+   * =========================================
+   */
+
+  const genders =
+    useMemo(
+      () => [
+        {
+          label: "ភេទ",
+          value: "",
+        },
+
+        ...genderLookups
+          .map(
+            (gender) => {
+              const code =
+                String(
+                  gender?.code ||
+                    gender?.value ||
+                    "",
+                ).toUpperCase();
+
+              const label =
+                gender?.label_km ||
+                gender?.labelKm ||
+                gender?.label_en ||
+                gender?.labelEn ||
+                GENDER_LABELS_KM[
+                  code
+                ] ||
+                code;
+
+              return {
+                label,
+                value: code,
+              };
+            },
+          )
+          .filter(
+            (gender) =>
+              gender.value !==
+              "",
+          ),
+      ],
+      [genderLookups],
+    );
+
+  /*
+   * =========================================
+   * CREATE MEMBER CALLBACK
+   * =========================================
+   */
+
+  const handleCreateMember =
+    async () => {
+      setIsCreateOpen(
+        false,
+      );
+
+      const controller =
+        new AbortController();
+
+      try {
+        await Promise.all([
+          loadSummary(
+            controller.signal,
+          ),
+
+          loadMembers(
+            controller.signal,
+          ),
+        ]);
+      } catch (error) {
+        if (
+          error.name !==
+          "AbortError"
+        ) {
+          console.warn(
+            "Failed to refresh members:",
+            error.message,
+          );
+        }
+      }
+    };
+
+  /*
+   * =========================================
+   * TABLE
+   * =========================================
+   */
 
   const tableColumns = [
     {
       header: "ល.រ",
       width: "w-[6%]",
       align: "center",
-      render: (_, index) => index,
+
+      render: (
+        _,
+        index,
+      ) => index + 1,
     },
+
     {
       header: "សមាជិក",
-      width: "w-[18%]",
+      width: "w-[20%]",
       align: "left",
-      render: (m) => (
+
+      render: (member) => (
         <span className="block w-full truncate font-medium text-text-secondary">
-          {m.name_kh}
+          {member.nameKh}
         </span>
       ),
     },
+
     {
       header: "ភេទ",
-      width: "w-[8%]",
+      width: "w-[10%]",
       align: "center",
-      accessor: "gender",
+
+      render: (member) => (
+        <span>
+          {
+            member.genderLabel
+          }
+        </span>
+      ),
     },
+
     {
       header: "សាខា",
-      width: "w-[14%]",
+      width: "w-[18%]",
       align: "left",
-      render: (m) => <span className="block w-full truncate">{m.branch}</span>,
-    },
-    {
-      header: "តួនាទី",
-      width: "w-[14%]",
-      align: "center",
-      render: (m) => (
-        <span
-          className={`
-            inline-flex max-w-full items-center justify-center
-            rounded-full px-2 py-1 text-[11px]
-            whitespace-nowrap truncate
-            ${ROLE_BADGE_STYLES[m.role] || "bg-gray-100 text-text-secondary"}
-          `}
-        >
-          {ROLE_LABELS[m.role] || m.role}
+
+      render: (member) => (
+        <span className="block w-full truncate">
+          {
+            member.branchLabel
+          }
         </span>
       ),
     },
+
     {
       header: "ស្ថានភាព",
-      width: "w-[12%]",
+      width: "w-[14%]",
       align: "center",
-      render: (m) => (
+
+      render: (member) => (
         <span
           className={`
-            inline-flex max-w-full items-center justify-center
-            rounded-full px-2 py-1 text-[11px] 
-            whitespace-nowrap truncate
-            ${STATUS_BADGE_STYLES[m.status] || "bg-gray-100 text-text-secondary"}
+            inline-flex
+            max-w-full
+            items-center
+            justify-center
+            truncate
+            whitespace-nowrap
+            rounded-full
+            px-2
+            py-1
+            text-[11px]
+            ${
+              STATUS_BADGE_STYLES[
+                member
+                  .statusCode
+              ] ||
+              "bg-gray-100 text-text-secondary"
+            }
           `}
         >
-          {m.status}
+          {
+            member.statusLabel
+          }
         </span>
       ),
     },
+
     {
-      header: "ថ្ងៃចូលរួម",
-      width: "w-[14%]",
+      header:
+        "ថ្ងៃចូលរួម",
+
+      width: "w-[16%]",
       align: "left",
-      render: (m) => (
-        <span className="block w-full truncate">{m.joinedAt}</span>
+
+      render: (member) => (
+        <span className="block w-full truncate">
+          {
+            member.joinedAt
+          }
+        </span>
       ),
     },
+
     {
       header: "សកម្មភាព",
-      width: "w-[14%]",
+      width: "w-[16%]",
       align: "center",
-      render: (m) => (
-        <div className="flex items-center justify-center gap-[5px]">
-          <DetailButton
-            onClick={() => router.push(`/member/memberInfo/${m.id}`)}
-          />
 
-          <button
-            onClick={() => setDeleteTarget(m)}
-            className="shrink-0 px-0 p-1.5 text-red-500 hover:text-red-600"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+      render: (member) => (
+        <div className="flex w-full items-center justify-center">
+          <ButtonSeeDetail
+            onClick={() =>
+              router.push(
+                `/member/memberInfo/${member.id}`,
+              )
+            }
+          />
         </div>
       ),
     },
   ];
 
+  /*
+   * =========================================
+   * FILTERS
+   * =========================================
+   */
+
   const filterConfig = [
-  {
-    name: "branch",
-    value: branchFilter,
-    onChange: setBranchFilter,
-    options: branches,
-    placeholder: "សាខា",
-  },
-  {
-    name: "status",
-    value: statusFilter,
-    onChange: setStatusFilter,
-    options: [
-      {
-        label: "ស្ថានភាព",
-        value: "",
-      },
-      {
-        label: "សកម្ម",
-        value: "សកម្ម",
-      },
-      {
-        label: "អសកម្ម",
-        value: "អសកម្ម",
-      },
-    ],
-    placeholder: "ស្ថានភាព",
-  },
-  {
-    name: "gender",
-    value: genderFilter,
-    onChange: setGenderFilter,
-    options: [
-      {
-        label: "ភេទ",
-        value: "",
-      },
-      {
-        label: "ស្រី",
-        value: "ស្រី",
-      },
-      {
-        label: "ប្រុស",
-        value: "ប្រុស",
-      },
-      {
-        label: "ព្រះសង្ឃ",
-        value: "ព្រះសង្ឃ",
-      },
-    ],
-    placeholder: "ភេទ",
-  },
-];
+    {
+      name: "branch",
+
+      value:
+        branchFilter,
+
+      onChange:
+        setBranchFilter,
+
+      options:
+        branches,
+
+      placeholder:
+        "សាខា",
+    },
+
+    {
+      name: "status",
+
+      value:
+        statusFilter,
+
+      onChange:
+        setStatusFilter,
+
+      options:
+        memberStatuses,
+
+      placeholder:
+        "ស្ថានភាព",
+    },
+
+    {
+      name: "gender",
+
+      value:
+        genderFilter,
+
+      onChange:
+        setGenderFilter,
+
+      options:
+        genders,
+
+      placeholder:
+        "ភេទ",
+    },
+  ];
 
   return (
-    <div className="min-h-full flex flex-col gap-4">
-      <div className=" grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 shrink-0 ">
+    <div className="flex min-h-full min-w-0 flex-col gap-4 overflow-hidden">
+      {/* SUMMARY */}
+
+      <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
         <StatCard
-        
           icon={Users}
           label="សមាជិកសរុប"
-          value={String(stats.total)}
-          growth={String(stats.totalGrowth)}
+          value={String(
+            summary.total_members,
+          )}
+          growth="0"
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -350,8 +1169,10 @@ export default function MembersPage() {
         <StatCard
           icon={AiOutlineWoman}
           label="ភេទស្រី"
-          value={String(stats.female)}
-          growth={String(stats.femaleGrowth)}
+          value={String(
+            summary.female_members,
+          )}
+          growth="0"
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -359,8 +1180,10 @@ export default function MembersPage() {
         <StatCard
           icon={Landmark}
           label="ចំនួនព្រះសង្ឃ"
-          value={String(stats.monk)}
-          growth={String(stats.monkGrowth)}
+          value={String(
+            summary.monk_members,
+          )}
+          growth="0"
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -368,8 +1191,10 @@ export default function MembersPage() {
         <StatCard
           icon={FaDharmachakra}
           label="ព្រះពុទ្ធ"
-          value={String(stats.buddhist)}
-          growth={String(stats.buddhistGrowth)}
+          value={String(
+            summary.buddhist_members,
+          )}
+          growth="0"
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -377,54 +1202,85 @@ export default function MembersPage() {
         <StatCard
           icon={Moon}
           label="អ៊ីស្លាម"
-          value={String(stats.islam)}
-          growth={String(stats.islamGrowth)}
+          value={String(
+            summary.islam_members,
+          )}
+          growth="0"
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
       </div>
 
-      <div className="w-full h-[34px]">
+      {/* TABLE */}
+
+      <div className="min-w-0 w-full">
         <DataTable
           title="បញ្ជីសមាជិក"
-          data={filteredMembers}
-          columns={tableColumns}
-          filters={filterConfig}
-          searchQuery={query}
-          onSearchChange={setQuery}
-          searchPlaceholder="ស្វែងរកតាមរយៈឈ្មោះ ឬលេខទូរស័ព្ទ..."
+          data={members}
+          columns={
+            tableColumns
+          }
+          filters={
+            filterConfig
+          }
+          searchQuery={
+            query
+          }
+          onSearchChange={
+            setQuery
+          }
+          searchPlaceholder="ស្វែងរកតាមរយៈឈ្មោះ..."
           pageSize={20}
           actionButton={
             <button
-              onClick={() => setIsCreateOpen(true)}
-              className="h-[34px] inline-flex items-center gap-2 rounded-lg bg-success px-3 py-2 text-sm font-medium text-white hover:opacity-90 transition whitespace-nowrap"
+              type="button"
+              onClick={() =>
+                setIsCreateOpen(
+                  true,
+                )
+              }
+              className="
+                inline-flex
+                h-[34px]
+                w-full
+                items-center
+                justify-center
+                gap-2
+                whitespace-nowrap
+                rounded-lg
+                bg-success
+                px-4
+                text-sm
+                font-medium
+                text-white
+                transition
+                hover:opacity-90
+              "
             >
               <RiAddCircleLine className="h-4 w-4 shrink-0" />
-              <span>បន្ថែមសមាជិកថ្មី</span>
+
+              <span>
+                បន្ថែមសមាជិកថ្មី
+              </span>
             </button>
           }
         />
       </div>
 
-      <ConfirmDeleteModal
-        open={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          setDeletedIds((prev) => [...prev, deleteTarget.id]);
-          setDeleteTarget(null);
-        }}
-        description={
-          deleteTarget
-            ? `តើអ្នកប្រាកដថានឹងលុប "${deleteTarget.name_kh}" ចេញពីបញ្ជីសមាជិកទេ?`
-            : undefined
-        }
-      />
+      {/* CREATE MODAL */}
 
       <CreateMemberModal
-        open={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        onSave={() => setIsCreateOpen(false)}
-        branches={branches}
+        open={
+          isCreateOpen
+        }
+        onClose={() =>
+          setIsCreateOpen(
+            false,
+          )
+        }
+        onSave={
+          handleCreateMember
+        }
       />
     </div>
   );

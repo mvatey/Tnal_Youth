@@ -196,3 +196,21 @@ input[type="reset"] {
 .hide-scrollbar::-webkit-scrollbar {
   display: none; /* Chrome, Safari */
 }
+/* Read-only member details keep normal contrast, while dropdown arrows are hidden. */
+.member-readonly :is(input, select, textarea):disabled {
+  color: var(--color-text-primary, #374151);
+  opacity: 1;
+  background-color: #f9fafb;
+}
+
+.member-readonly label {
+  color: var(--color-text-primary, #111827);
+}
+
+.member-readonly select + svg {
+  display: none;
+}
+
+.member-readonly .admin-editable select + svg {
+  display: block;
+}

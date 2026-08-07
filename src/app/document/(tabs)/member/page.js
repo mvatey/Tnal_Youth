@@ -5,9 +5,27 @@ import { useRouter } from "next/navigation";
 import { Eye } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
-import DataTable from "@/components/tables/DataTable";
+import DataTable from "@/components/table/DataTable";
 import CertificatePreview from "@/components/document/certificatePreview";
-import documentMember from "@/data/memberDocuments.json";
+import documentMember from "@/data/documentMember.json";
+
+const DOCUMENT_TYPE_BADGE_STYLES = {
+  PDF: "bg-red-100 text-red-500",
+  Excel: "bg-success-bg text-success",
+  XLS: "bg-success-bg text-success",
+  XLSX: "bg-success-bg text-success",
+  Word: "bg-blue-50 text-blue-600",
+  DOC: "bg-blue-50 text-blue-600",
+  DOCX: "bg-blue-50 text-blue-600",
+  PowerPoint: "bg-orange-50 text-orange-600",
+  PPT: "bg-orange-50 text-orange-600",
+  PPTX: "bg-orange-50 text-orange-600",
+  PNG: "bg-purple-50 text-purple-600",
+  JPG: "bg-yellow-50 text-yellow-600",
+  JPEG: "bg-yellow-50 text-yellow-600",
+};
+
+const DEFAULT_DOCUMENT_TYPE_STYLE = "bg-gray-100 text-text-secondary";
 
 export default function MemberDocumentPage() {
   const router = useRouter();
@@ -27,6 +45,7 @@ export default function MemberDocumentPage() {
       item.memberName?.toLowerCase().includes(searchValue);
 
     const matchType = !typeFilter || item.type === typeFilter;
+
     const matchDate = !dateFilter || item.date === dateFilter;
 
     return matchSearch && matchType && matchDate;
@@ -46,7 +65,14 @@ export default function MemberDocumentPage() {
         <img
           src={item.image || "/document.jpg"}
           alt={item.title || "document"}
-          className="h-8 w-6 rounded border border-gray-200 object-cover"
+          className="
+            h-8
+            w-6
+            rounded
+            border
+            border-gray-200
+            object-cover
+          "
         />
       ),
     },
@@ -83,11 +109,33 @@ export default function MemberDocumentPage() {
     {
       header: "ប្រភេទឯកសារ",
       width: "w-[10%]",
-      render: (item) => (
-        <span className="inline-flex rounded-md bg-red-100 px-3 py-1 text-xs font-medium text-red-500">
-          {item.type}
-        </span>
-      ),
+      align: "center",
+      render: (item) => {
+        const normalizedType = String(item.type || "").trim();
+
+        const badgeStyle =
+          DOCUMENT_TYPE_BADGE_STYLES[normalizedType] ||
+          DEFAULT_DOCUMENT_TYPE_STYLE;
+
+        return (
+          <span
+            className={`
+              inline-flex
+          max-w-full
+          items-center
+          justify-center
+          rounded-full
+          px-2
+          py-1
+          text-[11px]
+          truncate whitespace-nowrap
+              ${badgeStyle}
+            `}
+          >
+            {normalizedType || "-"}
+          </span>
+        );
+      },
     },
     {
       header: "សកម្មភាព",
@@ -98,7 +146,16 @@ export default function MemberDocumentPage() {
           <button
             type="button"
             onClick={() => setSelectedCertificate(item)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-blue-50"
+            className="
+              inline-flex
+              h-8
+              w-8
+              items-center
+              justify-center
+              rounded-md
+              transition
+              hover:bg-blue-50
+            "
             aria-label="មើលឯកសារ"
           >
             <Eye size={18} className="text-blue-500" />
@@ -113,12 +170,12 @@ export default function MemberDocumentPage() {
       name: "type",
       placeholder: "ប្រភេទឯកសារ",
       value: typeFilter,
-      options: [...new Set(documents.map((item) => item.type))].map(
-        (type) => ({
-          label: type,
-          value: type,
-        }),
-      ),
+      options: [
+        ...new Set(documents.map((item) => item.type).filter(Boolean)),
+      ].map((type) => ({
+        label: type,
+        value: type,
+      })),
       onChange: setTypeFilter,
     },
     {
@@ -134,10 +191,25 @@ export default function MemberDocumentPage() {
     <button
       type="button"
       onClick={() => router.push("/document/create")}
-      className="flex items-center gap-2 rounded-lg bg-success px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+      className="
+        inline-flex
+        items-center
+        gap-2
+        whitespace-nowrap
+        rounded-lg
+        bg-success
+        px-18
+        py-2
+        text-sm
+        font-medium
+        text-white
+        transition
+        hover:opacity-90
+      "
     >
-      <RiAddCircleLine size={18} />
-      បង្កើតឯកសារ
+      <RiAddCircleLine className="h-4 w-4 shrink-0" />
+
+      <span>បង្កើតឯកសារ</span>
     </button>
   );
 

@@ -3,15 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, CalendarDays, ChevronsUpDown, FileText, PencilLineIcon, PencilRulerIcon, PenSquareIcon, PlusCircle, Search, SquarePen, SquarePenIcon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import SponsorTypeSelect from "@/components/donations/sponsor/SponsorTypeSelect";
+import SponsorTypeSelect from "@/components/forms/sponsorTypeSelect";
 import Pagination from "@/components/navigation/Pagination";
-import PrimaryActionButton from "@/components/ui/actions/PrimaryActionButton";
-import AddSuccessAlert from "@/components/ui/feedback/AddSuccessAlert";
-import SaveSuccessAlert from "@/components/ui/feedback/SaveSuccessAlert";
+import SaveButton from "@/components/forms/save";
+import AddAlert from "@/components/forms/addalert";
+import SaveAlert from "@/components/forms/savealert";
 import sponsorData from "@/data/donation/sponsorData.json";
-import sponsorOptions from "@/data/donation/sponsorOptions.json";
-import branchRecords from "@/data/branchRecords.json";
-import memberRecords from "@/data/members.json";
+import donationData from "@/data/donation/donationData.json";
 import tableHeaders from "@/data/donation/tableHeaders.json";
 import { MdEditSquare } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
@@ -21,60 +19,11 @@ import { VscEditSparkle } from "react-icons/vsc";
 import { downloadCsv } from "@/utils/downloadCsv";
 
 const { sponsorRows: sponsorDataRows } = sponsorData;
-const { sponsorTypes } = sponsorOptions;
+const { donationRows } = donationData;
 const { sponsorHeaders: headers } = tableHeaders;
 const rowsPerPage = 12;
 const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
-const sponsorTypeLabels = Object.fromEntries(
-  sponsorTypes.map((option) => [option.value, option.label]),
-);
-const memberById = new Map(
-  memberRecords.map((member) => [String(member.id), member]),
-);
-
-function normalizeSponsorRow(row, index) {
-  const member = row.memberId
-    ? memberById.get(String(row.memberId))
-    : null;
-  const matchedBranch = branchRecords.find(
-    (record) =>
-      String(record.id) ===
-      String(row.branchId),
-  );
-  const fallbackBranch =
-    branchRecords[index % branchRecords.length];
-  const branch =
-    row.branch ||
-    matchedBranch?.branchName ||
-    matchedBranch?.nameKm ||
-    matchedBranch?.name ||
-    fallbackBranch?.branchName ||
-    fallbackBranch?.nameKm ||
-    fallbackBranch?.name ||
-    "";
-  const sponsorType = row.sponsorType || row.type || "";
-
-  return {
-    ...row,
-    name:
-      row.name ||
-      member?.name_kh ||
-      member?.nameKh ||
-      member?.name ||
-      "-",
-    type: sponsorTypeLabels[sponsorType] || sponsorType,
-    typeValue: sponsorType,
-    phone: row.phone || member?.phone || "-",
-    email: row.email || member?.email || "-",
-    date: row.date || row.donationDate || "-",
-    dateValue: row.dateValue || row.donationDate || "",
-    rielAmount: row.rielAmount ?? row.amountKhr ?? 0,
-    dollarAmount: row.dollarAmount ?? row.amountUsd ?? 0,
-    method: row.method || row.paymentMethod || "-",
-    branch,
-  };
-}
 
 function SponsorReceiptPreview({ receipt }) {
   if (!receipt) {
@@ -164,29 +113,25 @@ export default function SponsorPanel({
   }, []);
 
   const allRows = useMemo(
-    () =>
-      [...createdRows, ...sponsorDataRows].map(
-        normalizeSponsorRow,
-      ),
+    () => [...createdRows, ...sponsorDataRows],
     [createdRows],
   );
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return allRows.filter((row) => {
+    return allRows.filter((row, index) => {
+      const rowBranch =
+        row.branch || donationRows[index % donationRows.length]?.branch;
       const matchesSearch =
         !query ||
         row.name.toLowerCase().includes(query) ||
         row.phone.includes(query) ||
         row.email.toLowerCase().includes(query);
-      const matchesType =
-        !selectedType ||
-        row.typeValue === selectedType ||
-        row.type === selectedType;
+      const matchesType = !selectedType || row.type === selectedType;
       const matchesDate = !selectedDate || row.dateValue === selectedDate;
       const matchesBranch =
-        selectedBranch === "all" || row.branch === selectedBranch;
+        selectedBranch === "all" || rowBranch === selectedBranch;
 
       return matchesSearch && matchesType && matchesDate && matchesBranch;
     });
@@ -233,13 +178,13 @@ export default function SponsorPanel({
     <section className="min-h-[650px] rounded-md border border-border bg-[#fbfcfe] px-7 py-4 shadow-sm">
       {showDownloadAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
-          <AddSuccessAlert message="ការទាញយកថវិការឧបត្ថម្ភជោគជ័យ!" />
+          <AddAlert message="ការទាញយកថវិការឧបត្ថម្ភជោគជ័យ!" />
         </div>
       )}
 
       {showSaveAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
-          <SaveSuccessAlert message="អបអរសាទរ ! ថវិការឧបត្ថម្ភត្រូវបានរក្សាទុកដោយជោគជ័យ" />
+          <SaveAlert message="អបអរសាទរ ! ថវិការឧបត្ថម្ភត្រូវបានរក្សាទុកដោយជោគជ័យ" />
         </div>
       )}
 
@@ -265,7 +210,7 @@ export default function SponsorPanel({
           <SponsorTypeSelect
             value={selectedType}
             onChange={updateFilter(setSelectedType)}
-            options={typeOptions ?? sponsorTypes}
+            options={typeOptions}
             placeholder="ប្រភេទអ្នកឧបត្ថម្ភ"
             className="w-[180px]"
             size="compact"
@@ -339,19 +284,12 @@ export default function SponsorPanel({
                 <td className="px-4">{row.email}</td>
                 <td className="whitespace-nowrap px-4">{row.date}</td>
                 <td className="px-4">
-                  {Number(row.rielAmount || 0).toLocaleString("en-US")}
+                  {row.rielAmount || "0"}
                 </td>
                 <td className="px-4">
-                  {Number(row.dollarAmount || 0).toLocaleString("en-US", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
+                  {row.dollarAmount || "0"}
                 </td>
-                <td className="px-4">
-                  {row.method === "MATERIAL"
-                    ? "សម្ភារៈ"
-                    : row.method}
-                </td>
+                <td className="px-4">{row.method}</td>
                 <td className="px-4">
                   <div className="inline-flex items-center justify-center gap-2">
                     <button
@@ -378,7 +316,7 @@ export default function SponsorPanel({
       />
 
       <div className="mt-10 flex justify-end">
-        <PrimaryActionButton onClick={handleDownload} />
+        <SaveButton onClick={handleDownload} />
       </div>
     </section>
   );

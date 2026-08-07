@@ -3,58 +3,100 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-
-
-
-const TABS = [
+const MY_ACCOUNT_TABS = [
   {
-    label: "ប័ណ្ណសម្គាល់ខ្លួននិងលិខិត",
+    name: "ប័ណ្ណសម្គាល់ខ្លួននិងលិខិត",
     href: "/myAcc/documents",
   },
   {
-    label: "ការចូលរួមកម្មវិធី",
+    name: "សកម្មភាព",
     href: "/myAcc/participation",
   },
   {
-    label: "ការធ្វើវិភាគទាន",
+    name: "ការធ្វើវិភាគទាន",
     href: "/myAcc/donation",
   },
   {
-    label: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
+    name: "ការបរិច្ចាក",
+    href: "/myAcc/sponsor",
+  },
+  {
+    name: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
     href: "/myAcc/password",
   },
 ];
 
-
-export default function MyAccountProfileLayout({ children }) {
+export default function MyAccountProfileLayout({
+  children,
+}) {
   const pathname = usePathname();
 
   return (
-    <div className="min-w-0">
-      <div className="grid grid-cols-4 overflow-hidden rounded-xl border border-border bg-white">
-        {TABS.map((tab) => {
-          const isActive =
-            tab.href === "/myAcc"
-              ? pathname === "/myAcc"
-              : pathname.startsWith(tab.href);
+    <div className="space-y-4">
+      <div
+        className="
+          overflow-x-auto
+          rounded-lg
+          bg-white
+          shadow-sm
+        "
+      >
+        <div
+          className="
+            grid
+            min-w-[850px]
+            grid-cols-5
+          "
+        >
+          {MY_ACCOUNT_TABS.map((tab) => {
+            const active =
+              pathname === tab.href ||
+              pathname.startsWith(
+                `${tab.href}/`,
+              );
 
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={`flex h-12 items-center justify-center border-t-2 px-4 text-sm font-medium transition ${
-                isActive
-                  ? "border-secondary bg-secondary-light text-secondary"
-                  : "border-transparent text-text-secondary hover:bg-gray-50"
-              }`}
-            >
-              {tab.label}
-            </Link>
-          );
-        })}
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className={`
+                  flex
+                  h-10
+                  items-center
+                  justify-center
+                  whitespace-nowrap
+                  border-t-2
+                  px-3
+                  text-sm
+                  font-medium
+                  transition-all
+                  duration-200
+                  ${
+                    active
+                      ? `
+                        border-secondary
+                        bg-secondary-light
+                        text-secondary
+                      `
+                      : `
+                        border-transparent
+                        bg-white
+                        text-text-secondary
+                        hover:bg-gray-50
+                      `
+                  }
+                `}
+              >
+                <span className="truncate">
+                  {tab.name}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="mt-4 min-w-0">
+      <div className="min-w-0">
         {children}
       </div>
     </div>

@@ -41,7 +41,7 @@ const tabs = [
               href={tab.href}
               className={`
                 flex 
-                h-9
+                h-10
                 items-center 
                 justify-center
                 border-t-2

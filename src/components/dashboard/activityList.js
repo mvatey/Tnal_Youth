@@ -1,117 +1,139 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import dashboardActivities from "@/data/activityRecords.json";
-// ---- DATA LAYER ----
-// Imported directly since data now lives under src/ (not browser-
-// fetchable). Kept as `async function` so downstream loading logic
-// doesn't need to change. Swap for a real fetch() call once the
-// backend endpoint exists.
-async function fetchActivities() {
-  return dashboardActivities ?? [];
-}
-// --------------------------------------------------------------------
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 const TYPE_BADGE = {
-  internal: {
+  INTERNAL: {
     label: "កម្មវិធីខាងក្នុង",
-    color: "#8871E8",
-    tint: "#F1EDFF",
+    color: "#6D5BD0",
+    tint: "#F1EEFC",
   },
-  external: {
+  EXTERNAL: {
     label: "កម្មវិធីខាងក្រៅ",
-    color: "#49B982",
-    tint: "#E7F8EF",
+    color: "#2FA36B",
+    tint: "#E9F9F1",
   },
 };
 
-function TypeBadge({ type }) {
-  const normalizedType = String(type ?? "")
+function normalizeType(type) {
+  return String(type ?? "")
     .trim()
-    .toLowerCase();
+    .toUpperCase();
+}
 
-  let badgeType = normalizedType;
+function TypeBadge({ type }) {
+  const normalizedType =
+    normalizeType(type);
 
-  if (
-    normalizedType === "កម្មវិធីខាងក្នុង" ||
-    normalizedType === "internal_activity"
-  ) {
-    badgeType = "internal";
-  }
-
-  if (
-    normalizedType === "កម្មវិធីខាងក្រៅ" ||
-    normalizedType === "external_activity"
-  ) {
-    badgeType = "external";
-  }
-
-  const cfg = TYPE_BADGE[badgeType] ?? {
-    label: type || "មិនមានប្រភេទ",
-    color: "#6B7280",
-    tint: "#F1F2F5",
-  };
+  const config =
+    TYPE_BADGE[normalizedType] ?? {
+      label: type || "-",
+      color: "#6B7280",
+      tint: "#F1F2F5",
+    };
 
   return (
     <span
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: 28,
-        padding: "5px 12px",
-        borderRadius: 9,
+        display: "inline-block",
+        borderRadius: 6,
+        background: config.tint,
+        padding: "2px 7px",
+        color: config.color,
         fontSize: 10,
-        fontWeight: 500,
-        lineHeight: 1,
-        color: cfg.color,
-        backgroundColor: cfg.tint,
+        fontWeight: 400,
         whiteSpace: "nowrap",
       }}
     >
-      {cfg.label}
+      {config.label}
     </span>
   );
 }
 
-// Both completed and upcoming activities now render as the same
-// rectangular photo thumbnail. Falls back to a neutral placeholder
-// image (no colored tint, no icon) when `activity.image` isn't set yet
-// — e.g. upcoming activities per the current API contract.
+function formatDateTime(value) {
+  if (!value) {
+    return "-";
+  }
+
+  const date =
+    new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return new Intl.DateTimeFormat(
+    "km-KH",
+    {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+  ).format(date);
+}
+
 function ActivityThumbnail({ activity }) {
+  const imageUrl =
+    activity?.image ??
+    "/activity-placeholder.svg";
+
   return (
     <img
-      src={activity.image || "/activity-placeholder.svg"}
-      alt=""
+      src={imageUrl}
+      alt={
+        activity?.titleKm ??
+        activity?.title_km ??
+        activity?.title ??
+        ""
+      }
+      onError={(event) => {
+        event.currentTarget.src =
+          "/activity-placeholder.svg";
+      }}
       style={{
-        width: 74,
-        height: 50,
-        borderRadius: 8,
-        objectFit: "cover",
+        width: 64,
+        height: 44,
         flexShrink: 0,
+        borderRadius: 8,
         background: "#F1F2F5",
+        objectFit: "cover",
       }}
     />
   );
 }
 
-// Manages its own hover state so "មើលទាំងអស់" darkens on hover — plain
-// inline styles can't express :hover, so this tracks it in state.
-function ViewMoreLink() {
-  const [isHovered, setIsHovered] = useState(false);
+function ViewMoreLink({
+  onClick,
+}) {
+  const [
+    isHovered,
+    setIsHovered,
+  ] = useState(false);
+
   return (
     <button
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      type="button"
+      onClick={onClick}
+      onMouseEnter={() =>
+        setIsHovered(true)
+      }
+      onMouseLeave={() =>
+        setIsHovered(false)
+      }
       style={{
-        fontSize: 11,
-        color: isHovered ? "#4A3AA8" : "#6D5BD0",
-        textDecoration: "underline",
-        background: "none",
         border: "none",
-        cursor: "pointer",
+        background: "none",
         padding: 0,
+        color: isHovered
+          ? "#4A3AA8"
+          : "#6D5BD0",
         fontFamily: "inherit",
+        fontSize: 11,
+        textDecoration: "underline",
+        cursor: "pointer",
       }}
     >
       មើលទាំងអស់
@@ -119,258 +141,349 @@ function ViewMoreLink() {
   );
 }
 
-function ActivityRow({ activity }) {
-  const isCompleted = activity.status === "completed";
+function ActivityRow({
+  activity,
+  variant,
+  onClick,
+}) {
+  const title =
+    activity?.titleKm ??
+    activity?.title_km ??
+    activity?.title ??
+    "-";
+
+  const type =
+    activity?.type?.code ??
+    activity?.type ??
+    "";
+
+  const participantCount =
+    Number(
+      activity?.participantCount ??
+        activity?.participant_count ??
+        activity?.attendeeCount
+    ) || 0;
+
+  const dateValue =
+    activity?.startsAt ??
+    activity?.starts_at ??
+    activity?.date;
+
+  const isCompleted =
+    variant === "completed";
 
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
       style={{
         display: "flex",
+        width: "100%",
         alignItems: "center",
-        gap: 12,
-        padding: "8px 0",
-        borderBottom: "1px solid #F2F3F5",
+        gap: 10,
+        border: "none",
+        borderBottom:
+          "1px solid #F2F3F5",
+        background: "transparent",
+        padding: "7px 0",
+        textAlign: "left",
+        fontFamily: "inherit",
+        cursor: "pointer",
       }}
     >
-      <ActivityThumbnail activity={activity} />
+      <ActivityThumbnail
+        activity={activity}
+      />
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+      <div
+        style={{
+          minWidth: 0,
+          flex: 1,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent:
+              "space-between",
+            gap: 6,
+          }}
+        >
           <span
             style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#232629",
               overflow: "hidden",
+              color: "#232629",
+              fontSize: 12,
+              fontWeight: 500,
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}
           >
-            {activity.title}
+            {title}
           </span>
-          <TypeBadge type={activity.type} />
+
+          <TypeBadge type={type} />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 3 }}>
-          <span style={{ fontSize: 11, color: "#9AA0A8", whiteSpace: "nowrap" }}>
-            {activity.date}
-            {!isCompleted && activity.time ? `  -  ${activity.time}` : ""}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent:
+              "space-between",
+            gap: 8,
+            marginTop: 2,
+          }}
+        >
+          <span
+            style={{
+              overflow: "hidden",
+              color: "#9AA0A8",
+              fontSize: 10,
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {formatDateTime(dateValue)}
           </span>
-          {isCompleted ? (
-            <span style={{ fontSize: 10, color: "#9AA0A8", whiteSpace: "nowrap" }}>
-              អ្នកចូលរួមសរុប {activity.attendeeCount}នាក់
-            </span>
-          ) : (
-            <button
+
+          {isCompleted && (
+            <span
               style={{
+                flexShrink: 0,
+                color: "#9AA0A8",
                 fontSize: 10,
-                color: "#6D5BD0",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-                fontFamily: "inherit",
               }}
             >
-            </button>
+              អ្នកចូលរួមសរុប{" "}
+              {participantCount.toLocaleString()}
+              នាក់
+            </span>
           )}
         </div>
       </div>
+    </button>
+  );
+}
+
+function ActivityListSkeleton() {
+  return (
+    <div
+      style={{
+        padding: "12px 0",
+      }}
+    >
+      {[0, 1, 2].map((item) => (
+        <div
+          key={item}
+          style={{
+            display: "flex",
+            gap: 10,
+            borderBottom:
+              "1px solid #F2F3F5",
+            padding: "7px 0",
+          }}
+        >
+          <div
+            className="animate-pulse"
+            style={{
+              width: 64,
+              height: 44,
+              flexShrink: 0,
+              borderRadius: 8,
+              background: "#F1F2F5",
+            }}
+          />
+
+          <div
+            style={{
+              flex: 1,
+            }}
+          >
+            <div
+              className="animate-pulse"
+              style={{
+                width: "60%",
+                height: 9,
+                marginBottom: 6,
+                borderRadius: 4,
+                background: "#F1F2F5",
+              }}
+            />
+
+            <div
+              className="animate-pulse"
+              style={{
+                width: "40%",
+                height: 7,
+                borderRadius: 4,
+                background: "#F1F2F5",
+              }}
+            />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
-// Exported so it can be placed as a standalone grid item (see
-// RecentActivities / UpcomingActivities below) instead of always being
-// paired inside a fixed flex row — that's what lets it become an exact
-// 1fr grid column, same width as the QuickActions/PerformanceSummary
-// column beside it.
-export function ActivityListCard({ title, activities, isLoading }) {
+export function ActivityListCard({
+  title,
+  activities = [],
+  loading = false,
+  variant,
+  onViewAll,
+}) {
+  const router =
+    useRouter();
+
+  function openActivity(
+    activity
+  ) {
+    const activityId =
+      activity?.id;
+
+    if (!activityId) {
+      return;
+    }
+
+    router.push(
+      `/activity/${activityId}`
+    );
+  }
+
   return (
     <div
       className="app-card"
       style={{
-        background: "#FFFFFF",
-        border: "1px solid #E7E9EE",
-        borderRadius: 16,
-        padding: "16px 18px",
         height: "100%",
         boxSizing: "border-box",
+        border:
+          "1px solid #EEF0F3",
+        borderRadius: 14,
+        background: "#FFFFFF",
+        padding: 16,
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 7 }}>
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#1F2329" }}>{title}</h3>
-        <ViewMoreLink />
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent:
+            "space-between",
+          marginBottom: 6,
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            color: "#232629",
+            fontSize: 14,
+            fontWeight: 600,
+          }}
+        >
+          {title}
+        </h3>
+
+        <ViewMoreLink
+          onClick={
+            onViewAll ??
+            (() =>
+              router.push(
+                "/activity"
+              ))
+          }
+        />
       </div>
 
-      {isLoading ? (
-        <div style={{ padding: "12px 0" }}>
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                gap: 10,
-                padding: "7px 0",
-                borderBottom: "1px solid #F2F3F5",
-              }}
-            >
-              <div style={{ width: 64, height: 44, borderRadius: 8, background: "#F1F2F5", flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <div style={{ width: "60%", height: 9, borderRadius: 4, background: "#F1F2F5", marginBottom: 6 }} />
-                <div style={{ width: "40%", height: 7, borderRadius: 4, background: "#F1F2F5" }} />
-              </div>
-            </div>
-          ))}
-        </div>
+      {loading ? (
+        <ActivityListSkeleton />
       ) : activities.length === 0 ? (
-        <div style={{ padding: "18px 0", textAlign: "center", fontSize: 11, color: "#9AA0A8" }}>
+        <div
+          style={{
+            padding: "18px 0",
+            color: "#9AA0A8",
+            fontSize: 11,
+            textAlign: "center",
+          }}
+        >
           មិនទាន់មានកម្មវិធីទេ
         </div>
       ) : (
-        activities.map((a) => <ActivityRow key={a.id} activity={a} />)
+        activities
+          .slice(0, 5)
+          .map((activity) => (
+            <ActivityRow
+              key={activity.id}
+              activity={activity}
+              variant={variant}
+              onClick={() =>
+                openActivity(activity)
+              }
+            />
+          ))
       )}
     </div>
   );
 }
 
-// Shared fetch + derive logic. Each of RecentActivities/UpcomingActivities
-// calls this independently — cheap, since it's reading a local JSON
-// import rather than hitting the network, and it keeps each card fully
-// self-contained so the page can place them as independent grid items.
-function useActivityLists() {
-  const [activities, setActivities] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const loadData = useCallback(() => {
-    setIsLoading(true);
-    setError(null);
-    fetchActivities()
-      .then((res) => {
-        setActivities(res);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setError("មិនអាចទាញយកទិន្នន័យបានទេ");
-        setIsLoading(false);
-      });
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const completed = activities.filter((a) => a.status === "completed").slice(0, 5);
-  const upcoming = activities.filter((a) => a.status === "upcoming").slice(0, 5);
-
-  return { completed, upcoming, isLoading, error };
-}
-
-export function RecentActivities() {
-  const { completed, isLoading, error } = useActivityLists();
-  if (error) {
-    return (
-      <div style={{ padding: "20px 0", textAlign: "center", color: "#B3261E", fontSize: 13 }}>
-        {error}
-      </div>
-    );
-  }
-  return <ActivityListCard title="កម្មវិធីថ្មីៗ" activities={completed} isLoading={isLoading} />;
-}
-
-export function UpcomingActivities() {
-  const { upcoming, isLoading, error } = useActivityLists();
-  if (error) {
-    return (
-      <div style={{ padding: "20px 0", textAlign: "center", color: "#B3261E", fontSize: 13 }}>
-        {error}
-      </div>
-    );
-  }
-  return <ActivityListCard title="កម្មវិធីបន្ទាប់" activities={upcoming} isLoading={isLoading} />;
-}
-
-// Kept as the default export for backwards compatibility — renders both
-// cards side by side in a flex row. Prefer RecentActivities +
-// UpcomingActivities placed as separate grid items when exact equal-width
-// columns matter (e.g. next to QuickActions/PerformanceSummary).
-export default function ActivityList() {
-  const { completed, upcoming, isLoading, error } = useActivityLists();
-
-  if (error) {
-    return (
-      <div style={{ padding: "20px 0", textAlign: "center", color: "#B3261E", fontSize: 13 }}>
-        {error}
-      </div>
-    );
-  }
-
+export function RecentActivities({
+  activities = [],
+  loading = false,
+}) {
   return (
-    <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-      <ActivityListCard title="កម្មវិធីថ្មីៗ" activities={completed} isLoading={isLoading} />
-      <ActivityListCard title="កម្មវិធីបន្ទាប់" activities={upcoming} isLoading={isLoading} />
-    </div>
+    <ActivityListCard
+      title="កម្មវិធីថ្មីៗ"
+      activities={activities}
+      loading={loading}
+      variant="completed"
+    />
   );
 }
 
+export function UpcomingActivities({
+  activities = [],
+  loading = false,
+}) {
+  return (
+    <ActivityListCard
+      title="កម្មវិធីបន្ទាប់"
+      activities={activities}
+      loading={loading}
+      variant="upcoming"
+    />
+  );
+}
 
-/**
- * ActivityLists
- * --------------
- * Renders the "កម្មវិធីថ្មីៗ" (recent) and "កម្មវិធីបន្ទាប់" (upcoming)
- * activity list cards.
- *
- * Wired to match this API contract:
- *
- *   GET /dashboard/activities?status=completed&limit=5
- *   GET /dashboard/activities?status=upcoming&limit=5
- *
- *   (Modeled here against one shared "activities" array, since that's
- *   what's currently in src/data/donation/activityLists.json — see note below.)
- *
- *   Each activity:
- *   {
- *     "id": "1",
- *     "title": "កម្មវិធីដាំដើមឈើ",
- *     "type": "external",       // "internal" | "external"
- *     "status": "completed",    // "completed" | "upcoming"
- *     "date": "25 មករា, 2026",
- *     "time": null,             // populated for "upcoming", null for "completed"
- *     "attendeeCount": 200,     // populated for "completed", null for "upcoming"
-<<<<<<< HEAD
- *     "image": "/tree planning.jpg"  // null for "upcoming" (no photo exists yet)
-=======
- *     "image": "/activities/1.jpg"  // null for "upcoming" (no photo exists yet)
->>>>>>> origin/feature/member
- *   }
- *
- * IMPORTANT — sorting & limiting responsibility:
- * "date" is a pre-formatted Khmer display string ("25 មករា, 2026"), not
- * an ISO date. That means the frontend CANNOT reliably sort by it
- * (parsing Khmer month names back into a real Date is fragile and easy
- * to get wrong). So this component does NOT sort or slice the data —
- * it trusts the backend to already return each list correctly ordered
- * (completed: most recent first; upcoming: soonest first) and already
- * limited to 5. If backend ever sends more than 5 or in the wrong
- * order, this component will just render it as-is — worth confirming
- * that contract explicitly rather than assuming.
- *
- * LAYOUT NOTE:
- * RecentActivities and UpcomingActivities are exported separately so
- * they can be dropped directly into a CSS grid as siblings of
- * QuickActions/PerformanceSummary's column. That guarantees all three
- * end up as true equal 1fr grid columns — using the old combined
- * ActivityList inside its own flex row produced a *different* internal
- * gap than the outer grid's column gap, which is why the two activity
- * cards didn't end up the same width as the third column before.
- *
- * THUMBNAIL NOTE:
- * Both completed and upcoming rows render the same rectangular (64x44)
- * photo thumbnail via ActivityThumbnail, instead of upcoming rows
- * getting a colored icon box. Since `image` is currently null for
- * upcoming activities (see above), those rows fall back to
- * /dashboard/activity-placeholder.jpg until real per-event photos exist
- * on the backend — swap that fallback path for whatever generic
- * placeholder asset the project uses.
- */
+export default function ActivityList({
+  recentCompleted = [],
+  upcoming = [],
+  loading = false,
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 16,
+      }}
+    >
+      <ActivityListCard
+        title="កម្មវិធីថ្មីៗ"
+        activities={
+          recentCompleted
+        }
+        loading={loading}
+        variant="completed"
+      />
+
+      <ActivityListCard
+        title="កម្មវិធីបន្ទាប់"
+        activities={upcoming}
+        loading={loading}
+        variant="upcoming"
+      />
+    </div>
+  );
+}

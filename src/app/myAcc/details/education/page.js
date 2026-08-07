@@ -5,12 +5,12 @@ import { RiAddCircleLine } from "react-icons/ri";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
 
-import SaveButton from "@/components/ui/actions/SaveButton";
-import FormControl from "@/components/forms/FormControl";
-import KhmerDateField from "@/components/forms/KhmerDateField";
+import SaveButton from "@/components/forms/SaveButton";
+import BoxFill from "@/components/forms/boxFill";
+import FormDate from "@/components/forms/FormDate";
 import FormSelect from "@/components/forms/FormSelect";
-import DeleteButton from "@/components/ui/actions/DeleteButton";
-import DocumentLinkField from "@/components/forms/DocumentLinkField";
+import DeleteButton from "@/components/forms/DeleteButton";
+import ButtonDropLink from "@/components/forms/ButtonDropLink";
 
 import locationData from "@/data/location.json";
 import educationData from "@/data/education.json";
@@ -204,9 +204,9 @@ function EducationGroup({
       </h3>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-  <FormControl
-    label="សាលា ឬ ស្ថាប័ន"
-    placeholder="បញ្ចូលឈ្មោះសាលា"
+  <BoxFill
+    label="ស្ថាប័ន"
+    placeholder="បញ្ចូលឈ្មោះស្ថាប័ន"
     value={education.school || ""}
     onChange={(event) =>
       onChange("school", event.target.value)
@@ -223,14 +223,13 @@ function EducationGroup({
     options={provinces}
   />
 
-  <FormSelect
+  <BoxFill
     label="ប្រទេស"
-    placeholder="ជ្រើសរើស"
+    placeholder="បំពេញឈ្មោះប្រទេស"
     value={education.country || ""}
     onChange={(event) =>
       onChange("country", event.target.value)
     }
-    options={countries}
   />
 
   <FormSelect
@@ -248,7 +247,7 @@ function EducationGroup({
       ឯកសារភ្ជាប់
     </label>
 
-    <DocumentLinkField
+    <ButtonDropLink
       value={education.documentLink || ""}
       onChange={(value) =>
         onChange("documentLink", value)
@@ -256,7 +255,7 @@ function EducationGroup({
     />
   </div>
 
-  <KhmerDateField
+  <FormDate
     label="ថ្ងៃចាប់ផ្ដើម"
     name={`start-${education.id}`}
     value={education.startDate || ""}
@@ -265,7 +264,7 @@ function EducationGroup({
     }
   />
 
-  <KhmerDateField
+  <FormDate
     label="ថ្ងៃបញ្ចប់"
     name={`end-${education.id}`}
     value={education.endDate || ""}

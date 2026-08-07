@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download, Eye, Search } from "lucide-react";
-import FilterBar from "@/components/tables/FilterBar";
+import { Eye, Search } from "lucide-react";
+import { HiSaveAs } from "react-icons/hi";
+import FilterBar from "@/components/table-items/FilterBar";
 
 const members = [
   { id: 1, name: "ឌី រីយ៉ា", email: "riya@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
@@ -100,8 +101,8 @@ export default function MemberSelectModal({ onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-5">
       <div className="w-full max-w-5xl rounded-xl bg-white p-5 shadow-xl">
         <div className="mb-4 flex items-center gap-3">
-          <div className="relative flex-1 h-[34px]">
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={query ? "" : "ស្វែងរកសមាជិក..."} className="h-[34px] w-full rounded-lg border border-border bg-white pl-4 pr-10 text-sm outline-none" />
+          <div className="relative flex-1">
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={query ? "" : "ស្វែងរកសមាជិក..."} className="h-10 w-full rounded-lg border border-border bg-white pl-4 pr-10 text-sm outline-none" />
             <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary" />
           </div>
 
@@ -149,7 +150,7 @@ export default function MemberSelectModal({ onClose }) {
 
                     <td className="text-center">
                       <span className={`rounded-full px-3 py-1 text-[11px] ${isSelected ? "bg-success-bg text-success" : "bg-warning-bg text-warning"}`}>
-                        {isSelected ? "បានចូលរួម" : "មិនបានចូលរួម"}
+                        {isSelected ? "បានអញ្ជើញ" : "មិនបានអញ្ជើញ"}
                       </span>
                     </td>
 
@@ -173,7 +174,7 @@ export default function MemberSelectModal({ onClose }) {
           <button type="button" onClick={onClose} className="h-[34px] w-[91px] rounded-lg border border-border bg-white text-sm font-semibold text-text-secondary">បោះបង់</button>
 
           <button type="button" onClick={handleSave} className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white">
-            <Download size={16} />
+            <HiSaveAs size={16} />
             រក្សាទុក
           </button>
         </div>

@@ -1,5 +1,5 @@
 import DonationFilterSelect from "./DonationFilterSelect";
-import DonationSearchInput from "@/components/donations/DonationSearchInput";
+import DonationSearchInput from "../../forms/searchBar";
 
 export default function AddDonationFilters({
   branches,

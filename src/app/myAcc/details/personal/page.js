@@ -1,14 +1,106 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { UploadCloud } from "lucide-react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  FileText,
+  UploadCloud,
+  X,
+} from "lucide-react";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
 
-import SaveButton from "@/components/ui/actions/SaveButton";
-import FormControl from "@/components/forms/FormControl";
-import KhmerDateField from "@/components/forms/KhmerDateField";
-import FormSelect from "@/components/forms/FormSelect";
+import BoxFill from "@/components/forms/boxFill";
+import SaveButton from "@/components/forms/SaveButton";
+
+const MAX_FILE_SIZE =
+  5 * 1024 * 1024;
+
+const ALLOWED_FILE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+
+const ROLE_LABELS = {
+  admin: "អ្នកគ្រប់គ្រង",
+  branch_leader: "ប្រធានសាខា",
+  secretary: "លេខាធិការ",
+  member: "សមាជិក",
+
+  អ្នកគ្រប់គ្រង: "អ្នកគ្រប់គ្រង",
+  ប្រធានសាខា: "ប្រធានសាខា",
+  លេខាធិការ: "លេខាធិការ",
+  សមាជិក: "សមាជិក",
+};
+
+function getRoleLabel(role) {
+  const normalizedRole =
+    String(role || "").trim();
+
+  return (
+    ROLE_LABELS[normalizedRole] ||
+    normalizedRole ||
+    "-"
+  );
+}
+
+function getLevelValue(member) {
+  const level =
+    member?.level ||
+    member?.memberLevel ||
+    member?.rank ||
+    "";
+
+  if (!level) {
+    return "-";
+  }
+
+  const stringLevel =
+    String(level).trim();
+
+  if (
+    stringLevel.startsWith("កាំ")
+  ) {
+    return stringLevel;
+  }
+
+  return `កាំ ${stringLevel}`;
+}
+
+function getShirtSize(member) {
+  return (
+    member?.shirtSize ||
+    member?.shirt_size ||
+    member?.tshirtSize ||
+    "-"
+  );
+}
+
+function formatFileSize(size) {
+  if (!size) {
+    return "0 KB";
+  }
+
+  const sizeInMb =
+    size / 1024 / 1024;
+
+  if (sizeInMb >= 1) {
+    return `${sizeInMb.toFixed(
+      2,
+    )} MB`;
+  }
+
+  return `${(
+    size / 1024
+  ).toFixed(1)} KB`;
+}
 
 export default function MyAccountPersonalPage() {
   const fileRef = useRef(null);
@@ -19,8 +111,17 @@ export default function MyAccountPersonalPage() {
     error,
   } = useCurrentMember();
 
-  const [form, setForm] = useState(null);
-  const [fileName, setFileName] = useState("");
+  const [form, setForm] =
+    useState(null);
+
+  const [cvFile, setCvFile] =
+    useState(null);
+
+  const [fileError, setFileError] =
+    useState("");
+
+  const [saving, setSaving] =
+    useState(false);
 
   useEffect(() => {
     if (!member) {
@@ -29,54 +130,166 @@ export default function MyAccountPersonalPage() {
     }
 
     setForm({
-      name_kh: member.name_kh || "",
-      name_en: member.name_en || "",
-      branch: member.branch || "",
-      gender: member.gender || "",
-      email: member.email || "",
-      phone: member.phone || "",
-      date_of_birth: member.date_of_birth || "",
-      nationality: member.nationality || "",
-      ethnicity: member.ethnicity || "",
+      name_kh:
+        member.name_kh || "",
+
+      name_en:
+        member.name_en || "",
+
+      branch:
+        member.branch || "",
+
+      gender:
+        member.gender || "",
+
+      email:
+        member.email || "",
+
+      phone:
+        member.phone || "",
+
+      date_of_birth:
+        member.date_of_birth || "",
+
+      nationality:
+        member.nationality || "",
+
+      ethnicity:
+        member.ethnicity || "",
+
+      role: getRoleLabel(
+        member.role,
+      ),
+
+      level:
+        getLevelValue(member),
+
+      shirtSize:
+        getShirtSize(member),
+
+      status:
+        member.status || "",
+
+      religion:
+        member.religion || "",
+
+      joinedAt:
+        member.joinedAt ||
+        member.joined_at ||
+        "",
     });
+
+    setCvFile(null);
+    setFileError("");
+
+    if (fileRef.current) {
+      fileRef.current.value = "";
+    }
   }, [member]);
 
   const handleChange = (field) => (event) => {
-    setForm((previous) => ({
-      ...previous,
-      [field]: event.target.value,
-    }));
-  };
+  setForm((previousForm) => ({
+    ...previousForm,
+    [field]: event.target.value,
+  }));
+};
 
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0];
+  const handleFileChange = (
+    event,
+  ) => {
+    const selectedFile =
+      event.target.files?.[0];
 
-    if (!file) return;
+    setFileError("");
 
-    if (file.size > 5 * 1024 * 1024) {
-      event.target.value = "";
+    if (!selectedFile) {
       return;
     }
 
-    setFileName(file.name);
+    if (
+      !ALLOWED_FILE_TYPES.includes(
+        selectedFile.type,
+      )
+    ) {
+      setFileError(
+        "សូមជ្រើសរើសឯកសារ JPG, PNG, PDF, DOC ឬ DOCX។",
+      );
+
+      event.target.value = "";
+      setCvFile(null);
+
+      return;
+    }
+
+    if (
+      selectedFile.size >
+      MAX_FILE_SIZE
+    ) {
+      setFileError(
+        "ទំហំឯកសារមិនត្រូវលើស 5MB។",
+      );
+
+      event.target.value = "";
+      setCvFile(null);
+
+      return;
+    }
+
+    setCvFile(selectedFile);
   };
 
-  const handleSave = () => {
-    console.log("Current member:", member);
-    console.log("Updated account:", form);
+  const removeFile = () => {
+    setCvFile(null);
+    setFileError("");
+
+    if (fileRef.current) {
+      fileRef.current.value = "";
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="rounded-xl border border-border bg-white p-6">
-        កំពុងទាញយកព័ត៌មានសមាជិក...
-      </div>
+  const handleSave = async () => {
+  setSaving(true);
+
+  try {
+    const formData = new FormData();
+
+    formData.append(
+      "memberId",
+      String(member.id),
     );
+
+    if (cvFile) {
+      formData.append("cv", cvFile);
+    }
+
+    // TODO:
+    // Replace this with your backend API later.
+
+    console.log("Member:", member);
+    console.log("Form:", form);
+    console.log("CV:", cvFile);
+
+    alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+  } catch (error) {
+    console.error(error);
+
+    alert("រក្សាទុកព័ត៌មានមិនបានជោគជ័យ");
+  } finally {
+    setSaving(false);
   }
+};
 
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
+      <div
+        className="
+          rounded-xl
+          border
+          border-red-200
+          bg-white
+          p-6
+        "
+      >
         <p className="text-sm text-red-500">
           {error}
         </p>
@@ -86,7 +299,15 @@ export default function MyAccountPersonalPage() {
 
   if (!member || !form) {
     return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
+      <div
+        className="
+          rounded-xl
+          border
+          border-red-200
+          bg-white
+          p-6
+        "
+      >
         <p className="text-sm text-red-500">
           គណនីនេះមិនទាន់ភ្ជាប់ជាមួយព័ត៌មានសមាជិកទេ
         </p>
@@ -96,114 +317,361 @@ export default function MyAccountPersonalPage() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
+      <div
+        className="
+          rounded-xl
+          border
+          border-gray-200
+          bg-white
+          p-4
+          sm:p-5
+          lg:p-6
+        "
+      >
         <h2 className="text-lg font-bold text-primary">
           ព័ត៌មានផ្ទាល់ខ្លួន
         </h2>
 
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:col-span-2">
-            <FormControl
-              label="ឈ្មោះជាភាសាខ្មែរ"
-              name="name_kh"
-              value={form.name_kh}
-              onChange={handleChange("name_kh")}
-              placeholder="បញ្ចូលឈ្មោះជាភាសាខ្មែរ"
+        <div
+          className="
+            mt-6
+            grid
+            grid-cols-1
+            gap-6
+            xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]
+          "
+        >
+          {/* Read-only member information */}
+
+          <div
+  className="
+    grid
+    grid-cols-1
+    gap-5
+    md:grid-cols-2
+  "
+>
+  {/* Read only */}
+
+  <BoxFill
+    label="ឈ្មោះជាភាសាខ្មែរ"
+    name="name_kh"
+    value={form.name_kh || "-"}
+    readOnly
+  />
+
+  <BoxFill
+    label="ឈ្មោះជាអក្សរឡាតាំង"
+    name="name_en"
+    value={form.name_en || "-"}
+    readOnly
+  />
+
+  {/* Editable */}
+
+  <BoxFill
+    label="ភេទ"
+    name="gender"
+    value={form.gender || ""}
+    placeholder="បញ្ចូលភេទ"
+    onChange={handleChange("gender")}
+  />
+
+  <BoxFill
+    label="ថ្ងៃខែឆ្នាំកំណើត"
+    name="date_of_birth"
+    type="date"
+    value={form.date_of_birth || ""}
+    onChange={handleChange("date_of_birth")}
+  />
+
+  {/* Read only */}
+
+  <BoxFill
+    label="អ៊ីមែល"
+    name="email"
+    type="email"
+    value={form.email || "-"}
+    readOnly
+  />
+
+  <BoxFill
+    label="លេខទូរស័ព្ទ"
+    name="phone"
+    type="tel"
+    value={form.phone || "-"}
+    readOnly
+  />
+
+  {/* Editable */}
+
+  <BoxFill
+    label="ជនជាតិ"
+    name="ethnicity"
+    value={form.ethnicity || ""}
+    placeholder="បញ្ចូលជនជាតិ"
+    onChange={handleChange("ethnicity")}
+  />
+
+  <BoxFill
+    label="សញ្ជាតិ"
+    name="nationality"
+    value={form.nationality || ""}
+    placeholder="បញ្ចូលសញ្ជាតិ"
+    onChange={handleChange("nationality")}
+  />
+
+  <BoxFill
+    label="សាសនា"
+    name="religion"
+    value={form.religion || ""}
+    placeholder="បញ្ចូលសាសនា"
+    onChange={handleChange("religion")}
+  />
+
+  {/* Read only */}
+
+  <BoxFill
+    label="ថ្ងៃខែឆ្នាំចូលរួម"
+    name="joinedAt"
+    value={form.joinedAt || "-"}
+    readOnly
+  />
+
+  <BoxFill
+    label="សាខា"
+    name="branch"
+    value={form.branch || "-"}
+    readOnly
+  />
+
+  <BoxFill
+    label="តួនាទី"
+    name="role"
+    value={form.role || "-"}
+    readOnly
+  />
+
+  <BoxFill
+    label="កម្រិតសមាជិក (កាំ)"
+    name="level"
+    value={form.level || "-"}
+    readOnly
+  />
+
+  {/* Editable */}
+
+  <BoxFill
+    label="ទំហំអាវ"
+    name="shirtSize"
+    value={form.shirtSize || ""}
+    placeholder="បញ្ចូលទំហំអាវ"
+    onChange={handleChange("shirtSize")}
+  />
+
+  {/* Read only */}
+
+  <BoxFill
+    label="ស្ថានភាព"
+    name="status"
+    value={form.status || "-"}
+    readOnly
+  />
+</div>
+
+          {/* CV upload remains editable */}
+
+          <div>
+            <label
+              className="
+                mb-2
+                block
+                text-sm
+                font-semibold
+                text-text-primary
+              "
+            >
+              បញ្ចូល CV
+            </label>
+
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+              className="hidden"
+              onChange={
+                handleFileChange
+              }
             />
 
-            <FormControl
-              label="ឈ្មោះជាអក្សរឡាតាំង"
-              name="name_en"
-              value={form.name_en}
-              onChange={handleChange("name_en")}
-              placeholder="បញ្ចូលឈ្មោះជាអក្សរឡាតាំង"
-            />
+            {!cvFile ? (
+              <button
+                type="button"
+                onClick={() =>
+                  fileRef.current?.click()
+                }
+                className="
+                  flex
+                  min-h-[190px]
+                  w-full
+                  flex-col
+                  items-center
+                  justify-center
+                  rounded-xl
+                  border-2
+                  border-dashed
+                  border-gray-200
+                  bg-gray-50
+                  px-4
+                  text-center
+                  transition
+                  hover:border-primary/40
+                  hover:bg-gray-100
+                "
+              >
+                <div
+                  className="
+                    mb-3
+                    flex
+                    h-11
+                    w-11
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-gray-100
+                  "
+                >
+                  <UploadCloud
+                    size={23}
+                    className="text-gray-400"
+                  />
+                </div>
 
-        <BoxFill
-          label="សាខា"
-          value={member.branch || ""}
-          placeholder="-"
-          readOnly
-        />
+                <p className="text-sm font-semibold text-primary">
+                  បញ្ចូលឯកសារ
+                </p>
 
-        <BoxFill
-          label="ភេទ"
-          value={member.gender || ""}
-          placeholder="-"
-          readOnly
-        />
+                <p className="mt-2 text-xs text-gray-400">
+                  JPG, DOCX, PDF, PNG
+                  (មិនលើស 5MB)
+                </p>
+              </button>
+            ) : (
+              <div
+                className="
+                  relative
+                  flex
+                  min-h-[190px]
+                  w-full
+                  flex-col
+                  items-center
+                  justify-center
+                  rounded-xl
+                  border
+                  border-gray-200
+                  bg-gray-50
+                  px-6
+                  text-center
+                "
+              >
+                <button
+                  type="button"
+                  onClick={removeFile}
+                  aria-label="លុបឯកសារ"
+                  className="
+                    absolute
+                    right-3
+                    top-3
+                    flex
+                    h-8
+                    w-8
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-white
+                    text-red-500
+                    shadow-sm
+                    transition
+                    hover:bg-red-50
+                  "
+                >
+                  <X size={17} />
+                </button>
 
-            <FormControl
-              label="អ៊ីមែល"
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange("email")}
-              placeholder="បញ្ចូលអ៊ីមែល"
-            />
+                <div
+                  className="
+                    mb-3
+                    flex
+                    h-12
+                    w-12
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-secondary-light
+                  "
+                >
+                  <FileText
+                    size={24}
+                    className="text-secondary"
+                  />
+                </div>
 
-            <FormControl
-              label="លេខទូរស័ព្ទ"
-              type="tel"
-              name="phone"
-              value={form.phone}
-              onChange={handleChange("phone")}
-              placeholder="បញ្ចូលលេខទូរស័ព្ទ"
-            />
+                <p
+                  className="
+                    max-w-[240px]
+                    truncate
+                    text-sm
+                    font-semibold
+                    text-text-primary
+                  "
+                  title={cvFile.name}
+                >
+                  {cvFile.name}
+                </p>
 
-            <KhmerDateField
-              label="ថ្ងៃខែឆ្នាំកំណើត"
-              name="date_of_birth"
-              value={form.date_of_birth}
-              onChange={handleChange("date_of_birth")}
-            />
+                <p className="mt-1 text-xs text-gray-400">
+                  {formatFileSize(
+                    cvFile.size,
+                  )}
+                </p>
 
-            <FormControl
-              label="សញ្ជាតិ"
-              name="nationality"
-              value={form.nationality}
-              onChange={handleChange("nationality")}
-              placeholder="បញ្ចូលសញ្ជាតិ"
-            />
+                <button
+                  type="button"
+                  onClick={() =>
+                    fileRef.current?.click()
+                  }
+                  className="
+                    mt-3
+                    text-xs
+                    font-semibold
+                    text-primary
+                    hover:underline
+                  "
+                >
+                  ផ្លាស់ប្តូរឯកសារ
+                </button>
+              </div>
+            )}
 
-            <FormControl
-              label="ជនជាតិ"
-              name="ethnicity"
-              value={form.ethnicity}
-              onChange={handleChange("ethnicity")}
-              placeholder="បញ្ចូលជនជាតិ"
-            />
+            {fileError && (
+              <p className="mt-2 text-xs font-medium text-red-500">
+                {fileError}
+              </p>
+            )}
           </div>
+        </div>
+      </div>
 
-        <BoxFill
-          label="សាសនា"
-          value={member.religion || ""}
-          placeholder="-"
-          readOnly
-        />
+      {/* Only the CV can be saved */}
 
-            <div className="flex h-[165px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 text-center">
-              <UploadCloud
-                size={22}
-                className="mb-3 text-gray-400"
-              />
-
-        <BoxFill
-          label="ស្ថានភាព"
-          value={member.status || ""}
-          placeholder="-"
-          readOnly
-        />
-
-        <BoxFill
-          label="ថ្ងៃចូលរួម"
-          value={member.joinedAt || ""}
-          placeholder="-"
-          readOnly
+      <div className="flex justify-end">
+        <SaveButton
+          onClick={handleSave}
+          disabled={
+            !cvFile || saving
+          }
         />
       </div>
     </div>
-     </div>
-      </div>
   );
 }

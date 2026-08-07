@@ -1,91 +1,87 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
-import dashboardData from "@/data/dashboard.json";
-import branchesData from "@/data/branchRecords.json";
+function normalizeBranchOptions(branches = []) {
+  if (!Array.isArray(branches)) {
+    return [];
+  }
 
-function normalizeBranches(branches) {
   return branches.map((branch) => ({
-    id: String(branch.id),
+    id:
+      branch.id ??
+      branch.branchId ??
+      branch.branch_id,
+
     name:
-      branch.nameKm ||
-      branch.name ||
-      branch.branchName ||
-      "មិនមានឈ្មោះសាខា",
+      branch.nameKm ??
+      branch.name_km ??
+      branch.branchNameKm ??
+      branch.branch_name_km ??
+      branch.name ??
+      branch.label ??
+      "-",
   }));
-}
-
-function normalizePerformanceStats(items = []) {
-  return items.map((item) => {
-    const key = item.key || "";
-
-    const defaultLabels = {
-      newMembers: "សមាជិកថ្មី",
-      totalIncome: "ចំណូលសរុប",
-      completedActivities: "កម្មវិធីបានបញ្ចប់",
-    };
-
-    let value = item.value ?? 0;
-
-    if (item.valueUsd != null) {
-      value = `${new Intl.NumberFormat("en-US", {
-        maximumFractionDigits: 0,
-      }).format(Number(item.valueUsd) || 0)}$`;
-    }
-
-    return {
-      key: key || item.label,
-      label:
-        item.label ||
-        defaultLabels[key] ||
-        "មិនមានចំណងជើង",
-      value,
-      growth:
-        item.growthPercent ??
-        item.growth ??
-        0,
-    };
-  });
-}
-
-// Temporary mock data loader.
-// The current dashboard.json has one organization-level summary,
-// not separate statistics for every branch.
-async function fetchPerformanceStats() {
-  return normalizePerformanceStats(
-    dashboardData.performanceSummary || []
-  );
 }
 
 function BranchDropdown({
   branches,
   value,
   onChange,
+  disabled = false,
 }) {
   return (
     <div className="relative">
       <select
-        value={value}
+        value={value ?? ""}
         onChange={(event) =>
-          onChange(event.target.value)
+          onChange?.(event.target.value)
         }
-        className="cursor-pointer appearance-none rounded-lg border border-[#E7E9EE] bg-white py-[7px] pl-[14px] pr-8 text-[13px] text-[#4A4F59] outline-none"
+        disabled={disabled}
+        className="
+          appearance-none
+          rounded-lg
+          border
+          border-[#E7E9EE]
+          bg-white
+          py-[7px]
+          pl-[14px]
+          pr-8
+          text-[13px]
+          text-[#4A4F59]
+          outline-none
+          transition
+          hover:border-gray-300
+          disabled:cursor-not-allowed
+          disabled:opacity-60
+        "
       >
-        {branches.map((branch) => (
-          <option
-            key={branch.id}
-            value={branch.id}
-          >
-            {branch.name}
+        {branches.length === 0 ? (
+          <option value="">
+            មិនមានសាខា
           </option>
-        ))}
+        ) : (
+          branches.map((branch) => (
+            <option
+              key={branch.id}
+              value={branch.id}
+            >
+              {branch.name}
+            </option>
+          ))
+        )}
       </select>
 
       <ChevronDown
         size={14}
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8A8F98]"
+        className="
+          pointer-events-none
+          absolute
+          right-3
+          top-1/2
+          -translate-y-1/2
+          text-[#8A8F98]
+        "
       />
     </div>
   );
@@ -95,34 +91,72 @@ function StatMiniCard({
   label,
   value,
   growth,
-  isLoading,
+  loading,
 }) {
   const growthNumber =
     Number(growth) || 0;
 
-  const isUp = growthNumber >= 0;
+  const isUp =
+    growthNumber >= 0;
 
   return (
-    <div className="flex h-full flex-col rounded-[10px] border border-[#EEF0F3] bg-[#F7F8FA] px-[14px] py-3">
-      <span className="text-xs text-[#6B7280]">
+    <div
+      className="app-card"
+      style={{
+        display: "flex",
+        height: "100%",
+        flexDirection: "column",
+        boxSizing: "border-box",
+        border:
+          "1px solid #EEF0F3",
+        borderRadius: 10,
+        background: "#F7F8FA",
+        padding: "12px 14px",
+      }}
+    >
+      <span
+        style={{
+          color: "#6B7280",
+          fontSize: 12,
+        }}
+      >
         {label}
       </span>
 
-      <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-1.5 gap-y-1">
-        <span className="whitespace-nowrap text-base font-bold text-[#1F2329] sm:text-lg">
-          {isLoading ? "···" : value}
+      <div
+        style={{
+          display: "flex",
+          flex: 1,
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <span
+          style={{
+            color: "#1F2329",
+            fontSize: 20,
+            fontWeight: 700,
+          }}
+        >
+          {loading ? "···" : value}
         </span>
 
-        {!isLoading && (
+        {!loading && (
           <span
-            className={`shrink-0 whitespace-nowrap text-[10px] font-semibold ${
-              isUp
-                ? "text-[#22A35A]"
-                : "text-[#D14343]"
-            }`}
+            style={{
+              color: isUp
+                ? "#22A35A"
+                : "#D14343",
+              fontSize: 11,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+            }}
           >
             {isUp ? "↑" : "↓"}{" "}
-            {Math.abs(growthNumber)}%
+            {Math.abs(
+              growthNumber
+            )}
+            %
           </span>
         )}
       </div>
@@ -130,112 +164,193 @@ function StatMiniCard({
   );
 }
 
-export default function PerformanceSummary() {
-  const branchOptions = useMemo(
-    () => normalizeBranches(branchesData),
-    []
-  );
+function formatDonationValue(
+  donations
+) {
+  const amountUsd =
+    Number(
+      donations?.amountUsd ??
+      donations?.amount_usd
+    ) || 0;
 
-  const [selectedBranchId, setSelectedBranchId] =
-    useState(
-      branchOptions[0]?.id || ""
+  const amountKhr =
+    Number(
+      donations?.amountKhr ??
+      donations?.amount_khr
+    ) || 0;
+
+  if (amountUsd > 0) {
+    return `$${amountUsd.toLocaleString()}`;
+  }
+
+  return `${amountKhr.toLocaleString()}៛`;
+}
+
+export default function PerformanceSummary({
+  data,
+  branches = [],
+  selectedBranchId,
+  onBranchChange,
+  loading = false,
+  showBranchDropdown = true,
+}) {
+  /*
+   * Expected backend response:
+   *
+   * {
+   *   "period": "2026-07",
+   *   "scope": {
+   *     "branchId": 1,
+   *     "branchNameKm": "...",
+   *     "branchNameEn": "..."
+   *   },
+   *   "activities": {
+   *     "value": 58,
+   *     "changePercent": 8
+   *   },
+   *   "donations": {
+   *     "amountKhr": 0,
+   *     "amountUsd": 1200,
+   *     "changePercentKhr": 0,
+   *     "changePercentUsd": 23
+   *   },
+   *   "members": {
+   *     "value": 86,
+   *     "changePercent": 12
+   *   }
+   * }
+   */
+
+  const branchOptions =
+    normalizeBranchOptions(
+      branches
     );
 
-  const [stats, setStats] =
-    useState([]);
+  const activities =
+    data?.activities ?? {};
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const donations =
+    data?.donations ?? {};
 
-  const [error, setError] =
-    useState("");
+  const members =
+    data?.members ?? {};
 
-  useEffect(() => {
-    let cancelled = false;
+  const stats = [
+    {
+      key: "activities",
+      label: "កម្មវិធីសរុប",
+      value: (
+        Number(
+          activities?.value
+        ) || 0
+      ).toLocaleString(),
+      growth:
+        Number(
+          activities?.changePercent
+        ) || 0,
+    },
+    {
+      key: "donations",
+      label: "វិភាគទានសរុប",
+      value:
+        formatDonationValue(
+          donations
+        ),
+      growth:
+        Number(
+          donations?.changePercentUsd ??
+          donations?.changePercentKhr
+        ) || 0,
+    },
+    {
+      key: "members",
+      label: "សមាជិកថ្មី",
+      value: (
+        Number(
+          members?.value
+        ) || 0
+      ).toLocaleString(),
+      growth:
+        Number(
+          members?.changePercent
+        ) || 0,
+    },
+  ];
 
-    async function loadStats() {
-      try {
-        setIsLoading(true);
-        setError("");
-
-        const result =
-          await fetchPerformanceStats(
-            selectedBranchId
-          );
-
-        if (!cancelled) {
-          setStats(result);
-        }
-      } catch {
-        if (!cancelled) {
-          setError(
-            "មិនអាចទាញយកទិន្នន័យបានទេ"
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    loadStats();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedBranchId]);
+  const resolvedBranchId =
+    selectedBranchId ??
+    data?.scope?.branchId ??
+    data?.scope?.branch_id ??
+    "";
 
   return (
-    <div className="flex h-full flex-col rounded-[14px] border border-[#EEF0F3] bg-white px-5 py-[18px]">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#232629]">
+    <section
+      className="app-card"
+      style={{
+        display: "flex",
+        height: "100%",
+        flexDirection: "column",
+        boxSizing: "border-box",
+        border:
+          "1px solid #EEF0F3",
+        borderRadius: 14,
+        background: "#FFFFFF",
+        padding: "18px 20px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent:
+            "space-between",
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
+        <h3
+          style={{
+            margin: 0,
+            color: "#232629",
+            fontSize: 14,
+            fontWeight: 600,
+          }}
+        >
           សមិទ្ធផលសរុបរបស់សាខា
         </h3>
 
-        {branchOptions.length > 0 && (
+        {showBranchDropdown && (
           <BranchDropdown
             branches={branchOptions}
-            value={selectedBranchId}
-            onChange={setSelectedBranchId}
+            value={resolvedBranchId}
+            onChange={
+              onBranchChange
+            }
+            disabled={loading}
           />
         )}
       </div>
 
-      {error ? (
-        <div className="py-4 text-center text-[13px] text-[#B3261E]">
-          {error}
-        </div>
-      ) : (
-        <div className="grid flex-1 grid-cols-1 items-stretch gap-3 sm:grid-cols-3">
-          {(isLoading
-            ? [0, 1, 2]
-            : stats
-          ).map((item, index) =>
-            isLoading ? (
-              <StatMiniCard
-                key={index}
-                label=""
-                value=""
-                growth={0}
-                isLoading
-              />
-            ) : (
-              <StatMiniCard
-                key={
-                  item.key ||
-                  item.label ||
-                  index
-                }
-                label={item.label}
-                value={item.value}
-                growth={item.growth}
-                isLoading={false}
-              />
-            )
-          )}
-        </div>
-      )}
-    </div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(3, minmax(0, 1fr))",
+          flex: 1,
+          alignItems: "stretch",
+          gap: 12,
+        }}
+      >
+        {stats.map((item) => (
+          <StatMiniCard
+            key={item.key}
+            label={item.label}
+            value={item.value}
+            growth={item.growth}
+            loading={loading}
+          />
+        ))}
+      </div>
+    </section>
   );
 }

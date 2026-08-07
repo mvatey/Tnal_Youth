@@ -7,31 +7,80 @@ import TextInput from "@/components/ui/textInput";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
-  const [phone, setPhone] = useState("");
+  const [phoneOrEmail, setPhoneOrEmail] =
+  useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
-    e.preventDefault();
+  e.preventDefault();
+
+  const identifier = phoneOrEmail.trim();
+
+  if (!identifier) {
+    setError(
+      "សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល",
+    );
+    return;
+  }
+
+  try {
     setError("");
     setLoading(true);
 
-    const res = await fetch("/api/auth/send-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone }),
-    });
+    const res = await fetch(
+      "/api/auth/send-otp",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phoneOrEmail: identifier,
+        }),
+      },
+    );
 
-    setLoading(false);
+    const responseText = await res.text();
+
+    let data = {};
+
+    if (responseText) {
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        data = {
+          message: responseText,
+        };
+      }
+    }
 
     if (!res.ok) {
-      const data = await res.json();
-      setError(data.message || "Something went wrong");
+      setError(
+        data?.message ||
+          "មិនអាចផ្ញើលេខកូដ OTP បាន",
+      );
       return;
     }
 
-    router.push(`/auth/verify-otp?phone=${encodeURIComponent(phone)}`);
+    router.push(
+      `/auth/verify-otp?phoneOrEmail=${encodeURIComponent(
+        identifier,
+      )}`,
+    );
+  } catch (error) {
+    console.error(
+      "Forgot password error:",
+      error,
+    );
+
+    setError(
+      "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបាន",
+    );
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <div>
@@ -44,12 +93,14 @@ export default function ForgotPasswordPage() {
 
       <form onSubmit={handleSubmit} className="w-full space-y-5">
         <TextInput
-          label="លេខទូរស័ព្ទប្រើប្រាស់ ឬ អ៊ីមែល"
-          icon={User}
-          placeholder="បញ្ចូលលេខទូរស័ព្ទ ឬ អ៊ីមែល"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
+            label="លេខទូរស័ព្ទប្រើប្រាស់ ឬ អ៊ីមែល"
+            icon={User}
+            placeholder="បញ្ចូលលេខទូរស័ព្ទ ឬ អ៊ីមែល"
+            value={phoneOrEmail}
+            onChange={(e) =>
+              setPhoneOrEmail(e.target.value)
+            }
+          />
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 

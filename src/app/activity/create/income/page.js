@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronRight, Download } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { HiSaveAs } from "react-icons/hi";
 import { RiDownloadCloud2Line } from "react-icons/ri";
 
 import Pagination from "@/components/navigation/Pagination";
@@ -510,6 +511,7 @@ export default function IncomePage() {
                           <option value="Wing">
                             Wing
                           </option>
+                          
                         </select>
                       </td>
 
@@ -624,7 +626,7 @@ export default function IncomePage() {
           onClick={handleSave}
           className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white transition hover:bg-secondary-hover"
         >
-          <Download size={16} />
+          <HiSaveAs size={16} />
 
           រក្សាទុក
         </button>

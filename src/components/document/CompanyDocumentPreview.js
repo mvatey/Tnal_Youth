@@ -9,6 +9,7 @@ export default function CompanyDocumentPreview({
 
   if (!document) return null;
 
+
   const handleDownload = async () => {
     if (!document.image) {
       console.error("No file available");
@@ -16,22 +17,49 @@ export default function CompanyDocumentPreview({
     }
 
     const response = await fetch(document.image);
+
     const blob = await response.blob();
+
     const url = window.URL.createObjectURL(blob);
+
     const link = window.document.createElement("a");
+
     link.href = url;
+
     link.download = `${document.title}.${document.type.toLowerCase()}`;
+
     window.document.body.appendChild(link);
+
     link.click();
+
     window.document.body.removeChild(link);
+
     window.URL.revokeObjectURL(url);
   };
 
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 bg-black/40"
+      onClick={onClose}
+    >
+
       {/* center only content area after sidebar/topbar */}
+
       <div
-        className=" fixed left-64 top-16 right-0 bottom-0 flex items-center justify-center p-4 " >
+        className="
+        fixed
+        left-64
+        top-16
+        right-0
+        bottom-0
+        flex
+        items-center
+        justify-center
+        p-4
+        "
+      >
+
         <div
           onClick={(e)=>e.stopPropagation()}
           className="
@@ -43,7 +71,10 @@ export default function CompanyDocumentPreview({
           shadow-xl
           "
         >
+
+
           {/* Close */}
+
           <button
             onClick={onClose}
             className="
@@ -61,7 +92,11 @@ export default function CompanyDocumentPreview({
           >
             <X size={17}/>
           </button>
+
+
+
           {/* Title */}
+
           <h2
             className="
             mb-4
@@ -72,7 +107,12 @@ export default function CompanyDocumentPreview({
           >
             ឯកសារ
           </h2>
+
+
+
+
           {/* Information */}
+
           <div
             className="
             mb-4
@@ -85,28 +125,38 @@ export default function CompanyDocumentPreview({
             p-4
             "
           >
+
             <Info
               label="ឈ្មោះឯកសារ"
               value={document.title}
             />
+
             <Info
               label="សាខា"
               value={document.branch}
             />
+
             <Info
               label="កាលបរិច្ឆេទ"
               value={document.date}
             />
+
             <Info
               label="ទំហំ"
               value={document.size}
             />
+
             <Info
               label="ប្រភេទឯកសារ"
               value={document.type}
             />
 
           </div>
+
+
+
+
+
           {/* Preview */}
 
           <div
@@ -121,8 +171,10 @@ export default function CompanyDocumentPreview({
             border-gray-200
             "
           >
+
             {
               document.image ? (
+
                 <img
                   src={document.image}
                   alt="document preview"
@@ -147,6 +199,7 @@ export default function CompanyDocumentPreview({
                   text-gray-400
                   "
                 >
+
                   <FileText size={50}/>
 
                   <span className="text-sm">
@@ -157,9 +210,16 @@ export default function CompanyDocumentPreview({
 
               )
             }
+
           </div>
 
+
+
+
+
+
           {/* Download Button */}
+
           <button
             type="button"
             onClick={handleDownload}
@@ -179,15 +239,27 @@ export default function CompanyDocumentPreview({
             hover:opacity-90
             "
           >
+
             <DownloadCloud size={16}/>
+
             ទាញយក
+
           </button>
+
+
         </div>
+
+
       </div>
+
 
     </div>
   );
 }
+
+
+
+
 
 function Info({
   label,
@@ -195,7 +267,9 @@ function Info({
 }) {
 
   return (
+
     <div>
+
       <p
         className="
         text-[11px]
@@ -204,6 +278,8 @@ function Info({
       >
         {label}
       </p>
+
+
       <p
         className="
         text-sm
@@ -214,6 +290,10 @@ function Info({
       >
         {value || "-"}
       </p>
+
+
     </div>
+
   );
+
 }

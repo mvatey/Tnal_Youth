@@ -47,7 +47,7 @@ export default function DataTable({
   return (
     <div className="w-full">
       {(title || onSearchChange || filters.length > 0 || actionButton) && (
-        <div className="mb-4 rounded-lg border border-[#e5eaf0] bg-white p-4">
+        <div className="mb-4 rounded-lg border border-[#e5eaf0] bg-white p-3 sm:p-4">
           {title && (
             <h3
               className="
@@ -64,11 +64,14 @@ export default function DataTable({
 
           <div
             className="
-            flex
+            grid
+            grid-cols-1
+            sm:grid-cols-2
+            lg:flex
             flex-wrap
             items-center
             gap-3
-            h-[34px]
+            lg:min-h-[34px]
             "
           >
             {onSearchChange && (
@@ -76,8 +79,11 @@ export default function DataTable({
                 className="
                 h-[34px]
                 relative
-                min-w-[220px]
+                min-w-0
+                w-full
                 flex-1
+                sm:col-span-2
+                lg:col-span-1
                 "
               >
                 <Search
@@ -116,7 +122,7 @@ export default function DataTable({
             )}
 
             {filters.map((filter, index) => (
-              <div key={index} className="h-[34px] w-[140px] ">
+              <div key={index} className="h-[34px] w-full lg:w-[140px]">
                 {filter.type === "date" ? (
                   <KhmerDateField
                     value={filter.value}
@@ -135,13 +141,17 @@ export default function DataTable({
               </div>
             ))}
 
-            {actionButton && <div className="ml-auto">{actionButton}</div>}
+            {actionButton && (
+              <div className="w-full sm:w-auto lg:ml-auto [&>*]:w-full sm:[&>*]:w-auto">
+                {actionButton}
+              </div>
+            )}
           </div>
         </div>
       )}
 
       <div className="overflow-x-auto rounded-sm border border-[#e5eaf0] bg-white">
-        <table className="w-full min-w-[980px] table-fixed border-collapse text-sm">
+        <table className="w-full min-w-[760px] table-fixed border-collapse text-xs sm:min-w-[980px] sm:text-sm">
           <colgroup>
             {columns.map((column, index) => (
               <col key={index} className={column.width || ""} />
@@ -154,7 +164,7 @@ export default function DataTable({
                 <th
                   key={index}
                   className={`
-                    py-2 px-3
+                    px-2 py-2 sm:px-3
                     text-xs
                     font-semibold
                     text-text-secondary
@@ -189,7 +199,7 @@ export default function DataTable({
                         className={`
                           h-12
                           overflow-hidden
-                          px-4
+                          px-2 sm:px-4
                           text-text-secondary
                           ${getAlignment(column.align)}
                         `}
@@ -232,7 +242,7 @@ export default function DataTable({
             onPageChange={setCurrentPage}
           />
 
-          <div className="mt-3 flex justify-end">
+          <div className="mt-3 flex justify-stretch sm:justify-end [&>*]:w-full sm:[&>*]:w-auto">
             <DownloadButton data={data} filename={downloadFilename} />
           </div>
         </div>

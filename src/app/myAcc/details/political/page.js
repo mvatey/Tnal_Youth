@@ -7,10 +7,10 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 import politicalData from "@/data/political.json";
 import locationData from "@/data/location.json";
 
-import SaveButton from "@/components/ui/actions/SaveButton";
-import DeleteButton from "@/components/ui/actions/DeleteButton";
-import FormControl from "@/components/forms/FormControl";
-import KhmerDateField from "@/components/forms/KhmerDateField";
+import SaveButton from "@/components/forms/SaveButton";
+import DeleteButton from "@/components/forms/DeleteButton";
+import BoxFill from "@/components/forms/boxFill";
+import FormDate from "@/components/forms/FormDate";
 import FormSelect from "@/components/forms/FormSelect";
 
 function createEmptyPolitical() {
@@ -142,7 +142,7 @@ export default function MyAccountPoliticalPage() {
               </h3>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-                <FormControl
+                <BoxFill
                   label="ឈ្មោះ ស្ថាប័ន"
                   value={item.organization || ""}
                   onChange={(event) =>
@@ -161,21 +161,21 @@ export default function MyAccountPoliticalPage() {
                   options={workLevels}
                 />
 
-                <FormControl
+                <BoxFill
                   label="ប្រទេស"
                   placeholder="បញ្ចូលឈ្មោះប្រទេស"
                   value={item.country ?? ""}
                   onChange={(event) => onChange("country", event.target.value)}
                 />
 
-                <FormControl
+                <BoxFill
                   label="តួនាទី"
                   placeholder="បញ្ចូលឈ្មោះតួនាទី"
                   value={item.position ?? ""}
                   onChange={(event) => onChange("position", event.target.value)}
                 />
 
-                <FormControl
+                <BoxFill
                   label="លេខកាត/លិខិតតែងតាំង"
                   value={item.appointmentNumber || ""}
                   onChange={(event) =>
@@ -188,7 +188,7 @@ export default function MyAccountPoliticalPage() {
                   placeholder="បញ្ចូលលេខកាត/លិខិតតែងតាំង"
                 />
 
-                <KhmerDateField
+                <FormDate
                   label="ថ្ងៃខែឆ្នាំចាប់ផ្ដើម"
                   name={`political-start-${item.id}`}
                   value={item.startDate || ""}
@@ -197,7 +197,7 @@ export default function MyAccountPoliticalPage() {
                   }
                 />
 
-                <KhmerDateField
+                <FormDate
                   label="ថ្ងៃខែឆ្នាំបញ្ចប់"
                   name={`political-end-${item.id}`}
                   value={item.endDate || ""}

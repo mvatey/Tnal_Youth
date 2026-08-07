@@ -3,10 +3,10 @@
 import { useMemo, useState } from "react";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
-import participationData from "@/data/participationRecords.json";
+import participationData from "@/data/participation.json";
 
-import DataTable from "@/components/tables/DataTable";
-import DetailButton from "@/components/ui/actions/DetailButton";
+import DataTable from "@/components/table/DataTable";
+import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail";
 
 const TYPE_STYLES = {
   កម្មវិធីផ្ទៃក្នុង: "bg-primary-light text-primary",
@@ -163,7 +163,7 @@ export default function MyAccountParticipationPage() {
       width: "w-[8%]",
       align: "center",
       render: (item) => (
-        <DetailButton
+        <ButtonSeeDetail
           onClick={() =>
             console.log("Participation detail:", item)
           }

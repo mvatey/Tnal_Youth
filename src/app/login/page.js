@@ -1,10 +1,10 @@
 import AuthLayout from "@/app/auth/layout";
-import LoginForm from "@/components/auth/loginForm";
+import LoginPage from "@/app/auth/login/page";
 
 export default function LoginRedirectPage() {
   return (
     <AuthLayout>
-      <LoginForm />
+      <LoginPage />
     </AuthLayout>
   );
 }

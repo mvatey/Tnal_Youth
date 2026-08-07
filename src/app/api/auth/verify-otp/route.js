@@ -1,5 +1,25 @@
 import { NextResponse } from "next/server";
 
+const BACKEND_URL =
+  process.env.BACKEND_API_URL ||
+  "http://localhost:8081/api";
+
+async function readResponse(response) {
+  const text = await response.text();
+
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      message: text,
+    };
+  }
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -21,7 +41,8 @@ export async function POST(request) {
       return NextResponse.json(
         {
           success: false,
-          message: "រកមិនឃើញលេខទូរស័ព្ទ ឬអ៊ីមែល",
+          message:
+            "រកមិនឃើញលេខទូរស័ព្ទ ឬអ៊ីមែល",
         },
         {
           status: 400,
@@ -33,7 +54,8 @@ export async function POST(request) {
       return NextResponse.json(
         {
           success: false,
-          message: "សូមបញ្ចូលលេខកូដ OTP ចំនួន ៦ ខ្ទង់",
+          message:
+            "សូមបញ្ចូលលេខកូដ OTP ចំនួន ៦ ខ្ទង់",
         },
         {
           status: 400,
@@ -41,23 +63,61 @@ export async function POST(request) {
       );
     }
 
+    const backendResponse = await fetch(
+      `${BACKEND_URL}/auth/verify-otp`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          phoneOrEmail,
+          otp,
+        }),
+        cache: "no-store",
+      },
+    );
+
+    const data = await readResponse(
+      backendResponse,
+    );
+
+    if (!backendResponse.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            data?.message ||
+            "លេខកូដ OTP មិនត្រឹមត្រូវ",
+        },
+        {
+          status: backendResponse.status,
+        },
+      );
+    }
+
     return NextResponse.json(
       {
+        ...data,
         success: true,
         phoneOrEmail,
-        otp,
       },
       {
         status: 200,
       },
     );
   } catch (error) {
-    console.error("Verify OTP route error:", error);
+    console.error(
+      "Verify OTP route error:",
+      error,
+    );
 
     return NextResponse.json(
       {
         success: false,
-        message: "មិនអាចផ្ទៀងផ្ទាត់លេខកូដ OTP បាន",
+        message:
+          "មិនអាចផ្ទៀងផ្ទាត់លេខកូដ OTP បាន",
       },
       {
         status: 500,

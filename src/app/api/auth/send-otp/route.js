@@ -26,16 +26,17 @@ export async function POST(request) {
 
     const phoneOrEmail = String(
       body.phoneOrEmail ||
-      body.phone ||
-      body.email ||
-      "",
+        body.phone ||
+        body.email ||
+        "",
     ).trim();
 
     if (!phoneOrEmail) {
       return NextResponse.json(
         {
           success: false,
-          message: "សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល",
+          message:
+            "សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល",
         },
         {
           status: 400,
@@ -43,14 +44,10 @@ export async function POST(request) {
       );
     }
 
-    /*
-     * Keep the old behavior:
-     * email address -> EMAIL
-     * phone number -> SMS
-     */
-    const deliveryChannel = phoneOrEmail.includes("@")
-      ? "EMAIL"
-      : "SMS";
+    const deliveryChannel =
+      phoneOrEmail.includes("@")
+        ? "EMAIL"
+        : "SMS";
 
     const backendResponse = await fetch(
       `${BACKEND_URL}/auth/forgot-password`,
@@ -68,7 +65,9 @@ export async function POST(request) {
       },
     );
 
-    const data = await readResponse(backendResponse);
+    const data = await readResponse(
+      backendResponse,
+    );
 
     if (!backendResponse.ok) {
       console.error("OTP backend error:", {
@@ -98,21 +97,23 @@ export async function POST(request) {
         deliveryChannel,
         message:
           data?.message ||
-          (deliveryChannel === "EMAIL"
-            ? "OTP ត្រូវបានផ្ញើទៅអ៊ីមែលដោយជោគជ័យ"
-            : "OTP ត្រូវបានផ្ញើទៅលេខទូរស័ព្ទដោយជោគជ័យ"),
+          "OTP ត្រូវបានផ្ញើដោយជោគជ័យ",
       },
       {
         status: 200,
       },
     );
   } catch (error) {
-    console.error("Send OTP route error:", error);
+    console.error(
+      "Send OTP route error:",
+      error,
+    );
 
     return NextResponse.json(
       {
         success: false,
-        message: "ប្រតិបត្តិការផ្ញើ OTP មិនជោគជ័យ",
+        message:
+          "ប្រតិបត្តិការផ្ញើ OTP មិនជោគជ័យ",
       },
       {
         status: 500,

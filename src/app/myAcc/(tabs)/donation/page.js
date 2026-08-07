@@ -5,10 +5,10 @@ import { Trash2 } from "lucide-react";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
 
-import DataTable from "@/components/tables/DataTable.js";
-import ConfirmDeleteModal from "@/components/modals/Confirmdeletemodal.js";
+import DataTable from "@/components/table/DataTable.js";
+import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal.js";
 
-import donationData from "@/data/donationRecords.json";
+import donationData from "@/data/donation.json";
 
 export default function DonationPage() {
   const { member, loading, error } = useCurrentMember();

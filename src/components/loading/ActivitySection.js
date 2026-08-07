@@ -9,7 +9,9 @@ import { activities } from "./data";
 export default function ActivitySection(){
 return (
 <section
+id="programs"
 className="
+scroll-mt-[82px]
 px-10
 py-12
 "

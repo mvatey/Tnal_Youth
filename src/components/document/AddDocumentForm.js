@@ -1,197 +1,719 @@
 "use client";
 
-import { UploadCloud } from "lucide-react";
+import { useRef, useState } from "react";
+import {
+  FileText,
+  UploadCloud,
+  X,
+} from "lucide-react";
 
-import PopupCard from "@/components/modals/PopupCard";
+import PopupCard from "@/components/popup/PopupCard";
+import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
-import SaveButton from "@/components/ui/actions/SaveButton";
-export default function AddDocumentForm({ form, setForm, onSave, onClose }) {
-  const updateField = (field) => (e) => {
-    setForm({
-      ...form,
-      [field]: e.target.value,
-    });
-  };
-  const handleSave = () => {
-    if (!form.title?.trim() || !form.branch || !form.description?.trim()) {
-      alert("សូមបំពេញព័ត៌មានទាំងអស់");
+import FormActionButtons from "@/components/forms/FormActionButton";
 
+const BRANCH_OPTIONS = [
+  {
+    label: "សាខាភ្នំពេញ",
+    value: "សាខាភ្នំពេញ",
+  },
+  {
+    label: "សាខាសៀមរាប",
+    value: "សាខាសៀមរាប",
+  },
+  {
+    label: "សាខាបាត់ដំបង",
+    value: "សាខាបាត់ដំបង",
+  },
+  {
+    label: "សាខាកំពង់ចាម",
+    value: "សាខាកំពង់ចាម",
+  },
+  {
+    label: "សាខាកណ្ដាល",
+    value: "សាខាកណ្ដាល",
+  },
+];
+
+const DOCUMENT_TYPE_OPTIONS = [
+  {
+    label: "វិញ្ញាបនបត្រ",
+    value: "វិញ្ញាបនបត្រ",
+  },
+  {
+    label: "លិខិតតែងតាំង",
+    value: "លិខិតតែងតាំង",
+  },
+];
+
+const MAX_FILE_SIZE =
+  5 * 1024 * 1024;
+
+export default function AddDocumentForm({
+  form,
+  setForm,
+  onSave,
+  onClose,
+}) {
+  const fileInputRef = useRef(null);
+
+  const [
+    showValidationError,
+    setShowValidationError,
+  ] = useState(false);
+
+  const [fileError, setFileError] =
+    useState("");
+
+  const files = Array.isArray(
+    form.files,
+  )
+    ? form.files
+    : [];
+
+  const updateField =
+    (field) => (event) => {
+      const value =
+        event.target.value;
+
+      setForm((previousForm) => ({
+        ...previousForm,
+        [field]: value,
+      }));
+
+      setShowValidationError(false);
+    };
+
+  const handleFileChange = (
+    event,
+  ) => {
+    const selectedFiles =
+      Array.from(
+        event.target.files || [],
+      );
+
+    setFileError("");
+    setShowValidationError(false);
+
+    if (
+      selectedFiles.length === 0
+    ) {
       return;
     }
 
-    onSave?.();
+    const oversizedFiles =
+      selectedFiles.filter(
+        (file) =>
+          file.size >
+          MAX_FILE_SIZE,
+      );
+
+    if (
+      oversizedFiles.length > 0
+    ) {
+      setFileError(
+        "ឯកសារនីមួយៗមិនអាចមានទំហំលើសពី 5MB បានទេ។",
+      );
+
+      event.target.value = "";
+      return;
+    }
+
+    const newFiles =
+      selectedFiles.map(
+        (file) => ({
+          id: createFileId(file),
+          file,
+          name: file.name,
+          fileFormat: getFileType(file.name),
+          mimeType:
+            file.type,
+          size: formatFileSize(
+            file.size,
+          ),
+          rawSize:
+            file.size,
+          previewUrl:
+            URL.createObjectURL(
+              file,
+            ),
+        }),
+      );
+
+    setForm(
+      (previousForm) => ({
+        ...previousForm,
+        files: [
+          ...(
+            previousForm.files ||
+            []
+          ),
+          ...newFiles,
+        ],
+      }),
+    );
+
+    event.target.value = "";
   };
 
+  const removeFile = (
+    fileId,
+  ) => {
+    setForm(
+      (previousForm) => {
+        const selectedFile = (
+          previousForm.files ||
+          []
+        ).find(
+          (item) =>
+            item.id === fileId,
+        );
+
+        if (
+          selectedFile?.previewUrl
+        ) {
+          URL.revokeObjectURL(
+            selectedFile.previewUrl,
+          );
+        }
+
+        return {
+          ...previousForm,
+          files: (
+            previousForm.files ||
+            []
+          ).filter(
+            (item) =>
+              item.id !== fileId,
+          ),
+        };
+      },
+    );
+
+    setFileError("");
+    setShowValidationError(false);
+  };
+
+  const isFormValid =
+    Boolean(
+      form.title?.trim(),
+    ) &&
+    Boolean(form.branch) &&
+    Boolean(form.type) &&
+    Boolean(
+      form.description?.trim(),
+    ) &&
+    files.length > 0;
+
+  const handleSave = (event) => {
+  event.preventDefault();
+
+  if (!isFormValid) {
+    setShowValidationError(true);
+    return;
+  }
+
+  setShowValidationError(false);
+
+  const totalSize = files.reduce(
+    (total, currentFile) =>
+      total +
+      (
+        currentFile.rawSize ||
+        currentFile.file?.size ||
+        0
+      ),
+    0,
+  );
+
+  const selectedDocumentType =
+    String(form.type || "").trim();
+
+  const newDocument = {
+    ...form,
+
+    title: form.title.trim(),
+
+    description:
+      form.description.trim(),
+
+    // This comes only from the user dropdown.
+    type: selectedDocumentType,
+
+    documentType:
+      selectedDocumentType,
+
+    // PDF/JPG is stored separately.
+    fileFormat:
+      files[0]?.fileFormat || "",
+
+    date:
+      form.date ||
+      getTodayLocalDate(),
+
+    files,
+
+    fileCount: files.length,
+
+    size:
+      formatFileSize(totalSize),
+
+    image:
+      getFirstImagePreview(files) ||
+      "/document.jpg",
+  };
+
+  console.log(
+    "Document being saved:",
+    newDocument,
+  );
+
+  onSave?.(newDocument);
+};
+
   return (
-    <PopupCard size="md" onClose={onClose}>
+    <PopupCard
+      size="md"
+      onClose={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="បិទ"
+        className="
+          absolute
+          right-4
+          top-4
+          flex
+          h-8
+          w-8
+          items-center
+          justify-center
+          rounded-full
+          bg-transparent
+          transition-colors
+          hover:bg-gray-100
+        "
+      >
+        <X
+          size={18}
+          className="text-gray-700"
+        />
+      </button>
+
       <h2
         className="
-        mb-6
-        text-lg
-        font-bold
-        text-primary
+          mb-6
+          text-lg
+          font-bold
+          text-primary
         "
       >
         បញ្ចូលឯកសារ
       </h2>
 
-      <div className="space-y-4">
-        {/* Title + Branch */}
+      <form
+        onSubmit={handleSave}
+      >
+        <div className="space-y-4">
+          <div
+            className="
+              grid
+              grid-cols-1
+              gap-5
+              md:grid-cols-2
+            "
+          >
+            <BoxFill
+  label="ឈ្មោះឯកសារ"
+  name="title"
+  placeholder="បញ្ចូលឈ្មោះឯកសារ"
+  value={form.title || ""}
+  onChange={updateField("title")}
+/>
 
-        <div className="grid grid-cols-2 gap-5">
+            <FormSelect
+              label="សាខា"
+              placeholder="ជ្រើសរើសសាខា"
+              value={
+                form.branch ||
+                ""
+              }
+              onChange={
+                updateField(
+                  "branch",
+                )
+              }
+              options={
+                BRANCH_OPTIONS
+              }
+            />
+          </div>
+
+          <div
+            className="
+              grid
+              grid-cols-1
+              gap-5
+              md:grid-cols-1
+            "
+          >
+            <FormSelect
+              label="ប្រភេទឯកសារ"
+              placeholder="ជ្រើសរើសប្រភេទឯកសារ"
+              value={
+                form.type || ""
+              }
+              onChange={
+                updateField(
+                  "type",
+                )
+              }
+              options={
+                DOCUMENT_TYPE_OPTIONS
+              }
+            />
+          </div>
+
           <div>
             <label
               className="
-              mb-2
-              block
-              text-sm
-              font-semibold
+                mb-2
+                block
+                text-sm
+                font-semibold
               "
             >
-              ឈ្មោះឯកសារ
+              លេខសម្គាល់
             </label>
 
-            <input
-              value={form.title || ""}
-              onChange={updateField("title")}
-              placeholder="បញ្ចូលឈ្មោះឯកសារ"
+            <textarea
+              rows={3}
+              value={
+                form.description ||
+                ""
+              }
+              onChange={
+                updateField(
+                  "description",
+                )
+              }
+              placeholder="បញ្ចូលលេខសម្គាល់"
               className="
-              h-11
-              w-full
-              rounded-lg
-              border
-              border-gray-200
-              px-4
-              text-sm
-              outline-none
-              placeholder:text-gray-400
-              focus:border-primary
+                w-full
+                resize-none
+                rounded-lg
+                border
+                border-gray-200
+                p-3
+                text-sm
+                outline-none
+                placeholder:text-gray-400
+                focus:border-primary
               "
             />
           </div>
 
-          <FormSelect
-            label="សាខា"
-            placeholder="ជ្រើសរើសសាខា"
-            value={form.branch}
-            onChange={updateField("branch")}
-            options={[
-              {
-                label: "សាខាភ្នំពេញ",
-                value: "សាខាភ្នំពេញ",
-              },
-              {
-                label: "សាខាសៀមរាប",
-                value: "សាខាសៀមរាប",
-              },
-            ]}
-          />
+          <div>
+            <input
+              ref={
+                fileInputRef
+              }
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+              onChange={
+                handleFileChange
+              }
+              className="hidden"
+            />
+
+            <button
+              type="button"
+              onClick={() =>
+                fileInputRef.current?.click()
+              }
+              className="
+                flex
+                h-[120px]
+                w-full
+                cursor-pointer
+                flex-col
+                items-center
+                justify-center
+                rounded-xl
+                border-2
+                border-dashed
+                border-gray-200
+                transition
+                hover:border-primary
+                hover:bg-gray-50
+              "
+            >
+              <UploadCloud
+                size={30}
+                className="
+                  mb-2
+                  text-gray-400
+                "
+              />
+
+              <p
+                className="
+                  text-sm
+                  font-semibold
+                  text-primary
+                "
+              >
+                បញ្ចូលឯកសារ
+              </p>
+
+              <p
+                className="
+                  text-xs
+                  text-gray-400
+                "
+              >
+                PDF, Word, Excel,
+                JPG, PNG (Max 5MB
+                ក្នុងមួយឯកសារ)
+              </p>
+            </button>
+
+            {files.length > 0 && (
+              <div
+                className="
+                  mt-3
+                  space-y-2
+                "
+              >
+                {files.map(
+                  (item) => (
+                    <div
+                      key={
+                        item.id
+                      }
+                      className="
+                        flex
+                        items-center
+                        justify-between
+                        rounded-lg
+                        border
+                        border-gray-200
+                        px-3
+                        py-2
+                      "
+                    >
+                      <div
+                        className="
+                          flex
+                          min-w-0
+                          items-center
+                          gap-3
+                        "
+                      >
+                        <FileText
+                          size={20}
+                          className="
+                            shrink-0
+                            text-primary
+                          "
+                        />
+
+                        <div className="min-w-0">
+                          <p
+                            className="
+                              truncate
+                              text-sm
+                              font-medium
+                              text-gray-700
+                            "
+                          >
+                            {
+                              item.name
+                            }
+                          </p>
+
+                          <p className="text-xs text-gray-400">
+  {form.type || "មិនទាន់ជ្រើសរើសប្រភេទ"} · {item.size}
+</p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeFile(
+                            item.id,
+                          )
+                        }
+                        aria-label="លុបឯកសារ"
+                        className="
+                          ml-3
+                          flex
+                          h-8
+                          w-8
+                          shrink-0
+                          items-center
+                          justify-center
+                          rounded-full
+                          text-gray-500
+                          transition-colors
+                          hover:bg-gray-100
+                          hover:text-red-500
+                        "
+                      >
+                        <X
+                          size={17}
+                        />
+                      </button>
+                    </div>
+                  ),
+                )}
+              </div>
+            )}
+
+            {fileError && (
+              <p
+                className="
+                  mt-2
+                  text-xs
+                  font-medium
+                  text-red-500
+                "
+              >
+                {fileError}
+              </p>
+            )}
+          </div>
         </div>
 
-        {/* Description */}
+        {showValidationError &&
+          !isFormValid && (
+            <p
+              className="
+                mt-4
+                text-xs
+                font-medium
+                text-red-500
+              "
+            >
+              សូមបំពេញព័ត៌មានទាំងអស់
+              និងបញ្ចូលឯកសារយ៉ាងតិចមួយ។
+            </p>
+          )}
 
-        <div>
-          <label
-            className="
-            mb-2
-            block
-            text-sm
-            font-semibold
-            "
-          >
-            លេខសម្គាល់
-          </label>
-
-          <textarea
-            rows={3}
-            value={form.description || ""}
-            onChange={updateField("description")}
-            placeholder="បញ្ចូលលេខសម្គាល់"
-            className="
-            w-full
-            resize-none
-            rounded-lg
-            border
-            border-gray-200
-            p-3
-            text-sm
-            outline-none
-            placeholder:text-gray-400
-            focus:border-primary
-            "
-          />
-        </div>
-
-        {/* Upload */}
-
-        <label
-          className="
-          flex
-          h-[120px]
-          cursor-pointer
-          flex-col
-          items-center
-          justify-center
-          rounded-xl
-          border-2
-          border-dashed
-          border-gray-200
-          "
-        >
-          <UploadCloud size={30} className="mb-2 text-gray-400" />
-
-          <p
-            className="
-            text-sm
-            font-semibold
-            text-primary
-            "
-          >
-            បញ្ចូលឯកសារ
-          </p>
-
-          <p
-            className="
-            text-xs
-            text-gray-400
-            "
-          >
-            PDF, Excel, JPG, PNG (Max 5MB)
-          </p>
-
-          <input type="file" hidden />
-        </label>
-      </div>
-
-      {/* Buttons */}
-
-      {/* Buttons */}
-
-      <div
-        className="
-  mt-5
-  flex
-  justify-end
-  gap-4
-  "
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          className="
-    h-10
-    w-[120px]
-    rounded-lg
-    border
-    border-gray-200
-    text-sm
-    "
-        >
-          បោះបង់
-        </button>
-
-        <SaveButton onClick={handleSave} />
-      </div>
+        <FormActionButtons
+          onCancel={onClose}
+          isValid={
+            isFormValid
+          }
+          saveText="រក្សាទុក"
+          cancelText="បោះបង់"
+        />
+      </form>
     </PopupCard>
   );
+}
+
+function createFileId(file) {
+  const randomId =
+    typeof crypto !==
+      "undefined" &&
+    typeof crypto.randomUUID ===
+      "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()}`;
+
+  return [
+    file.name,
+    file.size,
+    file.lastModified,
+    randomId,
+  ].join("-");
+}
+
+function getFirstImagePreview(
+  files,
+) {
+  const imageFile =
+    files.find((item) =>
+      item.mimeType?.startsWith(
+        "image/",
+      ),
+    );
+
+  return (
+    imageFile?.previewUrl ||
+    null
+  );
+}
+
+function getFileType(
+  fileName,
+) {
+  const extension =
+    fileName
+      ?.split(".")
+      .pop()
+      ?.toLowerCase() ||
+    "";
+
+  const typeMap = {
+    pdf: "PDF",
+    doc: "Word",
+    docx: "Word",
+    xls: "Excel",
+    xlsx: "Excel",
+    jpg: "JPG",
+    jpeg: "JPEG",
+    png: "PNG",
+  };
+
+  return (
+    typeMap[extension] ||
+    "ឯកសារ"
+  );
+}
+
+function formatFileSize(
+  bytes,
+) {
+  if (!bytes) {
+    return "0KB";
+  }
+
+  const megabytes =
+    bytes /
+    (1024 * 1024);
+
+  if (megabytes < 1) {
+    return `${(
+      bytes / 1024
+    ).toFixed(1)}KB`;
+  }
+
+  return `${megabytes.toFixed(
+    1,
+  )}MB`;
+}
+
+function getTodayLocalDate() {
+  const now =
+    new Date();
+
+  const year =
+    now.getFullYear();
+
+  const month =
+    String(
+      now.getMonth() + 1,
+    ).padStart(2, "0");
+
+  const day =
+    String(
+      now.getDate(),
+    ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
