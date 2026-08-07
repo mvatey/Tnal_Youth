@@ -5,10 +5,12 @@ import {
   useEffect,
   useState,
 } from "react";
+
 import {
   useRouter,
   useSearchParams,
 } from "next/navigation";
+
 import {
   ArrowLeft,
   LogIn,
@@ -73,7 +75,8 @@ function LoginContent() {
   const [rememberMe, setRememberMe] =
     useState(false);
 
-  const [error, setError] = useState("");
+  const [error, setError] =
+    useState("");
 
   const [
     successMessage,
@@ -108,83 +111,7 @@ function LoginContent() {
     activated,
   ]);
 
-  async function sendActivationOtp(
-    normalizedLogin
-  ) {
-    try {
-      console.log(
-        "=== SEND ACTIVATION OTP ==="
-      );
-
-      console.log(
-        "Identifier:",
-        normalizedLogin
-      );
-
-      const response = await fetch(
-        "/api/auth/activation/send-otp",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          cache: "no-store",
-          body: JSON.stringify({
-            phoneOrEmail:
-              normalizedLogin,
-          }),
-        }
-      );
-
-      const data =
-        await parseResponse(response);
-
-      console.log(
-        "Send OTP response:",
-        {
-          status: response.status,
-          data,
-        }
-      );
-
-      if (!response.ok) {
-        setError(
-          data?.message ||
-            data?.data?.message ||
-            "មិនអាចផ្ញើលេខកូដ OTP បានទេ"
-        );
-
-        return false;
-      }
-
-      sessionStorage.setItem(
-        "activationIdentifier",
-        normalizedLogin
-      );
-
-      router.push(
-        `/auth/activate-account/verify-otp?identifier=${encodeURIComponent(
-          normalizedLogin
-        )}`
-      );
-
-      return true;
-    } catch (sendOtpError) {
-      console.error(
-        "Send activation OTP error:",
-        sendOtpError
-      );
-
-      setError(
-        "មិនអាចផ្ញើលេខកូដ OTP បានទេ"
-      );
-
-      return false;
-    }
-  }
-
-  async function checkAccountStatus() {
+  async function handleContinue() {
     const normalizedLogin =
       phoneOrEmail.trim();
 
@@ -201,7 +128,7 @@ function LoginContent() {
     setLoading(true);
 
     try {
-      const response = await fetch(
+      const statusResponse = await fetch(
         "/api/auth/account-status",
         {
           method: "POST",
@@ -217,153 +144,75 @@ function LoginContent() {
         }
       );
 
-      const data =
-        await parseResponse(response);
+      const statusData =
+        await parseResponse(statusResponse);
 
-      console.log(
-        "=== ACCOUNT STATUS ==="
-      );
-
-      console.log(
-        "HTTP status:",
-        response.status
-      );
-
-      console.log(
-        "Raw response:",
-        data
-      );
-
-      if (!response.ok) {
+      if (!statusResponse.ok) {
         setError(
-          data?.message ||
-            data?.data?.message ||
+          statusData?.message ||
             "មិនអាចពិនិត្យស្ថានភាពគណនីបានទេ"
         );
-
         return;
       }
 
-      /*
-       * Supports these response formats:
-       *
-       * { accountExists, status, nextStep }
-       *
-       * { data: { accountExists, status, nextStep } }
-       *
-       * { data: { data: { ... } } }
-       */
-      const accountStatus =
-        data?.data?.data ??
-        data?.data ??
-        data;
-
-      const accountExists =
-        accountStatus?.accountExists ??
-        accountStatus?.account_exists;
-
-      const status = String(
-        accountStatus?.status || ""
-      )
-        .trim()
-        .toUpperCase();
-
-      const nextStep = String(
-        accountStatus?.nextStep ||
-          accountStatus?.next_step ||
-          ""
-      )
-        .trim()
-        .toUpperCase();
-
-      console.log(
-        "Resolved account status:",
-        {
-          accountStatus,
-          accountExists,
-          status,
-          nextStep,
-        }
-      );
-
       if (
-        accountExists === false ||
-        nextStep ===
-          "ACCOUNT_NOT_FOUND"
+        statusData?.status ===
+          "PENDING_ACTIVATION" ||
+        statusData?.nextStep ===
+          "ACTIVATE_ACCOUNT"
       ) {
-        setError(
-          "រកមិនឃើញគណនីដែលប្រើលេខទូរស័ព្ទ ឬអ៊ីមែលនេះទេ"
+        const otpResponse = await fetch(
+          "/api/auth/activation/send-otp",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            cache: "no-store",
+            body: JSON.stringify({
+              phoneOrEmail:
+                normalizedLogin,
+            }),
+          }
         );
 
-        return;
-      }
+        const otpData =
+          await parseResponse(otpResponse);
 
-      /*
-       * Existing activated account:
-       * show the password field.
-       */
-      if (
-        nextStep === "ENTER_PASSWORD" ||
-        status === "ACTIVE"
-      ) {
-        setStep(LOGIN_STEP.PASSWORD);
-        setPassword("");
+        if (!otpResponse.ok) {
+          setError(
+            otpData?.message ||
+              "មិនអាចផ្ញើលេខកូដ OTP បានទេ"
+          );
+          return;
+        }
 
-        return;
-      }
-
-      /*
-       * New account:
-       * send activation OTP and move to
-       * the activation verification page.
-       */
-      if (
-        nextStep ===
-          "ACTIVATE_ACCOUNT" ||
-        status ===
-          "PENDING_ACTIVATION"
-      ) {
-        await sendActivationOtp(
+        sessionStorage.setItem(
+          "activationIdentifier",
           normalizedLogin
         );
 
+        router.push(
+          `/auth/activate-account/verify-otp?identifier=${encodeURIComponent(
+            normalizedLogin
+          )}`
+        );
         return;
       }
 
       if (
-        nextStep ===
-          "ACCOUNT_INACTIVE" ||
-        status === "INACTIVE"
+        statusData?.status === "INACTIVE" ||
+        statusData?.status === "LOCKED"
       ) {
         setError(
-          "គណនីនេះត្រូវបានបិទ។ សូមទាក់ទងអ្នកគ្រប់គ្រង"
+          "គណនីនេះមិនអាចចូលប្រើប្រាស់បានទេ"
         );
-
         return;
       }
 
-      if (
-        nextStep ===
-          "ACCOUNT_LOCKED" ||
-        status === "LOCKED"
-      ) {
-        setError(
-          "គណនីនេះត្រូវបានចាក់សោ។ សូមព្យាយាមម្ដងទៀតនៅពេលក្រោយ"
-        );
-
-        return;
-      }
-
-      console.warn(
-        "Unknown account status:",
-        accountStatus
-      );
-
-      setError(
-        accountStatus?.message ||
-          data?.message ||
-          "មិនអាចកំណត់ស្ថានភាពគណនីបានទេ"
-      );
+      setPassword("");
+      setStep(LOGIN_STEP.PASSWORD);
     } catch (statusError) {
       console.error(
         "Account status error:",
@@ -371,7 +220,7 @@ function LoginContent() {
       );
 
       setError(
-        "មានបញ្ហាកើតឡើង សូមព្យាយាមម្ដងទៀត"
+        "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ"
       );
     } finally {
       setLoading(false);
@@ -411,6 +260,7 @@ function LoginContent() {
             "Content-Type":
               "application/json",
           },
+          cache: "no-store",
           body: JSON.stringify({
             phoneOrEmail:
               normalizedLogin,
@@ -423,10 +273,13 @@ function LoginContent() {
       const data =
         await parseResponse(response);
 
-      console.log("Login response:", {
-        status: response.status,
-        data,
-      });
+      console.log(
+        "Login response:",
+        {
+          status: response.status,
+          data,
+        }
+      );
 
       if (!response.ok) {
         setError(
@@ -443,11 +296,6 @@ function LoginContent() {
         data?.data ??
         data;
 
-      /*
-       * Prefer the user returned by login.
-       * If login only returns tokens, /api/users/me
-       * will provide the authenticated user.
-       */
       let authenticatedUser =
         loginData?.user || null;
 
@@ -518,7 +366,7 @@ function LoginContent() {
     if (
       step === LOGIN_STEP.IDENTIFIER
     ) {
-      await checkAccountStatus();
+      await handleContinue();
       return;
     }
 
@@ -531,10 +379,6 @@ function LoginContent() {
     setError("");
     setSuccessMessage("");
 
-    /*
-     * Remove activation-related query parameters
-     * without navigating away from the login page.
-     */
     router.replace("/auth/login");
   }
 

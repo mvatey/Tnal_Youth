@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -16,8 +17,8 @@ import {
 } from "lucide-react";
 import { RiDownloadCloud2Line } from "react-icons/ri";
 
-import activities from "@/data/activityRecords.json";
 import QuantityInput from "@/components/forms/QuantityInput";
+import { useActivityCreateDraft } from "../ActivityCreateDraftContext";
 
 const KHR_PER_USD = 4000;
 
@@ -42,7 +43,7 @@ function createEmptyRow(id) {
 
 const initialRows = Array.from(
   { length: 3 },
-  (_, index) => createEmptyRow(index + 1)
+  (_, index) => createEmptyRow(`new-${index + 1}`)
 );
 
 function parseNumber(value) {
@@ -105,16 +106,69 @@ const getAmountFieldClass = (value) =>
 export default function ExpensePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { draft, updateDraft } = useActivityCreateDraft();
   const id = searchParams.get("activityId");
 
   
-  const activity = activities.find(
-    (item) =>
-      String(item.id) === String(id)
-  );
+  const [activity, setActivity] = useState(null);
+  const [rows, setRows] = useState(() => draft.expenseRows || initialRows);
+  const [deletedIds, setDeletedIds] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
 
-  const [rows, setRows] =
-    useState(initialRows);
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+
+    async function loadExpenses() {
+      setError("");
+      try {
+        const [activityResponse, expensesResponse] = await Promise.all([
+          fetch(`/api/backend/activities/${encodeURIComponent(id)}`, { cache: "no-store" }),
+          fetch(`/api/backend/activities/${encodeURIComponent(id)}/expenses`, { cache: "no-store" }),
+        ]);
+        const failed = [activityResponse, expensesResponse].find((response) => !response.ok);
+        if (failed) {
+          const problem = await failed.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to load activity expenses.");
+        }
+        const [activityData, expenses] = await Promise.all([activityResponse.json(), expensesResponse.json()]);
+        if (!cancelled) {
+          setActivity({ ...activityData, name: activityData.titleKm || activityData.titleEn || "-" });
+          setRows(expenses.length ? expenses.map((expense) => {
+            const quantity = Number(expense.quantity) || 1;
+            const unitPriceRiel = Number(expense.amount_khr || 0) / quantity;
+            const unitPriceDollar = Number(expense.amount_usd || 0) / quantity;
+            return {
+              id: expense.id,
+              name: expense.name || "",
+              category: expense.description || "",
+              quantity,
+              unitPriceRiel: String(unitPriceRiel),
+              unitPriceDollar: unitPriceDollar.toFixed(2),
+              totalRiel: Number(expense.amount_khr || 0),
+              directDollarTotal: Number(expense.amount_usd || 0),
+              totalDollar: Number(expense.total_amount_usd || 0),
+              spentOn: expense.spent_on,
+              receiptFileId: expense.receipt_file_id,
+            };
+          }) : [createEmptyRow(crypto.randomUUID())]);
+          setDeletedIds([]);
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to load activity expenses.");
+      }
+    }
+
+    loadExpenses();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) updateDraft({ expenseRows: rows });
+  }, [id, rows, updateDraft]);
 
   const updateRow = (
     rowId,
@@ -213,6 +267,7 @@ export default function ExpensePage() {
   };
 
   const deleteRow = (rowId) => {
+    if (typeof rowId === "number") setDeletedIds((previous) => [...previous, rowId]);
     setRows((currentRows) => {
       const filteredRows =
         currentRows.filter(
@@ -255,29 +310,53 @@ export default function ExpensePage() {
     };
   }, [rows]);
 
-  const handleSave = () => {
-    const expenseData = {
-      activityId: id,
-      exchangeRate: KHR_PER_USD,
-      rows,
-      summary,
-    };
-
-    console.log(
-      "Saved expenses:",
-      expenseData
-    );
-
-    localStorage.setItem(
-      `activity-expenses-${id}`,
-      JSON.stringify(expenseData)
-    );
-
-    router.back();
+  const handleSave = async () => {
+    if (!id) {
+      updateDraft({ expenseRows: rows });
+      router.push("/activity/create");
+      return;
+    }
+    setIsSaving(true);
+    setError("");
+    try {
+      const baseUrl = `/api/backend/activities/${encodeURIComponent(id)}/expenses`;
+      await Promise.all(deletedIds.map(async (expenseId) => {
+        const response = await fetch(`${baseUrl}/${expenseId}`, { method: "DELETE" });
+        if (!response.ok) throw new Error("Unable to delete an expense.");
+      }));
+      const saved = await Promise.all(rows.filter((row) => row.name.trim()).map(async (row) => {
+        const existing = typeof row.id === "number";
+        const response = await fetch(existing ? `${baseUrl}/${row.id}` : baseUrl, {
+          method: existing ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: row.name.trim(),
+            description: row.category.trim() || null,
+            quantity: Number(row.quantity),
+            amount_khr: Number(row.totalRiel),
+            amount_usd: Number(row.directDollarTotal),
+            spent_on: row.spentOn || new Date().toISOString().slice(0, 10),
+            receipt_file_id: row.receiptFileId || null,
+          }),
+        });
+        if (!response.ok) {
+          const problem = await response.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to save activity expenses.");
+        }
+        return response.json();
+      }));
+      setDeletedIds([]);
+      if (saved.length) router.push(`/activity/${id}`);
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save activity expenses.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
     <div className="space-y-5">
+      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
       {/* Header */}
       <div>
         <div className="flex items-center gap-1 text-sm text-text-secondary">
@@ -291,10 +370,10 @@ export default function ExpensePage() {
           <ChevronRight size={14} />
 
           <Link
-            href={`/activity/${activity?.id}`}
+            href={id ? `/activity/${id}` : "/activity/create"}
             className="hover:text-primary"
           >
-            ព័ត៌មានលម្អិត
+            {id ? "ព័ត៌មានលម្អិត" : "បង្កើតកម្មវិធីថ្មី"}
           </Link>
 
           <ChevronRight size={14} />
@@ -607,6 +686,7 @@ export default function ExpensePage() {
           <button
             type="button"
             onClick={handleSave}
+            disabled={isSaving}
             className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white hover:bg-secondary-hover"
           >
             <Download size={16} />

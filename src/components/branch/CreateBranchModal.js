@@ -9,6 +9,7 @@ import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
 
 const EMPTY_FORM = {
+  code: "",
   nameKm: "",
   nameEn: "",
   level: "",
@@ -19,49 +20,9 @@ const EMPTY_FORM = {
   googleMapUrl: "",
   phone: "",
   email: "",
-  status: "ACTIVE",
+  status: "",
   branchLeaderId: "",
 };
-
-const LEVEL_OPTIONS = [
-  { label: "រាជធានី/ខេត្ត", value: "PROVINCE" },
-  { label: "ក្រុង/ស្រុក/ខណ្ឌ", value: "DISTRICT" },
-  { label: "ឃុំ/សង្កាត់", value: "COMMUNE" },
-];
-
-const PROVINCE_OPTIONS = [
-  { label: "ភ្នំពេញ", value: "PHNOM_PENH" },
-  { label: "កណ្ដាល", value: "KANDAL" },
-  { label: "កំពត", value: "KAMPOT" },
-  { label: "កំពង់ចាម", value: "KAMPONG_CHAM" },
-  { label: "កំពង់ធំ", value: "KAMPONG_THOM" },
-  { label: "កំពង់ស្ពឺ", value: "KAMPONG_SPEU" },
-  { label: "តាកែវ", value: "TAKEO" },
-  { label: "ព្រៃវែង", value: "PREY_VENG" },
-  { label: "សៀមរាប", value: "SIEM_REAP" },
-  { label: "បាត់ដំបង", value: "BATTAMBANG" },
-];
-
-const DISTRICT_OPTIONS = [
-  { label: "ខណ្ឌចំការមន", value: "CHAMKAR_MON" },
-  { label: "ខណ្ឌដូនពេញ", value: "DAUN_PENH" },
-  { label: "ខណ្ឌសែនសុខ", value: "SEN_SOK" },
-];
-
-const COMMUNE_OPTIONS = [
-  { label: "សង្កាត់ទន្លេបាសាក់", value: "TONLE_BASSAC" },
-  { label: "សង្កាត់បឹងកេងកងទី១", value: "BKK_1" },
-  { label: "សង្កាត់ផ្សារថ្មីទី១", value: "PHSAR_THMEI_1" },
-];
-
-const STATUS_OPTIONS = [
-  { label: "សកម្ម", value: "ACTIVE" },
-  { label: "អសកម្ម", value: "INACTIVE" },
-];
-
-function getOptionLabel(options, value) {
-  return options.find((option) => option.value === value)?.label || value || "";
-}
 
 function getInitialForm(branch) {
   if (!branch) {
@@ -69,17 +30,18 @@ function getInitialForm(branch) {
   }
 
   return {
+    code: branch.code || "",
     nameKm: branch.nameKm || branch.name || "",
     nameEn: branch.nameEn || "",
-    level: branch.levelCode || "",
-    province: branch.provinceCode || "",
-    district: branch.districtCode || "",
-    commune: branch.communeCode || "",
+    level: branch.levelId ? String(branch.levelId) : "",
+    province: branch.provinceId ? String(branch.provinceId) : "",
+    district: branch.districtId ? String(branch.districtId) : "",
+    commune: branch.communeId ? String(branch.communeId) : "",
     addressLine: branch.addressLine || "",
     googleMapUrl: branch.googleMapUrl || "",
     phone: branch.phone || "",
     email: branch.email || "",
-    status: branch.status || "ACTIVE",
+    status: branch.statusId ? String(branch.statusId) : "",
     branchLeaderId: branch.leader?.id ? String(branch.leader.id) : "",
   };
 }
@@ -90,6 +52,10 @@ export default function CreateBranchModal({
   onSave,
   initialData = null,
   leaderOptions = [],
+  levelOptions = [],
+  statusOptions = [],
+  provinceOptions = [],
+  enableLeaderAssignment = false,
 }) {
   const isEditMode = Boolean(initialData);
 
@@ -97,9 +63,15 @@ export default function CreateBranchModal({
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
   const [modalRoot, setModalRoot] = useState(null);
+  const [districtOptions, setDistrictOptions] = useState([]);
+  const [communeOptions, setCommuneOptions] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const showDistrict = form.level === "DISTRICT" || form.level === "COMMUNE";
-  const showCommune = form.level === "COMMUNE";
+  const selectedLevelCode = levelOptions.find(
+    (option) => String(option.value) === String(form.level),
+  )?.code;
+  const showDistrict = selectedLevelCode === "DISTRICT" || selectedLevelCode === "COMMUNE";
+  const showCommune = selectedLevelCode === "COMMUNE";
 
   const branchLeaderOptions = useMemo(
     () => [
@@ -138,6 +110,36 @@ export default function CreateBranchModal({
     };
   }, [open, initialData, onClose]);
 
+  useEffect(() => {
+    if (!form.province) {
+      setDistrictOptions([]);
+      return;
+    }
+
+    fetch(`/api/lookups/districts?provinceId=${form.province}`)
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Unable to load districts.")))
+      .then((items) => setDistrictOptions(items.map((item) => ({
+        label: item.labelKm || item.labelEn,
+        value: item.value,
+      }))))
+      .catch((loadError) => setError(loadError.message));
+  }, [form.province]);
+
+  useEffect(() => {
+    if (!form.district) {
+      setCommuneOptions([]);
+      return;
+    }
+
+    fetch(`/api/lookups/communes?districtId=${form.district}`)
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Unable to load communes.")))
+      .then((items) => setCommuneOptions(items.map((item) => ({
+        label: item.labelKm || item.labelEn,
+        value: item.value,
+      }))))
+      .catch((loadError) => setError(loadError.message));
+  }, [form.district]);
+
   const updateField = (field) => (event) => {
     const value = event?.target?.value ?? event ?? "";
 
@@ -148,12 +150,16 @@ export default function CreateBranchModal({
       };
 
       if (field === "level") {
-        if (value === "PROVINCE") {
+        const levelCode = levelOptions.find(
+          (option) => String(option.value) === String(value),
+        )?.code;
+
+        if (levelCode === "PROVINCE") {
           next.district = "";
           next.commune = "";
         }
 
-        if (value === "DISTRICT") {
+        if (levelCode === "DISTRICT") {
           next.commune = "";
         }
       }
@@ -173,8 +179,13 @@ export default function CreateBranchModal({
     setError("");
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (!form.code.trim()) {
+      setError("Please enter a unique branch code.");
+      return;
+    }
 
     if (!form.nameKm.trim()) {
       setError("សូមបញ្ចូលឈ្មោះសាខា");
@@ -201,55 +212,22 @@ export default function CreateBranchModal({
       return;
     }
 
-    const selectedLeader =
-      isEditMode && form.branchLeaderId
-        ? leaderOptions.find(
-            (option) =>
-              String(option.value) === String(form.branchLeaderId),
-          )?.member || null
-        : null;
+    if (!form.status) {
+      setError("Please select a branch status.");
+      return;
+    }
 
-    const now = Date.now();
+    setIsSaving(true);
+    setError("");
 
-    const branchPayload = {
-      ...(initialData || {}),
-      id: initialData?.id || now,
-      code: initialData?.code || `BR-${String(now).slice(-4)}`,
-      name: form.nameKm.trim(),
-      nameKm: form.nameKm.trim(),
-      nameEn: form.nameEn.trim(),
-      level: getOptionLabel(LEVEL_OPTIONS, form.level),
-      levelCode: form.level,
-      province: getOptionLabel(PROVINCE_OPTIONS, form.province),
-      provinceCode: form.province,
-      district: showDistrict
-        ? getOptionLabel(DISTRICT_OPTIONS, form.district)
-        : "",
-      districtCode: showDistrict ? form.district : "",
-      commune: showCommune
-        ? getOptionLabel(COMMUNE_OPTIONS, form.commune)
-        : "",
-      communeCode: showCommune ? form.commune : "",
-      addressLine: form.addressLine.trim(),
-      googleMapUrl: form.googleMapUrl.trim(),
-      phone: form.phone.trim(),
-      email: form.email.trim(),
-      status: form.status,
-      memberCount: initialData?.memberCount || 0,
-      activityCount: initialData?.activityCount || 0,
-      totalDonationUsd: initialData?.totalDonationUsd || 0,
-      createdAt:
-        initialData?.createdAt ||
-        new Intl.DateTimeFormat("km-KH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(new Date()),
-      leader: isEditMode ? selectedLeader : null,
-    };
-
-    onSave(branchPayload);
-    onClose();
+    try {
+      await onSave(form);
+      onClose();
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save branch.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!mounted || !open || !modalRoot) {
@@ -293,6 +271,15 @@ export default function CreateBranchModal({
           <div className="space-y-5 px-7 pb-7">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <BoxFill
+                label="Branch code"
+                name="code"
+                value={form.code}
+                onChange={updateField("code")}
+                placeholder="Example: PP-001"
+                disabled={isEditMode}
+              />
+
+              <BoxFill
                 label="ឈ្មោះសាខា"
                 name="nameKm"
                 value={form.nameKm}
@@ -328,7 +315,7 @@ export default function CreateBranchModal({
                 value={form.level}
                 onChange={updateField("level")}
                 placeholder="ជ្រើសរើសកម្រិត"
-                options={LEVEL_OPTIONS}
+                options={levelOptions}
               />
 
               <FormSelect
@@ -337,7 +324,7 @@ export default function CreateBranchModal({
                 value={form.province}
                 onChange={updateField("province")}
                 placeholder="ជ្រើសរើសរាជធានី/ខេត្ត"
-                options={PROVINCE_OPTIONS}
+                options={provinceOptions}
               />
 
               {showDistrict && (
@@ -347,7 +334,7 @@ export default function CreateBranchModal({
                   value={form.district}
                   onChange={updateField("district")}
                   placeholder="ជ្រើសរើសក្រុង/ស្រុក/ខណ្ឌ"
-                  options={DISTRICT_OPTIONS}
+                  options={districtOptions}
                 />
               )}
 
@@ -358,7 +345,7 @@ export default function CreateBranchModal({
                   value={form.commune}
                   onChange={updateField("commune")}
                   placeholder="ជ្រើសរើសឃុំ/សង្កាត់"
-                  options={COMMUNE_OPTIONS}
+                  options={communeOptions}
                 />
               )}
             </div>
@@ -449,10 +436,10 @@ export default function CreateBranchModal({
               value={form.status}
               onChange={updateField("status")}
               placeholder="ជ្រើសរើសស្ថានភាព"
-              options={STATUS_OPTIONS}
+              options={statusOptions}
             />
 
-            {isEditMode && (
+            {isEditMode && enableLeaderAssignment && (
               <div className="space-y-2 rounded-xl border border-border bg-gray-50 p-4">
                 <FormSelect
                   label="ប្រធានសាខា"
@@ -488,6 +475,7 @@ export default function CreateBranchModal({
 
               <button
                 type="submit"
+                disabled={isSaving}
                 className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-secondary px-6 text-sm font-semibold text-white transition hover:opacity-90"
               >
                 <HiSaveAs size={18} />

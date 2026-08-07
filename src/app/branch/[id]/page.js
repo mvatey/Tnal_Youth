@@ -26,9 +26,6 @@ import Table from "@/components/table-items/Table";
 import Button from "@/components/ui/Button";
 import CreateBranchModal from "@/components/branch/CreateBranchModal";
 
-import branches from "@/data/branch/branches.json";
-import branchMembers from "@/data/branch/branchMembers.json";
-
 const ALL_OPTION = "ទាំងអស់";
 
 const STATUS_OPTIONS = [ALL_OPTION, "សកម្ម", "អសកម្ម"];
@@ -57,6 +54,8 @@ function DetailStatCard({
   iconClassName,
   borderClassName,
 }) {
+  const helperIsNegative = String(helper || "").startsWith("↓");
+
   return (
     <div
       className={`rounded-xl border border-border border-t-2 bg-white p-4 shadow-sm ${borderClassName}`}
@@ -76,7 +75,7 @@ function DetailStatCard({
           </p>
 
           {helper && (
-            <p className="mt-1 text-[11px] text-success">{helper}</p>
+            <p className={`mt-1 text-[11px] ${helperIsNegative ? "text-error" : "text-success"}`}>{helper}</p>
           )}
         </div>
       </div>
@@ -87,28 +86,168 @@ function DetailStatCard({
 export default function BranchDetailPage() {
   const params = useParams();
   const branchId = String(params.id);
+  // This detail endpoint is ADMIN-only; the backend still enforces permission.
+  const canManageBranchLeader = true;
 
-  const initialBranch = useMemo(
-    () => branches.find((item) => String(item.id) === branchId),
-    [branchId],
-  );
-
-  const [branch, setBranch] = useState(initialBranch || null);
+  const [branch, setBranch] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [lookupOptions, setLookupOptions] = useState({
+    levels: [],
+    statuses: [],
+    provinces: [],
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState(ALL_OPTION);
 
-  useEffect(() => {
-    setBranch(initialBranch || null);
-  }, [initialBranch]);
+  const loadBranchData = async () => {
+    setIsLoading(true);
+    setError("");
 
-  const members = useMemo(
-    () =>
-      branchMembers.filter(
-        (member) => String(member.branchId) === branchId,
-      ),
-    [branchId],
-  );
+    try {
+      const responses = await Promise.all([
+        fetch(`/api/branches/${encodeURIComponent(branchId)}`),
+        fetch("/api/lookups/branch-levels"),
+        fetch("/api/lookups/branch-statuses"),
+        fetch("/api/lookups/provinces"),
+        fetch(`/api/members?page=0&size=100&branchId=${encodeURIComponent(branchId)}`),
+        fetch(`/api/dashboard/branch-performance?branchId=${encodeURIComponent(branchId)}`),
+        fetch(`/api/backend/branches/${encodeURIComponent(branchId)}/leader`, {
+          credentials: "include",
+        }),
+      ]);
+      const failedResponse = responses.find((response) => !response.ok);
+
+      if (failedResponse) {
+        const problem = await failedResponse.json().catch(() => ({}));
+        throw new Error(problem.detail || problem.message || "Unable to load branch information.");
+      }
+
+      const [branchData, levels, statuses, provinces, memberPage, performance, leaderData] =
+        await Promise.all(responses.map(async (response, index) => {
+          if (index !== 6) return response.json();
+          const text = await response.text();
+          return text ? JSON.parse(text) : null;
+        }));
+      const branchStatus = statuses.find(
+        (item) => String(item.value) === String(branchData.status_id),
+      );
+
+      setBranch({
+        id: branchData.id,
+        code: branchData.branch_code,
+        name: branchData.name_km,
+        nameKm: branchData.name_km,
+        nameEn: branchData.name_en || "",
+        levelId: branchData.branch_level_id,
+        parentBranchId: branchData.parent_branch_id,
+        provinceId: branchData.province_id,
+        districtId: branchData.district_id,
+        communeId: branchData.commune_id,
+        statusId: branchData.status_id,
+        status: branchStatus?.code || "",
+        addressLine: branchData.address || "",
+        googleMapUrl: branchData.google_map_url || "",
+        phone: branchData.phone || "",
+        email: branchData.email || "",
+        createdAt: branchData.created_at || "",
+        updatedAt: branchData.updated_at || "",
+        memberCount: performance.members?.value ?? memberPage.totalElements ?? 0,
+        memberGrowth: performance.members?.changePercent ?? null,
+        activityCount: performance.activities?.value ?? 0,
+        activityGrowth: performance.activities?.changePercent ?? null,
+        totalDonationUsd: performance.donations?.amountUsd ?? 0,
+        donationGrowth: performance.donations?.changePercentUsd ?? null,
+        leader: leaderData ? {
+          id: leaderData.id,
+          nameKm: leaderData.nameKm,
+          nameEn: leaderData.nameEn || "",
+          gender: leaderData.gender || "",
+          role: leaderData.role || "ប្រធានសាខា",
+          status: leaderData.status || "",
+          phone: leaderData.phone || "",
+          email: leaderData.email || "",
+          dateOfBirth: leaderData.dateOfBirth || "",
+          joinedAt: leaderData.joinedAt || "",
+          profileImage: leaderData.profilePhotoId
+            ? `/api/backend/files/${encodeURIComponent(leaderData.profilePhotoId)}/content`
+            : "/member.png",
+        } : null,
+      });
+      setMembers((memberPage.content || []).map((member) => ({
+        id: member.id,
+        nameKm: member.full_name_km,
+        nameEn: member.full_name_en || "",
+        gender: member.gender?.label_km || member.gender?.code || "",
+        role: "សមាជិក",
+        status: member.status?.code || "",
+        joinedAt: member.joined_on || "",
+        profileImage: member.profile_photo?.id
+          ? `/api/backend/files/${encodeURIComponent(member.profile_photo.id)}/content`
+          : "/member.png",
+      })));
+      setLookupOptions({ levels, statuses, provinces });
+    } catch (loadError) {
+      setError(loadError.message || "Unable to load branch information.");
+      setBranch(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBranchData();
+  }, [branchId]);
+
+  const updateBranch = async (form) => {
+    const response = await fetch(`/api/branches/${encodeURIComponent(branchId)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name_km: form.nameKm.trim(),
+        name_en: form.nameEn.trim() || null,
+        branch_level_id: Number(form.level),
+        parent_branch_id: branch.parentBranchId || null,
+        province_id: Number(form.province),
+        district_id: form.district ? Number(form.district) : null,
+        commune_id: form.commune ? Number(form.commune) : null,
+        status_id: Number(form.status),
+        address: form.addressLine.trim() || null,
+        google_map_url: form.googleMapUrl.trim() || null,
+        phone: form.phone.trim() || null,
+        email: form.email.trim() || null,
+      }),
+    });
+
+    if (!response.ok) {
+      const problem = await response.json().catch(() => ({}));
+      throw new Error(problem.detail || problem.message || "Unable to update branch.");
+    }
+
+    const leaderResponse = await fetch(
+      `/api/backend/branches/${encodeURIComponent(branchId)}/leader`,
+      {
+        method: form.branchLeaderId ? "PUT" : "DELETE",
+        credentials: "include",
+        headers: form.branchLeaderId ? { "Content-Type": "application/json" } : undefined,
+        body: form.branchLeaderId
+          ? JSON.stringify({ memberId: Number(form.branchLeaderId) })
+          : undefined,
+      },
+    );
+
+    if (!leaderResponse.ok) {
+      const problem = await leaderResponse.json().catch(() => ({}));
+      throw new Error(
+        problem.detail || problem.message || "Unable to assign the branch leader.",
+      );
+    }
+
+    setIsEditModalOpen(false);
+    await loadBranchData();
+  };
 
   const leaderOptions = useMemo(
     () =>
@@ -153,12 +292,23 @@ export default function BranchDetailPage() {
     });
   }, [members, searchQuery, selectedStatus]);
 
+  if (isLoading) {
+    return (
+      <div className="rounded-xl border border-border bg-white p-6 text-sm text-text-secondary">
+        កំពុងទាញយកព័ត៌មានសាខា...
+      </div>
+    );
+  }
+
   if (!branch) {
     return (
       <div className="rounded-xl border border-red-200 bg-white p-6">
         <p className="text-sm text-error">
-          រកមិនឃើញព័ត៌មានសាខា
+          {error || "រកមិនឃើញព័ត៌មានសាខា"}
         </p>
+        <button type="button" onClick={loadBranchData} className="mt-3 text-sm font-semibold text-primary underline">
+          ព្យាយាមម្តងទៀត
+        </button>
       </div>
     );
   }
@@ -280,7 +430,7 @@ export default function BranchDetailPage() {
           ).toLocaleString("en-US", {
             minimumFractionDigits: 2,
           })}`}
-          helper="↑ 4% ក្នុងខែនេះ"
+          helper={branch.donationGrowth == null ? null : `${Number(branch.donationGrowth) >= 0 ? "↑" : "↓"} ${Math.abs(Number(branch.donationGrowth))}% ក្នុងខែនេះ`}
           icon={Banknote}
           iconClassName="bg-secondary-light text-secondary"
           borderClassName="border-t-3 border-t-secondary"
@@ -289,7 +439,7 @@ export default function BranchDetailPage() {
         <DetailStatCard
           title="ចំនួនសមាជិក"
           value={branch.memberCount || 0}
-          helper="↑ 4% ក្នុងខែនេះ"
+          helper={branch.memberGrowth == null ? null : `${Number(branch.memberGrowth) >= 0 ? "↑" : "↓"} ${Math.abs(Number(branch.memberGrowth))}% ក្នុងខែនេះ`}
           icon={Users}
           iconClassName="bg-success-bg text-success"
           borderClassName="border-t-3 border-t-success"
@@ -298,7 +448,7 @@ export default function BranchDetailPage() {
         <DetailStatCard
           title="ចំនួនកម្មវិធី"
           value={branch.activityCount || 0}
-          helper="↑ 4% ក្នុងខែនេះ"
+          helper={branch.activityGrowth == null ? null : `${Number(branch.activityGrowth) >= 0 ? "↑" : "↓"} ${Math.abs(Number(branch.activityGrowth))}% ក្នុងខែនេះ`}
           icon={CalendarDays}
           iconClassName="bg-warning-bg text-warning"
           borderClassName="border-t-3 border-t-warning"
@@ -410,7 +560,7 @@ export default function BranchDetailPage() {
             ប្រធានសាខា
           </h2>
 
-          <button
+          {canManageBranchLeader && <button
             type="button"
             onClick={() => setIsEditModalOpen(true)}
             className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-secondary px-3 text-xs font-semibold text-secondary transition hover:bg-secondary-light"
@@ -424,7 +574,7 @@ export default function BranchDetailPage() {
             {branch.leader
               ? "ផ្លាស់ប្តូរប្រធាន"
               : "បន្ថែមប្រធាន"}
-          </button>
+          </button>}
         </div>
 
         {branch.leader ? (
@@ -582,14 +732,14 @@ export default function BranchDetailPage() {
               បង្កើតសមាជិកក្នុងសាខានេះជាមុន ហើយបន្ទាប់មកកែប្រែសាខាដើម្បីកំណត់ប្រធាន។
             </p>
 
-            <button
+            {canManageBranchLeader && <button
               type="button"
               onClick={() => setIsEditModalOpen(true)}
               className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg bg-success px-4 text-sm font-semibold text-white transition hover:bg-emerald-700"
             >
               <PlusCircle size={15} />
               បន្ថែមប្រធានសាខា
-            </button>
+            </button>}
           </div>
         )}
       </section>
@@ -632,9 +782,11 @@ export default function BranchDetailPage() {
         onClose={() => setIsEditModalOpen(false)}
         initialData={branch}
         leaderOptions={leaderOptions}
-        onSave={(updatedBranch) => {
-          setBranch(updatedBranch);
-        }}
+        enableLeaderAssignment={canManageBranchLeader}
+        levelOptions={lookupOptions.levels.map((item) => ({ label: item.labelKm || item.labelEn, value: item.value, code: item.code }))}
+        statusOptions={lookupOptions.statuses.map((item) => ({ label: item.labelKm || item.labelEn, value: item.value, code: item.code }))}
+        provinceOptions={lookupOptions.provinces.map((item) => ({ label: item.labelKm || item.labelEn, value: item.value }))}
+        onSave={updateBranch}
       />
     </div>
   );

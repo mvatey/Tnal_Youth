@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Landmark, Moon, Users } from "lucide-react";
 import { AiOutlineWoman } from "react-icons/ai";
@@ -12,7 +12,6 @@ import DataTable from "@/components/table/DataTable.js";
 import StatCard from "@/components/dashboard/statCard";
 import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail";
 
-import initialMembers from "@/data/members.json";
 
 const KHMER_MONTHS = {
   មករា: 0,
@@ -213,8 +212,18 @@ export default function MembersPage() {
    * This allows newly created members
    * to appear immediately.
    */
-  const [members, setMembers] =
-    useState(initialMembers);
+  const [members, setMembers] = useState([]);
+  const [lookups, setLookups] = useState({
+    branches: [],
+    statuses: [],
+    genders: [],
+    levels: [],
+    nationalities: [],
+    roles: [],
+  });
+  const [serverSummary, setServerSummary] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [query, setQuery] =
     useState("");
@@ -239,11 +248,71 @@ export default function MembersPage() {
     setIsCreateOpen,
   ] = useState(false);
 
+  const loadMembers = useCallback(async () => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const endpoints = [
+        "/api/members?page=0&size=100",
+        "/api/members/summary",
+        "/api/lookups/branches",
+        "/api/lookups/member-statuses",
+        "/api/lookups/genders",
+        "/api/lookups/member-levels",
+        "/api/lookups/nationalities",
+        "/api/lookups/user-roles",
+      ];
+      const responses = await Promise.all(endpoints.map((url) => fetch(url)));
+      const failed = responses.find((response) => !response.ok);
+
+      if (failed) {
+        const problem = await failed.json().catch(() => ({}));
+        throw new Error(problem.message || "Unable to load member data.");
+      }
+
+      const [page, summary, branchesData, statuses, genders, levels, nationalities, roles] =
+        await Promise.all(responses.map((response) => response.json()));
+
+      setMembers((page.content || []).map((member) => ({
+        id: member.id,
+        name_kh: member.full_name_km,
+        name_en: member.full_name_en || "",
+        gender: member.gender?.label_km || member.gender?.code || "",
+        genderCode: member.gender?.code || "",
+        branch: member.branch?.label_km || "",
+        branchId: member.branch?.id,
+        status: member.status?.label_km || member.status?.code || "",
+        statusId: member.status?.id,
+        role: "member",
+        joinedAt: formatDateToKhmer(member.joined_on),
+        level: member.level?.label_km || member.level?.code || "",
+      })));
+      setServerSummary(summary);
+      setLookups({
+        branches: branchesData,
+        statuses,
+        genders,
+        levels,
+        nationalities,
+        roles,
+      });
+    } catch (loadError) {
+      setError(loadError.message || "Unable to load member data.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadMembers();
+  }, [loadMembers]);
+
   /*
    * Statistic card values.
    */
   const stats = useMemo(() => {
-    const total = members.length;
+    const total = serverSummary?.total_members ?? members.length;
 
     const female = members.filter(
       (member) =>
@@ -270,10 +339,10 @@ export default function MembersPage() {
 
     return {
       total,
-      female,
-      monk,
-      buddhist,
-      islam,
+      female: serverSummary?.female_members ?? female,
+      monk: serverSummary?.monk_members ?? monk,
+      buddhist: serverSummary?.buddhist_members ?? buddhist,
+      islam: serverSummary?.islam_members ?? islam,
 
       totalGrowth: calcGrowth(
         members,
@@ -307,7 +376,7 @@ export default function MembersPage() {
           ISLAM_LABEL,
       ),
     };
-  }, [members]);
+  }, [members, serverSummary]);
 
   /*
    * Search and filter table data.
@@ -420,6 +489,14 @@ export default function MembersPage() {
     ];
   }, [members]);
 
+  const branchCreateOptions = useMemo(
+    () => lookups.branches.map((branch) => ({
+      label: branch.labelKm || branch.labelEn || branch.code,
+      value: branch.value,
+    })),
+    [lookups.branches],
+  );
+
   /*
    * Receive form data from
    * CreateMemberModal.
@@ -523,6 +600,59 @@ export default function MembersPage() {
     );
 
     setIsCreateOpen(false);
+  };
+
+  const handleSaveMember = async (formData) => {
+    let profilePhotoId = null;
+
+    if (formData.profileFile) {
+      const uploadBody = new FormData();
+      uploadBody.append("file", formData.profileFile);
+      const uploadResponse = await fetch("/api/backend/files/images", {
+        method: "POST",
+        credentials: "include",
+        body: uploadBody,
+      });
+      const uploadedFile = await uploadResponse.json().catch(() => ({}));
+      if (!uploadResponse.ok) {
+        throw new Error(uploadedFile.message || "Unable to upload the profile image.");
+      }
+      profilePhotoId = uploadedFile.id;
+    }
+
+    const response = await fetch("/api/members", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        full_name_km: formData.nameKh.trim(),
+        full_name_en: formData.nameEn.trim() || null,
+        gender: formData.gender,
+        nationality_id: Number(formData.nationality),
+        date_of_birth: formData.dob,
+        phone: formData.phone.trim(),
+        email: formData.email?.trim() || null,
+        branch_id: Number(formData.branch),
+        level_id: Number(formData.level),
+        role: formData.role,
+        joined_on: formData.joinedAt,
+        status_id: Number(formData.status),
+        profile_photo_id: profilePhotoId,
+      }),
+    });
+
+    if (!response.ok) {
+      const problem = await response.json().catch(() => ({}));
+      if (profilePhotoId) {
+        await fetch(`/api/backend/files/${encodeURIComponent(profilePhotoId)}`, {
+          method: "DELETE",
+          credentials: "include",
+        }).catch(() => {});
+      }
+      throw new Error(problem.message || "Unable to create member.");
+    }
+
+    setIsCreateOpen(false);
+    await loadMembers();
   };
 
   const tableColumns = [
@@ -784,6 +914,17 @@ export default function MembersPage() {
         />
       </div>
 
+      {error && (
+        <div className="flex items-center justify-between rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span>{error}</span>
+          <button type="button" className="font-semibold underline" onClick={loadMembers}>Retry</button>
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="rounded-lg border border-border bg-white p-5 text-sm text-text-secondary">Loading member data...</div>
+      )}
+
       {/* Member table */}
 
       <div className="w-full">
@@ -840,12 +981,14 @@ export default function MembersPage() {
           setIsCreateOpen(false)
         }
         onSave={
-          handleCreateMember
+          handleSaveMember
         }
-        branches={branches.filter(
-          (branch) =>
-            branch.value !== "",
-        )}
+        branches={branchCreateOptions}
+        lookupGenderOptions={lookups.genders.map((item) => ({ label: item.labelKm || item.labelEn, value: item.code }))}
+        lookupStatusOptions={lookups.statuses.map((item) => ({ label: item.labelKm || item.labelEn, value: item.value }))}
+        lookupRoleOptions={lookups.roles.map((item) => ({ label: item.labelKm || item.labelEn, value: item.code }))}
+        lookupLevelOptions={lookups.levels.map((item) => ({ label: item.labelKm || item.labelEn, value: item.id }))}
+        nationalityOptions={lookups.nationalities.map((item) => ({ label: item.labelKm || item.labelEn, value: item.id }))}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { List, PlusCircle } from "lucide-react";
 
 import SearchBar from "@/components/tables/SearchBar";
@@ -11,23 +11,7 @@ import ActivityStats from "@/components/activity/ActivityStats";
 import PrimaryActionButton from "@/components/ui/actions/PrimaryActionButton";
 
 import { useBranch } from "@/context/BranchContext";
-import activities from "@/data/activityRecords.json";
 import { downloadCsv } from "@/utils/downloadCsv";
-
-const branches = ["ភ្នំពេញ", "កណ្ដាល"];
-
-const sectors = [
-  "បច្ចេកវិទ្យា",
-  "រដ្ឋបាល",
-  "សង្គម",
-  "អប់រំ",
-  "បរិស្ថាន",
-];
-
-const types = [
-  "កម្មវិធីផ្ទៃក្នុង",
-  "កម្មវិធីខាងក្រៅ",
-];
 
 function TypeBadge({ type }) {
   const style =
@@ -69,6 +53,11 @@ export default function ActivityPage() {
     selectedBranch = "all",
     setSelectedBranch = () => {},
   } = useBranch();
+  const [activities, setActivities] = useState([]);
+  const [sectors, setSectors] = useState([]);
+  const [types, setTypes] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [searchQuery, setSearchQuery] =
     useState("");
@@ -81,6 +70,70 @@ export default function ActivityPage() {
 
   const [selectedDate, setSelectedDate] =
     useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadActivities() {
+      setIsLoading(true);
+      setError("");
+      try {
+        const responses = await Promise.all([
+          fetch("/api/backend/activities?page=0&size=200", { cache: "no-store" }),
+          fetch("/api/lookups/branches", { cache: "no-store" }),
+          fetch("/api/lookups/activity-sectors", { cache: "no-store" }),
+          fetch("/api/lookups/activity-types", { cache: "no-store" }),
+        ]);
+        const failed = responses.find((response) => !response.ok);
+        if (failed) {
+          const problem = await failed.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to load activities.");
+        }
+        const [page, branchData, sectorData, typeData] = await Promise.all(
+          responses.map((response) => response.json()),
+        );
+        const branchById = new Map(
+          branchData.map((branch) => [String(branch.value), branch.labelKm || branch.labelEn || branch.code]),
+        );
+
+        if (!cancelled) {
+          setActivities((page.content || []).map((item) => {
+            const startsAt = item.startsAt ? new Date(item.startsAt) : null;
+            const endsAt = item.endsAt ? new Date(item.endsAt) : null;
+            const durationHours = startsAt && endsAt
+              ? Math.max(0, Math.round((endsAt - startsAt) / 3600000))
+              : 0;
+            const statusCode = item.status?.code || "";
+            return {
+              id: item.id,
+              name: item.titleKm || item.titleEn || "-",
+              type: item.type?.labelKm || item.type?.labelEn || item.type?.code || "-",
+              sector: item.sector?.labelKm || item.sector?.labelEn || item.sector?.code || "-",
+              branch: branchById.get(String(item.branchId)) || "-",
+              branchId: item.branchId,
+              location: item.locationName || "-",
+              date: startsAt ? startsAt.toLocaleDateString("km-KH") : "-",
+              dateValue: startsAt ? startsAt.toISOString().slice(0, 10) : "",
+              duration: durationHours ? `${durationHours} ម៉ោង` : "-",
+              participants: item.capacity ?? 0,
+              status: /COMPLETED|FINISHED|DONE/.test(statusCode) ? "completed" : "upcoming",
+            };
+          }));
+          setSectors(sectorData.map((item) => item.labelKm || item.labelEn || item.code));
+          setTypes(typeData.map((item) => item.labelKm || item.labelEn || item.code));
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to load activities.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    loadActivities();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filteredActivities = useMemo(() => {
     const query = searchQuery
@@ -268,6 +321,9 @@ export default function ActivityPage() {
   return (
     <div className="min-w-0 space-y-5 overflow-x-hidden">
       <ActivityStats activities={filteredActivities} />
+
+      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {isLoading && <div className="rounded-lg border border-border bg-white p-5 text-sm text-text-secondary">Loading activities...</div>}
 
       <section className="rounded-xl border border-border bg-white p-4 transition-shadow duration-200 hover:shadow-sm">
         <div className="mb-4 flex min-w-0 flex-nowrap items-center gap-3">

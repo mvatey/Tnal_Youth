@@ -1,26 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { Camera, X } from "lucide-react";
 import { HiSaveAs } from "react-icons/hi";
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
 import FormActionButton from "@/components/forms/FormActionButton";
 
-import memberOptions from "@/data/donation/memberOptions.json";
-import membersData from "@/data/members.json";
-
-const { genderOptions, statusOptions } = memberOptions;
-
-const ROLE_LABELS = {
-  branch_leader: "ប្រធានសាខា",
-  secretary: "លេខាធិការ",
-  member: "សមាជិក",
-};
-
-const LEVEL_OPTIONS = ["ក", "ខ", "គ", "ឃ", "ង"];
 
 const EMPTY_FORM = {
   nameKh: "",
@@ -34,56 +22,27 @@ const EMPTY_FORM = {
   dob: "",
   joinedAt: "",
   level: "",
+  nationality: "",
+  profileFile: null,
+  profilePreview: "",
 };
-
-function normalizeRole(role) {
-  const normalizedRole = String(role ?? "").trim();
-
-  const roleMap = {
-    admin: "admin",
-    អ្នកគ្រប់គ្រង: "admin",
-
-    branch_leader: "branch_leader",
-    ប្រធានសាខា: "branch_leader",
-
-    secretary: "secretary",
-    លេខាធិការ: "secretary",
-
-    member: "member",
-    សមាជិក: "member",
-  };
-
-  return roleMap[normalizedRole] || normalizedRole;
-}
 
 export default function CreateMemberModal({
   open,
   onClose,
   onSave,
   branches = [],
+  lookupGenderOptions = [],
+  lookupStatusOptions = [],
+  lookupRoleOptions = [],
+  lookupLevelOptions = [],
+  nationalityOptions = [],
 }) {
   const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [showValidationError, setShowValidationError] = useState(false);
-
-  const roleOptions = useMemo(() => {
-    const roleMap = new Map();
-
-    membersData.forEach((member) => {
-      const role = normalizeRole(member.role);
-
-      if (!role || !ROLE_LABELS[role]) {
-        return;
-      }
-
-      roleMap.set(role, {
-        label: ROLE_LABELS[role],
-        value: role,
-      });
-    });
-
-    return Array.from(roleMap.values());
-  }, []);
+  const [saveError, setSaveError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -93,6 +52,7 @@ export default function CreateMemberModal({
     if (open) {
       setForm(EMPTY_FORM);
       setShowValidationError(false);
+      setSaveError("");
     }
   }, [open]);
 
@@ -139,6 +99,28 @@ export default function CreateMemberModal({
     setShowValidationError(false);
   };
 
+  const selectProfileImage = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      setSaveError("Profile image must be JPG, PNG, or WebP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setSaveError("Profile image must be 5 MB or smaller.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setForm((current) => ({
+      ...current,
+      profileFile: file,
+      profilePreview: String(reader.result || ""),
+    }));
+    reader.readAsDataURL(file);
+    setSaveError("");
+  };
+
   const requiredFields = [
     "nameKh",
     "nameEn",
@@ -150,6 +132,7 @@ export default function CreateMemberModal({
     "dob",
     "joinedAt",
     "level",
+    "nationality",
   ];
 
   const isFormValid = requiredFields.every((field) => {
@@ -166,16 +149,19 @@ export default function CreateMemberModal({
 
     setShowValidationError(false);
 
-    const newMember = {
-      id: crypto.randomUUID(),
-      ...form,
-    };
+    setIsSaving(true);
+    setSaveError("");
 
-    await onSave?.(newMember);
-
-    setForm(EMPTY_FORM);
-    setShowValidationError(false);
-    onClose?.();
+    try {
+      await onSave?.(form);
+      setForm(EMPTY_FORM);
+      setShowValidationError(false);
+      onClose?.();
+    } catch (error) {
+      setSaveError(error.message || "Unable to save member.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!open || !mounted) {
@@ -237,6 +223,24 @@ export default function CreateMemberModal({
           </div>
 
           <form onSubmit={submit}>
+            <div className="mb-4 flex items-center gap-4 rounded-xl border border-border bg-gray-50 p-3">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-white">
+                {form.profilePreview ? (
+                  <img src={form.profilePreview} alt="Member profile preview" className="h-full w-full object-cover" />
+                ) : (
+                  <Camera className="text-text-secondary" size={26} />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-text-primary">រូបថតសមាជិក</p>
+                <p className="mt-1 text-xs text-text-secondary">JPG, PNG ឬ WebP — អតិបរមា 5 MB</p>
+                <label className="mt-2 inline-flex cursor-pointer rounded-lg bg-secondary px-3 py-2 text-xs font-semibold text-white hover:opacity-90">
+                  ជ្រើសរើសរូបថត
+                  <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={selectProfileImage} />
+                </label>
+                {form.profileFile && <p className="mt-1 max-w-[250px] truncate text-xs text-text-secondary">{form.profileFile.name}</p>}
+              </div>
+            </div>
             <div
               className="
                 grid
@@ -263,7 +267,7 @@ export default function CreateMemberModal({
                 label="ភេទ"
                 type="select"
                 placeholder="ជ្រើសរើសភេទ"
-                options={genderOptions}
+                options={lookupGenderOptions}
                 value={form.gender}
                 onChange={update("gender")}
               />
@@ -272,7 +276,7 @@ export default function CreateMemberModal({
                 label="ស្ថានភាព"
                 type="select"
                 placeholder="ជ្រើសរើសស្ថានភាព"
-                options={statusOptions}
+                options={lookupStatusOptions}
                 value={form.status}
                 onChange={update("status")}
               />
@@ -307,7 +311,7 @@ export default function CreateMemberModal({
                 label="តួនាទី"
                 type="select"
                 placeholder="ជ្រើសរើសតួនាទី"
-                options={roleOptions}
+                options={lookupRoleOptions}
                 value={form.role}
                 onChange={update("role")}
               />
@@ -327,13 +331,19 @@ export default function CreateMemberModal({
               />
 
               <FormSelect
+                label="សញ្ជាតិ"
+                type="select"
+                placeholder="ជ្រើសរើសសញ្ជាតិ"
+                options={nationalityOptions}
+                value={form.nationality}
+                onChange={update("nationality")}
+              />
+
+              <FormSelect
                 label="កាំ"
                 type="select"
                 placeholder="ជ្រើសរើសកាំ"
-                options={LEVEL_OPTIONS.map((level) => ({
-                  label: `កាំ ${level}`,
-                  value: level,
-                }))}
+                options={lookupLevelOptions}
                 value={form.level}
                 onChange={update("level")}
               />
@@ -344,9 +354,12 @@ export default function CreateMemberModal({
                 សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
               </p>
             )}
+            {saveError && (
+              <p className="mt-4 text-xs font-medium text-red-500">{saveError}</p>
+            )}
             <FormActionButton
               onCancel={onClose}
-              isValid={isFormValid}
+              isValid={isFormValid && !isSaving}
               saveText="រក្សាទុក"
               cancelText="បោះបង់"
             />

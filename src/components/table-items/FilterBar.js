@@ -45,14 +45,20 @@ function FilterInput({
         </option>
 
 
-        {options.map((item)=>(
+        {options.map((item) => {
+          const option = typeof item === "object"
+            ? item
+            : { label: item, value: item };
+
+          return (
           <option 
-            key={item}
-            value={item}
+            key={option.value}
+            value={option.value}
           >
-            {item}
+            {option.label}
           </option>
-        ))}
+          );
+        })}
 
       </select>
 

@@ -1,24 +1,87 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 import SaveButton from "@/components/forms/SaveButton";
 import BoxFill from "@/components/forms/boxFill";
 import FormDate from "@/components/forms/FormDate";
-import membersData from "@/data/members.json";
+
+const EMPTY_PERSON = {
+  id: null,
+  name_kh: "",
+  name_en: "",
+  occupation: "",
+  date_of_birth: "",
+  status: "ALIVE",
+  address: "",
+};
+
+function emptyFamily() {
+  return {
+    spouse: { ...EMPTY_PERSON },
+    father: { ...EMPTY_PERSON },
+    mother: { ...EMPTY_PERSON },
+  };
+}
 
 export default function FamilyPage() {
   const params = useParams();
   const memberId = String(params.id);
 
-  const selectedMember = membersData.find(
-    (member) => String(member.id) === memberId
-  );
+  const [family, setFamily] = useState(emptyFamily);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
 
-  const [family, setFamily] = useState(
-    selectedMember?.family
-  );
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadFamily() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const response = await fetch(
+          `/api/backend/members/${encodeURIComponent(memberId)}/family`,
+          { cache: "no-store" },
+        );
+
+        if (!response.ok) {
+          const problem = await response.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to load family information.");
+        }
+
+        const records = await response.json();
+        const nextFamily = emptyFamily();
+
+        records.forEach((record) => {
+          const section = String(record.relationship || "").toLowerCase();
+          if (!nextFamily[section]) return;
+          nextFamily[section] = {
+            id: record.id,
+            name_kh: record.full_name_km || "",
+            name_en: record.full_name_en || "",
+            occupation: record.occupation || "",
+            date_of_birth: record.date_of_birth || "",
+            status: record.life_status || "ALIVE",
+            address: record.address || "",
+          };
+        });
+
+        if (!cancelled) setFamily(nextFamily);
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to load family information.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    loadFamily();
+    return () => {
+      cancelled = true;
+    };
+  }, [memberId]);
 
   function handleFamilyChange(section, field, value) {
     setFamily((previous) => ({
@@ -30,18 +93,74 @@ export default function FamilyPage() {
     }));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    setIsSaving(true);
+    setError("");
 
-    const updatedMember = {
-      ...selectedMember,
-      family,
-    };
+    try {
+      const savedSections = await Promise.all(
+        Object.entries(family).map(async ([section, person]) => {
+          const relationship = section.toUpperCase();
+          const baseUrl = `/api/backend/members/${encodeURIComponent(memberId)}/family`;
 
-    console.log("Updated member:", updatedMember);
+          if (!person.name_kh.trim()) {
+            if (person.id) {
+              const deleteResponse = await fetch(`${baseUrl}/${person.id}`, { method: "DELETE" });
+              if (!deleteResponse.ok) throw new Error(`Unable to remove ${section} information.`);
+            }
+            return [section, { ...EMPTY_PERSON }];
+          }
+
+          const response = await fetch(person.id ? `${baseUrl}/${person.id}` : baseUrl, {
+            method: person.id ? "PUT" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              relationship,
+              full_name_km: person.name_kh.trim(),
+              full_name_en: person.name_en.trim() || null,
+              date_of_birth: person.date_of_birth || null,
+              occupation: person.occupation.trim() || null,
+              life_status:
+                person.status === "ស្លាប់" || person.status === "DECEASED"
+                  ? "DECEASED"
+                  : "ALIVE",
+              address: person.address.trim() || null,
+            }),
+          });
+
+          if (!response.ok) {
+            const problem = await response.json().catch(() => ({}));
+            throw new Error(problem.message || `Unable to save ${section} information.`);
+          }
+
+          const saved = await response.json();
+          return [section, {
+            id: saved.id,
+            name_kh: saved.full_name_km || "",
+            name_en: saved.full_name_en || "",
+            occupation: saved.occupation || "",
+            date_of_birth: saved.date_of_birth || "",
+            status: saved.life_status || "ALIVE",
+            address: saved.address || "",
+          }];
+        }),
+      );
+
+      setFamily(Object.fromEntries(savedSections));
+      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save family information.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  if (!selectedMember || !family) {
+  if (isLoading) {
+    return <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-500">Loading family information...</div>;
+  }
+
+  if (!family) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white p-6">
         <p className="text-sm text-red-500">
@@ -254,7 +373,8 @@ export default function FamilyPage() {
       </div>
 
       <div className="flex justify-end">
-        <SaveButton type="submit" />
+        {error && <p className="mr-4 self-center text-sm text-red-600">{error}</p>}
+        <SaveButton type="submit" disabled={isSaving} />
       </div>
     </form>
   );
@@ -276,16 +396,16 @@ function RadioGroup({
         <Radio
           name={name}
           label="នៅរស់"
-          value="នៅរស់"
-          checked={value === "នៅរស់"}
+          value="ALIVE"
+          checked={value === "នៅរស់" || value === "ALIVE"}
           onChange={onChange}
         />
 
         <Radio
           name={name}
           label="ស្លាប់"
-          value="ស្លាប់"
-          checked={value === "ស្លាប់"}
+          value="DECEASED"
+          checked={value === "ស្លាប់" || value === "DECEASED"}
           onChange={onChange}
         />
       </div>

@@ -1,5 +1,6 @@
-import activityData from "@/data/activityRecords.json";
-import participantData from "@/data/participantRecords.json";
+"use client";
+
+import { useEffect, useState } from "react";
 import {
   InfoIcon,
   InfoItem,
@@ -9,7 +10,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { FaUsers } from "react-icons/fa";
-import { notFound } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
   Banknote,
   CalendarDays,
@@ -30,28 +31,103 @@ import {
   ChevronRight
 } from "lucide-react";
 
-export default async function ActivityDetailPage({ params }) {
-  const { id } = await params;
-  const activity = activityData.find((item) => String(item.id) === id);
+export default function ActivityDetailPage() {
+  const { id } = useParams();
+  const [activity, setActivity] = useState(null);
+  const [activityParticipants, setActivityParticipants] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadActivity() {
+      setIsLoading(true);
+      setError("");
+      try {
+        const responses = await Promise.all([
+          fetch(`/api/backend/activities/${encodeURIComponent(id)}`, { cache: "no-store" }),
+          fetch(`/api/backend/activities/${encodeURIComponent(id)}/participants`, { cache: "no-store" }),
+          fetch("/api/lookups/branches", { cache: "no-store" }),
+          fetch(`/api/backend/activities/${encodeURIComponent(id)}/attachments`, { cache: "no-store" }),
+          fetch(`/api/backend/activities/${encodeURIComponent(id)}/gallery`, { cache: "no-store" }),
+        ]);
+        const failed = responses.find((response) => !response.ok);
+        if (failed) {
+          const problem = await failed.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to load activity details.");
+        }
+        const [record, participants, branches, attachments, gallery] = await Promise.all(
+          responses.map((response) => response.json()),
+        );
+        const branch = branches.find((item) => String(item.value) === String(record.branchId));
+        const startsAt = record.startsAt ? new Date(record.startsAt) : null;
+        const endsAt = record.endsAt ? new Date(record.endsAt) : null;
+        const durationHours = startsAt && endsAt ? Math.max(0, Math.round((endsAt - startsAt) / 3600000)) : 0;
+        const statusCode = record.status?.code || "";
+
+        if (!cancelled) {
+          setActivity({
+            id: record.id,
+            name: record.titleKm || record.titleEn || "-",
+            image: record.coverImageId || gallery[0]?.file_id
+              ? `/api/backend/files/${encodeURIComponent(record.coverImageId || gallery[0].file_id)}/content`
+              : "/activity-placeholder.svg",
+            descriptionBrief: record.description || "",
+            descriptionDetail: record.description || "",
+            date: startsAt ? startsAt.toLocaleDateString("km-KH") : "-",
+            startDate: startsAt ? startsAt.toLocaleDateString("km-KH") : "-",
+            endDate: endsAt ? endsAt.toLocaleDateString("km-KH") : "-",
+            startTime: startsAt ? startsAt.toLocaleTimeString("km-KH", { hour: "2-digit", minute: "2-digit" }) : "-",
+            endTime: endsAt ? endsAt.toLocaleTimeString("km-KH", { hour: "2-digit", minute: "2-digit" }) : "-",
+            branch: branch?.labelKm || branch?.labelEn || branch?.code || "-",
+            location: record.locationName || "-",
+            address: record.address || record.locationName || "-",
+            mapLink: record.googleMapUrl || "",
+            participants: participants.length,
+            sector: record.sector?.labelKm || record.sector?.labelEn || record.sector?.code || "-",
+            type: record.type?.labelKm || record.type?.labelEn || record.type?.code || "-",
+            status: /COMPLETED|FINISHED|DONE/.test(statusCode) ? "completed" : "upcoming",
+            visibility: record.publicActivity === false ? "ឯកជន" : "សាធារណៈ",
+            duration: durationHours ? `${durationHours} ម៉ោង` : "-",
+            leader: "-",
+            phone: "-",
+            donation: "$ 0",
+            budget: "$ 0",
+            documents: (Array.isArray(attachments) ? attachments : [])
+              .map((document) => ({
+                id: document.attachment_id,
+                fileId: document.file_id,
+                name: document.title || document.original_name,
+                type: document.mime_type === "application/pdf" ? "pdf" : "file",
+                size: document.size_bytes ? `${(document.size_bytes / 1024 / 1024).toFixed(2)} MB` : "",
+              })),
+          });
+          setActivityParticipants(participants);
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to load activity details.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    loadActivity();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  if (isLoading) {
+    return <div className="rounded-xl border border-border bg-white p-8 text-center text-sm text-text-secondary">Loading activity details...</div>;
+  }
 
   if (!activity) {
-  notFound();
+    return <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">{error || "Activity not found."}</div>;
   }
-  const activityParticipants = participantData.filter(
-  (participant) =>
-    String(participant.activityId) === String(activity.id)
-);
 
-const attendedCount = activityParticipants.filter(
-  (participant) =>
-    participant.status === "បានចូលរួម"
-).length;
-
-const absentCount = activityParticipants.filter(
-  (participant) =>
-    participant.status === "មិនបានចូលរួម"
-).length;
-
+const attendedCount = activityParticipants.filter((participant) => participant.checked_in_at).length;
+const absentCount = activityParticipants.length - attendedCount;
 const totalParticipantCount = activityParticipants.length;
 
   const statusLabel = activity.status === "completed" ? "បានបញ្ចប់" : "នាពេលខាងមុខ";
@@ -294,10 +370,11 @@ const totalParticipantCount = activityParticipants.length;
               </div>
             </div>
 
-            <Eye
-              size={17}
-              className="cursor-pointer text-primary transition hover:text-primary-hover"
-            />
+            {doc.fileId && (
+              <a href={`/api/backend/files/${encodeURIComponent(doc.fileId)}/content`} target="_blank" rel="noreferrer" aria-label={`មើល ${doc.name}`}>
+                <Eye size={17} className="cursor-pointer text-primary transition hover:text-primary-hover" />
+              </a>
+            )}
           </div>
         );
       })}

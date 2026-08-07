@@ -7,17 +7,16 @@ import { RiAddCircleLine } from "react-icons/ri";
 import SaveButton from "@/components/forms/SaveButton";
 import BoxFill from "@/components/forms/boxFill.js";
 import FormDate from "@/components/forms/FormDate.js";
-import FormSelect from "@/components/forms/FormSelect";
 import DeleteButton from "@/components/forms/DeleteButton";
-
-import membersData from "@/data/members.json";
-import locationData from "@/data/location.json";
-import politicalData from "@/data/political.json";
 
 function createEmptyPolitical() {
   return {
-    id: `political-${Date.now()}-${Math.random()}`,
-    ...politicalData.emptyPolitical,
+    id: `new-${crypto.randomUUID()}`,
+    organization: "",
+    location: "",
+    position: "",
+    joinedDate: "",
+    leftDate: "",
   };
 }
 
@@ -25,29 +24,50 @@ export default function PoliticalPage() {
   const params = useParams();
   const memberId = String(params?.id ?? "");
 
-  const [member, setMember] = useState(null);
   const [politicals, setPoliticals] = useState([]);
+  const [deletedIds, setDeletedIds] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const selectedMember = membersData.find(
-      (item) => String(item.id) === memberId,
-    );
+    let cancelled = false;
 
-    if (!selectedMember) {
-      setMember(null);
-      setPoliticals([]);
-      return;
+    async function loadPoliticals() {
+      setIsLoading(true);
+      setError("");
+      try {
+        const response = await fetch(
+          `/api/backend/members/${encodeURIComponent(memberId)}/political-affiliations`,
+          { cache: "no-store" },
+        );
+        if (!response.ok) {
+          const problem = await response.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to load political affiliations.");
+        }
+        const records = await response.json();
+        if (!cancelled) {
+          setPoliticals(records.length ? records.map((record) => ({
+            id: record.id,
+            organization: record.affiliationName || "",
+            location: record.location || "",
+            position: record.positionTitle || "",
+            joinedDate: record.startDate || "",
+            leftDate: record.endDate || "",
+          })) : [createEmptyPolitical()]);
+          setDeletedIds([]);
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to load political affiliations.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
     }
 
-    setMember(selectedMember);
-
-    const politicalHistory = Array.isArray(selectedMember.politicalHistory)
-      ? selectedMember.politicalHistory
-      : [];
-
-    setPoliticals(
-      politicalHistory.length > 0 ? politicalHistory : [createEmptyPolitical()],
-    );
+    loadPoliticals();
+    return () => {
+      cancelled = true;
+    };
   }, [memberId]);
 
   function handlePoliticalChange(id, field, value) {
@@ -68,33 +88,67 @@ export default function PoliticalPage() {
   }
 
   function removePolitical(id) {
-    setPoliticals((previous) => {
-      if (previous.length === 1) {
-        return previous;
-      }
-
-      return previous.filter((item) => item.id !== id);
-    });
+    if (typeof id === "number") setDeletedIds((previous) => [...previous, id]);
+    setPoliticals((previous) => previous.filter((item) => item.id !== id));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    setIsSaving(true);
+    setError("");
+    try {
+      const baseUrl = `/api/backend/members/${encodeURIComponent(memberId)}/political-affiliations`;
+      await Promise.all(deletedIds.map(async (recordId) => {
+        const response = await fetch(`${baseUrl}/${recordId}`, { method: "DELETE" });
+        if (!response.ok) throw new Error("Unable to delete a political affiliation.");
+      }));
 
-    if (!member) return;
+      const saved = await Promise.all(politicals.filter((item) => item.organization.trim()).map(async (item) => {
+        const existing = typeof item.id === "number";
+        const response = await fetch(existing ? `${baseUrl}/${item.id}` : baseUrl, {
+          method: existing ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            affiliation_name: item.organization.trim(),
+            position_title: item.position.trim() || null,
+            location: item.location.trim() || null,
+            start_date: item.joinedDate || null,
+            end_date: item.leftDate || null,
+          }),
+        });
+        if (!response.ok) {
+          const problem = await response.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to save political affiliations.");
+        }
+        const record = await response.json();
+        return {
+          id: record.id,
+          organization: record.affiliationName || "",
+          location: record.location || "",
+          position: record.positionTitle || "",
+          joinedDate: record.startDate || "",
+          leftDate: record.endDate || "",
+        };
+      }));
 
-    const updatedMember = {
-      ...member,
-      politicalHistory: politicals,
-    };
-
-    console.log("Updated member:", updatedMember);
-    alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+      setPoliticals(saved.length ? saved : [createEmptyPolitical()]);
+      setDeletedIds([]);
+      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save political affiliations.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  if (!member) {
+  if (isLoading) {
+    return <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-500">Loading political affiliations...</div>;
+  }
+
+  if (error && politicals.length === 0) {
     return (
       <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">រកមិនឃើញព័ត៌មានសមាជិក</p>
+        <p className="text-sm text-red-500">{error}</p>
       </div>
     );
   }
@@ -110,7 +164,7 @@ export default function PoliticalPage() {
               key={item.id}
               index={index}
               item={item}
-              canDelete={politicals.length > 1}
+              canDelete
               onChange={(field, value) =>
                 handlePoliticalChange(item.id, field, value)
               }
@@ -132,23 +186,14 @@ export default function PoliticalPage() {
       </div>
 
       <div className="flex justify-end">
-        <SaveButton type="submit" />
+        {error && <p className="mr-4 self-center text-sm text-red-600">{error}</p>}
+        <SaveButton type="submit" disabled={isSaving} />
       </div>
     </form>
   );
 }
 
 function PoliticalGroup({ index, item, canDelete, onChange, onDelete }) {
-  const countries = Array.isArray(locationData.countries)
-    ? locationData.countries
-    : [];
-
-  const workLocations = Array.isArray(politicalData.workLocations)
-    ? politicalData.workLocations
-    : [];
-
-  const roles = Array.isArray(politicalData.roles) ? politicalData.roles : [];
-
   return (
     <div className="rounded-xl border border-gray-300 p-6">
       <h3 className="mb-5 text-sm font-semibold text-text-primary">
@@ -163,19 +208,11 @@ function PoliticalGroup({ index, item, canDelete, onChange, onDelete }) {
           onChange={(event) => onChange("organization", event.target.value)}
         />
 
-        <FormSelect
-          label="ទីកន្លែងបំពេញការងារ"
-          placeholder="ជ្រើសរើសទីកន្លែងបំពេញការងារ"
-          value={item.workLocation ?? ""}
-          onChange={(event) => onChange("workLocation", event.target.value)}
-          options={workLocations}
-        />
-
         <BoxFill
-          label="ប្រទេស"
-          placeholder="បញ្ចូលឈ្មោះប្រទេស"
-          value={item.country ?? ""}
-          onChange={(event) => onChange("country", event.target.value)}
+          label="ទីកន្លែងបំពេញការងារ"
+          placeholder="បញ្ចូលទីកន្លែងបំពេញការងារ"
+          value={item.location ?? ""}
+          onChange={(event) => onChange("location", event.target.value)}
         />
 
         <BoxFill
@@ -183,13 +220,6 @@ function PoliticalGroup({ index, item, canDelete, onChange, onDelete }) {
           placeholder="បញ្ចូលឈ្មោះតួនាទី"
           value={item.position ?? ""}
           onChange={(event) => onChange("position", event.target.value)}
-        />
-
-        <BoxFill
-          label="លេខកាត/លិខិតតែងតាំង"
-          placeholder="បញ្ចូលលេខកាត/លិខិតតែងតាំង"
-          value={item.cardNumber ?? ""}
-          onChange={(event) => onChange("cardNumber", event.target.value)}
         />
 
         <FormDate

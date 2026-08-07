@@ -1,17 +1,66 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 
 import DataTable from "@/components/table/DataTable.js";
 
-import donationData from "@/data/donation.json";
-
 export default function DonationPage() {
-  const [donations] = useState(donationData);
+  const { id } = useParams();
+  const [donations, setDonations] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [query, setQuery] = useState("");
 
   const [methodFilter, setMethodFilter] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDonations() {
+      setIsLoading(true);
+      setError("");
+      try {
+        const response = await fetch(
+          `/api/backend/donations?memberId=${encodeURIComponent(id)}&page=0&size=100`,
+          { cache: "no-store" },
+        );
+        if (!response.ok) {
+          const problem = await response.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to load donations.");
+        }
+        const payload = await response.json();
+        const items = payload.data?.items || payload.items || [];
+        if (!cancelled) {
+          setDonations(items.filter((item) => item.typeCode !== "SPONSOR_DONATION").map((item) => {
+            const period = item.donationPeriod ? new Date(`${item.donationPeriod}T00:00:00`) : null;
+            const amountParts = [];
+            if (Number(item.amountUsd)) amountParts.push(`$${Number(item.amountUsd).toFixed(2)}`);
+            if (Number(item.amountKhr)) amountParts.push(`${Number(item.amountKhr).toLocaleString()} ៛`);
+            return {
+              id: item.id,
+              month: period ? period.toLocaleString("km-KH", { month: "long" }) : "-",
+              year: period?.getFullYear() || "-",
+              amount: amountParts.join(" / ") || "$0.00",
+              date: item.paidAt ? new Date(item.paidAt).toLocaleDateString("km-KH") : "-",
+              recordedBy: item.recordedByName || "-",
+              paymentMethod: item.paymentMethodLabelKm || item.paymentMethodLabelEn || item.paymentMethodCode || "-",
+            };
+          }));
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to load donations.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    loadDonations();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   const paymentMethods = useMemo(() => {
     return [
@@ -132,6 +181,9 @@ export default function DonationPage() {
       <h2 className="text-lg font-semibold text-text-primary">
         បញ្ជីការធ្វើវិភាគទាន
       </h2>
+
+      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {isLoading && <div className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-500">Loading donations...</div>}
 
       <DataTable
         data={filteredData}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { UploadCloud } from "lucide-react";
 
@@ -9,35 +9,81 @@ import BoxFill from "@/components/forms/boxFill.js";
 import SelectArrow from "@/components/forms/SelectArrow";
 import FormDate from "@/components/forms/FormDate.js";
 
-import members from "@/data/members.json";
-
 export default function PersonalPage() {
   const { id } = useParams();
 
   const fileRef = useRef(null);
 
   const [member, setMember] = useState(null);
-
   const [fileName, setFileName] = useState("");
-
-  const branchOptions = useMemo(() => {
-    return [...new Set(members.map((item) => item.branch).filter(Boolean))];
-  }, []);
+  const [branchOptions, setBranchOptions] = useState([]);
+  const [nationalityOptions, setNationalityOptions] = useState([]);
+  const [ethnicityOptions, setEthnicityOptions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const selectedMember = members.find(
-      (item) => String(item.id) === String(id),
-    );
+    let cancelled = false;
 
-    if (!selectedMember) {
-      setMember(null);
+    async function load() {
+      setIsLoading(true);
+      setError("");
 
-      return;
+      try {
+        const responses = await Promise.all([
+          fetch(`/api/members/${encodeURIComponent(id)}`, { cache: "no-store" }),
+          fetch("/api/lookups/branches", { cache: "no-store" }),
+          fetch("/api/backend/nationalities", { cache: "no-store" }),
+          fetch("/api/backend/ethnicities", { cache: "no-store" }),
+        ]);
+        const failed = responses.find((response) => !response.ok);
+
+        if (failed) {
+          const problem = await failed.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to load member information.");
+        }
+
+        const [selectedMember, branches, nationalities, ethnicities] =
+          await Promise.all(responses.map((response) => response.json()));
+
+        if (cancelled) return;
+
+        setMember({
+          ...selectedMember,
+          name_kh: selectedMember.full_name_km || "",
+          name_en: selectedMember.full_name_en || "",
+          branch: String(selectedMember.branch_id ?? ""),
+          nationality: String(selectedMember.nationality?.id ?? ""),
+          ethnicity: String(selectedMember.ethnicity?.id ?? ""),
+          date_of_birth: selectedMember.date_of_birth || "",
+        });
+        setBranchOptions(branches.map((item) => ({
+          value: String(item.value ?? item.id),
+          label: item.labelKm || item.labelEn || item.code,
+        })));
+        setNationalityOptions(nationalities.map((item) => ({
+          value: String(item.id),
+          label: item.label_km || item.labelKm || item.nameKm || item.name || item.code,
+        })));
+        setEthnicityOptions(ethnicities.map((item) => ({
+          value: String(item.id),
+          label: item.label_km || item.labelKm || item.nameKm || item.name || item.code,
+        })));
+      } catch (loadError) {
+        if (!cancelled) {
+          setMember(null);
+          setError(loadError.message || "Unable to load member information.");
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
     }
 
-    setMember({
-      ...selectedMember,
-    });
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const handleChange = (field) => (event) => {
@@ -63,20 +109,70 @@ export default function PersonalPage() {
     setFileName(file.name);
   };
 
-  const handleSave = () => {
-    console.log("Member ID:", id);
+  const handleSave = async () => {
+    setIsSaving(true);
+    setError("");
 
-    console.log("Updated member:", member);
+    try {
+      const response = await fetch(`/api/members/${encodeURIComponent(id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name_km: member.name_kh.trim(),
+          full_name_en: member.name_en.trim() || null,
+          gender: member.gender || null,
+          nationality_id: member.nationality ? Number(member.nationality) : null,
+          religion_id: member.religion?.id ?? null,
+          ethnicity_id: member.ethnicity ? Number(member.ethnicity) : null,
+          date_of_birth: member.date_of_birth || null,
+          place_of_birth: member.place_of_birth || null,
+          phone: member.phone?.trim() || null,
+          email: member.email?.trim() || null,
+          branch_id: member.branch ? Number(member.branch) : null,
+          level_id: member.level?.id ?? null,
+          status_id: member.status?.id ?? null,
+          joined_on: member.joined_on || null,
+          current_address: member.current_address || null,
+          permanent_address: member.permanent_address || null,
+          profile_photo_id: member.profile_photo?.id ?? null,
+          cv_file_id: member.cv_file?.id ?? null,
+          tshirt_size: member.tshirt_size || null,
+          bio: member.bio || null,
+        }),
+      });
 
-    console.log("CV:", fileRef.current?.files?.[0] || null);
+      if (!response.ok) {
+        const problem = await response.json().catch(() => ({}));
+        throw new Error(problem.message || "Unable to save member information.");
+      }
 
-    alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+      const savedMember = await response.json();
+      setMember((previous) => ({
+        ...previous,
+        ...savedMember,
+        name_kh: savedMember.full_name_km || "",
+        name_en: savedMember.full_name_en || "",
+        branch: String(savedMember.branch_id ?? ""),
+        nationality: String(savedMember.nationality?.id ?? ""),
+        ethnicity: String(savedMember.ethnicity?.id ?? ""),
+        date_of_birth: savedMember.date_of_birth || "",
+      }));
+      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save member information.");
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  if (isLoading) {
+    return <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-500">Loading member information...</div>;
+  }
 
   if (!member) {
     return (
       <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">រកមិនឃើញព័ត៌មានសមាជិក</p>
+        <p className="text-sm text-red-500">{error || "រកមិនឃើញព័ត៌មានសមាជិក"}</p>
       </div>
     );
   }
@@ -143,18 +239,20 @@ export default function PersonalPage() {
               onChange={handleChange("date_of_birth")}
             />
 
-            <BoxFill
+            <FormSelect
               label="សញ្ជាតិ"
               value={member.nationality || ""}
               onChange={handleChange("nationality")}
-              placeholder={member.nationality ? "" : "បញ្ចូលសញ្ជាតិ"}
+              placeholder="ជ្រើសរើសសញ្ជាតិ"
+              options={nationalityOptions}
             />
 
-            <BoxFill
+            <FormSelect
               label="ជនជាតិ"
               value={member.ethnicity || ""}
               onChange={handleChange("ethnicity")}
-              placeholder={member.ethnicity ? "" : "បញ្ចូលជនជាតិ"}
+              placeholder="ជ្រើសរើសជនជាតិ"
+              options={ethnicityOptions}
             />
           </div>
 
@@ -201,7 +299,8 @@ export default function PersonalPage() {
       </div>
 
       <div className="flex justify-end">
-        <SaveButton onClick={handleSave} />
+        {error && <p className="mr-4 self-center text-sm text-red-600">{error}</p>}
+        <SaveButton onClick={handleSave} disabled={isSaving} />
       </div>
     </div>
   );
@@ -235,8 +334,8 @@ function FormSelect({
           </option>
 
           {options.map((option) => (
-            <option key={option} value={option}>
-              {option}
+            <option key={option.value ?? option} value={option.value ?? option}>
+              {option.label ?? option}
             </option>
           ))}
         </select>

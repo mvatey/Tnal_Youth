@@ -1,20 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight, Download } from "lucide-react";
 import { RiDownloadCloud2Line } from "react-icons/ri";
 
 import Pagination from "@/components/navigation/Pagination";
 import { ReceiptIcon } from "@/components/donations/monthlydonation/AddDonationTableRow";
-import members from "@/data/members.json";
-import activities from "@/data/activityRecords.json";
+import { useActivityCreateDraft } from "../ActivityCreateDraftContext";
 
 const ROWS_PER_PAGE = 10;
 const KHR_PER_USD = 4000;
 
-function createInitialRows() {
+function createInitialRows(members = []) {
   const getMemberIdentity = (member) =>
     String(
       member.email ||
@@ -40,15 +39,18 @@ function createInitialRows() {
     id: member.id,
     name:
       member.name_kh ||
+      member.full_name_km ||
       member.fullNameKm ||
       member.name ||
       member.name_en ||
+      member.full_name_en ||
       member.fullNameEn ||
       "",
     gender: member.gender || "",
     joinedDate:
       member.joinedDate ||
       member.joinedAt ||
+      member.joined_on ||
       "",
 
     amountRiel: "0",
@@ -114,24 +116,125 @@ function getTotalInDollars(row) {
 export default function IncomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { draft, updateDraft } = useActivityCreateDraft();
   const activityId =
     searchParams.get("activityId");
 
-  const activity = useMemo(() => {
-    if (!activityId) {
-      return null;
+  const [activity, setActivity] = useState(null);
+  const [rows, setRows] = useState(() => draft.incomeRows || []);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!activityId) return;
+    let cancelled = false;
+
+    async function loadIncome() {
+      setError("");
+      try {
+        const responses = await Promise.all([
+          fetch(`/api/backend/activities/${encodeURIComponent(activityId)}`, { cache: "no-store" }),
+          fetch(`/api/backend/activities/${encodeURIComponent(activityId)}/participants`, { cache: "no-store" }),
+          fetch(`/api/backend/activities/${encodeURIComponent(activityId)}/incomes`, { cache: "no-store" }),
+          fetch("/api/backend/payment-methods", { cache: "no-store" }),
+        ]);
+        const failed = responses.find((response) => !response.ok);
+        if (failed) {
+          const problem = await failed.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to load activity income.");
+        }
+        const [activityData, participants, incomePayload, methods] = await Promise.all(
+          responses.map((response) => response.json()),
+        );
+        const incomeDetail = incomePayload.data || incomePayload;
+        const existingByMember = new Map(
+          (incomeDetail.items || []).map((item) => [String(item.memberId), item]),
+        );
+        const memberRows = createInitialRows(participants.map((participant) => ({
+          id: participant.member_id,
+          name_kh: participant.full_name_km,
+          name_en: participant.full_name_en,
+          email: participant.email,
+          phone: participant.phone,
+          gender: "-",
+          joinedAt: participant.registered_at
+            ? new Date(participant.registered_at).toLocaleDateString("km-KH")
+            : "-",
+        })));
+        if (!cancelled) {
+          setActivity({ ...activityData, name: activityData.titleKm || activityData.titleEn || "-" });
+          setPaymentMethods(methods);
+          setRows(memberRows.map((row) => {
+            const existing = existingByMember.get(String(row.id));
+            return existing ? {
+              ...row,
+              donationId: existing.donationId,
+              amountRiel: String(existing.amountKhr || 0),
+              amountDollar: Number(existing.amountUsd || 0).toFixed(2),
+              paymentMethod: String(existing.paymentMethodId || ""),
+              receiptFileId: existing.receiptFileId,
+            } : {
+              ...row,
+              paymentMethod: String(methods[0]?.id || ""),
+            };
+          }));
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to load activity income.");
+      }
     }
 
-    return activities.find(
-      (item) =>
-        String(item.id) ===
-        String(activityId)
-    );
+    loadIncome();
+    return () => {
+      cancelled = true;
+    };
   }, [activityId]);
 
-  const [rows, setRows] = useState(() =>
-    createInitialRows()
-  );
+  useEffect(() => {
+    if (activityId) return;
+    let cancelled = false;
+
+    async function loadDraftIncome() {
+      setError("");
+      try {
+        const methodResponse = await fetch("/api/backend/payment-methods", { cache: "no-store" });
+        if (!methodResponse.ok) throw new Error("Unable to load payment methods.");
+        const methods = await methodResponse.json();
+        const memberResponses = await Promise.all(
+          (draft.selectedMemberIds || []).map((memberId) =>
+            fetch(`/api/members/${encodeURIComponent(memberId)}`, { cache: "no-store" }),
+          ),
+        );
+        const failedMember = memberResponses.find((response) => !response.ok);
+        if (failedMember) throw new Error("Unable to load the selected activity members.");
+        const members = await Promise.all(memberResponses.map((response) => response.json()));
+        const existingById = new Map(
+          (draft.incomeRows || []).map((row) => [String(row.id), row]),
+        );
+        const memberRows = createInitialRows(members).map((row) => ({
+          ...row,
+          paymentMethod: String(methods[0]?.id || ""),
+          ...(existingById.get(String(row.id)) || {}),
+        }));
+        if (!cancelled) {
+          setPaymentMethods(methods);
+          setRows(memberRows);
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to prepare activity income.");
+      }
+    }
+
+    loadDraftIncome();
+    return () => {
+      cancelled = true;
+    };
+  }, [activityId, draft.selectedMemberIds]);
+
+  useEffect(() => {
+    if (!activityId) updateDraft({ incomeRows: rows });
+  }, [activityId, rows, updateDraft]);
 
   const [currentPage, setCurrentPage] =
     useState(1);
@@ -222,30 +325,52 @@ export default function IncomePage() {
     );
   }, [rows]);
 
-  const handleSave = () => {
-    const incomeData = {
-      activityId,
-      activityName:
-        activity?.name || "",
-      rows: rows.map((row) => ({
-        ...row,
-        receipt: row.receipt
-          ? {
-              name: row.receipt.name,
-              size: row.receipt.size,
-              type: row.receipt.type,
-            }
-          : null,
-      })),
-      summary,
-    };
-
-    localStorage.setItem(
-      `activity-income-${activityId}`,
-      JSON.stringify(incomeData)
+  const handleSave = async () => {
+    if (!activityId) {
+      updateDraft({ incomeRows: rows });
+      router.push("/activity/create");
+      return;
+    }
+    const newItems = rows.filter(
+      (row) => !row.donationId && (parseAmount(row.amountRiel) > 0 || parseAmount(row.amountDollar) > 0),
     );
+    if (newItems.length === 0) {
+      router.push(`/activity/${activityId}`);
+      return;
+    }
 
-    router.back();
+    setIsSaving(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/backend/activities/${encodeURIComponent(activityId)}/incomes/batch`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            received_at: new Date().toISOString(),
+            items: newItems.map((row) => ({
+              member_id: Number(row.id),
+              amount_khr: parseAmount(row.amountRiel),
+              amount_usd: parseAmount(row.amountDollar),
+              payment_method_id: Number(row.paymentMethod),
+              receipt_file_id: row.receiptFileId || null,
+              description: null,
+              client_request_id: crypto.randomUUID(),
+            })),
+          }),
+        },
+      );
+      if (!response.ok) {
+        const problem = await response.json().catch(() => ({}));
+        throw new Error(problem.message || "Unable to save activity income.");
+      }
+      router.push(`/activity/${activityId}`);
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save activity income.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const cancelHref = activityId
@@ -254,6 +379,7 @@ export default function IncomePage() {
 
   return (
     <div className="space-y-5">
+      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
       {/* Header */}
       <div>
         <div className="flex flex-wrap items-center gap-1 text-sm text-text-secondary">
@@ -266,7 +392,7 @@ export default function IncomePage() {
 
           <ChevronRight size={14} />
 
-          {activityId && (
+          {activityId ? (
             <>
               <Link
                 href={`/activity/${activityId}`}
@@ -275,6 +401,13 @@ export default function IncomePage() {
                 ព័ត៌មានលម្អិត
               </Link>
 
+              <ChevronRight size={14} />
+            </>
+          ) : (
+            <>
+              <Link href="/activity/create" className="hover:text-primary">
+                បង្កើតកម្មវិធីថ្មី
+              </Link>
               <ChevronRight size={14} />
             </>
           )}
@@ -384,6 +517,7 @@ export default function IncomePage() {
                         <div className={`mx-auto flex h-7 w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(row.amountRiel)}`}>
                           <input
                             type="text"
+                            disabled={Boolean(row.donationId)}
                             inputMode="numeric"
                             value={
                               row.amountRiel
@@ -433,6 +567,7 @@ export default function IncomePage() {
                         <div className={`mx-auto flex h-7 w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(row.amountDollar)}`}>
                           <input
                             type="text"
+                            disabled={Boolean(row.donationId)}
                             inputMode="decimal"
                             value={
                               row.amountDollar
@@ -479,6 +614,7 @@ export default function IncomePage() {
 
                       <td className="px-3">
                         <select
+                          disabled={Boolean(row.donationId)}
                           value={
                             row.paymentMethod
                           }
@@ -495,21 +631,11 @@ export default function IncomePage() {
                           }
                           className="mx-auto block h-7 w-[82px] rounded-md border border-slate-400 bg-white px-2 text-[12px] text-text-secondary outline-none focus:border-[#4B2E91]"
                         >
-                          <option value="Cash">
-                            Cash
-                          </option>
-
-                          <option value="ABA">
-                            ABA
-                          </option>
-
-                          <option value="ACLEDA">
-                            ACLEDA
-                          </option>
-
-                          <option value="Wing">
-                            Wing
-                          </option>
+                          {paymentMethods.map((method) => (
+                            <option key={method.id} value={method.id}>
+                              {method.labelKm || method.labelEn || method.code}
+                            </option>
+                          ))}
                         </select>
                       </td>
 
@@ -522,6 +648,7 @@ export default function IncomePage() {
 
                           <input
                             type="file"
+                            disabled={Boolean(row.donationId)}
                             accept="image/*,.pdf"
                             className="hidden"
                             onChange={(
@@ -622,6 +749,7 @@ export default function IncomePage() {
         <button
           type="button"
           onClick={handleSave}
+          disabled={isSaving}
           className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white transition hover:bg-secondary-hover"
         >
           <Download size={16} />

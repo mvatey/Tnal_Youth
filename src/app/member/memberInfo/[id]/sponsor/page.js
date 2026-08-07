@@ -1,15 +1,62 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 
 import DataTable from "@/components/table/DataTable";
-import sponsorData from "@/data/sponsor.json";
 
 export default function SponsorDonationPage() {
-  const [sponsors] = useState(sponsorData);
+  const { id } = useParams();
+  const [sponsors, setSponsors] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [query, setQuery] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSponsorDonations() {
+      setIsLoading(true);
+      setError("");
+      try {
+        const response = await fetch(
+          `/api/backend/donations?memberId=${encodeURIComponent(id)}&page=0&size=100`,
+          { cache: "no-store" },
+        );
+        if (!response.ok) {
+          const problem = await response.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to load sponsor donations.");
+        }
+        const payload = await response.json();
+        const items = payload.data?.items || payload.items || [];
+        if (!cancelled) {
+          setSponsors(items.filter((item) => item.typeCode === "SPONSOR_DONATION").map((item) => {
+            const amounts = [];
+            if (Number(item.amountUsd)) amounts.push(`$${Number(item.amountUsd).toFixed(2)}`);
+            if (Number(item.amountKhr)) amounts.push(`${Number(item.amountKhr).toLocaleString()} ៛`);
+            return {
+              id: item.id,
+              amount: amounts.join(" / ") || "$0.00",
+              date: item.paidAt ? new Date(item.paidAt).toLocaleDateString("km-KH") : "-",
+              recordedBy: item.recordedByName || "-",
+              paymentMethod: item.paymentMethodLabelKm || item.paymentMethodLabelEn || item.paymentMethodCode || "-",
+            };
+          }));
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to load sponsor donations.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    loadSponsorDonations();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   const paymentMethods = useMemo(() => {
     return [
@@ -98,6 +145,9 @@ export default function SponsorDonationPage() {
       <h2 className="text-lg font-semibold text-text-primary">
         បញ្ជីវិភាគទានអ្នកឧបត្ថម្ភ
       </h2>
+
+      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {isLoading && <div className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-500">Loading sponsor donations...</div>}
 
       <DataTable
         data={filteredData}

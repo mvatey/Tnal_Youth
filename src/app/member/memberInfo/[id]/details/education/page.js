@@ -2,25 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Trash2 } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 import FormSelect from "@/components/forms/FormSelect";
 
 import SaveButton from "@/components/forms/SaveButton.js";
 import BoxFill from "@/components/forms/boxFill.js";
 import FormDate from "@/components/forms/FormDate.js";
-import SelectArrow from "@/components/forms/SelectArrow";
 import DeleteButton from "@/components/forms/DeleteButton";
-import ButtonDropLink from "@/components/forms/ButtonDropLink";
-
-import locationData from "@/data/location.json";
-import educationData from "@/data/education.json";
-import membersData from "@/data/members.json";
 
 function createEmptyEducation() {
   return {
-    id: `edu-${Date.now()}`,
-    ...educationData.emptyEducation,
+    id: `new-${crypto.randomUUID()}`,
+    school: "",
+    province: "",
+    country: "KH",
+    degree: "",
+    fieldOfStudy: "",
+    certificateFileId: null,
+    startDate: "",
+    endDate: "",
   };
 }
 
@@ -28,33 +28,74 @@ export default function EducationPage() {
   const params = useParams();
   const memberId = String(params?.id ?? "");
 
-  const [member, setMember] = useState(null);
   const [educations, setEducations] = useState([]);
+  const [deletedIds, setDeletedIds] = useState([]);
+  const [provinces, setProvinces] = useState([]);
+  const [countries, setCountries] = useState([]);
+  const [degrees, setDegrees] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const selectedMember = membersData.find(
-      (item) => String(item.id) === memberId,
-    );
+    let cancelled = false;
 
-    if (!selectedMember) {
-      setMember(null);
-      setEducations([]);
-      return;
+    async function loadEducations() {
+      setIsLoading(true);
+      setError("");
+      try {
+        const responses = await Promise.all([
+          fetch(`/api/backend/members/${encodeURIComponent(memberId)}/education`, { cache: "no-store" }),
+          fetch("/api/lookups/provinces", { cache: "no-store" }),
+          fetch("/api/lookups/countries", { cache: "no-store" }),
+          fetch("/api/lookups/education-levels", { cache: "no-store" }),
+        ]);
+        const failed = responses.find((response) => !response.ok);
+        if (failed) {
+          const problem = await failed.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to load education history.");
+        }
+        const [records, provinceData, countryData, degreeData] =
+          await Promise.all(responses.map((response) => response.json()));
+        if (cancelled) return;
+
+        setEducations(records.length ? records.map((record) => ({
+          id: record.id,
+          school: record.school_name || "",
+          province: record.country_code === "KH"
+            ? String(record.province_id ?? "")
+            : record.province_name || "",
+          country: record.country_code || "KH",
+          degree: String(record.education_level_id ?? ""),
+          fieldOfStudy: record.field_of_study || "",
+          certificateFileId: record.certificate_file?.id ?? null,
+          startDate: record.start_date || "",
+          endDate: record.end_date || "",
+        })) : [createEmptyEducation()]);
+        setProvinces(provinceData.map((item) => ({
+          value: String(item.value),
+          label: item.labelKm || item.labelEn || item.code,
+        })));
+        setCountries(countryData.map((item) => ({
+          value: item.value,
+          label: item.labelKm || item.labelEn || item.code,
+        })));
+        setDegrees(degreeData.map((item) => ({
+          value: String(item.value),
+          label: item.labelKm || item.labelEn || item.code,
+        })));
+        setDeletedIds([]);
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to load education history.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
     }
 
-    setMember(selectedMember);
-
-    const educationHistory = Array.isArray(
-      selectedMember.educationHistory,
-    )
-      ? selectedMember.educationHistory
-      : [];
-
-    setEducations(
-      educationHistory.length > 0
-        ? educationHistory
-        : [createEmptyEducation()],
-    );
+    loadEducations();
+    return () => {
+      cancelled = true;
+    };
   }, [memberId]);
 
   function handleEducationChange(id, field, value) {
@@ -78,35 +119,78 @@ export default function EducationPage() {
   }
 
   function removeEducation(id) {
-    setEducations((previous) => {
-      if (previous.length === 1) {
-        return previous;
-      }
-
-      return previous.filter(
-        (education) => education.id !== id,
-      );
-    });
+    if (typeof id === "number") setDeletedIds((previous) => [...previous, id]);
+    setEducations((previous) => previous.filter((education) => education.id !== id));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    setIsSaving(true);
+    setError("");
 
-    if (!member) return;
+    try {
+      const baseUrl = `/api/backend/members/${encodeURIComponent(memberId)}/education`;
+      await Promise.all(deletedIds.map(async (educationId) => {
+        const response = await fetch(`${baseUrl}/${educationId}`, { method: "DELETE" });
+        if (!response.ok) throw new Error("Unable to delete an education record.");
+      }));
 
-    const updatedMember = {
-      ...member,
-      educationHistory: educations,
-    };
+      const saved = await Promise.all(educations.filter((item) => item.school.trim()).map(async (education) => {
+        const existing = typeof education.id === "number";
+        const country = countries.find((item) => item.value === education.country);
+        const response = await fetch(existing ? `${baseUrl}/${education.id}` : baseUrl, {
+          method: existing ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            school_name: education.school.trim(),
+            education_level_id: education.degree ? Number(education.degree) : null,
+            field_of_study: education.fieldOfStudy.trim() || null,
+            country_code: education.country,
+            country_name: country?.label || education.country,
+            province_id: education.country === "KH" && education.province ? Number(education.province) : null,
+            province_name: education.country === "KH" ? null : education.province.trim() || null,
+            certificate_file_id: education.certificateFileId,
+            start_date: education.startDate || null,
+            end_date: education.endDate || null,
+          }),
+        });
+        if (!response.ok) {
+          const problem = await response.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to save education history.");
+        }
+        const record = await response.json();
+        return {
+          id: record.id,
+          school: record.school_name || "",
+          province: record.country_code === "KH" ? String(record.province_id ?? "") : record.province_name || "",
+          country: record.country_code || "KH",
+          degree: String(record.education_level_id ?? ""),
+          fieldOfStudy: record.field_of_study || "",
+          certificateFileId: record.certificate_file?.id ?? null,
+          startDate: record.start_date || "",
+          endDate: record.end_date || "",
+        };
+      }));
 
-    console.log("Updated member:", updatedMember);
+      setEducations(saved.length ? saved : [createEmptyEducation()]);
+      setDeletedIds([]);
+      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save education history.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  if (!member) {
+  if (isLoading) {
+    return <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-500">Loading education history...</div>;
+  }
+
+  if (error && educations.length === 0) {
     return (
       <div className="rounded-xl border border-red-200 bg-white p-6">
         <p className="text-sm text-red-500">
-          រកមិនឃើញព័ត៌មានសមាជិក
+          {error}
         </p>
       </div>
     );
@@ -127,7 +211,10 @@ export default function EducationPage() {
               key={education.id}
               index={index}
               education={education}
-              canDelete={educations.length > 1}
+              canDelete
+              provinces={provinces}
+              countries={countries}
+              degrees={degrees}
               onChange={(field, value) =>
                 handleEducationChange(
                   education.id,
@@ -155,7 +242,8 @@ export default function EducationPage() {
       </div>
 
       <div className="flex justify-end">
-        <SaveButton type="submit" />
+        {error && <p className="mr-4 self-center text-sm text-red-600">{error}</p>}
+        <SaveButton type="submit" disabled={isSaving} />
       </div>
     </form>
   );
@@ -167,19 +255,10 @@ function EducationGroup({
   canDelete,
   onDelete,
   onChange,
+  provinces,
+  countries,
+  degrees,
 }) {
-  const provinces = Array.isArray(locationData.provinces)
-    ? locationData.provinces
-    : [];
-
-  const countries = Array.isArray(locationData.countries)
-    ? locationData.countries
-    : [];
-
-  const degrees = Array.isArray(educationData.degrees)
-    ? educationData.degrees
-    : [];
-
   return (
     <div className="rounded-xl border border-gray-300 p-6">
       <h3 className="mb-5 text-sm font-semibold text-text-primary">
@@ -196,23 +275,31 @@ function EducationGroup({
           }
         />
 
-        <FormSelect
-          label="រាជធានី/ខេត្ត/រដ្ឋ"
-          placeholder="ជ្រើសរើសរាជធានី/ខេត្ត/រដ្ឋ"
-          value={education.province ?? ""}
-          onChange={(event) =>
-            onChange("province", event.target.value)
-          }
-          options={provinces}
-        />
+        {education.country === "KH" ? (
+          <FormSelect
+            label="រាជធានី/ខេត្ត"
+            placeholder="ជ្រើសរើសរាជធានី/ខេត្ត"
+            value={education.province ?? ""}
+            onChange={(event) => onChange("province", event.target.value)}
+            options={provinces}
+          />
+        ) : (
+          <BoxFill
+            label="រាជធានី/ខេត្ត/រដ្ឋ"
+            placeholder="បញ្ចូលរាជធានី/ខេត្ត/រដ្ឋ"
+            value={education.province ?? ""}
+            onChange={(event) => onChange("province", event.target.value)}
+          />
+        )}
 
         <FormSelect
           label="ប្រទេស"
           placeholder="ជ្រើសរើសប្រទេស"
           value={education.country ?? ""}
-          onChange={(event) =>
-            onChange("country", event.target.value)
-          }
+          onChange={(event) => {
+            onChange("country", event.target.value);
+            onChange("province", "");
+          }}
           options={countries}
         />
 
@@ -226,14 +313,12 @@ function EducationGroup({
           options={degrees}
         />
 
-        <div className="flex items-end">
-          <ButtonDropLink
-            value={education.documentLink ?? ""}
-            onChange={(value) =>
-              onChange("documentLink", value)
-            }
-          />
-        </div>
+        <BoxFill
+          label="ជំនាញ/មុខវិជ្ជា"
+          placeholder="បញ្ចូលជំនាញ/មុខវិជ្ជា"
+          value={education.fieldOfStudy ?? ""}
+          onChange={(event) => onChange("fieldOfStudy", event.target.value)}
+        />
 
         <FormDate
           label="ថ្ងៃចាប់ផ្តើម"

@@ -1,181 +1,166 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Download, Eye, Search } from "lucide-react";
-import FilterBar from "@/components/table-items/FilterBar";
+import { useEffect, useMemo, useState } from "react";
+import { Eye, Search } from "lucide-react";
+import Link from "next/link";
 
-const members = [
-  { id: 1, name: "ឌី រីយ៉ា", email: "riya@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 2, name: "ចាន់ សុភា", email: "sophea@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 3, name: "ឡេង ដារ៉ា", email: "dara@example.com", gender: "ប្រុស", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 4, name: "ហេង ស្រីនា", email: "sreyna@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 5, name: "គឹម សុវណ្ណ", email: "sovann@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 6, name: "ណារី សុជាតា", email: "socheata@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 7, name: "ម៉ៅ រដ្ឋា", email: "ratha@example.com", gender: "ប្រុស", role: "ប្រធាន", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 8, name: "អ៊ុំ ស្រីពេជ្រ", email: "sreypich@example.com", gender: "ស្រី", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 9, name: "វង្ស វណ្ណៈ", email: "vannak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 10, name: "សាន សុភ័ក្រ", email: "sopheak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 11, name: "លីណា ស្រីមុំ", email: "sreymom@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 12, name: "ថន ចាន់រ៉ា", email: "chanra@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 13, name: "ឌី រីយ៉ា", email: "riya@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 14, name: "ចាន់ សុភា", email: "sophea@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 15, name: "ឡេង ដារ៉ា", email: "dara@example.com", gender: "ប្រុស", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 16, name: "ហេង ស្រីនា", email: "sreyna@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 17, name: "គឹម សុវណ្ណ", email: "sovann@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 18, name: "ណារី សុជាតា", email: "socheata@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 19, name: "ម៉ៅ រដ្ឋា", email: "ratha@example.com", gender: "ប្រុស", role: "ប្រធាន", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 20, name: "អ៊ុំ ស្រីពេជ្រ", email: "sreypich@example.com", gender: "ស្រី", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 21, name: "វង្ស វណ្ណៈ", email: "vannak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 22, name: "សាន សុភ័ក្រ", email: "sopheak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 23, name: "លីណា ស្រីមុំ", email: "sreymom@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 24, name: "ថន ចាន់រ៉ា", email: "chanra@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 25, name: "ឌី រីយ៉ា", email: "riya@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 26, name: "ចាន់ សុភា", email: "sophea@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 27, name: "ឡេង ដារ៉ា", email: "dara@example.com", gender: "ប្រុស", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 28, name: "ហេង ស្រីនា", email: "sreyna@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 29, name: "គឹម សុវណ្ណ", email: "sovann@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 30, name: "ណារី សុជាតា", email: "socheata@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 31, name: "ម៉ៅ រដ្ឋា", email: "ratha@example.com", gender: "ប្រុស", role: "ប្រធាន", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 32, name: "អ៊ុំ ស្រីពេជ្រ", email: "sreypich@example.com", gender: "ស្រី", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 33, name: "វង្ស វណ្ណៈ", email: "vannak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 34, name: "សាន សុភ័ក្រ", email: "sopheak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 35, name: "លីណា ស្រីមុំ", email: "sreymom@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 36, name: "ថន ចាន់រ៉ា", email: "chanra@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 37, name: "ឌី រីយ៉ា", email: "riya@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 38, name: "ចាន់ សុភា", email: "sophea@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 39, name: "ឡេង ដារ៉ា", email: "dara@example.com", gender: "ប្រុស", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 40, name: "ហេង ស្រីនា", email: "sreyna@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 41, name: "គឹម សុវណ្ណ", email: "sovann@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 42, name: "ណារី សុជាតា", email: "socheata@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 43, name: "ម៉ៅ រដ្ឋា", email: "ratha@example.com", gender: "ប្រុស", role: "ប្រធាន", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 44, name: "អ៊ុំ ស្រីពេជ្រ", email: "sreypich@example.com", gender: "ស្រី", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 45, name: "វង្ស វណ្ណៈ", email: "vannak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 46, name: "សាន សុភ័ក្រ", email: "sopheak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 47, name: "លីណា ស្រីមុំ", email: "sreymom@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 48, name: "ថន ចាន់រ៉ា", email: "chanra@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" }
-];
-
-
-const roles = ["ប្រធាន", "លេខាធិការ", "សមាជិក"];
-
-export default function MemberSelectModal({ onClose }) {
-  const [selected, setSelected] = useState([]);
+export default function MemberSelectModal({ onClose, onSave, initialSelected = [] }) {
+  const [members, setMembers] = useState([]);
+  const [selected, setSelected] = useState(initialSelected.map(Number));
   const [query, setQuery] = useState("");
-  const [selectedRole, setSelectedRole] = useState("all");
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadMembers() {
+      setIsLoading(true);
+      setError("");
+      try {
+        const [membersResponse, branchesResponse] = await Promise.all([
+          fetch("/api/members?page=0&size=100", { cache: "no-store" }),
+          fetch("/api/lookups/branches", { cache: "no-store" }),
+        ]);
+        const failed = [membersResponse, branchesResponse].find((response) => !response.ok);
+        if (failed) {
+          const problem = await failed.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to load members.");
+        }
+        const [firstPage, branches] = await Promise.all([
+          membersResponse.json(),
+          branchesResponse.json(),
+        ]);
+        const remainingPages = await Promise.all(
+          Array.from(
+            { length: Math.max(0, (firstPage.totalPages || 1) - 1) },
+            (_, index) => index + 1,
+          ).map(async (pageNumber) => {
+            const response = await fetch(
+              `/api/members?page=${pageNumber}&size=100`,
+              { cache: "no-store" },
+            );
+            const json = await response.json().catch(() => ({}));
+            if (!response.ok) {
+              throw new Error(json.message || `Unable to load member page ${pageNumber + 1}.`);
+            }
+            return json;
+          }),
+        );
+        const allMembers = [
+          ...(firstPage.content || []),
+          ...remainingPages.flatMap((page) => page.content || []),
+        ];
+        const branchById = new Map(
+          branches.map((branch) => [String(branch.value), branch.labelKm || branch.labelEn || branch.code]),
+        );
+        if (!cancelled) {
+          setMembers(allMembers.map((member) => ({
+            id: member.id,
+            name: member.full_name_km || member.full_name_en || "-",
+            email: member.email || "",
+            gender: member.gender?.label_km || member.gender?.label_en || member.gender?.code || "-",
+            branch: member.branch?.label_km || branchById.get(String(member.branch?.id)) || "-",
+            joinedDate: member.joined_on
+              ? new Date(`${member.joined_on}T00:00:00`).toLocaleDateString("km-KH")
+              : "-",
+          })));
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to load members.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    loadMembers();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filteredMembers = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const selectedDateValue = selectedDate ? selectedDate.toISOString().split("T")[0] : "";
+    const search = query.trim().toLowerCase();
+    if (!search) return members;
+    return members.filter((member) =>
+      [member.name, member.email, member.branch]
+        .some((value) => String(value || "").toLowerCase().includes(search)),
+    );
+  }, [members, query]);
 
-    return members.filter((member) => {
-      const matchesSearch = !q || member.name?.toLowerCase().includes(q) || member.email?.toLowerCase().includes(q);
-      const matchesRole = selectedRole === "all" || member.role === selectedRole;
-      const matchesDate = !selectedDate || member.joinedDateValue === selectedDateValue;
+  const allFilteredSelected =
+    filteredMembers.length > 0 &&
+    filteredMembers.every((member) => selected.includes(member.id));
 
-      return matchesSearch && matchesRole && matchesDate;
-    });
-  }, [query, selectedRole, selectedDate]);
+  function toggle(memberId) {
+    setSelected((current) =>
+      current.includes(memberId)
+        ? current.filter((id) => id !== memberId)
+        : [...current, memberId],
+    );
+  }
 
-  const allFilteredSelected = filteredMembers.length > 0 && filteredMembers.every((member) => selected.includes(member.id));
-
-  const toggle = (id) => {
-    setSelected((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
-  };
-
-  const toggleAll = () => {
+  function toggleAll() {
     if (allFilteredSelected) {
-      setSelected((current) => current.filter((id) => !filteredMembers.some((member) => member.id === id)));
-    } else {
-      setSelected((current) => [...new Set([...current, ...filteredMembers.map((member) => member.id)])]);
+      const visibleIds = new Set(filteredMembers.map((member) => member.id));
+      setSelected((current) => current.filter((id) => !visibleIds.has(id)));
+      return;
     }
-  };
-
-  const handleSave = () => {
-    localStorage.setItem("activity-selected-members", JSON.stringify(selected));
-    onClose();
-  };
+    setSelected((current) => [...new Set([...current, ...filteredMembers.map((member) => member.id)])]);
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-5">
       <div className="w-full max-w-5xl rounded-xl bg-white p-5 shadow-xl">
         <div className="mb-4 flex items-center gap-3">
           <div className="relative flex-1">
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={query ? "" : "ស្វែងរកសមាជិក..."} className="h-10 w-full rounded-lg border border-border bg-white pl-4 pr-10 text-sm outline-none" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ស្វែងរកសមាជិក..." className="h-10 w-full rounded-lg border border-border bg-white pl-4 pr-10 text-sm outline-none focus:border-primary" />
             <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary" />
           </div>
-
-          <FilterBar filters={[{ key: "role", value: selectedRole, onChange: setSelectedRole, placeholder: "តួនាទី", options: roles }, { key: "date", value: selectedDate, onChange: setSelectedDate, placeholder: "ថ្ងៃ/ខែ/ឆ្នាំ", type: "date" }]} />
-
-          <span className="ml-auto whitespace-nowrap text-sm font-semibold text-text-primary">{selected.length}/{members.length} នាក់</span>
+          <span className="whitespace-nowrap text-sm font-semibold text-text-primary">{selected.length}/{members.length} នាក់</span>
         </div>
+
+        {error && <div className="mb-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
         <div className="max-h-[430px] overflow-y-auto rounded-lg border border-border">
           <table className="w-full table-fixed border-collapse text-[12px] text-text-secondary">
             <thead className="sticky top-0 z-10 bg-white">
-              <tr className="h-11 border-b border-border font-medium text-text-secondary">
-                <th className="w-[4%] text-center">
-                  <input type="checkbox" checked={allFilteredSelected} onChange={toggleAll} />
-                </th>
-                <th className="w-[24%] text-left">ឈ្មោះអ្នកចូលរួម</th>
-                <th className="w-[10%] text-center">ភេទ</th>
-                <th className="w-[13%] text-center">តួនាទី</th>
-                <th className="w-[15%] text-center">សាខា</th>
-                <th className="w-[16%] text-center">ថ្ងៃ/ខែ/ឆ្នាំ</th>
-                <th className="w-[13%] text-center">ស្ថានភាព</th>
-                <th className="w-[5%] text-center">សកម្មភាព</th>
+              <tr className="h-11 border-b border-border font-medium">
+                <th className="w-[6%] text-center"><input type="checkbox" checked={allFilteredSelected} onChange={toggleAll} /></th>
+                <th className="w-[30%] text-left">ឈ្មោះអ្នកចូលរួម</th>
+                <th className="w-[13%] text-center">ភេទ</th>
+                <th className="w-[18%] text-center">សាខា</th>
+                <th className="w-[18%] text-center">ថ្ងៃចូលរួម</th>
+                <th className="w-[10%] text-center">ស្ថានភាព</th>
+                <th className="w-[5%] text-center">មើល</th>
               </tr>
             </thead>
-
             <tbody>
               {filteredMembers.map((member) => {
                 const isSelected = selected.includes(member.id);
-
                 return (
-                  <tr key={member.id} className="h-12 border-b border-border text-text-secondary">
-                    <td className="text-center">
-                      <input type="checkbox" checked={isSelected} onChange={() => toggle(member.id)} />
-                    </td>
-
-                    <td>
-                      <p className="font-medium text-text-primary">{member.name}</p>
-                      <p className="text-[12px] text-text-secondary">{member.email}</p>
-                    </td>
-
+                  <tr key={member.id} className="h-12 border-b border-border">
+                    <td className="text-center"><input type="checkbox" checked={isSelected} onChange={() => toggle(member.id)} /></td>
+                    <td><p className="font-medium text-text-primary">{member.name}</p><p>{member.email || "-"}</p></td>
                     <td className="text-center">{member.gender}</td>
-                    <td className="text-center">{member.role}</td>
                     <td className="text-center">{member.branch}</td>
                     <td className="text-center">{member.joinedDate}</td>
-
-                    <td className="text-center">
-                      <span className={`rounded-full px-3 py-1 text-[11px] ${isSelected ? "bg-success-bg text-success" : "bg-warning-bg text-warning"}`}>
-                        {isSelected ? "បានអញ្ជើញ" : "មិនបានអញ្ជើញ"}
-                      </span>
-                    </td>
-
-                    <td className="text-center">
-                      <Eye size={16} className="mx-auto cursor-pointer text-primary" />
-                    </td>
+                    <td className="text-center"><span className={`rounded-full px-2 py-1 ${isSelected ? "bg-success-bg text-success" : "bg-warning-bg text-warning"}`}>{isSelected ? "បានជ្រើស" : "មិនបានជ្រើស"}</span></td>
+                    <td className="text-center"><Link href={`/member/memberInfo/${member.id}`}><Eye size={16} className="mx-auto text-primary" /></Link></td>
                   </tr>
                 );
               })}
-
-              {filteredMembers.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="py-10 text-center text-sm text-text-secondary">មិនមានទិន្នន័យសមាជិកទេ</td>
-                </tr>
+              {!isLoading && filteredMembers.length === 0 && (
+                <tr><td colSpan={7} className="py-10 text-center">មិនមានសមាជិកទេ</td></tr>
               )}
+              {isLoading && <tr><td colSpan={7} className="py-10 text-center">Loading members...</td></tr>}
             </tbody>
           </table>
         </div>
 
-        <div className="mt-5 flex items-center justify-between">
-          <button type="button" onClick={onClose} className="h-[34px] w-[91px] rounded-lg border border-border bg-white text-sm font-semibold text-text-secondary">បោះបង់</button>
-
-          <button type="button" onClick={handleSave} className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white">
-            <Download size={16} />
-            រក្សាទុក
-          </button>
+        <div className="mt-5 flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="rounded-lg border border-border px-5 py-2 text-sm font-semibold">បោះបង់</button>
+          <button type="button" onClick={() => { onSave?.(selected); onClose(); }} className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-white">រក្សាទុក ({selected.length})</button>
         </div>
       </div>
     </div>

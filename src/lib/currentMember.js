@@ -1,210 +1,29 @@
-import members from "@/data/members.json";
+const ROLE_MAP = { ADMIN: "admin", SECRETARY: "secretary", BRANCH_LEADER: "branch_leader", MEMBER: "member" };
 
-const AUTH_ROLE_TO_JSON_ROLE = {
-  ADMIN: "admin",
-  SECRETARY: "secretary",
-  BRANCH_LEADER: "branch_leader",
-  MEMBER: "member",
-};
-
-/*
- * Temporary mapping:
- * backend user ID -> members.json member ID
- *
- * Remove this after the backend returns a real memberId.
+/**
+ * Converts the authenticated /api/auth/me response to the shape used by the
+ * account layout. Profile and organisational records are never read from JSON
+ * or browser storage; memberId is the database member primary key.
  */
-const TEMP_MEMBER_MAP = {
-  9: "1",
-  // 10: "2",
-  // 11: "3",
-};
-
-const AUTH_STORAGE_KEYS = [
-  "user",
-  "currentUser",
-  "authUser",
-  "tnal-user",
-];
-
-function normalize(value) {
-  return String(value ?? "")
-    .trim()
-    .toLowerCase();
-}
-
-function findJsonMember(authUser) {
-  if (!authUser) return {};
-
-  const mappedMemberId = TEMP_MEMBER_MAP[authUser.id];
-
-  return (
-    members.find(
-      (item) =>
-        mappedMemberId &&
-        String(item.id) === String(mappedMemberId),
-    ) ||
-    members.find(
-      (item) =>
-        authUser.email &&
-        normalize(item.email) === normalize(authUser.email),
-    ) ||
-    members.find(
-      (item) =>
-        authUser.phone &&
-        normalize(item.phone) === normalize(authUser.phone),
-    ) ||
-    members.find(
-      (item) =>
-        authUser.memberId &&
-        String(item.id) === String(authUser.memberId),
-    ) ||
-    members.find(
-      (item) =>
-        authUser.id &&
-        String(item.id) === String(authUser.id),
-    ) ||
-    {}
-  );
-}
-
 export function combineAuthUserWithMember(authUser) {
   if (!authUser) return null;
-
-  const jsonMember = findJsonMember(authUser);
-
-  const normalizedRole =
-    AUTH_ROLE_TO_JSON_ROLE[authUser.role] ||
-    normalize(authUser.role) ||
-    jsonMember.role ||
-    "member";
-
+  const memberId = authUser.memberId ?? authUser.member_id ?? null;
   return {
-    ...jsonMember,
-
-    /*
-     * Prefer memberId because authUser.id is normally the user-account ID,
-     * not necessarily the member ID.
-     */
-    id:
-      authUser.memberId ??
-      jsonMember.id ??
-      authUser.id ??
-      null,
-
-    userId: authUser.id ?? null,
-
-    name_kh:
-      authUser.fullNameKm ||
-      jsonMember.name_kh ||
-      "-",
-
-    name_en:
-      authUser.fullNameEn ||
-      jsonMember.name_en ||
-      "-",
-
-    phone:
-      authUser.phone ||
-      jsonMember.phone ||
-      "-",
-
-    email:
-      authUser.email ||
-      jsonMember.email ||
-      "-",
-
-    role: normalizedRole,
-
-    profile_photo:
-      authUser.profileImage ||
-      jsonMember.profile_photo ||
-      "/member.png",
-
-    status:
-      jsonMember.status ||
-      "សកម្ម",
-
-    branch:
-      jsonMember.branch ||
-      "-",
-
-    gender:
-      jsonMember.gender ||
-      "-",
-
-    religion:
-      jsonMember.religion ||
-      "-",
-
-    joinedAt:
-      jsonMember.joinedAt ||
-      "-",
-
-    date_of_birth:
-      jsonMember.date_of_birth ||
-      "-",
-
-    nationality:
-      jsonMember.nationality ||
-      "-",
-
-    ethnicity:
-      jsonMember.ethnicity ||
-      "-",
-
-    family:
-      jsonMember.family ||
-      null,
-
-    workHistory:
-      jsonMember.workHistory ||
-      [],
-
-    educationHistory:
-      jsonMember.educationHistory ||
-      [],
+    ...authUser,
+    id: memberId,
+    memberId,
+    userId: authUser.id ?? authUser.userId ?? null,
+    name_kh: authUser.fullNameKm || authUser.full_name_km || "-",
+    name_en: authUser.fullNameEn || authUser.full_name_en || "-",
+    phone: authUser.phone || "-",
+    email: authUser.email || "-",
+    role: ROLE_MAP[authUser.role] || String(authUser.role || "member").toLowerCase(),
+    profile_photo: authUser.profileImage || authUser.profile_image || "/member.png",
+    status: authUser.status || "ACTIVE",
+    branch: authUser.branchNameKm || authUser.branchNameEn || "-",
   };
 }
 
-function readStoredAuthUser() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  for (const key of AUTH_STORAGE_KEYS) {
-    const storedValue = localStorage.getItem(key);
-
-    if (!storedValue) continue;
-
-    try {
-      const parsedValue = JSON.parse(storedValue);
-
-      /*
-       * Supports structures such as:
-       * { user: {...} }
-       * { data: {...} }
-       * or a direct user object.
-       */
-      return (
-        parsedValue?.user ||
-        parsedValue?.data?.user ||
-        parsedValue?.data ||
-        parsedValue
-      );
-    } catch (error) {
-      console.warn(
-        `Cannot parse auth user from localStorage key "${key}":`,
-        error,
-      );
-    }
-  }
-
-  return null;
-}
-
 export default function getCurrentMember(authUser = null) {
-  const resolvedAuthUser =
-    authUser || readStoredAuthUser();
-
-  return combineAuthUserWithMember(resolvedAuthUser);
+  return combineAuthUserWithMember(authUser);
 }

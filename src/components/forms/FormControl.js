@@ -21,9 +21,13 @@ export default function FormControl({
 
   const isControlled = value !== undefined;
 
+  const handleValueChange = (event) => {
+    onChange?.(event.target.value);
+  };
+
   const sharedValueProps = isControlled
-    ? { value, onChange }
-    : { defaultValue, onChange };
+    ? { value, onChange: handleValueChange }
+    : { defaultValue, onChange: handleValueChange };
 
   const baseFieldClass = `
     h-[34px]

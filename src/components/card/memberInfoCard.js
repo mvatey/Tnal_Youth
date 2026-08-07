@@ -81,11 +81,13 @@ export default function MemberInfoCard({ member }) {
     member.full_name_en ||
     "-";
 
+  const profileFile = member.profile_photo || member.profilePhoto;
   const profileImage =
     member.profileImage ||
-    member.profile_photo ||
     member.profile_image ||
-    "/member.png";
+    (profileFile?.id
+      ? `/api/backend/files/${encodeURIComponent(profileFile.id)}/content`
+      : "/member.png");
 
   const role = member.role || "MEMBER";
 

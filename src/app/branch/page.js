@@ -23,8 +23,6 @@ import BranchStats from "@/components/branch/branchStats";
 import SaveButton from "@/components/forms/save";
 import SaveFile from "@/components/forms/savefile";
 
-import branchData from "@/data/branch/branches.json";
-
 import { RiDownloadCloud2Line } from "react-icons/ri";
 import Button from "@/components/ui/Button";
 
@@ -70,19 +68,18 @@ function BranchStatusBadge({ status }) {
   );
 }
 
-function handleCreateBranch(newBranch) {
-  setBranches((previousBranches) => [
-    newBranch,
-    ...previousBranches,
-  ]);
-}
-
-export default function BranchPage() {
+export default function BranchManagementPage() {
   const [showCreateModal, setShowCreateModal] =
     useState(false);
 
-  const [branches, setBranches] =
-    useState(branchData);
+  const [branches, setBranches] = useState([]);
+  const [lookupOptions, setLookupOptions] = useState({
+    levels: [],
+    statuses: [],
+    provinces: [],
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [searchQuery, setSearchQuery] =
     useState("");
@@ -102,6 +99,106 @@ export default function BranchPage() {
 
   const [showSaveFile, setShowSaveFile] =
     useState(false);
+
+  const loadBranches = async () => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const [branchResponse, levelResponse, statusResponse, provinceResponse] =
+        await Promise.all([
+          fetch("/api/branches"),
+          fetch("/api/lookups/branch-levels"),
+          fetch("/api/lookups/branch-statuses"),
+          fetch("/api/lookups/provinces"),
+        ]);
+      const responses = [branchResponse, levelResponse, statusResponse, provinceResponse];
+      const failed = responses.find((response) => !response.ok);
+
+      if (failed) {
+        const problem = await failed.json().catch(() => ({}));
+        throw new Error(problem.message || "Unable to load branch data.");
+      }
+
+      const [branchRows, levels, statuses, provinceOptions] =
+        await Promise.all(responses.map((response) => response.json()));
+      const provinceIds = [...new Set(branchRows.map((branch) => branch.province_id).filter(Boolean))];
+      const districtLists = await Promise.all(
+        provinceIds.map((id) => fetch(`/api/lookups/districts?provinceId=${id}`).then((response) => response.ok ? response.json() : [])),
+      );
+      const districts = districtLists.flat();
+      const districtIds = [...new Set(branchRows.map((branch) => branch.district_id).filter(Boolean))];
+      const communeLists = await Promise.all(
+        districtIds.map((id) => fetch(`/api/lookups/communes?districtId=${id}`).then((response) => response.ok ? response.json() : [])),
+      );
+      const communes = communeLists.flat();
+      const labelFor = (options, id) =>
+        options.find((option) => String(option.value) === String(id))?.labelKm || "";
+
+      setBranches(branchRows.map((branch) => ({
+        id: branch.id,
+        code: branch.branch_code,
+        name: branch.name_km,
+        nameKm: branch.name_km,
+        nameEn: branch.name_en,
+        level: labelFor(levels, branch.branch_level_id),
+        levelId: branch.branch_level_id,
+        province: labelFor(provinceOptions, branch.province_id),
+        provinceId: branch.province_id,
+        district: labelFor(districts, branch.district_id),
+        districtId: branch.district_id,
+        commune: labelFor(communes, branch.commune_id),
+        communeId: branch.commune_id,
+        status: statuses.find((option) => String(option.value) === String(branch.status_id))?.code || "",
+        statusId: branch.status_id,
+        addressLine: branch.address || "",
+        googleMapUrl: branch.google_map_url || "",
+        phone: branch.phone || "",
+        email: branch.email || "",
+        memberCount: 0,
+        createdAt: branch.created_at ? new Intl.DateTimeFormat("km-KH").format(new Date(branch.created_at)) : "",
+      })));
+      setLookupOptions({ levels, statuses, provinces: provinceOptions });
+    } catch (loadError) {
+      setError(loadError.message || "Unable to load branch data.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBranches();
+  }, []);
+
+  const saveBranchToDatabase = async (form) => {
+    const response = await fetch("/api/branches", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        branch_code: form.code.trim(),
+        name_km: form.nameKm.trim(),
+        name_en: form.nameEn.trim() || null,
+        branch_level_id: Number(form.level),
+        parent_branch_id: null,
+        province_id: Number(form.province),
+        district_id: form.district ? Number(form.district) : null,
+        commune_id: form.commune ? Number(form.commune) : null,
+        status_id: Number(form.status),
+        address: form.addressLine.trim() || null,
+        google_map_url: form.googleMapUrl.trim() || null,
+        phone: form.phone.trim() || null,
+        email: form.email.trim() || null,
+      }),
+    });
+
+    if (!response.ok) {
+      const problem = await response.json().catch(() => ({}));
+      throw new Error(problem.message || "Unable to create branch.");
+    }
+
+    setShowCreateModal(false);
+    await loadBranches();
+  };
 
   useEffect(() => {
     if (!showSaveFile) {
@@ -279,7 +376,10 @@ const filters = [
     value: selectedLevel,
     onChange: setSelectedLevel,
     placeholder: "កម្រិតសាខា",
-    options: branchLevels,
+    options: lookupOptions.levels.map((item) => ({
+      label: item.labelKm || item.labelEn,
+      value: item.labelKm || item.labelEn,
+    })),
   },
   {
     key: "province",
@@ -293,7 +393,10 @@ const filters = [
     value: selectedStatus,
     onChange: setSelectedStatus,
     placeholder: "ស្ថានភាព",
-    options: statusOptions,
+    options: lookupOptions.statuses.map((item) => ({
+      label: item.labelKm || item.labelEn,
+      value: item.code,
+    })),
   },
 ];
 
@@ -310,6 +413,17 @@ const filters = [
       </div>
 
       <BranchStats branches={branches} />
+
+      {error && (
+        <div className="flex items-center justify-between rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span>{error}</span>
+          <button type="button" className="font-semibold underline" onClick={loadBranches}>Retry</button>
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="rounded-lg border border-border bg-white p-5 text-sm text-text-secondary">Loading branch data...</div>
+      )}
 
       <section className="rounded-xl border border-border bg-white p-4 transition-shadow duration-200 hover:shadow-sm">
         <div className="mb-4 flex min-w-0 flex-wrap items-center gap-3 xl:flex-nowrap">
@@ -377,7 +491,10 @@ const filters = [
       <CreateBranchModal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onSave={handleCreateBranch}
+        onSave={saveBranchToDatabase}
+        levelOptions={lookupOptions.levels.map((item) => ({ label: item.labelKm || item.labelEn, value: item.value, code: item.code }))}
+        statusOptions={lookupOptions.statuses.map((item) => ({ label: item.labelKm || item.labelEn, value: item.value, code: item.code }))}
+        provinceOptions={lookupOptions.provinces.map((item) => ({ label: item.labelKm || item.labelEn, value: item.value }))}
       />
     </div>
   );

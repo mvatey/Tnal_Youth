@@ -5,9 +5,6 @@ import { ChevronRight, Eye, Pencil } from "lucide-react";
 import { RiDownloadCloud2Line } from "react-icons/ri";
 import Link from "next/link";
 
-import activities from "@/data/activityRecords.json";
-import participantRecords from "@/data/participantRecords.json";
-
 import SearchBar from "@/components/tables/SearchBar";
 import FilterBar from "@/components/tables/FilterBar";
 import Button from "@/components/tables/Button";
@@ -16,7 +13,6 @@ import ParticipantStats, { ParticipantStatusBadge as StatusBadge } from "@/compo
 import ParticipationEditModal from "@/components/activity/ParticipantEditModal";
 
 const roles = ["ប្រធាន", "លេខាធិការ", "សមាជិក"];
-const branches = ["ភ្នំពេញ", "កណ្ដាល"];
 
 function normalizeParticipant(participant) {
   const isParticipated =
@@ -55,40 +51,69 @@ export default function ActivityParticipantsPage({ params }) {
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [selectedDate, setSelectedDate] = useState(null);
   const [activityParticipants, setActivityParticipants] = useState([]);
+  const [activity, setActivity] = useState(null);
+  const [branches, setBranches] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  const activity = useMemo(() => {
-    return activities.find((item) => String(item.id) === String(id));
-  }, [id]);
-
-  const initialParticipants = useMemo(() => {
-    return participantRecords
-      .filter((participant) => String(participant.activityId) === String(id))
-      .map(normalizeParticipant);
-  }, [id]);
-
-  const storageKey = useMemo(() => {
-    return `tnal-activity-participation:${id}`;
-  }, [id]);
-
   useEffect(() => {
-    try {
-      const savedParticipants = localStorage.getItem(storageKey);
+    let cancelled = false;
 
-      if (savedParticipants) {
-        const parsedParticipants = JSON.parse(savedParticipants);
-
-        if (Array.isArray(parsedParticipants)) {
-          setActivityParticipants(parsedParticipants.map(normalizeParticipant));
-          return;
+    async function loadParticipants() {
+      setIsLoading(true);
+      setError("");
+      try {
+        const responses = await Promise.all([
+          fetch(`/api/backend/activities/${encodeURIComponent(id)}`, { cache: "no-store" }),
+          fetch(`/api/backend/activities/${encodeURIComponent(id)}/attendance`, { cache: "no-store" }),
+          fetch("/api/lookups/branches", { cache: "no-store" }),
+        ]);
+        const failed = responses.find((response) => !response.ok);
+        if (failed) {
+          const problem = await failed.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to load participants.");
         }
+        const [activityData, attendancePage, branchData] = await Promise.all(
+          responses.map((response) => response.json()),
+        );
+        const branchById = new Map(
+          branchData.map((branch) => [String(branch.value), branch.labelKm || branch.labelEn || branch.code]),
+        );
+        if (!cancelled) {
+          setActivity({
+            ...activityData,
+            name: activityData.titleKm || activityData.titleEn || "-",
+          });
+          setActivityParticipants((attendancePage.attendance || []).map((participant) => normalizeParticipant({
+            id: participant.participant_id,
+            memberId: participant.member_id,
+            name: participant.full_name_km || participant.full_name_en || "-",
+            email: participant.email || "",
+            gender: "-",
+            role: "-",
+            branch: branchById.get(String(participant.branch_id)) || "-",
+            joinedDate: participant.registered_at
+              ? new Date(participant.registered_at).toLocaleDateString("km-KH")
+              : "-",
+            joinedDateValue: participant.registered_at?.slice(0, 10) || "",
+            attendanceStatus: participant.attendance_status,
+            isParticipated: participant.attendance_status === "PRESENT",
+          })));
+          setBranches(branchData.map((branch) => branch.labelKm || branch.labelEn || branch.code));
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to load participants.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Cannot load saved participation data:", error);
     }
 
-    setActivityParticipants(initialParticipants);
-  }, [initialParticipants, storageKey]);
+    loadParticipants();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   const completed = isCompletedActivity(activity);
 
@@ -216,15 +241,38 @@ export default function ActivityParticipantsPage({ params }) {
     [],
   );
 
-  const handleSaveParticipation = (updatedParticipants) => {
-    setActivityParticipants(updatedParticipants);
-
+  const handleSaveParticipation = async (updatedParticipants) => {
+    setError("");
     try {
-      localStorage.setItem(storageKey, JSON.stringify(updatedParticipants));
-    } catch (error) {
-      console.error("Cannot save participation data:", error);
+      const saved = await Promise.all(updatedParticipants.map(async (participant) => {
+        const response = await fetch(
+          `/api/backend/activities/${encodeURIComponent(id)}/attendance/status`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              member_id: Number(participant.memberId),
+              attendance_status: participant.isParticipated ? "PRESENT" : "ABSENT",
+            }),
+          },
+        );
+        if (!response.ok) {
+          const problem = await response.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to update attendance.");
+        }
+        await response.json();
+        return participant;
+      }));
+      setActivityParticipants(saved);
+      setIsEditOpen(false);
+    } catch (saveError) {
+      setError(saveError.message || "Unable to update attendance.");
     }
   };
+
+  if (isLoading) {
+    return <div className="rounded-xl border border-border bg-white p-8 text-center text-sm text-text-secondary">Loading participants...</div>;
+  }
 
   if (!activity) {
     return (
@@ -265,6 +313,8 @@ export default function ActivityParticipantsPage({ params }) {
         attended={participantStats.attended}
         absent={participantStats.absent}
       />
+
+      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
       <div className="rounded-xl border border-border bg-white p-4">
         <div className="mb-4 flex flex-wrap items-center gap-3">

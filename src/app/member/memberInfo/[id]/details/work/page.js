@@ -8,15 +8,14 @@ import BoxFill from "@/components/forms/boxFill.js";
 import FormDate from "@/components/forms/FormDate.js";
 import FormSelect from "@/components/forms/FormSelect";
 import DeleteButton from "@/components/forms/DeleteButton";
-import membersData from "@/data/members.json";
 
 function createEmptyWork() {
   return {
-    id: `work-${Date.now()}-${Math.random()}`,
+    id: `new-${crypto.randomUUID()}`,
     company: "",
     address: "",
     position: "",
-    appointment: "",
+    employmentSectorId: "",
     startDate: "",
     endDate: "",
   };
@@ -25,25 +24,57 @@ function createEmptyWork() {
 export default function WorkPage() {
   const params = useParams();
   const memberId = String(params?.id ?? "");
-  const [member, setMember] = useState(null);
   const [works, setWorks] = useState([]);
+  const [deletedIds, setDeletedIds] = useState([]);
+  const [sectorOptions, setSectorOptions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const selectedMember = membersData.find((item) => String(item.id) === memberId);
+    let cancelled = false;
 
-    if (!selectedMember) {
-      setMember(null);
-      setWorks([]);
-      return;
+    async function loadWorks() {
+      setIsLoading(true);
+      setError("");
+      try {
+        const [response, sectorsResponse] = await Promise.all([
+          fetch(`/api/backend/members/${encodeURIComponent(memberId)}/work-history`, { cache: "no-store" }),
+          fetch("/api/lookups/employment-sectors", { cache: "no-store" }),
+        ]);
+        const failed = [response, sectorsResponse].find((item) => !item.ok);
+        if (failed) {
+          const problem = await failed.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to load work history.");
+        }
+        const [records, sectors] = await Promise.all([response.json(), sectorsResponse.json()]);
+        if (!cancelled) {
+          setWorks(records.length ? records.map((record) => ({
+            id: record.id,
+            company: record.organization_name || "",
+            address: record.address || "",
+            position: record.position_title || "",
+            employmentSectorId: record.employment_sector_id || "",
+            startDate: record.start_date || "",
+            endDate: record.end_date || "",
+          })) : [createEmptyWork()]);
+          setSectorOptions(sectors.map((sector) => ({
+            value: String(sector.value),
+            label: sector.labelKm || sector.labelEn || sector.code,
+          })));
+          setDeletedIds([]);
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to load work history.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
     }
 
-    setMember(selectedMember);
-
-    if (Array.isArray(selectedMember.workHistory) && selectedMember.workHistory.length > 0) {
-      setWorks(selectedMember.workHistory);
-    } else {
-      setWorks([createEmptyWork()]);
-    }
+    loadWorks();
+    return () => {
+      cancelled = true;
+    };
   }, [memberId]);
 
   function handleWorkChange(id, field, value) {
@@ -55,28 +86,70 @@ export default function WorkPage() {
   }
 
   function removeWork(id) {
-    setWorks((previousWorks) => {
-      if (previousWorks.length === 1) return previousWorks;
-      return previousWorks.filter((work) => work.id !== id);
-    });
+    if (typeof id === "number") setDeletedIds((previous) => [...previous, id]);
+    setWorks((previousWorks) => previousWorks.filter((work) => work.id !== id));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    setIsSaving(true);
+    setError("");
 
-    const updatedMember = {
-      ...member,
-      workHistory: works,
-    };
+    try {
+      const baseUrl = `/api/backend/members/${encodeURIComponent(memberId)}/work-history`;
+      await Promise.all(deletedIds.map(async (workId) => {
+        const response = await fetch(`${baseUrl}/${workId}`, { method: "DELETE" });
+        if (!response.ok) throw new Error("Unable to delete a work-history record.");
+      }));
 
-    console.log("Updated member:", updatedMember);
-    alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+      const saved = await Promise.all(works.filter((work) => work.company.trim() || work.position.trim()).map(async (work) => {
+        const existing = typeof work.id === "number";
+        const response = await fetch(existing ? `${baseUrl}/${work.id}` : baseUrl, {
+          method: existing ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            organization_name: work.company.trim(),
+            position_title: work.position.trim(),
+            address: work.address.trim() || null,
+            employment_sector_id: work.employmentSectorId ? Number(work.employmentSectorId) : null,
+            start_date: work.startDate || null,
+            end_date: work.endDate || null,
+          }),
+        });
+        if (!response.ok) {
+          const problem = await response.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to save work history.");
+        }
+        const record = await response.json();
+        return {
+          id: record.id,
+          company: record.organization_name || "",
+          address: record.address || "",
+          position: record.position_title || "",
+          employmentSectorId: record.employment_sector_id || "",
+          startDate: record.start_date || "",
+          endDate: record.end_date || "",
+        };
+      }));
+
+      setWorks(saved.length ? saved : [createEmptyWork()]);
+      setDeletedIds([]);
+      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save work history.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  if (!member) {
+  if (isLoading) {
+    return <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-500">Loading work history...</div>;
+  }
+
+  if (error && works.length === 0) {
     return (
       <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">រកមិនឃើញព័ត៌មានសមាជិក</p>
+        <p className="text-sm text-red-500">{error}</p>
       </div>
     );
   }
@@ -96,9 +169,9 @@ export default function WorkPage() {
 
                 <BoxFill label="អាស័យដ្ឋាន" placeholder="បញ្ចូលអាស័យដ្ឋាន" value={work.address} onChange={(event) => handleWorkChange(work.id, "address", event.target.value)} />
 
-                <FormSelect label="តួនាទី" placeholder="ជ្រើសរើសតួនាទី" value={work.position} onChange={(event) => handleWorkChange(work.id, "position", event.target.value)} options={["ពេញម៉ោង", "ក្រៅម៉ោង", "កិច្ចសន្យា", "ស្ម័គ្រចិត្ត"]} />
+                <BoxFill label="តួនាទី" placeholder="បញ្ចូលតួនាទី" value={work.position} onChange={(event) => handleWorkChange(work.id, "position", event.target.value)} />
 
-                <FormSelect label="ការតែងតាំងមុខតំណែង" placeholder="ជ្រើសរើសការតែងតាំង" value={work.appointment} onChange={(event) => handleWorkChange(work.id, "appointment", event.target.value)} options={["បញ្ចប់កិច្ចសន្យា", "ផ្លាស់ប្ដូរការងារ", "បន្តការសិក្សា", "ផ្សេងៗ"]} />
+                <FormSelect label="វិស័យការងារ" placeholder="ជ្រើសរើសវិស័យការងារ" value={String(work.employmentSectorId || "")} onChange={(event) => handleWorkChange(work.id, "employmentSectorId", event.target.value)} options={sectorOptions} />
 
                 <FormDate label="ថ្ងៃខែចាប់ផ្ដើម" name={`startDate-${work.id}`} value={work.startDate} onChange={(event) => handleWorkChange(work.id, "startDate", event.target.value)} />
 
@@ -106,7 +179,7 @@ export default function WorkPage() {
               </div>
 
               <div className="mt-6 flex justify-end">
-                <DeleteButton canDelete={works.length > 1} onClick={() => removeWork(work.id)} />
+                <DeleteButton canDelete onClick={() => removeWork(work.id)} />
               </div>
             </div>
           ))}
@@ -121,7 +194,8 @@ export default function WorkPage() {
       </div>
 
       <div className="flex justify-end">
-        <SaveButton />
+        {error && <p className="mr-4 self-center text-sm text-red-600">{error}</p>}
+        <SaveButton type="submit" disabled={isSaving} />
       </div>
     </form>
   );

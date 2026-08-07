@@ -1,8 +1,8 @@
 // src/app/member/memberInfo/[id]/participation/page.js
 "use client";
 
-import { useMemo, useState } from "react";
-import participationData from "@/data/participation.json";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import DataTable from "@/components/table/DataTable.js";
 import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail.js";
 
@@ -17,25 +17,78 @@ const STATUS_BADGE_STYLES = {
 };
 
 export default function ParticipationPage() {
+  const { id } = useParams();
+  const router = useRouter();
+  const [participations, setParticipations] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
 
   const types = useMemo(() => {
-    return [...new Set(participationData.map((item) => item.type))];
-  }, []);
+    return [...new Set(participations.map((item) => item.type).filter(Boolean))];
+  }, [participations]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadParticipations() {
+      setIsLoading(true);
+      setError("");
+      try {
+        const response = await fetch(
+          `/api/backend/members/${encodeURIComponent(id)}/participations?page=0&size=100`,
+          { cache: "no-store" },
+        );
+        if (!response.ok) {
+          const problem = await response.json().catch(() => ({}));
+          throw new Error(problem.message || "Unable to load participation history.");
+        }
+        const page = await response.json();
+        if (!cancelled) {
+          setParticipations((page.content || []).map((item) => ({
+            id: item.id,
+            activityId: item.activity_id,
+            activity: item.activity_title_km || item.activity_title_en || "-",
+            sector: item.sector?.label_km || item.sector?.label_en || "-",
+            type: item.type?.label_km || item.type?.label_en || item.type?.code || "-",
+            status:
+              item.attendance_status?.label_km ||
+              item.attendance_status?.label_en ||
+              item.attendance_status?.code ||
+              "-",
+            location: {
+              city: item.location?.name || "-",
+              district: item.location?.address || "",
+            },
+            date: item.starts_at ? new Date(item.starts_at).toLocaleDateString("km-KH") : "-",
+          })));
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to load participation history.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    loadParticipations();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   const filteredData = useMemo(() => {
-    return participationData.filter((item) => {
+    return participations.filter((item) => {
       const search = query.trim().toLowerCase();
       const matchesQuery =
         !search || item.activity?.toLowerCase().includes(search);
       const matchesType = !typeFilter || item.type === typeFilter;
       return matchesQuery && matchesType;
     });
-  }, [query, typeFilter]);
+  }, [participations, query, typeFilter]);
 
   const handleViewDetail = (item) => {
-    console.log("View activity detail:", item);
+    router.push(`/activity/${item.activityId}`);
   };
 
   const columns = [
@@ -130,6 +183,9 @@ export default function ParticipationPage() {
       <h2 className="text-lg font-semibold text-text-primary">
         ប្រវត្តិការចូលរួមសកម្មភាព
       </h2>
+
+      {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      {isLoading && <div className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-500">Loading participation history...</div>}
 
       <DataTable
         data={filteredData}
