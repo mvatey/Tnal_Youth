@@ -24,7 +24,8 @@ function createEmptyWork() {
 }
 
 export default function WorkPage() {
-  const { isAdmin } = useMemberPermissions();
+  const { canEditMemberDetails } = useMemberPermissions();
+  const isReadOnly = !canEditMemberDetails;
   const params = useParams();
   const memberId = String(params?.id ?? "");
   const [member, setMember] = useState(null);
@@ -92,7 +93,7 @@ export default function WorkPage() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <fieldset disabled={isAdmin} className={isAdmin ? "member-readonly contents [&_button]:hidden" : "contents"}>
+      <fieldset disabled={isReadOnly} className={isReadOnly ? "member-readonly contents [&_button]:hidden" : "contents"}>
       <div className="rounded-xl border border-gray-200 bg-white p-6">
         <h2 className="text-lg font-bold text-primary">ប្រវត្តិការងារ</h2>
 

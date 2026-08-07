@@ -69,20 +69,7 @@ function validatePassword(
   password,
 ) {
   return {
-    minLength:
-      password.length >= 6,
-
-    special:
-      /[!@#$%^&*]/.test(
-        password,
-      ),
-
-    number:
-      /\d/.test(password),
-
-    upperLower:
-      /[A-Z]/.test(password) &&
-      /[a-z]/.test(password),
+    sixDigits: /^\d{6}$/.test(password),
   };
 }
 
@@ -136,10 +123,7 @@ export default function PasswordPage() {
     );
 
   const passwordValid =
-    rules.minLength &&
-    rules.special &&
-    rules.number &&
-    rules.upperLower;
+    rules.sixDigits;
 
   const passwordsMatch =
     newPassword !== "" &&
@@ -163,7 +147,7 @@ export default function PasswordPage() {
 
       if (!passwordValid) {
         setError(
-          "ពាក្យសម្ងាត់ថ្មីមិនទាន់បំពេញលក្ខខណ្ឌសុវត្ថិភាព។",
+          "ពាក្យសម្ងាត់ត្រូវមានលេខ ៦ ខ្ទង់គត់។",
         );
 
         return;
@@ -329,30 +313,9 @@ export default function PasswordPage() {
 
           <div className="space-y-4">
             <Rule
-              text="មានអក្សរយ៉ាងហោចណាស់ ៦ តួ"
+              text="មានលេខ ៦ ខ្ទង់គត់"
               valid={
-                rules.minLength
-              }
-            />
-
-            <Rule
-              text="មានតួអក្សរពិសេស (!@#$%^&*)"
-              valid={
-                rules.special
-              }
-            />
-
-            <Rule
-              text="មានលេខ (0-9)"
-              valid={
-                rules.number
-              }
-            />
-
-            <Rule
-              text="មានអក្សរធំ និងអក្សរតូច"
-              valid={
-                rules.upperLower
+                rules.sixDigits
               }
             />
           </div>
@@ -390,9 +353,11 @@ function BoxFill({
           value={value}
           onChange={(event) =>
             onChange(
-              event.target.value,
+              event.target.value.replace(/\D/g, "").slice(0, 6),
             )
           }
+          inputMode="numeric"
+          maxLength={6}
           placeholder="បញ្ចូលពាក្យសម្ងាត់"
           autoComplete="new-password"
           className="

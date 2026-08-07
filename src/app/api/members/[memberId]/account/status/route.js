@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 const BACKEND_URL =
   process.env.BACKEND_URL ??
@@ -25,22 +26,19 @@ export async function GET(
   try {
     const { memberId } = await params;
 
-    const authorization =
-      request.headers.get("authorization");
+    const authorization = request.headers.get("authorization");
+    const accessToken = (await cookies()).get("accessToken")?.value;
 
     const response = await fetch(
       `${BACKEND_URL}/members/${memberId}/account/status`,
       {
         method: "GET",
         headers: {
-          ...(authorization
+          ...(authorization || accessToken
             ? {
-                Authorization: authorization,
+                Authorization: authorization || `Bearer ${accessToken}`,
               }
             : {}),
-
-          Cookie:
-            request.headers.get("cookie") ?? "",
         },
         cache: "no-store",
       }

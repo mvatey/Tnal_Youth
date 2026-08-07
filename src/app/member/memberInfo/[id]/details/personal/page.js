@@ -324,7 +324,8 @@ function normalizePersonalInfo(
  * ========================================================= */
 
 export default function PersonalPage() {
-  const { isAdmin } = useMemberPermissions();
+  const { isAdmin, canEditMemberDetails } = useMemberPermissions();
+  const isReadOnly = !canEditMemberDetails;
   const params =
     useParams();
 
@@ -519,7 +520,7 @@ export default function PersonalPage() {
       try {
         const account =
           await requestJson(
-            `/members/${memberId}/personal-info/account`,
+            `/members/${memberId}/account/status`,
           );
 
         if (
@@ -740,7 +741,7 @@ export default function PersonalPage() {
   const handleChange =
     (field) =>
     (event) => {
-      if (isAdmin && !["branch_id", "account_role"].includes(field)) {
+      if (isReadOnly) {
         return;
       }
       const value =
@@ -764,6 +765,10 @@ export default function PersonalPage() {
 
   const handleFileChange =
     (event) => {
+      if (isReadOnly) {
+        return;
+      }
+
       const file =
         event.target
           .files?.[0];
@@ -835,6 +840,10 @@ export default function PersonalPage() {
 
     const handleAccountStatusChange =
       async (event) => {
+        if (isReadOnly) {
+          return;
+        }
+
         const nextStatus =
           event.target.value;
 
@@ -922,6 +931,10 @@ export default function PersonalPage() {
 
   const handleSave =
     async () => {
+      if (isReadOnly) {
+        return;
+      }
+
       if (!memberId) {
         setError(
           "រកមិនឃើញលេខសម្គាល់សមាជិក។",
@@ -1165,7 +1178,7 @@ export default function PersonalPage() {
           try {
             const account =
               await requestJson(
-                `/members/${memberId}/personal-info/account`,
+                `/members/${memberId}/account/status`,
               );
 
             setForm(
@@ -1274,7 +1287,7 @@ export default function PersonalPage() {
               grid-cols-1
               gap-5
               md:grid-cols-2
-              ${isAdmin ? "member-readonly [&_input]:pointer-events-none [&_input]:bg-gray-50 [&_select]:pointer-events-none [&_select]:bg-gray-50" : ""}
+              ${isReadOnly ? "member-readonly [&_input]:pointer-events-none [&_input]:bg-gray-50 [&_select]:pointer-events-none [&_select]:bg-gray-50" : ""}
             `}
           >
             <BoxFill
@@ -1609,7 +1622,7 @@ export default function PersonalPage() {
                 }
               />
 
-              {!isAdmin && <button
+              {!isReadOnly && <button
                 type="button"
                 onClick={() =>
                   fileRef.current?.click()
@@ -1693,6 +1706,7 @@ export default function PersonalPage() {
             handleSave
           }
           disabled={
+            isReadOnly ||
             saving ||
             changingStatus
           }

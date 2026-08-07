@@ -33,6 +33,24 @@ const ALLOWED_LOOKUPS =
     "communes",
   ]);
 
+const DIRECT_BACKEND_PATHS = {
+  ethnicities: "/ethnicities?activeOnly=true",
+  religions: "/religions?activeOnly=true",
+  "proficiency-levels": "/proficiency-levels",
+};
+
+const LOCAL_LOOKUPS = {
+  "tshirt-sizes": [
+    { value: "XS", label: "XS" },
+    { value: "S", label: "S" },
+    { value: "M", label: "M" },
+    { value: "L", label: "L" },
+    { value: "XL", label: "XL" },
+    { value: "2XL", label: "2XL" },
+    { value: "3XL", label: "3XL" },
+  ],
+};
+
 export async function GET(request, context) {
   const { type } = await context.params;
 
@@ -45,6 +63,10 @@ export async function GET(request, context) {
         status: 404,
       }
     );
+  }
+
+  if (LOCAL_LOOKUPS[type]) {
+    return Response.json(LOCAL_LOOKUPS[type]);
   }
 
   const cookieStore = await cookies();
@@ -65,8 +87,11 @@ export async function GET(request, context) {
 
   const incomingUrl = new URL(request.url);
 
+  const directPath = DIRECT_BACKEND_PATHS[type];
+  const backendPath = directPath || `/lookups/${type}${incomingUrl.search}`;
+
   const backendResponse = await fetch(
-    `${BACKEND_URL}/lookups/${type}${incomingUrl.search}`,
+    `${BACKEND_URL}${backendPath}`,
     {
       method: "GET",
       headers: {

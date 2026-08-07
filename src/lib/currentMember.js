@@ -173,7 +173,6 @@ export function combineAuthUserWithMember(authUser) {
       "-",
 
     role:
-      jsonMember?.role ||
       normalizedRole,
 
     profile_photo:

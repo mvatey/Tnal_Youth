@@ -206,7 +206,8 @@ function personPayload(
 }
 
 export default function FamilyPage() {
-  const { isAdmin } = useMemberPermissions();
+  const { canEditMemberDetails } = useMemberPermissions();
+  const isReadOnly = !canEditMemberDetails;
   const params =
     useParams();
 
@@ -478,7 +479,7 @@ export default function FamilyPage() {
       }
       className="space-y-4"
     >
-      <fieldset disabled={isAdmin} className={isAdmin ? "member-readonly contents" : "contents"}>
+      <fieldset disabled={isReadOnly} className={isReadOnly ? "member-readonly contents" : "contents"}>
       <div
         className="
           rounded-xl
@@ -923,7 +924,7 @@ export default function FamilyPage() {
 
       {/* SAVE */}
 
-      {!isAdmin && <div className="flex justify-end">
+      {!isReadOnly && <div className="flex justify-end">
         <SaveButton
           type="submit"
           disabled={

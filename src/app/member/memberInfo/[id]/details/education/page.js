@@ -26,12 +26,14 @@ function createEmptyEducation() {
 }
 
 export default function EducationPage() {
-  const { isAdmin } = useMemberPermissions();
+  const { canEditMemberDetails } = useMemberPermissions();
+  const isReadOnly = !canEditMemberDetails;
   const params = useParams();
   const memberId = String(params?.id ?? "");
 
   const [member, setMember] = useState(null);
   const [educations, setEducations] = useState([]);
+  const [degreeOptions, setDegreeOptions] = useState([]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -43,6 +45,23 @@ export default function EducationPage() {
       .catch((error) => { if (error.name !== "AbortError") setMember(null); });
     return () => controller.abort();
   }, [memberId]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/lookups/education-levels", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then((response) => response.ok ? response.json() : [])
+      .then((items) => setDegreeOptions((Array.isArray(items) ? items : []).map((item) => ({
+        value: String(item.value ?? item.id ?? ""),
+        label: item.labelKm || item.label_km || item.labelEn || item.label_en || item.code || "",
+      }))))
+      .catch((error) => {
+        if (error.name !== "AbortError") setDegreeOptions([]);
+      });
+    return () => controller.abort();
+  }, []);
 
   function handleEducationChange(id, field, value) {
     setEducations((previous) =>
@@ -106,7 +125,7 @@ export default function EducationPage() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <fieldset disabled={isAdmin} className={isAdmin ? "member-readonly contents [&_button]:hidden" : "contents"}>
+      <fieldset disabled={isReadOnly} className={isReadOnly ? "member-readonly contents [&_button]:hidden" : "contents"}>
       <div className="rounded-xl border border-gray-200 bg-white p-5">
         <div>
           <h2 className="text-lg font-bold text-primary">
@@ -120,6 +139,7 @@ export default function EducationPage() {
               key={education.id}
               index={index}
               education={education}
+              degrees={degreeOptions}
               canDelete={educations.length > 1}
               onChange={(field, value) =>
                 handleEducationChange(
@@ -158,6 +178,7 @@ export default function EducationPage() {
 function EducationGroup({
   index,
   education,
+  degrees,
   canDelete,
   onDelete,
   onChange,
@@ -168,10 +189,6 @@ function EducationGroup({
 
   const countries = Array.isArray(locationData.countries)
     ? locationData.countries
-    : [];
-
-  const degrees = Array.isArray(educationData.degrees)
-    ? educationData.degrees
     : [];
 
   return (

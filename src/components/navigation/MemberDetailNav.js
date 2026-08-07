@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 
 
 export default function MemberDetailNav(){
 
   const pathname = usePathname();
+  const params = useParams();
+  const memberId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
 
   const tabs = [
@@ -56,7 +58,8 @@ export default function MemberDetailNav(){
           tabs.map((tab)=>{
 
 
-            const active = pathname.includes(tab.href);
+            const href = `/member/memberInfo/${encodeURIComponent(memberId || "")}/details/${tab.href}`;
+            const active = pathname === href;
 
 
 
@@ -66,7 +69,7 @@ export default function MemberDetailNav(){
 
                 key={tab.href}
 
-                href={tab.href}
+                href={href}
 
                 className={`flex h-10 items-center justify-center border-t-2 px-3 text-sm font-medium transition-all ${
                   

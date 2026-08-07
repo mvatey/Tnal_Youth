@@ -4,12 +4,19 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 
 export default function useMemberPermissions() {
   const { member, loading } = useCurrentMember();
-  const role = String(member?.role || member?.account_role || "").toUpperCase();
+  const rawRole = member?.role || member?.account_role || "";
+  const role = String(
+    typeof rawRole === "object"
+      ? rawRole?.code || rawRole?.value || ""
+      : rawRole,
+  )
+    .replace(/^ROLE_/i, "")
+    .toUpperCase();
   return {
     role,
     loading,
     isAdmin: role === "ADMIN",
-    canEditMemberDetails: role === "SECRETARY" || role === "BRANCH_LEADER",
+    canEditMemberDetails: ["ADMIN", "SECRETARY", "BRANCH_LEADER"].includes(role),
     canManageMemberAccount: ["ADMIN", "SECRETARY", "BRANCH_LEADER"].includes(role),
   };
 }

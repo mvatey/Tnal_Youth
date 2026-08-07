@@ -68,7 +68,8 @@ function createComputerSkill() {
 }
 
 export default function SkillPage() {
-  const { isAdmin } = useMemberPermissions();
+  const { canEditMemberDetails } = useMemberPermissions();
+  const isReadOnly = !canEditMemberDetails;
   const memberId = String(useParams()?.id ?? "");
   const [languageSkills, setLanguageSkills] = useState([
     createLanguageSkill(),
@@ -77,6 +78,7 @@ export default function SkillPage() {
   const [computerSkills, setComputerSkills] = useState([
     createComputerSkill(),
   ]);
+  const [proficiencyOptions, setProficiencyOptions] = useState([]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -89,6 +91,23 @@ export default function SkillPage() {
     }).catch((error) => { if (error.name !== "AbortError") console.error(error); });
     return () => controller.abort();
   }, [memberId]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/lookups/proficiency-levels", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then((response) => response.ok ? response.json() : [])
+      .then((items) => setProficiencyOptions((Array.isArray(items) ? items : []).map((item) => ({
+        value: String(item.value ?? item.id ?? ""),
+        label: item.labelKm || item.label_km || item.labelEn || item.label_en || item.code || "",
+      }))))
+      .catch((error) => {
+        if (error.name !== "AbortError") setProficiencyOptions([]);
+      });
+    return () => controller.abort();
+  }, []);
 
   const updateLanguageSkill = (
     id,
@@ -177,7 +196,7 @@ export default function SkillPage() {
 
   return (
     <div className="space-y-4">
-      <fieldset disabled={isAdmin} className={isAdmin ? "member-readonly contents [&_button]:hidden" : "contents"}>
+      <fieldset disabled={isReadOnly} className={isReadOnly ? "member-readonly contents [&_button]:hidden" : "contents"}>
       {/* =====================================
           LANGUAGE SKILLS
       ===================================== */}
@@ -202,6 +221,7 @@ export default function SkillPage() {
               key={item.id}
               index={index}
               item={item}
+              proficiencyOptions={proficiencyOptions}
               canDelete={languageSkills.length > 1}
               onChange={(field, value) =>
                 updateLanguageSkill(
@@ -244,6 +264,7 @@ export default function SkillPage() {
               key={item.id}
               index={index}
               item={item}
+              proficiencyOptions={proficiencyOptions}
               canDelete={computerSkills.length > 1}
               onChange={(field, value) =>
                 updateComputerSkill(
@@ -273,6 +294,7 @@ export default function SkillPage() {
 function LanguageSkillGroup({
   index,
   item,
+  proficiencyOptions,
   canDelete,
   onChange,
   onDelete,
@@ -326,11 +348,7 @@ function LanguageSkillGroup({
               event.target.value,
             )
           }
-          options={
-            educationData.listeningLevels ||
-            educationData.proficiencyLevels ||
-            []
-          }
+          options={proficiencyOptions}
         />
 
         <FormSelect
@@ -344,11 +362,7 @@ function LanguageSkillGroup({
               event.target.value,
             )
           }
-          options={
-            educationData.readingLevels ||
-            educationData.proficiencyLevels ||
-            []
-          }
+          options={proficiencyOptions}
         />
 
         <FormSelect
@@ -362,11 +376,7 @@ function LanguageSkillGroup({
               event.target.value,
             )
           }
-          options={
-            educationData.speakingLevels ||
-            educationData.proficiencyLevels ||
-            []
-          }
+          options={proficiencyOptions}
         />
 
         <FormSelect
@@ -380,11 +390,7 @@ function LanguageSkillGroup({
               event.target.value,
             )
           }
-          options={
-            educationData.writingLevels ||
-            educationData.proficiencyLevels ||
-            []
-          }
+          options={proficiencyOptions}
         />
       </div>
 
@@ -420,6 +426,7 @@ function LanguageSkillGroup({
 function ComputerSkillGroup({
   index,
   item,
+  proficiencyOptions,
   canDelete,
   onChange,
   onDelete,
@@ -474,9 +481,7 @@ function ComputerSkillGroup({
               event.target.value,
             )
           }
-          options={
-            educationData.computerSkillLevels || []
-          }
+          options={proficiencyOptions}
         />
       </div>
 

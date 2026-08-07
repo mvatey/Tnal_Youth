@@ -12,6 +12,7 @@ import DeleteButton from "@/components/forms/DeleteButton";
 
 import { deleteMemberRecord, loadMemberRecords, saveMemberRecords } from "@/lib/memberRecords";
 import useMemberPermissions from "@/hooks/useMemberPermissions";
+import politicalData from "@/data/political.json";
 
 function createEmptyPolitical() {
   return {
@@ -21,26 +22,40 @@ function createEmptyPolitical() {
 }
 
 export default function PoliticalPage() {
-  const { isAdmin } = useMemberPermissions();
+  const { canEditMemberDetails } = useMemberPermissions();
+  const isReadOnly = !canEditMemberDetails;
   const params = useParams();
   const memberId = String(params?.id ?? "");
 
   const [member, setMember] = useState(null);
   const [politicals, setPoliticals] = useState([]);
-  const [parties, setParties] = useState([]);
+  const parties = politicalData.organizationTypes || [];
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
-    Promise.all([
-      loadMemberRecords(memberId, "political-affiliations", controller.signal),
-      fetch("/api/lookups/political-parties", { cache: "no-store", signal: controller.signal })
-        .then((response) => response.ok ? response.json() : []),
-    ]).then(([rows, partyOptions]) => {
-        setParties(Array.isArray(partyOptions) ? partyOptions : partyOptions?.content || []);
+    setError("");
+    loadMemberRecords(memberId, "political-affiliations", controller.signal)
+      .then((rows) => {
         setMember({ id: memberId });
-        setPoliticals(rows.length ? rows.map((row) => ({ id: row.id, organization: row.party_id || "", workLocation: row.location || "", country: row.country || "", position: row.position_title || "", cardNumber: row.card_no || "", joinedDate: row.start_date || "", leftDate: row.end_date || "" })) : [createEmptyPolitical()]);
+        setPoliticals(rows.length ? rows.map((row) => ({
+          id: row.id,
+          organization: row.affiliationName || row.affiliation_name || "",
+          workLocation: row.location || "",
+          country: "",
+          position: row.positionTitle || row.position_title || "",
+          cardNumber: "",
+          joinedDate: row.startDate || row.start_date || "",
+          leftDate: row.endDate || row.end_date || "",
+        })) : [createEmptyPolitical()]);
       })
-      .catch((error) => { if (error.name !== "AbortError") setMember(null); });
+      .catch((loadError) => {
+        if (loadError.name !== "AbortError") {
+          setMember({ id: memberId });
+          setPoliticals([createEmptyPolitical()]);
+          setError(loadError.message || "មិនអាចទាញយកព័ត៌មាននយោបាយបានទេ។");
+        }
+      });
     return () => controller.abort();
   }, [memberId]);
 
@@ -77,19 +92,29 @@ export default function PoliticalPage() {
 
     if (!member) return;
 
-    const rows = await saveMemberRecords(memberId, "political-affiliations", politicals, (item) => ({
-      party_id: Number(item.organization),
-      country: item.country || null,
-      location: item.workLocation || null,
-      position_title: item.position || null,
-      card_no: item.cardNumber || null,
-      start_date: item.joinedDate || null,
-      end_date: item.leftDate || null,
-      is_current: !item.leftDate,
-      note: item.note || null,
-    }));
-    setPoliticals(rows.map((row) => ({ id: row.id, organization: row.party_id || "", workLocation: row.location || "", country: row.country || "", position: row.position_title || "", cardNumber: row.card_no || "", joinedDate: row.start_date || "", leftDate: row.end_date || "" })));
-    alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+    try {
+      setError("");
+      const rows = await saveMemberRecords(memberId, "political-affiliations", politicals, (item) => ({
+        affiliation_name: item.organization,
+        location: item.workLocation || null,
+        position_title: item.position || null,
+        start_date: item.joinedDate || null,
+        end_date: item.leftDate || null,
+      }));
+      setPoliticals(rows.map((row) => ({
+        id: row.id,
+        organization: row.affiliationName || row.affiliation_name || "",
+        workLocation: row.location || "",
+        country: "",
+        position: row.positionTitle || row.position_title || "",
+        cardNumber: "",
+        joinedDate: row.startDate || row.start_date || "",
+        leftDate: row.endDate || row.end_date || "",
+      })));
+      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+    } catch (saveError) {
+      setError(saveError.message || "មិនអាចរក្សាទុកព័ត៌មាននយោបាយបានទេ។");
+    }
   }
 
   if (!member) {
@@ -102,7 +127,12 @@ export default function PoliticalPage() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <fieldset disabled={isAdmin} className={isAdmin ? "member-readonly contents [&_button]:hidden" : "contents"}>
+      <fieldset disabled={isReadOnly} className={isReadOnly ? "member-readonly contents [&_button]:hidden" : "contents"}>
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
       <div className="rounded-xl border border-gray-200 bg-white p-5">
         <h2 className="text-lg font-bold text-primary">កិច្ចការនយោបាយ</h2>
 
