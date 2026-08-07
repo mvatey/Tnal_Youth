@@ -55,7 +55,7 @@ export async function POST(request) {
       );
     }
 
-    if (newPassword.length < 8) {
+    if (!/^\d{6}$/.test(newPassword)) {
       return Response.json(
         {
           message:

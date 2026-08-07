@@ -41,13 +41,7 @@ export default function PasswordPage() {
       setError("ពាក្យសម្ងាត់បញ្ជាក់មិនត្រូវគ្នា។");
       return;
     }
-    if (
-      newPassword.length < 8 ||
-      !/[a-z]/.test(newPassword) ||
-      !/[A-Z]/.test(newPassword) ||
-      !/\d/.test(newPassword) ||
-      !/[^A-Za-z0-9]/.test(newPassword)
-    ) {
+    if (!/^\d{6}$/.test(newPassword)) {
       setError("ពាក្យសម្ងាត់ថ្មីមិនទាន់បំពេញលក្ខខណ្ឌសុវត្ថិភាព។");
       return;
     }
@@ -106,7 +100,7 @@ export default function PasswordPage() {
             show={showNew}
             setShow={setShowNew}
             value={newPassword}
-            onChange={(event) => setNewPassword(event.target.value)}
+            onChange={(event) => setNewPassword(event.target.value.replace(/\D/g, "").slice(0, 6))}
           />
 
 
@@ -115,7 +109,7 @@ export default function PasswordPage() {
             show={showConfirm}
             setShow={setShowConfirm}
             value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
+            onChange={(event) => setConfirmPassword(event.target.value.replace(/\D/g, "").slice(0, 6))}
           />
 
 
@@ -200,6 +194,8 @@ function BoxFill({ label, show, setShow, value, onChange }) {
 
         <input
           type={show ? "text" : "password"}
+          inputMode="numeric"
+          maxLength={6}
           value={value}
           onChange={onChange}
           placeholder="បញ្ចូលពាក្យសម្ងាត់"
