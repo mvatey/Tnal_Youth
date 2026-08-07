@@ -25,6 +25,10 @@ import FilterBar from "@/components/table-items/FilterBar";
 import Table from "@/components/table-items/Table";
 import Button from "@/components/ui/Button";
 import CreateBranchModal from "@/components/branch/CreateBranchModal";
+import {
+  DEFAULT_MEMBER_PROFILE_PHOTO,
+  getMemberProfilePhotoUrl,
+} from "@/lib/memberProfilePhoto";
 
 const ALL_OPTION = "ទាំងអស់";
 
@@ -171,9 +175,7 @@ export default function BranchDetailPage() {
           email: leaderData.email || "",
           dateOfBirth: leaderData.dateOfBirth || "",
           joinedAt: leaderData.joinedAt || "",
-          profileImage: leaderData.profilePhotoId
-            ? `/api/backend/files/${encodeURIComponent(leaderData.profilePhotoId)}/content`
-            : "/member.png",
+          profileImage: getMemberProfilePhotoUrl(leaderData),
         } : null,
       });
       setMembers((memberPage.content || []).map((member) => ({
@@ -184,9 +186,7 @@ export default function BranchDetailPage() {
         role: "សមាជិក",
         status: member.status?.code || "",
         joinedAt: member.joined_on || "",
-        profileImage: member.profile_photo?.id
-          ? `/api/backend/files/${encodeURIComponent(member.profile_photo.id)}/content`
-          : "/member.png",
+        profileImage: getMemberProfilePhotoUrl(member),
       })));
       setLookupOptions({ levels, statuses, provinces });
     } catch (loadError) {
@@ -330,10 +330,16 @@ export default function BranchDetailPage() {
         <div className="flex min-w-0 items-center gap-3">
           <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full">
             <Image
-              src={row.profileImage || "/member.png"}
+              src={row.profileImage || DEFAULT_MEMBER_PROFILE_PHOTO}
               alt={row.nameKm || "Member"}
               fill
               sizes="32px"
+              unoptimized
+              onError={(event) => {
+                if (!event.currentTarget.src.endsWith(DEFAULT_MEMBER_PROFILE_PHOTO)) {
+                  event.currentTarget.src = DEFAULT_MEMBER_PROFILE_PHOTO;
+                }
+              }}
               className="object-cover"
             />
           </div>
@@ -585,7 +591,7 @@ export default function BranchDetailPage() {
                   <Image
                     src={
                       branch.leader.profileImage ||
-                      "/member.png"
+                      DEFAULT_MEMBER_PROFILE_PHOTO
                     }
                     alt={
                       branch.leader.nameKm ||
@@ -593,6 +599,12 @@ export default function BranchDetailPage() {
                     }
                     fill
                     sizes="64px"
+                    unoptimized
+                    onError={(event) => {
+                      if (!event.currentTarget.src.endsWith(DEFAULT_MEMBER_PROFILE_PHOTO)) {
+                        event.currentTarget.src = DEFAULT_MEMBER_PROFILE_PHOTO;
+                      }
+                    }}
                     className="object-cover"
                   />
                 </div>

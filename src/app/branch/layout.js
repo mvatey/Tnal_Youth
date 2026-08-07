@@ -3,6 +3,7 @@
 import Sidebar from "@/components/navigation/sidebar";
 import Topbar from "@/components/navigation/topbar";
 import useCurrentMember from "@/hooks/useCurrentMember";
+import { DEFAULT_MEMBER_PROFILE_PHOTO } from "@/lib/memberProfilePhoto";
 
 const ROLE_LABELS = {
   ADMIN: "អ្នកគ្រប់គ្រង",
@@ -35,7 +36,7 @@ export default function BranchLayout({ children }) {
   const userAvatar =
     member?.profile_photo ||
     member?.profileImage ||
-    "/member.png";
+    DEFAULT_MEMBER_PROFILE_PHOTO;
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg-page-gray">

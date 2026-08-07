@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { DEFAULT_MEMBER_PROFILE_PHOTO } from "@/lib/memberProfilePhoto";
 
 const ROLE_LABELS = {
   admin: "អ្នកគ្រប់គ្រង",
@@ -19,7 +20,7 @@ const DEFAULT_USER = {
   phone: "",
   date_of_birth: "",
   branch: "",
-  profile_photo: "/profile.png",
+  profile_photo: DEFAULT_MEMBER_PROFILE_PHOTO,
 };
 
 export default function IdCard({
@@ -51,7 +52,7 @@ export default function IdCard({
   const profilePhoto =
     displayUser.profile_photo ||
     displayUser.profilePhoto ||
-    "/profile.png";
+    DEFAULT_MEMBER_PROFILE_PHOTO;
 
   return (
     <div className="flex w-full justify-center py-4">
@@ -191,7 +192,7 @@ export default function IdCard({
                 src={
                   hasSelectedUser
                     ? profilePhoto
-                    : "/profile.png"
+                    : DEFAULT_MEMBER_PROFILE_PHOTO
                 }
                 alt={
                   displayUser.name_kh ||
@@ -200,6 +201,12 @@ export default function IdCard({
                 }
                 fill
                 sizes="125px"
+                unoptimized
+                onError={(event) => {
+                  if (!event.currentTarget.src.endsWith(DEFAULT_MEMBER_PROFILE_PHOTO)) {
+                    event.currentTarget.src = DEFAULT_MEMBER_PROFILE_PHOTO;
+                  }
+                }}
                 className="object-cover"
               />
             </div>

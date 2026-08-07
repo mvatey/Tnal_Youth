@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Camera, X } from "lucide-react";
+import { X } from "lucide-react";
 import { HiSaveAs } from "react-icons/hi";
 
 import BoxFill from "@/components/forms/boxFill";
@@ -23,8 +23,6 @@ const EMPTY_FORM = {
   joinedAt: "",
   level: "",
   nationality: "",
-  profileFile: null,
-  profilePreview: "",
 };
 
 export default function CreateMemberModal({
@@ -97,28 +95,6 @@ export default function CreateMemberModal({
     }));
 
     setShowValidationError(false);
-  };
-
-  const selectProfileImage = (event) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
-      setSaveError("Profile image must be JPG, PNG, or WebP.");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setSaveError("Profile image must be 5 MB or smaller.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => setForm((current) => ({
-      ...current,
-      profileFile: file,
-      profilePreview: String(reader.result || ""),
-    }));
-    reader.readAsDataURL(file);
-    setSaveError("");
   };
 
   const requiredFields = [
@@ -223,24 +199,6 @@ export default function CreateMemberModal({
           </div>
 
           <form onSubmit={submit}>
-            <div className="mb-4 flex items-center gap-4 rounded-xl border border-border bg-gray-50 p-3">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-white">
-                {form.profilePreview ? (
-                  <img src={form.profilePreview} alt="Member profile preview" className="h-full w-full object-cover" />
-                ) : (
-                  <Camera className="text-text-secondary" size={26} />
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-text-primary">រូបថតសមាជិក</p>
-                <p className="mt-1 text-xs text-text-secondary">JPG, PNG ឬ WebP — អតិបរមា 5 MB</p>
-                <label className="mt-2 inline-flex cursor-pointer rounded-lg bg-secondary px-3 py-2 text-xs font-semibold text-white hover:opacity-90">
-                  ជ្រើសរើសរូបថត
-                  <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={selectProfileImage} />
-                </label>
-                {form.profileFile && <p className="mt-1 max-w-[250px] truncate text-xs text-text-secondary">{form.profileFile.name}</p>}
-              </div>
-            </div>
             <div
               className="
                 grid

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRef, useState } from "react";
 import {
   Phone,
   Mail,
@@ -9,7 +10,13 @@ import {
   Globe,
   Users,
   Building2,
+  Camera,
+  LoaderCircle,
 } from "lucide-react";
+import {
+  DEFAULT_MEMBER_PROFILE_PHOTO,
+  getMemberProfilePhotoUrl,
+} from "@/lib/memberProfilePhoto";
 
 const ROLE_LABELS = {
   ADMIN: "អ្នកគ្រប់គ្រង",
@@ -65,7 +72,11 @@ function getGenderIcon(gender) {
   return "•";
 }
 
-export default function MemberInfoCard({ member }) {
+export default function MemberInfoCard({ member, onChangeProfilePhoto }) {
+  const photoInputRef = useRef(null);
+  const [photoError, setPhotoError] = useState("");
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
   if (!member) return null;
 
   const displayName =
@@ -81,13 +92,34 @@ export default function MemberInfoCard({ member }) {
     member.full_name_en ||
     "-";
 
-  const profileFile = member.profile_photo || member.profilePhoto;
-  const profileImage =
-    member.profileImage ||
-    member.profile_image ||
-    (profileFile?.id
-      ? `/api/backend/files/${encodeURIComponent(profileFile.id)}/content`
-      : "/member.png");
+  const profileImage = getMemberProfilePhotoUrl(member);
+
+  const handlePhotoSelected = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file || !onChangeProfilePhoto) return;
+
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      setPhotoError("សូមជ្រើសរើសរូបភាព JPG, PNG ឬ WebP។");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError("ទំហំរូបភាពមិនត្រូវលើសពី 5 MB។");
+      return;
+    }
+
+    setPhotoError("");
+    setIsUploadingPhoto(true);
+    try {
+      await onChangeProfilePhoto(file);
+    } catch (error) {
+      setPhotoError(error.message || "មិនអាចប្តូររូបភាពបានទេ។");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   const role = member.role || "MEMBER";
 
@@ -128,8 +160,39 @@ export default function MemberInfoCard({ member }) {
               alt={displayName}
               fill
               sizes="96px"
+              unoptimized
+              onError={(event) => {
+                if (!event.currentTarget.src.endsWith(DEFAULT_MEMBER_PROFILE_PHOTO)) {
+                  event.currentTarget.src = DEFAULT_MEMBER_PROFILE_PHOTO;
+                }
+              }}
               className="object-cover"
             />
+            {onChangeProfilePhoto && (
+              <>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  onChange={handlePhotoSelected}
+                />
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={isUploadingPhoto}
+                  className="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-secondary text-white shadow-md transition hover:opacity-90 disabled:cursor-wait disabled:opacity-70"
+                  aria-label="ប្តូររូបថតសមាជិក"
+                  title="ប្តូររូបថតសមាជិក"
+                >
+                  {isUploadingPhoto ? (
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
+                </button>
+              </>
+            )}
           </div>
 
           <div className="pr-20 pt-0.5 text-white">
@@ -292,6 +355,11 @@ export default function MemberInfoCard({ member }) {
           </div>
         </div>
       </div>
+      {photoError && (
+        <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+          {photoError}
+        </p>
+      )}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { Download, Minus } from "lucide-react";
 import IdCard from "@/components/card/idCard";
 import CertificateCard from "@/components/card/certificate";
 import DocumentPreviewCard from "@/components/card/DocumentPreviewCard";
+import { getMemberProfilePhotoUrl } from "@/lib/memberProfilePhoto";
 import LetterOfAppointment from "@/components/card/LetterOfAppointment";
 
 export default function DocumentPage() {
@@ -56,9 +57,7 @@ export default function DocumentPage() {
           memberData.nationality?.label_km || memberData.nationality?.label_en || "-",
         ethnicity:
           memberData.ethnicity?.label_km || memberData.ethnicity?.label_en || "-",
-        profile_photo: memberData.profile_photo?.id
-          ? `/api/backend/files/${encodeURIComponent(memberData.profile_photo.id)}/content`
-          : "/profile.png",
+        profile_photo: getMemberProfilePhotoUrl(memberData),
       });
       setDocuments(
         (Array.isArray(allDocuments) ? allDocuments : []).filter(

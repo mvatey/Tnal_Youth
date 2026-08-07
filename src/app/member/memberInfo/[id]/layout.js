@@ -52,6 +52,11 @@ export default function MemberInfoLayout({ children, params }) {
         fullNameEn: memberData.full_name_en,
         branch: branch?.labelKm || branch?.labelEn || branch?.code || "-",
         status: memberData.status?.code || memberData.status?.label_km || "-",
+        statusId: memberData.status?.id ?? null,
+        levelId: memberData.level?.id ?? null,
+        nationalityId: memberData.nationality?.id ?? null,
+        ethnicityId: memberData.ethnicity?.id ?? null,
+        religionId: memberData.religion?.id ?? null,
         nationality:
           memberData.nationality?.label_km ||
           memberData.nationality?.label_en ||
@@ -110,6 +115,73 @@ export default function MemberInfoLayout({ children, params }) {
     router.push("/member");
   };
 
+  const handleChangeProfilePhoto = async (file) => {
+    const uploadBody = new FormData();
+    uploadBody.append("file", file);
+
+    const uploadResponse = await fetch("/api/backend/files/images", {
+      method: "POST",
+      credentials: "include",
+      body: uploadBody,
+    });
+    const uploadedFile = await uploadResponse.json().catch(() => ({}));
+
+    if (!uploadResponse.ok) {
+      throw new Error(uploadedFile.message || "Unable to upload the profile image.");
+    }
+
+    const previousPhotoId = member.profile_photo?.id ?? null;
+
+    try {
+      const updateResponse = await fetch(`/api/members/${encodeURIComponent(id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name_km: member.full_name_km,
+          full_name_en: member.full_name_en || null,
+          gender: member.gender || null,
+          nationality_id: member.nationalityId,
+          religion_id: member.religionId,
+          ethnicity_id: member.ethnicityId,
+          date_of_birth: member.date_of_birth || null,
+          place_of_birth: member.place_of_birth || null,
+          phone: member.phone || null,
+          email: member.email || null,
+          branch_id: member.branch_id ?? null,
+          level_id: member.levelId,
+          status_id: member.statusId,
+          joined_on: member.joined_on || null,
+          current_address: member.current_address || null,
+          permanent_address: member.permanent_address || null,
+          profile_photo_id: uploadedFile.id,
+          cv_file_id: member.cv_file?.id ?? null,
+          tshirt_size: member.tshirtSize || member.tshirt_size || null,
+          bio: member.bio || null,
+        }),
+      });
+      const savedMember = await updateResponse.json().catch(() => ({}));
+
+      if (!updateResponse.ok) {
+        throw new Error(savedMember.message || "Unable to update the profile image.");
+      }
+
+      await loadMember();
+
+      if (previousPhotoId && previousPhotoId !== uploadedFile.id) {
+        await fetch(`/api/backend/files/${encodeURIComponent(previousPhotoId)}`, {
+          method: "DELETE",
+          credentials: "include",
+        }).catch(() => {});
+      }
+    } catch (error) {
+      await fetch(`/api/backend/files/${encodeURIComponent(uploadedFile.id)}`, {
+        method: "DELETE",
+        credentials: "include",
+      }).catch(() => {});
+      throw error;
+    }
+  };
+
   return (
     <div className="space-y-4">
       <HeaderMemberInfo
@@ -128,7 +200,7 @@ export default function MemberInfoLayout({ children, params }) {
         </div>
       )}
 
-      <MemberInfoCard member={member} />
+      <MemberInfoCard member={member} onChangeProfilePhoto={handleChangeProfilePhoto} />
 
       {!isDetailPage && <MemberTabNav memberId={member.id} />}
 

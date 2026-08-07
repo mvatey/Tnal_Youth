@@ -1,3 +1,5 @@
+import { DEFAULT_MEMBER_PROFILE_PHOTO } from "@/lib/memberProfilePhoto";
+
 const ROLE_MAP = { ADMIN: "admin", SECRETARY: "secretary", BRANCH_LEADER: "branch_leader", MEMBER: "member" };
 
 /**
@@ -18,7 +20,7 @@ export function combineAuthUserWithMember(authUser) {
     phone: authUser.phone || "-",
     email: authUser.email || "-",
     role: ROLE_MAP[authUser.role] || String(authUser.role || "member").toLowerCase(),
-    profile_photo: authUser.profileImage || authUser.profile_image || "/member.png",
+    profile_photo: authUser.profileImage || authUser.profile_image || DEFAULT_MEMBER_PROFILE_PHOTO,
     status: authUser.status || "ACTIVE",
     branch: authUser.branchNameKm || authUser.branchNameEn || "-",
   };

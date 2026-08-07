@@ -603,23 +603,6 @@ export default function MembersPage() {
   };
 
   const handleSaveMember = async (formData) => {
-    let profilePhotoId = null;
-
-    if (formData.profileFile) {
-      const uploadBody = new FormData();
-      uploadBody.append("file", formData.profileFile);
-      const uploadResponse = await fetch("/api/backend/files/images", {
-        method: "POST",
-        credentials: "include",
-        body: uploadBody,
-      });
-      const uploadedFile = await uploadResponse.json().catch(() => ({}));
-      if (!uploadResponse.ok) {
-        throw new Error(uploadedFile.message || "Unable to upload the profile image.");
-      }
-      profilePhotoId = uploadedFile.id;
-    }
-
     const response = await fetch("/api/members", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -636,18 +619,12 @@ export default function MembersPage() {
         role: formData.role,
         joined_on: formData.joinedAt,
         status_id: Number(formData.status),
-        profile_photo_id: profilePhotoId,
+        profile_photo_id: null,
       }),
     });
 
     if (!response.ok) {
       const problem = await response.json().catch(() => ({}));
-      if (profilePhotoId) {
-        await fetch(`/api/backend/files/${encodeURIComponent(profilePhotoId)}`, {
-          method: "DELETE",
-          credentials: "include",
-        }).catch(() => {});
-      }
       throw new Error(problem.message || "Unable to create member.");
     }
 
