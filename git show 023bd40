@@ -1,0 +1,168 @@
+[33m5d3b454[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmerging-2[m[33m, [m[1;31morigin/merging-2[m[33m)[m Merge remote-tracking branch 'origin/member-merge' into merging-2
+[33mf250912[m save local changes before merging member-merge
+[33me7e56cb[m[33m ([m[1;31morigin/member-merge[m[33m)[m the latest modifying member and document
+[33m023bd40[m add cards in montly donation and modify in sponsor
+[33mb059a11[m changing active branches to sub-branches
+[33m131b0f3[m fixing admin side
+[33m8c7292e[m last modify
+[33ma1da86b[m Merge remote-tracking branch 'origin/merging-2' into merging-2
+[33me215dc9[m modify member and document
+[33m78abae0[m chnage icon via b comment and add more feature in event donation also add feature in landing page
+[33m63503d1[m modifying member page 70%
+[33m6ccbcaa[m fixing forget-password otp
+[33md6d18b2[m for demo
+[33mf9ee542[m sidebar for admin
+[33m9d88a89[m modifying branch and activity
+[33mcd39ca5[m integrating with dashboard api
+[33m9d3c6b0[m merging with doc
+[33m455047f[m merging with completed document
+[33me2dd97a[m[33m ([m[1;31morigin/feature/member[m[33m, [m[1;32mfeature/member[m[33m)[m document size and color fix
+[33m473311f[m modify member and document
+[33m91d3a49[m static ui of member&document
+[33m5b4cee5[m modify document and member page
+[33mf9bfc84[m static ui is finish but not responsive yet
+[33m54f5856[m modifying ui document
+[33m7fc39d4[m static ui of member and document
+[33m314de87[m static ui finish
+[33m4908c0a[m modifying member and document page static
+[33m2e0a676[m member and document modifying
+[33m17b9335[m existing features completely merged
+[33mbdca1bb[m change style in memberpage and document
+[33m2567d89[m + notification
+[33m7491632[m + landing
+[33m326fefc[m almost
+[33mbeb8db7[m + member
+[33m21ae017[m + downloadCsv
+[33m5fca9cd[m modifying document and member page
+[33m1dcc9bb[m Merge remote-tracking branch 'origin/feature/donation' into feature/branch
+[33m8bdf5f7[m extra filter member in spnosr page
+[33m8f8c8c2[m + donation
+[33m3f72968[m + member 2
+[33m7d82a49[m +member more
+[33m88d56e7[m + variable
+[33m71b07ef[m change color card number of sponsor and change the requirement in add sponsor form.
+[33mfae5691[m modifying member page and document
+[33m6f8d6d8[m modifying member and document
+[33m83a5fcf[m branch page + create branch
+[33m5cfa1f5[m create modal completed
+[33maea6a61[m extrac summary amount of the money in montly,card in event and modify some feature in sponsor
+[33m4c8172f[m[33m ([m[1;31morigin/develop[m[33m, [m[1;32mdevelop[m[33m)[m Merge branch 'develop' of https://github.com/mvatey/Tnal_Youth into release-1
+[33m8c2ca90[m a bit of dashboard changes
+[33m44f18ae[m modify filter
+[33mb462d5c[m auth completed
+[33m4627c0d[m auth halfway
+[33m6a30566[m modifying document page
+[33me0b4480[m modifying document page
+[33m7f92be0[m static
+[33mdac2a1d[m + final member
+[33m8804efc[m + myAccount
+[33mdd0b7cf[m myAcc is completed
+[33m8dd490b[m +member
+[33m5b3bd68[m auth + dashboard + activity + donation
+[33m75925e3[m memberPage and MyAccount is completed
+[33m0f9caa9[m merging (auth + donation)
+[33m5464c2b[m[33m ([m[1;31morigin/feature/activity[m[33m, [m[1;32mfeature/activity[m[33m)[m complete auth
+[33mc380f4a[m modify memberPage
+[33mde50a19[m auth and activity
+[33m3e7c8b8[m auth from backend
+[33md92ac8d[m[33m ([m[1;31morigin/feature/notification[m[33m)[m modify titles
+[33mea2bbc3[m modify place holder
+[33m47f1555[m add short money
+[33m4905bf6[m extarct hover
+[33m3ac0e44[m Revert "modify done"
+[33m1144fc4[m modify done
+[33macaa36b[m modify done
+[33m858924b[m modify feaatures
+[33m5027d1f[m update activity completely
+[33m618a22e[m modifying member page 70%
+[33m1c7b51c[m auth
+[33mb3beee0[m auth
+[33ma5f5909[m rout protechtion
+[33m77482b1[m[33m ([m[1;31morigin/feature/dashboard[m[33m, [m[1;32mfeature/dashboard[m[33m)[m modify qucik action
+[33m6263abc[m auth
+[33m98e5358[m[33m ([m[1;31morigin/feature/loading_page[m[33m)[m modify landing
+[33mcc15500[m modify done
+[33me228e09[m modify member ui
+[33m162e55f[m modify sponsor
+[33m296c4f4[m modify some feature
+[33mbbea82c[m update some feature
+[33m6e4c54d[m update data and some feature
+[33mff74e27[m modify member page
+[33m658b638[m donation for secretary
+[33m97b7b32[m donedonation
+[33m4d77c87[m admindonation
+[33mcf2fbe9[m done
+[33m3218f71[m for demo
+[33m91455b9[m Merge remote-tracking branch 'origin/feature/donation' into feature/activity "getting another version of donation"
+[33m6dde80f[m done notification
+[33mbe2369b[m done donation
+[33m3d74b01[m Add Loading feature
+[33md3b18e4[m update notification
+[33mdd43aba[m Merge branch 'feature/activity' into develop "merging 70% version"
+[33m77a3254[m secretary password
+[33me3c5d62[m finalized 1
+[33mf8f5651[m updating all
+[33m1f9fdcf[m Merged develop into my-branch after resolving conflicts
+[33m3efd700[m donation
+[33m5a05899[m update notification
+[33mbe81638[m adding member pages
+[33m5618358[m document
+[33m649905a[m Pulled document  from feature-document
+[33m62b7016[m Pulled certificate.jpg from feature-document
+[33mcf6e5f1[m finished donation
+[33m976341c[m Overrode develop with most stable version"
+[33md3b6f42[m Merge branch 'feature/activity' into develop
+[33mfd077dc[m memberpage is completed 100%
+[33mb69975e[m updating activities
+[33m2e89d2f[m member page completed 100%
+[33m230353c[m memberpage is completed 100%
+[33m7884d4c[m memberpage is completed 90%
+[33mea9885d[m completed some notification
+[33mac57dab[m done donation
+[33mde34242[m[33m ([m[1;31morigin/feature-document[m[33m)[m Add document feature
+[33m4c545b7[m two activities
+[33m14239a8[m forgot password in memberInfo is completed
+[33m91bf79b[m idCard and certificate in memberInfo is completed
+[33m85596a7[m sponsor done 40%
+[33m14414f4[m done event donation
+[33mdef8fcd[m done monthly
+[33m359854a[m activity and donation in memberInfo is completed
+[33mdf256e3[m done monthly donation
+[33m09eb839[m config
+[33m3df586b[m add some components
+[33m30a6144[m update some forms
+[33m920a700[m whole
+[33mfb51772[m activity main page
+[33m921fc82[m data
+[33m1394c88[m activity
+[33mfe3329f[m sidebar click
+[33m302a018[m update add donation
+[33me011a45[m activity start
+[33m40e3bbf[m with other components
+[33meb17b9a[m Pie Chart
+[33mf111298[m member list is completed
+[33maebe450[m completed for memberlist
+[33mab7c237[m 40% complete have some part need to redesign
+[33mef48547[m 40% completed
+[33mc6f8062[m secretary dashboard
+[33m45ae41c[m fixing table
+[33m7349db5[m update add donation
+[33m2e7e575[m images
+[33m436b895[m navigation and icons
+[33m058eae7[m light/dark
+[33m36609e8[m top and sidebar
+[33m4f77e36[m dashboard with endpoints, halfway design
+[33m4ae098d[m add donation
+[33m4ca9b8e[m this member page has done 30%
+[33m99fa083[m[33m ([m[1;31morigin/feature-auth[m[33m)[m sidebar modification
+[33m4b22246[m auth with routes
+[33mde74380[m first page to application
+[33md17ffab[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m config
+[33mef0a196[m updating sidebar
+[33m1e93fe7[m message
+[33m871d9f7[m color components
+[33m196cf9d[m halfway login
+[33mdf6e844[m structure
+[33mca421e5[m -structure
+[33md33493c[m structure
+[33md58abb1[m Initial commit
