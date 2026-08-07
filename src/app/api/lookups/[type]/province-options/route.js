@@ -4,33 +4,7 @@ const BACKEND_URL =
   process.env.BACKEND_API_URL ||
   "http://localhost:8081/api";
 
-const ALLOWED_LOOKUPS = new Set([
-  "branches",
-  "branch-statuses",
-  "member-statuses",
-  "genders",
-  "member-levels",
-  "nationalities",
-  "user-roles",
-  "provinces",
-  "districts",
-  "communes",
-]);
-
-export async function GET(request, context) {
-  const { type } = await context.params;
-
-  if (!ALLOWED_LOOKUPS.has(type)) {
-    return Response.json(
-      {
-        message: "Lookup not found",
-      },
-      {
-        status: 404,
-      }
-    );
-  }
-
+export async function GET(request) {
   const cookieStore = await cookies();
 
   const accessToken =
@@ -43,14 +17,14 @@ export async function GET(request, context) {
       },
       {
         status: 401,
-      }
+      },
     );
   }
 
   const incomingUrl = new URL(request.url);
 
   const backendResponse = await fetch(
-    `${BACKEND_URL}/lookups/${type}${incomingUrl.search}`,
+    `${BACKEND_URL}/lookups/branches/province-options${incomingUrl.search}`,
     {
       method: "GET",
       headers: {
@@ -58,7 +32,7 @@ export async function GET(request, context) {
         Authorization: `Bearer ${accessToken}`,
       },
       cache: "no-store",
-    }
+    },
   );
 
   const responseText =
@@ -69,7 +43,7 @@ export async function GET(request, context) {
     headers: {
       "Content-Type":
         backendResponse.headers.get(
-          "content-type"
+          "content-type",
         ) || "application/json",
     },
   });
