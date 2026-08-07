@@ -8,8 +8,7 @@ import Pagination from "@/components/navigation/Pagination";
 import SaveButton from "@/components/forms/save";
 import AddAlert from "@/components/forms/addalert";
 import SaveAlert from "@/components/forms/savealert";
-import sponsorData from "@/data/donation/sponsorData.json";
-import donationData from "@/data/donation/donationData.json";
+import sponsorOptions from "@/data/donation/sponsorOptions.json";
 import tableHeaders from "@/data/donation/tableHeaders.json";
 import { MdEditSquare } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
@@ -18,11 +17,13 @@ import { PiPencilSlash } from "react-icons/pi";
 import { VscEditSparkle } from "react-icons/vsc";
 import { downloadCsv } from "@/utils/downloadCsv";
 
-const { sponsorRows: sponsorDataRows } = sponsorData;
-const { donationRows } = donationData;
 const { sponsorHeaders: headers } = tableHeaders;
+const sponsorTypeByKind = {
+  INDIVIDUAL: sponsorOptions.sponsorTypes[0],
+  INSTITUTION: sponsorOptions.sponsorTypes[1],
+  MEMBER: sponsorOptions.sponsorTypes[2],
+};
 const rowsPerPage = 12;
-const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
 function SponsorReceiptPreview({ receipt }) {
@@ -84,45 +85,55 @@ export default function SponsorPanel({
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [showSaveAlert, setShowSaveAlert] = useState(false);
   const [moneySort, setMoneySort] = useState(null);
-  const [createdRows, setCreatedRows] = useState([]);
+  const [rows, setRows] = useState([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const savedRowsValue = window.localStorage.getItem(
-      SPONSOR_CREATED_ROWS_KEY,
-    );
     const shouldShowSaveAlert = window.localStorage.getItem(
       "tnal-youth:sponsor-save-alert",
     );
-
-    try {
-      const savedRows = savedRowsValue ? JSON.parse(savedRowsValue) : [];
-      setCreatedRows(
-        Array.isArray(savedRows)
-          ? savedRows.filter((row) => row.name?.trim())
-          : [],
-      );
-    } catch {
-      setCreatedRows([]);
-    }
 
     if (shouldShowSaveAlert === "true") {
       window.localStorage.removeItem("tnal-youth:sponsor-save-alert");
       setShowSaveAlert(true);
     }
 
+    let cancelled = false;
+    fetch("/api/backend/donations/sponsor?page=0&size=500", { cache: "no-store" })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.message || "Unable to load sponsor donations.");
+        return payload.data ?? payload;
+      })
+      .then((page) => {
+        if (cancelled) return;
+        setRows((page.items || []).map((row) => ({
+          id: row.donationId,
+          name: row.name || "-",
+          type: sponsorTypeByKind[row.donorKind] || row.donorKind,
+          phone: row.phone || "",
+          email: row.email || "",
+          date: row.paidAt ? new Intl.DateTimeFormat("km-KH").format(new Date(row.paidAt)) : "-",
+          dateValue: row.paidAt?.slice(0, 10) || "",
+          rielAmount: row.amountKhr || 0,
+          dollarAmount: row.amountUsd || 0,
+          method: row.paymentMethodLabelKm || row.paymentMethodCode || "-",
+          branch: row.branchNameKm || "",
+          materialCategory: row.materialCategory,
+          materialQuantity: row.materialQuantity,
+          materialQuantityType: row.materialQuantityType,
+          receipt: null,
+        })));
+      })
+      .catch((loadError) => { if (!cancelled) setError(loadError.message); });
+    return () => { cancelled = true; };
   }, []);
-
-  const allRows = useMemo(
-    () => [...createdRows, ...sponsorDataRows],
-    [createdRows],
-  );
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return allRows.filter((row, index) => {
-      const rowBranch =
-        row.branch || donationRows[index % donationRows.length]?.branch;
+    return rows.filter((row) => {
+      const rowBranch = row.branch;
       const matchesSearch =
         !query ||
         row.name.toLowerCase().includes(query) ||
@@ -135,7 +146,7 @@ export default function SponsorPanel({
 
       return matchesSearch && matchesType && matchesDate && matchesBranch;
     });
-  }, [allRows, searchQuery, selectedBranch, selectedDate, selectedType]);
+  }, [rows, searchQuery, selectedBranch, selectedDate, selectedType]);
 
   const sortedRows = useMemo(() => {
     if (!moneySort) return filteredRows;
@@ -186,6 +197,12 @@ export default function SponsorPanel({
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
           <SaveAlert message="អបអរសាទរ ! ថវិការឧបត្ថម្ភត្រូវបានរក្សាទុកដោយជោគជ័យ" />
         </div>
+      )}
+
+      {error && (
+        <p className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-error" role="alert">
+          {error}
+        </p>
       )}
 
       <div className="mb-4 flex flex-col gap-4">

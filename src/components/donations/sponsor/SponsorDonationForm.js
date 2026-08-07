@@ -5,22 +5,37 @@ import { CalendarDays, ChevronDown, ChevronUp, CloudUpload, FileText, ImportIcon
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import SaveAlert from "@/components/forms/savealert";
-import memberRecords from "@/data/donation/members.json";
 import sponsorOptions from "@/data/donation/sponsorOptions.json";
 
-const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
 const {
-  branches,
   equipmentTypes,
   khmerDigits,
   khmerMonths,
   paymentLogos,
-  paymentMethods,
-  sponsorStatuses,
   sponsorTypes,
 } = sponsorOptions;
-const members = memberRecords.filter((member) => member.role === "member");
-const memberNames = members.map((member) => member.name);
+const MEMBER_SPONSOR_TYPE = sponsorTypes[2];
+const MATERIAL_PAYMENT_CODE = "MATERIAL";
+const DONOR_KIND_BY_TYPE = {
+  [sponsorTypes[0]]: "INDIVIDUAL",
+  [sponsorTypes[1]]: "INSTITUTION",
+  [sponsorTypes[2]]: "MEMBER",
+};
+const TYPE_BY_DONOR_KIND = Object.fromEntries(
+  Object.entries(DONOR_KIND_BY_TYPE).map(([type, kind]) => [kind, type]),
+);
+
+function unwrapApiPayload(payload) {
+  return payload?.data ?? payload;
+}
+
+async function readApiResponse(response, fallbackMessage) {
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload?.message || payload?.error || fallbackMessage);
+  }
+  return unwrapApiPayload(payload);
+}
 
 function toKhmerNumber(value) {
   return String(value).replace(/\d/g, (digit) => khmerDigits[Number(digit)]);
@@ -145,8 +160,11 @@ function SelectField({
         >
           <option value="">{placeholder}</option>
           {options.map((option) => (
-            <option key={option} value={option}>
-              {option}
+            <option
+              key={typeof option === "object" ? option.value : option}
+              value={typeof option === "object" ? option.value : option}
+            >
+              {typeof option === "object" ? option.label : option}
             </option>
           ))}
         </select>
@@ -170,6 +188,9 @@ function MemberSelectField({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const fieldRef = useRef(null);
+  const selectedOption = options.find((option) =>
+    String(typeof option === "object" ? option.value : option) === String(value),
+  );
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -199,7 +220,11 @@ function MemberSelectField({
           isOpen ? "border-secondary" : "border-[#CBD0D8]"
         } ${value ? "text-text-secondary" : "text-text-mute"}`}
       >
-        <span className="truncate">{value || placeholder}</span>
+        <span className="truncate">
+          {selectedOption
+            ? (typeof selectedOption === "object" ? selectedOption.label : selectedOption)
+            : (value || placeholder)}
+        </span>
         <ChevronDown
           size={16}
           strokeWidth={2.4}
@@ -214,23 +239,28 @@ function MemberSelectField({
           role="listbox"
           className="absolute left-0 top-full z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-[#CBD0D8] bg-white py-1 shadow-lg"
         >
+          {options.length === 0 && (
+            <div className="px-4 py-2 text-[13px] text-text-mute">
+              No members found in this branch
+            </div>
+          )}
           {options.map((option) => (
             <button
-              key={option}
+              key={typeof option === "object" ? option.value : option}
               type="button"
               role="option"
-              aria-selected={value === option}
+              aria-selected={value === (typeof option === "object" ? option.value : option)}
               onClick={() => {
-                onChange(option);
+                onChange(typeof option === "object" ? option.value : option);
                 setIsOpen(false);
               }}
               className={`block w-full px-4 py-2 text-left text-[13px] transition hover:bg-secondary-light hover:text-secondary ${
-                value === option
+                value === (typeof option === "object" ? option.value : option)
                   ? "bg-secondary-light text-secondary"
                   : "text-text-secondary"
               }`}
             >
-              {option}
+              {typeof option === "object" ? option.label : option}
             </button>
           ))}
         </div>
@@ -289,8 +319,9 @@ function DateField({ label, value, onChange, required = false, className = "" })
   );
 }
 
-function PaymentMethodField({ value, onChange, className = "" }) {
+function PaymentMethodField({ value, onChange, options, className = "" }) {
   const logo = paymentLogos[value];
+  const selected = options.find((option) => option.value === value);
 
   return (
     <label className={`block ${className}`}>
@@ -309,7 +340,7 @@ function PaymentMethodField({ value, onChange, className = "" }) {
               className="h-5 w-5 rounded object-contain"
             />
           ) : null}
-          {value || "ABA"}
+          {selected?.label || value || "ABA"}
         </span>
         <select
           value={value}
@@ -317,9 +348,9 @@ function PaymentMethodField({ value, onChange, className = "" }) {
           className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
           aria-label="វិធីសាស្ត្រទូទាត់"
         >
-          {paymentMethods.map((method) => (
-            <option key={method} value={method}>
-              {method}
+          {options.map((method) => (
+            <option key={method.value} value={method.value}>
+              {method.label}
             </option>
           ))}
         </select>
@@ -408,27 +439,30 @@ function buildInitialForm(initialData = {}) {
   const data = initialData ?? {};
 
   return {
-    id: data.id ?? null,
-    sponsorType: data.type || "",
+    id: data.donationId ?? data.id ?? null,
+    sponsorType: TYPE_BY_DONOR_KIND[data.donorKind] || data.type || "",
+    memberId: data.memberId ? String(data.memberId) : "",
     sponsorName: data.name || "",
     phone: data.phone || "",
     email: data.email || "",
     address: data.address || "",
-    equipment: data.equipment || "",
-    equipmentType: data.equipmentType || "",
-    equipmentCount: data.equipmentCount || "0",
-    date: data.dateValue || "",
-    paymentMethod: data.method || "ABA",
-    amountRiel: data.rielAmount || "",
-    amountDollar: data.dollarAmount || "",
+    equipment: data.materialCategory ? MATERIAL_PAYMENT_CODE : data.equipment || "",
+    equipmentType: data.materialCategory || data.equipmentType || "",
+    equipmentCount: String(data.materialQuantity ?? data.equipmentCount ?? "0"),
+    materialUnit: data.materialQuantityType || "",
+    date: data.paidAt?.slice(0, 10) || data.dateValue || "",
+    paymentMethod: data.paymentMethodCode || data.method || "ABA",
+    amountRiel: String(data.amountKhr ?? data.rielAmount ?? ""),
+    amountDollar: String(data.amountUsd ?? data.dollarAmount ?? ""),
     note: data.note || "",
-    branch: data.branch || "",
-    status: data.status || "",
+    branch: data.branchId ? String(data.branchId) : data.branch || "",
+    status: data.activityId ? String(data.activityId) : data.status || "",
     receipt: data.receipt || null,
+    updatedAt: data.updatedAt || null,
   };
 }
 
-export default function SponsorDonationForm({ initialData = null }) {
+export default function SponsorDonationForm({ initialData = null, donationId = null }) {
   const router = useRouter();
   const pathname = usePathname();
   const listPath = pathname?.startsWith("/admin/donation")
@@ -437,28 +471,69 @@ export default function SponsorDonationForm({ initialData = null }) {
   const [showSaveAlert, setShowSaveAlert] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [form, setForm] = useState(() => buildInitialForm(initialData));
+  const [branches, setBranches] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const initialForm = buildInitialForm(initialData);
-
-    if (!initialForm.id) {
-      setForm(initialForm);
-      return;
+    let cancelled = false;
+    async function loadFormData() {
+      setError("");
+      try {
+        const requests = [
+          fetch("/api/branches", { cache: "no-store" }),
+          fetch("/api/backend/payment-methods?activeOnly=true", { cache: "no-store" }),
+          fetch("/api/backend/activities?page=0&size=200", { cache: "no-store" }),
+        ];
+        if (donationId) {
+          requests.push(fetch(`/api/backend/donations/sponsor/${encodeURIComponent(donationId)}`, { cache: "no-store" }));
+        }
+        const responses = await Promise.all(requests);
+        const [branchRows, methodRows, activityPage, donation] = await Promise.all([
+          readApiResponse(responses[0], "Unable to load branches."),
+          readApiResponse(responses[1], "Unable to load payment methods."),
+          readApiResponse(responses[2], "Unable to load activities."),
+          responses[3] ? readApiResponse(responses[3], "Unable to load sponsor donation.") : Promise.resolve(initialData),
+        ]);
+        if (cancelled) return;
+        setBranches((branchRows || []).map((branch) => ({
+          value: String(branch.id),
+          label: branch.name_km || branch.nameKm || branch.name_en || branch.nameEn || branch.branch_code,
+        })));
+        setPaymentMethods((methodRows || []).map((method) => ({
+          value: method.code,
+          id: method.id,
+          label: method.labelKm || method.label_km || method.labelEn || method.label_en || method.code,
+        })));
+        setActivities((activityPage?.content || []).map((activity) => ({
+          value: String(activity.id),
+          label: activity.titleKm || activity.titleEn || `Activity ${activity.id}`,
+          branchId: String(activity.branchId || ""),
+        })));
+        setForm(buildInitialForm(donation));
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to prepare sponsor donation.");
+      }
     }
+    loadFormData();
+    return () => { cancelled = true; };
+  }, [donationId, initialData]);
 
-    const savedValue = window.localStorage.getItem(
-      "tnal-youth:sponsor-donation-edits",
-    );
-    let savedEdits = {};
-
-    try {
-      savedEdits = savedValue ? JSON.parse(savedValue) : {};
-    } catch {
-      savedEdits = {};
+  useEffect(() => {
+    if (form.sponsorType !== MEMBER_SPONSOR_TYPE || !form.branch) {
+      setMembers([]);
+      return undefined;
     }
-
-    setForm(buildInitialForm(savedEdits[initialForm.id] || initialData));
-  }, [initialData]);
+    let cancelled = false;
+    fetch(`/api/backend/donations/sponsor/lookup/members?branchId=${encodeURIComponent(form.branch)}`, { cache: "no-store" })
+      .then((response) => readApiResponse(response, "Unable to load members for this branch."))
+      .then((rows) => { if (!cancelled) setMembers(rows || []); })
+      .catch((loadError) => { if (!cancelled) { setMembers([]); setError(loadError.message); } });
+    return () => { cancelled = true; };
+  }, [form.branch, form.sponsorType]);
 
   useEffect(() => {
     if (!showSaveAlert) return undefined;
@@ -480,19 +555,22 @@ export default function SponsorDonationForm({ initialData = null }) {
       ...currentForm,
       sponsorType: event.target.value,
       sponsorName: "",
+      memberId: "",
       phone: "",
       email: "",
     }));
   };
 
-  const handleMemberChange = (memberName) => {
-    const selectedMember = members.find((member) => member.name === memberName);
+  const handleMemberChange = (memberId) => {
+    const selectedMember = members.find((member) => String(member.id) === String(memberId));
 
     setForm((currentForm) => ({
       ...currentForm,
-      sponsorName: memberName,
+      memberId: String(memberId),
+      sponsorName: selectedMember?.name || selectedMember?.nameEn || "",
       phone: selectedMember?.phone || "",
       email: selectedMember?.email || "",
+      address: selectedMember?.address || "",
     }));
   };
 
@@ -501,30 +579,32 @@ export default function SponsorDonationForm({ initialData = null }) {
 
     setForm((currentForm) => ({
       ...currentForm,
-      equipment: isChecked ? "សម្ភារៈ" : "",
+      equipment: isChecked ? MATERIAL_PAYMENT_CODE : "",
       paymentMethod:
         isChecked
-          ? "សម្ភារៈ"
-          : currentForm.paymentMethod === "សម្ភារៈ"
+          ? MATERIAL_PAYMENT_CODE
+          : currentForm.paymentMethod === MATERIAL_PAYMENT_CODE
             ? "ABA"
             : currentForm.paymentMethod,
       ...(!isChecked && {
         equipmentType: "",
         equipmentCount: "0",
+        materialUnit: "",
       }),
     }));
   };
 
   const handlePaymentMethodChange = (paymentMethod) => {
-    const isEquipment = paymentMethod === "សម្ភារៈ";
+    const isEquipment = paymentMethod === MATERIAL_PAYMENT_CODE;
 
     setForm((currentForm) => ({
       ...currentForm,
       paymentMethod,
-      equipment: isEquipment ? "សម្ភារៈ" : "",
+      equipment: isEquipment ? MATERIAL_PAYMENT_CODE : "",
       ...(!isEquipment && {
         equipmentType: "",
         equipmentCount: "0",
+        materialUnit: "",
       }),
     }));
   };
@@ -537,73 +617,62 @@ export default function SponsorDonationForm({ initialData = null }) {
     }
   };
 
-  const handleSave = () => {
-    const rowId = form.id ?? Date.now();
-    const savedRow = {
-      id: rowId,
-      name: form.sponsorName,
-      type: form.sponsorType,
-      phone: form.phone,
-      email: form.email,
-      address: form.address,
-      equipment: form.equipment,
-      equipmentType: form.equipmentType,
-      equipmentCount: form.equipmentCount,
-      date: formatKhmerDate(form.date),
-      dateValue: form.date,
-      rielAmount: form.amountRiel || "0",
-      dollarAmount: form.amountDollar || "0",
-      method: form.paymentMethod,
-      note: form.note,
-      branch: form.branch,
-      status: form.status,
-      receipt: form.receipt,
-    };
-
-    if (form.id) {
-      const savedValue = window.localStorage.getItem(
-        "tnal-youth:sponsor-donation-edits",
-      );
-      let savedEdits = {};
-
-      try {
-        savedEdits = savedValue ? JSON.parse(savedValue) : {};
-      } catch {
-        savedEdits = {};
-      }
-
-      window.localStorage.setItem(
-        "tnal-youth:sponsor-donation-edits",
-        JSON.stringify({
-          ...savedEdits,
-          [form.id]: savedRow,
-        }),
-      );
-    } else {
-      const savedValue = window.localStorage.getItem(SPONSOR_CREATED_ROWS_KEY);
-      let savedRows = [];
-
-      try {
-        savedRows = savedValue ? JSON.parse(savedValue) : [];
-      } catch {
-        savedRows = [];
-      }
-
-      window.localStorage.setItem(
-        SPONSOR_CREATED_ROWS_KEY,
-        JSON.stringify([savedRow, ...savedRows]),
-      );
+  const handleSave = async () => {
+    setError("");
+    const donorKind = DONOR_KIND_BY_TYPE[form.sponsorType];
+    const selectedPaymentMethod = paymentMethods.find((method) => method.value === form.paymentMethod);
+    if (!donorKind) return setError("Please choose sponsor type.");
+    if (!form.branch) return setError("Please choose a branch.");
+    if (donorKind === "MEMBER" && !form.memberId) return setError("Please choose a member from the selected branch.");
+    if (donorKind !== "MEMBER" && !form.sponsorName.trim()) return setError("Please enter sponsor name.");
+    if (!form.date) return setError("Please choose donation date.");
+    if (!selectedPaymentMethod) return setError("Please choose payment method.");
+    if (form.paymentMethod === MATERIAL_PAYMENT_CODE && (!form.equipmentType.trim() || Number(form.equipmentCount) <= 0 || !form.materialUnit.trim())) {
+      return setError("Please enter material type, quantity, and unit.");
     }
 
-    window.localStorage.setItem(
-      form.id
-        ? `tnal-youth:sponsor-donation-edit:${form.id}`
-        : "tnal-youth:sponsor-donation-draft",
-      JSON.stringify(form),
-    );
+    const body = {
+      donorKind,
+      sponsorId: null,
+      memberId: donorKind === "MEMBER" ? Number(form.memberId) : null,
+      name: donorKind === "MEMBER" ? null : form.sponsorName.trim(),
+      phone: form.phone.trim() || null,
+      email: form.email.trim() || null,
+      address: form.address.trim() || null,
+      branchId: Number(form.branch),
+      activityId: /^\d+$/.test(form.status) ? Number(form.status) : null,
+      amountKhr: Number(form.amountRiel || 0),
+      amountUsd: Number(form.amountDollar || 0),
+      paymentMethodId: selectedPaymentMethod.id,
+      paidAt: new Date(`${form.date}T12:00:00+07:00`).toISOString(),
+      paymentReference: null,
+      receiptFileId: null,
+      materialCategory: form.equipment ? form.equipmentType.trim() : null,
+      materialQuantity: form.equipment ? Number(form.equipmentCount) : null,
+      materialQuantityType: form.equipment ? form.materialUnit.trim() : null,
+      purpose: form.status && !/^\d+$/.test(form.status) ? form.status : null,
+      note: form.note.trim() || null,
+      expectedUpdatedAt: form.id ? form.updatedAt : null,
+    };
 
-    window.localStorage.setItem("tnal-youth:sponsor-save-alert", "true");
-    router.push(listPath);
+    setIsSaving(true);
+    try {
+      const id = form.id || donationId;
+      const response = await fetch(id
+        ? `/api/backend/donations/sponsor/${encodeURIComponent(id)}`
+        : "/api/backend/donations/sponsor", {
+        method: id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      await readApiResponse(response, "Unable to save sponsor donation.");
+      window.localStorage.setItem("tnal-youth:sponsor-save-alert", "true");
+      router.push(listPath);
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save sponsor donation.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const sponsorNamePlaceholder =
@@ -648,13 +717,35 @@ export default function SponsorDonationForm({ initialData = null }) {
               ))}
             </fieldset>
 
-            {form.sponsorType === "សមាជិក" ? (
+            {form.sponsorType === MEMBER_SPONSOR_TYPE && (
+              <SelectField
+                label="សាខា"
+                required
+                value={form.branch}
+                onChange={(value) => setForm((current) => ({
+                  ...current,
+                  branch: value,
+                  memberId: "",
+                  sponsorName: "",
+                  phone: "",
+                  email: "",
+                  address: "",
+                }))}
+                options={branches}
+                placeholder="ជ្រើសរើសសាខាជាមុន"
+              />
+            )}
+
+            {form.sponsorType === MEMBER_SPONSOR_TYPE ? (
               <MemberSelectField
                 label="ឈ្មោះអ្នកឧបត្ថម្ភ"
                 required
-                value={form.sponsorName}
+                value={form.memberId}
                 onChange={handleMemberChange}
-                options={memberNames}
+                options={members.map((member) => ({
+                  value: String(member.id),
+                  label: member.name || member.nameEn || member.memberNo,
+                }))}
                 placeholder="ជ្រើសរើសសមាជិក"
                 className="focus:placeholder-transparent"
               />
@@ -714,6 +805,7 @@ export default function SponsorDonationForm({ initialData = null }) {
               <PaymentMethodField
                 value={form.paymentMethod}
                 onChange={handlePaymentMethodChange}
+                options={paymentMethods}
                 className="min-w-0 flex-1"
               />
             </div>
@@ -764,8 +856,8 @@ export default function SponsorDonationForm({ initialData = null }) {
                     <input
                       type="checkbox"
                       name="equipment"
-                      value="សម្ភារៈ"
-                      checked={form.equipment === "សម្ភារៈ"}
+                      value={MATERIAL_PAYMENT_CODE}
+                      checked={form.equipment === MATERIAL_PAYMENT_CODE}
                       onChange={handleEquipmentChange}
                       className="h-3.5 w-3.5 accent-[#1689F2]"
                     />
@@ -776,7 +868,7 @@ export default function SponsorDonationForm({ initialData = null }) {
                   label="ប្រភេទសម្ភារៈ"
                   value={form.equipmentType}
                   onChange={updateField("equipmentType")}
-                  disabled={form.equipment !== "សម្ភារៈ"}
+                  disabled={form.equipment !== MATERIAL_PAYMENT_CODE}
                   options={equipmentTypes}
                   placeholder="បញ្ចូលនូវឈ្មោះសម្ភារៈ"
                   className="min-w-0 flex-1"
@@ -785,24 +877,34 @@ export default function SponsorDonationForm({ initialData = null }) {
                   label="ចំនួនសម្ភារៈ"
                   value={form.equipmentCount}
                   onChange={updateField("equipmentCount")}
-                  disabled={form.equipment !== "សម្ភារៈ"}
+                  disabled={form.equipment !== MATERIAL_PAYMENT_CODE}
                 />
               </div>
 
+            {form.equipment === MATERIAL_PAYMENT_CODE && (
+              <TextField
+                label="ឯកតាសម្ភារៈ"
+                value={form.materialUnit}
+                onChange={updateField("materialUnit")}
+                placeholder="ឧ. គីឡូក្រាម, ប្រអប់, ក្បាល"
+              />
+            )}
+
             <div className="flex items-end gap-4">
-              <SelectField
-                label="សាខា(Optional)"
+              {form.sponsorType !== MEMBER_SPONSOR_TYPE && <SelectField
+                label="សាខា"
+                required
                 value={form.branch}
                 onChange={updateField("branch")}
                 options={branches}
                 placeholder="ជ្រើសរើសសាខា"
                 className="min-w-0 flex-1"
-              />
+              />}
               <SelectField
                 label="ឧបត្ថម្ភក្នុងកម្មវិធី(Optional)"
                 value={form.status}
                 onChange={updateField("status")}
-                options={sponsorStatuses}
+                options={activities.filter((activity) => !form.branch || activity.branchId === String(form.branch))}
                 placeholder="ជ្រើសរើសកម្មវិធី"
                 className="min-w-0 flex-1"
               />
@@ -820,6 +922,11 @@ export default function SponsorDonationForm({ initialData = null }) {
         </div>
 
         <div className="mt-28 flex items-center justify-between gap-4">
+          {error && (
+            <p className="max-w-md text-sm font-medium text-error" role="alert">
+              {error}
+            </p>
+          )}
           <button
             type="button"
             onClick={() => router.push(listPath)}
@@ -830,10 +937,11 @@ export default function SponsorDonationForm({ initialData = null }) {
           <button
             type="button"
             onClick={handleSave}
+            disabled={isSaving}
             className="inline-flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary px-3 text-[14px] font-semibold text-white shadow-sm transition hover:bg-secondary-hover"
           >
             <ImportIcon size={16} />
-            រក្សាទុក
+            {isSaving ? "Saving..." : "រក្សាទុក"}
           </button>
         </div>
       </section>
