@@ -1,274 +1,117 @@
 "use client";
 
 import { useState } from "react";
-import { UploadCloud, X } from "lucide-react";
+import { UploadCloud } from "lucide-react";
 
 import PopupCard from "@/components/popup/PopupCard";
-import FormDate from "@/components/forms/FormDate";
 import FormSelect from "@/components/forms/FormSelect";
 
-export default function EditDocumentForm({ form, setForm, onSave, onClose }) {
-  const [files, setFiles] = useState(
-    form.files || [
-      {
-        name: "របាយការណ៍ឆ្នាំ2026.pdf",
-        size: "3.2 MB",
-        type: "PDF",
-      },
-    ],
-  );
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
-  const updateField = (field) => (e) => {
-    setForm({
-      ...form,
-      [field]: e.target.value,
-    });
+export default function EditDocumentForm({
+  form,
+  setForm,
+  onSave,
+  onClose,
+  branchOptions = [],
+  saving = false,
+  error = "",
+}) {
+  const [fileError, setFileError] = useState("");
+
+  const updateField = (field) => (event) => {
+    setForm((current) => ({ ...current, [field]: event.target.value }));
   };
 
-  // Add files
-  const handleUpload = (e) => {
-    const selectedFiles = Array.from(e.target.files);
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0] || null;
+    setFileError("");
 
-    const newFiles = selectedFiles.map((file) => ({
-      name: file.name,
-      size: (file.size / 1024 / 1024).toFixed(1) + " MB",
-      type: file.name.split(".").pop().toUpperCase(),
-      file: file,
-    }));
+    if (file && file.size > MAX_FILE_SIZE) {
+      setFileError("File size must not exceed 20 MB.");
+      event.target.value = "";
+      return;
+    }
 
-    setFiles((prev) => [...prev, ...newFiles]);
-  };
-
-  // Remove file
-  const removeFile = (index) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
+    setForm((current) => ({ ...current, newFile: file }));
   };
 
   return (
-    <PopupCard
-      size="md"
-      onClose={onClose}
-      className="
-    scale-[0.85]
-  "
-    >
+    <PopupCard size="md" onClose={onClose} className="scale-[0.85]">
       <div className="space-y-4">
-        <h2
-          className="
-          mb-4
-          text-lg
-          font-bold
-          text-primary
-          "
-        >
-          កែប្រែឯកសារ
-        </h2>
-
-        {/* Title + Branch */}
+        <h2 className="mb-4 text-lg font-bold text-primary">កែប្រែឯកសារ</h2>
 
         <div className="grid grid-cols-2 gap-5">
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
               ឈ្មោះឯកសារ
             </label>
-
             <input
               value={form.title || ""}
               onChange={updateField("title")}
-              className="
-              h-11
-              w-full
-              rounded-lg
-              border
-              border-gray-200
-              px-4
-              text-sm
-              outline-none
-              focus:border-primary
-              "
+              className="h-11 w-full rounded-lg border border-gray-200 px-4 text-sm outline-none focus:border-primary"
             />
           </div>
 
           <FormSelect
             label="សាខា"
             placeholder="ជ្រើសរើសសាខា"
-            value={form.branch}
-            onChange={updateField("branch")}
-            options={[
-              {
-                label: "សាខាភ្នំពេញ",
-                value: "សាខាភ្នំពេញ",
-              },
-              {
-                label: "សាខាសៀមរាប",
-                value: "សាខាសៀមរាប",
-              },
-            ]}
+            value={String(form.branchId || "")}
+            onChange={updateField("branchId")}
+            options={branchOptions}
           />
         </div>
 
-        {/* Description */}
-
         <div>
           <label className="mb-2 block text-sm font-semibold text-text-primary">
-            លេខសម្គាល់
+            សេចក្ដីពិពណ៌នា
           </label>
-
           <textarea
             rows={3}
             value={form.description || ""}
             onChange={updateField("description")}
-            className="
-            w-full
-            resize-none
-            rounded-lg
-            border
-            border-gray-200
-            p-3
-            text-sm
-            outline-none
-            focus:border-primary
-            "
+            className="w-full resize-none rounded-lg border border-gray-200 p-3 text-sm outline-none focus:border-primary"
           />
         </div>
 
-        {/* Date */}
-
-        <FormDate
-          label="កាលបរិច្ឆេទ"
-          value={form.date}
-          onChange={updateField("date")}
-        />
-
-        {/* Files */}
-
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-text-primary">
-            ឯកសារ
-          </label>
-
-          <div className="space-y-2">
-            {files.map((file, index) => (
-              <div
-                key={index}
-                className="
-                flex
-                h-12
-                items-center
-                justify-between
-                rounded-lg
-                border
-                border-gray-200
-                px-3
-                "
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="
-                    flex
-                    h-8
-                    w-8
-                    items-center
-                    justify-center
-                    rounded
-                    bg-red-100
-                    text-[10px]
-                    font-bold
-                    text-red-500
-                    "
-                  >
-                    {file.type}
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-gray-700">{file.name}</p>
-
-                    <p className="text-xs text-gray-400">
-                      {file.type} - {file.size}
-                    </p>
-                  </div>
-                </div>
-
-                <button type="button" onClick={() => removeFile(index)}>
-                  <X
-                    size={18}
-                    className="
-                    cursor-pointer
-                    text-gray-400
-                    hover:text-red-500
-                    "
-                  />
-                </button>
-              </div>
-            ))}
-          </div>
+        <div className="rounded-lg border border-gray-200 px-3 py-3 text-sm text-gray-600">
+          {form.fileName || "No existing file"}
         </div>
 
-        {/* Upload */}
-
-        <label
-          className="
-          flex
-          h-[110px]
-          cursor-pointer
-          flex-col
-          items-center
-          justify-center
-          rounded-xl
-          border-2
-          border-dashed
-          border-gray-200
-          "
-        >
-          <UploadCloud size={28} className="mb-2 text-gray-400" />
-
-          <p className="text-sm font-semibold text-primary">បញ្ចូលឯកសារ</p>
-
-          <p className="text-[11px] text-gray-400">
-            PDF, Excel, JPG, PNG (Max 5MB)
-          </p>
-
-          <input type="file" multiple hidden onChange={handleUpload} />
+        <label className="flex h-[100px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200">
+          <UploadCloud size={26} className="mb-2 text-gray-400" />
+          <span className="text-sm font-semibold text-primary">ជំនួសឯកសារ (មិនចាំបាច់)</span>
+          <input
+            type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp"
+            hidden
+            onChange={handleFileChange}
+          />
         </label>
-      </div>
 
-      {/* Buttons */}
+        {form.newFile && (
+          <p className="text-xs text-gray-600">New file: {form.newFile.name}</p>
+        )}
+        {fileError && <p className="text-xs text-red-500">{fileError}</p>}
+        {error && <p className="text-xs text-red-500">{error}</p>}
+      </div>
 
       <div className="mt-5 flex gap-4">
         <button
+          type="button"
           onClick={onClose}
-          className="
-          h-10
-          flex-1
-          rounded-lg
-          border
-          border-gray-200
-          text-sm
-          "
+          disabled={saving}
+          className="h-10 flex-1 rounded-lg border border-gray-200 text-sm disabled:opacity-60"
         >
           បោះបង់
         </button>
-
         <button
-          onClick={() => {
-            setForm({
-              ...form,
-              files,
-            });
-
-            onSave?.();
-          }}
-          className="
-          h-10
-          flex-1
-          rounded-lg
-          bg-primary
-          text-sm
-          font-medium
-          text-white
-          "
+          type="button"
+          onClick={() => onSave?.(form)}
+          disabled={saving || !form.title?.trim() || !form.branchId}
+          className="h-10 flex-1 rounded-lg bg-primary text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
-          រក្សាទុក
+          {saving ? "កំពុងរក្សាទុក..." : "រក្សាទុក"}
         </button>
       </div>
     </PopupCard>

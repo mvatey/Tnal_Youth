@@ -53,6 +53,10 @@ export default function AddDocumentForm({
   setForm,
   onSave,
   onClose,
+  branchOptions = BRANCH_OPTIONS,
+  documentTypeOptions = DOCUMENT_TYPE_OPTIONS,
+  saving = false,
+  error = "",
 }) {
   const fileInputRef = useRef(null);
 
@@ -204,7 +208,7 @@ export default function AddDocumentForm({
     ) &&
     files.length > 0;
 
-  const handleSave = (event) => {
+  const handleSave = async (event) => {
   event.preventDefault();
 
   if (!isFormValid) {
@@ -267,7 +271,7 @@ export default function AddDocumentForm({
     newDocument,
   );
 
-  onSave?.(newDocument);
+  await onSave?.(newDocument);
 };
 
   return (
@@ -374,9 +378,7 @@ export default function AddDocumentForm({
                   "branch",
                 )
               }
-              options={
-                BRANCH_OPTIONS
-              }
+              options={branchOptions}
             />
           </div>
 
@@ -399,9 +401,7 @@ export default function AddDocumentForm({
                   "type",
                 )
               }
-              options={
-                DOCUMENT_TYPE_OPTIONS
-              }
+              options={documentTypeOptions}
             />
 
             <div>
@@ -672,11 +672,16 @@ export default function AddDocumentForm({
             </p>
           )}
 
+        {error && (
+          <p className="mt-4 text-xs font-medium text-red-500">
+            {error}
+          </p>
+        )}
+
         <FormActionButtons
           onCancel={onClose}
-          isValid={
-            isFormValid
-          }
+          isValid={isFormValid}
+          saving={saving}
           saveText="រក្សាទុក"
           cancelText="បោះបង់"
         />

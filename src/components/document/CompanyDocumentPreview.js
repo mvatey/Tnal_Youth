@@ -11,12 +11,14 @@ export default function CompanyDocumentPreview({
 
 
   const handleDownload = async () => {
-    if (!document.image) {
+    const downloadUrl = document.fileUrl || document.image;
+
+    if (!downloadUrl) {
       console.error("No file available");
       return;
     }
 
-    const response = await fetch(document.image);
+    const response = await fetch(downloadUrl);
 
     const blob = await response.blob();
 
@@ -26,7 +28,7 @@ export default function CompanyDocumentPreview({
 
     link.href = url;
 
-    link.download = `${document.title}.${document.type.toLowerCase()}`;
+    link.download = document.fileName || `${document.title}.${String(document.fileFormat || "file").toLowerCase()}`;
 
     window.document.body.appendChild(link);
 
