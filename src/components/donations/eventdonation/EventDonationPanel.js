@@ -43,10 +43,20 @@ export default function EventDonationPanel({ selectedBranch: controlledSelectedB
         if (!cancelled) {
           setRows((Array.isArray(page?.items) ? page.items : []).filter((row) => row.activityId).map(mapEventRow));
           const values = branchBody?.data ?? branchBody;
-          setBranches((Array.isArray(values) ? values : []).map((branch) => ({
-            value: String(branch.id ?? branch.value),
-            label: branch.nameKm ?? branch.name ?? branch.label,
-          })));
+          setBranches((Array.isArray(values) ? values : [])
+            .map((branch) => ({
+              value: String(branch.value ?? branch.id ?? ""),
+              label:
+                branch.labelKm ??
+                branch.nameKm ??
+                branch.labelEn ??
+                branch.nameEn ??
+                branch.label ??
+                branch.name ??
+                branch.code ??
+                "",
+            }))
+            .filter((branch) => branch.value && branch.label));
         }
       } catch (loadError) {
         if (!cancelled) {
