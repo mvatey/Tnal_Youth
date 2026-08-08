@@ -33,11 +33,9 @@ async function fetchJson(path) {
     `/api${path}`,
     {
       method: "GET",
-
       headers: {
         Accept: "application/json",
       },
-
       cache: "no-store",
     },
   );
@@ -49,7 +47,8 @@ async function fetchJson(path) {
 
   if (text) {
     try {
-      body = JSON.parse(text);
+      body =
+        JSON.parse(text);
     } catch {
       body = text;
     }
@@ -57,7 +56,8 @@ async function fetchJson(path) {
 
   if (!response.ok) {
     const message =
-      typeof body === "object"
+      typeof body ===
+      "object"
         ? body?.message ||
           body?.detail ||
           body?.error
@@ -81,7 +81,8 @@ async function createMember(
       method: "POST",
 
       headers: {
-        Accept: "application/json",
+        Accept:
+          "application/json",
         "Content-Type":
           "application/json",
       },
@@ -100,7 +101,8 @@ async function createMember(
 
   if (text) {
     try {
-      body = JSON.parse(text);
+      body =
+        JSON.parse(text);
     } catch {
       body = text;
     }
@@ -108,7 +110,8 @@ async function createMember(
 
   if (!response.ok) {
     const message =
-      typeof body === "object"
+      typeof body ===
+      "object"
         ? body?.message ||
           body?.detail ||
           body?.error
@@ -123,8 +126,12 @@ async function createMember(
   return body;
 }
 
-function normalizeArray(data) {
-  if (Array.isArray(data)) {
+function normalizeArray(
+  data,
+) {
+  if (
+    Array.isArray(data)
+  ) {
     return data;
   }
 
@@ -209,21 +216,9 @@ export default function CreateMemberModal({
     setSubmitError,
   ] = useState("");
 
-  /*
-   * =========================================
-   * MOUNT
-   * =========================================
-   */
-
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  /*
-   * =========================================
-   * RESET WHEN MODAL OPENS
-   * =========================================
-   */
 
   useEffect(() => {
     if (!open) {
@@ -240,12 +235,6 @@ export default function CreateMemberModal({
 
     setSubmitError("");
   }, [open]);
-
-  /*
-   * =========================================
-   * LOAD LOOKUPS
-   * =========================================
-   */
 
   useEffect(() => {
     if (!open) {
@@ -286,13 +275,6 @@ export default function CreateMemberModal({
       }
     }
 
-    /*
-     * Load independently.
-     *
-     * One failed lookup should not
-     * make every dropdown empty.
-     */
-
     loadLookup(
       "/lookups/branches",
       setBranchLookups,
@@ -328,12 +310,6 @@ export default function CreateMemberModal({
     };
   }, [open]);
 
-  /*
-   * =========================================
-   * ESCAPE
-   * =========================================
-   */
-
   useEffect(() => {
     if (!open) {
       return undefined;
@@ -365,12 +341,6 @@ export default function CreateMemberModal({
     onClose,
   ]);
 
-  /*
-   * =========================================
-   * LOCK PAGE SCROLL
-   * =========================================
-   */
-
   useEffect(() => {
     if (!open) {
       return undefined;
@@ -381,7 +351,8 @@ export default function CreateMemberModal({
         .overflow;
 
     document.body.style
-      .overflow = "hidden";
+      .overflow =
+      "hidden";
 
     return () => {
       document.body.style
@@ -390,21 +361,19 @@ export default function CreateMemberModal({
     };
   }, [open]);
 
-  /*
-   * =========================================
-   * FORM CHANGE
-   * =========================================
-   */
-
   const update =
-    (field) => (event) => {
+    (field) =>
+    (event) => {
       const value =
         event.target.value;
 
       setForm(
-        (previousForm) => ({
+        (
+          previousForm,
+        ) => ({
           ...previousForm,
-          [field]: value,
+          [field]:
+            value,
         }),
       );
 
@@ -414,12 +383,6 @@ export default function CreateMemberModal({
 
       setSubmitError("");
     };
-
-  /*
-   * =========================================
-   * GENDER OPTIONS
-   * =========================================
-   */
 
   const genderOptions =
     useMemo(
@@ -444,7 +407,8 @@ export default function CreateMemberModal({
 
               return {
                 label,
-                value: code,
+                value:
+                  code,
               };
             },
           )
@@ -455,14 +419,10 @@ export default function CreateMemberModal({
               option.label !==
                 "",
           ),
-      [genderLookups],
+      [
+        genderLookups,
+      ],
     );
-
-  /*
-   * =========================================
-   * NATIONALITY OPTIONS
-   * =========================================
-   */
 
   const nationalityOptions =
     useMemo(
@@ -482,6 +442,10 @@ export default function CreateMemberModal({
                 nationality?.label_km ||
                 nationality?.labelEn ||
                 nationality?.label_en ||
+                nationality?.nameKm ||
+                nationality?.name_km ||
+                nationality?.nameEn ||
+                nationality?.name_en ||
                 nationality?.code ||
                 "";
 
@@ -489,7 +453,8 @@ export default function CreateMemberModal({
                 label,
 
                 value:
-                  id !== null &&
+                  id !==
+                    null &&
                   id !==
                     undefined
                     ? String(
@@ -511,12 +476,6 @@ export default function CreateMemberModal({
       ],
     );
 
-  /*
-   * =========================================
-   * MEMBER LEVEL OPTIONS
-   * =========================================
-   */
-
   const levelOptions =
     useMemo(
       () =>
@@ -533,6 +492,8 @@ export default function CreateMemberModal({
                 level?.label_km ||
                 level?.labelEn ||
                 level?.label_en ||
+                level?.nameKm ||
+                level?.name_km ||
                 level?.code ||
                 "";
 
@@ -540,7 +501,8 @@ export default function CreateMemberModal({
                 label,
 
                 value:
-                  id !== null &&
+                  id !==
+                    null &&
                   id !==
                     undefined
                     ? String(
@@ -559,12 +521,6 @@ export default function CreateMemberModal({
           ),
       [levelLookups],
     );
-
-  /*
-   * =========================================
-   * ROLE OPTIONS
-   * =========================================
-   */
 
   const roleOptions =
     useMemo(
@@ -589,7 +545,8 @@ export default function CreateMemberModal({
 
               return {
                 label,
-                value: code,
+                value:
+                  code,
               };
             },
           )
@@ -602,12 +559,6 @@ export default function CreateMemberModal({
           ),
       [roleLookups],
     );
-
-  /*
-   * =========================================
-   * BRANCH OPTIONS
-   * =========================================
-   */
 
   const branchOptions =
     useMemo(
@@ -635,7 +586,8 @@ export default function CreateMemberModal({
                 label,
 
                 value:
-                  id !== null &&
+                  id !==
+                    null &&
                   id !==
                     undefined
                     ? String(
@@ -654,12 +606,6 @@ export default function CreateMemberModal({
           ),
       [branchLookups],
     );
-
-  /*
-   * =========================================
-   * STATUS OPTIONS
-   * =========================================
-   */
 
   const statusOptions =
     useMemo(
@@ -684,7 +630,8 @@ export default function CreateMemberModal({
                 label,
 
                 value:
-                  id !== null &&
+                  id !==
+                    null &&
                   id !==
                     undefined
                     ? String(
@@ -704,12 +651,6 @@ export default function CreateMemberModal({
       [statusLookups],
     );
 
-  /*
-   * =========================================
-   * VALIDATION
-   * =========================================
-   */
-
   const requiredFields = [
     "fullNameKm",
     "fullNameEn",
@@ -728,15 +669,11 @@ export default function CreateMemberModal({
     requiredFields.every(
       (field) =>
         String(
-          form[field] ?? "",
-        ).trim() !== "",
+          form[field] ??
+            "",
+        ).trim() !==
+        "",
     );
-
-  /*
-   * =========================================
-   * SUBMIT
-   * =========================================
-   */
 
   const submit =
     async (event) => {
@@ -759,7 +696,9 @@ export default function CreateMemberModal({
 
       setSubmitError("");
 
-      setIsSubmitting(true);
+      setIsSubmitting(
+        true,
+      );
 
       const payload = {
         full_name_km:
@@ -849,7 +788,12 @@ export default function CreateMemberModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] bg-black/40"
+      className="
+        fixed
+        inset-0
+        z-[9999]
+        bg-black/40
+      "
       onMouseDown={(
         event,
       ) => {
@@ -861,33 +805,43 @@ export default function CreateMemberModal({
         }
       }}
     >
+      {/* =====================================
+          CENTER ONLY INSIDE MAIN CONTENT AREA
+      ===================================== */}
+
       <div
         className="
           absolute
-          inset-0
+          bottom-0
+          left-0
+          right-0
+          top-0
+
           flex
-          items-start
+          items-center
           justify-center
-          overflow-y-auto
+
           p-3
-          pt-5
           sm:p-4
-          sm:pt-6
-          p-4
+
+          lg:left-72
+          lg:top-16
         "
       >
         <div
           className="
             flex
-            max-h-[calc(100dvh-2rem)]
+            max-h-[calc(100dvh-32px)]
             w-full
-            max-w-[1020px]
+            max-w-[900px]
             flex-col
             overflow-hidden
             rounded-xl
             bg-white
             shadow-2xl
             sm:rounded-2xl
+
+            lg:max-h-[calc(100dvh-96px)]
           "
           onMouseDown={(
             event,
@@ -905,22 +859,26 @@ export default function CreateMemberModal({
               justify-between
               border-b
               border-border
-              px-7
-              py-7
+              px-4
+              py-4
+              sm:px-5
             "
           >
-            <h2 className="text-xl font-bold text-primary">
+            <h2 className="text-lg font-bold text-primary">
               បង្កើតសមាជិកថ្មី
             </h2>
 
             <button
               type="button"
-              onClick={onClose}
+              onClick={
+                onClose
+              }
               aria-label="បិទ"
               className="
                 flex
                 h-8
                 w-8
+                shrink-0
                 items-center
                 justify-center
                 rounded-full
@@ -930,7 +888,9 @@ export default function CreateMemberModal({
                 hover:text-text-primary
               "
             >
-              <X size={18} />
+              <X
+                size={18}
+              />
             </button>
           </div>
 
@@ -947,31 +907,31 @@ export default function CreateMemberModal({
               flex-col
             "
           >
+            {/* SCROLLABLE BODY */}
+
             <div
               className="
                 no-scrollbar
                 min-h-0
                 flex-1
                 overflow-y-auto
-                px-7
-                py-6
+                px-4
+                py-4
+                sm:px-5
               "
             >
               <div
                 className="
                   grid
                   grid-cols-1
-                  gap-x-6
-                  gap-y-4
+                  gap-x-4
+                  gap-y-3
                   sm:grid-cols-2
-                  [&_input]:!h-[52px]
-                  [&_select]:!h-[52px]
                 "
               >
                 <BoxFill
                   label="ឈ្មោះជាភាសាខ្មែរ"
                   name="fullNameKm"
-                  className="sm:order-1"
                   placeholder="បញ្ចូលឈ្មោះ"
                   value={
                     form.fullNameKm
@@ -984,7 +944,6 @@ export default function CreateMemberModal({
                 <BoxFill
                   label="ឈ្មោះជាអក្សរឡាតាំង"
                   name="fullNameEn"
-                  className="sm:order-2"
                   placeholder="បញ្ចូលឈ្មោះ"
                   value={
                     form.fullNameEn
@@ -997,7 +956,6 @@ export default function CreateMemberModal({
                 <FormSelect
                   label="ភេទ"
                   name="gender"
-                  className="sm:order-3"
                   placeholder="ជ្រើសរើសភេទ"
                   options={
                     genderOptions
@@ -1011,38 +969,23 @@ export default function CreateMemberModal({
                 />
 
                 <FormSelect
-                  label="សញ្ជាតិ"
-                  name="nationalityId"
-                  className="sm:order-4"
-                  placeholder="ជ្រើសរើសសញ្ជាតិ"
+                  label="ស្ថានភាព"
+                  name="statusId"
+                  placeholder="ជ្រើសរើសស្ថានភាព"
                   options={
-                    nationalityOptions
+                    statusOptions
                   }
                   value={
-                    form.nationalityId
+                    form.statusId
                   }
                   onChange={update(
-                    "nationalityId",
-                  )}
-                />
-
-                <BoxFill
-                  label="ថ្ងៃខែឆ្នាំកំណើត"
-                  name="dateOfBirth"
-                  className="sm:order-9"
-                  type="date"
-                  value={
-                    form.dateOfBirth
-                  }
-                  onChange={update(
-                    "dateOfBirth",
+                    "statusId",
                   )}
                 />
 
                 <BoxFill
                   label="លេខទូរស័ព្ទ"
                   name="phone"
-                  className="sm:order-5"
                   type="tel"
                   placeholder="បញ្ចូលលេខទូរស័ព្ទ"
                   value={
@@ -1056,7 +999,6 @@ export default function CreateMemberModal({
                 <BoxFill
                   label="អ៊ីមែល"
                   name="email"
-                  className="sm:order-6"
                   type="email"
                   placeholder="បញ្ចូលអ៊ីមែល"
                   value={
@@ -1070,7 +1012,6 @@ export default function CreateMemberModal({
                 <FormSelect
                   label="សាខា"
                   name="branchId"
-                  className="sm:order-7"
                   placeholder="ជ្រើសរើសសាខា"
                   options={
                     branchOptions
@@ -1084,25 +1025,8 @@ export default function CreateMemberModal({
                 />
 
                 <FormSelect
-                  label="កម្រិតសមាជិក (កាំ)"
-                  name="levelId"
-                  className="sm:order-11"
-                  placeholder="ជ្រើសរើសកម្រិតសមាជិក"
-                  options={
-                    levelOptions
-                  }
-                  value={
-                    form.levelId
-                  }
-                  onChange={update(
-                    "levelId",
-                  )}
-                />
-
-                <FormSelect
                   label="តួនាទី"
                   name="role"
-                  className="sm:order-8"
                   placeholder="ជ្រើសរើសតួនាទី"
                   options={
                     roleOptions
@@ -1116,9 +1040,20 @@ export default function CreateMemberModal({
                 />
 
                 <BoxFill
+                  label="ថ្ងៃខែឆ្នាំកំណើត"
+                  name="dateOfBirth"
+                  type="date"
+                  value={
+                    form.dateOfBirth
+                  }
+                  onChange={update(
+                    "dateOfBirth",
+                  )}
+                />
+
+                <BoxFill
                   label="ថ្ងៃខែឆ្នាំចូលរួម"
                   name="joinedOn"
-                  className="sm:order-10"
                   type="date"
                   value={
                     form.joinedOn
@@ -1129,37 +1064,67 @@ export default function CreateMemberModal({
                 />
 
                 <FormSelect
-                  label="ស្ថានភាព"
-                  name="statusId"
-                  className="sm:order-12"
-                  placeholder="ជ្រើសរើសស្ថានភាព"
+                  label="កម្រិតសមាជិក (កាំ)"
+                  name="levelId"
+                  placeholder="ជ្រើសរើសកម្រិតសមាជិក"
                   options={
-                    statusOptions
+                    levelOptions
                   }
                   value={
-                    form.statusId
+                    form.levelId
                   }
                   onChange={update(
-                    "statusId",
+                    "levelId",
+                  )}
+                />
+
+                <FormSelect
+                  label="សញ្ជាតិ"
+                  name="nationalityId"
+                  placeholder="ជ្រើសរើសសញ្ជាតិ"
+                  options={
+                    nationalityOptions
+                  }
+                  value={
+                    form.nationalityId
+                  }
+                  onChange={update(
+                    "nationalityId",
                   )}
                 />
               </div>
 
               {showValidationError &&
                 !isFormValid && (
-                  <p className="mt-4 text-xs font-medium text-red-500">
+                  <p
+                    className="
+                      mt-4
+                      text-xs
+                      font-medium
+                      text-red-500
+                    "
+                  >
                     សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
                   </p>
                 )}
 
               {submitError && (
-                <p className="mt-4 text-xs font-medium text-red-500">
-                  {submitError}
+                <p
+                  className="
+                    mt-4
+                    text-xs
+                    font-medium
+                    text-red-500
+                  "
+                >
+                  {
+                    submitError
+                  }
                 </p>
               )}
             </div>
 
-            {/* ACTIONS */}
+            {/* ACTION BUTTON */}
 
             <div
               className="
@@ -1167,12 +1132,11 @@ export default function CreateMemberModal({
                 border-t
                 border-border
                 bg-white
-                px-7
-                py-6
+                px-4
+                py-3
+                sm:px-5
+                sm:py-4
                 [&>div]:mt-0
-                [&_button]:!h-[52px]
-                [&_button]:!text-base
-                sm:[&>div]:!grid-cols-[252px_1fr]
               "
             >
               <FormActionButton
@@ -1183,11 +1147,10 @@ export default function CreateMemberModal({
                   isFormValid &&
                   !isSubmitting
                 }
-                saveText={
+                saving={
                   isSubmitting
-                    ? "កំពុងរក្សាទុក..."
-                    : "រក្សាទុក"
                 }
+                saveText="រក្សាទុក"
                 cancelText="បោះបង់"
               />
             </div>
