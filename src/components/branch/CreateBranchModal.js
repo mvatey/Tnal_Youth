@@ -126,8 +126,13 @@ function getLocationLabel(item) {
   return (
     item?.name_km ||
     item?.nameKm ||
+    item?.label_km ||
+    item?.labelKm ||
     item?.name_en ||
     item?.nameEn ||
+    item?.label_en ||
+    item?.labelEn ||
+    item?.label ||
     item?.code ||
     "-"
   );
