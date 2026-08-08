@@ -4,6 +4,75 @@ const BACKEND_URL =
   process.env.BACKEND_API_URL ||
   "http://localhost:8081/api";
 
+export async function GET(
+  request,
+  context,
+) {
+  const { branchId } =
+    await context.params;
+
+  const accessToken =
+    (await cookies()).get(
+      "accessToken",
+    )?.value;
+
+  if (!accessToken) {
+    return Response.json(
+      { message: "Unauthorized" },
+      { status: 401 },
+    );
+  }
+
+  if (!branchId) {
+    return Response.json(
+      { message: "Branch ID is required" },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const backendResponse =
+      await fetch(
+        `${BACKEND_URL}/branches/${branchId}/leader`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            Authorization:
+              `Bearer ${accessToken}`,
+          },
+          cache: "no-store",
+        },
+      );
+
+    return new Response(
+      await backendResponse.text(),
+      {
+        status: backendResponse.status,
+        headers: {
+          "Content-Type":
+            backendResponse.headers.get(
+              "content-type",
+            ) || "application/json",
+        },
+      },
+    );
+  } catch (error) {
+    console.error(
+      "Load branch leader proxy error:",
+      error,
+    );
+
+    return Response.json(
+      {
+        message:
+          "Could not load branch leader",
+      },
+      { status: 502 },
+    );
+  }
+}
+
 export async function PUT(
   request,
   context,

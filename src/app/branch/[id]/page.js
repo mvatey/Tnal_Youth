@@ -242,6 +242,16 @@ function getStatusLabel(value) {
 }
 
 function getProfileImage(member) {
+  const profilePhotoId =
+    member?.profile_photo?.id ??
+    member?.profilePhoto?.id ??
+    member?.profile_photo_id ??
+    member?.profilePhotoId;
+
+  if (profilePhotoId) {
+    return `/api/files/${encodeURIComponent(profilePhotoId)}/content`;
+  }
+
   const imagePath =
     member?.profile_photo?.url ||
     member?.profilePhoto?.url ||
