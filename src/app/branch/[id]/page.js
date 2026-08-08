@@ -589,8 +589,8 @@ export default function BranchDetailPage() {
               ]
             : [],
           summary: {
-            total_members: 0,
-            total_activities: 0,
+            total_members: null,
+            total_activities: null,
           },
         });
       },
@@ -917,7 +917,7 @@ export default function BranchDetailPage() {
         (person) =>
           person.role ===
           "BRANCH_LEADER",
-      ) || null,
+      ) || mappedLeaders[0] || null,
     [mappedLeaders],
   );
 
