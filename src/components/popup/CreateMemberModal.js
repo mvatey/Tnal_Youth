@@ -873,28 +873,21 @@ export default function CreateMemberModal({
           pt-5
           sm:p-4
           sm:pt-6
-          lg:bottom-0
-          lg:left-72
-          lg:right-0
-          lg:top-16
-          lg:items-start
-          lg:pt-5
+          p-4
         "
       >
         <div
           className="
             flex
-            max-h-[calc(100dvh-1.5rem)]
+            max-h-[calc(100dvh-2rem)]
             w-full
-            max-w-[680px]
+            max-w-[1020px]
             flex-col
             overflow-hidden
             rounded-xl
             bg-white
             shadow-2xl
-            sm:max-h-[calc(100dvh-2rem)]
             sm:rounded-2xl
-            lg:max-h-[calc(100dvh-5rem)]
           "
           onMouseDown={(
             event,
@@ -912,13 +905,11 @@ export default function CreateMemberModal({
               justify-between
               border-b
               border-border
-              px-4
-              py-3
-              sm:px-5
-              sm:py-4
+              px-7
+              py-7
             "
           >
-            <h2 className="text-lg font-bold text-primary">
+            <h2 className="text-xl font-bold text-primary">
               បង្កើតសមាជិកថ្មី
             </h2>
 
@@ -962,23 +953,25 @@ export default function CreateMemberModal({
                 min-h-0
                 flex-1
                 overflow-y-auto
-                px-4
-                py-4
-                sm:px-5
+                px-7
+                py-6
               "
             >
               <div
                 className="
                   grid
                   grid-cols-1
-                  gap-x-4
-                  gap-y-3
+                  gap-x-6
+                  gap-y-4
                   sm:grid-cols-2
+                  [&_input]:!h-[52px]
+                  [&_select]:!h-[52px]
                 "
               >
                 <BoxFill
                   label="ឈ្មោះជាភាសាខ្មែរ"
                   name="fullNameKm"
+                  className="sm:order-1"
                   placeholder="បញ្ចូលឈ្មោះ"
                   value={
                     form.fullNameKm
@@ -991,6 +984,7 @@ export default function CreateMemberModal({
                 <BoxFill
                   label="ឈ្មោះជាអក្សរឡាតាំង"
                   name="fullNameEn"
+                  className="sm:order-2"
                   placeholder="បញ្ចូលឈ្មោះ"
                   value={
                     form.fullNameEn
@@ -1003,6 +997,7 @@ export default function CreateMemberModal({
                 <FormSelect
                   label="ភេទ"
                   name="gender"
+                  className="sm:order-3"
                   placeholder="ជ្រើសរើសភេទ"
                   options={
                     genderOptions
@@ -1018,6 +1013,7 @@ export default function CreateMemberModal({
                 <FormSelect
                   label="សញ្ជាតិ"
                   name="nationalityId"
+                  className="sm:order-4"
                   placeholder="ជ្រើសរើសសញ្ជាតិ"
                   options={
                     nationalityOptions
@@ -1033,6 +1029,7 @@ export default function CreateMemberModal({
                 <BoxFill
                   label="ថ្ងៃខែឆ្នាំកំណើត"
                   name="dateOfBirth"
+                  className="sm:order-9"
                   type="date"
                   value={
                     form.dateOfBirth
@@ -1045,6 +1042,7 @@ export default function CreateMemberModal({
                 <BoxFill
                   label="លេខទូរស័ព្ទ"
                   name="phone"
+                  className="sm:order-5"
                   type="tel"
                   placeholder="បញ្ចូលលេខទូរស័ព្ទ"
                   value={
@@ -1058,6 +1056,7 @@ export default function CreateMemberModal({
                 <BoxFill
                   label="អ៊ីមែល"
                   name="email"
+                  className="sm:order-6"
                   type="email"
                   placeholder="បញ្ចូលអ៊ីមែល"
                   value={
@@ -1071,6 +1070,7 @@ export default function CreateMemberModal({
                 <FormSelect
                   label="សាខា"
                   name="branchId"
+                  className="sm:order-7"
                   placeholder="ជ្រើសរើសសាខា"
                   options={
                     branchOptions
@@ -1084,9 +1084,10 @@ export default function CreateMemberModal({
                 />
 
                 <FormSelect
-                  label="កាំ"
+                  label="កម្រិតសមាជិក (កាំ)"
                   name="levelId"
-                  placeholder="ជ្រើសរើសកាំ"
+                  className="sm:order-11"
+                  placeholder="ជ្រើសរើសកម្រិតសមាជិក"
                   options={
                     levelOptions
                   }
@@ -1101,6 +1102,7 @@ export default function CreateMemberModal({
                 <FormSelect
                   label="តួនាទី"
                   name="role"
+                  className="sm:order-8"
                   placeholder="ជ្រើសរើសតួនាទី"
                   options={
                     roleOptions
@@ -1116,6 +1118,7 @@ export default function CreateMemberModal({
                 <BoxFill
                   label="ថ្ងៃខែឆ្នាំចូលរួម"
                   name="joinedOn"
+                  className="sm:order-10"
                   type="date"
                   value={
                     form.joinedOn
@@ -1128,6 +1131,7 @@ export default function CreateMemberModal({
                 <FormSelect
                   label="ស្ថានភាព"
                   name="statusId"
+                  className="sm:order-12"
                   placeholder="ជ្រើសរើសស្ថានភាព"
                   options={
                     statusOptions
@@ -1163,10 +1167,12 @@ export default function CreateMemberModal({
                 border-t
                 border-border
                 bg-white
-                px-4
-                py-3
-                sm:px-5
-                sm:py-4
+                px-7
+                py-6
+                [&>div]:mt-0
+                [&_button]:!h-[52px]
+                [&_button]:!text-base
+                sm:[&>div]:!grid-cols-[252px_1fr]
               "
             >
               <FormActionButton

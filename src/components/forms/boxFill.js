@@ -17,6 +17,9 @@ export default function BoxFill({
   readOnly = false,
   disabled = false,
   leadingIcon,
+  list,
+  suggestions = [],
+  className = "",
 }) {
   const [focused, setFocused] = useState(false);
 
@@ -52,7 +55,7 @@ export default function BoxFill({
   `;
 
   return (
-    <div className={`min-w-0 ${disabled || readOnly ? "[&_label]:text-gray-400" : ""}`}>
+    <div className={`min-w-0 ${disabled || readOnly ? "[&_label]:text-gray-400" : ""} ${className}`}>
       {label && (
         <label
           htmlFor={name}
@@ -163,6 +166,7 @@ export default function BoxFill({
             id={name}
             type={type}
             name={name}
+            list={list}
             {...sharedValueProps}
             readOnly={readOnly}
             disabled={disabled}
@@ -178,6 +182,17 @@ export default function BoxFill({
               }
             `}
           />
+
+          {list && suggestions.length > 0 && (
+            <datalist id={list}>
+              {suggestions.map((suggestion, index) => (
+                <option
+                  key={`${list}-${suggestion.value ?? suggestion.label ?? index}`}
+                  value={suggestion.label ?? suggestion.value ?? suggestion}
+                />
+              ))}
+            </datalist>
+          )}
         </div>
       )}
     </div>
