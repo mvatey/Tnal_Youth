@@ -1,5 +1,4 @@
-import activityData from "@/data/activityRecords.json";
-import participantData from "@/data/participantRecords.json";
+import { cookies } from "next/headers";
 import {
   InfoIcon,
   InfoItem,
@@ -30,26 +29,122 @@ import {
   ChevronRight
 } from "lucide-react";
 
+const BACKEND_URL =
+  process.env.BACKEND_API_URL || "http://localhost:8081/api";
+
+function lookupLabel(value) {
+  return value?.labelKm || value?.labelEn || value?.code || "-";
+}
+
+function formatDate(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return new Intl.DateTimeFormat("km-KH", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  }).format(date);
+}
+
+function formatTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return new Intl.DateTimeFormat("km-KH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function formatDuration(startsAt, endsAt) {
+  const start = new Date(startsAt);
+  const end = new Date(endsAt);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "-";
+  return `${Math.round((end - start) / 3_600_000)} ម៉ោង`;
+}
+
+async function backendGet(path, accessToken) {
+  const response = await fetch(`${BACKEND_URL}${path}`, {
+    headers: {
+      Accept: "application/json",
+      ...(accessToken
+        ? { Authorization: `Bearer ${accessToken}` }
+        : {}),
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) return null;
+  return response.json();
+}
+
 export default async function ActivityDetailPage({ params }) {
   const { id } = await params;
-  const activity = activityData.find((item) => String(item.id) === id);
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("accessToken")?.value;
 
-  if (!activity) {
-  notFound();
+  const [record, participantData, branchData] = await Promise.all([
+    backendGet(`/activities/${encodeURIComponent(id)}`, accessToken),
+    backendGet(
+      `/activities/${encodeURIComponent(id)}/participants`,
+      accessToken,
+    ),
+    backendGet("/lookups/branches", accessToken),
+  ]);
+
+  if (!record) {
+    notFound();
   }
-  const activityParticipants = participantData.filter(
-  (participant) =>
-    String(participant.activityId) === String(activity.id)
-);
+
+  const branches = Array.isArray(branchData) ? branchData : [];
+  const branch = branches.find(
+    (item) => String(item.value) === String(record.branchId),
+  );
+  const activityParticipants = Array.isArray(participantData)
+    ? participantData
+    : [];
+
+  const activity = {
+    id: record.id,
+    name: record.titleKm || record.titleEn || "-",
+    descriptionBrief: record.description || "-",
+    descriptionDetail: record.description || "-",
+    type: lookupLabel(record.type),
+    sector: lookupLabel(record.sector),
+    status: String(record.status?.code || "").toLowerCase(),
+    branch:
+      branch?.labelKm || branch?.labelEn || branch?.code || `#${record.branchId}`,
+    location: record.locationName || "-",
+    address: record.address || record.locationName || "-",
+    mapLink: record.googleMapUrl || "#",
+    mapImage: "/map.png",
+    image: record.coverImageId
+      ? `/api/files/${record.coverImageId}/content`
+      : "/activity-placeholder.svg",
+    date: formatDate(record.startsAt),
+    startDate: formatDate(record.startsAt),
+    endDate: formatDate(record.endsAt),
+    startTime: formatTime(record.startsAt),
+    endTime: formatTime(record.endsAt),
+    duration: formatDuration(record.startsAt, record.endsAt),
+    participants: `${activityParticipants.length}/${record.capacity || "-"}`,
+    visibility: record.publicActivity ? "សាធារណៈ" : "ផ្ទៃក្នុង",
+    leader: "-",
+    phone: "-",
+    donation: "$ 0",
+    budget: "$ 0",
+    documents: [],
+  };
 
 const attendedCount = activityParticipants.filter(
   (participant) =>
-    participant.status === "បានចូលរួម"
+    Boolean(participant.checked_in_at || participant.checkedInAt)
 ).length;
 
 const absentCount = activityParticipants.filter(
   (participant) =>
-    participant.status === "មិនបានចូលរួម"
+    !Boolean(participant.checked_in_at || participant.checkedInAt)
 ).length;
 
 const totalParticipantCount = activityParticipants.length;

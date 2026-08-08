@@ -181,8 +181,8 @@ function PoliticalGroup({ index, item, parties, canDelete, onChange, onDelete })
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
         <FormSelect
-          label="បក្ស័"
-          placeholder="ជ្រើសរើសបក្ស័"
+          label="បក្ស"
+          placeholder="ជ្រើសរើសបក្ស"
           value={item.organization ?? ""}
           onChange={(event) => onChange("organization", event.target.value)}
           options={parties}

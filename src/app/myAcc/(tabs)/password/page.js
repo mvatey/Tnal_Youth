@@ -15,6 +15,38 @@ export default function PasswordPage() {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSave = async () => {
+    setError("");
+    setMessage("");
+    if (!currentPassword) return setError("Please enter your current password.");
+    if (!/^\d{6}$/.test(newPassword)) return setError("New password must contain exactly 6 digits.");
+    if (newPassword !== confirmPassword) return setError("Password confirmation does not match.");
+    setSaving(true);
+    try {
+      const response = await fetch("/api/backend/my-account/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+      });
+      const body = response.status === 204 ? null : await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.message || "Unable to change password.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setMessage("Password changed successfully.");
+    } catch (saveError) {
+      setError(saveError.message || "Unable to change password.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -38,11 +70,16 @@ export default function PasswordPage() {
             label="ពាក្យសម្ងាត់បច្ចុប្បន្ន"
             show={showCurrent}
             setShow={setShowCurrent}
+            value={currentPassword}
+            onChange={setCurrentPassword}
           />
           <BoxFill
             label="ពាក្យសម្ងាត់ថ្មី"
             show={showNew}
             setShow={setShowNew}
+            value={newPassword}
+            onChange={setNewPassword}
+            digitsOnly
           />
 
 
@@ -50,11 +87,16 @@ export default function PasswordPage() {
             label="បញ្ជាក់ពាក្យសម្ងាត់ថ្មី"
             show={showConfirm}
             setShow={setShowConfirm}
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+            digitsOnly
           />
 
 
+          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {message ? <p className="text-sm text-emerald-600">{message}</p> : null}
           <div className="flex justify-end pt-3">
-            <SaveButton />
+            <SaveButton onClick={handleSave}>{saving ? "Saving..." : undefined}</SaveButton>
           </div>
 
 
@@ -112,7 +154,7 @@ export default function PasswordPage() {
 
 
 
-function BoxFill({ label, show, setShow }) {
+function BoxFill({ label, show, setShow, value, onChange, digitsOnly = false }) {
 
   return (
     <div>
@@ -133,6 +175,10 @@ function BoxFill({ label, show, setShow }) {
 
         <input
           type={show ? "text" : "password"}
+          value={value}
+          inputMode={digitsOnly ? "numeric" : undefined}
+          maxLength={digitsOnly ? 6 : undefined}
+          onChange={(event) => onChange(digitsOnly ? event.target.value.replace(/\D/g, "") : event.target.value)}
           placeholder="បញ្ចូលពាក្យសម្ងាត់"
           className="h-11 w-full rounded-lg border border-gray-200 bg-white pl-11 pr-11 text-sm outline-none transition focus:border-primary"
         />

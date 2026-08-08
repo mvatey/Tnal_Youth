@@ -6,262 +6,191 @@ import DonationFilterSelect from "../monthlydonation/DonationFilterSelect";
 import DonationSearchInput from "@/components/forms/searchBar";
 import Table from "@/components/tables/table";
 import SaveAlert from "@/components/forms/savealert";
-import donationData from "@/data/donation/donationData.json";
-import eventDonationData from "@/data/donation/eventDonationData.json";
 
-const SAVED_EVENT_DONATION_ROWS_KEY = "tnal-youth:saved-event-donation-rows";
-const { addDonationRows } = donationData;
-const { eventNames, eventTypes } = eventDonationData;
-
-const getSavedRowKey = (row) =>
-  [row.branch, row.eventType, row.id].join("|");
-
-function buildEventMembers() {
-  return addDonationRows.map((row, index) => {
-    const eventType = eventTypes[index % eventTypes.length];
-
-    return {
-      ...row,
-      eventType,
-      eventName: eventNames[eventType],
-      realAmount: row.realAmount || "0",
-      dollarAmount: row.dollarAmount || "0.00",
-      paymentMethod: row.paymentMethod || "Cash",
-    };
-  });
+async function fetchJson(url, options) {
+  const response = await fetch(url, { cache: "no-store", ...options });
+  const body = await response.json().catch(() => null);
+  if (!response.ok || body?.success === false) {
+    throw new Error(body?.message || `Request failed (${response.status})`);
+  }
+  return body?.data ?? body;
 }
 
-export default function EventDonationDetailForm({
-  initialQuery = {},
-  onCancel,
-}) {
+function toOptions(items, labelKeys) {
+  return (Array.isArray(items) ? items : []).map((item) => ({
+    value: String(item.id ?? item.value),
+    label: labelKeys.map((key) => item[key]).find(Boolean) || String(item.id ?? item.value),
+    raw: item,
+  }));
+}
+
+export default function EventDonationDetailForm({ initialQuery = {}, onCancel }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const isDetailPage = pathname?.endsWith("/detail");
   const listPath = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/eventdonation"
     : "/donation/eventdonation";
-  const eventMembers = useMemo(buildEventMembers, []);
-  const queryValues = useMemo(() => {
-    const eventFromQuery = initialQuery.event || searchParams.get("event");
-
-    return {
-      branch: initialQuery.branch || searchParams.get("branch") || null,
-      event: eventFromQuery ? eventNames[eventFromQuery] || eventFromQuery : null,
-      id: initialQuery.id || searchParams.get("id") || null,
-    };
-  }, [initialQuery.branch, initialQuery.event, initialQuery.id, searchParams]);
-  const selectedId = queryValues.id;
-  const currentRow = eventMembers.find(
-    (row) => String(row.id) === String(selectedId),
-  );
-  const initialBranch = queryValues.branch || currentRow?.branch || "all";
-  const initialEvent = queryValues.event || currentRow?.eventName || "all";
+  const isDetailPage = pathname?.endsWith("/detail");
+  const initialBranch = String(initialQuery.branch || searchParams.get("branch") || "all");
+  const initialEvent = String(initialQuery.event || searchParams.get("event") || "all");
 
   const [selectedBranch, setSelectedBranch] = useState(initialBranch);
   const [selectedEvent, setSelectedEvent] = useState(initialEvent);
   const [searchQuery, setSearchQuery] = useState("");
+  const [branches, setBranches] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [donationTypeId, setDonationTypeId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
   const [showSaveAlert, setShowSaveAlert] = useState(false);
-  const [savedRows, setSavedRows] = useState({});
-
-  const branches = useMemo(
-    () => [...new Set(eventMembers.map((row) => row.branch))],
-    [eventMembers],
-  );
-
-  const members = useMemo(
-    () =>
-      eventMembers
-        .filter(
-          (row) =>
-            selectedEvent === "all" || row.eventName === selectedEvent,
-        )
-        .map((row) => ({
-          ...row,
-          ...savedRows[getSavedRowKey(row)],
-        })),
-    [eventMembers, savedRows, selectedEvent],
-  );
 
   useEffect(() => {
-    const savedValue = window.localStorage.getItem(
-      SAVED_EVENT_DONATION_ROWS_KEY,
-    );
-
-    if (!savedValue) return;
-
-    try {
-      setSavedRows(JSON.parse(savedValue));
-    } catch {
-      setSavedRows({});
-    }
+    let cancelled = false;
+    Promise.all([
+      fetchJson("/api/lookups/branches"),
+      fetchJson("/api/backend/activities?page=0&size=1000"),
+      fetchJson("/api/backend/payment-methods?activeOnly=true"),
+      fetchJson("/api/backend/donation-types?activeOnly=true"),
+    ])
+      .then(([branchItems, activityPage, methods, types]) => {
+        if (cancelled) return;
+        setBranches(toOptions(branchItems, ["nameKm", "labelKm", "name", "label"]));
+        const activityItems = activityPage?.content ?? activityPage?.items ?? activityPage;
+        setActivities(toOptions(activityItems, ["titleKm", "titleEn", "nameKm", "nameEn"]));
+        setPaymentMethods(Array.isArray(methods) ? methods : []);
+        const typeItems = Array.isArray(types) ? types : [];
+        const eventType = typeItems.find((type) =>
+          ["ACTIVITY_DONATION", "EVENT_DONATION", "ACTIVITY"].includes(String(type.code).toUpperCase()),
+        ) || typeItems.find((type) => String(type.code).toUpperCase().includes("ACTIV"));
+        setDonationTypeId(eventType?.id ?? null);
+      })
+      .catch((loadError) => {
+        if (!cancelled) setError(loadError.message || "Unable to load donation options.");
+      });
+    return () => { cancelled = true; };
   }, []);
 
+  const eventOptions = useMemo(() => activities.filter((option) => {
+    if (selectedBranch === "all") return true;
+    const branchId = option.raw?.branchId ?? option.raw?.branch?.id;
+    return branchId == null || String(branchId) === String(selectedBranch);
+  }), [activities, selectedBranch]);
+
   useEffect(() => {
-    setSelectedBranch((currentBranch) =>
-      currentBranch === initialBranch ? currentBranch : initialBranch,
-    );
-    setSelectedEvent((currentEvent) =>
-      currentEvent === initialEvent ? currentEvent : initialEvent,
-    );
-  }, [initialBranch, initialEvent]);
+    if (selectedBranch === "all" || selectedEvent === "all") {
+      setMembers([]);
+      return undefined;
+    }
+    let cancelled = false;
+    const branchLabel = branches.find((option) => option.value === selectedBranch)?.label || selectedBranch;
+    setLoading(true);
+    setError("");
+    fetchJson(`/api/backend/members?branchId=${encodeURIComponent(selectedBranch)}&page=0&size=1000`)
+      .then((page) => {
+        if (cancelled) return;
+        const items = page?.content ?? page?.items ?? page;
+        setMembers((Array.isArray(items) ? items : []).map((member) => ({
+          id: member.id,
+          memberId: member.id,
+          branchId: member.branch?.id ?? member.branchId ?? Number(selectedBranch),
+          branch: branchLabel,
+          name: member.fullNameKm || member.nameKm || member.fullNameEn || member.memberNo || `#${member.id}`,
+          avatar: member.profilePhoto?.url || (member.profilePhoto?.id ? `/api/backend/files/${member.profilePhoto.id}/content` : ""),
+          gender: member.gender?.labelKm || member.gender?.code || member.gender || "-",
+          dob: member.dateOfBirth || "-",
+          realAmount: "0",
+          dollarAmount: "0",
+          paymentMethod: paymentMethods[0]?.code || "Cash",
+          paymentMethodId: paymentMethods[0]?.id,
+        })));
+      })
+      .catch((loadError) => {
+        if (!cancelled) {
+          setMembers([]);
+          setError(loadError.message || "Unable to load members for this branch.");
+        }
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [branches, paymentMethods, selectedBranch, selectedEvent]);
 
   useEffect(() => {
     if (!showSaveAlert) return undefined;
-
-    const timeoutId = window.setTimeout(() => {
-      setShowSaveAlert(false);
-    }, 3000);
-
-    return () => window.clearTimeout(timeoutId);
+    const timer = window.setTimeout(() => setShowSaveAlert(false), 3000);
+    return () => window.clearTimeout(timer);
   }, [showSaveAlert]);
 
-  const handleSave = (rows) => {
-    const completed = rows.filter(
-      (row) => Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0,
-    );
-    const nextRows = { ...savedRows };
+  const handleSave = async (rows) => {
+    const completed = rows.filter((row) => Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0);
+    if (!donationTypeId) return setError("Event donation type is missing in the backend.");
+    if (selectedBranch === "all" || selectedEvent === "all") return setError("Please choose a branch and activity.");
+    if (completed.length === 0) return setError("Please enter an amount for at least one member.");
 
-    rows.forEach((row) => {
-      nextRows[getSavedRowKey(row)] = {
-        ...nextRows[getSavedRowKey(row)],
-        realAmount: row.realAmount ?? "",
-        dollarAmount: row.dollarAmount ?? "",
-        paymentMethod: row.paymentMethod || "Cash",
-      };
-    });
-
-    window.localStorage.setItem(
-      SAVED_EVENT_DONATION_ROWS_KEY,
-      JSON.stringify(nextRows),
-    );
-    setSavedRows(nextRows);
-
-    setSavedMessage(
-      completed.length > 0
-        ? `បានរក្សាទុកវិភាគទាន ${completed.length} នាក់`
-        : "សូមបញ្ចូលចំនួនទឹកប្រាក់យ៉ាងហោចណាស់ម្នាក់",
-    );
-    router.push(listPath);
-  };
-
-  const handleReset = (rows) => {
-    setSavedRows((currentRows) => {
-      const nextRows = { ...currentRows };
-
-      rows.forEach((row) => {
-        nextRows[getSavedRowKey(row)] = {
-          ...nextRows[getSavedRowKey(row)],
-          realAmount: "0",
-          dollarAmount: "0",
-          paymentMethod: row.paymentMethod || "Cash",
-        };
-      });
-
-      window.localStorage.setItem(
-        SAVED_EVENT_DONATION_ROWS_KEY,
-        JSON.stringify(nextRows),
-      );
-
-      return nextRows;
-    });
-  };
-
-  const handleReceiptSave = (id, receipt) => {
-    const row = members.find((member) => member.id === id);
-
-    if (row) {
-      setSavedRows((currentRows) => {
-        const key = getSavedRowKey(row);
-        const nextRows = {
-          ...currentRows,
-          [key]: { ...currentRows[key], receipt },
-        };
-
-        try {
-          window.localStorage.setItem(
-            SAVED_EVENT_DONATION_ROWS_KEY,
-            JSON.stringify(nextRows),
-          );
-        } catch {
-          // Keep large receipt previews in React state when storage is full.
-        }
-
-        return nextRows;
-      });
+    setSaving(true);
+    setError("");
+    try {
+      await Promise.all(completed.map((row) => {
+        const method = paymentMethods.find((item) =>
+          String(item.id) === String(row.paymentMethodId) || item.code === row.paymentMethod,
+        ) || paymentMethods[0];
+        return fetchJson("/api/backend/donations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            donationTypeId: Number(donationTypeId),
+            memberId: Number(row.memberId),
+            activityId: Number(selectedEvent),
+            branchId: Number(selectedBranch),
+            amountKhr: Number(row.realAmount || 0),
+            amountUsd: Number(row.dollarAmount || 0),
+            exchangeRateKhrPerUsd: Number(row.realAmount || 0) > 0 ? 4000 : null,
+            paymentMethodId: Number(method?.id),
+            paidAt: new Date().toISOString(),
+            receiptFileId: null,
+          }),
+        });
+      }));
+      setSavedMessage(`បានរក្សាទុកវិភាគទាន ${completed.length} នាក់`);
+      setShowSaveAlert(true);
+      window.setTimeout(() => router.push(listPath), 500);
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save event donations.");
+    } finally {
+      setSaving(false);
     }
+  };
 
-    setSavedMessage("បានរក្សាទុកវិក្កយបត្រដោយជោគជ័យ");
+  const handleBranchChange = (value) => {
+    setSelectedBranch(value);
+    setSelectedEvent("all");
+    setMembers([]);
   };
 
   return (
     <>
-      {showSaveAlert && (
-        <div
-          className="fixed inset-0 z-[60] flex items-start justify-center bg-black/25 pt-10"
-          role="status"
-          aria-live="polite"
-        >
-          <SaveAlert message="អបអរសាទរ វិភាគទានត្រូវបានបន្ថែមដោយជោគជ័យ" />
-        </div>
-      )}
-
+      {showSaveAlert && <div className="fixed inset-0 z-[60] flex items-start justify-center bg-black/25 pt-10"><SaveAlert message="បានបន្ថែមវិភាគទានដោយជោគជ័យ" /></div>}
       <section className="min-h-[545px] rounded-md border border-border bg-[#fbfbfd] p-6">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-base font-semibold text-secondary">
-            ការកត់ត្រាវិភាគទានក្នុងកម្មវិធី
-          </h1>
-          {savedMessage && (
-            <p className="text-sm font-medium text-success" role="status">
-              {savedMessage}
-            </p>
-          )}
+          <h1 className="text-base font-semibold text-secondary">ការកត់ត្រាវិភាគទានក្នុងកម្មវិធី</h1>
+          {savedMessage ? <p className="text-sm font-medium text-success">{savedMessage}</p> : null}
         </div>
-
+        {error ? <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-wrap items-end gap-6">
-            <DonationFilterSelect
-              label="សាខា"
-              value={selectedBranch}
-              onChange={setSelectedBranch}
-              options={branches}
-              allLabel="ជ្រើសរើសសាខា"
-              className="w-[158px]"
-              required
-              disabled={isDetailPage}
-            />
-            <DonationFilterSelect
-              label="កម្មវិធី"
-              value={selectedEvent}
-              onChange={setSelectedEvent}
-              options={Object.values(eventNames)}
-              allLabel="ជ្រើសរើសកម្មវិធី"
-              className="w-[158px]"
-              required
-              disabled={isDetailPage}
-            />
+            <DonationFilterSelect label="សាខា" value={selectedBranch} onChange={handleBranchChange} options={branches} allLabel="ជ្រើសរើសសាខា" className="w-[158px]" required disabled={isDetailPage} />
+            <DonationFilterSelect label="កម្មវិធី" value={selectedEvent} onChange={setSelectedEvent} options={eventOptions} allLabel="ជ្រើសរើសកម្មវិធី" className="w-[158px]" required disabled={isDetailPage} />
           </div>
-
-          <DonationSearchInput
-            value={searchQuery}
-            onChange={setSearchQuery}
-            showLabel={false}
-          />
+          <DonationSearchInput value={searchQuery} onChange={setSearchQuery} showLabel={false} />
         </div>
-
-        {selectedBranch !== "all" && (
-          <Table
-            members={members}
-            selectedBranch={selectedBranch}
-            searchQuery={searchQuery}
-            onReset={handleReset}
-            onCancel={onCancel || (() => router.push(listPath))}
-            onSave={handleSave}
-            onReceiptSave={handleReceiptSave}
-          />
-        )}
+        {loading ? <div className="py-10 text-center text-sm text-text-secondary">កំពុងទាញទិន្នន័យសមាជិក...</div> : null}
+        {!loading && selectedBranch !== "all" && selectedEvent !== "all" ? (
+          <Table members={members} selectedBranch={selectedBranch} searchQuery={searchQuery} onReset={() => setMembers((rows) => rows.map((row) => ({ ...row, realAmount: "0", dollarAmount: "0" })))} onCancel={onCancel || (() => router.push(listPath))} onSave={saving ? undefined : handleSave} onReceiptSave={(id, receipt) => setMembers((rows) => rows.map((row) => row.id === id ? { ...row, receipt } : row))} />
+        ) : null}
       </section>
     </>
   );

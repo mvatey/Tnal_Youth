@@ -59,8 +59,8 @@ const members = [
 
 const roles = ["ប្រធាន", "លេខាធិការ", "សមាជិក"];
 
-export default function MemberSelectModal({ onClose }) {
-  const [selected, setSelected] = useState([]);
+export default function MemberSelectModal({ onClose, members = [], selectedIds = [], onSave }) {
+  const [selected, setSelected] = useState(selectedIds);
   const [query, setQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
   const [selectedDate, setSelectedDate] = useState(null);
@@ -93,7 +93,7 @@ export default function MemberSelectModal({ onClose }) {
   };
 
   const handleSave = () => {
-    localStorage.setItem("activity-selected-members", JSON.stringify(selected));
+    onSave?.(selected);
     onClose();
   };
 

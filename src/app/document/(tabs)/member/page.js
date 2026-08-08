@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
 import DataTable from "@/components/table/DataTable";
 import CertificatePreview from "@/components/document/certificatePreview";
-import documentMember from "@/data/documentMember.json";
 
 const DOCUMENT_TYPE_BADGE_STYLES = {
   PDF: "bg-red-100 text-red-500",
@@ -34,8 +33,27 @@ export default function MemberDocumentPage() {
   const [typeFilter, setTypeFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [selectedCertificate, setSelectedCertificate] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const documents = documentMember;
+  const loadDocuments = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/backend/documents", { cache: "no-store" });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.message || "Unable to load documents.");
+      const rows = body?.data ?? body;
+      setDocuments((Array.isArray(rows) ? rows : []).filter((row) => row.member).map(mapMemberDocument));
+    } catch (loadError) {
+      setError(loadError.message || "Unable to load documents.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadDocuments(); }, [loadDocuments]);
 
   const filteredDocuments = documents.filter((item) => {
     const searchValue = search.trim().toLowerCase();
@@ -215,8 +233,14 @@ export default function MemberDocumentPage() {
 
   return (
     <>
+      {error ? (
+        <div className="mb-3 flex items-center justify-between rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span>{error}</span>
+          <button type="button" className="font-semibold underline" onClick={loadDocuments}>Retry</button>
+        </div>
+      ) : null}
       <DataTable
-        data={filteredDocuments}
+        data={loading ? [] : filteredDocuments}
         columns={columns}
         filters={filters}
         searchQuery={search}
@@ -234,4 +258,25 @@ export default function MemberDocumentPage() {
       )}
     </>
   );
+}
+
+function mapMemberDocument(row) {
+  const extension = row.file?.originalName?.split(".").pop()?.toUpperCase();
+  return {
+    id: row.id,
+    title: row.title,
+    memberName: row.member?.fullNameKm || row.member?.full_name_km || row.member?.fullNameEn || row.member?.full_name_en || "-",
+    gender: "-",
+    branch: row.branch?.nameKm || row.branch?.name_km || row.branch?.nameEn || row.branch?.name_en || "-",
+    date: row.created_at ? row.created_at.slice(0, 10) : "-",
+    size: formatSize(row.file?.sizeBytes),
+    type: extension || row.type?.code || "FILE",
+    image: row.file?.id ? `/api/backend/files/${row.file.id}/content` : "/document.jpg",
+  };
+}
+
+function formatSize(bytes) {
+  if (!bytes) return "0 KB";
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }

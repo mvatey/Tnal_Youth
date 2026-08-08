@@ -8,27 +8,27 @@ import SaveAlert from "../../forms/savealert";
 import SaveButton from "../../forms/save";
 import Pagination from "../../navigation/Pagination";
 import TableRow from "./TableRow";
-import donationData from "@/data/donation/donationData.json";
 import { downloadCsv } from "@/utils/downloadCsv";
-
-const { donationRows } = donationData;
-
-const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
-const DONATION_SAVE_ALERT_KEY = "tnal-youth:donation-save-alert";
 
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
-const rowHasSavedMoney = (row, savedRows) =>
-  Object.entries(savedRows).some(([key, value]) => {
-    const [branch, month, year] = key.split("|");
-    const matchesDonation =
-      branch === row.branch && month === row.month && year === row.year;
+const KHMER_MONTHS = [
+  "មករា",
+  "កុម្ភៈ",
+  "មីនា",
+  "មេសា",
+  "ឧសភា",
+  "មិថុនា",
+  "កក្កដា",
+  "សីហា",
+  "កញ្ញា",
+  "តុលា",
+  "វិច្ឆិកា",
+  "ធ្នូ",
+];
 
-    return (
-      matchesDonation &&
-      (Number(value?.realAmount) > 0 || Number(value?.dollarAmount) > 0)
-    );
-  });
+const getKhmerMonth = (month) =>
+  KHMER_MONTHS[Number(month) - 1] || month;
 
 export default function DonationTable() {
   const rowsPerPage = 12;
@@ -45,25 +45,37 @@ export default function DonationTable() {
   const [selectedYear, setSelectedYear] = useState("all");
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedBranch, setSelectedBranch] = useState("all");
-  const [rows, setRows] = useState(donationRows);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [showSaveAlert, setShowSaveAlert] = useState(false);
-  const [savedRows, setSavedRows] = useState({});
   const [moneySort, setMoneySort] = useState(null);
 
   const years = useMemo(() => [...new Set(rows.map((row) => row.year))], [rows]);
-  const months = useMemo(() => [...new Set(rows.map((row) => row.month))], [rows]);
-  const branches = useMemo(() => [...new Set(rows.map((row) => row.branch))], [rows]);
-  const handleDelete = (rowId) => {
-    setRows((currentRows) => currentRows.filter((row) => row.id !== rowId));
-  };
+  const months = useMemo(
+    () =>
+      [...new Set(rows.map((row) => row.month))]
+        .sort((left, right) => Number(left) - Number(right))
+        .map((month) => ({
+          value: month,
+          label: getKhmerMonth(month),
+        })),
+    [rows],
+  );
+  const branches = useMemo(() => {
+    const unique = new Map();
+    rows.forEach((row) => unique.set(String(row.branchId), row.branch));
+    return [...unique].map(([value, label]) => ({ value, label }));
+  }, [rows]);
+  const handleDelete = () => setError("Open the monthly detail to delete an individual donation record.");
   const filteredRows = useMemo(
     () =>
       rows.filter((row) => {
         const matchesYear = selectedYear === "all" || row.year === selectedYear;
         const matchesMonth = selectedMonth === "all" || row.month === selectedMonth;
-        const matchesBranch = selectedBranch === "all" || row.branch === selectedBranch;
+        const matchesBranch = selectedBranch === "all" || String(row.branchId) === String(selectedBranch);
 
         return matchesYear && matchesMonth && matchesBranch;
       }),
@@ -97,37 +109,24 @@ export default function DonationTable() {
   };
 
   useEffect(() => {
-    const loadSavedRows = () => {
-      const shouldShowSaveAlert = window.localStorage.getItem(
-        DONATION_SAVE_ALERT_KEY,
-      );
-      const savedValue = window.localStorage.getItem(SAVED_DONATION_ROWS_KEY);
-
-      if (shouldShowSaveAlert === "true") {
-        window.localStorage.removeItem(DONATION_SAVE_ALERT_KEY);
-        setShowSaveAlert(true);
-      }
-
-      if (!savedValue) {
-        setSavedRows({});
-        return;
-      }
-
+    let cancelled = false;
+    async function loadRows() {
+      setLoading(true);
+      setError("");
       try {
-        setSavedRows(JSON.parse(savedValue));
-      } catch {
-        setSavedRows({});
+        const response = await fetch("/api/backend/donations/monthly?page=0&size=100", { cache: "no-store" });
+        const body = await response.json().catch(() => null);
+        if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load monthly donations.");
+        const page = body?.data ?? body;
+        if (!cancelled) setRows((Array.isArray(page?.items) ? page.items : []).map(mapMonthlyRow));
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to load monthly donations.");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    };
-
-    loadSavedRows();
-    window.addEventListener("focus", loadSavedRows);
-    window.addEventListener("pageshow", loadSavedRows);
-
-    return () => {
-      window.removeEventListener("focus", loadSavedRows);
-      window.removeEventListener("pageshow", loadSavedRows);
-    };
+    }
+    loadRows();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -143,6 +142,7 @@ export default function DonationTable() {
 
   return (
     <section className="rounded-md border border-border bg-white px-7 py-4 shadow-sm">
+      {error ? <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
       {showDownloadAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
           <AddAlert />
@@ -205,13 +205,13 @@ export default function DonationTable() {
           </thead>
 
           <tbody>
-            {pagedRows.map((row, index) => (
+            {!loading && pagedRows.map((row, index) => (
               <TableRow
                 key={row.id}
                 row={row}
                 rowNumber={(safePage - 1) * rowsPerPage + index + 1}
                 onDelete={handleDelete}
-                hasMoney={rowHasSavedMoney(row, savedRows)}
+                hasMoney={row.donorCount > 0}
               />
             ))}
             {filteredRows.length === 0 && (
@@ -237,4 +237,20 @@ export default function DonationTable() {
     
 
   );
+}
+
+function mapMonthlyRow(row) {
+  const period = row.donationPeriod ? new Date(`${row.donationPeriod}T00:00:00`) : null;
+  return {
+    id: `${row.branchId}-${row.donationPeriod}`,
+    branchId: row.branchId,
+    branch: row.branchNameKm || row.branchNameEn || row.branchCode || "-",
+    month: period ? String(period.getMonth() + 1).padStart(2, "0") : "-",
+    monthLabel: period ? getKhmerMonth(period.getMonth() + 1) : "-",
+    year: period ? String(period.getFullYear()) : "-",
+    monthlyRiel: Number(row.totalKhr || 0).toLocaleString(),
+    monthlyUsd: Number(row.totalUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
+    total: Number(row.overallTotalUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
+    donorCount: Number(row.donorCount || 0),
+  };
 }

@@ -29,7 +29,9 @@ const EMPTY_FORM = {
   phone: "",
 
   nationality_id: "",
+  nationality_text: "",
   ethnicity_id: "",
+  ethnicity_text: "",
   religion_id: "",
 
   branch_id: "",
@@ -48,6 +50,16 @@ const EMPTY_FORM = {
 
   cv_file_id: null,
 };
+
+const TSHIRT_SIZE_OPTIONS = [
+  { value: "XS", label: "XS" },
+  { value: "S", label: "S" },
+  { value: "M", label: "M" },
+  { value: "L", label: "L" },
+  { value: "XL", label: "XL" },
+  { value: "2XL", label: "2XL" },
+  { value: "3XL", label: "3XL" },
+];
 
 /* =========================================================
  * REQUEST HELPER
@@ -265,6 +277,20 @@ function normalizePersonalInfo(
           )
         : "",
 
+    nationality_text:
+      data?.nationality_label_km ||
+      data?.nationalityLabelKm ||
+      data?.nationality?.label_km ||
+      data?.nationality?.labelKm ||
+      "",
+
+    ethnicity_text:
+      data?.ethnicity_label_km ||
+      data?.ethnicityLabelKm ||
+      data?.ethnicity?.label_km ||
+      data?.ethnicity?.labelKm ||
+      "",
+
     member_level_id:
       data?.member_level_id != null
         ? String(
@@ -426,7 +452,7 @@ export default function PersonalPage() {
   const [
     tshirtSizes,
     setTshirtSizes,
-  ] = useState([]);
+  ] = useState(TSHIRT_SIZE_OPTIONS);
 
   /* =======================================================
    * LOAD PERSONAL INFO
@@ -613,7 +639,9 @@ export default function PersonalPage() {
           );
 
         setter(
-          normalized,
+          normalized.length > 0
+            ? normalized
+            : options?.fallback || [],
         );
       } catch (lookupError) {
         console.error(
@@ -622,7 +650,9 @@ export default function PersonalPage() {
         );
 
         if (active) {
-          setter([]);
+          setter(
+            options?.fallback || [],
+          );
         }
       }
     }
@@ -726,6 +756,7 @@ export default function PersonalPage() {
       setTshirtSizes,
       {
         valueMode: "value",
+        fallback: TSHIRT_SIZE_OPTIONS,
       },
     );
 
@@ -733,6 +764,32 @@ export default function PersonalPage() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    setForm((previous) => {
+      const nationality = nationalities.find(
+        (option) => String(option.value) === String(previous.nationality_id),
+      );
+      const ethnicity = ethnicities.find(
+        (option) => String(option.value) === String(previous.ethnicity_id),
+      );
+
+      if (
+        (previous.nationality_text || !nationality) &&
+        (previous.ethnicity_text || !ethnicity)
+      ) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        nationality_text:
+          previous.nationality_text || nationality?.label || "",
+        ethnicity_text:
+          previous.ethnicity_text || ethnicity?.label || "",
+      };
+    });
+  }, [nationalities, ethnicities]);
 
   /* =======================================================
    * NORMAL FIELD CHANGE
@@ -757,6 +814,29 @@ export default function PersonalPage() {
             value,
         }),
       );
+    };
+
+  const handleLookupTextChange =
+    (textField, idField, options) =>
+    (event) => {
+      if (isReadOnly) {
+        return;
+      }
+
+      const value = event.target.value;
+      const match = options.find(
+        (option) =>
+          option.label.trim().toLocaleLowerCase() ===
+          value.trim().toLocaleLowerCase(),
+      );
+
+      setError("");
+      setSuccess("");
+      setForm((previous) => ({
+        ...previous,
+        [textField]: value,
+        [idField]: match?.value || previous[idField],
+      }));
     };
 
   /* =======================================================
@@ -1373,36 +1453,40 @@ export default function PersonalPage() {
               placeholder="បញ្ចូលលេខទូរស័ព្ទ"
             />
 
-            <FormSelect
+            <BoxFill
               label="សញ្ជាតិ"
               value={
-                form.nationality_id
+                form.nationality_text
               }
               onChange={
-                handleChange(
+                handleLookupTextChange(
+                  "nationality_text",
                   "nationality_id",
+                  nationalities,
                 )
               }
-              placeholder="ជ្រើសរើសសញ្ជាតិ"
-              options={
-                nationalities
-              }
+              name="nationality"
+              list="nationality-options"
+              suggestions={nationalities}
+              placeholder="បញ្ចូលសញ្ជាតិ"
             />
 
-            <FormSelect
+            <BoxFill
               label="ជនជាតិ"
               value={
-                form.ethnicity_id
+                form.ethnicity_text
               }
               onChange={
-                handleChange(
+                handleLookupTextChange(
+                  "ethnicity_text",
                   "ethnicity_id",
+                  ethnicities,
                 )
               }
-              placeholder="ជ្រើសរើសជនជាតិ"
-              options={
-                ethnicities
-              }
+              name="ethnicity"
+              list="ethnicity-options"
+              suggestions={ethnicities}
+              placeholder="បញ្ចូលជនជាតិ"
             />
 
             <FormSelect
@@ -1503,7 +1587,7 @@ export default function PersonalPage() {
             {/* ACCOUNT STATUS */}
 
             <FormSelect
-              label="ស្ថានភាពគណនី"
+              label="ស្ថានភាព"
               value={
                 form.account_status
               }
@@ -1539,31 +1623,6 @@ export default function PersonalPage() {
               adminEditable={isAdmin}
             />
 
-            <BoxFill
-              label="អាសយដ្ឋានបច្ចុប្បន្ន"
-              value={
-                form.current_address
-              }
-              onChange={
-                handleChange(
-                  "current_address",
-                )
-              }
-              placeholder="បញ្ចូលអាសយដ្ឋានបច្ចុប្បន្ន"
-            />
-
-            <BoxFill
-              label="អាសយដ្ឋានអចិន្ត្រៃយ៍"
-              value={
-                form.permanent_address
-              }
-              onChange={
-                handleChange(
-                  "permanent_address",
-                )
-              }
-              placeholder="បញ្ចូលអាសយដ្ឋានអចិន្ត្រៃយ៍"
-            />
           </div>
 
           {/* CV */}

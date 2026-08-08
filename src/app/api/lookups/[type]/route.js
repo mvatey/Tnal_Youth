@@ -37,18 +37,7 @@ const DIRECT_BACKEND_PATHS = {
   ethnicities: "/ethnicities?activeOnly=true",
   religions: "/religions?activeOnly=true",
   "proficiency-levels": "/proficiency-levels",
-};
-
-const LOCAL_LOOKUPS = {
-  "tshirt-sizes": [
-    { value: "XS", label: "XS" },
-    { value: "S", label: "S" },
-    { value: "M", label: "M" },
-    { value: "L", label: "L" },
-    { value: "XL", label: "XL" },
-    { value: "2XL", label: "2XL" },
-    { value: "3XL", label: "3XL" },
-  ],
+  "tshirt-sizes": "/lookups/tshirt-sizes",
 };
 
 export async function GET(request, context) {
@@ -63,10 +52,6 @@ export async function GET(request, context) {
         status: 404,
       }
     );
-  }
-
-  if (LOCAL_LOOKUPS[type]) {
-    return Response.json(LOCAL_LOOKUPS[type]);
   }
 
   const cookieStore = await cookies();

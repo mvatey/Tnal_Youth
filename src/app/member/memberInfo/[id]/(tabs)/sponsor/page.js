@@ -1,15 +1,96 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 
 import DataTable from "@/components/table/DataTable";
-import sponsorData from "@/data/sponsor.json";
-
 export default function SponsorDonationPage() {
-  const [sponsors] = useState(sponsorData);
+  const { id } = useParams();
+  const [sponsors, setSponsors] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [query, setQuery] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadSponsorDonations() {
+      try {
+        setIsLoading(true);
+        setError("");
+
+        const response = await fetch(
+          `/api/backend/donations?memberId=${encodeURIComponent(id)}&page=0&size=100`,
+          {
+            cache: "no-store",
+            signal: controller.signal,
+          },
+        );
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(
+            payload.message || "មិនអាចទាញយកទិន្នន័យអ្នកឧបត្ថម្ភបានទេ។",
+          );
+        }
+
+        const items = payload.data?.items || payload.items || [];
+        setSponsors(
+          items
+            .filter((item) => item.typeCode === "SPONSOR_DONATION")
+            .map((item) => {
+              const period = item.donationPeriod
+                ? new Date(`${item.donationPeriod}T00:00:00`)
+                : item.paidAt
+                  ? new Date(item.paidAt)
+                  : null;
+              const amounts = [];
+
+              if (Number(item.amountUsd)) {
+                amounts.push(`$${Number(item.amountUsd).toFixed(2)}`);
+              }
+              if (Number(item.amountKhr)) {
+                amounts.push(`${Number(item.amountKhr).toLocaleString()} ៛`);
+              }
+
+              return {
+                id: item.id,
+                month: period
+                  ? period.toLocaleString("km-KH", { month: "long" })
+                  : "-",
+                year: period?.getFullYear() || "-",
+                amount: amounts.join(" / ") || "$0.00",
+                date: item.paidAt
+                  ? new Date(item.paidAt).toLocaleDateString("km-KH")
+                  : "-",
+                recordedBy: item.recordedByName || "-",
+                paymentMethod:
+                  item.paymentMethodLabelKm ||
+                  item.paymentMethodLabelEn ||
+                  item.paymentMethodCode ||
+                  "-",
+              };
+            }),
+        );
+      } catch (loadError) {
+        if (loadError.name !== "AbortError") {
+          setSponsors([]);
+          setError(
+            loadError.message || "មិនអាចទាញយកទិន្នន័យអ្នកឧបត្ថម្ភបានទេ។",
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    if (id) loadSponsorDonations();
+    return () => controller.abort();
+  }, [id]);
 
   const paymentMethods = useMemo(() => {
     return [
@@ -108,6 +189,18 @@ export default function SponsorDonationPage() {
       <h2 className="text-lg font-semibold text-text-primary">
         បញ្ជីវិភាគទានអ្នកឧបត្ថម្ភ
       </h2>
+
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-500">
+          កំពុងទាញយកទិន្នន័យ...
+        </div>
+      )}
 
       <DataTable
         data={filteredData}

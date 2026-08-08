@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { List, PlusCircle } from "lucide-react";
 
 import SearchBar from "@/components/tables/SearchBar";
@@ -12,25 +12,74 @@ import Button from "@/components/ui/Button";
 import PrimaryActionButton from "@/components/ui/actions/PrimaryActionButton";
 
 import { useBranch } from "@/context/BranchContext";
-import activities from "@/data/activityRecords.json";
 import { downloadCsv } from "@/utils/downloadCsv";
 import { useAuth } from "@/context/AuthContext";
 import { normalizeRole } from "@/lib/navigation";
 
-const branches = ["ភ្នំពេញ", "កណ្ដាល"];
+function getLookupLabel(lookup) {
+  return (
+    lookup?.labelKm ||
+    lookup?.label_km ||
+    lookup?.labelEn ||
+    lookup?.label_en ||
+    lookup?.code ||
+    "-"
+  );
+}
 
-const sectors = [
-  "បច្ចេកវិទ្យា",
-  "រដ្ឋបាល",
-  "សង្គម",
-  "អប់រំ",
-  "បរិស្ថាន",
-];
+function formatDate(value) {
+  if (!value) return "-";
 
-const types = [
-  "កម្មវិធីផ្ទៃក្នុង",
-  "កម្មវិធីខាងក្រៅ",
-];
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return new Intl.DateTimeFormat("km-KH", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  }).format(date);
+}
+
+function formatDuration(startsAt, endsAt) {
+  const start = new Date(startsAt);
+  const end = new Date(endsAt);
+
+  if (
+    Number.isNaN(start.getTime()) ||
+    Number.isNaN(end.getTime()) ||
+    end <= start
+  ) {
+    return "-";
+  }
+
+  const hours = Math.round((end - start) / 3_600_000);
+  return `${hours} ម៉ោង`;
+}
+
+function normalizeActivity(item, branchOptions) {
+  const branch = branchOptions.find(
+    (option) => String(option.value) === String(item.branchId),
+  );
+  const status = String(item.status?.code || "").toLowerCase();
+  const capacity = Number(item.capacity || 0);
+
+  return {
+    id: item.id,
+    name: item.titleKm || item.titleEn || "-",
+    type: getLookupLabel(item.type),
+    typeId: item.type?.id,
+    sector: getLookupLabel(item.sector),
+    sectorId: item.sector?.id,
+    branch: branch?.label || `#${item.branchId}`,
+    branchId: item.branchId,
+    location: item.locationName || "-",
+    date: formatDate(item.startsAt),
+    dateValue: item.startsAt?.slice(0, 10) || "",
+    duration: formatDuration(item.startsAt, item.endsAt),
+    participants: capacity > 0 ? `-/${capacity}` : "-",
+    status,
+  };
+}
 
 function TypeBadge({ type }) {
   const style =
@@ -76,9 +125,15 @@ export default function ActivityPage() {
   role === "branch_leader";
 
   const {
+    branches: contextBranches = [],
     selectedBranch = "all",
     setSelectedBranch = () => {},
   } = useBranch();
+
+  const [activityRecords, setActivityRecords] = useState([]);
+  const [branchOptions, setBranchOptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const [searchQuery, setSearchQuery] =
     useState("");
@@ -91,6 +146,85 @@ export default function ActivityPage() {
 
   const [selectedDate, setSelectedDate] =
     useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadActivities() {
+      setLoading(true);
+      setLoadError("");
+
+      try {
+        const [activityResponse, branchResponse] = await Promise.all([
+          fetch("/api/backend/activities?page=0&size=1000", {
+            cache: "no-store",
+          }),
+          fetch("/api/lookups/branches", {
+            cache: "no-store",
+          }),
+        ]);
+
+        if (!activityResponse.ok) {
+          throw new Error(`Cannot load activities (${activityResponse.status})`);
+        }
+
+        const activityBody = await activityResponse.json();
+        const branchBody = branchResponse.ok
+          ? await branchResponse.json()
+          : [];
+
+        if (!active) return;
+
+        setActivityRecords(
+          Array.isArray(activityBody?.content)
+            ? activityBody.content
+            : [],
+        );
+        setBranchOptions(
+          (Array.isArray(branchBody) ? branchBody : []).map((branch) => ({
+            value: branch.value ?? branch.id,
+            label:
+              branch.labelKm ||
+              branch.labelEn ||
+              branch.label ||
+              branch.code ||
+              `#${branch.value ?? branch.id}`,
+          })),
+        );
+      } catch (error) {
+        if (active) {
+          setActivityRecords([]);
+          setLoadError(error.message || "Cannot load activities");
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadActivities();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const activities = useMemo(
+    () =>
+      activityRecords.map((item) =>
+        normalizeActivity(item, branchOptions),
+      ),
+    [activityRecords, branchOptions],
+  );
+
+  const types = useMemo(
+    () => [...new Set(activities.map((item) => item.type).filter(Boolean))],
+    [activities],
+  );
+
+  const sectors = useMemo(
+    () => [...new Set(activities.map((item) => item.sector).filter(Boolean))],
+    [activities],
+  );
 
   const filteredActivities = useMemo(() => {
     const query = searchQuery
@@ -124,7 +258,13 @@ export default function ActivityPage() {
 
       const matchesBranch =
         selectedBranch === "all" ||
-        item.branch === selectedBranch;
+        String(item.branchId) === String(selectedBranch) ||
+        item.branch === selectedBranch ||
+        contextBranches.some(
+          (branch) =>
+            String(branch) === String(selectedBranch) &&
+            branch === item.branch,
+        );
 
       const matchesDate =
         !selectedDateValue ||
@@ -144,6 +284,8 @@ export default function ActivityPage() {
     selectedType,
     selectedBranch,
     selectedDate,
+    activities,
+    contextBranches,
   ]);
 
   const columns = [
@@ -277,7 +419,13 @@ export default function ActivityPage() {
 
   return (
     <div className="min-w-0 space-y-5 overflow-x-hidden">
-      <ActivityStats activities={filteredActivities} />
+      <ActivityStats activities={activities} />
+
+      {loadError && (
+        <div className="rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">
+          {loadError}
+        </div>
+      )}
 
       <section className="rounded-xl border border-border bg-white p-4 transition-shadow duration-200 hover:shadow-sm">
         <div className="mb-4 flex min-w-0 flex-nowrap items-center gap-3">
@@ -315,7 +463,11 @@ export default function ActivityPage() {
           data={filteredActivities}
           rowsPerPage={10}
           scrollable={false}
-          emptyMessage="មិនមានទិន្នន័យកម្មវិធីទេ"
+          emptyMessage={
+            loading
+              ? "កំពុងទាញយកទិន្នន័យ..."
+              : "មិនមានទិន្នន័យកម្មវិធីទេ"
+          }
         />
       </section>
     </div>

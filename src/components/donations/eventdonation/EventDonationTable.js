@@ -74,8 +74,8 @@ export default function EventDonationTable({
                         pathname: detailPath,
                         query: {
                           id: row.id,
-                          branch: row.branch,
-                          event: row.eventType,
+                          branch: row.branchId,
+                          event: row.activityId,
                         },
                       }}
                       className="inline-flex h-[18px] min-w-[52px] items-center justify-center gap-[3px] rounded-[8px] bg-[#5636A3] px-2 text-[10px] font-normal leading-none text-white transition hover:bg-[#4b2f91]"

@@ -8,8 +8,6 @@ import Pagination from "@/components/navigation/Pagination";
 import SaveButton from "@/components/forms/save";
 import AddAlert from "@/components/forms/addalert";
 import SaveAlert from "@/components/forms/savealert";
-import sponsorData from "@/data/donation/sponsorData.json";
-import donationData from "@/data/donation/donationData.json";
 import tableHeaders from "@/data/donation/tableHeaders.json";
 import { MdEditSquare } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
@@ -17,12 +15,10 @@ import { BsPencilSquare } from "react-icons/bs";
 import { PiPencilSlash } from "react-icons/pi";
 import { VscEditSparkle } from "react-icons/vsc";
 import { downloadCsv } from "@/utils/downloadCsv";
+import DonationFilterSelect from "@/components/donations/monthlydonation/DonationFilterSelect";
 
-const { sponsorRows: sponsorDataRows } = sponsorData;
-const { donationRows } = donationData;
 const { sponsorHeaders: headers } = tableHeaders;
 const rowsPerPage = 12;
-const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
 function SponsorReceiptPreview({ receipt }) {
@@ -68,7 +64,8 @@ function DateFilter({ value, onChange }) {
 }
 
 export default function SponsorPanel({
-  selectedBranch = "all",
+  selectedBranch: controlledSelectedBranch,
+  onBranchChange,
   showAddButton = true,
   typeOptions,
 }) {
@@ -84,54 +81,66 @@ export default function SponsorPanel({
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [showSaveAlert, setShowSaveAlert] = useState(false);
   const [moneySort, setMoneySort] = useState(null);
-  const [createdRows, setCreatedRows] = useState([]);
+  const [allRows, setAllRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [internalSelectedBranch, setInternalSelectedBranch] = useState("all");
+  const [branchOptions, setBranchOptions] = useState([]);
+  const selectedBranch = controlledSelectedBranch ?? internalSelectedBranch;
+  const setSelectedBranch = onBranchChange ?? setInternalSelectedBranch;
 
   useEffect(() => {
-    const savedRowsValue = window.localStorage.getItem(
-      SPONSOR_CREATED_ROWS_KEY,
-    );
-    const shouldShowSaveAlert = window.localStorage.getItem(
-      "tnal-youth:sponsor-save-alert",
-    );
-
-    try {
-      const savedRows = savedRowsValue ? JSON.parse(savedRowsValue) : [];
-      setCreatedRows(
-        Array.isArray(savedRows)
-          ? savedRows.filter((row) => row.name?.trim())
-          : [],
-      );
-    } catch {
-      setCreatedRows([]);
+    let cancelled = false;
+    async function loadRows() {
+      setLoading(true);
+      setError("");
+      try {
+        const response = await fetch("/api/backend/donations/sponsor?page=0&size=100", { cache: "no-store" });
+        const body = await response.json().catch(() => null);
+        if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load sponsor donations.");
+        const page = body?.data ?? body;
+        if (!cancelled) setAllRows((Array.isArray(page?.items) ? page.items : []).map(mapSponsorRow));
+      } catch (loadError) {
+        if (!cancelled) {
+          setAllRows([]);
+          setError(loadError.message || "Unable to load sponsor donations.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
-
-    if (shouldShowSaveAlert === "true") {
-      window.localStorage.removeItem("tnal-youth:sponsor-save-alert");
-      setShowSaveAlert(true);
-    }
-
+    loadRows();
+    return () => { cancelled = true; };
   }, []);
 
-  const allRows = useMemo(
-    () => [...createdRows, ...sponsorDataRows],
-    [createdRows],
-  );
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/lookups/branches", { cache: "no-store" })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error("Unable to load branches.");
+        if (!cancelled) setBranchOptions((Array.isArray(body) ? body : []).map((branch) => ({
+          value: String(branch.value ?? branch.id),
+          label: branch.labelKm || branch.labelEn || branch.label || branch.code || `#${branch.value ?? branch.id}`,
+        })));
+      })
+      .catch((loadError) => { if (!cancelled) setError(loadError.message || "Unable to load branches."); });
+    return () => { cancelled = true; };
+  }, []);
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return allRows.filter((row, index) => {
-      const rowBranch =
-        row.branch || donationRows[index % donationRows.length]?.branch;
+    return allRows.filter((row) => {
       const matchesSearch =
         !query ||
         row.name.toLowerCase().includes(query) ||
         row.phone.includes(query) ||
         row.email.toLowerCase().includes(query);
-      const matchesType = !selectedType || row.type === selectedType;
+      const matchesType = !selectedType || row.type === selectedType || row.donorKind === selectedType;
       const matchesDate = !selectedDate || row.dateValue === selectedDate;
       const matchesBranch =
-        selectedBranch === "all" || rowBranch === selectedBranch;
+        selectedBranch === "all" || String(row.branchId) === String(selectedBranch);
 
       return matchesSearch && matchesType && matchesDate && matchesBranch;
     });
@@ -188,6 +197,8 @@ export default function SponsorPanel({
         </div>
       )}
 
+      {error ? <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+
       <div className="mb-4 flex flex-col gap-4">
         <h1 className="text-base font-semibold text-secondary">
           ថវិកាឧបត្ថម្ភ
@@ -214,6 +225,16 @@ export default function SponsorPanel({
             placeholder="ប្រភេទអ្នកឧបត្ថម្ភ"
             className="w-[180px]"
             size="compact"
+          />
+
+          <DonationFilterSelect
+            label="សាខា"
+            value={selectedBranch}
+            onChange={updateFilter(setSelectedBranch)}
+            options={branchOptions}
+            allLabel="សាខាទាំងអស់"
+            showLabel={false}
+            className="w-[180px]"
           />
 
           <DateFilter
@@ -272,7 +293,7 @@ export default function SponsorPanel({
           </thead>
 
           <tbody>
-            {pagedRows.map((row, index) => (
+            {!loading && pagedRows.map((row, index) => (
               <tr
                 key={row.id}
                 className="h-11 border-b border-border text-center text-sm text-text-secondary last:border-b-0"
@@ -320,4 +341,33 @@ export default function SponsorPanel({
       </div>
     </section>
   );
+}
+
+function mapSponsorRow(row) {
+  const donorKindLabels = {
+    MEMBER: "សមាជិក",
+    INDIVIDUAL: "បុគ្គល",
+    ORGANIZATION: "ស្ថាប័ន",
+    INSTITUTION: "ស្ថាប័ន",
+  };
+  return {
+    id: row.donationId,
+    name: row.name || "-",
+    type: donorKindLabels[row.donorKind] || row.donorKind || "-",
+    donorKind: row.donorKind,
+    phone: row.phone || "-",
+    email: row.email || "-",
+    branch: row.branchNameKm || "-",
+    branchId: row.branchId,
+    date: row.paidAt ? new Date(row.paidAt).toLocaleDateString("en-GB") : "-",
+    dateValue: row.paidAt ? row.paidAt.slice(0, 10) : "",
+    rielAmount: Number(row.amountKhr || 0).toLocaleString(),
+    dollarAmount: Number(row.amountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
+    method: row.paymentMethodLabelKm || row.paymentMethodCode || "-",
+    receipt: row.receiptFileId ? {
+      name: "Receipt",
+      dataUrl: `/api/backend/files/${row.receiptFileId}/content`,
+      type: "image/unknown",
+    } : null,
+  };
 }

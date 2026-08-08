@@ -7,7 +7,7 @@ import NotificationStatusBadge from "./NotificationStatusBadge";
 
 const longDescriptionLength = 110;
 
-export default function NotificationItem({ notification }) {
+export default function NotificationItem({ notification, onMarkRead }) {
   const [expanded, setExpanded] = useState(false);
   const canExpand = notification.description.length > longDescriptionLength;
 
@@ -42,7 +42,10 @@ export default function NotificationItem({ notification }) {
         {canExpand ? (
           <NotificationAction
             expanded={expanded}
-            onClick={() => setExpanded((current) => !current)}
+            onClick={() => {
+              setExpanded((current) => !current);
+              if (!notification.read) onMarkRead?.(notification.id);
+            }}
           />
         ) : null}
       </div>

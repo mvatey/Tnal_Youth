@@ -2,7 +2,6 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import donationData from "@/data/donation/donationData.json";
 import AddDonationFilters from "./AddDonationFilters";
 import Table from "../../tables/table";
 import SaveAlert from "../../forms/savealert";
@@ -10,8 +9,6 @@ import MemberCard from "../eventdonation/membercard";
 import CashCard from "./cashcard";
 import BankCard from "./bankcard";
 
-const SAVED_DONATION_ROWS_KEY = "tnal-youth:saved-donation-rows";
-const { addDonationRows } = donationData;
 const BANK_PAYMENT_METHODS = new Set([
   "Bank Transfer",
   "ABA",
@@ -19,9 +16,49 @@ const BANK_PAYMENT_METHODS = new Set([
   "ACLEDA",
 ]);
 
-const getSavedRowKey = (row) =>
-  [row.branch, row.month, row.year, row.id].join("|");
 const KHR_PER_USD = 4000;
+
+const KHMER_MONTHS = [
+  "មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា",
+  "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ",
+];
+
+async function fetchJson(url, options) {
+  const response = await fetch(url, { cache: "no-store", ...options });
+  const body = await response.json().catch(() => null);
+  if (!response.ok || body?.success === false) {
+    throw new Error(body?.message || `Request failed (${response.status})`);
+  }
+  return body?.data ?? body;
+}
+
+function normalizeOptions(items) {
+  return (Array.isArray(items) ? items : []).map((item) => ({
+    value: String(item.value ?? item.id),
+    label: item.labelKm || item.nameKm || item.labelEn || item.nameEn || item.label || item.code || String(item.value ?? item.id),
+  }));
+}
+
+function mapMonthlyMember(member, branchLabel, month, year) {
+  return {
+    id: member.memberId,
+    memberId: member.memberId,
+    branch: branchLabel,
+    branchId: member.branchId,
+    month,
+    year,
+    name: member.fullNameKm || member.fullNameEn || member.memberNo || `#${member.memberId}`,
+    avatar: member.profilePhotoId ? `/api/files/${member.profilePhotoId}/content` : "",
+    gender: member.gender || "-",
+    dob: member.dateOfBirth || "-",
+    realAmount: member.amountKhr ?? "0",
+    dollarAmount: member.amountUsd ?? "0",
+    paymentMethodId: member.paymentMethodId ?? "",
+    paymentMethod: member.paymentMethodCode || "",
+    receiptFileId: member.receiptFileId ?? null,
+    alreadyPaid: Boolean(member.alreadyPaid),
+  };
+}
 export default function AddDonationForm() {
   const router = useRouter();
   const pathname = usePathname();
@@ -45,52 +82,29 @@ export default function AddDonationForm() {
   const [searchQuery, setSearchQuery] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
   const [showSaveAlert, setShowSaveAlert] = useState(false);
-  const [savedRows, setSavedRows] = useState({});
   const [editableRows, setEditableRows] = useState([]);
+  const [branchOptions, setBranchOptions] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const allFiltersSelected =
   selectedBranch !== "all" &&
   selectedMonth !== "all" &&
   selectedYear !== "all";
 
-  const branches = useMemo(
-    () => [...new Set(addDonationRows.map((row) => row.branch))],
-    [],
-  );
+  const branches = branchOptions;
   const months = useMemo(
-    () => [...new Set(addDonationRows.map((row) => row.month))],
+    () => KHMER_MONTHS.map((label, index) => ({
+      value: String(index + 1).padStart(2, "0"),
+      label,
+    })),
     [],
   );
-  const years = useMemo(
-    () => [...new Set(addDonationRows.map((row) => row.year))],
-    [],
-  );
-  const members = useMemo(() => {
-  if (!allFiltersSelected) {
-    return [];
-  }
-
-  return addDonationRows
-    .filter(
-      (row) =>
-        row.branch === selectedBranch &&
-        row.month === selectedMonth &&
-        row.year === selectedYear,
-    )
-    .map((row) => ({
-      ...row,
-      ...savedRows[getSavedRowKey(row)],
-    }));
-}, [
-  allFiltersSelected,
-  savedRows,
-  selectedBranch,
-  selectedMonth,
-  selectedYear,
-
-]);
-useEffect(() => {
-  setEditableRows(members);
-}, [members]);
+  const years = useMemo(() => {
+    const current = new Date().getFullYear();
+    return Array.from({ length: 7 }, (_, index) => String(current - 3 + index));
+  }, []);
 
 const summary = useMemo(() => {
   const riel = editableRows.reduce(
@@ -122,16 +136,62 @@ const paymentSummary = useMemo(
 
 
   useEffect(() => {
-    const savedValue = window.localStorage.getItem(SAVED_DONATION_ROWS_KEY);
-
-    if (!savedValue) return;
-
-    try {
-      setSavedRows(JSON.parse(savedValue));
-    } catch {
-      setSavedRows({});
-    }
+    let cancelled = false;
+    Promise.all([
+      fetchJson("/api/lookups/branches"),
+      fetchJson("/api/backend/payment-methods?activeOnly=true"),
+    ])
+      .then(([branchItems, methodItems]) => {
+        if (cancelled) return;
+        setBranchOptions(normalizeOptions(branchItems));
+        setPaymentMethods((Array.isArray(methodItems) ? methodItems : []).map((method) => ({
+          id: String(method.id),
+          code: method.code,
+          label: method.labelKm || method.labelEn || method.code,
+        })));
+      })
+      .catch((loadError) => {
+        if (!cancelled) setError(loadError.message || "Unable to load donation options.");
+      });
+    return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (!allFiltersSelected) {
+      setEditableRows([]);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const params = new URLSearchParams({
+      branchId: selectedBranch,
+      month: String(Number(selectedMonth)),
+      year: selectedYear,
+      page: "0",
+      size: "1000",
+    });
+    if (searchQuery.trim()) params.set("search", searchQuery.trim());
+
+    setLoadingMembers(true);
+    setError("");
+    fetchJson(`/api/backend/donations/monthly/members?${params}`)
+      .then((page) => {
+        if (cancelled) return;
+        const branchLabel = branchOptions.find((option) => option.value === selectedBranch)?.label || selectedBranch;
+        setEditableRows((Array.isArray(page?.items) ? page.items : []).map((member) =>
+          mapMonthlyMember(member, branchLabel, selectedMonth, selectedYear),
+        ));
+      })
+      .catch((loadError) => {
+        if (!cancelled) {
+          setEditableRows([]);
+          setError(loadError.message || "Unable to load branch members.");
+        }
+      })
+      .finally(() => { if (!cancelled) setLoadingMembers(false); });
+
+    return () => { cancelled = true; };
+  }, [allFiltersSelected, branchOptions, searchQuery, selectedBranch, selectedMonth, selectedYear]);
 
   useEffect(() => {
     setSelectedBranch((currentBranch) =>
@@ -157,26 +217,57 @@ const paymentSummary = useMemo(
     return () => window.clearTimeout(timeoutId);
   }, [showSaveAlert]);
 
-  const handleSave = (rows) => {
+  const handleSave = async (rows) => {
     const completed = rows.filter(
       (row) => Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0,
     );
-    const nextRows = { ...savedRows };
+    if (completed.length === 0) {
+      setSavedMessage("សូមបញ្ចូលចំនួនទឹកប្រាក់យ៉ាងហោចណាស់ម្នាក់");
+      return;
+    }
 
-    rows.forEach((row) => {
-      nextRows[getSavedRowKey(row)] = {
-        ...nextRows[getSavedRowKey(row)],
-        realAmount: row.realAmount ?? "",
-        dollarAmount: row.dollarAmount ?? "",
-        paymentMethod: row.paymentMethod || "Cash",
+    const fallbackMethod = paymentMethods[0];
+    const items = completed.map((row) => {
+      const method = paymentMethods.find(
+        (option) =>
+          String(option.id) === String(row.paymentMethodId) ||
+          option.code === row.paymentMethod,
+      ) || fallbackMethod;
+
+      return {
+        member_id: Number(row.memberId),
+        amount_khr: Number(row.realAmount || 0),
+        amount_usd: Number(row.dollarAmount || 0),
+        payment_method_id: Number(method?.id),
+        receipt_file_id: row.receiptFileId || null,
       };
     });
 
-    window.localStorage.setItem(
-      SAVED_DONATION_ROWS_KEY,
-      JSON.stringify(nextRows),
-    );
-    setSavedRows(nextRows);
+    if (items.some((item) => !Number.isFinite(item.payment_method_id))) {
+      setError("មិនអាចកំណត់វិធីសាស្ត្រទូទាត់បានទេ");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    try {
+      await fetchJson("/api/backend/donations/monthly/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          branch_id: Number(selectedBranch),
+          donation_period: `${selectedYear}-${selectedMonth}-01`,
+          paid_at: new Date().toISOString(),
+          items,
+        }),
+      });
+      setShowSaveAlert(true);
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save monthly donations.");
+      return;
+    } finally {
+      setSaving(false);
+    }
 
     setSavedMessage(
       completed.length > 0
@@ -187,50 +278,16 @@ const paymentSummary = useMemo(
   };
 
   const handleReset = (rows) => {
-    setSavedRows((currentRows) => {
-      const nextRows = { ...currentRows };
-
-      rows.forEach((row) => {
-        nextRows[getSavedRowKey(row)] = {
-          ...nextRows[getSavedRowKey(row)],
-          realAmount: "0",
-          dollarAmount: "0",
-          paymentMethod: row.paymentMethod || "Cash",
-        };
-      });
-
-      window.localStorage.setItem(
-        SAVED_DONATION_ROWS_KEY,
-        JSON.stringify(nextRows),
-      );
-
-      return nextRows;
-    });
+    const ids = new Set(rows.map((row) => row.id));
+    setEditableRows((currentRows) => currentRows.map((row) =>
+      ids.has(row.id) ? { ...row, realAmount: "0", dollarAmount: "0" } : row,
+    ));
   };
 
   const handleReceiptSave = (id, receipt) => {
-    const row = members.find((member) => member.id === id);
-
-    if (row) {
-      setSavedRows((currentRows) => {
-        const key = getSavedRowKey(row);
-        const nextRows = {
-          ...currentRows,
-          [key]: { ...currentRows[key], receipt },
-        };
-
-        try {
-          window.localStorage.setItem(
-            SAVED_DONATION_ROWS_KEY,
-            JSON.stringify(nextRows),
-          );
-        } catch {
-          // Keep large receipt previews in React state when storage is full.
-        }
-
-        return nextRows;
-      });
-    }
+    setEditableRows((currentRows) => currentRows.map((row) =>
+      row.id === id ? { ...row, receipt } : row,
+    ));
 
     setSavedMessage("បានរក្សាទុកវិក្ក័យបត្រដោយជោគជ័យ");
   };
@@ -273,6 +330,11 @@ const paymentSummary = useMemo(
       </div>
 
       <section className="min-h-[545px] rounded-md border border-border bg-[#fbfbfd] p-6">
+        {error ? (
+          <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-base font-semibold text-secondary">ការកត់ត្រាវិភាគទានប្រចាំខែ</h1>
           {savedMessage && (
@@ -297,7 +359,11 @@ const paymentSummary = useMemo(
        
         />
 
-        {allFiltersSelected && editableRows.length > 0 && (
+        {loadingMembers ? (
+          <div className="py-12 text-center text-sm text-text-secondary">កំពុងទាញយកសមាជិក...</div>
+        ) : null}
+
+        {allFiltersSelected && !loadingMembers && editableRows.length > 0 && (
         <>
           <Table
               members={editableRows}
@@ -310,6 +376,7 @@ const paymentSummary = useMemo(
               onCancel={handleCancel}
               onSave={handleSave}
               onReceiptSave={handleReceiptSave}
+              saving={saving}
          />
 
     <div

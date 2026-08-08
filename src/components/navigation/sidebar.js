@@ -295,16 +295,7 @@ export default function Sidebar() {
   if (authLoading) {
     return (
       <aside
-        className="
-          flex
-          h-screen
-          w-72
-          shrink-0
-          items-center
-          justify-center
-          bg-primary-sidebar
-          text-white
-        "
+        className="flex h-screen w-72 shrink-0 items-center justify-center bg-primary-sidebar text-white"
       >
         <span className="text-sm text-white/60">
           កំពុងដំណើរការ...

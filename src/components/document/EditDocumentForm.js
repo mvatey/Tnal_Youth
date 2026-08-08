@@ -23,6 +23,7 @@ export default function EditDocumentForm({
   setForm,
   onSave,
   onClose,
+  branchOptions = BRANCH_OPTIONS,
 }) {
   const [files, setFiles] = useState(
     Array.isArray(form.files) && form.files.length > 0
@@ -176,7 +177,7 @@ export default function EditDocumentForm({
               placeholder="ជ្រើសរើសសាខា"
               value={form.branch || ""}
               onChange={updateField("branch")}
-              options={BRANCH_OPTIONS}
+              options={branchOptions}
             />
           </div>
 

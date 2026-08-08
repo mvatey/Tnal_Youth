@@ -28,8 +28,6 @@ import DatePickerField from "@/components/forms/DatePickerField";
 import FormActionButton from "@/components/ui/actions/FormActionButton";
 import MemberSelectModal from "@/components/activity/MemberSelectModal";
 
-import activities from "@/data/activityRecords.json";
-
 const BRANCH_OPTIONS = [
   "ភ្នំពេញ",
   "កណ្ដាល",
@@ -112,6 +110,31 @@ function formatDate(dateValue) {
   return `${year}-${month}-${day}`;
 }
 
+function getOptionLabel(option) {
+  return option?.labelKm || option?.label_km || option?.labelEn || option?.label_en || option?.code || "";
+}
+
+function getOptionValue(option) {
+  return Number(option?.value ?? option?.id);
+}
+
+function combineDateAndTime(dateValue, timeValue) {
+  const date = convertToDate(dateValue);
+  if (!date) return null;
+  const [hours, minutes] = String(timeValue || "00:00").split(":").map(Number);
+  date.setHours(Number.isFinite(hours) ? hours : 0, Number.isFinite(minutes) ? minutes : 0, 0, 0);
+  return date.toISOString();
+}
+
+async function fetchJson(path, options = {}) {
+  const response = await fetch(path, { cache: "no-store", ...options });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(body?.message || `Request failed (${response.status})`);
+  }
+  return body;
+}
+
 function getActivityLocation(location) {
   if (!location) return "";
 
@@ -166,34 +189,36 @@ function createInitialForm(activity) {
   }
 
   return {
-    name: activity.name || "",
-    branch: activity.branch || "",
-    type: activity.type || "",
-    sector: activity.sector || "",
+    name: activity.name || activity.titleKm || activity.titleEn || "",
+    branch: activity.branch || activity.branchLabel || "",
+    type: typeof activity.type === "object" ? getOptionLabel(activity.type) : activity.type || "",
+    sector: typeof activity.sector === "object" ? getOptionLabel(activity.sector) : activity.sector || "",
     visibility: activity.visibility || "សាធារណៈ",
     description: activity.descriptionDetail || activity.description || "",
     startDate: convertToDate(
-      activity.startDateISO ||
+      activity.startsAt ||
+        activity.startDateISO ||
         activity.startDateValue ||
         activity.startDate ||
         activity.dateValue ||
         activity.date
     ),
     endDate: convertToDate(
-      activity.endDateISO ||
+      activity.endsAt ||
+        activity.endDateISO ||
         activity.endDateValue ||
         activity.endDate ||
         activity.finishDate ||
         activity.dateValue ||
         activity.date
     ),
-    startTime: activity.startTime24 || activity.startTime || "",
-    endTime: activity.endTime24 || activity.endTime || "",
-    location: getActivityLocation(activity.location),
-    mapLink: activity.mapLink || "",
+    startTime: activity.startTime24 || activity.startTime || activity.startsAt?.slice(11, 16) || "",
+    endTime: activity.endTime24 || activity.endTime || activity.endsAt?.slice(11, 16) || "",
+    location: activity.locationName || getActivityLocation(activity.location),
+    mapLink: activity.googleMapUrl || activity.mapLink || "",
     address: activity.address || "",
     invitedBranches: normalizeInvitedBranches(activity),
-    status: activity.status || activity.status2 || "",
+    status: typeof activity.status === "object" ? getOptionLabel(activity.status) : activity.status || activity.status2 || "",
   };
 }
 
@@ -518,30 +543,118 @@ export default function CreateActivityPage() {
   const searchParams = useSearchParams();
 
   const editId = searchParams.get("edit");
-
-  const editingActivity = editId
-    ? activities.find(
-        (activity) =>
-          String(activity.id) === String(editId)
-      )
-    : null;
-
-  const isEditMode = Boolean(editingActivity);
-
-  const [form, setForm] = useState(() =>
-    createInitialForm(editingActivity)
-  );
+  const isEditMode = Boolean(editId);
+  const [editingActivity, setEditingActivity] = useState(null);
+  const [form, setForm] = useState(() => createInitialForm(null));
+  const [lookupData, setLookupData] = useState({
+    branches: [],
+    types: [],
+    sectors: [],
+    statuses: [],
+  });
 
   const [activityImages, setActivityImages] = useState([]);
   const [activityDocuments, setActivityDocuments] = useState([]);
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [memberOptions, setMemberOptions] = useState([]);
+  const [selectedMemberIds, setSelectedMemberIds] = useState([]);
+
+  const branchOptions = lookupData.branches.length
+    ? lookupData.branches.map(getOptionLabel)
+    : BRANCH_OPTIONS;
+  const typeOptions = lookupData.types.length
+    ? lookupData.types.map(getOptionLabel)
+    : TYPE_OPTIONS;
+  const sectorOptions = lookupData.sectors.length
+    ? lookupData.sectors.map(getOptionLabel)
+    : SECTOR_OPTIONS;
+  const statusOptions = lookupData.statuses.length
+    ? lookupData.statuses.map(getOptionLabel)
+    : STATUS_OPTIONS;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadFormData() {
+      try {
+        const [branches, types, sectors, statuses] = await Promise.all([
+          fetchJson("/api/lookups/branches"),
+          fetchJson("/api/lookups/activity-types"),
+          fetchJson("/api/lookups/activity-sectors"),
+          fetchJson("/api/lookups/activity-statuses"),
+        ]);
+        const nextLookups = { branches, types, sectors, statuses };
+        if (cancelled) return;
+        setLookupData(nextLookups);
+
+        if (editId) {
+          const [activity, invitations] = await Promise.all([
+            fetchJson(`/api/backend/activities/${encodeURIComponent(editId)}`),
+            fetchJson(`/api/backend/activities/${encodeURIComponent(editId)}/invited-branches`).catch(() => []),
+          ]);
+          const branch = branches.find((option) => getOptionValue(option) === Number(activity.branchId));
+          const invitedBranches = (Array.isArray(invitations) ? invitations : [])
+            .map((invitation) => branches.find((option) => getOptionValue(option) === Number(invitation.branchId ?? invitation.branch_id)))
+            .filter(Boolean)
+            .map(getOptionLabel);
+          const normalized = {
+            ...activity,
+            branchLabel: getOptionLabel(branch),
+            invitedBranches,
+          };
+          if (!cancelled) {
+            setEditingActivity(normalized);
+            setForm(createInitialForm(normalized));
+          }
+        }
+      } catch (error) {
+        console.error("Load activity form data error:", error);
+        if (!cancelled) alert(error.message || "Unable to load activity form data.");
+      }
+    }
+
+    loadFormData();
+    return () => {
+      cancelled = true;
+    };
+  }, [editId]);
+
+  useEffect(() => {
+    const branch = lookupData.branches.find((option) => getOptionLabel(option) === form.branch);
+    const branchId = getOptionValue(branch);
+    if (!Number.isFinite(branchId) || branchId <= 0) {
+      setMemberOptions([]);
+      return;
+    }
+    let cancelled = false;
+    fetchJson(`/api/backend/members?branchId=${branchId}&page=0&size=100`)
+      .then((page) => {
+        const records = Array.isArray(page) ? page : page?.content || [];
+        if (!cancelled) {
+          setMemberOptions(records.map((member) => ({
+            id: member.id,
+            name: member.full_name_km || member.full_name_en || "-",
+            email: member.email || "",
+            gender: member.gender?.label_km || member.gender?.labelKm || member.gender?.code || "-",
+            role: member.level?.label_km || member.level?.labelKm || member.level?.code || "-",
+            branch: member.branch?.label_km || member.branch?.labelKm || form.branch,
+            joinedDate: member.joined_on || "-",
+            joinedDateValue: member.joined_on || "",
+          })));
+        }
+      })
+      .catch((error) => console.error("Load activity members error:", error));
+    return () => {
+      cancelled = true;
+    };
+  }, [form.branch, lookupData.branches]);
 
   const invitedBranchOptions = useMemo(() => {
-    return BRANCH_OPTIONS.filter(
+    return branchOptions.filter(
       (branch) => branch !== form.branch
     );
-  }, [form.branch]);
+  }, [branchOptions, form.branch]);
 
   const setValue = (field, value) => {
     setForm((currentForm) => ({
@@ -612,103 +725,98 @@ export default function CreateActivityPage() {
     setIsSaving(true);
 
     try {
-      const activityData = {
-        ...editingActivity,
-        ...form,
-        id: isEditMode
-          ? editingActivity.id
-          : Date.now(),
-        descriptionDetail: form.description,
-        startDateISO: formatDate(form.startDate),
-        endDateISO: formatDate(form.endDate),
-        startTime24: form.startTime,
-        endTime24: form.endTime,
-        invitedBranches: form.invitedBranches,
-        additionalBranches: form.invitedBranches,
-        branch2: form.invitedBranches[0] || "",
-        newImages: activityImages.map((file) => ({
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          lastModified: file.lastModified,
-        })),
-        newDocuments: activityDocuments.map((file) => ({
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          lastModified: file.lastModified,
-        })),
-        status: form.status,
-        updatedAt: new Date().toISOString(),
+      const findOptionId = (options, label) => {
+        const match = options.find((option) => getOptionLabel(option) === label);
+        const value = getOptionValue(match);
+        return Number.isFinite(value) && value > 0 ? value : null;
+      };
+      const payload = {
+        titleKm: form.name.trim(),
+        titleEn: editingActivity?.titleEn || null,
+        description: form.description.trim() || null,
+        typeId: findOptionId(lookupData.types, form.type),
+        sectorId: findOptionId(lookupData.sectors, form.sector),
+        statusId: findOptionId(lookupData.statuses, form.status),
+        branchId: findOptionId(lookupData.branches, form.branch),
+        isPublic: form.visibility === VISIBILITY_OPTIONS[0],
+        startsAt: combineDateAndTime(form.startDate, form.startTime),
+        endsAt: combineDateAndTime(form.endDate, form.endTime),
+        provinceId: editingActivity?.provinceId || null,
+        districtId: editingActivity?.districtId || null,
+        communeId: editingActivity?.communeId || null,
+        locationName: form.location || null,
+        address: form.address.trim() || null,
+        googleMapUrl: form.mapLink.trim() || null,
+        capacity: editingActivity?.capacity || null,
+        coverImageId: editingActivity?.coverImageId || null,
       };
 
-      const storedActivities = JSON.parse(
-        localStorage.getItem("activities") || "[]"
-      );
-
-      let newActivities;
-
-      if (isEditMode) {
-        const savedActivityExists =
-          storedActivities.some(
-            (activity) =>
-              String(activity.id) === String(editId)
-          );
-
-        if (savedActivityExists) {
-          newActivities = storedActivities.map(
-            (activity) =>
-              String(activity.id) === String(editId)
-                ? activityData
-                : activity
-          );
-        } else {
-          newActivities = [
-            ...storedActivities,
-            activityData,
-          ];
-        }
-      } else {
-        newActivities = [
-          ...storedActivities,
-          activityData,
-        ];
+      const requiredValues = [payload.typeId, payload.sectorId, payload.statusId, payload.branchId, payload.startsAt, payload.endsAt];
+      if (requiredValues.some((value) => value == null)) {
+        throw new Error("Please complete all required activity fields.");
+      }
+      if (!isEditMode) {
+        delete payload.isPublic;
       }
 
-      localStorage.setItem(
-        "activities",
-        JSON.stringify(newActivities)
+      const savedActivity = await fetchJson(
+        isEditMode
+          ? `/api/backend/activities/${encodeURIComponent(editId)}`
+          : "/api/backend/activities",
+        {
+          method: isEditMode ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
+      const savedId = savedActivity.id;
+
+      if (!isEditMode) {
+        const invitedBranchIds = form.invitedBranches
+          .map((label) => findOptionId(lookupData.branches, label))
+          .filter(Boolean);
+        await Promise.all(
+          invitedBranchIds.map((branchId) =>
+            fetchJson(`/api/backend/activities/${savedId}/invited-branches`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ branch_id: branchId }),
+            }),
+          ),
+        );
+      }
+
+      if (!isEditMode && selectedMemberIds.length) {
+        await fetchJson(`/api/backend/activities/${savedId}/participants/invite`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ member_ids: selectedMemberIds.map(Number) }),
+        });
+      }
+
+      if (activityImages.length) {
+        const imageData = new FormData();
+        activityImages.forEach((file) => imageData.append("files", file));
+        await fetchJson(`/api/backend/activities/${savedId}/gallery`, {
+          method: "POST",
+          body: imageData,
+        });
+      }
+
+      await Promise.all(
+        activityDocuments.map((file, index) => {
+          const documentData = new FormData();
+          documentData.append("file", file);
+          documentData.append("title", file.name);
+          documentData.append("sortOrder", String(index));
+          return fetchJson(`/api/backend/activities/${savedId}/attachments`, {
+            method: "POST",
+            body: documentData,
+          });
+        }),
       );
 
-      /*
-        When your backend upload API is ready, replace the localStorage
-        section with FormData:
-
-        const requestData = new FormData();
-
-        requestData.append(
-          "activity",
-          new Blob(
-            [JSON.stringify(activityData)],
-            { type: "application/json" }
-          )
-        );
-
-        activityImages.forEach((file) => {
-          requestData.append("images", file);
-        });
-
-        activityDocuments.forEach((file) => {
-          requestData.append("documents", file);
-        });
-
-        await fetch("/api/activities", {
-          method: isEditMode ? "PUT" : "POST",
-          body: requestData,
-        });
-      */
-
-      router.back();
+      router.push(`/activity/${savedId}`);
     } catch (error) {
       console.error("Save activity error:", error);
       alert("មិនអាចរក្សាទុកកម្មវិធីបានទេ");
@@ -772,7 +880,7 @@ export default function CreateActivityPage() {
                 value={form.branch}
                 onChange={handleBranchChange}
                 placeholder="ជ្រើសរើសសាខា"
-                options={BRANCH_OPTIONS}
+                options={branchOptions}
               />
 
               <FormSelect
@@ -780,7 +888,7 @@ export default function CreateActivityPage() {
                 value={form.type}
                 onChange={(value) => setValue("type", value)}
                 placeholder="ជ្រើសរើសប្រភេទ"
-                options={TYPE_OPTIONS}
+                options={typeOptions}
               />
             </div>
 
@@ -790,7 +898,7 @@ export default function CreateActivityPage() {
                 value={form.sector}
                 onChange={(value) => setValue("sector", value)}
                 placeholder="ជ្រើសរើសវិស័យ"
-                options={SECTOR_OPTIONS}
+                options={sectorOptions}
               />
 
               <FormSelect
@@ -933,7 +1041,7 @@ export default function CreateActivityPage() {
               value={form.status}
               onChange={(value) => setValue("status", value)}
               placeholder="ជ្រើសរើសស្ថានភាពកម្មវិធី"
-              options={STATUS_OPTIONS}
+                options={statusOptions}
             />
           </div>
 
@@ -1051,6 +1159,9 @@ export default function CreateActivityPage() {
       {showMemberModal && (
         <MemberSelectModal
           onClose={() => setShowMemberModal(false)}
+          members={memberOptions}
+          selectedIds={selectedMemberIds}
+          onSave={setSelectedMemberIds}
         />
       )}
     </>

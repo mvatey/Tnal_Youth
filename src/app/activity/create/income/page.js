@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { HiSaveAs } from "react-icons/hi";
@@ -9,17 +9,15 @@ import { RiDownloadCloud2Line } from "react-icons/ri";
 
 import Pagination from "@/components/navigation/Pagination";
 import { ReceiptIcon } from "@/components/donations/monthlydonation/AddDonationTableRow";
-import members from "@/data/members.json";
-import activities from "@/data/activityRecords.json";
-
 const ROWS_PER_PAGE = 10;
 const KHR_PER_USD = 4000;
 
-function createInitialRows() {
+function createInitialRows(members = []) {
   const getMemberIdentity = (member) =>
     String(
       member.email ||
         member.phone ||
+        member.full_name_km ||
         member.name_kh ||
         member.name_en ||
         member.name ||
@@ -43,11 +41,13 @@ function createInitialRows() {
       member.name_kh ||
       member.fullNameKm ||
       member.name ||
+      member.full_name_en ||
       member.name_en ||
       member.fullNameEn ||
       "",
-    gender: member.gender || "",
+    gender: member.gender?.label_km || member.gender?.labelKm || member.gender?.code || member.gender || "",
     joinedDate:
+      member.joined_on ||
       member.joinedDate ||
       member.joinedAt ||
       "",
@@ -58,6 +58,13 @@ function createInitialRows() {
     paymentMethod: "Cash",
     receipt: null,
   }));
+}
+
+async function fetchJson(path, options = {}) {
+  const response = await fetch(path, { cache: "no-store", ...options });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.message || `Request failed (${response.status})`);
+  return body;
 }
 
 function parseAmount(value) {
@@ -118,24 +125,45 @@ export default function IncomePage() {
   const activityId =
     searchParams.get("activityId");
 
-  const activity = useMemo(() => {
-    if (!activityId) {
-      return null;
-    }
-
-    return activities.find(
-      (item) =>
-        String(item.id) ===
-        String(activityId)
-    );
-  }, [activityId]);
-
-  const [rows, setRows] = useState(() =>
-    createInitialRows()
-  );
+  const [activity, setActivity] = useState(null);
+  const [rows, setRows] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const [currentPage, setCurrentPage] =
     useState(1);
+
+  useEffect(() => {
+    if (!activityId) return;
+    let cancelled = false;
+
+    async function loadIncomeData() {
+      try {
+        setError("");
+        const activityRecord = await fetchJson(`/api/backend/activities/${encodeURIComponent(activityId)}`);
+        const [memberPage, methods] = await Promise.all([
+          fetchJson(`/api/backend/members?branchId=${activityRecord.branchId}&page=0&size=100`),
+          fetchJson("/api/backend/payment-methods?activeOnly=true"),
+        ]);
+        const members = Array.isArray(memberPage) ? memberPage : memberPage?.content || [];
+        const methodList = Array.isArray(methods) ? methods : [];
+        const defaultMethod = methodList[0]?.code || "Cash";
+        if (!cancelled) {
+          setActivity({ ...activityRecord, name: activityRecord.titleKm || activityRecord.titleEn || "" });
+          setRows(createInitialRows(members).map((row) => ({ ...row, paymentMethod: defaultMethod })));
+          setPaymentMethods(methodList);
+        }
+      } catch (loadError) {
+        if (!cancelled) setError(loadError.message || "Unable to load income data.");
+      }
+    }
+
+    loadIncomeData();
+    return () => {
+      cancelled = true;
+    };
+  }, [activityId]);
 
   const totalPages = Math.max(
     1,
@@ -223,30 +251,54 @@ export default function IncomePage() {
     );
   }, [rows]);
 
-  const handleSave = () => {
-    const incomeData = {
-      activityId,
-      activityName:
-        activity?.name || "",
-      rows: rows.map((row) => ({
-        ...row,
-        receipt: row.receipt
-          ? {
-              name: row.receipt.name,
-              size: row.receipt.size,
-              type: row.receipt.type,
-            }
-          : null,
-      })),
-      summary,
-    };
-
-    localStorage.setItem(
-      `activity-income-${activityId}`,
-      JSON.stringify(incomeData)
+  const handleSave = async () => {
+    const activeRows = rows.filter(
+      (row) => parseAmount(row.amountRiel) > 0 || parseAmount(row.amountDollar) > 0,
     );
+    if (!activityId || activeRows.length === 0) {
+      setError("Please enter at least one income amount.");
+      return;
+    }
 
-    router.back();
+    setIsSaving(true);
+    setError("");
+    try {
+      const items = await Promise.all(
+        activeRows.map(async (row) => {
+          let receiptFileId = null;
+          if (row.receipt) {
+            const data = new FormData();
+            data.append("file", row.receipt);
+            const uploaded = await fetchJson("/api/backend/files/attachments", {
+              method: "POST",
+              body: data,
+            });
+            receiptFileId = uploaded.id;
+          }
+          const method = paymentMethods.find((item) => item.code === row.paymentMethod);
+          return {
+            member_id: Number(row.id),
+            amount_khr: parseAmount(row.amountRiel),
+            amount_usd: parseAmount(row.amountDollar),
+            payment_method_id: Number(method?.id),
+            receipt_file_id: receiptFileId,
+          };
+        }),
+      );
+      if (items.some((item) => !Number.isFinite(item.payment_method_id))) {
+        throw new Error("Payment method is required.");
+      }
+      await fetchJson(`/api/backend/activities/${encodeURIComponent(activityId)}/incomes/batch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ received_at: new Date().toISOString(), items }),
+      });
+      router.push(`/activity/${activityId}`);
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save activity income.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const cancelHref = activityId
@@ -295,6 +347,12 @@ export default function IncomePage() {
           </p>
         )}
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
+          {error}
+        </div>
+      )}
 
       {/* Income table */}
       <div className="rounded-xl border border-border bg-white p-5">
@@ -496,21 +554,11 @@ export default function IncomePage() {
                           }
                           className="mx-auto block h-7 w-[82px] rounded-md border border-slate-400 bg-white px-2 text-[12px] text-text-secondary outline-none focus:border-[#4B2E91]"
                         >
-                          <option value="Cash">
-                            Cash
-                          </option>
-
-                          <option value="ABA">
-                            ABA
-                          </option>
-
-                          <option value="ACLEDA">
-                            ACLEDA
-                          </option>
-
-                          <option value="Wing">
-                            Wing
-                          </option>
+                          {paymentMethods.map((method) => (
+                            <option key={method.id} value={method.code}>
+                              {method.nameKm || method.name_km || method.nameEn || method.name_en || method.code}
+                            </option>
+                          ))}
                           
                         </select>
                       </td>
@@ -624,6 +672,7 @@ export default function IncomePage() {
         <button
           type="button"
           onClick={handleSave}
+          disabled={isSaving}
           className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white transition hover:bg-secondary-hover"
         >
           <HiSaveAs size={16} />

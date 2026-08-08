@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -16,7 +17,6 @@ import {
 import { RiDownloadCloud2Line } from "react-icons/ri";
 import { HiSaveAs } from "react-icons/hi";
 
-import activities from "@/data/activityRecords.json";
 import QuantityInput from "@/components/forms/QuantityInput";
 
 const KHR_PER_USD = 4000;
@@ -102,19 +102,47 @@ const getAmountFieldClass = (value) =>
     ? "border-[#65686b] bg-[#eef5f3]"
     : "border-[#65686b] bg-[#e5e7eb]";
 
+async function fetchJson(path, options = {}) {
+  const response = await fetch(path, { cache: "no-store", ...options });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(body?.message || `Request failed (${response.status})`);
+  return body;
+}
+
+function todayIsoDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default function ExpensePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("activityId");
 
-  
-  const activity = activities.find(
-    (item) =>
-      String(item.id) === String(id)
-  );
+  const [activity, setActivity] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const [rows, setRows] =
     useState(initialRows);
+
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    fetchJson(`/api/backend/activities/${encodeURIComponent(id)}`)
+      .then((record) => {
+        if (!cancelled) setActivity({ ...record, name: record.titleKm || record.titleEn || "" });
+      })
+      .catch((loadError) => {
+        if (!cancelled) setError(loadError.message || "Unable to load activity.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   const updateRow = (
     rowId,
@@ -255,25 +283,39 @@ export default function ExpensePage() {
     };
   }, [rows]);
 
-  const handleSave = () => {
-    const expenseData = {
-      activityId: id,
-      exchangeRate: KHR_PER_USD,
-      rows,
-      summary,
-    };
+  const handleSave = async () => {
+    const activeRows = rows.filter((row) => row.name.trim());
+    if (!id || activeRows.length === 0) {
+      setError("Please enter at least one expense name.");
+      return;
+    }
 
-    console.log(
-      "Saved expenses:",
-      expenseData
-    );
-
-    localStorage.setItem(
-      `activity-expenses-${id}`,
-      JSON.stringify(expenseData)
-    );
-
-    router.back();
+    setIsSaving(true);
+    setError("");
+    try {
+      await Promise.all(
+        activeRows.map((row) =>
+          fetchJson(`/api/backend/activities/${encodeURIComponent(id)}/expenses`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: row.name.trim(),
+              description: row.category.trim() || null,
+              quantity: parseNumber(row.quantity),
+              amount_khr: parseNumber(row.totalRiel),
+              amount_usd: parseNumber(row.directDollarTotal),
+              spent_on: todayIsoDate(),
+              receipt_file_id: null,
+            }),
+          }),
+        ),
+      );
+      router.push(`/activity/${id}`);
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save activity expenses.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -312,6 +354,12 @@ export default function ExpensePage() {
           {activity?.name}
         </p>
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
+          {error}
+        </div>
+      )}
 
       <div className="rounded-xl border border-border bg-white p-5">
         <div className="mb-4 flex justify-end">
@@ -607,6 +655,7 @@ export default function ExpensePage() {
           <button
             type="button"
             onClick={handleSave}
+            disabled={isSaving}
             className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white hover:bg-secondary-hover"
           >
             <HiSaveAs size={16} />

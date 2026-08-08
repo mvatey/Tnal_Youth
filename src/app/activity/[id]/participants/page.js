@@ -1,106 +1,166 @@
 "use client";
 
 import { use, useEffect, useMemo, useState } from "react";
-import { ChevronRight, Eye, Pencil } from "lucide-react";
+import { ChevronRight, Eye } from "lucide-react";
 import { RiDownloadCloud2Line } from "react-icons/ri";
 import Link from "next/link";
 
-import activities from "@/data/activityRecords.json";
-import participantRecords from "@/data/participantRecords.json";
-
-import SearchBar from "@/components/tables/SearchBar";
-import FilterBar from "@/components/tables/FilterBar";
-import Button from "@/components/tables/Button";
-import Table from "@/components/tables/GenericTable";
+import SearchBar from "@/components/table-items/SearchBar";
+import FilterBar from "@/components/table-items/FilterBar";
+import Button from "@/components/table-items/Button";
+import Table from "@/components/table-items/Table";
 import ParticipantStats, { ParticipantStatusBadge as StatusBadge } from "@/components/activity/ParticipantStats";
-import ParticipationEditModal from "@/components/activity/ParticipantEditModal";
-import { useAuth } from "@/context/AuthContext";
-import { normalizeRole } from "@/lib/navigation";
 
-const roles = ["ប្រធាន", "លេខាធិការ", "សមាជិក"];
-const branches = ["ភ្នំពេញ", "កណ្ដាល"];
+async function fetchApi(path) {
+  const response = await fetch(`/api/backend${path}`, {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  const body = await response.json().catch(() => null);
 
-function normalizeParticipant(participant) {
-  const isParticipated =
-    participant.isParticipated ??
-    participant.is_participated ??
-    participant.status === "បានចូលរួម";
+  if (!response.ok) {
+    throw new Error(body?.message || `Request failed (${response.status})`);
+  }
 
-  const isInvited =
-    participant.isInvited ??
-    participant.is_invited ??
-    true;
-
-  return {
-    ...participant,
-    isInvited,
-    isParticipated,
-  };
+  return body;
 }
 
-function isCompletedActivity(activity) {
-  const status = String(
-    activity?.statusCode ??
-    activity?.status?.code ??
-    activity?.status ??
-    "",
-  ).toUpperCase();
+function getValue(record, camelKey, snakeKey) {
+  return record?.[camelKey] ?? record?.[snakeKey];
+}
 
-  return status === "COMPLETED" || status === "បានបញ្ចប់";
+function getLabel(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return value.labelKm ?? value.label_km ?? value.labelEn ?? value.label_en ?? value.code ?? "";
+}
+
+function formatDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function normalizeExistingParticipant(participant) {
+  return {
+    ...participant,
+    memberId: Number(getValue(participant, "memberId", "member_id")),
+    branchId: Number(getValue(participant, "branchId", "branch_id")),
+    checkedInAt: getValue(participant, "checkedInAt", "checked_in_at"),
+  };
 }
 
 export default function ActivityParticipantsPage({ params }) {
   const { id } = use(params);
-
-  const { user } = useAuth();
-
-  const role = normalizeRole(user?.role);
-
-  const canEditParticipation =
-    role === "secretary" ||
-    role === "branch_leader";
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
   const [selectedBranch, setSelectedBranch] = useState("all");
   const [selectedDate, setSelectedDate] = useState(null);
   const [activityParticipants, setActivityParticipants] = useState([]);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-
-  const activity = useMemo(() => {
-    return activities.find((item) => String(item.id) === String(id));
-  }, [id]);
-
-  const initialParticipants = useMemo(() => {
-    return participantRecords
-      .filter((participant) => String(participant.activityId) === String(id))
-      .map(normalizeParticipant);
-  }, [id]);
-
-  const storageKey = useMemo(() => {
-    return `tnal-activity-participation:${id}`;
-  }, [id]);
+  const [activity, setActivity] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    try {
-      const savedParticipants = localStorage.getItem(storageKey);
+    let cancelled = false;
 
-      if (savedParticipants) {
-        const parsedParticipants = JSON.parse(savedParticipants);
+    async function loadParticipants() {
+      setLoading(true);
+      setLoadError("");
 
-        if (Array.isArray(parsedParticipants)) {
-          setActivityParticipants(parsedParticipants.map(normalizeParticipant));
-          return;
+      try {
+        const activityRecord = await fetchApi(`/activities/${id}`);
+        const branchId = Number(getValue(activityRecord, "branchId", "branch_id"));
+
+        if (!Number.isFinite(branchId) || branchId <= 0) {
+          throw new Error("This activity is not assigned to a branch.");
         }
+
+        const [memberPage, existingResponse] = await Promise.all([
+          fetchApi(`/members?branchId=${branchId}&page=0&size=100`),
+          fetchApi(`/activities/${id}/participants`),
+        ]);
+
+        const members = Array.isArray(memberPage)
+          ? memberPage
+          : Array.isArray(memberPage?.content)
+            ? memberPage.content
+            : [];
+        const existingParticipants = (Array.isArray(existingResponse)
+          ? existingResponse
+          : Array.isArray(existingResponse?.content)
+            ? existingResponse.content
+            : []
+        ).map(normalizeExistingParticipant);
+        const existingByMemberId = new Map(
+          existingParticipants.map((participant) => [participant.memberId, participant]),
+        );
+
+        const rows = members.map((member) => {
+          const memberId = Number(member.id);
+          const existing = existingByMemberId.get(memberId);
+          const joinedDateValue = getValue(member, "joinedOn", "joined_on") ||
+            getValue(existing, "registeredAt", "registered_at") || "";
+
+          return {
+            id: memberId,
+            memberId,
+            name: getValue(member, "fullNameKm", "full_name_km") ||
+              getValue(member, "fullNameEn", "full_name_en") ||
+              getValue(existing, "fullNameKm", "full_name_km") ||
+              getValue(existing, "fullNameEn", "full_name_en") || "-",
+            email: member.email || existing?.email || "",
+            gender: getLabel(member.gender) || "-",
+            role: getLabel(member.level) || "-",
+            branch: getLabel(member.branch) ||
+              getValue(existing, "branchNameKm", "branch_name_km") ||
+              getValue(existing, "branchNameEn", "branch_name_en") || "-",
+            branchId,
+            joinedDateValue: joinedDateValue ? String(joinedDateValue).slice(0, 10) : "",
+            joinedDate: formatDate(joinedDateValue),
+            isInvited: Boolean(existing),
+            isParticipated: Boolean(existing?.checkedInAt),
+          };
+        });
+
+        if (!cancelled) {
+          setActivity({
+            ...activityRecord,
+            name: getValue(activityRecord, "titleKm", "title_km") ||
+              getValue(activityRecord, "titleEn", "title_en") || "-",
+          });
+          setActivityParticipants(rows);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setLoadError(error instanceof Error ? error.message : "Something went wrong");
+          setActivityParticipants([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    } catch (error) {
-      console.error("Cannot load saved participation data:", error);
     }
 
-    setActivityParticipants(initialParticipants);
-  }, [initialParticipants, storageKey]);
+    loadParticipants();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
-  const completed = isCompletedActivity(activity);
+  const roles = useMemo(
+    () => [...new Set(activityParticipants.map((item) => item.role).filter((value) => value && value !== "-"))],
+    [activityParticipants],
+  );
+  const branches = useMemo(
+    () => [...new Set(activityParticipants.map((item) => item.branch).filter((value) => value && value !== "-"))],
+    [activityParticipants],
+  );
 
   const filteredParticipants = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -226,15 +286,21 @@ export default function ActivityParticipantsPage({ params }) {
     [],
   );
 
-  const handleSaveParticipation = (updatedParticipants) => {
-    setActivityParticipants(updatedParticipants);
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-border bg-white p-6 text-center text-text-secondary">
+        Loading activity members...
+      </div>
+    );
+  }
 
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(updatedParticipants));
-    } catch (error) {
-      console.error("Cannot save participation data:", error);
-    }
-  };
+  if (loadError) {
+    return (
+      <div className="rounded-xl border border-error/30 bg-error-bg p-6 text-center text-error">
+        {loadError}
+      </div>
+    );
+  }
 
   if (!activity) {
     return (
@@ -311,29 +377,12 @@ export default function ActivityParticipantsPage({ params }) {
             ]}
           />
 
-          <div className="ml-auto flex items-center gap-3">
-            {completed && canEditParticipation && (
-              <button
-                type="button"
-                onClick={() => setIsEditOpen(true)}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-success px-5 text-sm font-semibold text-white transition hover:bg-emerald-700"
-              >
-                <Pencil size={16} />
-                កែប្រែការចូលរួម
-              </button>
-            )}
-
+          <div className="ml-auto">
             <Button icon={RiDownloadCloud2Line}>
               ទាញយករបាយការណ៍
             </Button>
           </div>
-          </div>
-
-        {!completed && (
-          <div className="mb-4 rounded-lg border border-warning/30 bg-warning-bg px-4 py-3 text-sm text-warning">
-            អាចកែប្រែស្ថានភាពចូលរួមបាន បន្ទាប់ពីកម្មវិធីបានបញ្ចប់។
-          </div>
-        )}
+        </div>
 
         <Table
           columns={columns}
@@ -343,12 +392,6 @@ export default function ActivityParticipantsPage({ params }) {
         />
       </div>
 
-      <ParticipationEditModal
-        open={isEditOpen}
-        participants={activityParticipants}
-        onClose={() => setIsEditOpen(false)}
-        onSave={handleSaveParticipation}
-      />
     </div>
   );
 }

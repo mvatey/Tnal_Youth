@@ -12,7 +12,7 @@ import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
 import FormActionButtons from "@/components/forms/FormActionButton";
 
-const BRANCH_OPTIONS = [
+const FALLBACK_BRANCH_OPTIONS = [
   {
     label: "សាខាភ្នំពេញ",
     value: "សាខាភ្នំពេញ",
@@ -35,7 +35,7 @@ const BRANCH_OPTIONS = [
   },
 ];
 
-const DOCUMENT_TYPE_OPTIONS = [
+const FALLBACK_DOCUMENT_TYPE_OPTIONS = [
   {
     label: "វិញ្ញាបនបត្រ",
     value: "វិញ្ញាបនបត្រ",
@@ -54,6 +54,9 @@ export default function AddDocumentForm({
   setForm,
   onSave,
   onClose,
+  branchOptions = FALLBACK_BRANCH_OPTIONS,
+  documentTypeOptions = FALLBACK_DOCUMENT_TYPE_OPTIONS,
+  saving = false,
 }) {
   const fileInputRef = useRef(null);
 
@@ -345,7 +348,7 @@ export default function AddDocumentForm({
                 )
               }
               options={
-                BRANCH_OPTIONS
+                branchOptions
               }
             />
           </div>
@@ -370,7 +373,7 @@ export default function AddDocumentForm({
                 )
               }
               options={
-                DOCUMENT_TYPE_OPTIONS
+                documentTypeOptions
               }
             />
           </div>

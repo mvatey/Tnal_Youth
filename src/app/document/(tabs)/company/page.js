@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
@@ -9,8 +9,6 @@ import AddDocumentForm from "@/components/document/AddDocumentForm";
 import EditDocumentForm from "@/components/document/EditDocumentForm";
 import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
 import DeleteConfirmModal from "@/components/popup/Confirmdeletemodal";
-
-import documentCompany from "@/data/documentCompany.json";
 
 const EMPTY_FORM = {
   title: "",
@@ -33,7 +31,12 @@ const DEFAULT_DOCUMENT_TYPE_STYLE =
   "bg-gray-100 text-text-secondary";
 
 export default function CompanyDocumentPage() {
-  const [documents, setDocuments] = useState(documentCompany);
+  const [documents, setDocuments] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [documentTypes, setDocumentTypes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -44,6 +47,39 @@ export default function CompanyDocumentPage() {
   const [deleteDocument, setDeleteDocument] = useState(null);
 
   const [form, setForm] = useState(EMPTY_FORM);
+
+  const loadPage = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const responses = await Promise.all([
+        fetch("/api/backend/documents", { cache: "no-store" }),
+        fetch("/api/lookups/branches", { cache: "no-store" }),
+        fetch("/api/backend/document-types", { cache: "no-store" }),
+      ]);
+      if (responses.some((response) => !response.ok)) throw new Error("Unable to load documents.");
+      const [documentBody, branchBody, typeBody] = await Promise.all(responses.map((response) => response.json()));
+      const documentRows = documentBody?.data ?? documentBody;
+      setDocuments((Array.isArray(documentRows) ? documentRows : []).filter((row) => row.branch).map(mapDocument));
+      setBranches(Array.isArray(branchBody) ? branchBody : (branchBody?.data ?? []));
+      setDocumentTypes(Array.isArray(typeBody) ? typeBody : (typeBody?.data ?? []));
+    } catch (loadError) {
+      setError(loadError.message || "Unable to load documents.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadPage(); }, [loadPage]);
+
+  const branchOptions = useMemo(() => branches.map((branch) => ({
+    value: String(branch.id),
+    label: branch.nameKm || branch.name_km || branch.nameEn || branch.name_en || branch.name,
+  })), [branches]);
+  const documentTypeOptions = useMemo(() => documentTypes.map((type) => ({
+    value: String(type.id),
+    label: type.labelKm || type.label_km || type.labelEn || type.label_en || type.code,
+  })), [documentTypes]);
 
   const filteredDocuments = documents.filter((item) => {
     const searchValue = search.trim().toLowerCase();
@@ -80,7 +116,7 @@ export default function CompanyDocumentPage() {
     },
     {
       header: "សាខា",
-      accessor: "branch",
+      accessor: "branchName",
       width: "w-[15%]",
     },
     {
@@ -131,7 +167,7 @@ export default function CompanyDocumentPage() {
         <div className="flex items-center justify-center ">
           <button
             type="button"
-            onClick={() => setSelectedDocument(item)}
+            onClick={() => setSelectedDocument({ ...item, branch: item.branchName })}
             className="inline-flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-blue-50"
             aria-label="មើលឯកសារ"
           >
@@ -208,72 +244,74 @@ export default function CompanyDocumentPage() {
   </button>
 );
 
-  const handleAddSave = (newDocumentFromForm) => {
-
-  const newDocument = {
-    id: Date.now(),
-
-    title: newDocumentFromForm.title,
-
-    branch: newDocumentFromForm.branch,
-
-    description: newDocumentFromForm.description,
-
-    date:
-      newDocumentFromForm.date ||
-      new Date().toISOString().slice(0,10),
-
-    size: newDocumentFromForm.size || "-",
-
-    // TAKE FROM CREATE FORM
-    type: newDocumentFromForm.type,
-
-    // FILE FORMAT ONLY
-    fileFormat:
-      newDocumentFromForm.fileFormat,
-
-    image:
-      newDocumentFromForm.image ||
-      "/document.jpg",
-
-    files:
-      newDocumentFromForm.files || [],
+  const handleAddSave = async (newDocumentFromForm) => {
+    setSaving(true);
+    setError("");
+    try {
+      for (const item of newDocumentFromForm.files) {
+        const upload = new FormData();
+        upload.append("file", item.file);
+        const uploadResponse = await fetch("/api/backend/files/attachments", { method: "POST", body: upload });
+        const uploadedFile = await uploadResponse.json().catch(() => null);
+        if (!uploadResponse.ok) throw new Error(uploadedFile?.message || "File upload failed.");
+        const createResponse = await fetch("/api/backend/documents", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type_id: Number(newDocumentFromForm.type),
+            file_id: uploadedFile.id,
+            title: newDocumentFromForm.title,
+            description: newDocumentFromForm.description,
+            branch_id: Number(newDocumentFromForm.branch),
+          }),
+        });
+        const created = await createResponse.json().catch(() => null);
+        if (!createResponse.ok) throw new Error(created?.message || "Unable to save document.");
+      }
+      setForm(EMPTY_FORM);
+      setShowAddForm(false);
+      await loadPage();
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save document.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-
-  setDocuments((previous)=>[
-    newDocument,
-    ...previous,
-  ]);
-
-  setForm(EMPTY_FORM);
-  setShowAddForm(false);
-};
-
-  const handleEditSave = () => {
-    setDocuments((previous) =>
-      previous.map((item) =>
-        item.id === editDocument.id
-          ? { ...item, ...editDocument }
-          : item,
-      ),
-    );
-
+  const handleEditSave = async (updatedDocument) => {
+    const response = await fetch(`/api/backend/documents/${updatedDocument.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type_id: updatedDocument.typeId,
+        file_id: updatedDocument.fileId,
+        title: updatedDocument.title,
+        description: updatedDocument.description || "",
+        branch_id: Number(updatedDocument.branch),
+      }),
+    });
+    const body = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(body?.message || "Unable to update document.");
     setEditDocument(null);
+    await loadPage();
   };
 
-  const handleDeleteConfirm = () => {
-    setDocuments((previous) =>
-      previous.filter((item) => item.id !== deleteDocument.id),
-    );
-
+  const handleDeleteConfirm = async () => {
+    const response = await fetch(`/api/backend/documents/${deleteDocument.id}`, { method: "DELETE" });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      setError(body?.message || "Unable to delete document.");
+      return;
+    }
     setDeleteDocument(null);
+    await loadPage();
   };
 
   return (
     <>
+      {error ? <div className="mb-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
       <DataTable
-        data={filteredDocuments}
+        data={loading ? [] : filteredDocuments}
         columns={columns}
         filters={filters}
         searchQuery={search}
@@ -289,6 +327,9 @@ export default function CompanyDocumentPage() {
           setForm={setForm}
           onClose={() => setShowAddForm(false)}
           onSave={handleAddSave}
+          branchOptions={branchOptions}
+          documentTypeOptions={documentTypeOptions}
+          saving={saving}
         />
       )}
 
@@ -298,6 +339,7 @@ export default function CompanyDocumentPage() {
           setForm={setEditDocument}
           onClose={() => setEditDocument(null)}
           onSave={handleEditSave}
+          branchOptions={branchOptions}
         />
       )}
 
@@ -319,4 +361,29 @@ export default function CompanyDocumentPage() {
       )}
     </>
   );
+}
+
+function mapDocument(row) {
+  const extension = row.file?.originalName?.split(".").pop()?.toUpperCase();
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description || "",
+    branch: String(row.branch?.id || ""),
+    branchName: row.branch?.nameKm || row.branch?.name_km || row.branch?.nameEn || row.branch?.name_en || "-",
+    branchId: row.branch?.id,
+    date: row.created_at ? row.created_at.slice(0, 10) : "-",
+    size: formatSize(row.file?.sizeBytes),
+    type: extension || row.type?.code || "FILE",
+    typeId: row.type?.id,
+    fileId: row.file?.id,
+    image: row.file?.id ? `/api/backend/files/${row.file.id}/content` : "/document.jpg",
+    files: row.file ? [{ name: row.file.originalName, size: formatSize(row.file.sizeBytes), type: extension || "FILE" }] : [],
+  };
+}
+
+function formatSize(bytes) {
+  if (!bytes) return "0 KB";
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }

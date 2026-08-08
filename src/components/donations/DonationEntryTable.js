@@ -51,7 +51,8 @@ export default function Table({
 
     return rows.filter((member) => {
       const matchesBranch =
-        selectedBranch === "all" || member.branch === selectedBranch;
+        selectedBranch === "all" ||
+        String(member.branchId ?? member.branch) === String(selectedBranch);
       const matchesSearch =
         !normalizedQuery ||
         member.name?.toLocaleLowerCase().includes(normalizedQuery);

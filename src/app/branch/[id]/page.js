@@ -560,44 +560,46 @@ export default function BranchDetailPage() {
   const loadBranchDetails =
     useCallback(
       async (signal) => {
-        const data = await fetchJson(
-          `/branches/${branchId}/details`,
-          signal,
-        );
+        const [branch, leader] = await Promise.all([
+          fetchJson(`/branches/${branchId}`, signal),
+          fetchJson(`/branches/${branchId}/leader`, signal).catch(() => null),
+        ]);
 
-        setBranchDetails(data);
+        setBranchDetails({
+          branch,
+          leaders: leader
+            ? [
+                {
+                  member_id: leader.id,
+                  full_name_km: leader.nameKm,
+                  full_name_en: leader.nameEn,
+                  gender: leader.gender,
+                  status: leader.status,
+                  phone: leader.phone,
+                  email: leader.email,
+                  date_of_birth: leader.dateOfBirth,
+                  joined_on: leader.joinedAt,
+                  profile_photo_id: leader.profilePhotoId,
+                  profile_image: leader.profileImage,
+                  role: leader.role || "BRANCH_LEADER",
+                },
+              ]
+            : [],
+          summary: {
+            total_members: 0,
+            total_activities: 0,
+          },
+        });
       },
       [branchId],
     );
 
   const loadLeaderCandidates =
     useCallback(
-      async (signal) => {
-        try {
-          const data = await fetchJson(
-            `/branches/${branchId}/leader-candidates`,
-            signal,
-          );
-
-          setLeaderCandidates(
-            Array.isArray(data)
-              ? data
-              : [],
-          );
-        } catch (error) {
-          if (
-            error.name !== "AbortError"
-          ) {
-            console.warn(
-              "Failed to load leader candidates:",
-              error.message,
-            );
-          }
-
-          setLeaderCandidates([]);
-        }
+      async () => {
+        // Candidates are derived from the real branch-member response.
       },
-      [branchId],
+      [],
     );
 
   const loadMembers = useCallback(
@@ -631,6 +633,7 @@ export default function BranchDetailPage() {
 
         if (totalPages <= 1) {
           setMembers(firstContent);
+          setLeaderCandidates(firstContent);
           return;
         }
 
@@ -651,7 +654,7 @@ export default function BranchDetailPage() {
             ),
           );
 
-        setMembers([
+        const allMembers = [
           ...firstContent,
           ...remainingPages.flatMap(
             (page) =>
@@ -661,7 +664,10 @@ export default function BranchDetailPage() {
                 ? page.content
                 : [],
           ),
-        ]);
+        ];
+
+        setMembers(allMembers);
+        setLeaderCandidates(allMembers);
       } catch (error) {
         if (
           error.name !== "AbortError"
@@ -824,7 +830,8 @@ export default function BranchDetailPage() {
           branchDetails?.summary
             ?.total_members ??
             branchDetails?.summary
-              ?.totalMembers,
+              ?.totalMembers ??
+            members.length,
         ) || 0,
 
       activityCount:
@@ -835,7 +842,7 @@ export default function BranchDetailPage() {
               ?.totalActivities,
         ) || 0,
     };
-  }, [branchDetails]);
+  }, [branchDetails, members.length]);
 
   const mappedLeaders = useMemo(
     () =>
@@ -989,19 +996,22 @@ export default function BranchDetailPage() {
             candidate?.fullNameEn ||
             `សមាជិក ${
               candidate?.member_id ??
-              candidate?.memberId
+              candidate?.memberId ??
+              candidate?.id
             }`,
 
           value: String(
             candidate?.member_id ??
               candidate?.memberId ??
+              candidate?.id ??
               "",
           ),
 
           member: {
             id:
               candidate?.member_id ??
-              candidate?.memberId,
+              candidate?.memberId ??
+              candidate?.id,
 
             nameKm:
               candidate?.full_name_km ||

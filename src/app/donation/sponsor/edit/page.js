@@ -1,44 +1,65 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import DonationTabs from "@/components/donations/DonationTabs";
 import SponsorDonationForm from "@/components/donations/sponsor/SponsorDonationForm";
-import sponsorData from "@/data/donation/sponsorData.json";
 
-const { sponsorRows } = sponsorData;
+const DONOR_KIND_LABELS = {
+  INDIVIDUAL: "បុគ្គល",
+  INSTITUTION: "ស្ថាប័ន",
+  MEMBER: "សមាជិក",
+};
 
-const SPONSOR_CREATED_ROWS_KEY = "tnal-youth:sponsor-donation-created-rows";
+function mapSponsor(record) {
+  if (!record) return null;
+  return {
+    id: record.donationId,
+    memberId: record.memberId,
+    sponsorId: record.sponsorId,
+    type: DONOR_KIND_LABELS[record.donorKind] || record.donorKind,
+    name: record.name,
+    phone: record.phone,
+    email: record.email,
+    address: record.address,
+    branchId: record.branchId,
+    activityId: record.activityId,
+    dateValue: record.paidAt?.slice(0, 10),
+    rielAmount: record.amountKhr,
+    dollarAmount: record.amountUsd,
+    method: record.paymentMethodCode,
+    equipment: record.materialCategory ? "សម្ភារៈ" : "",
+    equipmentType: record.materialCategory,
+    equipmentCount: record.materialQuantity,
+    equipmentUnit: record.materialQuantityType,
+    note: record.note,
+  };
+}
 
 export default function EditSponsorDonationQueryPage() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
-  const [createdRows, setCreatedRows] = useState([]);
+  const [sponsor, setSponsor] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const savedValue = window.localStorage.getItem(SPONSOR_CREATED_ROWS_KEY);
-
-    if (!savedValue) return;
-
-    try {
-      setCreatedRows(JSON.parse(savedValue));
-    } catch {
-      setCreatedRows([]);
-    }
-  }, []);
-
-  const sponsor = useMemo(
-    () =>
-      [...createdRows, ...sponsorRows].find(
-        (row) => String(row.id) === String(id),
-      ),
-    [createdRows, id],
-  );
+    if (!id) return;
+    let cancelled = false;
+    fetch(`/api/backend/donations/sponsor/${encodeURIComponent(id)}`, { cache: "no-store" })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load sponsor donation.");
+        if (!cancelled) setSponsor(mapSponsor(body?.data ?? body));
+      })
+      .catch((loadError) => { if (!cancelled) setError(loadError.message || "Unable to load sponsor donation."); });
+    return () => { cancelled = true; };
+  }, [id]);
 
   return (
     <div className="space-y-4">
       <DonationTabs />
-      <SponsorDonationForm initialData={sponsor} />
+      {error ? <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {sponsor ? <SponsorDonationForm initialData={sponsor} /> : null}
     </div>
   );
 }

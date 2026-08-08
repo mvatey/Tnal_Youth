@@ -111,6 +111,10 @@ function formatCreatedDate(value) {
 
 function getProvinceLabel(province) {
   return (
+    province?.labelKm ||
+    province?.label_km ||
+    province?.labelEn ||
+    province?.label_en ||
     province?.name_km ||
     province?.nameKm ||
     province?.name_en ||
@@ -197,6 +201,12 @@ export default function BranchPage() {
     setStatusLookups,
   ] = useState([]);
 
+  const [districtLookups, setDistrictLookups] =
+    useState([]);
+
+  const [communeLookups, setCommuneLookups] =
+    useState([]);
+
   const [searchQuery, setSearchQuery] =
     useState("");
 
@@ -258,6 +268,41 @@ export default function BranchPage() {
 
   const loadBranches = useCallback(
     async (signal) => {
+      async function setRealBranches(items) {
+        const counts = await Promise.all(
+          items.map(async (branch) => {
+            try {
+              const members = await fetchJson(
+                `/members?page=0&size=1&branchId=${encodeURIComponent(branch.id)}`,
+                signal,
+              );
+
+              return Number(
+                members?.total_elements ??
+                  members?.totalElements ??
+                  0,
+              );
+            } catch {
+              return 0;
+            }
+          }),
+        );
+
+        const enriched = items.map((branch, index) => ({
+          ...branch,
+          member_count: counts[index],
+        }));
+
+        setBranches(enriched);
+        setSummary({
+          total_branches: enriched.length,
+          active_branches: enriched.filter(
+            (branch) => Number(branch.status_id ?? branch.statusId) === 1,
+          ).length,
+          total_members: counts.reduce((total, count) => total + count, 0),
+        });
+      }
+
       const firstPage =
         await fetchJson(
           "/branches?page=0&size=100",
@@ -281,7 +326,7 @@ export default function BranchPage() {
       );
 
       if (totalPages <= 1) {
-        setBranches(firstContent);
+        await setRealBranches(firstContent);
         return;
       }
 
@@ -310,7 +355,7 @@ export default function BranchPage() {
               : [],
         );
 
-      setBranches([
+      await setRealBranches([
         ...firstContent,
         ...remainingContent,
       ]);
@@ -329,7 +374,7 @@ export default function BranchPage() {
       try {
         const provinces =
           await fetchJson(
-            "/lookups/branches/province-options",
+            "/lookups/provinces",
             signal,
           );
 
@@ -387,7 +432,6 @@ export default function BranchPage() {
 
         try {
           await Promise.all([
-            loadSummary(signal),
             loadBranches(signal),
             loadLookups(signal),
           ]);
@@ -414,7 +458,6 @@ export default function BranchPage() {
       [
         loadBranches,
         loadLookups,
-        loadSummary,
       ],
     );
 
@@ -430,6 +473,57 @@ export default function BranchPage() {
       controller.abort();
     };
   }, [loadBranchPage]);
+
+  useEffect(() => {
+    if (branches.length === 0) {
+      setDistrictLookups([]);
+      setCommuneLookups([]);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    async function loadGeography() {
+      const provinceIds = [...new Set(
+        branches
+          .map((branch) => branch.province_id ?? branch.provinceId)
+          .filter(Boolean),
+      )];
+      const districtIds = [...new Set(
+        branches
+          .map((branch) => branch.district_id ?? branch.districtId)
+          .filter(Boolean),
+      )];
+
+      const [districtGroups, communeGroups] = await Promise.all([
+        Promise.all(
+          provinceIds.map((provinceId) =>
+            fetchJson(
+              `/lookups/districts?provinceId=${provinceId}`,
+              controller.signal,
+            ).catch(() => []),
+          ),
+        ),
+        Promise.all(
+          districtIds.map((districtId) =>
+            fetchJson(
+              `/lookups/communes?districtId=${districtId}`,
+              controller.signal,
+            ).catch(() => []),
+          ),
+        ),
+      ]);
+
+      if (!controller.signal.aborted) {
+        setDistrictLookups(districtGroups.flat());
+        setCommuneLookups(communeGroups.flat());
+      }
+    }
+
+    loadGeography();
+
+    return () => controller.abort();
+  }, [branches]);
 
   useEffect(() => {
     if (!showSaveFile) {
@@ -452,7 +546,8 @@ export default function BranchPage() {
         provinceLookups.map(
           (province) => [
             String(
-              province?.id ?? "",
+              province?.value ??
+                province?.id ?? "",
             ),
             province,
           ],
@@ -467,13 +562,36 @@ export default function BranchPage() {
         statusLookups.map(
           (status) => [
             String(
-              status?.id ?? "",
+              status?.value ??
+                status?.id ?? "",
             ),
             status,
           ],
         ),
       ),
     [statusLookups],
+  );
+
+  const districtById = useMemo(
+    () =>
+      new Map(
+        districtLookups.map((item) => [
+          String(item?.value ?? item?.id ?? ""),
+          item,
+        ]),
+      ),
+    [districtLookups],
+  );
+
+  const communeById = useMemo(
+    () =>
+      new Map(
+        communeLookups.map((item) => [
+          String(item?.value ?? item?.id ?? ""),
+          item,
+        ]),
+      ),
+    [communeLookups],
   );
 
   const mappedBranches = useMemo(
@@ -519,6 +637,9 @@ export default function BranchPage() {
           statusById.get(
             String(statusId),
           );
+
+        const districtLookup = districtById.get(String(districtId));
+        const communeLookup = communeById.get(String(communeId));
 
         const statusCode = String(
           branch?.status_code ||
@@ -601,6 +722,7 @@ export default function BranchPage() {
               ?.name_km ||
             branch?.district
               ?.nameKm ||
+            getProvinceLabel(districtLookup) ||
             "-",
 
           communeId,
@@ -614,6 +736,7 @@ export default function BranchPage() {
               ?.name_km ||
             branch?.commune
               ?.nameKm ||
+            getProvinceLabel(communeLookup) ||
             "-",
 
           memberCount:
@@ -637,6 +760,8 @@ export default function BranchPage() {
       branches,
       provinceById,
       statusById,
+      districtById,
+      communeById,
     ],
   );
 

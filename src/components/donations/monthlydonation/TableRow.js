@@ -12,7 +12,7 @@ export default function TableRow({ row, rowNumber, onDelete, hasMoney = false })
   const detailHref = {
     pathname: addPath,
     query: {
-      branch: row.branch,
+      branch: row.branchId,
       month: row.month,
       year: row.year,
     },
@@ -21,7 +21,9 @@ export default function TableRow({ row, rowNumber, onDelete, hasMoney = false })
   return (
     <tr className="h-11 border-b border-border text-center text-sm text-text-secondary last:border-b-0">
       <td className="px-4 font-normal text-text-secondary">{rowNumber}</td>
-      <td className="px-4 font-normal text-text-secondary">{row.month}</td>
+      <td className="px-4 font-normal text-text-secondary">
+        {row.monthLabel || row.month}
+      </td>
       <td className="px-4">{row.year}</td>
       <td className="px-4">{row.branch}</td>
       <td className="px-4">{row.monthlyRiel}</td>

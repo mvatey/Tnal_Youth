@@ -600,7 +600,7 @@ export default function FamilyPage() {
               />
 
               <FormDate
-                label="ថ្ងៃខែឆ្នាំកំណើត"
+                label="ថ្ងៃខែឆ្នាំ កំណើត"
                 name="spouseDateOfBirth"
                 value={
                   family.spouse
@@ -614,24 +614,6 @@ export default function FamilyPage() {
                     "date_of_birth",
                     event.target
                       .value,
-                  )
-                }
-              />
-
-              <RadioGroup
-                label="ស្ថានភាព ប្ដី/ប្រពន្ធ"
-                name="spouseStatus"
-                value={
-                  family.spouse
-                    .life_status
-                }
-                onChange={(
-                  value,
-                ) =>
-                  handleFamilyChange(
-                    "spouse",
-                    "life_status",
-                    value,
                   )
                 }
               />
@@ -696,25 +678,6 @@ export default function FamilyPage() {
               handleFamilyChange(
                 "father",
                 "full_name_en",
-                event.target
-                  .value,
-              )
-            }
-          />
-
-          <FormDate
-            label="ថ្ងៃខែឆ្នាំកំណើតឪពុក"
-            name="fatherDateOfBirth"
-            value={
-              family.father
-                .date_of_birth
-            }
-            onChange={(
-              event,
-            ) =>
-              handleFamilyChange(
-                "father",
-                "date_of_birth",
                 event.target
                   .value,
               )
@@ -815,25 +778,6 @@ export default function FamilyPage() {
               handleFamilyChange(
                 "mother",
                 "full_name_en",
-                event.target
-                  .value,
-              )
-            }
-          />
-
-          <FormDate
-            label="ថ្ងៃខែឆ្នាំកំណើតម្តាយ"
-            name="motherDateOfBirth"
-            value={
-              family.mother
-                .date_of_birth
-            }
-            onChange={(
-              event,
-            ) =>
-              handleFamilyChange(
-                "mother",
-                "date_of_birth",
                 event.target
                   .value,
               )

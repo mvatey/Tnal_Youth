@@ -18,11 +18,17 @@ export default function DonationFilterSelect({
       aria-label={!showLabel ? label : undefined}
     >
       <option value="all">{allLabel}</option>
-      {options.map((option) => (
-        <option key={option} value={option}>
-          {option}
-        </option>
-      ))}
+      {options.map((option) => {
+        const isObject = option !== null && typeof option === "object";
+        const optionValue = isObject ? option.value : option;
+        const optionLabel = isObject ? option.label : option;
+
+        return (
+          <option key={String(optionValue)} value={optionValue}>
+            {optionLabel}
+          </option>
+        );
+      })}
     </select>
   );
 
