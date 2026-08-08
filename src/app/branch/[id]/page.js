@@ -581,7 +581,10 @@ export default function BranchDetailPage() {
                   joined_on: leader.joinedAt,
                   profile_photo_id: leader.profilePhotoId,
                   profile_image: leader.profileImage,
-                  role: leader.role || "BRANCH_LEADER",
+                  // This endpoint only returns the active branch leader.
+                  // Use the stable role code even if an older backend
+                  // returns a translated display label.
+                  role: "BRANCH_LEADER",
                 },
               ]
             : [],
@@ -1506,7 +1509,11 @@ export default function BranchDetailPage() {
         onClose={() =>
           setIsEditModalOpen(false)
         }
-        initialData={branch}
+        initialData={{
+          ...branch,
+          branchLeaderId:
+            branchLeader?.id ?? "",
+        }}
         leaderOptions={leaderOptions}
         onSave={handleBranchSaved}
       />
