@@ -55,11 +55,11 @@ export async function POST(request) {
       );
     }
 
-    if (newPassword.length < 8) {
+    if (!/^\d{6}$/.test(newPassword)) {
       return Response.json(
         {
           message:
-            "លេខសម្ងាត់ត្រូវមានយ៉ាងតិច ៨ តួអក្សរ",
+            "លេខសម្ងាត់ត្រូវមានលេខ ៦ ខ្ទង់",
         },
         {
           status: 400,

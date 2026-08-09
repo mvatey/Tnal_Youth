@@ -20,7 +20,7 @@ import {
 } from "react";
 
 import {
-  getSavedProfileImage,
+  notifyProfileImageChange,
   saveProfileImage,
 } from "@/lib/member/profileImageStorage";
 
@@ -146,8 +146,19 @@ function normalizeImageUrl(value) {
    */
   if (
     imagePath.startsWith("/profiles/") ||
-    imagePath.startsWith("/images/")
+    imagePath.startsWith("/images/") ||
+    imagePath.startsWith("/api/")
   ) {
+    return imagePath;
+  }
+
+  /*
+   * Any root-relative URL belongs to the frontend application.
+   * In particular, /api/files and /api/backend carry the logged-in
+   * user's cookie to Spring Boot. Rewriting them to a direct backend
+   * URL breaks authenticated profile images.
+   */
+  if (imagePath.startsWith("/")) {
     return imagePath;
   }
 
@@ -157,9 +168,9 @@ function normalizeImageUrl(value) {
    * uploads/member-profiles/xxx.jpg
    */
   const normalizedPath =
-    imagePath.startsWith("/")
-      ? imagePath
-      : `/${imagePath}`;
+    imagePath.startsWith("uploads/")
+      ? `/${imagePath}`
+      : `/uploads/${imagePath}`;
 
   return `${BACKEND_ORIGIN}${normalizedPath}`;
 }
@@ -438,6 +449,8 @@ function getLookupLabel(value) {
 export default function MemberInfoCard({
   member,
   allowProfileChange = true,
+  profileUploadEndpoint =
+    "/api/backend/my-account/profile-photo",
 }) {
   const fileInputRef =
     useRef(null);
@@ -453,6 +466,11 @@ export default function MemberInfoCard({
     imageError,
     setImageError,
   ] = useState("");
+
+  const [
+    isUploadingImage,
+    setIsUploadingImage,
+  ] = useState(false);
 
   const memberId =
     getMemberId(member);
@@ -482,15 +500,8 @@ export default function MemberInfoCard({
       return undefined;
     }
 
-    const savedImage =
-      getSavedProfileImage(
-        memberId,
-        defaultProfileImage,
-      );
-
     setProfilePreview(
-      savedImage ||
-        defaultProfileImage,
+      defaultProfileImage,
     );
 
     const handleImageChange = (
@@ -647,7 +658,7 @@ export default function MemberInfoCard({
   };
 
   const handleProfileImageChange =
-    (event) => {
+    async (event) => {
       const file =
         event.target.files?.[0];
 
@@ -693,6 +704,70 @@ export default function MemberInfoCard({
 
         return;
       }
+
+      const formData =
+        new FormData();
+
+      formData.append(
+        "file",
+        file,
+      );
+
+      setIsUploadingImage(true);
+
+      try {
+        const response = await fetch(
+          profileUploadEndpoint,
+          {
+            method: "POST",
+            credentials: "include",
+            body: formData,
+          },
+        );
+
+        const responseBody =
+          await response
+            .json()
+            .catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(
+            responseBody?.message ||
+              responseBody?.error ||
+              "Unable to upload profile image",
+          );
+        }
+
+        const profilePhoto =
+          responseBody?.profilePhoto ||
+          responseBody?.profile_photo;
+
+        const uploadedImage =
+          profilePhoto?.id
+            ? `/api/files/${profilePhoto.id}/content`
+            : normalizeImageUrl(
+                profilePhoto?.url,
+              );
+
+        setProfilePreview(
+          uploadedImage,
+        );
+
+        notifyProfileImageChange(
+          memberId,
+          uploadedImage,
+        );
+      } catch (error) {
+        setImageError(
+          error?.message ||
+            "Unable to upload profile image",
+        );
+      } finally {
+        setIsUploadingImage(false);
+        event.target.value = "";
+      }
+
+      return;
 
       const reader =
         new FileReader();
@@ -842,6 +917,9 @@ export default function MemberInfoCard({
 
                   <button
                     type="button"
+                    disabled={
+                      isUploadingImage
+                    }
                     onClick={
                       handleChooseImage
                     }

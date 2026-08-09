@@ -141,3 +141,40 @@ export function removeSavedProfileImage(
     ),
   );
 }
+
+/* Notify mounted components after the backend has saved a new photo. */
+export function notifyProfileImageChange(
+  memberId,
+  imageData,
+) {
+  if (
+    typeof window === "undefined" ||
+    memberId === undefined ||
+    memberId === null
+  ) {
+    return;
+  }
+
+  const storageKey =
+    getProfileImageStorageKey(
+      memberId,
+    );
+
+  if (storageKey) {
+    localStorage.removeItem(
+      storageKey,
+    );
+  }
+
+  window.dispatchEvent(
+    new CustomEvent(
+      "tnal-profile-image-change",
+      {
+        detail: {
+          memberId: String(memberId),
+          imageData,
+        },
+      },
+    ),
+  );
+}

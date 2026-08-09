@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -9,7 +10,7 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 
 import DataTable from "@/components/table/DataTable";
 
-import sponsorData from "@/data/sponsor.json";
+import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 
 export default function MyAccountSponsorPage() {
   const {
@@ -25,6 +26,8 @@ export default function MyAccountSponsorPage() {
     methodFilter,
     setMethodFilter,
   ] = useState("");
+  const [sponsorRows, setSponsorRows] = useState([]);
+  const [dataError, setDataError] = useState("");
 
   /*
    * Show only sponsor records belonging
@@ -33,28 +36,24 @@ export default function MyAccountSponsorPage() {
    * Old records without memberId remain visible
    * temporarily for your JSON testing.
    */
-  const sponsors = useMemo(() => {
-    if (!member) {
-      return [];
-    }
-
-    return sponsorData.filter(
-      (item) => {
-        if (
-          item.memberId ===
-            undefined ||
-          item.memberId === null
-        ) {
-          return true;
-        }
-
-        return (
-          String(item.memberId) ===
-          String(member.id)
-        );
-      },
-    );
+  useEffect(() => {
+    if (!member) return;
+    fetchMyAccountCollection("donations/sponsors")
+      .then((rows) => setSponsorRows(rows.map((row) => ({
+        id: row.id,
+        month: row.paidAt ? new Date(row.paidAt).toLocaleString("km-KH", { month: "long" }) : "-",
+        year: row.paidAt ? new Date(row.paidAt).getFullYear() : "-",
+        amount: Number(row.amountKhr || 0) > 0
+          ? `${Number(row.amountKhr).toLocaleString()} ៛`
+          : `$${Number(row.amountUsd || row.totalAmountUsd || 0).toFixed(2)}`,
+        date: row.paidAt ? new Date(row.paidAt).toLocaleDateString() : "-",
+        recordedBy: row.recordedBy?.fullNameKm || row.recordedBy?.fullNameEn || "-",
+        paymentMethod: row.paymentMethod?.labelKm || row.paymentMethod?.labelEn || row.paymentMethod?.code || "-",
+      }))))
+      .catch((requestError) => setDataError(requestError.message));
   }, [member]);
+
+  const sponsors = useMemo(() => sponsorRows, [sponsorRows]);
 
   const paymentMethods =
     useMemo(() => {
@@ -207,6 +206,10 @@ export default function MyAccountSponsorPage() {
         </p>
       </div>
     );
+  }
+
+  if (dataError) {
+    return <div className="rounded-xl border border-red-200 bg-white p-6 text-sm text-red-500">{dataError}</div>;
   }
 
   if (!member) {

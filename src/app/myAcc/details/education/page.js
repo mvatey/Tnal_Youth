@@ -14,6 +14,10 @@ import ButtonDropLink from "@/components/forms/ButtonDropLink";
 
 import locationData from "@/data/location.json";
 import educationData from "@/data/education.json";
+import {
+  fetchMyAccountCollection,
+  saveMyAccountCollection,
+} from "@/lib/myAccountCollections";
 
 function createEmptyEducation() {
   return {
@@ -30,6 +34,9 @@ export default function EducationPage() {
   } = useCurrentMember();
 
   const [educations, setEducations] = useState([]);
+  const [originalEducations, setOriginalEducations] = useState([]);
+  const [degreeOptions, setDegreeOptions] = useState([]);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     if (!member) {
@@ -37,16 +44,35 @@ export default function EducationPage() {
       return;
     }
 
-    const history = Array.isArray(member.educationHistory)
-      ? member.educationHistory
-      : [];
-
-    setEducations(
-      history.length > 0
-        ? history
-        : [createEmptyEducation()],
-    );
+    let active = true;
+    fetchMyAccountCollection("education")
+      .then((rows) => {
+        if (!active) return;
+        setOriginalEducations(rows);
+        setEducations(rows.length ? rows.map((row) => ({
+          id: row.id,
+          school: row.school_name || "",
+          province: row.province_name || "",
+          country: row.country_name || "",
+          degree: String(row.education_level_id || ""),
+          fieldOfStudy: row.field_of_study || "",
+          startDate: row.start_date || "",
+          endDate: row.end_date || "",
+          documentLink: row.certificate_file?.file_path || "",
+        })) : [createEmptyEducation()]);
+      })
+      .catch((requestError) => setSaveError(requestError.message));
+    return () => { active = false; };
   }, [member]);
+
+  useEffect(() => {
+    fetch("/api/lookups/education-levels", { cache: "no-store", credentials: "include" })
+      .then((response) => response.ok ? response.json() : [])
+      .then((items) => setDegreeOptions((Array.isArray(items) ? items : []).map((item) => ({
+        value: String(item.value ?? item.id ?? ""),
+        label: item.labelKm || item.label_km || item.labelEn || item.label_en || item.code || "",
+      }))));
+  }, []);
 
   function handleEducationChange(id, field, value) {
     setEducations((previous) =>
@@ -80,18 +106,25 @@ export default function EducationPage() {
     });
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
-
-    const updatedMember = {
-      ...member,
-      educationHistory: educations,
-    };
-
-    console.log(
-      "Updated member:",
-      updatedMember,
-    );
+    try {
+      setSaveError("");
+      const current = educations.filter((item) => String(item.school || "").trim());
+      const rows = await saveMyAccountCollection("education", originalEducations, current, (item) => ({
+        school_name: item.school.trim(),
+        education_level_id: Number(item.degree),
+        field_of_study: item.fieldOfStudy?.trim() || null,
+        country_name: item.country?.trim() || null,
+        province_name: item.province?.trim() || null,
+        start_date: item.startDate || null,
+        end_date: item.endDate || null,
+      }));
+      setOriginalEducations(rows);
+      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+    } catch (requestError) {
+      setSaveError(requestError.message);
+    }
   }
 
   if (loading) {
@@ -138,6 +171,7 @@ export default function EducationPage() {
               key={education.id}
               index={index}
               education={education}
+              degrees={degreeOptions}
               canDelete={educations.length > 1}
               onChange={(field, value) =>
                 handleEducationChange(
@@ -166,6 +200,7 @@ export default function EducationPage() {
       </div>
 
       <div className="flex justify-end">
+        {saveError && <p className="mr-4 self-center text-sm text-red-500">{saveError}</p>}
         <SaveButton type="submit" />
       </div>
     </form>
@@ -175,6 +210,7 @@ export default function EducationPage() {
 function EducationGroup({
   index,
   education,
+  degrees,
   canDelete,
   onDelete,
   onChange,
@@ -189,12 +225,6 @@ function EducationGroup({
     locationData.countries,
   )
     ? locationData.countries
-    : [];
-
-  const degrees = Array.isArray(
-    educationData.degrees,
-  )
-    ? educationData.degrees
     : [];
 
   return (

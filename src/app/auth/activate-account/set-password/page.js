@@ -92,8 +92,8 @@ function SetActivationPasswordContent() {
       return "សូមបញ្ចូលលេខសម្ងាត់ថ្មី";
     }
 
-    if (newPassword.length < 8) {
-      return "លេខសម្ងាត់ត្រូវមានយ៉ាងតិច ៨ តួអក្សរ";
+    if (!/^\d{6}$/.test(newPassword)) {
+      return "លេខសម្ងាត់ត្រូវមានលេខ ៦ ខ្ទង់";
     }
 
     if (newPassword !== confirmPassword) {
@@ -209,9 +209,13 @@ function SetActivationPasswordContent() {
           onChange={(event) => {
             setNewPassword(
               event.target.value
+                .replace(/\D/g, "")
+                .slice(0, 6)
             );
             setError("");
           }}
+          inputMode="numeric"
+          maxLength={6}
           icon={KeyRound}
         />
 
@@ -223,9 +227,13 @@ function SetActivationPasswordContent() {
           onChange={(event) => {
             setConfirmPassword(
               event.target.value
+                .replace(/\D/g, "")
+                .slice(0, 6)
             );
             setError("");
           }}
+          inputMode="numeric"
+          maxLength={6}
           icon={KeyRound}
         />
 

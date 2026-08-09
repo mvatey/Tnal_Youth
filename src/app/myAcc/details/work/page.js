@@ -10,6 +10,10 @@ import DeleteButton from "@/components/forms/DeleteButton";
 import BoxFill from "@/components/forms/boxFill";
 import FormDate from "@/components/forms/FormDate";
 import FormSelect from "@/components/forms/FormSelect";
+import {
+  fetchMyAccountCollection,
+  saveMyAccountCollection,
+} from "@/lib/myAccountCollections";
 
 function createEmptyWork() {
   return {
@@ -31,6 +35,8 @@ export default function MyAccountWorkPage() {
   } = useCurrentMember();
 
   const [works, setWorks] = useState([]);
+  const [originalWorks, setOriginalWorks] = useState([]);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     if (!member) {
@@ -38,15 +44,23 @@ export default function MyAccountWorkPage() {
       return;
     }
 
-    const history = Array.isArray(member.workHistory)
-      ? member.workHistory
-      : [];
-
-    setWorks(
-      history.length > 0
-        ? history
-        : [createEmptyWork()],
-    );
+    let active = true;
+    fetchMyAccountCollection("work-history")
+      .then((rows) => {
+        if (!active) return;
+        setOriginalWorks(rows);
+        setWorks(rows.length ? rows.map((row) => ({
+          id: row.id,
+          company: row.organization_name || "",
+          address: row.address || "",
+          position: row.position_title || "",
+          appointment: "",
+          startDate: row.start_date || "",
+          endDate: row.end_date || "",
+        })) : [createEmptyWork()]);
+      })
+      .catch((requestError) => setSaveError(requestError.message));
+    return () => { active = false; };
   }, [member]);
 
   const updateWork = (id, field, value) => {
@@ -62,6 +76,9 @@ export default function MyAccountWorkPage() {
     );
   };
 
+  // The V1 fields call this name; keep them connected to the same state updater.
+  const handleWorkChange = updateWork;
+
   const removeWork = (id) => {
     setWorks((previous) =>
       previous.length === 1
@@ -72,9 +89,22 @@ export default function MyAccountWorkPage() {
     );
   };
 
-  const handleSave = () => {
-    console.log("Member ID:", member?.id);
-    console.log("Updated work history:", works);
+  const handleSave = async () => {
+    try {
+      setSaveError("");
+      const current = works.filter((item) => String(item.company || "").trim());
+      const rows = await saveMyAccountCollection("work-history", originalWorks, current, (item) => ({
+        organization_name: item.company.trim(),
+        position_title: String(item.position || item.appointment || "").trim(),
+        address: item.address?.trim() || null,
+        start_date: item.startDate || null,
+        end_date: item.endDate || null,
+      }));
+      setOriginalWorks(rows);
+      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+    } catch (requestError) {
+      setSaveError(requestError.message);
+    }
   };
 
   if (loading) {
@@ -160,6 +190,7 @@ export default function MyAccountWorkPage() {
       </div>
 
       <div className="flex justify-end">
+        {saveError && <p className="mr-4 self-center text-sm text-red-500">{saveError}</p>}
         <SaveButton onClick={handleSave} />
       </div>
     </div>

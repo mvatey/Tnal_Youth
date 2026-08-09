@@ -56,11 +56,19 @@ export default function DetailsLayout({ children }) {
 
       <MemberInfoCard member={member} />
 
-      <MyAccountDetailTabNav memberId={member.id} />
+      {!member.isLinkedMember ? (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
+          This login account is not linked to a member profile yet. An administrator must assign this account to the correct member before member details can be edited.
+        </div>
+      ) : (
+        <>
+          <MyAccountDetailTabNav memberId={member.id} />
 
-      <div>
-        {children}
-      </div>
+          <div>
+            {children}
+          </div>
+        </>
+      )}
     </div>
   );
 }

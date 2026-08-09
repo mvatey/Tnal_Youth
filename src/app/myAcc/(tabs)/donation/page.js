@@ -1,39 +1,48 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
 
 import DataTable from "@/components/table/DataTable.js";
-import ConfirmDeleteModal from "@/components/popup/Confirmdeletemodal.js";
 
-import donationData from "@/data/donation.json";
+import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
+
+const KHMER_MONTHS = [
+  "មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា",
+  "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ",
+];
 
 export default function DonationPage() {
   const { member, loading, error } = useCurrentMember();
 
-  const [donations, setDonations] = useState(donationData);
+  const [donations, setDonations] = useState([]);
+  const [dataError, setDataError] = useState("");
   const [query, setQuery] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
-  const [deleteModal, setDeleteModal] = useState(false);
-  const [selectedDonation, setSelectedDonation] = useState(null);
 
-  const memberDonations = useMemo(() => {
-    if (!member) return [];
+  useEffect(() => {
+    if (!member) return;
+    fetchMyAccountCollection("donations/monthly")
+      .then((rows) => setDonations(rows.map((row) => {
+        const paidAt = row.paidAt || "";
+        const period = row.donationPeriod || "";
+        return {
+          id: row.id,
+          month: period ? KHMER_MONTHS[Number(period.slice(5, 7)) - 1] || "-" : "-",
+          year: period ? period.slice(0, 4) : "-",
+          amount: Number(row.amountKhr || 0) > 0
+            ? `${Number(row.amountKhr).toLocaleString()} ៛`
+            : `$${Number(row.amountUsd || row.totalAmountUsd || 0).toFixed(2)}`,
+          date: paidAt ? new Date(paidAt).toLocaleDateString() : "-",
+          recordedBy: row.recordedBy?.fullNameKm || row.recordedBy?.fullNameEn || "-",
+          paymentMethod: row.paymentMethod?.labelKm || row.paymentMethod?.labelEn || row.paymentMethod?.code || "-",
+        };
+      })))
+      .catch((requestError) => setDataError(requestError.message));
+  }, [member]);
 
-    return donations.filter((item) => {
-      /*
-       * Temporary behavior:
-       * If the JSON item has no memberId, show it for now.
-       */
-      if (item.memberId === undefined || item.memberId === null) {
-        return true;
-      }
-
-      return String(item.memberId) === String(member.id);
-    });
-  }, [donations, member]);
+  const memberDonations = useMemo(() => donations, [donations]);
 
   const paymentMethods = useMemo(() => {
     return [
@@ -70,19 +79,6 @@ export default function DonationPage() {
     query,
     methodFilter,
   ]);
-
-  const handleDelete = () => {
-    if (!selectedDonation) return;
-
-    setDonations((previousDonations) =>
-      previousDonations.filter(
-        (item) => item.id !== selectedDonation.id,
-      ),
-    );
-
-    setDeleteModal(false);
-    setSelectedDonation(null);
-  };
 
   const columns = [
     {
@@ -125,24 +121,6 @@ export default function DonationPage() {
       align: "left",
       accessor: "paymentMethod",
     },
-    {
-      header: "សកម្មភាព",
-      width: "w-[10%]",
-      align: "center",
-      render: (item) => (
-        <button
-          type="button"
-          onClick={() => {
-            setSelectedDonation(item);
-            setDeleteModal(true);
-          }}
-          className="inline-flex items-center justify-center text-red-500 hover:text-red-600"
-          aria-label="លុបវិភាគទាន"
-        >
-          <Trash2 className="h-5 w-5" />
-        </button>
-      ),
-    },
   ];
 
   const filters = [
@@ -173,6 +151,10 @@ export default function DonationPage() {
     );
   }
 
+  if (dataError) {
+    return <div className="rounded-xl border border-red-200 bg-white p-6 text-sm text-red-500">{dataError}</div>;
+  }
+
   if (!member) {
     return (
       <div className="rounded-xl border border-red-200 bg-white p-6">
@@ -200,22 +182,6 @@ export default function DonationPage() {
         downloadFilename={`donations-${member.id}.csv`}
       />
 
-      <ConfirmDeleteModal
-        open={deleteModal}
-        onClose={() => {
-          setDeleteModal(false);
-          setSelectedDonation(null);
-        }}
-        onConfirm={handleDelete}
-        title="លុបវិភាគទាន?"
-        description={
-          selectedDonation
-            ? `តើអ្នកប្រាកដថាចង់លុបវិភាគទាន ${selectedDonation.amount} នេះទេ?`
-            : "តើអ្នកប្រាកដថាចង់លុបទិន្នន័យនេះទេ?"
-        }
-        cancelLabel="បោះបង់"
-        confirmLabel="លុប"
-      />
     </div>
   );
 }

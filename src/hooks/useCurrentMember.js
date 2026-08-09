@@ -33,9 +33,49 @@ export default function useCurrentMember() {
          * Others wrap it inside data.
          */
         const userData = authUser.data || authUser;
+        const memberId =
+          userData.memberId ?? userData.member_id ?? null;
+        let memberData = null;
+
+        if (memberId) {
+          const memberResponse = await fetch(`/api/members/${memberId}`, {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+          });
+
+          if (!memberResponse.ok) {
+            throw new Error("The member profile linked to this account could not be loaded");
+          }
+
+          const memberBody = await memberResponse.json();
+          memberData = memberBody.data || memberBody;
+
+          const branchId = memberData.branch_id ?? memberData.branchId;
+          if (branchId) {
+            const branchResponse = await fetch("/api/lookups/branches", {
+              credentials: "include",
+              cache: "no-store",
+            });
+            if (branchResponse.ok) {
+              const branchBody = await branchResponse.json();
+              const branches = Array.isArray(branchBody) ? branchBody : [];
+              const branch = branches.find(
+                (option) => Number(option.value ?? option.id) === Number(branchId),
+              );
+              if (branch) {
+                memberData.branch = {
+                  id: branchId,
+                  nameKm:
+                    branch.labelKm || branch.label_km || branch.label || branch.code,
+                };
+              }
+            }
+          }
+        }
 
         if (!cancelled) {
-          setMember(combineAuthUserWithMember(userData));
+          setMember(combineAuthUserWithMember(userData, memberData));
         }
       } catch (error) {
         if (!cancelled) {

@@ -7,6 +7,10 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 import SaveButton from "@/components/forms/SaveButton";
 import BoxFill from "@/components/forms/boxFill";
 import FormDate from "@/components/forms/FormDate";
+import {
+  fetchMyAccountCollection,
+  saveMyAccountCollection,
+} from "@/lib/myAccountCollections";
 
 const EMPTY_FAMILY = {
   spouse: {
@@ -42,29 +46,44 @@ export default function FamilyPage() {
   } = useCurrentMember();
 
   const [family, setFamily] = useState(EMPTY_FAMILY);
+  const [originalFamily, setOriginalFamily] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState("");
 
   useEffect(() => {
     if (!member) {
       setFamily(EMPTY_FAMILY);
+      setOriginalFamily([]);
       return;
     }
 
-    setFamily({
-      spouse: {
-        ...EMPTY_FAMILY.spouse,
-        ...(member.family?.spouse || {}),
-      },
+    let active = true;
+    fetchMyAccountCollection("family")
+      .then((items) => {
+        if (!active) return;
+        const next = structuredClone(EMPTY_FAMILY);
+        for (const item of items) {
+          const section = String(item.relationship || "").toLowerCase();
+          if (!next[section]) continue;
+          next[section] = {
+            id: item.id,
+            name_kh: item.fullNameKm || "",
+            name_en: item.fullNameEn || "",
+            occupation: item.occupation || "",
+            date_of_birth: item.dateOfBirth || "",
+            status:
+              item.lifeStatus === "DECEASED" ? "ស្លាប់" :
+              item.lifeStatus === "ALIVE" ? "នៅរស់" : "",
+            address: item.address || "",
+          };
+        }
+        setOriginalFamily(items);
+        setFamily(next);
+      })
+      .catch((requestError) => setSaveError(requestError.message));
 
-      father: {
-        ...EMPTY_FAMILY.father,
-        ...(member.family?.father || {}),
-      },
-
-      mother: {
-        ...EMPTY_FAMILY.mother,
-        ...(member.family?.mother || {}),
-      },
-    });
+    return () => { active = false; };
   }, [member]);
 
   function handleFamilyChange(section, field, value) {
@@ -78,15 +97,44 @@ export default function FamilyPage() {
     }));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    setSaving(true);
+    setSaveError("");
+    setSaveSuccess("");
 
-    const updatedMember = {
-      ...member,
-      family,
-    };
+    try {
+      const current = Object.entries(family)
+        .filter(([section, item]) =>
+          ["spouse", "father", "mother"].includes(section) &&
+          String(item.name_kh || "").trim(),
+        )
+        .map(([section, item]) => ({ ...item, relationship: section.toUpperCase() }));
 
-    console.log("Updated member:", updatedMember);
+      const saved = await saveMyAccountCollection(
+        "family",
+        originalFamily,
+        current,
+        (item) => ({
+          relationship: item.relationship,
+          fullNameKm: item.name_kh.trim(),
+          fullNameEn: item.name_en?.trim() || null,
+          dateOfBirth: item.date_of_birth || null,
+          occupation: item.occupation?.trim() || null,
+          lifeStatus:
+            item.status === "ស្លាប់" || item.status === "DECEASED"
+              ? "DECEASED"
+              : item.status ? "ALIVE" : null,
+          address: item.address?.trim() || null,
+        }),
+      );
+      setOriginalFamily(saved);
+      setSaveSuccess("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+    } catch (requestError) {
+      setSaveError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) {
@@ -362,7 +410,11 @@ export default function FamilyPage() {
       </div>
 
       <div className="flex justify-end">
-        <SaveButton type="submit" />
+        <div className="flex flex-col items-end gap-2">
+          {saveError && <p className="text-sm text-red-500">{saveError}</p>}
+          {saveSuccess && <p className="text-sm text-green-600">{saveSuccess}</p>}
+          <SaveButton type="submit" disabled={saving} />
+        </div>
       </div>
     </form>
   );

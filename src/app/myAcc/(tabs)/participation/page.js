@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
-import participationData from "@/data/participation.json";
+import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 
 import DataTable from "@/components/table/DataTable";
 import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail";
@@ -19,20 +20,34 @@ const STATUS_STYLES = {
 };
 
 export default function MyAccountParticipationPage() {
+  const router = useRouter();
   const { member, loading, error } = useCurrentMember();
 
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [participations, setParticipations] = useState([]);
+  const [dataError, setDataError] = useState("");
+
+  useEffect(() => {
+    if (!member) return;
+    fetchMyAccountCollection("activities")
+      .then((rows) => setParticipations(rows.map((row) => ({
+        id: row.activityId,
+        activity: row.titleKm || row.titleEn || "-",
+        sector: row.activitySectorLabelKm || row.activitySectorLabelEn || row.activitySectorCode || "-",
+        type: row.activityTypeLabelKm || row.activityTypeLabelEn || row.activityTypeCode || "-",
+        status: row.attendanceStatusLabelKm || row.attendanceStatusLabelEn || row.attendanceStatusCode || "-",
+        location: { city: row.locationName || "-", district: row.address || "" },
+        date: row.joinedAt ? new Date(row.joinedAt).toLocaleDateString() : "-",
+      }))))
+      .catch((requestError) => setDataError(requestError.message));
+  }, [member]);
 
   const memberParticipation = useMemo(() => {
     if (!member) return [];
 
-    return participationData.filter((item) => {
-      if (item.memberId === undefined) return true;
-
-      return String(item.memberId) === String(member.id);
-    });
-  }, [member]);
+    return participations;
+  }, [member, participations]);
 
   const types = useMemo(
     () => [
@@ -77,6 +92,10 @@ export default function MyAccountParticipationPage() {
         </p>
       </div>
     );
+  }
+
+  if (dataError) {
+    return <div className="rounded-xl border border-red-200 bg-white p-6 text-sm text-red-500">{dataError}</div>;
   }
 
   if (!member) {
@@ -164,9 +183,7 @@ export default function MyAccountParticipationPage() {
       align: "center",
       render: (item) => (
         <ButtonSeeDetail
-          onClick={() =>
-            console.log("Participation detail:", item)
-          }
+          onClick={() => router.push(`/activity/${item.id}`)}
         />
       ),
     },

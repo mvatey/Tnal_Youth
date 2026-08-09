@@ -10,6 +10,10 @@ import SaveButton from "@/components/forms/SaveButton";
 import DeleteButton from "@/components/forms/DeleteButton";
 import FormSelect from "@/components/forms/FormSelect";
 import ButtonDropLink from "@/components/forms/ButtonDropLink";
+import {
+  fetchMyAccountCollection,
+  saveMyAccountCollection,
+} from "@/lib/myAccountCollections";
 
 function createId(prefix) {
   if (
@@ -87,6 +91,10 @@ export default function MyAccountSkillPage() {
     computerSkills,
     setComputerSkills,
   ] = useState([]);
+  const [originalLanguages, setOriginalLanguages] = useState([]);
+  const [originalSkills, setOriginalSkills] = useState([]);
+  const [proficiencyOptions, setProficiencyOptions] = useState([]);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     if (!member) {
@@ -95,36 +103,39 @@ export default function MyAccountSkillPage() {
       return;
     }
 
-    const memberLanguages =
-      Array.isArray(
-        member.languageSkills,
-      )
-        ? member.languageSkills
-        : [];
-
-    const memberComputers =
-      Array.isArray(
-        member.computerSkills,
-      )
-        ? member.computerSkills
-        : [];
-
-    setLanguageSkills(
-      memberLanguages.length > 0
-        ? memberLanguages.map(
-            normalizeLanguageSkill,
-          )
-        : [createLanguageSkill()],
-    );
-
-    setComputerSkills(
-      memberComputers.length > 0
-        ? memberComputers.map(
-            normalizeComputerSkill,
-          )
-        : [createComputerSkill()],
-    );
+    let active = true;
+    Promise.all([
+      fetchMyAccountCollection("languages"),
+      fetchMyAccountCollection("skills"),
+    ]).then(([languages, skills]) => {
+      if (!active) return;
+      setOriginalLanguages(languages);
+      setOriginalSkills(skills);
+      setLanguageSkills(languages.length ? languages.map((row) => normalizeLanguageSkill({
+        id: row.id,
+        language: row.language_name || "",
+        listening: String(row.listening_level_id || ""),
+        speaking: String(row.speaking_level_id || ""),
+        reading: String(row.reading_level_id || ""),
+        writing: String(row.writing_level_id || ""),
+      })) : [createLanguageSkill()]);
+      setComputerSkills(skills.length ? skills.map((row) => normalizeComputerSkill({
+        id: row.id,
+        skill: row.skill_name || "",
+        level: String(row.proficiency_level_id || ""),
+      })) : [createComputerSkill()]);
+    }).catch((requestError) => setSaveError(requestError.message));
+    return () => { active = false; };
   }, [member]);
+
+  useEffect(() => {
+    fetch("/api/lookups/proficiency-levels", { cache: "no-store", credentials: "include" })
+      .then((response) => response.ok ? response.json() : [])
+      .then((items) => setProficiencyOptions((Array.isArray(items) ? items : []).map((item) => ({
+        value: String(item.value ?? item.id ?? ""),
+        label: item.labelKm || item.label_km || item.labelEn || item.label_en || item.code || "",
+      }))));
+  }, []);
 
   const updateLanguage = (
     id,
@@ -204,21 +215,38 @@ export default function MyAccountSkillPage() {
     );
   };
 
-  const handleSave = () => {
-    const updatedMember = {
-      ...member,
-      languageSkills,
-      computerSkills,
-    };
-
-    console.log(
-      "Updated member skills:",
-      updatedMember,
-    );
-
-    alert(
-      "រក្សាទុកព័ត៌មានបានជោគជ័យ",
-    );
+  const handleSave = async () => {
+    try {
+      setSaveError("");
+      const [languages, skills] = await Promise.all([
+        saveMyAccountCollection(
+          "languages",
+          originalLanguages,
+          languageSkills.filter((item) => String(item.language || "").trim()),
+          (item) => ({
+            language_name: item.language.trim(),
+            listening_level_id: Number(item.listening) || null,
+            speaking_level_id: Number(item.speaking) || null,
+            reading_level_id: Number(item.reading) || null,
+            writing_level_id: Number(item.writing) || null,
+          }),
+        ),
+        saveMyAccountCollection(
+          "skills",
+          originalSkills,
+          computerSkills.filter((item) => String(item.skill || "").trim()),
+          (item) => ({
+            skill_name: item.skill.trim(),
+            proficiency_level_id: Number(item.level) || null,
+          }),
+        ),
+      ]);
+      setOriginalLanguages(languages);
+      setOriginalSkills(skills);
+      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+    } catch (requestError) {
+      setSaveError(requestError.message);
+    }
   };
 
   if (loading) {
@@ -244,12 +272,12 @@ export default function MyAccountSkillPage() {
   }
 
   const levels =
-    educationData.proficiencyLevels || [
+    proficiencyOptions.length ? proficiencyOptions : (educationData.proficiencyLevels || [
       "ខ្សោយ",
       "មធ្យម",
       "ល្អ",
       "ល្អណាស់",
-    ];
+    ]);
 
   return (
     <div className="space-y-4">
@@ -342,6 +370,7 @@ export default function MyAccountSkillPage() {
       </section>
 
       <div className="flex justify-end">
+        {saveError && <p className="mr-4 self-center text-sm text-red-500">{saveError}</p>}
         <SaveButton
           onClick={handleSave}
         />

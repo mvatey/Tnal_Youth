@@ -12,6 +12,10 @@ import DeleteButton from "@/components/forms/DeleteButton";
 import BoxFill from "@/components/forms/boxFill";
 import FormDate from "@/components/forms/FormDate";
 import FormSelect from "@/components/forms/FormSelect";
+import {
+  fetchMyAccountCollection,
+  saveMyAccountCollection,
+} from "@/lib/myAccountCollections";
 
 function createEmptyPolitical() {
   return {
@@ -34,6 +38,8 @@ export default function MyAccountPoliticalPage() {
   } = useCurrentMember();
 
   const [politicals, setPoliticals] = useState([]);
+  const [originalPoliticals, setOriginalPoliticals] = useState([]);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     if (!member) {
@@ -41,11 +47,24 @@ export default function MyAccountPoliticalPage() {
       return;
     }
 
-    const history = Array.isArray(member.politicalHistory)
-      ? member.politicalHistory
-      : [];
-
-    setPoliticals(history.length > 0 ? history : [createEmptyPolitical()]);
+    let active = true;
+    fetchMyAccountCollection("political-affiliations")
+      .then((rows) => {
+        if (!active) return;
+        setOriginalPoliticals(rows);
+        setPoliticals(rows.length ? rows.map((row) => ({
+          id: row.id,
+          organization: row.affiliationName || row.affiliation_name || "",
+          workLevel: row.location || "",
+          country: "",
+          position: row.positionTitle || row.position_title || "",
+          appointmentNumber: "",
+          startDate: row.startDate || row.start_date || "",
+          endDate: row.endDate || row.end_date || "",
+        })) : [createEmptyPolitical()]);
+      })
+      .catch((requestError) => setSaveError(requestError.message));
+    return () => { active = false; };
   }, [member]);
 
   const updatePolitical = (id, field, value) => {
@@ -75,12 +94,22 @@ export default function MyAccountPoliticalPage() {
     );
   };
 
-  const handleSave = () => {
-    console.log("Member ID:", member?.id);
-    console.log(
-      "Updated political history:",
-      politicals,
-    );
+  const handleSave = async () => {
+    try {
+      setSaveError("");
+      const current = politicals.filter((item) => String(item.organization || "").trim());
+      const rows = await saveMyAccountCollection("political-affiliations", originalPoliticals, current, (item) => ({
+        affiliation_name: item.organization.trim(),
+        position_title: item.position?.trim() || null,
+        location: [item.workLevel, item.country].filter(Boolean).join(" - ") || null,
+        start_date: item.startDate || null,
+        end_date: item.endDate || null,
+      }));
+      setOriginalPoliticals(rows);
+      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+    } catch (requestError) {
+      setSaveError(requestError.message);
+    }
   };
 
   if (loading) {
@@ -165,14 +194,18 @@ export default function MyAccountPoliticalPage() {
                   label="ប្រទេស"
                   placeholder="បញ្ចូលឈ្មោះប្រទេស"
                   value={item.country ?? ""}
-                  onChange={(event) => onChange("country", event.target.value)}
+                  onChange={(event) =>
+                    updatePolitical(item.id, "country", event.target.value)
+                  }
                 />
 
                 <BoxFill
                   label="តួនាទី"
                   placeholder="បញ្ចូលឈ្មោះតួនាទី"
                   value={item.position ?? ""}
-                  onChange={(event) => onChange("position", event.target.value)}
+                  onChange={(event) =>
+                    updatePolitical(item.id, "position", event.target.value)
+                  }
                 />
 
                 <BoxFill
@@ -232,6 +265,7 @@ export default function MyAccountPoliticalPage() {
       </div>
 
       <div className="flex justify-end">
+        {saveError && <p className="mr-4 self-center text-sm text-red-500">{saveError}</p>}
         <SaveButton onClick={handleSave} />
       </div>
     </div>

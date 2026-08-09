@@ -126,23 +126,22 @@ export async function GET(request) {
     const headers =
       createHeaders(request);
 
-    const summaryPath =
-      `/dashboard/summary?month=${encodeURIComponent(
-        month
-      )}`;
+    const scopedParams = new URLSearchParams({ month });
+
+    if (branchId) scopedParams.set("branchId", branchId);
+
+    const summaryPath = `/dashboard/summary?${scopedParams.toString()}`;
 
     const breakdownPath =
-      `/dashboard/activity-breakdown?month=${encodeURIComponent(
-        month
-      )}`;
+      `/dashboard/activity-breakdown?${scopedParams.toString()}`;
 
-    const trendPath =
-      `/dashboard/participation-trend?year=${encodeURIComponent(
-        year
-      )}`;
+    const trendParams = new URLSearchParams({ year: String(year) });
+    if (branchId) trendParams.set("branchId", branchId);
+    const trendPath = `/dashboard/participation-trend?${trendParams.toString()}`;
 
-    const activitiesPath =
-      "/dashboard/activities";
+    const activitiesPath = branchId
+      ? `/dashboard/activities?branchId=${encodeURIComponent(branchId)}`
+      : "/dashboard/activities";
 
     const branchPerformanceParams =
       new URLSearchParams({

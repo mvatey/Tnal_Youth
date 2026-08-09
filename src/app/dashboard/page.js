@@ -11,6 +11,7 @@ import {
 } from "@/components/dashboard/activityList";
 import QuickActions from "@/components/dashboard/quickActions";
 import PerformanceSummary from "@/components/dashboard/performanceSummary";
+import { useBranch } from "@/context/BranchContext";
 
 function getCurrentMonth() {
   const today = new Date();
@@ -35,6 +36,11 @@ async function parseJsonSafely(response) {
 }
 
 export default function DashboardPage() {
+  const {
+    branches,
+    selectedBranch,
+    setSelectedBranch,
+  } = useBranch();
   const [selectedMonth, setSelectedMonth] =
     useState(getCurrentMonth);
 
@@ -59,6 +65,10 @@ export default function DashboardPage() {
         month: selectedMonth,
         year: String(selectedYear),
       });
+
+      if (selectedBranch !== "all") {
+        params.set("branchId", String(selectedBranch));
+      }
 
       const response = await fetch(
         `/api/dashboard?${params.toString()}`,
@@ -94,7 +104,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedMonth, selectedYear]);
+  }, [selectedBranch, selectedMonth, selectedYear]);
 
   useEffect(() => {
     loadDashboard();
@@ -191,6 +201,13 @@ export default function DashboardPage() {
               data={
                 dashboard?.branchPerformance
               }
+              branches={branches}
+              selectedBranchId={
+                selectedBranch === "all"
+                  ? null
+                  : selectedBranch
+              }
+              onBranchChange={setSelectedBranch}
               loading={loading}
             />
           </div>

@@ -28,6 +28,29 @@ const ALLOWED_FILE_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
+async function readJson(response) {
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.message || body.error || "Something went wrong");
+  return body.data || body;
+}
+
+async function resolveLookupId(type, label, existingId) {
+  const value = String(label || "").trim();
+  if (!value || value === "-") return null;
+  const options = await readJson(await fetch(`/api/lookups/${type}`, {
+    credentials: "include",
+    cache: "no-store",
+  }));
+  const match = (Array.isArray(options) ? options : []).find((option) =>
+    [option.labelKm, option.label_km, option.labelEn, option.label_en, option.label, option.code]
+      .filter(Boolean)
+      .some((candidate) => String(candidate).trim().toLowerCase() === value.toLowerCase()),
+  );
+  if (match) return Number(match.value ?? match.id);
+  if (existingId) throw new Error(`Please choose a valid ${type.replaceAll("-", " ")} value`);
+  throw new Error(`The ${type.replaceAll("-", " ")} value does not exist`);
+}
+
 const ROLE_LABELS = {
   admin: "អ្នកគ្រប់គ្រង",
   branch_leader: "ប្រធានសាខា",
@@ -265,10 +288,6 @@ export default function MyAccountPersonalPage() {
     // TODO:
     // Replace this with your backend API later.
 
-    console.log("Member:", member);
-    console.log("Form:", form);
-    console.log("CV:", cvFile);
-
     alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
   } catch (error) {
     console.error(error);
@@ -278,6 +297,66 @@ export default function MyAccountPersonalPage() {
     setSaving(false);
   }
 };
+
+  const handleRealSave = async () => {
+    setSaving(true);
+    try {
+      let cvFileId = member.cvFileId || null;
+      if (cvFile) {
+        const upload = new FormData();
+        upload.append("file", cvFile);
+        const uploaded = await readJson(await fetch("/api/backend/files/attachments", {
+          method: "POST",
+          credentials: "include",
+          body: upload,
+        }));
+        cvFileId = uploaded.id;
+      }
+
+      const [nationalityId, ethnicityId, religionId] = await Promise.all([
+        resolveLookupId("nationalities", form.nationality, member.nationalityId),
+        resolveLookupId("ethnicities", form.ethnicity, member.ethnicityId),
+        resolveLookupId("religions", form.religion, member.religionId),
+      ]);
+
+      await readJson(await fetch("/api/backend/my-account", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: member.phone,
+          email: member.email === "-" ? null : member.email,
+          fullNameKm: member.name_kh,
+          fullNameEn: member.name_en === "-" ? null : member.name_en,
+          gender: form.gender === "-" ? null : form.gender,
+          nationalityId,
+          religionId,
+          ethnicityId,
+          dateOfBirth: form.date_of_birth || null,
+          placeOfBirth: member.placeOfBirth || null,
+          currentAddress: member.currentAddress || null,
+          permanentAddress: member.permanentAddress || null,
+          bio: member.bio || null,
+          tshirtSize: form.shirtSize === "-" ? null : form.shirtSize,
+          branchId: member.branchId,
+          memberStatusId: member.statusId,
+          memberLevelId: member.levelId,
+          joinedOn: member.joinedAt === "-" ? null : member.joinedAt,
+          profilePhotoId: null,
+          cvFileId,
+        }),
+      }));
+
+      setCvFile(null);
+      if (fileRef.current) fileRef.current.value = "";
+      alert("Saved successfully");
+    } catch (saveError) {
+      console.error(saveError);
+      alert(saveError.message || "Unable to save My Account information");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (error) {
     return (
@@ -666,9 +745,9 @@ export default function MyAccountPersonalPage() {
 
       <div className="flex justify-end">
         <SaveButton
-          onClick={handleSave}
+          onClick={handleRealSave}
           disabled={
-            !cvFile || saving
+            saving || !member.isLinkedMember
           }
         />
       </div>

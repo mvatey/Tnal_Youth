@@ -159,7 +159,7 @@ export default function ActivityPage() {
           fetch("/api/backend/activities?page=0&size=1000", {
             cache: "no-store",
           }),
-          fetch("/api/lookups/branches", {
+          fetch("/api/lookups/activity-invitable-branches", {
             cache: "no-store",
           }),
         ]);

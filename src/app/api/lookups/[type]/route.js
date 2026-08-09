@@ -27,6 +27,9 @@ const ALLOWED_LOOKUPS =
     "tshirt-sizes",
 
     "activity-types",
+    "activity-sectors",
+    "activity-statuses",
+    "activity-invitable-branches",
 
     "provinces",
     "districts",

@@ -37,10 +37,6 @@ import {
   normalizeRole,
 } from "@/lib/navigation";
 
-import {
-  getSavedProfileImage,
-} from "@/lib/member/profileImageStorage";
-
 import ChartIcon from "@/components/ui/icons/chartIcon";
 
 const ICON_MAP = {
@@ -85,15 +81,40 @@ function getDefaultAvatar(
   member,
   user,
 ) {
-  return (
+  const value =
     member?.profile_photo ||
     member?.profileImage ||
     member?.profile_image ||
     member?.profilePhoto ||
     user?.profileImage ||
     user?.profile_photo ||
-    "/profiles/default-avatar.jpg"
-  );
+    "";
+
+  const path = String(
+    typeof value === "object"
+      ? value?.url || ""
+      : value,
+  ).trim();
+
+  if (!path) {
+    return "/profiles/default-avatar.jpg";
+  }
+
+  if (
+    path.startsWith("http://") ||
+    path.startsWith("https://") ||
+    path.startsWith("/")
+  ) {
+    return path;
+  }
+
+  const backendOrigin =
+    process.env.NEXT_PUBLIC_BACKEND_ORIGIN ||
+    "http://localhost:8081";
+
+  return path.startsWith("uploads/")
+    ? `${backendOrigin}/${path}`
+    : `${backendOrigin}/uploads/${path}`;
 }
 
 function getDisplayName(
@@ -142,6 +163,8 @@ export default function Sidebar() {
     setProfileOpen,
   ] = useState(false);
 
+  const [mounted, setMounted] = useState(false);
+
   const [
     userAvatar,
     setUserAvatar,
@@ -151,6 +174,10 @@ export default function Sidebar() {
 
   const profileRef =
     useRef(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const currentMemberId =
     getMemberId(
@@ -204,10 +231,7 @@ export default function Sidebar() {
    */
   useEffect(() => {
     setUserAvatar(
-      getSavedProfileImage(
-        currentMemberId,
-        defaultUserAvatar,
-      ),
+      defaultUserAvatar,
     );
 
     const handleProfileImageChange = (
@@ -292,7 +316,7 @@ export default function Sidebar() {
     router.refresh();
   }
 
-  if (authLoading) {
+  if (!mounted || authLoading) {
     return (
       <aside
         className="flex h-screen w-72 shrink-0 items-center justify-center bg-primary-sidebar text-white"

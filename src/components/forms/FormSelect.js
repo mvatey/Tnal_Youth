@@ -78,13 +78,7 @@ export default function FormSelect({
       {label && (
         <label
           htmlFor={name}
-          className="
-            mb-2
-            block
-            text-sm
-            font-semibold
-            text-text-primary
-          "
+          className="mb-2 block text-sm font-semibold text-text-primary"
         >
           {label}
 

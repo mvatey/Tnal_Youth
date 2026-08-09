@@ -60,10 +60,7 @@ export default function PasswordForm() {
             </h3>
           </div>
           <div className="space-y-4">
-            <Rule text="មានអក្សរយ៉ាងហោចណាស់ ៨ តួ" />
-            <Rule text="មានតួអក្សរពិសេស (!@#$%^&*)" />
-            <Rule text="មានលេខ (0-9)" />
-            <Rule text="មានអក្សរធំ និងអក្សរតូច" />
+            <Rule text="លេខសម្ងាត់ត្រូវមានលេខ ៦ ខ្ទង់" />
           </div>
         </div>
       </div>

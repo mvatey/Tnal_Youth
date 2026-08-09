@@ -403,6 +403,9 @@ export default function MemberInfoLayout({
 
       <MemberInfoCard
         member={member}
+        profileUploadEndpoint={
+          `/api/backend/members/${member.id}/profile-photo`
+        }
       />
 
       {!isDetailPage && (

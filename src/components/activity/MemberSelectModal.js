@@ -57,13 +57,38 @@ const members = [
 ];
 
 
-const roles = ["ប្រធាន", "លេខាធិការ", "សមាជិក"];
+function MemberAvatar({ member }) {
+  return (
+    <img
+      src={member.profileImage || "/profiles/default-avatar.jpg"}
+      alt={member.name || "Member"}
+      className="h-9 w-9 shrink-0 rounded-full object-cover"
+      onError={(event) => {
+        event.currentTarget.onerror = null;
+        event.currentTarget.src = "/profiles/default-avatar.jpg";
+      }}
+    />
+  );
+}
 
-export default function MemberSelectModal({ onClose, members = [], selectedIds = [], onSave }) {
+export default function MemberSelectModal({
+  onClose,
+  members = [],
+  selectedIds = [],
+  onSave,
+  branchName = "",
+  loading = false,
+  error = "",
+}) {
   const [selected, setSelected] = useState(selectedIds);
   const [query, setQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
   const [selectedDate, setSelectedDate] = useState(null);
+
+  const roles = useMemo(
+    () => [...new Set(members.map((member) => member.role).filter(Boolean))],
+    [members],
+  );
 
   const filteredMembers = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -139,8 +164,15 @@ export default function MemberSelectModal({ onClose, members = [], selectedIds =
                     </td>
 
                     <td>
-                      <p className="font-medium text-text-primary">{member.name}</p>
-                      <p className="text-[12px] text-text-secondary">{member.email}</p>
+                      <div className="flex items-center gap-2.5">
+                        <MemberAvatar member={member} />
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-text-primary">{member.name}</p>
+                          {member.email ? (
+                            <p className="truncate text-[12px] text-text-secondary">{member.email}</p>
+                          ) : null}
+                        </div>
+                      </div>
                     </td>
 
                     <td className="text-center">{member.gender}</td>
@@ -161,9 +193,29 @@ export default function MemberSelectModal({ onClose, members = [], selectedIds =
                 );
               })}
 
-              {filteredMembers.length === 0 && (
+              {loading && (
                 <tr>
-                  <td colSpan={8} className="py-10 text-center text-sm text-text-secondary">មិនមានទិន្នន័យសមាជិកទេ</td>
+                  <td colSpan={8} className="py-10 text-center text-sm text-text-secondary">
+                    កំពុងទាញយកសមាជិក...
+                  </td>
+                </tr>
+              )}
+
+              {!loading && error && (
+                <tr>
+                  <td colSpan={8} className="py-10 text-center text-sm text-danger">
+                    {error}
+                  </td>
+                </tr>
+              )}
+
+              {!loading && !error && filteredMembers.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="py-10 text-center text-sm text-text-secondary">
+                    {branchName
+                      ? `មិនមានសមាជិកនៅក្នុងសាខា ${branchName} ទេ`
+                      : "សូមជ្រើសរើសសាខាជាមុនសិន"}
+                  </td>
                 </tr>
               )}
             </tbody>

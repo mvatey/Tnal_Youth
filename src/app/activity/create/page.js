@@ -53,12 +53,6 @@ const VISIBILITY_OPTIONS = [
   "ឯកជន",
 ];
 
-const LOCATION_OPTIONS = [
-  "សាលាបឋមសិក្សា",
-  "សាលប្រជុំធំ",
-  "មជ្ឈមណ្ឌលសហគមន៍",
-];
-
 const STATUS_OPTIONS = [
   "ឆាប់ៗនេះ",
   "កំពុងដំណើរការ",
@@ -111,11 +105,54 @@ function formatDate(dateValue) {
 }
 
 function getOptionLabel(option) {
-  return option?.labelKm || option?.label_km || option?.labelEn || option?.label_en || option?.code || "";
+  return (
+    option?.labelKm ||
+    option?.label_km ||
+    option?.nameKm ||
+    option?.name_km ||
+    option?.labelEn ||
+    option?.label_en ||
+    option?.nameEn ||
+    option?.name_en ||
+    option?.branchCode ||
+    option?.code ||
+    ""
+  );
 }
 
 function getOptionValue(option) {
   return Number(option?.value ?? option?.id);
+}
+
+function getMemberProfileImage(member) {
+  const profilePhoto = member?.profile_photo || member?.profilePhoto;
+  const fileId = profilePhoto?.id || member?.profile_photo_id || member?.profilePhotoId;
+
+  if (fileId) {
+    return `/api/files/${fileId}/content`;
+  }
+
+  const value =
+    profilePhoto?.url ||
+    profilePhoto?.file_path ||
+    profilePhoto?.filePath ||
+    member?.profile_image ||
+    member?.profileImage;
+
+  if (!value) {
+    return "/profiles/default-avatar.jpg";
+  }
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.hostname === "localhost" && parsed.port === "8081") {
+      return `/api/backend${parsed.pathname}${parsed.search}`;
+    }
+  } catch {
+    // Relative frontend and proxied API URLs can be used as-is.
+  }
+
+  return value;
 }
 
 function combineDateAndTime(dateValue, timeValue) {
@@ -181,6 +218,7 @@ function createInitialForm(activity) {
       startTime: "",
       endTime: "",
       location: "",
+      province: "",
       mapLink: "",
       address: "",
       invitedBranches: [],
@@ -215,6 +253,12 @@ function createInitialForm(activity) {
     startTime: activity.startTime24 || activity.startTime || activity.startsAt?.slice(11, 16) || "",
     endTime: activity.endTime24 || activity.endTime || activity.endsAt?.slice(11, 16) || "",
     location: activity.locationName || getActivityLocation(activity.location),
+    province:
+      (typeof activity.province === "object"
+        ? getOptionLabel(activity.province)
+        : activity.province) ||
+      activity.provinceLabel ||
+      "",
     mapLink: activity.googleMapUrl || activity.mapLink || "",
     address: activity.address || "",
     invitedBranches: normalizeInvitedBranches(activity),
@@ -548,6 +592,8 @@ export default function CreateActivityPage() {
   const [form, setForm] = useState(() => createInitialForm(null));
   const [lookupData, setLookupData] = useState({
     branches: [],
+    invitableBranches: [],
+    provinces: [],
     types: [],
     sectors: [],
     statuses: [],
@@ -559,32 +605,32 @@ export default function CreateActivityPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [memberOptions, setMemberOptions] = useState([]);
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [memberLoadError, setMemberLoadError] = useState("");
 
-  const branchOptions = lookupData.branches.length
-    ? lookupData.branches.map(getOptionLabel)
-    : BRANCH_OPTIONS;
-  const typeOptions = lookupData.types.length
-    ? lookupData.types.map(getOptionLabel)
-    : TYPE_OPTIONS;
-  const sectorOptions = lookupData.sectors.length
-    ? lookupData.sectors.map(getOptionLabel)
-    : SECTOR_OPTIONS;
-  const statusOptions = lookupData.statuses.length
-    ? lookupData.statuses.map(getOptionLabel)
-    : STATUS_OPTIONS;
+  const branchOptions = lookupData.branches.map(getOptionLabel).filter(Boolean);
+  const allInvitableBranchOptions = lookupData.invitableBranches
+    .map(getOptionLabel)
+    .filter(Boolean);
+  const provinceOptions = lookupData.provinces.map(getOptionLabel).filter(Boolean);
+  const typeOptions = lookupData.types.map(getOptionLabel).filter(Boolean);
+  const sectorOptions = lookupData.sectors.map(getOptionLabel).filter(Boolean);
+  const statusOptions = lookupData.statuses.map(getOptionLabel).filter(Boolean);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadFormData() {
       try {
-        const [branches, types, sectors, statuses] = await Promise.all([
+        const [branches, invitableBranches, provinces, types, sectors, statuses] = await Promise.all([
           fetchJson("/api/lookups/branches"),
+          fetchJson("/api/lookups/activity-invitable-branches"),
+          fetchJson("/api/lookups/provinces"),
           fetchJson("/api/lookups/activity-types"),
           fetchJson("/api/lookups/activity-sectors"),
           fetchJson("/api/lookups/activity-statuses"),
         ]);
-        const nextLookups = { branches, types, sectors, statuses };
+        const nextLookups = { branches, invitableBranches, provinces, types, sectors, statuses };
         if (cancelled) return;
         setLookupData(nextLookups);
 
@@ -594,13 +640,15 @@ export default function CreateActivityPage() {
             fetchJson(`/api/backend/activities/${encodeURIComponent(editId)}/invited-branches`).catch(() => []),
           ]);
           const branch = branches.find((option) => getOptionValue(option) === Number(activity.branchId));
+          const province = provinces.find((option) => getOptionValue(option) === Number(activity.provinceId));
           const invitedBranches = (Array.isArray(invitations) ? invitations : [])
-            .map((invitation) => branches.find((option) => getOptionValue(option) === Number(invitation.branchId ?? invitation.branch_id)))
+            .map((invitation) => invitableBranches.find((option) => getOptionValue(option) === Number(invitation.branchId ?? invitation.branch_id)))
             .filter(Boolean)
             .map(getOptionLabel);
           const normalized = {
             ...activity,
             branchLabel: getOptionLabel(branch),
+            provinceLabel: getOptionLabel(province),
             invitedBranches,
           };
           if (!cancelled) {
@@ -625,10 +673,15 @@ export default function CreateActivityPage() {
     const branchId = getOptionValue(branch);
     if (!Number.isFinite(branchId) || branchId <= 0) {
       setMemberOptions([]);
+      setSelectedMemberIds([]);
+      setMembersLoading(false);
+      setMemberLoadError("");
       return;
     }
     let cancelled = false;
-    fetchJson(`/api/backend/members?branchId=${branchId}&page=0&size=100`)
+    setMembersLoading(true);
+    setMemberLoadError("");
+    fetchJson(`/api/members?branchId=${branchId}&page=0&size=100`)
       .then((page) => {
         const records = Array.isArray(page) ? page : page?.content || [];
         if (!cancelled) {
@@ -641,20 +694,32 @@ export default function CreateActivityPage() {
             branch: member.branch?.label_km || member.branch?.labelKm || form.branch,
             joinedDate: member.joined_on || "-",
             joinedDateValue: member.joined_on || "",
+            profileImage: getMemberProfileImage(member),
+            status: member.status?.label_km || member.status?.labelKm || member.status?.code || "-",
           })));
         }
       })
-      .catch((error) => console.error("Load activity members error:", error));
+      .catch((error) => {
+        console.error("Load activity members error:", error);
+        if (!cancelled) {
+          setMemberOptions([]);
+          setSelectedMemberIds([]);
+          setMemberLoadError(error.message || "Unable to load members for this branch.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setMembersLoading(false);
+      });
     return () => {
       cancelled = true;
     };
   }, [form.branch, lookupData.branches]);
 
   const invitedBranchOptions = useMemo(() => {
-    return branchOptions.filter(
+    return allInvitableBranchOptions.filter(
       (branch) => branch !== form.branch
     );
-  }, [branchOptions, form.branch]);
+  }, [allInvitableBranchOptions, form.branch]);
 
   const setValue = (field, value) => {
     setForm((currentForm) => ({
@@ -663,7 +728,11 @@ export default function CreateActivityPage() {
     }));
   };
 
-  const handleBranchChange = (value) => {
+  const handleBranchChange = (event) => {
+    const value = event.target.value;
+    setMemberOptions([]);
+    setSelectedMemberIds([]);
+    setMemberLoadError("");
     setForm((currentForm) => ({
       ...currentForm,
       branch: value,
@@ -671,6 +740,15 @@ export default function CreateActivityPage() {
         (branch) => branch !== value
       ),
     }));
+  };
+
+  const handleOpenMemberModal = () => {
+    if (!form.branch) {
+      alert("សូមជ្រើសរើសសាខាជាមុនសិន");
+      return;
+    }
+
+    setShowMemberModal(true);
   };
 
   const handleCancel = () => {
@@ -700,6 +778,11 @@ export default function CreateActivityPage() {
 
     if (!form.startDate) {
       alert("សូមជ្រើសរើសកាលបរិច្ឆេទចាប់ផ្តើម");
+      return false;
+    }
+
+    if (!form.province) {
+      alert("សូមជ្រើសរើសខេត្ត/រាជធានី");
       return false;
     }
 
@@ -741,7 +824,7 @@ export default function CreateActivityPage() {
         isPublic: form.visibility === VISIBILITY_OPTIONS[0],
         startsAt: combineDateAndTime(form.startDate, form.startTime),
         endsAt: combineDateAndTime(form.endDate, form.endTime),
-        provinceId: editingActivity?.provinceId || null,
+        provinceId: findOptionId(lookupData.provinces, form.province),
         districtId: editingActivity?.districtId || null,
         communeId: editingActivity?.communeId || null,
         locationName: form.location || null,
@@ -751,7 +834,15 @@ export default function CreateActivityPage() {
         coverImageId: editingActivity?.coverImageId || null,
       };
 
-      const requiredValues = [payload.typeId, payload.sectorId, payload.statusId, payload.branchId, payload.startsAt, payload.endsAt];
+      const requiredValues = [
+        payload.typeId,
+        payload.sectorId,
+        payload.statusId,
+        payload.branchId,
+        payload.provinceId,
+        payload.startsAt,
+        payload.endsAt,
+      ];
       if (requiredValues.some((value) => value == null)) {
         throw new Error("Please complete all required activity fields.");
       }
@@ -773,7 +864,7 @@ export default function CreateActivityPage() {
 
       if (!isEditMode) {
         const invitedBranchIds = form.invitedBranches
-          .map((label) => findOptionId(lookupData.branches, label))
+          .map((label) => findOptionId(lookupData.invitableBranches, label))
           .filter(Boolean);
         await Promise.all(
           invitedBranchIds.map((branchId) =>
@@ -871,7 +962,7 @@ export default function CreateActivityPage() {
               <FormControl
                 label="ឈ្មោះកម្មវិធី"
                 value={form.name}
-                onChange={(value) => setValue("name", value)}
+                onChange={(event) => setValue("name", event.target.value)}
                 placeholder="កម្មវិធីដាំដើមឈើ"
               />
 
@@ -886,7 +977,7 @@ export default function CreateActivityPage() {
               <FormSelect
                 label="ប្រភេទកម្មវិធី"
                 value={form.type}
-                onChange={(value) => setValue("type", value)}
+                onChange={(event) => setValue("type", event.target.value)}
                 placeholder="ជ្រើសរើសប្រភេទ"
                 options={typeOptions}
               />
@@ -896,7 +987,7 @@ export default function CreateActivityPage() {
               <FormSelect
                 label="វិស័យ"
                 value={form.sector}
-                onChange={(value) => setValue("sector", value)}
+                onChange={(event) => setValue("sector", event.target.value)}
                 placeholder="ជ្រើសរើសវិស័យ"
                 options={sectorOptions}
               />
@@ -904,7 +995,7 @@ export default function CreateActivityPage() {
               <FormSelect
                 label="ការផ្សព្វផ្សាយ"
                 value={form.visibility}
-                onChange={(value) => setValue("visibility", value)}
+                onChange={(event) => setValue("visibility", event.target.value)}
                 placeholder="ជ្រើសរើសការផ្សព្វផ្សាយ"
                 options={VISIBILITY_OPTIONS}
               />
@@ -962,7 +1053,7 @@ export default function CreateActivityPage() {
                 label="ពេលវេលាចាប់ផ្តើម"
                 type="time"
                 value={form.startTime}
-                onChange={(value) => setValue("startTime", value)}
+                onChange={(event) => setValue("startTime", event.target.value)}
                 className = "h-[34px]"
               />
 
@@ -970,7 +1061,7 @@ export default function CreateActivityPage() {
                 label="ពេលវេលាបញ្ចប់"
                 type="time"
                 value={form.endTime}
-                onChange={(value) => setValue("endTime", value)}
+                onChange={(event) => setValue("endTime", event.target.value)}
                 className = "h-[34px]"
               />
             </div>
@@ -984,11 +1075,12 @@ export default function CreateActivityPage() {
 
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <FormSelect
-                label="ទីតាំងកម្មវិធី"
-                value={form.location}
-                onChange={(value) => setValue("location", value)}
-                placeholder="ជ្រើសរើសទីតាំង"
-                options={LOCATION_OPTIONS}
+                label="ខេត្ត/រាជធានី"
+                value={form.province}
+                onChange={(event) => setValue("province", event.target.value)}
+                placeholder="ជ្រើសរើសខេត្ត/រាជធានី"
+                options={provinceOptions}
+                required
               />
 
               <div >
@@ -1013,7 +1105,7 @@ export default function CreateActivityPage() {
                 <FormControl
                   label="អាសយដ្ឋានលម្អិត"
                   value={form.address}
-                  onChange={(value) => setValue("address", value)}
+                  onChange={(event) => setValue("address", event.target.value)}
                   placeholder="ភូមិ, ឃុំ, ស្រុក, ខេត្ត..."
                 />
               </div>
@@ -1039,7 +1131,7 @@ export default function CreateActivityPage() {
             <FormSelect
               label="ស្ថានភាព"
               value={form.status}
-              onChange={(value) => setValue("status", value)}
+              onChange={(event) => setValue("status", event.target.value)}
               placeholder="ជ្រើសរើសស្ថានភាពកម្មវិធី"
                 options={statusOptions}
             />
@@ -1051,7 +1143,7 @@ export default function CreateActivityPage() {
                 សមាសភាពចូលរួម
               </Link>
             ) : (
-              <button type="button" onClick={() => setShowMemberModal(true)} className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90">
+              <button type="button" onClick={handleOpenMemberModal} className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90">
                 ជ្រើសរើសសមាសភាព
               </button>
             )}
@@ -1162,6 +1254,9 @@ export default function CreateActivityPage() {
           members={memberOptions}
           selectedIds={selectedMemberIds}
           onSave={setSelectedMemberIds}
+          branchName={form.branch}
+          loading={membersLoading}
+          error={memberLoadError}
         />
       )}
     </>

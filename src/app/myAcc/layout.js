@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
 import {
@@ -44,6 +45,33 @@ export default function MyAccountLayout({
     loading,
     error,
   } = useCurrentMember();
+  const [summary, setSummary] = useState({
+    attended_activities: 0,
+    absent_activities: 0,
+    total_donations: 0,
+  });
+
+  useEffect(() => {
+    if (!member?.isLinkedMember) return;
+    let cancelled = false;
+    fetch("/api/backend/my-account/summary", {
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.message || "Unable to load account summary");
+        if (!cancelled) setSummary(body.data || body);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSummary({ attended_activities: 0, absent_activities: 0, total_donations: 0 });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [member?.isLinkedMember]);
 
   const isDetailsPage =
     pathname.startsWith(
@@ -112,28 +140,10 @@ export default function MyAccountLayout({
         userAvatar={displayAvatar}
       />
 
-      <div
-        className="
-          flex
-          min-h-0
-          min-w-0
-          flex-1
-          flex-col
-          overflow-hidden
-        "
-      >
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar title="គណនីរបស់ខ្ញុំ" />
 
-        <main
-          className="
-            no-scrollbar
-            min-h-0
-            flex-1
-            overflow-y-auto
-            p-4
-            sm:p-5
-          "
-        >
+        <main className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
           {loading && (
             <div className="rounded-xl border border-border bg-white p-6">
               កំពុងទាញយកព័ត៌មានគណនី...
@@ -181,8 +191,8 @@ export default function MyAccountLayout({
                         <StatCard
                           icon={Users}
                           label="ចំនួនសកម្មភាពចូលរួម"
-                          value="25"
-                          growth="12"
+                          value={String(summary.attended_activities ?? 0)}
+                          growth="0"
                           iconColor="text-primary"
                           iconBg="bg-secondary-light"
                         />
@@ -190,8 +200,8 @@ export default function MyAccountLayout({
                         <StatCard
                           icon={InfoIcon}
                           label="ចំនួនមិនបានចូលរួម"
-                          value="150"
-                          growth="8"
+                          value={String(summary.absent_activities ?? 0)}
+                          growth="0"
                           iconColor="text-error"
                           iconBg="bg-error-bg"
                         />
@@ -201,8 +211,8 @@ export default function MyAccountLayout({
                             FaHandHoldingDollar
                           }
                           label="ចំនួនធ្វើវិភាគទាន"
-                          value="150"
-                          growth="8"
+                          value={String(summary.total_donations ?? 0)}
+                          growth="0"
                           iconColor="text-warning"
                           iconBg="bg-warning-bg"
                         />

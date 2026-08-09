@@ -31,6 +31,7 @@ import { Kantumruy_Pro } from "next/font/google";
 
 import { ThemeProvider } from "@/components/providers/themeProvider";
 import { AuthProvider } from "@/context/AuthContext";
+import { BranchProvider } from "@/context/BranchContext";
 
 import "./globals.css";
 
@@ -55,7 +56,7 @@ export default function RootLayout({ children }) {
       <body className={kantumruyPro.className}>
         <ThemeProvider>
           <AuthProvider>
-            {children}
+            <BranchProvider>{children}</BranchProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
