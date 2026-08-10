@@ -8,6 +8,7 @@ export default function DonationFilterSelect({
   showLabel = true,
   required = false,
   disabled = false,
+  includeAllOption = true,
 }) {
   const select = (
     <select
@@ -17,7 +18,7 @@ export default function DonationFilterSelect({
       disabled={disabled}
       aria-label={!showLabel ? label : undefined}
     >
-      <option value="all">{allLabel}</option>
+      {includeAllOption ? <option value="all">{allLabel}</option> : null}
       {options.map((option) => {
         const isObject = option !== null && typeof option === "object";
         const optionValue = isObject ? option.value : option;

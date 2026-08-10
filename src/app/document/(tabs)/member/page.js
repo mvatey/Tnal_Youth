@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye } from "lucide-react";
+import { Eye, FileText } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
 import DataTable from "@/components/table/DataTable";
-import CertificatePreview from "@/components/document/certificatePreview";
+import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
 
 const DOCUMENT_TYPE_BADGE_STYLES = {
   PDF: "bg-red-100 text-red-500",
@@ -79,20 +79,18 @@ export default function MemberDocumentPage() {
     {
       header: "ឯកសារ",
       width: "w-[8%]",
-      render: (item) => (
-        <img
-          src={item.image || "/document.jpg"}
-          alt={item.title || "document"}
-          className="
-            h-8
-            w-6
-            rounded
-            border
-            border-gray-200
-            object-cover
-          "
-        />
-      ),
+      render: (item) =>
+        item.isImage ? (
+          <img
+            src={item.image || "/document.jpg"}
+            alt={item.title || "document"}
+            className="h-8 w-6 rounded border border-gray-200 object-cover"
+          />
+        ) : (
+          <span className="inline-flex h-8 w-7 items-center justify-center rounded border border-gray-200 bg-gray-50">
+            <FileText size={18} className="text-text-secondary" />
+          </span>
+        ),
     },
     {
       header: "ឈ្មោះឯកសារ",
@@ -251,7 +249,7 @@ export default function MemberDocumentPage() {
       />
 
       {selectedCertificate && (
-        <CertificatePreview
+        <CompanyDocumentPreview
           document={selectedCertificate}
           onClose={() => setSelectedCertificate(null)}
         />
@@ -262,15 +260,23 @@ export default function MemberDocumentPage() {
 
 function mapMemberDocument(row) {
   const extension = row.file?.originalName?.split(".").pop()?.toUpperCase();
+  const genderCode = row.member?.gender;
+  const genderLabels = {
+    MALE: "ប្រុស",
+    FEMALE: "ស្រី",
+    MONK: "ព្រះសង្ឃ",
+  };
+  const normalizedType = extension || row.type?.code || "FILE";
   return {
     id: row.id,
     title: row.title,
     memberName: row.member?.fullNameKm || row.member?.full_name_km || row.member?.fullNameEn || row.member?.full_name_en || "-",
-    gender: "-",
+    gender: row.member?.genderLabelKm || row.member?.gender_label_km || genderLabels[genderCode] || row.member?.genderLabelEn || row.member?.gender_label_en || "-",
     branch: row.branch?.nameKm || row.branch?.name_km || row.branch?.nameEn || row.branch?.name_en || "-",
     date: row.created_at ? row.created_at.slice(0, 10) : "-",
     size: formatSize(row.file?.sizeBytes),
-    type: extension || row.type?.code || "FILE",
+    type: normalizedType,
+    isImage: ["PNG", "JPG", "JPEG", "WEBP", "GIF"].includes(normalizedType),
     image: row.file?.id ? `/api/backend/files/${row.file.id}/content` : "/document.jpg",
   };
 }

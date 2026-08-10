@@ -4,30 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { FileText, UploadCloud, X } from "lucide-react";
 
 import FormSelect from "@/components/forms/FormSelect";
-import membersData from "@/data/members.json";
 import DocumentActionButton from "@/components/forms/documentActionbutton";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const ALLOWED_FILE_EXTENSIONS = ["jpg", "jpeg", "png", "pdf", "doc", "docx"];
-
-const MEMBER_OPTIONS = membersData
-  .filter(
-    (member) =>
-      member?.id &&
-      (member?.name_kh ||
-        member?.fullNameKm ||
-        member?.name_en ||
-        member?.fullNameEn),
-  )
-  .map((member) => ({
-    label:
-      member.name_kh ||
-      member.fullNameKm ||
-      member.name_en ||
-      member.fullNameEn,
-    value: String(member.id),
-  }));
 
 function getBranchName(branch) {
   if (!branch) return "";
@@ -36,7 +17,7 @@ function getBranchName(branch) {
     return branch;
   }
 
-  return branch.name_kh || branch.name_en || branch.name || "";
+  return branch.labelKm || branch.label_km || branch.nameKm || branch.name_km || branch.labelEn || branch.label_en || branch.nameEn || branch.name_en || branch.name_kh || branch.name_en || branch.name || "";
 }
 
 function getMemberNameKh(member) {
@@ -57,15 +38,6 @@ function getMemberJoinedDate(member) {
   );
 }
 
-const BRANCH_OPTIONS = [
-  ...new Set(
-    membersData.map((member) => getBranchName(member.branch)).filter(Boolean),
-  ),
-].map((branch) => ({
-  label: branch,
-  value: branch,
-}));
-
 export default function LetterOfAppointmentForm({
   form,
   setForm,
@@ -78,12 +50,64 @@ export default function LetterOfAppointmentForm({
   const [showValidationError, setShowValidationError] = useState(false);
 
   const [fileError, setFileError] = useState("");
+  const [branches, setBranches] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [dataError, setDataError] = useState("");
 
-  const selectedMember = useMemo(
-    () =>
-      membersData.find((member) => String(member.id) === String(form.memberId)),
-    [form.memberId],
+  const branchOptions = useMemo(() => branches.map((branch) => ({
+    label: getBranchName(branch),
+    value: String(branch.value ?? branch.id ?? branch.branchId ?? branch.branch_id ?? ""),
+  })).filter((option) => option.label && option.value), [branches]);
+
+  const selectedMemberIds = useMemo(
+    () => (Array.isArray(form.memberIds) ? form.memberIds.map(String) : form.memberId ? [String(form.memberId)] : []),
+    [form.memberId, form.memberIds],
   );
+
+  const selectedMembers = useMemo(
+    () => members.filter((member) => selectedMemberIds.includes(String(member.id))),
+    [members, selectedMemberIds],
+  );
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/lookups/branches", { cache: "no-store" })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message || "Unable to load branches.");
+        if (active) setBranches(Array.isArray(body) ? body : (body?.data ?? []));
+      })
+      .catch((error) => active && setDataError(error.message || "Unable to load branches."));
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!form.branchId) {
+      setMembers([]);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    setLoadingMembers(true);
+    setDataError("");
+    fetch(`/api/members?branchId=${encodeURIComponent(form.branchId)}&page=0&size=100`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message || "Unable to load members.");
+        const rows = body?.content ?? body?.data?.content ?? body?.data ?? body;
+        setMembers(Array.isArray(rows) ? rows : []);
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") setDataError(error.message || "Unable to load members.");
+      })
+      .finally(() => setLoadingMembers(false));
+
+    return () => controller.abort();
+  }, [form.branchId]);
 
   useEffect(() => {
     return () => {
@@ -104,41 +128,31 @@ export default function LetterOfAppointmentForm({
     setShowValidationError(false);
   };
 
-  const handleMemberChange = (event) => {
-    const memberId = event.target.value;
-
-    const member = membersData.find(
-      (item) => String(item.id) === String(memberId),
-    );
-
-    setShowValidationError(false);
-
-    if (!member) {
-      setForm((previous) => ({
-        ...previous,
-        memberId: "",
-        member: "",
-        memberNameEn: "",
-        branch: "",
-        joinedAt: "",
-      }));
-
-      return;
-    }
-
+  const handleBranchChange = (event) => {
+    const branchId = event.target.value;
+    const branch = branches.find((item) => String(item.value ?? item.id ?? item.branchId ?? item.branch_id) === String(branchId));
     setForm((previous) => ({
       ...previous,
-
-      memberId: String(member.id),
-
-      member: getMemberNameKh(member),
-
-      memberNameEn: getMemberNameEn(member),
-
-      branch: getBranchName(member.branch) || previous.branch || "",
-
-      joinedAt: getMemberJoinedDate(member) || previous.joinedAt || "",
+      branchId,
+      branch: getBranchName(branch),
+      memberId: "",
+      memberIds: [],
+      selectedMembers: [],
     }));
+    setShowValidationError(false);
+  };
+
+  const selectMember = (member) => {
+    const memberId = String(member.id);
+    setForm((previous) => ({
+      ...previous,
+      memberId,
+      memberIds: [memberId],
+      selectedMembers: [member],
+      member: getMemberNameKh(member),
+      memberNameEn: getMemberNameEn(member),
+    }));
+    setShowValidationError(false);
   };
 
   const handleFileUpload = (event) => {
@@ -214,9 +228,8 @@ export default function LetterOfAppointmentForm({
   };
 
   const isFormValid =
-    Boolean(form.branch) &&
-    Boolean(form.memberId) &&
-    Boolean(form.description?.trim()) &&
+    Boolean(form.branchId) &&
+    selectedMemberIds.length > 0 &&
     Boolean(form.templateFile);
 
   const handleSave = async () => {
@@ -239,28 +252,12 @@ export default function LetterOfAppointmentForm({
 
         fileType: form.fileType || "",
 
-        selectedMember,
-
-        user: selectedMember
-          ? {
-              ...selectedMember,
-
-              id: selectedMember.id || form.memberId,
-
-              name_kh: form.member || getMemberNameKh(selectedMember),
-
-              name_en: form.memberNameEn || getMemberNameEn(selectedMember),
-
-              branch: form.branch || getBranchName(selectedMember.branch),
-
-              joinedAt: form.joinedAt || getMemberJoinedDate(selectedMember),
-            }
-          : null,
+        selectedMembers,
       });
     } catch (error) {
       console.error("Cannot create appointment letter:", error);
 
-      alert("មានបញ្ហាក្នុងការបង្កើតលិខិតតែងតាំង");
+      throw error;
     }
   };
 
@@ -288,58 +285,49 @@ export default function LetterOfAppointmentForm({
         <div className="space-y-5">
           <FormSelect
             label="សាខា"
-            name="branch"
-            value={form.branch || ""}
-            onChange={updateField("branch")}
+            name="branchId"
+            value={form.branchId || ""}
+            onChange={handleBranchChange}
             placeholder="ជ្រើសរើសសាខា"
-            options={BRANCH_OPTIONS}
-          />
-
-          <FormSelect
-            label="សមាជិក"
-            name="memberId"
-            value={form.memberId || ""}
-            onChange={handleMemberChange}
-            placeholder="ជ្រើសរើសសមាជិក"
-            options={MEMBER_OPTIONS}
+            options={branchOptions}
           />
 
           <div>
-            <label
-              className="
-                mb-2
-                block
-                text-sm
-                font-semibold
-                text-text-primary
-              "
-            >
-              ពិពណ៌នា
-            </label>
-
-            <textarea
-              name="description"
-              value={form.description || ""}
-              onChange={updateField("description")}
-              placeholder="ពិពណ៌នាបន្ថែម"
-              className="
-                h-[180px]
-                w-full
-                resize-none
-                rounded-xl
-                border
-                border-gray-300
-                bg-white
-                px-5
-                py-4
-                text-sm
-                text-text-primary
-                outline-none
-                transition
-                placeholder:text-gray-400
-                focus:border-primary
-              "
-            />
+            <div className="mb-2 flex items-center justify-between text-sm font-semibold text-text-primary">
+              <span>ជ្រើសរើសសមាជិកក្នុងសាខា</span>
+              <span>{selectedMemberIds.length > 0 ? "1 នាក់" : "0 នាក់"}</span>
+            </div>
+            <div className="h-[255px] overflow-y-auto rounded-xl border border-gray-300 bg-white p-3">
+              {!form.branchId ? (
+                <p className="py-20 text-center text-sm text-gray-400">សូមជ្រើសរើសសាខាជាមុន</p>
+              ) : loadingMembers ? (
+                <p className="py-20 text-center text-sm text-gray-400">កំពុងទាញយកសមាជិក...</p>
+              ) : members.length === 0 ? (
+                <p className="py-20 text-center text-sm text-gray-400">មិនមានសមាជិកក្នុងសាខានេះ</p>
+              ) : (
+                <div className="space-y-1">
+                  {members.map((member) => {
+                    const memberId = String(member.id);
+                    const checked = selectedMemberIds.includes(memberId);
+                    return (
+                      <label key={memberId} className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 hover:bg-primary/5">
+                        <input
+                          type="radio"
+                          name="appointmentMemberId"
+                          checked={checked}
+                          onChange={() => selectMember(member)}
+                          className="h-4 w-4 accent-primary"
+                        />
+                        <span className="min-w-0 truncate text-sm text-text-primary">
+                          {getMemberNameKh(member) || getMemberNameEn(member) || `#${memberId}`}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            {dataError ? <p className="mt-2 text-sm text-error">{dataError}</p> : null}
           </div>
         </div>
 

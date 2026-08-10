@@ -69,7 +69,7 @@ function validatePassword(
   password,
 ) {
   return {
-    sixDigits: /^\d{6}$/.test(password),
+    minimumLength: password.length >= 6,
   };
 }
 
@@ -123,7 +123,7 @@ export default function PasswordPage() {
     );
 
   const passwordValid =
-    rules.sixDigits;
+    rules.minimumLength;
 
   const passwordsMatch =
     newPassword !== "" &&
@@ -145,9 +145,9 @@ export default function PasswordPage() {
         return;
       }
 
-      if (!passwordValid) {
+      if (newPassword.length < 6) {
         setError(
-          "ពាក្យសម្ងាត់ត្រូវមានលេខ ៦ ខ្ទង់គត់។",
+          "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ។",
         );
 
         return;
@@ -313,9 +313,8 @@ export default function PasswordPage() {
 
           <div className="space-y-4">
             <Rule
-              text="មានលេខ ៦ ខ្ទង់គត់"
               valid={
-                rules.sixDigits
+                rules.minimumLength
               }
             />
           </div>
@@ -352,12 +351,8 @@ function BoxFill({
           }
           value={value}
           onChange={(event) =>
-            onChange(
-              event.target.value.replace(/\D/g, "").slice(0, 6),
-            )
+            onChange(event.target.value)
           }
-          inputMode="numeric"
-          maxLength={6}
           placeholder="បញ្ចូលពាក្យសម្ងាត់"
           autoComplete="new-password"
           className="
@@ -398,10 +393,7 @@ function BoxFill({
   );
 }
 
-function Rule({
-  text,
-  valid,
-}) {
+function Rule({ valid }) {
   return (
     <div className="flex items-center gap-3">
       <div
@@ -431,7 +423,7 @@ function Rule({
       </div>
 
       <p className="text-sm font-medium text-text-primary">
-        {text}
+        ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ
       </p>
     </div>
   );

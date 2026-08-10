@@ -60,7 +60,11 @@ export default function CompanyDocumentPage() {
       if (responses.some((response) => !response.ok)) throw new Error("Unable to load documents.");
       const [documentBody, branchBody, typeBody] = await Promise.all(responses.map((response) => response.json()));
       const documentRows = documentBody?.data ?? documentBody;
-      setDocuments((Array.isArray(documentRows) ? documentRows : []).filter((row) => row.branch).map(mapDocument));
+      setDocuments(
+        (Array.isArray(documentRows) ? documentRows : [])
+          .filter((row) => row.branch && !row.member)
+          .map(mapDocument),
+      );
       setBranches(Array.isArray(branchBody) ? branchBody : (branchBody?.data ?? []));
       setDocumentTypes(Array.isArray(typeBody) ? typeBody : (typeBody?.data ?? []));
     } catch (loadError) {
@@ -72,10 +76,32 @@ export default function CompanyDocumentPage() {
 
   useEffect(() => { loadPage(); }, [loadPage]);
 
-  const branchOptions = useMemo(() => branches.map((branch) => ({
-    value: String(branch.id),
-    label: branch.nameKm || branch.name_km || branch.nameEn || branch.name_en || branch.name,
-  })), [branches]);
+  const branchOptions = useMemo(() => branches
+    .map((branch) => {
+      const value =
+        branch.value ??
+        branch.id ??
+        branch.branchId ??
+        branch.branch_id;
+
+      const label =
+        branch.labelKm ??
+        branch.label_km ??
+        branch.nameKm ??
+        branch.name_km ??
+        branch.labelEn ??
+        branch.label_en ??
+        branch.nameEn ??
+        branch.name_en ??
+        branch.label ??
+        branch.name;
+
+      return {
+        value: value == null ? "" : String(value),
+        label: label == null ? "" : String(label),
+      };
+    })
+    .filter((option) => option.value && option.label), [branches]);
   const documentTypeOptions = useMemo(() => documentTypes.map((type) => ({
     value: String(type.id),
     label: type.labelKm || type.label_km || type.labelEn || type.label_en || type.code,

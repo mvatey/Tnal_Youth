@@ -103,9 +103,9 @@ function ResetPasswordContent() {
       return;
     }
 
-    if (!/^\d{6}$/.test(password)) {
+    if (password.length < 6) {
       setError(
-        "លេខសម្ងាត់ត្រូវមានលេខ ៦ ខ្ទង់",
+        "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ",
       );
       return;
     }
@@ -202,15 +202,9 @@ function ResetPasswordContent() {
           placeholder="បញ្ចូលលេខសម្ងាត់ថ្មី"
           value={password}
           onChange={(event) => {
-            setPassword(
-              event.target.value
-                .replace(/\D/g, "")
-                .slice(0, 6),
-            );
+            setPassword(event.target.value);
             setError("");
           }}
-          inputMode="numeric"
-          maxLength={6}
         />
 
         <PasswordInput
@@ -218,15 +212,9 @@ function ResetPasswordContent() {
           placeholder="បញ្ចូលលេខសម្ងាត់ថ្មីម្តងទៀត"
           value={confirmPassword}
           onChange={(event) => {
-            setConfirmPassword(
-              event.target.value
-                .replace(/\D/g, "")
-                .slice(0, 6),
-            );
+            setConfirmPassword(event.target.value);
             setError("");
           }}
-          inputMode="numeric"
-          maxLength={6}
         />
 
         {error && (

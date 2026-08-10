@@ -14,12 +14,15 @@ const STORAGE_KEY = "tnal-member-documents";
 const EMPTY_FORM = {
   title: "",
   branch: "",
+  branchId: "",
   description: "",
   type: "",
 
   recipientType: "member",
 
   memberId: "",
+  memberIds: [],
+  selectedMembers: [],
   member: "",
   memberNameEn: "",
 
@@ -269,6 +272,74 @@ export default function CreateDocumentPage() {
     return memberKey;
   };
 
+  const saveMemberCertificatesToBackend = async (data) => {
+    const generatedDocuments = normalizeArray(data.generatedDocuments);
+
+    if (generatedDocuments.length === 0) {
+      throw new Error("No generated certificate file was found.");
+    }
+
+    const typeResponse = await fetch("/api/backend/document-types", {
+      cache: "no-store",
+    });
+    const typeBody = await typeResponse.json().catch(() => null);
+
+    if (!typeResponse.ok) {
+      throw new Error(typeBody?.message || "Unable to load document types.");
+    }
+
+    const documentTypes = normalizeArray(typeBody?.data ?? typeBody);
+    const memberDocumentType = documentTypes.find(
+      (item) =>
+        String(item.code || "").trim().toUpperCase() ===
+        "MEMBER_DOCUMENT",
+    );
+
+    if (!memberDocumentType?.id) {
+      throw new Error("The member document type is not configured.");
+    }
+
+    for (const generatedDocument of generatedDocuments) {
+      const memberId = Number(generatedDocument.member?.id);
+
+      if (!memberId) {
+        throw new Error("Member ID is required.");
+      }
+
+      const upload = new FormData();
+      upload.append("file", generatedDocument.file);
+
+      const uploadResponse = await fetch(
+        "/api/backend/files/attachments",
+        { method: "POST", body: upload },
+      );
+      const uploadedFile = await uploadResponse.json().catch(() => null);
+
+      if (!uploadResponse.ok || !uploadedFile?.id) {
+        throw new Error(uploadedFile?.message || "Certificate upload failed.");
+      }
+
+      const createResponse = await fetch("/api/backend/documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type_id: Number(memberDocumentType.id),
+          file_id: Number(uploadedFile.id),
+          title: data.title,
+          description: data.description || "",
+          member_id: memberId,
+        }),
+      });
+      const createdDocument = await createResponse.json().catch(() => null);
+
+      if (!createResponse.ok) {
+        throw new Error(createdDocument?.message || "Unable to save certificate.");
+      }
+    }
+
+    return String(generatedDocuments[0].member.id);
+  };
+
   const saveActivityCertificates = async (data, allDocuments) => {
     const activityMembers = data.selectedActivityMembers || [];
 
@@ -408,6 +479,79 @@ export default function CreateDocumentPage() {
     return memberKey;
   };
 
+  const saveAppointmentLettersToBackend = async (data) => {
+    const selectedMembers = normalizeArray(data.selectedMembers);
+    const memberId = Number(data.memberId || normalizeArray(data.memberIds)[0]);
+
+    if (!Number.isInteger(memberId) || memberId <= 0) {
+      throw new Error("សូមជ្រើសរើសសមាជិកម្នាក់");
+    }
+
+    if (!data.templateFile) {
+      throw new Error("សូមបញ្ចូលលិខិតតែងតាំង");
+    }
+
+    const typeResponse = await fetch("/api/backend/document-types", { cache: "no-store" });
+    const typeBody = await typeResponse.json().catch(() => null);
+    if (!typeResponse.ok) {
+      throw new Error(typeBody?.message || "Unable to load document types.");
+    }
+
+    const memberDocumentType = normalizeArray(typeBody?.data ?? typeBody).find(
+      (item) => String(item.code || "").trim().toUpperCase() === "MEMBER_DOCUMENT",
+    );
+    if (!memberDocumentType?.id) {
+      throw new Error("The member document type is not configured.");
+    }
+
+    const upload = new FormData();
+    upload.append("file", data.templateFile);
+
+    const uploadEndpoint = String(data.templateFile.type || "")
+      .toLowerCase()
+      .startsWith("image/")
+      ? "/api/backend/files/images"
+      : "/api/backend/files/attachments";
+
+    const uploadResponse = await fetch(uploadEndpoint, {
+      method: "POST",
+      body: upload,
+    });
+    const uploadedFile = await uploadResponse.json().catch(() => null);
+    if (!uploadResponse.ok || !uploadedFile?.id) {
+      throw new Error(
+        uploadedFile?.message ||
+          uploadedFile?.detail ||
+          uploadedFile?.error ||
+          "Appointment letter upload failed.",
+      );
+    }
+
+    const member = selectedMembers.find((item) => Number(item.id) === memberId);
+    const createResponse = await fetch("/api/backend/documents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type_id: Number(memberDocumentType.id),
+        file_id: Number(uploadedFile.id),
+        title: data.title?.trim() || "លិខិតតែងតាំង",
+        description: data.description?.trim() || `លិខិតតែងតាំងសម្រាប់ ${getBranchName(data.branch) || getBranchName(member?.branch)}`,
+        member_id: memberId,
+      }),
+    });
+    const createdDocument = await createResponse.json().catch(() => null);
+    if (!createResponse.ok) {
+      throw new Error(
+        createdDocument?.message ||
+          createdDocument?.detail ||
+          createdDocument?.error ||
+          "Unable to save appointment letter.",
+      );
+    }
+
+    return String(memberId);
+  };
+
   const handleSave = async (createdData) => {
     if (saving) {
       return;
@@ -431,7 +575,7 @@ export default function CreateDocumentPage() {
       }
 
       if (type === "certificate" && data.recipientType === "member") {
-        const memberId = await saveMemberCertificate(data, allDocuments);
+        const memberId = await saveMemberCertificatesToBackend(data);
 
         alert("✅ បង្កើតវិញ្ញាបនបត្រដោយជោគជ័យ!");
 
@@ -453,7 +597,7 @@ export default function CreateDocumentPage() {
         return;
       }
       if (type === "appointment_letter") {
-        const memberId = await saveAppointmentLetter(data, allDocuments);
+        const memberId = await saveAppointmentLettersToBackend(data);
 
         alert("✅ បង្កើតលិខិតតែងតាំងដោយជោគជ័យ!");
 

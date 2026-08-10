@@ -8,6 +8,7 @@ import SaveAlert from "../../forms/savealert";
 import MemberCard from "../eventdonation/membercard";
 import CashCard from "./cashcard";
 import BankCard from "./bankcard";
+import useCurrentMember from "@/hooks/useCurrentMember";
 
 const BANK_PAYMENT_METHODS = new Set([
   "Bank Transfer",
@@ -60,6 +61,15 @@ function mapMonthlyMember(member, branchLabel, month, year) {
   };
 }
 export default function AddDonationForm() {
+  const {
+    member: currentMember,
+    loading: currentMemberLoading,
+    error: currentMemberError,
+  } = useCurrentMember();
+  const isBranchScoped = ["secretary", "branch_leader"].includes(
+    currentMember?.role,
+  );
+  const scopedBranchId = isBranchScoped ? currentMember?.branchId : null;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -93,7 +103,12 @@ export default function AddDonationForm() {
   selectedMonth !== "all" &&
   selectedYear !== "all";
 
-  const branches = branchOptions;
+  const branches = useMemo(() => {
+    if (!isBranchScoped) return branchOptions;
+    return branchOptions.filter(
+      (option) => String(option.value) === String(scopedBranchId),
+    );
+  }, [branchOptions, isBranchScoped, scopedBranchId]);
   const months = useMemo(
     () => KHMER_MONTHS.map((label, index) => ({
       value: String(index + 1).padStart(2, "0"),
@@ -136,6 +151,8 @@ const paymentSummary = useMemo(
 
 
   useEffect(() => {
+    if (currentMemberLoading) return undefined;
+
     let cancelled = false;
     Promise.all([
       fetchJson("/api/lookups/branches"),
@@ -143,7 +160,14 @@ const paymentSummary = useMemo(
     ])
       .then(([branchItems, methodItems]) => {
         if (cancelled) return;
-        setBranchOptions(normalizeOptions(branchItems));
+        const normalizedBranches = normalizeOptions(branchItems);
+        setBranchOptions(normalizedBranches);
+        if (isBranchScoped) {
+          if (!scopedBranchId) {
+            throw new Error("គណនីនេះមិនទាន់បានកំណត់សាខា។");
+          }
+          setSelectedBranch(String(scopedBranchId));
+        }
         setPaymentMethods((Array.isArray(methodItems) ? methodItems : []).map((method) => ({
           id: String(method.id),
           code: method.code,
@@ -154,7 +178,7 @@ const paymentSummary = useMemo(
         if (!cancelled) setError(loadError.message || "Unable to load donation options.");
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [currentMemberLoading, isBranchScoped, scopedBranchId]);
 
   useEffect(() => {
     if (!allFiltersSelected) {
@@ -168,7 +192,7 @@ const paymentSummary = useMemo(
       month: String(Number(selectedMonth)),
       year: selectedYear,
       page: "0",
-      size: "1000",
+      size: "100",
     });
     if (searchQuery.trim()) params.set("search", searchQuery.trim());
 
@@ -194,18 +218,22 @@ const paymentSummary = useMemo(
   }, [allFiltersSelected, branchOptions, searchQuery, selectedBranch, selectedMonth, selectedYear]);
 
   useEffect(() => {
-    setSelectedBranch((currentBranch) =>
-      currentBranch === initialFilters.branch
-        ? currentBranch
-        : initialFilters.branch,
-    );
+    if (isBranchScoped && scopedBranchId) {
+      setSelectedBranch(String(scopedBranchId));
+    } else {
+      setSelectedBranch((currentBranch) =>
+        currentBranch === initialFilters.branch
+          ? currentBranch
+          : initialFilters.branch,
+      );
+    }
     setSelectedMonth((currentMonth) =>
       currentMonth === initialFilters.month ? currentMonth : initialFilters.month,
     );
     setSelectedYear((currentYear) =>
       currentYear === initialFilters.year ? currentYear : initialFilters.year,
     );
-  }, [initialFilters]);
+  }, [initialFilters, isBranchScoped, scopedBranchId]);
 
   useEffect(() => {
     if (!showSaveAlert) return undefined;
@@ -330,9 +358,9 @@ const paymentSummary = useMemo(
       </div>
 
       <section className="min-h-[545px] rounded-md border border-border bg-[#fbfbfd] p-6">
-        {error ? (
+        {error || currentMemberError ? (
           <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
+            {error || currentMemberError}
           </div>
         ) : null}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -356,6 +384,7 @@ const paymentSummary = useMemo(
           onMonthChange={setSelectedMonth}
           onYearChange={setSelectedYear}
           onSearchChange={setSearchQuery}
+          branchScoped={isBranchScoped}
        
         />
 

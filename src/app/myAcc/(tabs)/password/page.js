@@ -12,10 +12,8 @@ import {
 import SaveButton from "@/components/forms/SaveButton";
 
 export default function PasswordPage() {
-  const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
@@ -25,19 +23,17 @@ export default function PasswordPage() {
   const handleSave = async () => {
     setError("");
     setMessage("");
-    if (!currentPassword) return setError("Please enter your current password.");
-    if (!/^\d{6}$/.test(newPassword)) return setError("New password must contain exactly 6 digits.");
+    if (newPassword.length < 6) return setError("ពាក្យសម្ងាត់ថ្មីត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ។");
     if (newPassword !== confirmPassword) return setError("Password confirmation does not match.");
     setSaving(true);
     try {
       const response = await fetch("/api/backend/my-account/password", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+        body: JSON.stringify({ newPassword, confirmPassword }),
       });
       const body = response.status === 204 ? null : await response.json().catch(() => null);
       if (!response.ok) throw new Error(body?.message || "Unable to change password.");
-      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       setMessage("Password changed successfully.");
@@ -67,19 +63,11 @@ export default function PasswordPage() {
 
         <div className="space-y-5">
           <BoxFill
-            label="ពាក្យសម្ងាត់បច្ចុប្បន្ន"
-            show={showCurrent}
-            setShow={setShowCurrent}
-            value={currentPassword}
-            onChange={setCurrentPassword}
-          />
-          <BoxFill
             label="ពាក្យសម្ងាត់ថ្មី"
             show={showNew}
             setShow={setShowNew}
             value={newPassword}
             onChange={setNewPassword}
-            digitsOnly
           />
 
 
@@ -89,7 +77,6 @@ export default function PasswordPage() {
             setShow={setShowConfirm}
             value={confirmPassword}
             onChange={setConfirmPassword}
-            digitsOnly
           />
 
 
@@ -148,7 +135,7 @@ export default function PasswordPage() {
 
 
 
-function BoxFill({ label, show, setShow, value, onChange, digitsOnly = false }) {
+function BoxFill({ label, show, setShow, value, onChange }) {
 
   return (
     <div>
@@ -170,9 +157,7 @@ function BoxFill({ label, show, setShow, value, onChange, digitsOnly = false }) 
         <input
           type={show ? "text" : "password"}
           value={value}
-          inputMode={digitsOnly ? "numeric" : undefined}
-          maxLength={digitsOnly ? 6 : undefined}
-          onChange={(event) => onChange(digitsOnly ? event.target.value.replace(/\D/g, "") : event.target.value)}
+          onChange={(event) => onChange(event.target.value)}
           placeholder="បញ្ចូលពាក្យសម្ងាត់"
           className="h-11 w-full rounded-lg border border-gray-200 bg-white pl-11 pr-11 text-sm outline-none transition focus:border-primary"
         />
@@ -204,7 +189,7 @@ function BoxFill({ label, show, setShow, value, onChange, digitsOnly = false }) 
 
 
 
-function Rule({ text }) {
+function Rule() {
 
   return (
 
@@ -222,7 +207,7 @@ function Rule({ text }) {
 
 
       <p className="text-sm font-medium text-text-primary">
-        {text}
+        ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ
       </p>
 
 

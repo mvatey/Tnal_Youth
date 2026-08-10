@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/context/AuthContext";
 import useCurrentMember from "@/hooks/useCurrentMember";
@@ -9,6 +9,8 @@ import IdCard from "@/components/card/idCard";
 import CertificateCard from "@/components/card/certificate";
 import DocumentPreviewCard from "@/components/card/DocumentPreviewCard";
 import LetterOfAppointment from "@/components/card/LetterOfAppointment";
+import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
+import BackendDocumentCard from "@/components/document/BackendDocumentCard";
 
 function getFirstValidValue(...values) {
   return values.find((value) => {
@@ -178,6 +180,8 @@ function buildLoggedInMember(member, authUser) {
 }
 
 export default function DocumentsPage() {
+  const [backendDocuments, setBackendDocuments] = useState([]);
+  const [selectedBackendDocument, setSelectedBackendDocument] = useState(null);
   const {
     user,
     authLoading,
@@ -199,6 +203,33 @@ export default function DocumentsPage() {
   const loading =
     authLoading ||
     memberLoading;
+
+  useEffect(() => {
+    const memberId = currentMember?.id;
+    if (!memberId) {
+      setBackendDocuments([]);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    fetch(`/api/backend/documents?memberId=${encodeURIComponent(memberId)}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message || "Unable to load member documents.");
+        setBackendDocuments(Array.isArray(body) ? body : []);
+      })
+      .catch((documentError) => {
+        if (documentError.name !== "AbortError") {
+          console.error("Cannot load my account documents:", documentError);
+          setBackendDocuments([]);
+        }
+      });
+
+    return () => controller.abort();
+  }, [currentMember?.id]);
 
   if (loading) {
     return (
@@ -317,6 +348,19 @@ export default function DocumentsPage() {
           templatePreview=""
         />
       </DocumentPreviewCard>
+
+      {backendDocuments.map((document) => (
+        <BackendDocumentCard
+          key={`account-document-${document.id}`}
+          document={document}
+          onView={setSelectedBackendDocument}
+        />
+      ))}
+
+      <CompanyDocumentPreview
+        document={selectedBackendDocument}
+        onClose={() => setSelectedBackendDocument(null)}
+      />
     </div>
   );
 }

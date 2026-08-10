@@ -12,6 +12,8 @@ import IdCard from "@/components/card/idCard";
 import CertificateCard from "@/components/card/certificate";
 import DocumentPreviewCard from "@/components/card/DocumentPreviewCard";
 import LetterOfAppointment from "@/components/card/LetterOfAppointment";
+import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
+import BackendDocumentCard from "@/components/document/BackendDocumentCard";
 
 import {
   deleteTemplateFile,
@@ -430,6 +432,9 @@ export default function DocumentsPage() {
     setError,
   ] = useState("");
 
+  const [backendDocuments, setBackendDocuments] = useState([]);
+  const [selectedBackendDocument, setSelectedBackendDocument] = useState(null);
+
   /*
    * =========================================
    * FETCH SELECTED MEMBER FROM BACKEND
@@ -490,6 +495,26 @@ export default function DocumentsPage() {
     return () => {
       controller.abort();
     };
+  }, [memberId]);
+
+  useEffect(() => {
+    if (!memberId) {
+      setBackendDocuments([]);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    fetchJson(`/backend/documents?memberId=${encodeURIComponent(memberId)}`, controller.signal)
+      .then((rows) => setBackendDocuments(normalizeArray(rows)))
+      .catch((documentError) => {
+        if (documentError.name !== "AbortError") {
+          console.error("Cannot load backend member documents:", documentError);
+          setBackendDocuments([]);
+        }
+      });
+
+    return () => controller.abort();
   }, [memberId]);
 
   /*
@@ -1198,6 +1223,19 @@ export default function DocumentsPage() {
           );
         },
       )}
+
+      {backendDocuments.map((document) => (
+        <BackendDocumentCard
+          key={`backend-document-${document.id}`}
+          document={document}
+          onView={setSelectedBackendDocument}
+        />
+      ))}
+
+      <CompanyDocumentPreview
+        document={selectedBackendDocument}
+        onClose={() => setSelectedBackendDocument(null)}
+      />
     </div>
   );
 }

@@ -173,7 +173,8 @@ export default function MyAccountLayout({
                   children
                 ) : (
                   <div className="min-w-0 space-y-4">
-                    <HeaderUserInfo />
+                    <HeaderUserInfo />                    <HeaderUserInfo />
+
 
                     {/* Default StatCards:
                         documents, participation, password */}

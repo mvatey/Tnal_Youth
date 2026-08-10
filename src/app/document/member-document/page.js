@@ -6,7 +6,7 @@ import { Eye } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
 import DataTable from "@/components/table/DataTable";
-import CertificatePreview from "@/components/document/certificatePreview";
+import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
 import documentMember from "@/data/documentMember.json";
 
 export default function MemberDocumentPage() {
@@ -151,7 +151,7 @@ export default function MemberDocumentPage() {
       />
 
       {selectedCertificate && (
-        <CertificatePreview
+        <CompanyDocumentPreview
           document={selectedCertificate}
           onClose={() => setSelectedCertificate(null)}
         />

@@ -9,6 +9,7 @@ import SaveButton from "../../forms/save";
 import Pagination from "../../navigation/Pagination";
 import TableRow from "./TableRow";
 import { downloadCsv } from "@/utils/downloadCsv";
+import useCurrentMember from "@/hooks/useCurrentMember";
 
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
@@ -31,6 +32,15 @@ const getKhmerMonth = (month) =>
   KHMER_MONTHS[Number(month) - 1] || month;
 
 export default function DonationTable() {
+  const {
+    member: currentMember,
+    loading: currentMemberLoading,
+    error: currentMemberError,
+  } = useCurrentMember();
+  const isBranchScoped = ["secretary", "branch_leader"].includes(
+    currentMember?.role,
+  );
+  const scopedBranchId = isBranchScoped ? currentMember?.branchId : null;
   const rowsPerPage = 12;
   const headers = [
     "ល.រ",
@@ -67,8 +77,19 @@ export default function DonationTable() {
   const branches = useMemo(() => {
     const unique = new Map();
     rows.forEach((row) => unique.set(String(row.branchId), row.branch));
-    return [...unique].map(([value, label]) => ({ value, label }));
-  }, [rows]);
+    const options = [...unique].map(([value, label]) => ({ value, label }));
+
+    if (!isBranchScoped) return options;
+
+    const scopedOption = options.find(
+      (option) => String(option.value) === String(scopedBranchId),
+    );
+    return scopedOption
+      ? [scopedOption]
+      : scopedBranchId
+        ? [{ value: String(scopedBranchId), label: currentMember?.branch || "-" }]
+        : [];
+  }, [rows, isBranchScoped, scopedBranchId, currentMember?.branch]);
   const handleDelete = () => setError("Open the monthly detail to delete an individual donation record.");
   const filteredRows = useMemo(
     () =>
@@ -109,16 +130,31 @@ export default function DonationTable() {
   };
 
   useEffect(() => {
+    if (currentMemberLoading) return undefined;
+
     let cancelled = false;
     async function loadRows() {
       setLoading(true);
       setError("");
       try {
-        const response = await fetch("/api/backend/donations/monthly?page=0&size=100", { cache: "no-store" });
+        if (isBranchScoped && !scopedBranchId) {
+          throw new Error("គណនីនេះមិនទាន់បានកំណត់សាខា។");
+        }
+
+        const query = new URLSearchParams({ page: "0", size: "100" });
+        if (isBranchScoped) query.set("branchId", String(scopedBranchId));
+
+        const response = await fetch(`/api/backend/donations/monthly?${query}`, {
+          cache: "no-store",
+          credentials: "include",
+        });
         const body = await response.json().catch(() => null);
         if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load monthly donations.");
         const page = body?.data ?? body;
-        if (!cancelled) setRows((Array.isArray(page?.items) ? page.items : []).map(mapMonthlyRow));
+        if (!cancelled) {
+          setRows((Array.isArray(page?.items) ? page.items : []).map(mapMonthlyRow));
+          if (isBranchScoped) setSelectedBranch(String(scopedBranchId));
+        }
       } catch (loadError) {
         if (!cancelled) setError(loadError.message || "Unable to load monthly donations.");
       } finally {
@@ -127,7 +163,7 @@ export default function DonationTable() {
     }
     loadRows();
     return () => { cancelled = true; };
-  }, []);
+  }, [currentMemberLoading, isBranchScoped, scopedBranchId]);
 
   useEffect(() => {
     if (!showDownloadAlert && !showSaveAlert) return undefined;
@@ -142,7 +178,7 @@ export default function DonationTable() {
 
   return (
     <section className="rounded-md border border-border bg-white px-7 py-4 shadow-sm">
-      {error ? <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {error || currentMemberError ? <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error || currentMemberError}</div> : null}
       {showDownloadAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
           <AddAlert />
@@ -165,6 +201,7 @@ export default function DonationTable() {
         onYearChange={updateFilter(setSelectedYear)}
         onMonthChange={updateFilter(setSelectedMonth)}
         onBranchChange={updateFilter(setSelectedBranch)}
+        branchScoped={isBranchScoped}
       />
 
       <div className="mt-[17px] overflow-x-auto">

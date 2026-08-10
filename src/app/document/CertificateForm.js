@@ -5,6 +5,9 @@ import {
   useState,
 } from "react";
 
+import html2canvas from "html2canvas-pro";
+import jsPDF from "jspdf";
+
 import {
   UploadCloud,
   X,
@@ -16,7 +19,6 @@ import MultiSelect from "@/components/forms/multiselect";
 import CertificateCard from "@/components/card/certificate";
 import DocumentActionButton from "@/components/forms/documentActionbutton";
 
-import membersData from "@/data/members.json";
 import activities from "@/data/activity.json";
 import participantsData from "@/data/participants.json";
 
@@ -29,17 +31,6 @@ const ALLOWED_TEMPLATE_TYPES = [
   "image/webp",
 ];
 
-const BRANCH_OPTIONS = [
-  ...new Set(
-    membersData
-      .map((member) => member.branch)
-      .filter(Boolean),
-  ),
-].map((branch) => ({
-  label: branch,
-  value: branch,
-}));
-
 const DOCUMENT_TYPE_OPTIONS = [
   {
     label: "លិខិតបញ្ជាក់",
@@ -50,17 +41,6 @@ const DOCUMENT_TYPE_OPTIONS = [
     value: "បណ្ណសរសើរ",
   },
 ];
-
-const MEMBER_OPTIONS = membersData
-  .filter(
-    (member) =>
-      member?.id &&
-      member?.name_kh,
-  )
-  .map((member) => ({
-    label: member.name_kh,
-    value: String(member.id),
-  }));
 
 const ACTIVITY_OPTIONS = activities
   .filter(
@@ -156,11 +136,79 @@ function normalizeSelectedMemberIds(
   return [];
 }
 
+function unwrapList(payload) {
+  const data = payload?.data ?? payload;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.content)) return data.content;
+  if (Array.isArray(data?.items)) return data.items;
+  return [];
+}
+
+function getBranchLabel(branch) {
+  return (
+    branch?.label_km ||
+    branch?.labelKm ||
+    branch?.name_km ||
+    branch?.nameKm ||
+    branch?.name_en ||
+    branch?.nameEn ||
+    branch?.name ||
+    ""
+  );
+}
+
+function mapBranchOption(branch) {
+  const id = branch?.id ?? branch?.value ?? branch?.branch_id ?? branch?.branchId;
+  return {
+    value: String(id ?? ""),
+    label: getBranchLabel(branch) || branch?.label || String(id || ""),
+  };
+}
+
+function mapApiMember(member) {
+  const branch = member?.branch || {};
+  return {
+    ...member,
+    id: member?.id,
+    name_kh:
+      member?.full_name_km ||
+      member?.fullNameKm ||
+      member?.name_kh ||
+      member?.nameKh ||
+      member?.full_name_en ||
+      member?.fullNameEn ||
+      "",
+    name_en:
+      member?.full_name_en ||
+      member?.fullNameEn ||
+      member?.name_en ||
+      member?.nameEn ||
+      "",
+    gender:
+      member?.gender?.code ||
+      member?.gender?.label_km ||
+      member?.gender?.labelKm ||
+      member?.gender ||
+      "",
+    branch: getBranchLabel(branch),
+    branchId: branch?.id ?? member?.branch_id ?? member?.branchId ?? "",
+    profile_photo:
+      member?.profile_image_url ||
+      member?.profileImageUrl ||
+      member?.profile_photo?.url ||
+      member?.profilePhoto?.url ||
+      member?.profile_photo ||
+      member?.profilePhoto ||
+      "/profile.png",
+  };
+}
+
 export default function CertificateForm({
   form,
   setForm,
   onSave,
   onClose,
+  saving = false,
 }) {
   const recipientType =
     form.recipientType ||
@@ -177,6 +225,90 @@ export default function CertificateForm({
     setShowValidationError,
   ] = useState(false);
 
+  const [branchOptions, setBranchOptions] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [loadingBranches, setLoadingBranches] = useState(true);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [dataError, setDataError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadBranches() {
+      setLoadingBranches(true);
+      setDataError("");
+
+      try {
+        const response = await fetch("/api/lookups/branches", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const body = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(body?.message || "Unable to load branches");
+        }
+
+        setBranchOptions(
+          unwrapList(body)
+            .map(mapBranchOption)
+            .filter((branch) => branch.value && branch.label),
+        );
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setDataError(error.message || "Unable to load branches");
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoadingBranches(false);
+      }
+    }
+
+    loadBranches();
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    const branchId = String(form.branch || "");
+    if (!branchId) {
+      setMembers([]);
+      setLoadingMembers(false);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    async function loadMembers() {
+      setLoadingMembers(true);
+      setDataError("");
+
+      try {
+        const response = await fetch(
+          `/api/members?branchId=${encodeURIComponent(branchId)}&page=0&size=100`,
+          { cache: "no-store", signal: controller.signal },
+        );
+        const body = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(body?.message || "Unable to load members");
+        }
+
+        setMembers(
+          unwrapList(body)
+            .map(mapApiMember)
+            .filter((member) => member.id && member.name_kh),
+        );
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setMembers([]);
+          setDataError(error.message || "Unable to load members");
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoadingMembers(false);
+      }
+    }
+
+    loadMembers();
+    return () => controller.abort();
+  }, [form.branch]);
+
   /*
    * Multi-member IDs.
    */
@@ -190,7 +322,7 @@ export default function CertificateForm({
    * through the multi-select.
    */
   const selectedMembers =
-    membersData.filter(
+    members.filter(
       (member) =>
         selectedMemberIds.includes(
           String(member.id),
@@ -234,7 +366,7 @@ export default function CertificateForm({
           )
           .map(
             (participant) =>
-              membersData.find(
+              members.find(
                 (member) =>
                   String(
                     member.id,
@@ -246,6 +378,25 @@ export default function CertificateForm({
           )
           .filter(Boolean)
       : [];
+
+  const memberOptions = members.map((member) => ({
+    label: member.name_kh,
+    value: String(member.id),
+  }));
+
+  const handleBranchChange = (event) => {
+    const branchId = event.target.value;
+
+    setForm((previous) => ({
+      ...previous,
+      branch: branchId,
+      memberId: "",
+      memberIds: [],
+      member: "",
+      members: [],
+    }));
+    setShowValidationError(false);
+  };
 
   const hasTitle =
     Boolean(
@@ -371,8 +522,8 @@ export default function CertificateForm({
           )
         : [];
 
-    const members =
-      membersData.filter(
+    const selectedMembersForForm =
+      members.filter(
         (member) =>
           normalizedIds.includes(
             String(member.id),
@@ -380,7 +531,7 @@ export default function CertificateForm({
       );
 
     const firstMember =
-      members[0] || null;
+      selectedMembersForForm[0] || null;
 
     setForm(
       (previous) => ({
@@ -398,7 +549,7 @@ export default function CertificateForm({
           "",
 
         members:
-          members.map(
+          selectedMembersForForm.map(
             (member) =>
               member.name_kh ||
               "",
@@ -413,9 +564,7 @@ export default function CertificateForm({
          * Use the first selected
          * member's branch.
          */
-        branch:
-          firstMember?.branch ||
-          "",
+        branch: previous.branch || firstMember?.branchId || "",
       }),
     );
 
@@ -611,6 +760,61 @@ export default function CertificateForm({
       );
 
       try {
+        await document.fonts?.ready;
+
+        const generatedDocuments = [];
+
+        for (const member of selectedMembers) {
+          const captureElement = document.querySelector(
+            `[data-certificate-capture="member-${member.id}"]`,
+          );
+
+          if (!captureElement) {
+            throw new Error("Cannot find the generated certificate preview.");
+          }
+
+          const canvas = await html2canvas(captureElement, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: false,
+            backgroundColor: "#ffffff",
+            logging: false,
+          });
+
+          const pdf = new jsPDF({
+            orientation: "landscape",
+            unit: "px",
+            format: [canvas.width, canvas.height],
+            hotfixes: ["px_scaling"],
+          });
+
+          pdf.addImage(
+            canvas.toDataURL("image/jpeg", 0.96),
+            "JPEG",
+            0,
+            0,
+            canvas.width,
+            canvas.height,
+            undefined,
+            "FAST",
+          );
+
+          const safeMemberName = String(
+            member.name_en || member.name_kh || member.id,
+          )
+            .trim()
+            .replace(/[\\/:*?"<>|]+/g, "-");
+
+          generatedDocuments.push({
+            member,
+            file: new File(
+              [pdf.output("blob")],
+              `certificate-${safeMemberName || member.id}.pdf`,
+              { type: "application/pdf" },
+            ),
+          });
+        }
+
         await onSave?.({
           ...form,
 
@@ -634,6 +838,7 @@ export default function CertificateForm({
             ),
 
           selectedMembers,
+          generatedDocuments,
 
           /*
            * Keep first member
@@ -701,13 +906,13 @@ export default function CertificateForm({
             value={
               form.branch || ""
             }
-            onChange={updateField(
-              "branch",
-            )}
+            onChange={handleBranchChange}
             placeholder="ជ្រើសរើសសាខា"
             options={
-              BRANCH_OPTIONS
+              branchOptions
             }
+            loading={loadingBranches}
+            error={dataError && branchOptions.length === 0 ? dataError : ""}
           />
 
           <FormSelect
@@ -812,7 +1017,15 @@ export default function CertificateForm({
               }
               placeholder="ជ្រើសរើសសមាជិក"
               options={
-                MEMBER_OPTIONS
+                memberOptions
+              }
+              disabled={!form.branch || loadingMembers}
+              emptyLabel={
+                !form.branch
+                  ? "សូមជ្រើសរើសសាខាជាមុន"
+                  : loadingMembers
+                    ? "កំពុងទាញយកសមាជិក..."
+                    : "មិនមានសមាជិកនៅក្នុងសាខានេះ"
               }
             />
           ) : (
@@ -832,6 +1045,10 @@ export default function CertificateForm({
               }
             />
           )}
+
+          {dataError && branchOptions.length > 0 ? (
+            <p className="text-xs font-medium text-red-500">{dataError}</p>
+          ) : null}
 
           {/* Description */}
 
@@ -1199,6 +1416,7 @@ export default function CertificateForm({
                           templatePreview={
                             form.templatePreview
                           }
+                          captureId={`member-${member.id}`}
                         />
                       </CertificatePreviewItem>
                     ),
@@ -1286,6 +1504,7 @@ export default function CertificateForm({
             isValid={
               isFormValid
             }
+            saving={saving}
             cancelText="បោះបង់"
             createText="បង្កើតឯកសារ"
           />

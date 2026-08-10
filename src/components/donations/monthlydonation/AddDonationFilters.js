@@ -13,6 +13,7 @@ export default function AddDonationFilters({
   onMonthChange,
   onYearChange,
   onSearchChange,
+  branchScoped = false,
 }) {
   return (
     <div className="mb-6 flex flex-wrap items-end gap-4">
@@ -24,6 +25,8 @@ export default function AddDonationFilters({
         allLabel="ជ្រើសរើសសាខា"
         className="w-[158px]"
         required
+        disabled={branchScoped}
+        includeAllOption={!branchScoped}
       />
       <DonationFilterSelect
         label="ខែ"

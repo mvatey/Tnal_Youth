@@ -67,6 +67,7 @@ export default function CertificateCard({
 
   description = "",
   templatePreview = "",
+  captureId = "",
 }) {
   const isActivity =
     recipientType === "activity";
@@ -149,6 +150,7 @@ export default function CertificateCard({
         {/* Base certificate scaled as one complete card */}
 
         <div
+          data-certificate-capture={captureId || undefined}
           className="
             absolute
             left-0

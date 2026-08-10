@@ -79,6 +79,18 @@ export async function POST(request) {
       );
     }
 
+    if (newPassword.length < 6) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ",
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
     const backendResponse = await fetch(
       `${BACKEND_URL}/auth/reset-password`,
       {

@@ -11,6 +11,7 @@ export default function FilterBar({
   onYearChange,
   onMonthChange,
   onBranchChange,
+  branchScoped = false,
 }) {
   return (
     <div className="space-y-4">
@@ -24,6 +25,8 @@ export default function FilterBar({
           options={branches}
           allLabel="សាខាទាំងអស់"
           showLabel={false}
+          disabled={branchScoped}
+          includeAllOption={!branchScoped}
         />
         <DonationFilterSelect
           label="ខែ"
