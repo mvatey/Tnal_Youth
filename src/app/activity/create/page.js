@@ -124,6 +124,10 @@ function getOptionValue(option) {
   return Number(option?.value ?? option?.id);
 }
 
+function getOptionCode(option) {
+  return String(option?.code || "").trim().toUpperCase();
+}
+
 function getMemberProfileImage(member) {
   const profilePhoto = member?.profile_photo || member?.profilePhoto;
   const fileId = profilePhoto?.id || member?.profile_photo_id || member?.profilePhotoId;
@@ -786,10 +790,13 @@ export default function CreateActivityPage() {
       return false;
     }
 
+    const startsAt = combineDateAndTime(form.startDate, form.startTime);
+    const endsAt = combineDateAndTime(form.endDate, form.endTime);
+
     if (
-      form.startDate &&
-      form.endDate &&
-      form.endDate < form.startDate
+      startsAt &&
+      endsAt &&
+      new Date(endsAt).getTime() <= new Date(startsAt).getTime()
     ) {
       alert("កាលបរិច្ឆេទបញ្ចប់មិនអាចមុនកាលបរិច្ឆេទចាប់ផ្តើមបានទេ");
       return false;
@@ -813,13 +820,30 @@ export default function CreateActivityPage() {
         const value = getOptionValue(match);
         return Number.isFinite(value) && value > 0 ? value : null;
       };
+      const selectedStatusOption = lookupData.statuses.find(
+        (option) => getOptionLabel(option) === form.status,
+      );
+      const shouldComplete = getOptionCode(selectedStatusOption) === "COMPLETED";
+      const currentStatusId = getOptionValue(editingActivity?.status);
+      const draftStatusId = getOptionValue(
+        lookupData.statuses.find((option) => getOptionCode(option) === "DRAFT"),
+      );
+      const saveStatusId = shouldComplete
+        ? Number.isFinite(currentStatusId) &&
+          currentStatusId > 0 &&
+          getOptionCode(editingActivity?.status) !== "COMPLETED"
+          ? currentStatusId
+          : draftStatusId
+        : getOptionValue(selectedStatusOption);
       const payload = {
         titleKm: form.name.trim(),
         titleEn: editingActivity?.titleEn || null,
         description: form.description.trim() || null,
         typeId: findOptionId(lookupData.types, form.type),
         sectorId: findOptionId(lookupData.sectors, form.sector),
-        statusId: findOptionId(lookupData.statuses, form.status),
+        statusId: Number.isFinite(saveStatusId) && saveStatusId > 0
+          ? saveStatusId
+          : null,
         branchId: findOptionId(lookupData.branches, form.branch),
         isPublic: form.visibility === VISIBILITY_OPTIONS[0],
         startsAt: combineDateAndTime(form.startDate, form.startTime),
@@ -907,10 +931,20 @@ export default function CreateActivityPage() {
         }),
       );
 
+      if (shouldComplete) {
+        await fetchJson(
+          `/api/backend/activities/${encodeURIComponent(savedId)}/complete`,
+          { method: "PATCH" },
+        );
+      }
+
       router.push(`/activity/${savedId}`);
     } catch (error) {
       console.error("Save activity error:", error);
-      alert("មិនអាចរក្សាទុកកម្មវិធីបានទេ");
+      alert(
+        error?.message ||
+          "មិនអាចរក្សាទុកកម្មវិធីបានទេ",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -930,7 +964,7 @@ export default function CreateActivityPage() {
             {isEditMode && (
               <>
                 <Link href={`/activity/${editId}`} className="max-w-[250px] truncate text-text-secondary transition hover:text-primary">
-                  {editingActivity.name || "ព័ត៌មានកម្មវិធី"}
+                  {editingActivity?.name || "ព័ត៌មានកម្មវិធី"}
                 </Link>
 
                 <ChevronRight size={14} className="shrink-0 text-text-secondary" />
@@ -1190,14 +1224,14 @@ export default function CreateActivityPage() {
         </section>
 
         {isEditMode &&
-          editingActivity.documents?.length > 0 && (
+          editingActivity?.documents?.length > 0 && (
             <section className="rounded-xl border border-border bg-white p-5">
               <h3 className="mb-4 text-base font-bold text-secondary">
                 ឯកសារដែលមានស្រាប់
               </h3>
 
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                {editingActivity.documents.map(
+                {editingActivity?.documents?.map(
                   (document, index) => (
                     <div key={`${document.name}-${index}`} className="flex items-center justify-between rounded-lg border border-border p-3">
                       <div className="flex min-w-0 items-center gap-3">

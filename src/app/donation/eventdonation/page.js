@@ -18,7 +18,7 @@ export default function EventDonationPage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/backend/donations?page=0&size=1000", { cache: "no-store" })
+    fetch("/api/backend/donations?page=0&size=100", { cache: "no-store" })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
         if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load donations.");

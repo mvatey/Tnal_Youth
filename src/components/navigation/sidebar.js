@@ -654,19 +654,21 @@ export default function Sidebar() {
                 bg-white/10
               "
             >
-              <Image
-                src={
-                  userAvatar
-                }
+              {/* Authenticated image URLs must load in the browser so the
+                  access-token cookie is included. Next/Image optimization
+                  fetches them server-side and receives 401. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={userAvatar}
                 alt={userName}
-                fill
-                sizes="36px"
-                className="object-cover"
-                onError={() =>
+                className="h-full w-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = "/profiles/default-avatar.jpg";
                   setUserAvatar(
                     "/profiles/default-avatar.jpg",
-                  )
-                }
+                  );
+                }}
               />
             </div>
 

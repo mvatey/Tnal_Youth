@@ -2,10 +2,18 @@
 
 import { PlusCircle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import useCurrentMember from "@/hooks/useCurrentMember";
 
 export default function AddDonationLink() {
   const router = useRouter();
   const pathname = usePathname();
+  const { member, loading } = useCurrentMember();
+  const canAddDonation = ["secretary", "branch_leader"].includes(
+    member?.role,
+  );
+
+  if (loading || !canAddDonation) return null;
+
   const addPath = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/add"
     : "/donation/add";

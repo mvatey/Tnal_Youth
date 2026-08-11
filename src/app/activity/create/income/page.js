@@ -119,6 +119,37 @@ function getTotalInDollars(row) {
   );
 }
 
+function mergeSavedIncome(rows, savedItems = []) {
+  const savedByMember = new Map();
+
+  savedItems.forEach((item) => {
+    const key = String(item.memberId);
+    const current = savedByMember.get(key) || {
+      amountKhr: 0,
+      amountUsd: 0,
+      paymentMethodCode: "",
+    };
+
+    current.amountKhr += Number(item.amountKhr || 0);
+    current.amountUsd += Number(item.amountUsd || 0);
+    current.paymentMethodCode =
+      current.paymentMethodCode || item.paymentMethodCode || "";
+    savedByMember.set(key, current);
+  });
+
+  return rows.map((row) => {
+    const saved = savedByMember.get(String(row.id));
+    if (!saved) return row;
+
+    return {
+      ...row,
+      amountRiel: String(saved.amountKhr),
+      amountDollar: saved.amountUsd.toFixed(2),
+      paymentMethod: saved.paymentMethodCode || row.paymentMethod,
+    };
+  });
+}
+
 export default function IncomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -142,16 +173,23 @@ export default function IncomePage() {
       try {
         setError("");
         const activityRecord = await fetchJson(`/api/backend/activities/${encodeURIComponent(activityId)}`);
-        const [memberPage, methods] = await Promise.all([
+        const [memberPage, methods, incomeDetailResponse] = await Promise.all([
           fetchJson(`/api/backend/members?branchId=${activityRecord.branchId}&page=0&size=100`),
           fetchJson("/api/backend/payment-methods?activeOnly=true"),
+          fetchJson(`/api/backend/activities/${encodeURIComponent(activityId)}/incomes`),
         ]);
         const members = Array.isArray(memberPage) ? memberPage : memberPage?.content || [];
         const methodList = Array.isArray(methods) ? methods : [];
         const defaultMethod = methodList[0]?.code || "Cash";
+        const incomeDetail = incomeDetailResponse?.data ?? incomeDetailResponse;
+        const savedItems = Array.isArray(incomeDetail?.items) ? incomeDetail.items : [];
+        const initialRows = createInitialRows(members).map((row) => ({
+          ...row,
+          paymentMethod: defaultMethod,
+        }));
         if (!cancelled) {
           setActivity({ ...activityRecord, name: activityRecord.titleKm || activityRecord.titleEn || "" });
-          setRows(createInitialRows(members).map((row) => ({ ...row, paymentMethod: defaultMethod })));
+          setRows(mergeSavedIncome(initialRows, savedItems));
           setPaymentMethods(methodList);
         }
       } catch (loadError) {

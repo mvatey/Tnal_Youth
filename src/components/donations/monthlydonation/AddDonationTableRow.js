@@ -1,11 +1,35 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import donationOptions from "@/data/donation/donationOptions.json";
 
 const RECEIPT_ICON_COLOR = "#4B2E91";
+const DEFAULT_PROFILE_IMAGE = "/profiles/default-avatar.jpg";
+const BACKEND_ORIGIN =
+  process.env.NEXT_PUBLIC_BACKEND_ORIGIN || "http://localhost:8081";
 const { monthlyDonationPaymentMethods } = donationOptions;
+
+function normalizeAvatarUrl(value) {
+  const source = String(value || "").trim().replace(/\\/g, "/");
+
+  if (!source) return DEFAULT_PROFILE_IMAGE;
+  if (
+    source.startsWith("http://") ||
+    source.startsWith("https://") ||
+    source.startsWith("data:") ||
+    source.startsWith("blob:") ||
+    source.startsWith("/")
+  ) {
+    return source;
+  }
+  if (source.startsWith("uploads/")) {
+    return `${BACKEND_ORIGIN}/${source}`;
+  }
+  if (source.startsWith("images/")) {
+    return `${BACKEND_ORIGIN}/uploads/${source}`;
+  }
+  return `/${source}`;
+}
 
 const getAmountFieldClass = (value) =>
   Number(value) > 0
@@ -56,6 +80,7 @@ export default function AddDonationTableRow({
 }) {
   const [focusedAmountField, setFocusedAmountField] = useState(null);
   const receipt = member.receipt;
+  const avatarUrl = normalizeAvatarUrl(member.avatar);
 
   const handleAmountInput = (callback) => (e) => {
     const value = e.target.value.replace(/[^0-9.]/g, "");
@@ -79,13 +104,16 @@ export default function AddDonationTableRow({
       <td className="px-3 text-left">
         <div className="flex items-center gap-3">
           <div className="relative h-[26px] w-[26px] shrink-0 overflow-hidden rounded-full bg-slate-200">
-            {member.avatar ? (
-              <Image src={member.avatar} alt={member.name} fill className="object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-[12px] font-medium text-slate-500">
-                {member.name?.charAt(0)}
-              </div>
-            )}
+            <img
+              src={avatarUrl}
+              alt={member.name || "Member profile"}
+              className="h-full w-full object-cover"
+              onError={(event) => {
+                if (!event.currentTarget.src.endsWith(DEFAULT_PROFILE_IMAGE)) {
+                  event.currentTarget.src = DEFAULT_PROFILE_IMAGE;
+                }
+              }}
+            />
           </div>
           <span className="whitespace-nowrap font-medium text-slate-500">{member.name}</span>
         </div>

@@ -486,11 +486,33 @@ export default function PersonalPage() {
           );
 
         setForm(
-          normalized,
+          (previous) => ({
+            ...normalized,
+
+            // Account information is loaded by a separate request. Preserve
+            // it if that request finishes before the personal-info request.
+            has_account:
+              previous.has_account ||
+              normalized.has_account,
+
+            account_id:
+              previous.account_id ??
+              normalized.account_id,
+
+            account_role:
+              previous.account_role ||
+              normalized.account_role,
+
+            account_status:
+              previous.account_status ||
+              normalized.account_status,
+          }),
         );
 
         setOriginalRole(
-          normalized.account_role,
+          (previous) =>
+            previous ||
+            normalized.account_role,
         );
 
         if (
@@ -1143,18 +1165,32 @@ export default function PersonalPage() {
         /*
          * 2. Role
          */
+        const selectedRole =
+          String(
+            form.account_role || "",
+          )
+            .trim()
+            .toUpperCase();
+
+        const savedRole =
+          String(
+            originalRole || "",
+          )
+            .trim()
+            .toUpperCase();
+
         let updatedRole =
-          form.account_role;
+          selectedRole;
 
         if (
           form.has_account &&
-          form.account_role &&
-          form.account_role !==
-            originalRole
+          selectedRole &&
+          selectedRole !==
+            savedRole
         ) {
           const accountResponse =
             await requestJson(
-              `/members/${memberId}/personal-info/account/role`,
+              `/members/${memberId}/account/role`,
               {
                 method:
                   "PATCH",
@@ -1162,14 +1198,14 @@ export default function PersonalPage() {
                 body:
                   JSON.stringify({
                     role:
-                      form.account_role,
+                      selectedRole,
                   }),
               },
             );
 
           updatedRole =
             accountResponse?.role ||
-            form.account_role;
+            selectedRole;
 
           setOriginalRole(
             updatedRole,

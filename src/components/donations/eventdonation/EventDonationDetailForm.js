@@ -144,14 +144,17 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
             member.member_no ||
             member.memberNo ||
             `#${member.id}`,
-          avatar:
-            member.profile_photo?.url ||
-            member.profilePhoto?.url ||
-            (member.profile_photo?.id
-              ? `/api/backend/files/${member.profile_photo.id}/content`
-              : member.profilePhoto?.id
-                ? `/api/backend/files/${member.profilePhoto.id}/content`
-                : ""),
+          avatar: (() => {
+            const profilePhoto = member.profile_photo || member.profilePhoto;
+            return (
+              profilePhoto?.url ||
+              member.profile_photo_url ||
+              member.profilePhotoUrl ||
+              (profilePhoto?.id
+                ? `/api/backend/files/${profilePhoto.id}/content`
+                : "")
+            );
+          })(),
           gender: member.gender?.label_km || member.gender?.labelKm || member.gender?.code || member.gender || "-",
           dob: member.date_of_birth || member.dateOfBirth || "-",
           realAmount: "0",

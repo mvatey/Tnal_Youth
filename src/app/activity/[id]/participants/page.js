@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useMemo, useState } from "react";
-import { ChevronRight, Eye } from "lucide-react";
+import { ChevronRight, Eye, Pencil } from "lucide-react";
 import { RiDownloadCloud2Line } from "react-icons/ri";
 import Link from "next/link";
 
@@ -10,6 +10,9 @@ import FilterBar from "@/components/table-items/FilterBar";
 import Button from "@/components/table-items/Button";
 import Table from "@/components/table-items/Table";
 import ParticipantStats, { ParticipantStatusBadge as StatusBadge } from "@/components/activity/ParticipantStats";
+import ParticipationEditModal from "@/components/activity/ParticipantEditModal";
+import { useAuth } from "@/context/AuthContext";
+import { normalizeRole } from "@/lib/navigation";
 
 async function fetchApi(path) {
   const response = await fetch(`/api/backend${path}`, {
@@ -55,8 +58,26 @@ function normalizeExistingParticipant(participant) {
   };
 }
 
+function isCompletedActivity(activity) {
+  const status = String(
+    getValue(activity, "statusCode", "status_code") ??
+      activity?.status?.code ??
+      activity?.status ??
+      "",
+  ).toUpperCase();
+
+  return status === "COMPLETED" || status === "បានបញ្ចប់";
+}
+
 export default function ActivityParticipantsPage({ params }) {
   const { id } = use(params);
+  const { user } = useAuth();
+  const role = normalizeRole(user?.role);
+  const canEditParticipation = [
+    "admin",
+    "secretary",
+    "branch_leader",
+  ].includes(role);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
@@ -66,6 +87,8 @@ export default function ActivityParticipantsPage({ params }) {
   const [activity, setActivity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -127,7 +150,7 @@ export default function ActivityParticipantsPage({ params }) {
             isInvited: Boolean(existing),
             isParticipated: Boolean(existing?.checkedInAt),
           };
-        });
+        }).filter((member) => member.isInvited);
 
         if (!cancelled) {
           setActivity({
@@ -161,6 +184,7 @@ export default function ActivityParticipantsPage({ params }) {
     () => [...new Set(activityParticipants.map((item) => item.branch).filter((value) => value && value !== "-"))],
     [activityParticipants],
   );
+  const completed = isCompletedActivity(activity);
 
   const filteredParticipants = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -286,6 +310,55 @@ export default function ActivityParticipantsPage({ params }) {
     [],
   );
 
+  const handleSaveParticipation = async (updatedParticipants) => {
+    setSaveError("");
+
+    const currentByMemberId = new Map(
+      activityParticipants.map((participant) => [
+        participant.memberId,
+        participant,
+      ]),
+    );
+    const changedParticipants = updatedParticipants.filter((participant) => {
+      const current = currentByMemberId.get(participant.memberId);
+      return current && current.isParticipated !== participant.isParticipated;
+    });
+
+    try {
+      await Promise.all(
+        changedParticipants.map(async (participant) => {
+          const response = await fetch(
+            `/api/backend/activities/${encodeURIComponent(id)}/attendance/status`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                member_id: Number(participant.memberId),
+                attendance_status: participant.isParticipated
+                  ? "PRESENT"
+                  : "ABSENT",
+              }),
+            },
+          );
+          const body = await response.json().catch(() => null);
+
+          if (!response.ok) {
+            throw new Error(
+              body?.message || `Request failed (${response.status})`,
+            );
+          }
+        }),
+      );
+
+      setActivityParticipants(updatedParticipants);
+      setIsEditOpen(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Something went wrong";
+      setSaveError(message);
+      throw error;
+    }
+  };
+
   if (loading) {
     return (
       <div className="rounded-xl border border-border bg-white p-6 text-center text-text-secondary">
@@ -342,6 +415,12 @@ export default function ActivityParticipantsPage({ params }) {
         absent={participantStats.absent}
       />
 
+      {saveError && (
+        <div className="rounded-lg border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
+          {saveError}
+        </div>
+      )}
+
       <div className="rounded-xl border border-border bg-white p-4">
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <SearchBar
@@ -377,12 +456,29 @@ export default function ActivityParticipantsPage({ params }) {
             ]}
           />
 
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            {completed && canEditParticipation && (
+              <button
+                type="button"
+                onClick={() => setIsEditOpen(true)}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-success px-5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+              >
+                <Pencil size={16} />
+                កែប្រែការចូលរួម
+              </button>
+            )}
+
             <Button icon={RiDownloadCloud2Line}>
               ទាញយករបាយការណ៍
             </Button>
           </div>
         </div>
+
+        {!completed && canEditParticipation && (
+          <div className="mb-4 rounded-lg border border-warning/30 bg-warning-bg px-4 py-3 text-sm text-warning">
+            អាចកែប្រែស្ថានភាពចូលរួមបាន បន្ទាប់ពីកម្មវិធីបានបញ្ចប់។
+          </div>
+        )}
 
         <Table
           columns={columns}
@@ -391,6 +487,13 @@ export default function ActivityParticipantsPage({ params }) {
           emptyMessage="មិនមានសមាជិកចូលរួមទេ"
         />
       </div>
+
+      <ParticipationEditModal
+        open={isEditOpen}
+        participants={activityParticipants}
+        onClose={() => setIsEditOpen(false)}
+        onSave={handleSaveParticipation}
+      />
 
     </div>
   );

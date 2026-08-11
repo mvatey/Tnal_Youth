@@ -6,9 +6,6 @@ import { HiSaveAs } from "react-icons/hi";
 
 import FilterBar from "@/components/tables/FilterBar";
 
-const roles = ["ប្រធាន", "លេខាធិការ", "សមាជិក"];
-const branches = ["ភ្នំពេញ", "កណ្ដាល"];
-
 export default function ParticipationEditModal({
   open,
   participants = [],
@@ -19,6 +16,8 @@ export default function ParticipationEditModal({
   const [query, setQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
   const [selectedBranch, setSelectedBranch] = useState("all");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -31,7 +30,17 @@ export default function ParticipationEditModal({
     setQuery("");
     setSelectedRole("all");
     setSelectedBranch("all");
+    setSaveError("");
   }, [open, participants]);
+
+  const roles = useMemo(
+    () => [...new Set(participants.map((item) => item.role).filter((value) => value && value !== "-"))],
+    [participants],
+  );
+  const branches = useMemo(
+    () => [...new Set(participants.map((item) => item.branch).filter((value) => value && value !== "-"))],
+    [participants],
+  );
 
   const filteredParticipants = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -97,7 +106,7 @@ export default function ParticipationEditModal({
     ]);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const updatedParticipants = participants.map(
       (participant) => ({
         ...participant,
@@ -107,8 +116,18 @@ export default function ParticipationEditModal({
       }),
     );
 
-    onSave(updatedParticipants);
-    onClose();
+    setIsSaving(true);
+    setSaveError("");
+
+    try {
+      await onSave(updatedParticipants);
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : "Something went wrong",
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!open) {
@@ -292,6 +311,12 @@ export default function ParticipationEditModal({
           </table>
         </div>
 
+        {saveError && (
+          <div className="mt-4 rounded-lg border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
+            {saveError}
+          </div>
+        )}
+
         <div className="mt-5 flex items-center justify-between gap-3">
           <button
             type="button"
@@ -304,10 +329,11 @@ export default function ParticipationEditModal({
           <button
             type="button"
             onClick={handleSave}
+            disabled={isSaving}
             className="flex h-10 min-w-[190px] items-center justify-center gap-2 rounded-lg bg-secondary px-5 text-sm font-semibold text-white transition hover:opacity-90"
           >
             <HiSaveAs size={17} />
-            រក្សាទុកការចូលរួម
+            {isSaving ? "កំពុងរក្សាទុក..." : "រក្សាទុកការចូលរួម"}
           </button>
         </div>
       </div>

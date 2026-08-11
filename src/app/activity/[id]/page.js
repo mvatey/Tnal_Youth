@@ -187,7 +187,15 @@ const totalParticipantCount = activityParticipants.length;
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         <div className="xl:col-span-2 rounded-xl border border-border bg-white p-5">
           <div className="flex flex-col gap-5 md:flex-row">
-            <Image src={activity.image} width={300} height={200} className="h-[200px] w-full shrink-0 rounded-lg object-cover md:w-[300px]" alt={activity.name} />
+            <Image
+              src={activity.image}
+              width={300}
+              height={200}
+              className="h-[200px] w-full shrink-0 rounded-lg object-cover md:w-[300px]"
+              alt={activity.name}
+              // Let the browser include its session cookie for protected files.
+              unoptimized={activity.image.startsWith("/api/")}
+            />
 
             {/* no more justify-between — content hugs the top, icon row sits right under description */}
             <div className="flex flex-1 flex-col">
