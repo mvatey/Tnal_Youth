@@ -41,7 +41,7 @@ export default function EventDonationPanel({ selectedBranch: controlledSelectedB
         if (!branchResponse.ok || branchBody?.success === false) throw new Error(branchBody?.message || "Unable to load branches.");
         const page = body?.data ?? body;
         if (!cancelled) {
-          setRows((Array.isArray(page?.items) ? page.items : []).filter((row) => row.activityId).map(mapEventRow));
+          setRows(groupEventDonationRows(Array.isArray(page?.items) ? page.items : []));
           const values = branchBody?.data ?? branchBody;
           setBranches((Array.isArray(values) ? values : [])
             .map((branch) => ({
@@ -139,4 +139,57 @@ function mapEventRow(row) {
     rielAmount: Number(row.amountKhr || 0).toLocaleString(),
     dollarAmount: Number(row.amountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
   };
+}
+
+function groupEventDonationRows(donations) {
+  const groups = new Map();
+
+  donations
+    .filter((donation) => donation.activityId)
+    .forEach((donation) => {
+      const row = mapEventRow(donation);
+      const key = `${row.activityId}:${row.branchId ?? ""}`;
+      const current = groups.get(key);
+      const amountKhr = Number(donation.amountKhr || 0);
+      const amountUsd = Number(donation.amountUsd || 0);
+
+      if (!current) {
+        groups.set(key, {
+          ...row,
+          amountKhr,
+          amountUsd,
+        });
+        return;
+      }
+
+      current.amountKhr += amountKhr;
+      current.amountUsd += amountUsd;
+
+      if (row.startDateValue && (!current.startDateValue || row.startDateValue < current.startDateValue)) {
+        current.startDateValue = row.startDateValue;
+        current.startDate = row.startDate;
+      }
+      if (row.endDateValue && (!current.endDateValue || row.endDateValue > current.endDateValue)) {
+        current.endDateValue = row.endDateValue;
+        current.endDate = row.endDate;
+      }
+    });
+
+  return Array.from(groups.values()).map(({ amountKhr, amountUsd, ...row }) => {
+    const start = row.startDateValue ? new Date(`${row.startDateValue}T00:00:00`) : null;
+    const end = row.endDateValue ? new Date(`${row.endDateValue}T00:00:00`) : null;
+    const days = start && end
+      ? Math.max(1, Math.round((end - start) / 86400000) + 1)
+      : 1;
+
+    return {
+      ...row,
+      days,
+      rielAmount: amountKhr.toLocaleString("en-US"),
+      dollarAmount: amountUsd.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+    };
+  });
 }

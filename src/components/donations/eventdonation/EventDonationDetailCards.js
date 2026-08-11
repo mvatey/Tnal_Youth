@@ -14,7 +14,7 @@ export default function EventDonationDetailCards() {
   useEffect(() => {
     if (!activityId) return undefined;
     let cancelled = false;
-    fetch(`/api/backend/donations?page=0&size=1000&activityId=${encodeURIComponent(activityId)}`, { cache: "no-store" })
+    fetch(`/api/backend/donations?page=0&size=100&activityId=${encodeURIComponent(activityId)}`, { cache: "no-store" })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
         if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load donations.");

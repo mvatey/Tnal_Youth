@@ -24,6 +24,38 @@ function toOptions(items, labelKeys) {
   }));
 }
 
+function mergeSavedDonations(memberItems, donations, selectedBranch) {
+  const savedByMember = new Map();
+
+  donations.forEach((donation) => {
+    if (!donation.memberId || String(donation.branchId) !== String(selectedBranch)) return;
+    const key = String(donation.memberId);
+    const current = savedByMember.get(key) || {
+      amountKhr: 0,
+      amountUsd: 0,
+      paymentMethodId: null,
+      paymentMethodCode: "",
+    };
+    current.amountKhr += Number(donation.amountKhr || 0);
+    current.amountUsd += Number(donation.amountUsd || 0);
+    current.paymentMethodId = current.paymentMethodId ?? donation.paymentMethodId;
+    current.paymentMethodCode = current.paymentMethodCode || donation.paymentMethodCode || "";
+    savedByMember.set(key, current);
+  });
+
+  return memberItems.map((member) => {
+    const saved = savedByMember.get(String(member.id));
+    if (!saved) return member;
+    return {
+      ...member,
+      realAmount: String(saved.amountKhr),
+      dollarAmount: saved.amountUsd.toFixed(2),
+      paymentMethodId: saved.paymentMethodId ?? member.paymentMethodId,
+      paymentMethod: saved.paymentMethodCode || member.paymentMethod,
+    };
+  });
+}
+
 export default function EventDonationDetailForm({ initialQuery = {}, onCancel }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -53,7 +85,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     let cancelled = false;
     Promise.all([
       fetchJson("/api/lookups/branches"),
-      fetchJson("/api/backend/activities?page=0&size=1000"),
+      fetchJson("/api/backend/activities?page=0&size=100"),
       fetchJson("/api/backend/payment-methods?activeOnly=true"),
       fetchJson("/api/backend/donation-types?activeOnly=true"),
     ])
@@ -90,24 +122,48 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     const branchLabel = branches.find((option) => option.value === selectedBranch)?.label || selectedBranch;
     setLoading(true);
     setError("");
-    fetchJson(`/api/backend/members?branchId=${encodeURIComponent(selectedBranch)}&page=0&size=1000`)
-      .then((page) => {
+    Promise.all([
+      fetchJson(`/api/backend/members?branchId=${encodeURIComponent(selectedBranch)}&page=0&size=100`),
+      fetchJson(`/api/backend/donations?page=0&size=100&activityId=${encodeURIComponent(selectedEvent)}`),
+    ])
+      .then(([page, donationPage]) => {
         if (cancelled) return;
         const items = page?.content ?? page?.items ?? page;
-        setMembers((Array.isArray(items) ? items : []).map((member) => ({
+        const donationItems = donationPage?.items ?? donationPage?.content ?? donationPage;
+        const memberItems = (Array.isArray(items) ? items : []).map((member) => ({
           id: member.id,
           memberId: member.id,
-          branchId: member.branch?.id ?? member.branchId ?? Number(selectedBranch),
-          branch: branchLabel,
-          name: member.fullNameKm || member.nameKm || member.fullNameEn || member.memberNo || `#${member.id}`,
-          avatar: member.profilePhoto?.url || (member.profilePhoto?.id ? `/api/backend/files/${member.profilePhoto.id}/content` : ""),
-          gender: member.gender?.labelKm || member.gender?.code || member.gender || "-",
-          dob: member.dateOfBirth || "-",
+          branchId: member.branch?.id ?? member.branch_id ?? member.branchId ?? Number(selectedBranch),
+          branch: member.branch?.label_km ?? member.branch?.labelKm ?? branchLabel,
+          name:
+            member.full_name_km ||
+            member.fullNameKm ||
+            member.nameKm ||
+            member.full_name_en ||
+            member.fullNameEn ||
+            member.member_no ||
+            member.memberNo ||
+            `#${member.id}`,
+          avatar:
+            member.profile_photo?.url ||
+            member.profilePhoto?.url ||
+            (member.profile_photo?.id
+              ? `/api/backend/files/${member.profile_photo.id}/content`
+              : member.profilePhoto?.id
+                ? `/api/backend/files/${member.profilePhoto.id}/content`
+                : ""),
+          gender: member.gender?.label_km || member.gender?.labelKm || member.gender?.code || member.gender || "-",
+          dob: member.date_of_birth || member.dateOfBirth || "-",
           realAmount: "0",
-          dollarAmount: "0",
+          dollarAmount: "0.00",
           paymentMethod: paymentMethods[0]?.code || "Cash",
           paymentMethodId: paymentMethods[0]?.id,
-        })));
+        }));
+        setMembers(mergeSavedDonations(
+          memberItems,
+          Array.isArray(donationItems) ? donationItems : [],
+          selectedBranch,
+        ));
       })
       .catch((loadError) => {
         if (!cancelled) {
