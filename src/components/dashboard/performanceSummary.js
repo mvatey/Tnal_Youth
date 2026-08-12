@@ -7,21 +7,27 @@ function normalizeBranchOptions(branches = []) {
     return [];
   }
 
-  return branches.map((branch) => ({
-    id:
-      branch.id ??
-      branch.branchId ??
-      branch.branch_id,
+  return branches
+    .map((branch) => ({
+      id:
+        branch.id ??
+        branch.branchId ??
+        branch.branch_id,
 
-    name:
-      branch.nameKm ??
-      branch.name_km ??
-      branch.branchNameKm ??
-      branch.branch_name_km ??
-      branch.name ??
-      branch.label ??
-      "-",
-  }));
+      name:
+        branch.nameKm ??
+        branch.name_km ??
+        branch.branchNameKm ??
+        branch.branch_name_km ??
+        branch.name ??
+        branch.label ??
+        "-",
+    }))
+    .filter(
+      (branch) =>
+        branch.id !== null &&
+        branch.id !== undefined
+    );
 }
 
 function BranchDropdown({
@@ -33,10 +39,21 @@ function BranchDropdown({
   return (
     <div className="relative">
       <select
-        value={value ?? ""}
-        onChange={(event) =>
-          onChange?.(event.target.value)
+        value={
+          value == null
+            ? "all"
+            : String(value)
         }
+        onChange={(event) => {
+          const nextValue =
+            event.target.value;
+
+          onChange?.(
+            nextValue === "all"
+              ? "all"
+              : Number(nextValue)
+          );
+        }}
         disabled={disabled}
         className="
           appearance-none
@@ -56,20 +73,18 @@ function BranchDropdown({
           disabled:opacity-60
         "
       >
-        {branches.length === 0 ? (
-          <option value="">
-            មិនមានសាខា
+        <option value="all">
+          សាខាទាំងអស់
+        </option>
+
+        {branches.map((branch) => (
+          <option
+            key={branch.id}
+            value={String(branch.id)}
+          >
+            {branch.name}
           </option>
-        ) : (
-          branches.map((branch) => (
-            <option
-              key={branch.id}
-              value={branch.id}
-            >
-              {branch.name}
-            </option>
-          ))
-        )}
+        ))}
       </select>
 
       <ChevronDown
@@ -107,8 +122,7 @@ function StatMiniCard({
         height: "100%",
         flexDirection: "column",
         boxSizing: "border-box",
-        border:
-          "1px solid #EEF0F3",
+        border: "1px solid #EEF0F3",
         borderRadius: 10,
         background: "#F7F8FA",
         padding: "12px 14px",
@@ -153,10 +167,7 @@ function StatMiniCard({
             }}
           >
             {isUp ? "↑" : "↓"}{" "}
-            {Math.abs(
-              growthNumber
-            )}
-            %
+            {Math.abs(growthNumber)}%
           </span>
         )}
       </div>
@@ -194,33 +205,6 @@ export default function PerformanceSummary({
   loading = false,
   showBranchDropdown = true,
 }) {
-  /*
-   * Expected backend response:
-   *
-   * {
-   *   "period": "2026-07",
-   *   "scope": {
-   *     "branchId": 1,
-   *     "branchNameKm": "...",
-   *     "branchNameEn": "..."
-   *   },
-   *   "activities": {
-   *     "value": 58,
-   *     "changePercent": 8
-   *   },
-   *   "donations": {
-   *     "amountKhr": 0,
-   *     "amountUsd": 1200,
-   *     "changePercentKhr": 0,
-   *     "changePercentUsd": 23
-   *   },
-   *   "members": {
-   *     "value": 86,
-   *     "changePercent": 12
-   *   }
-   * }
-   */
-
   const branchOptions =
     normalizeBranchOptions(
       branches
@@ -239,37 +223,51 @@ export default function PerformanceSummary({
     {
       key: "activities",
       label: "កម្មវិធីសរុប",
+
       value: (
         Number(
           activities?.value
         ) || 0
       ).toLocaleString(),
+
       growth:
         Number(
           activities?.changePercent
         ) || 0,
     },
+
     {
       key: "donations",
       label: "វិភាគទានសរុប",
+
       value:
         formatDonationValue(
           donations
         ),
+
       growth:
         Number(
           donations?.changePercentUsd ??
           donations?.changePercentKhr
         ) || 0,
     },
+
     {
       key: "members",
-      label: "សមាជិកថ្មី",
+
+      /*
+       * Backend currently returns active members
+       * counted up to the end of selected month,
+       * not only newly joined members.
+       */
+      label: "សមាជិកសរុប",
+
       value: (
         Number(
           members?.value
         ) || 0
       ).toLocaleString(),
+
       growth:
         Number(
           members?.changePercent
@@ -277,11 +275,20 @@ export default function PerformanceSummary({
     },
   ];
 
+  /*
+   * The parent controls the selected branch.
+   *
+   * null = all branches
+   * number = one specific branch
+   */
   const resolvedBranchId =
     selectedBranchId ??
     data?.scope?.branchId ??
     data?.scope?.branch_id ??
-    "";
+    null;
+
+  const period =
+    data?.period ?? "";
 
   return (
     <section
@@ -291,8 +298,7 @@ export default function PerformanceSummary({
         height: "100%",
         flexDirection: "column",
         boxSizing: "border-box",
-        border:
-          "1px solid #EEF0F3",
+        border: "1px solid #EEF0F3",
         borderRadius: 14,
         background: "#FFFFFF",
         padding: "18px 20px",
@@ -308,25 +314,46 @@ export default function PerformanceSummary({
           marginBottom: 16,
         }}
       >
-        <h3
-          style={{
-            margin: 0,
-            color: "#232629",
-            fontSize: 14,
-            fontWeight: 600,
-          }}
-        >
-          សមិទ្ធផលសរុបរបស់សាខា
-        </h3>
+        <div>
+          <h3
+            style={{
+              margin: 0,
+              color: "#232629",
+              fontSize: 14,
+              fontWeight: 600,
+            }}
+          >
+            សមិទ្ធផលសរុបរបស់សាខា
+          </h3>
+
+          {period && (
+            <span
+              style={{
+                display: "block",
+                marginTop: 3,
+                color: "#9CA3AF",
+                fontSize: 11,
+              }}
+            >
+              {period}
+            </span>
+          )}
+        </div>
 
         {showBranchDropdown && (
           <BranchDropdown
-            branches={branchOptions}
-            value={resolvedBranchId}
+            branches={
+              branchOptions
+            }
+            value={
+              resolvedBranchId
+            }
             onChange={
               onBranchChange
             }
-            disabled={loading}
+            disabled={
+              loading
+            }
           />
         )}
       </div>

@@ -25,6 +25,27 @@ import Table from "@/components/table-items/Table";
 import SaveFile from "@/components/forms/savefile";
 import Button from "@/components/ui/Button";
 
+/*
+ * =========================================================
+ * FILTER LABELS
+ * =========================================================
+ */
+
+const ALL_LEVELS_LABEL =
+  "កម្រិតសាខាទាំងអស់";
+
+const ALL_PROVINCES_LABEL =
+  "រាជធានី/ខេត្តទាំងអស់";
+
+const ALL_STATUSES_LABEL =
+  "ស្ថានភាពទាំងអស់";
+
+/*
+ * =========================================================
+ * BRANCH LEVELS
+ * =========================================================
+ */
+
 const BRANCH_LEVEL_OPTIONS = [
   "រាជធានី/ខេត្ត",
   "ក្រុង/ស្រុក/ខណ្ឌ",
@@ -37,10 +58,22 @@ const BRANCH_LEVEL_LABELS = {
   3: "ឃុំ/សង្កាត់",
 };
 
+/*
+ * =========================================================
+ * STATUS
+ * =========================================================
+ */
+
 const STATUS_LABELS_KM = {
   ACTIVE: "សកម្ម",
   INACTIVE: "អសកម្ម",
 };
+
+/*
+ * =========================================================
+ * EMPTY SUMMARY
+ * =========================================================
+ */
 
 const EMPTY_SUMMARY = {
   total_branches: 0,
@@ -48,15 +81,33 @@ const EMPTY_SUMMARY = {
   total_members: 0,
 };
 
-async function fetchJson(path, signal) {
-  const response = await fetch(`/api${path}`, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-    cache: "no-store",
-    signal,
-  });
+/*
+ * =========================================================
+ * FETCH HELPER
+ * =========================================================
+ */
+
+async function fetchJson(
+  path,
+  signal,
+) {
+  const response =
+    await fetch(
+      `/api${path}`,
+      {
+        method: "GET",
+
+        headers: {
+          Accept:
+            "application/json",
+        },
+
+        cache:
+          "no-store",
+
+        signal,
+      },
+    );
 
   const responseText =
     await response.text();
@@ -66,15 +117,19 @@ async function fetchJson(path, signal) {
   if (responseText) {
     try {
       responseBody =
-        JSON.parse(responseText);
+        JSON.parse(
+          responseText,
+        );
     } catch {
-      responseBody = responseText;
+      responseBody =
+        responseText;
     }
   }
 
   if (!response.ok) {
     const message =
-      typeof responseBody === "object"
+      typeof responseBody ===
+      "object"
         ? responseBody?.message ||
           responseBody?.error
         : responseBody;
@@ -88,15 +143,30 @@ async function fetchJson(path, signal) {
   return responseBody;
 }
 
-function formatCreatedDate(value) {
+/*
+ * =========================================================
+ * DATE FORMAT
+ * =========================================================
+ */
+
+function formatCreatedDate(
+  value,
+) {
   if (!value) {
     return "-";
   }
 
-  const date = new Date(value);
+  const date =
+    new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return String(
+      value,
+    );
   }
 
   return new Intl.DateTimeFormat(
@@ -109,7 +179,15 @@ function formatCreatedDate(value) {
   ).format(date);
 }
 
-function getProvinceLabel(province) {
+/*
+ * =========================================================
+ * LOOKUP LABEL HELPERS
+ * =========================================================
+ */
+
+function getProvinceLabel(
+  province,
+) {
   return (
     province?.labelKm ||
     province?.label_km ||
@@ -123,10 +201,13 @@ function getProvinceLabel(province) {
   );
 }
 
-function getStatusLabel(status) {
-  const statusCode = String(
-    status?.code || "",
-  ).toUpperCase();
+function getStatusLabel(
+  status,
+) {
+  const statusCode =
+    String(
+      status?.code || "",
+    ).toUpperCase();
 
   return (
     status?.name_km ||
@@ -137,23 +218,34 @@ function getStatusLabel(status) {
     status?.nameEn ||
     status?.label_en ||
     status?.labelEn ||
-    STATUS_LABELS_KM[statusCode] ||
+    STATUS_LABELS_KM[
+      statusCode
+    ] ||
     status?.code ||
     ""
   );
 }
 
+/*
+ * =========================================================
+ * STATUS BADGE
+ * =========================================================
+ */
+
 function BranchStatusBadge({
   statusCode,
   statusLabel,
 }) {
-  const normalizedCode = String(
-    statusCode || "",
-  ).toUpperCase();
+  const normalizedCode =
+    String(
+      statusCode || "",
+    ).toUpperCase();
 
   const isActive =
-    normalizedCode === "ACTIVE" ||
-    statusLabel === "សកម្ម";
+    normalizedCode ===
+      "ACTIVE" ||
+    statusLabel ===
+      "សកម្ម";
 
   return (
     <span
@@ -180,16 +272,28 @@ function BranchStatusBadge({
 }
 
 export default function BranchPage() {
+  /*
+   * =======================================================
+   * UI STATE
+   * =======================================================
+   */
+
   const [
     showCreateModal,
     setShowCreateModal,
   ] = useState(false);
 
-  const [branches, setBranches] =
-    useState([]);
+  const [
+    branches,
+    setBranches,
+  ] = useState([]);
 
-  const [summary, setSummary] =
-    useState(EMPTY_SUMMARY);
+  const [
+    summary,
+    setSummary,
+  ] = useState(
+    EMPTY_SUMMARY,
+  );
 
   const [
     provinceLookups,
@@ -201,14 +305,20 @@ export default function BranchPage() {
     setStatusLookups,
   ] = useState([]);
 
-  const [districtLookups, setDistrictLookups] =
-    useState([]);
+  const [
+    districtLookups,
+    setDistrictLookups,
+  ] = useState([]);
 
-  const [communeLookups, setCommuneLookups] =
-    useState([]);
+  const [
+    communeLookups,
+    setCommuneLookups,
+  ] = useState([]);
 
-  const [searchQuery, setSearchQuery] =
-    useState("");
+  const [
+    searchQuery,
+    setSearchQuery,
+  ] = useState("");
 
   const [
     selectedLevel,
@@ -230,214 +340,324 @@ export default function BranchPage() {
     setShowSaveFile,
   ] = useState(false);
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const [
+    isLoading,
+    setIsLoading,
+  ] = useState(true);
 
-  const [loadError, setLoadError] =
-    useState("");
+  const [
+    loadError,
+    setLoadError,
+  ] = useState("");
 
-  const loadSummary = useCallback(
-    async (signal) => {
-      const data = await fetchJson(
-        "/branches/summary",
+  /*
+   * =======================================================
+   * LOAD BRANCHES
+   * =======================================================
+   */
+
+  const loadBranches =
+    useCallback(
+      async (
         signal,
-      );
+      ) => {
+        async function setRealBranches(
+          items,
+        ) {
+          /*
+           * Load real member count for each branch.
+           */
+          const counts =
+            await Promise.all(
+              items.map(
+                async (
+                  branch,
+                ) => {
+                  try {
+                    const members =
+                      await fetchJson(
+                        `/members?page=0&size=1&branchId=${encodeURIComponent(
+                          branch.id,
+                        )}`,
+                        signal,
+                      );
 
-      setSummary({
-        total_branches:
-          Number(
-            data?.total_branches ??
-              data?.totalBranches,
-          ) || 0,
+                    return (
+                      Number(
+                        members?.total_elements ??
+                          members?.totalElements ??
+                          0,
+                      ) || 0
+                    );
+                  } catch {
+                    return 0;
+                  }
+                },
+              ),
+            );
 
-        active_branches:
-          Number(
-            data?.active_branches ??
-              data?.activeBranches,
-          ) || 0,
+          const enriched =
+            items.map(
+              (
+                branch,
+                index,
+              ) => ({
+                ...branch,
 
-        total_members:
-          Number(
-            data?.total_members ??
-              data?.totalMembers,
-          ) || 0,
-      });
-    },
-    [],
-  );
+                member_count:
+                  counts[
+                    index
+                  ],
+              }),
+            );
 
-  const loadBranches = useCallback(
-    async (signal) => {
-      async function setRealBranches(items) {
-        const counts = await Promise.all(
-          items.map(async (branch) => {
-            try {
-              const members = await fetchJson(
-                `/members?page=0&size=1&branchId=${encodeURIComponent(branch.id)}`,
-                signal,
-              );
+          setBranches(
+            enriched,
+          );
 
-              return Number(
-                members?.total_elements ??
-                  members?.totalElements ??
-                  0,
-              );
-            } catch {
-              return 0;
-            }
-          }),
-        );
+          /*
+           * Build cards from the exact branch rows
+           * currently loaded.
+           */
+          setSummary({
+            total_branches:
+              enriched.length,
 
-        const enriched = items.map((branch, index) => ({
-          ...branch,
-          member_count: counts[index],
-        }));
+            active_branches:
+              enriched.filter(
+                (
+                  branch,
+                ) =>
+                  Number(
+                    branch.status_id ??
+                      branch.statusId,
+                  ) === 1,
+              ).length,
 
-        setBranches(enriched);
-        setSummary({
-          total_branches: enriched.length,
-          active_branches: enriched.filter(
-            (branch) => Number(branch.status_id ?? branch.statusId) === 1,
-          ).length,
-          total_members: counts.reduce((total, count) => total + count, 0),
-        });
-      }
+            total_members:
+              counts.reduce(
+                (
+                  total,
+                  count,
+                ) =>
+                  total +
+                  count,
+                0,
+              ),
+          });
+        }
 
-      const firstPage =
-        await fetchJson(
-          "/branches?page=0&size=100",
-          signal,
-        );
+        /*
+         * Load first page.
+         */
+        const firstPage =
+          await fetchJson(
+            "/branches?page=0&size=100",
+            signal,
+          );
 
-      const firstContent =
-        Array.isArray(firstPage?.content)
-          ? firstPage.content
-          : Array.isArray(firstPage)
-            ? firstPage
-            : [];
+        const firstContent =
+          Array.isArray(
+            firstPage?.content,
+          )
+            ? firstPage.content
+            : Array.isArray(
+                  firstPage,
+                )
+              ? firstPage
+              : [];
 
-      const totalPages = Math.max(
-        Number(
-          firstPage?.total_pages ??
-            firstPage?.totalPages ??
-            1,
-        ),
-        1,
-      );
-
-      if (totalPages <= 1) {
-        await setRealBranches(firstContent);
-        return;
-      }
-
-      const remainingRequests =
-        Array.from(
-          {
-            length: totalPages - 1,
-          },
-          (_, index) =>
-            fetchJson(
-              `/branches?page=${index + 1}&size=100`,
-              signal,
+        const totalPages =
+          Math.max(
+            Number(
+              firstPage?.total_pages ??
+                firstPage?.totalPages ??
+                1,
             ),
-        );
+            1,
+          );
 
-      const remainingPages =
-        await Promise.all(
-          remainingRequests,
-        );
+        /*
+         * Only one page.
+         */
+        if (
+          totalPages <= 1
+        ) {
+          await setRealBranches(
+            firstContent,
+          );
 
-      const remainingContent =
-        remainingPages.flatMap(
-          (page) =>
-            Array.isArray(page?.content)
-              ? page.content
+          return;
+        }
+
+        /*
+         * Load remaining pages.
+         */
+        const remainingRequests =
+          Array.from(
+            {
+              length:
+                totalPages -
+                1,
+            },
+            (
+              _,
+              index,
+            ) =>
+              fetchJson(
+                `/branches?page=${index + 1}&size=100`,
+                signal,
+              ),
+          );
+
+        const remainingPages =
+          await Promise.all(
+            remainingRequests,
+          );
+
+        const remainingContent =
+          remainingPages.flatMap(
+            (page) =>
+              Array.isArray(
+                page?.content,
+              )
+                ? page.content
+                : [],
+          );
+
+        await setRealBranches(
+          [
+            ...firstContent,
+            ...remainingContent,
+          ],
+        );
+      },
+      [],
+    );
+
+  /*
+   * =======================================================
+   * LOAD FILTER LOOKUPS
+   * =======================================================
+   */
+
+  const loadLookups =
+    useCallback(
+      async (
+        signal,
+      ) => {
+        /*
+         * Province options:
+         *
+         * IMPORTANT:
+         * This endpoint only returns provinces
+         * that currently have branches.
+         */
+        try {
+          const provinces =
+            await fetchJson(
+              "/lookups/branches/province-options",
+              signal,
+            );
+
+          setProvinceLookups(
+            Array.isArray(
+              provinces,
+            )
+              ? provinces
               : [],
-        );
-
-      await setRealBranches([
-        ...firstContent,
-        ...remainingContent,
-      ]);
-    },
-    [],
-  );
-
-  const loadLookups = useCallback(
-    async (signal) => {
-      /*
-       * Load each dropdown separately.
-       * One failed endpoint will not remove
-       * the other dropdown.
-       */
-
-      try {
-        const provinces =
-          await fetchJson(
-            "/lookups/provinces",
-            signal,
           );
-
-        setProvinceLookups(
-          Array.isArray(provinces)
-            ? provinces
-            : [],
-        );
-      } catch (error) {
-        if (
-          error.name !== "AbortError"
+        } catch (
+          error
         ) {
-          console.warn(
-            "Failed to load province options:",
-            error.message,
+          if (
+            error.name !==
+            "AbortError"
+          ) {
+            console.warn(
+              "Failed to load province options:",
+              error.message,
+            );
+          }
+
+          setProvinceLookups(
+            [],
           );
         }
 
-        setProvinceLookups([]);
-      }
+        /*
+         * Branch status options.
+         */
+        try {
+          const statuses =
+            await fetchJson(
+              "/lookups/branch-statuses",
+              signal,
+            );
 
-      try {
-        const statuses =
-          await fetchJson(
-            "/lookups/branch-statuses",
-            signal,
+          setStatusLookups(
+            Array.isArray(
+              statuses,
+            )
+              ? statuses
+              : [],
           );
-
-        setStatusLookups(
-          Array.isArray(statuses)
-            ? statuses
-            : [],
-        );
-      } catch (error) {
-        if (
-          error.name !== "AbortError"
+        } catch (
+          error
         ) {
-          console.warn(
-            "Failed to load branch statuses:",
-            error.message,
+          if (
+            error.name !==
+            "AbortError"
+          ) {
+            console.warn(
+              "Failed to load branch statuses:",
+              error.message,
+            );
+          }
+
+          setStatusLookups(
+            [],
           );
         }
+      },
+      [],
+    );
 
-        setStatusLookups([]);
-      }
-    },
-    [],
-  );
+  /*
+   * =======================================================
+   * LOAD PAGE
+   * =======================================================
+   */
 
   const loadBranchPage =
     useCallback(
-      async (signal) => {
-        setIsLoading(true);
-        setLoadError("");
+      async (
+        signal,
+      ) => {
+        setIsLoading(
+          true,
+        );
+
+        setLoadError(
+          "",
+        );
 
         try {
           await Promise.all([
-            loadBranches(signal),
-            loadLookups(signal),
+            loadBranches(
+              signal,
+            ),
+
+            loadLookups(
+              signal,
+            ),
           ]);
-        } catch (error) {
+        } catch (
+          error
+        ) {
           if (
-            error.name !== "AbortError"
+            error.name !==
+            "AbortError"
           ) {
             console.warn(
               "Failed to load branch page:",
@@ -450,8 +670,12 @@ export default function BranchPage() {
             );
           }
         } finally {
-          if (!signal?.aborted) {
-            setIsLoading(false);
+          if (
+            !signal?.aborted
+          ) {
+            setIsLoading(
+              false,
+            );
           }
         }
       },
@@ -472,377 +696,633 @@ export default function BranchPage() {
     return () => {
       controller.abort();
     };
-  }, [loadBranchPage]);
+  }, [
+    loadBranchPage,
+  ]);
+
+  /*
+   * =======================================================
+   * LOAD DISTRICTS / COMMUNES NEEDED BY CURRENT BRANCHES
+   * =======================================================
+   */
 
   useEffect(() => {
-    if (branches.length === 0) {
-      setDistrictLookups([]);
-      setCommuneLookups([]);
+    if (
+      branches.length ===
+      0
+    ) {
+      setDistrictLookups(
+        [],
+      );
+
+      setCommuneLookups(
+        [],
+      );
+
       return undefined;
     }
 
-    const controller = new AbortController();
+    const controller =
+      new AbortController();
 
     async function loadGeography() {
-      const provinceIds = [...new Set(
-        branches
-          .map((branch) => branch.province_id ?? branch.provinceId)
-          .filter(Boolean),
-      )];
-      const districtIds = [...new Set(
-        branches
-          .map((branch) => branch.district_id ?? branch.districtId)
-          .filter(Boolean),
-      )];
-
-      const [districtGroups, communeGroups] = await Promise.all([
-        Promise.all(
-          provinceIds.map((provinceId) =>
-            fetchJson(
-              `/lookups/districts?provinceId=${provinceId}`,
-              controller.signal,
-            ).catch(() => []),
+      const provinceIds =
+        [
+          ...new Set(
+            branches
+              .map(
+                (
+                  branch,
+                ) =>
+                  branch.province_id ??
+                  branch.provinceId,
+              )
+              .filter(
+                Boolean,
+              ),
           ),
-        ),
-        Promise.all(
-          districtIds.map((districtId) =>
-            fetchJson(
-              `/lookups/communes?districtId=${districtId}`,
-              controller.signal,
-            ).catch(() => []),
-          ),
-        ),
-      ]);
+        ];
 
-      if (!controller.signal.aborted) {
-        setDistrictLookups(districtGroups.flat());
-        setCommuneLookups(communeGroups.flat());
+      const districtIds =
+        [
+          ...new Set(
+            branches
+              .map(
+                (
+                  branch,
+                ) =>
+                  branch.district_id ??
+                  branch.districtId,
+              )
+              .filter(
+                Boolean,
+              ),
+          ),
+        ];
+
+      const [
+        districtGroups,
+        communeGroups,
+      ] =
+        await Promise.all([
+          Promise.all(
+            provinceIds.map(
+              (
+                provinceId,
+              ) =>
+                fetchJson(
+                  `/lookups/districts?provinceId=${provinceId}`,
+                  controller.signal,
+                ).catch(
+                  () =>
+                    [],
+                ),
+            ),
+          ),
+
+          Promise.all(
+            districtIds.map(
+              (
+                districtId,
+              ) =>
+                fetchJson(
+                  `/lookups/communes?districtId=${districtId}`,
+                  controller.signal,
+                ).catch(
+                  () =>
+                    [],
+                ),
+            ),
+          ),
+        ]);
+
+      if (
+        !controller
+          .signal
+          .aborted
+      ) {
+        setDistrictLookups(
+          districtGroups.flat(),
+        );
+
+        setCommuneLookups(
+          communeGroups.flat(),
+        );
       }
     }
 
     loadGeography();
 
-    return () => controller.abort();
-  }, [branches]);
+    return () => {
+      controller.abort();
+    };
+  }, [
+    branches,
+  ]);
+
+  /*
+   * =======================================================
+   * DOWNLOAD POPUP AUTO CLOSE
+   * =======================================================
+   */
 
   useEffect(() => {
-    if (!showSaveFile) {
+    if (
+      !showSaveFile
+    ) {
       return undefined;
     }
 
     const timeoutId =
-      window.setTimeout(() => {
-        setShowSaveFile(false);
-      }, 3000);
+      window.setTimeout(
+        () => {
+          setShowSaveFile(
+            false,
+          );
+        },
+        3000,
+      );
 
     return () => {
-      window.clearTimeout(timeoutId);
+      window.clearTimeout(
+        timeoutId,
+      );
     };
-  }, [showSaveFile]);
-
-  const provinceById = useMemo(
-    () =>
-      new Map(
-        provinceLookups.map(
-          (province) => [
-            String(
-              province?.value ??
-                province?.id ?? "",
-            ),
-            province,
-          ],
-        ),
-      ),
-    [provinceLookups],
-  );
-
-  const statusById = useMemo(
-    () =>
-      new Map(
-        statusLookups.map(
-          (status) => [
-            String(
-              status?.value ??
-                status?.id ?? "",
-            ),
-            status,
-          ],
-        ),
-      ),
-    [statusLookups],
-  );
-
-  const districtById = useMemo(
-    () =>
-      new Map(
-        districtLookups.map((item) => [
-          String(item?.value ?? item?.id ?? ""),
-          item,
-        ]),
-      ),
-    [districtLookups],
-  );
-
-  const communeById = useMemo(
-    () =>
-      new Map(
-        communeLookups.map((item) => [
-          String(item?.value ?? item?.id ?? ""),
-          item,
-        ]),
-      ),
-    [communeLookups],
-  );
-
-  const mappedBranches = useMemo(
-    () =>
-      branches.map((branch) => {
-        const branchLevelId =
-          branch?.branch_level_id ??
-          branch?.branchLevelId ??
-          branch?.branch_level?.id ??
-          branch?.branchLevel?.id ??
-          "";
-
-        const provinceId =
-          branch?.province_id ??
-          branch?.provinceId ??
-          branch?.province?.id ??
-          "";
-
-        const districtId =
-          branch?.district_id ??
-          branch?.districtId ??
-          branch?.district?.id ??
-          "";
-
-        const communeId =
-          branch?.commune_id ??
-          branch?.communeId ??
-          branch?.commune?.id ??
-          "";
-
-        const statusId =
-          branch?.status_id ??
-          branch?.statusId ??
-          branch?.status?.id ??
-          "";
-
-        const provinceLookup =
-          provinceById.get(
-            String(provinceId),
-          );
-
-        const statusLookup =
-          statusById.get(
-            String(statusId),
-          );
-
-        const districtLookup = districtById.get(String(districtId));
-        const communeLookup = communeById.get(String(communeId));
-
-        const statusCode = String(
-          branch?.status_code ||
-            branch?.statusCode ||
-            branch?.status?.code ||
-            statusLookup?.code ||
-            "",
-        ).toUpperCase();
-
-        const statusLabel =
-          branch?.status_name_km ||
-          branch?.statusNameKm ||
-          branch?.status?.name_km ||
-          branch?.status?.nameKm ||
-          branch?.status?.label_km ||
-          branch?.status?.labelKm ||
-          getStatusLabel(
-            statusLookup,
-          ) ||
-          STATUS_LABELS_KM[
-            statusCode
-          ] ||
-          "-";
-
-        const provinceLabel =
-          branch?.province_name_km ||
-          branch?.provinceNameKm ||
-          branch?.province?.name_km ||
-          branch?.province?.nameKm ||
-          branch?.province?.name_en ||
-          branch?.province?.nameEn ||
-          getProvinceLabel(
-            provinceLookup,
-          ) ||
-          "-";
-
-        return {
-          id: branch?.id,
-
-          name:
-            branch?.name_km ||
-            branch?.nameKm ||
-            branch?.name_en ||
-            branch?.nameEn ||
-            "-",
-
-          code:
-            branch?.branch_code ||
-            branch?.branchCode ||
-            "-",
-
-          levelId:
-            branchLevelId,
-
-          level:
-            branch
-              ?.branch_level_name_km ||
-            branch
-              ?.branchLevelNameKm ||
-            branch?.branch_level
-              ?.name_km ||
-            branch?.branchLevel
-              ?.nameKm ||
-            BRANCH_LEVEL_LABELS[
-              branchLevelId
-            ] ||
-            "-",
-
-          provinceId,
-          province: provinceLabel,
-
-          districtId,
-
-          district:
-            branch
-              ?.district_name_km ||
-            branch
-              ?.districtNameKm ||
-            branch?.district
-              ?.name_km ||
-            branch?.district
-              ?.nameKm ||
-            getProvinceLabel(districtLookup) ||
-            "-",
-
-          communeId,
-
-          commune:
-            branch
-              ?.commune_name_km ||
-            branch
-              ?.communeNameKm ||
-            branch?.commune
-              ?.name_km ||
-            branch?.commune
-              ?.nameKm ||
-            getProvinceLabel(communeLookup) ||
-            "-",
-
-          memberCount:
-            Number(
-              branch?.member_count ??
-                branch?.memberCount,
-            ) || 0,
-
-          statusId,
-          statusCode,
-          statusLabel,
-
-          createdAt:
-            formatCreatedDate(
-              branch?.created_at ||
-                branch?.createdAt,
-            ),
-        };
-      }),
-    [
-      branches,
-      provinceById,
-      statusById,
-      districtById,
-      communeById,
-    ],
-  );
+  }, [
+    showSaveFile,
+  ]);
 
   /*
-   * FilterBar expects string options.
+   * =======================================================
+   * LOOKUP MAPS
+   * =======================================================
    */
-  const provinceOptions =
+
+  const provinceById =
     useMemo(
       () =>
-        provinceLookups
-          .map(getProvinceLabel)
-          .filter(Boolean),
-      [provinceLookups],
+        new Map(
+          provinceLookups.map(
+            (
+              province,
+            ) => [
+              String(
+                province?.value ??
+                  province?.id ??
+                  "",
+              ),
+
+              province,
+            ],
+          ),
+        ),
+      [
+        provinceLookups,
+      ],
+    );
+
+  const statusById =
+    useMemo(
+      () =>
+        new Map(
+          statusLookups.map(
+            (
+              status,
+            ) => [
+              String(
+                status?.value ??
+                  status?.id ??
+                  "",
+              ),
+
+              status,
+            ],
+          ),
+        ),
+      [
+        statusLookups,
+      ],
+    );
+
+  const districtById =
+    useMemo(
+      () =>
+        new Map(
+          districtLookups.map(
+            (
+              item,
+            ) => [
+              String(
+                item?.value ??
+                  item?.id ??
+                  "",
+              ),
+
+              item,
+            ],
+          ),
+        ),
+      [
+        districtLookups,
+      ],
+    );
+
+  const communeById =
+    useMemo(
+      () =>
+        new Map(
+          communeLookups.map(
+            (
+              item,
+            ) => [
+              String(
+                item?.value ??
+                  item?.id ??
+                  "",
+              ),
+
+              item,
+            ],
+          ),
+        ),
+      [
+        communeLookups,
+      ],
+    );
+
+  /*
+   * =======================================================
+   * NORMALIZE BRANCH DATA
+   * =======================================================
+   */
+
+  const mappedBranches =
+    useMemo(
+      () =>
+        branches.map(
+          (
+            branch,
+          ) => {
+            const branchLevelId =
+              branch?.branch_level_id ??
+              branch?.branchLevelId ??
+              branch?.branch_level
+                ?.id ??
+              branch?.branchLevel
+                ?.id ??
+              "";
+
+            const provinceId =
+              branch?.province_id ??
+              branch?.provinceId ??
+              branch?.province
+                ?.id ??
+              "";
+
+            const districtId =
+              branch?.district_id ??
+              branch?.districtId ??
+              branch?.district
+                ?.id ??
+              "";
+
+            const communeId =
+              branch?.commune_id ??
+              branch?.communeId ??
+              branch?.commune
+                ?.id ??
+              "";
+
+            const statusId =
+              branch?.status_id ??
+              branch?.statusId ??
+              branch?.status
+                ?.id ??
+              "";
+
+            const provinceLookup =
+              provinceById.get(
+                String(
+                  provinceId,
+                ),
+              );
+
+            const statusLookup =
+              statusById.get(
+                String(
+                  statusId,
+                ),
+              );
+
+            const districtLookup =
+              districtById.get(
+                String(
+                  districtId,
+                ),
+              );
+
+            const communeLookup =
+              communeById.get(
+                String(
+                  communeId,
+                ),
+              );
+
+            const statusCode =
+              String(
+                branch?.status_code ||
+                  branch?.statusCode ||
+                  branch?.status
+                    ?.code ||
+                  statusLookup?.code ||
+                  "",
+              ).toUpperCase();
+
+            const statusLabel =
+              branch?.status_name_km ||
+              branch?.statusNameKm ||
+              branch?.status
+                ?.name_km ||
+              branch?.status
+                ?.nameKm ||
+              branch?.status
+                ?.label_km ||
+              branch?.status
+                ?.labelKm ||
+              getStatusLabel(
+                statusLookup,
+              ) ||
+              STATUS_LABELS_KM[
+                statusCode
+              ] ||
+              "-";
+
+            const provinceLabel =
+              branch?.province_name_km ||
+              branch?.provinceNameKm ||
+              branch?.province
+                ?.name_km ||
+              branch?.province
+                ?.nameKm ||
+              branch?.province
+                ?.name_en ||
+              branch?.province
+                ?.nameEn ||
+              getProvinceLabel(
+                provinceLookup,
+              ) ||
+              "-";
+
+            return {
+              id:
+                branch?.id,
+
+              name:
+                branch?.name_km ||
+                branch?.nameKm ||
+                branch?.name_en ||
+                branch?.nameEn ||
+                "-",
+
+              code:
+                branch?.branch_code ||
+                branch?.branchCode ||
+                "-",
+
+              levelId:
+                branchLevelId,
+
+              level:
+                branch?.branch_level_name_km ||
+                branch?.branchLevelNameKm ||
+                branch?.branch_level
+                  ?.name_km ||
+                branch?.branchLevel
+                  ?.nameKm ||
+                BRANCH_LEVEL_LABELS[
+                  branchLevelId
+                ] ||
+                "-",
+
+              provinceId,
+
+              province:
+                provinceLabel,
+
+              districtId,
+
+              district:
+                branch?.district_name_km ||
+                branch?.districtNameKm ||
+                branch?.district
+                  ?.name_km ||
+                branch?.district
+                  ?.nameKm ||
+                getProvinceLabel(
+                  districtLookup,
+                ) ||
+                "-",
+
+              communeId,
+
+              commune:
+                branch?.commune_name_km ||
+                branch?.communeNameKm ||
+                branch?.commune
+                  ?.name_km ||
+                branch?.commune
+                  ?.nameKm ||
+                getProvinceLabel(
+                  communeLookup,
+                ) ||
+                "-",
+
+              memberCount:
+                Number(
+                  branch?.member_count ??
+                    branch?.memberCount,
+                ) || 0,
+
+              statusId,
+
+              statusCode,
+
+              statusLabel,
+
+              createdAt:
+                formatCreatedDate(
+                  branch?.created_at ||
+                    branch?.createdAt,
+                ),
+            };
+          },
+        ),
+      [
+        branches,
+        provinceById,
+        statusById,
+        districtById,
+        communeById,
+      ],
+    );
+
+  /*
+   * =======================================================
+   * FILTER OPTIONS
+   * =======================================================
+   *
+   * Each filter explicitly contains an "All" option.
+   */
+
+  const branchLevelOptions =
+    useMemo(
+      () => [
+        ALL_LEVELS_LABEL,
+
+        ...BRANCH_LEVEL_OPTIONS,
+      ],
+      [],
+    );
+
+  const provinceOptions =
+    useMemo(
+      () => [
+        ALL_PROVINCES_LABEL,
+
+        ...provinceLookups
+          .map(
+            getProvinceLabel,
+          )
+          .filter(
+            Boolean,
+          ),
+      ],
+      [
+        provinceLookups,
+      ],
     );
 
   const branchStatusOptions =
     useMemo(
-      () =>
-        statusLookups
-          .map(getStatusLabel)
-          .filter(Boolean),
-      [statusLookups],
+      () => [
+        ALL_STATUSES_LABEL,
+
+        ...statusLookups
+          .map(
+            getStatusLabel,
+          )
+          .filter(
+            Boolean,
+          ),
+      ],
+      [
+        statusLookups,
+      ],
     );
 
+  /*
+   * =======================================================
+   * FILTER BRANCHES
+   * =======================================================
+   */
+
   const filteredBranches =
-    useMemo(() => {
-      const query = searchQuery
-        .trim()
-        .toLowerCase();
+    useMemo(
+      () => {
+        const query =
+          searchQuery
+            .trim()
+            .toLowerCase();
 
-      return mappedBranches.filter(
-        (branch) => {
-          const matchesSearch =
-            !query ||
-            branch.name
-              .toLowerCase()
-              .includes(query) ||
-            branch.code
-              .toLowerCase()
-              .includes(query) ||
-            branch.province
-              .toLowerCase()
-              .includes(query) ||
-            branch.district
-              .toLowerCase()
-              .includes(query);
+        return mappedBranches.filter(
+          (
+            branch,
+          ) => {
+            /*
+             * Search
+             */
+            const matchesSearch =
+              !query ||
+              branch.name
+                .toLowerCase()
+                .includes(
+                  query,
+                ) ||
+              branch.code
+                .toLowerCase()
+                .includes(
+                  query,
+                ) ||
+              branch.province
+                .toLowerCase()
+                .includes(
+                  query,
+                ) ||
+              branch.district
+                .toLowerCase()
+                .includes(
+                  query,
+                );
 
-          const matchesLevel =
-            !selectedLevel ||
-            branch.level ===
-              selectedLevel;
+            /*
+             * Level
+             */
+            const matchesLevel =
+              !selectedLevel ||
+              selectedLevel ===
+                ALL_LEVELS_LABEL ||
+              branch.level ===
+                selectedLevel;
 
-          const matchesProvince =
-            !selectedProvince ||
-            branch.province ===
-              selectedProvince;
+            /*
+             * Province
+             */
+            const matchesProvince =
+              !selectedProvince ||
+              selectedProvince ===
+                ALL_PROVINCES_LABEL ||
+              branch.province ===
+                selectedProvince;
 
-          const matchesStatus =
-            !selectedStatus ||
-            branch.statusLabel ===
-              selectedStatus;
+            /*
+             * Status
+             */
+            const matchesStatus =
+              !selectedStatus ||
+              selectedStatus ===
+                ALL_STATUSES_LABEL ||
+              branch.statusLabel ===
+                selectedStatus;
 
-          return (
-            matchesSearch &&
-            matchesLevel &&
-            matchesProvince &&
-            matchesStatus
-          );
-        },
-      );
-    }, [
-      mappedBranches,
-      searchQuery,
-      selectedLevel,
-      selectedProvince,
-      selectedStatus,
-    ]);
+            return (
+              matchesSearch &&
+              matchesLevel &&
+              matchesProvince &&
+              matchesStatus
+            );
+          },
+        );
+      },
+      [
+        mappedBranches,
+        searchQuery,
+        selectedLevel,
+        selectedProvince,
+        selectedStatus,
+      ],
+    );
+
+  /*
+   * =======================================================
+   * CREATE BRANCH CALLBACK
+   * =======================================================
+   */
 
   const handleCreateBranch =
     async () => {
-      setShowCreateModal(false);
+      setShowCreateModal(
+        false,
+      );
 
       const controller =
         new AbortController();
@@ -852,6 +1332,12 @@ export default function BranchPage() {
       );
     };
 
+  /*
+   * =======================================================
+   * TABLE COLUMNS
+   * =======================================================
+   */
+
   const columns = [
     {
       key: "no",
@@ -859,9 +1345,14 @@ export default function BranchPage() {
       width: "5%",
       align: "center",
 
-      render: (_row, index) =>
-        index + 1,
+      render:
+        (
+          _row,
+          index,
+        ) =>
+          index + 1,
     },
+
     {
       key: "name",
       label: "ឈ្មោះសាខា",
@@ -869,133 +1360,201 @@ export default function BranchPage() {
       align: "left",
       truncate: true,
 
-      render: (row) => (
-        <div className="min-w-0">
-          <p className="truncate font-medium text-text-primary">
-            {row.name}
-          </p>
+      render:
+        (row) => (
+          <div className="min-w-0">
+            <p className="truncate font-medium text-text-primary">
+              {row.name}
+            </p>
 
-          <p className="truncate text-[11px] text-text-secondary">
-            {row.code}
-          </p>
-        </div>
-      ),
+            <p className="truncate text-[11px] text-text-secondary">
+              {row.code}
+            </p>
+          </div>
+        ),
     },
+
     {
       key: "level",
       label: "កម្រិតសាខា",
       width: "15%",
       align: "left",
 
-      render: (row) =>
-        row.level,
+      render:
+        (row) =>
+          row.level,
     },
+
     {
       key: "province",
       label: "រាជធានី/ខេត្ត",
       width: "13%",
       align: "left",
 
-      render: (row) =>
-        row.province,
+      render:
+        (row) =>
+          row.province,
     },
+
     {
       key: "district",
       label: "ក្រុង/ស្រុក/ខណ្ឌ",
       width: "12%",
       align: "center",
 
-      render: (row) =>
-        row.district,
+      render:
+        (row) =>
+          row.district,
     },
+
     {
       key: "memberCount",
       label: "សមាជិក",
       width: "10%",
       align: "center",
 
-      render: (row) =>
-        row.memberCount,
+      render:
+        (row) =>
+          row.memberCount,
     },
+
     {
       key: "status",
       label: "ស្ថានភាព",
       width: "11%",
       align: "center",
 
-      render: (row) => (
-        <BranchStatusBadge
-          statusCode={
-            row.statusCode
-          }
-          statusLabel={
-            row.statusLabel
-          }
-        />
-      ),
+      render:
+        (row) => (
+          <BranchStatusBadge
+            statusCode={
+              row.statusCode
+            }
+            statusLabel={
+              row.statusLabel
+            }
+          />
+        ),
     },
+
     {
       key: "createdAt",
       label: "ថ្ងៃបង្កើត",
       width: "13%",
       align: "center",
 
-      render: (row) =>
-        row.createdAt,
+      render:
+        (row) =>
+          row.createdAt,
     },
+
     {
       key: "actions",
       label: "សកម្មភាព",
       width: "13%",
       align: "center",
 
-      render: (row) => (
-        <div className="flex items-center justify-center">
-          <Link
-            href={`/branch/${row.id}`}
-            className="inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-3 text-[11px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-sm active:translate-y-0"
-          >
-            <List size={14} />
+      render:
+        (row) => (
+          <div className="flex items-center justify-center">
+            <Link
+              href={`/branch/${row.id}`}
+              className="
+                inline-flex
+                h-8
+                items-center
+                justify-center
+                gap-1.5
+                whitespace-nowrap
+                rounded-lg
+                bg-primary
+                px-3
+                text-[11px]
+                font-semibold
+                text-white
+                transition-all
+                duration-200
+                hover:-translate-y-0.5
+                hover:bg-primary-hover
+                hover:shadow-sm
+                active:translate-y-0
+              "
+            >
+              <List
+                size={14}
+              />
 
-            ព័ត៌មានលម្អិត
-          </Link>
-        </div>
-      ),
+              ព័ត៌មានលម្អិត
+            </Link>
+          </div>
+        ),
     },
   ];
 
+  /*
+   * =======================================================
+   * FILTER BAR
+   * =======================================================
+   */
+
   const filters = [
     {
-      key: "level",
-      value: selectedLevel,
+      key:
+        "level",
+
+      value:
+        selectedLevel,
+
       onChange:
         setSelectedLevel,
+
       placeholder:
         "កម្រិតសាខា",
+
       options:
-        BRANCH_LEVEL_OPTIONS,
+        branchLevelOptions,
     },
+
     {
-      key: "province",
-      value: selectedProvince,
+      key:
+        "province",
+
+      value:
+        selectedProvince,
+
       onChange:
         setSelectedProvince,
+
       placeholder:
         "រាជធានី/ខេត្ត",
+
       options:
         provinceOptions,
     },
+
     {
-      key: "status",
-      value: selectedStatus,
+      key:
+        "status",
+
+      value:
+        selectedStatus,
+
       onChange:
         setSelectedStatus,
+
       placeholder:
         "ស្ថានភាព",
+
       options:
         branchStatusOptions,
     },
   ];
+
+  /*
+   * =======================================================
+   * PAGE
+   * =======================================================
+   */
 
   return (
     <div className="min-w-0 space-y-5 overflow-x-hidden">
@@ -1010,15 +1569,22 @@ export default function BranchPage() {
       </div>
 
       <BranchStats
-        branches={mappedBranches}
-        summary={summary}
+        branches={
+          mappedBranches
+        }
+        summary={
+          summary
+        }
       />
 
       <section className="rounded-xl border border-border bg-white p-4 transition-shadow duration-200 hover:shadow-sm">
         <div className="mb-4 flex min-w-0 flex-wrap items-center gap-3 xl:flex-nowrap">
+          {/* Search */}
           <div className="w-full shrink-0 sm:w-[265px]">
             <SearchBar
-              value={searchQuery}
+              value={
+                searchQuery
+              }
               onChange={
                 setSearchQuery
               }
@@ -1027,13 +1593,17 @@ export default function BranchPage() {
             />
           </div>
 
+          {/* Filters */}
           <div className="min-w-0 shrink-0">
             <FilterBar
-              filters={filters}
+              filters={
+                filters
+              }
               className="flex-wrap xl:flex-nowrap"
             />
           </div>
 
+          {/* Actions */}
           <div className="ml-auto flex shrink-0 items-center gap-3">
             <div className="relative">
               <Button
@@ -1041,12 +1611,16 @@ export default function BranchPage() {
                 variant="primary"
                 icon={
                   <RiDownloadCloud2Line
-                    size={16}
+                    size={
+                      16
+                    }
                   />
                 }
                 onClick={() =>
                   setShowSaveFile(
-                    (open) =>
+                    (
+                      open,
+                    ) =>
                       !open,
                   )
                 }
@@ -1073,7 +1647,9 @@ export default function BranchPage() {
               variant="success"
               icon={
                 <PlusCircle
-                  size={16}
+                  size={
+                    16
+                  }
                 />
               }
               onClick={() =>
@@ -1094,12 +1670,18 @@ export default function BranchPage() {
         )}
 
         <Table
-          columns={columns}
+          columns={
+            columns
+          }
           data={
             filteredBranches
           }
-          rowsPerPage={10}
-          scrollable={false}
+          rowsPerPage={
+            10
+          }
+          scrollable={
+            false
+          }
           emptyMessage={
             isLoading
               ? "កំពុងទាញយកទិន្នន័យ..."
@@ -1109,7 +1691,9 @@ export default function BranchPage() {
       </section>
 
       <CreateBranchModal
-        open={showCreateModal}
+        open={
+          showCreateModal
+        }
         onClose={() =>
           setShowCreateModal(
             false,

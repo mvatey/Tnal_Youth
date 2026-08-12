@@ -28,32 +28,44 @@ function createHeaders(request) {
   /*
    * Forward cookies in case Spring Boot reads JWT cookies.
    */
-  const cookie = request.headers.get("cookie");
+  const cookie =
+    request.headers.get("cookie");
 
   if (cookie) {
     headers.Cookie = cookie;
   }
 
   /*
-   * Also forward Authorization if the frontend request has it.
+   * Forward Authorization header when available.
    */
   const authorization =
-    request.headers.get("authorization");
+    request.headers.get(
+      "authorization"
+    );
 
   if (authorization) {
-    headers.Authorization = authorization;
+    headers.Authorization =
+      authorization;
   }
 
   /*
-   * Support JWT stored as an HttpOnly cookie.
-   * Adjust these names to match your login route.
+   * Support JWT stored in HttpOnly cookies.
    */
   const accessToken =
-    request.cookies.get("accessToken")?.value ??
-    request.cookies.get("access_token")?.value ??
-    request.cookies.get("token")?.value;
+    request.cookies.get(
+      "accessToken"
+    )?.value ??
+    request.cookies.get(
+      "access_token"
+    )?.value ??
+    request.cookies.get(
+      "token"
+    )?.value;
 
-  if (!headers.Authorization && accessToken) {
+  if (
+    !headers.Authorization &&
+    accessToken
+  ) {
     headers.Authorization =
       `Bearer ${accessToken}`;
   }
@@ -65,26 +77,32 @@ async function fetchBackend({
   path,
   headers,
 }) {
-  const response = await fetch(
-    `${BACKEND_URL}${path}`,
-    {
-      method: "GET",
-      headers,
-      cache: "no-store",
-    }
-  );
+  const response =
+    await fetch(
+      `${BACKEND_URL}${path}`,
+      {
+        method: "GET",
+        headers,
+        cache: "no-store",
+      }
+    );
 
   const data =
-    await parseJsonSafely(response);
+    await parseJsonSafely(
+      response
+    );
 
   if (!response.ok) {
     const error = new Error(
       data?.message ??
-        `Backend request failed: ${path}`
+      `Backend request failed: ${path}`
     );
 
-    error.status = response.status;
-    error.data = data;
+    error.status =
+      response.status;
+
+    error.data =
+      data;
 
     throw error;
   }
@@ -92,18 +110,28 @@ async function fetchBackend({
   return data;
 }
 
-export async function GET(request) {
+export async function GET(
+  request
+) {
   try {
     const searchParams =
-      request.nextUrl.searchParams;
+      request.nextUrl
+        .searchParams;
 
     /*
-     * Examples:
-     * month = 2026-07
+     * Example:
+     *
+     * month = 2026-08
      * year = 2026
-     * branchId = 1
+     *
+     * branchId
+     * → filters the main dashboard scope
+     *
+     * performanceBranchId
+     * → filters ONLY Branch Performance
      */
-    const currentDate = new Date();
+    const currentDate =
+      new Date();
 
     const defaultMonth =
       `${currentDate.getFullYear()}-${String(
@@ -111,53 +139,183 @@ export async function GET(request) {
       ).padStart(2, "0")}`;
 
     const month =
-      searchParams.get("month") ??
+      searchParams.get(
+        "month"
+      ) ??
       defaultMonth;
 
     const year =
       Number(
-        searchParams.get("year") ??
-          month.slice(0, 4)
+        searchParams.get(
+          "year"
+        ) ??
+        month.slice(
+          0,
+          4
+        )
       );
 
+    /*
+     * Main dashboard branch scope.
+     */
     const branchId =
-      searchParams.get("branchId");
+      searchParams.get(
+        "branchId"
+      );
+
+    /*
+     * Branch Performance dropdown scope.
+     */
+    const performanceBranchId =
+      searchParams.get(
+        "performanceBranchId"
+      );
 
     const headers =
-      createHeaders(request);
+      createHeaders(
+        request
+      );
 
-    const scopedParams = new URLSearchParams({ month });
-
-    if (branchId) scopedParams.set("branchId", branchId);
-
-    const summaryPath = `/dashboard/summary?${scopedParams.toString()}`;
-
-    const breakdownPath =
-      `/dashboard/activity-breakdown?${scopedParams.toString()}`;
-
-    const trendParams = new URLSearchParams({ year: String(year) });
-    if (branchId) trendParams.set("branchId", branchId);
-    const trendPath = `/dashboard/participation-trend?${trendParams.toString()}`;
-
-    const activitiesPath = branchId
-      ? `/dashboard/activities?branchId=${encodeURIComponent(branchId)}`
-      : "/dashboard/activities";
-
-    const branchPerformanceParams =
+    /*
+     * =========================================================
+     * SUMMARY
+     * =========================================================
+     */
+    const summaryParams =
       new URLSearchParams({
         month,
       });
 
     if (branchId) {
-      branchPerformanceParams.set(
+      summaryParams.set(
         "branchId",
         branchId
+      );
+    }
+
+    const summaryPath =
+      `/dashboard/summary?${summaryParams.toString()}`;
+
+    /*
+     * =========================================================
+     * ACTIVITY BREAKDOWN
+     * =========================================================
+     */
+    const breakdownParams =
+      new URLSearchParams({
+        month,
+      });
+
+    if (branchId) {
+      breakdownParams.set(
+        "branchId",
+        branchId
+      );
+    }
+
+    const breakdownPath =
+      `/dashboard/activity-breakdown?${breakdownParams.toString()}`;
+
+    /*
+     * =========================================================
+     * PARTICIPATION TREND
+     * =========================================================
+     */
+    const trendParams =
+      new URLSearchParams({
+        year: String(
+          year
+        ),
+      });
+
+    if (branchId) {
+      trendParams.set(
+        "branchId",
+        branchId
+      );
+    }
+
+    const trendPath =
+      `/dashboard/participation-trend?${trendParams.toString()}`;
+
+    /*
+     * =========================================================
+     * RECENT / UPCOMING ACTIVITIES
+     * =========================================================
+     */
+    const activitiesParams =
+      new URLSearchParams();
+
+    if (branchId) {
+      activitiesParams.set(
+        "branchId",
+        branchId
+      );
+    }
+
+    const activitiesPath =
+      activitiesParams
+        .toString()
+        ? `/dashboard/activities?${activitiesParams.toString()}`
+        : "/dashboard/activities";
+
+    /*
+     * =========================================================
+     * BRANCH PERFORMANCE
+     * =========================================================
+     *
+     * IMPORTANT:
+     *
+     * Use performanceBranchId here,
+     * NOT branchId.
+     *
+     * This allows the dropdown inside
+     * PerformanceSummary to change only
+     * this section.
+     */
+    const branchPerformanceParams =
+      new URLSearchParams({
+        month,
+      });
+
+    if (
+      performanceBranchId
+    ) {
+      branchPerformanceParams.set(
+        "branchId",
+        performanceBranchId
       );
     }
 
     const branchPerformancePath =
       `/dashboard/branch-performance?${branchPerformanceParams.toString()}`;
 
+    /*
+     * Temporary debugging.
+     *
+     * You can remove these after confirming
+     * everything works.
+     */
+    console.log(
+      "Dashboard main branchId:",
+      branchId
+    );
+
+    console.log(
+      "Performance branchId:",
+      performanceBranchId
+    );
+
+    console.log(
+      "Performance backend path:",
+      branchPerformancePath
+    );
+
+    /*
+     * =========================================================
+     * LOAD DASHBOARD DATA
+     * =========================================================
+     */
     const [
       summary,
       activityBreakdown,
@@ -171,7 +329,8 @@ export async function GET(request) {
       }),
 
       fetchBackend({
-        path: breakdownPath,
+        path:
+          breakdownPath,
         headers,
       }),
 
@@ -181,30 +340,41 @@ export async function GET(request) {
       }),
 
       fetchBackend({
-        path: activitiesPath,
+        path:
+          activitiesPath,
         headers,
       }),
 
       fetchBackend({
-        path: branchPerformancePath,
+        path:
+          branchPerformancePath,
         headers,
       }),
     ]);
 
-    return NextResponse.json({
-      period: month,
-      year,
+    /*
+     * =========================================================
+     * RESPONSE
+     * =========================================================
+     */
+    return NextResponse.json(
+      {
+        period: month,
 
-      summary,
+        year,
 
-      activityBreakdown,
+        summary,
 
-      participationTrend,
+        activityBreakdown,
 
-      activities,
+        participationTrend,
 
-      branchPerformance,
-    });
+        activities,
+
+        branchPerformance,
+      }
+    );
+
   } catch (error) {
     console.error(
       "Dashboard proxy error:",
@@ -220,7 +390,9 @@ export async function GET(request) {
       },
       {
         status:
-          Number.isInteger(error?.status)
+          Number.isInteger(
+            error?.status
+          )
             ? error.status
             : 500,
       }

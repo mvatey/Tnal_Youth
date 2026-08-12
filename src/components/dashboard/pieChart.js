@@ -48,20 +48,41 @@ const DONUT_SIZE = 190;
 const DONUT_INNER_RADIUS = 60;
 const DONUT_OUTER_RADIUS = 90;
 
-function getYearOptions(selectedMonth) {
-  const selectedYear =
-    Number(
-      String(selectedMonth ?? "").slice(
-        0,
-        4
-      )
-    ) || new Date().getFullYear();
+/*
+ * Generate months starting from January
+ * of the current year up to the current month only.
+ *
+ * Example in August 2026:
+ *
+ * 2026-01
+ * 2026-02
+ * ...
+ * 2026-08
+ *
+ * No future months.
+ * No previous years.
+ */
+function getAvailableMonths() {
+  const today = new Date();
 
-  return [
-    selectedYear - 1,
-    selectedYear,
-    selectedYear + 1,
-  ];
+  const currentYear =
+    today.getFullYear();
+
+  const currentMonthIndex =
+    today.getMonth();
+
+  return MONTHS_KM
+    .slice(
+      0,
+      currentMonthIndex + 1
+    )
+    .map((month) => ({
+      value:
+        `${currentYear}-${month.value}`,
+
+      label:
+        `${month.label} ${currentYear}`,
+    }));
 }
 
 function MonthDropdown({
@@ -69,15 +90,17 @@ function MonthDropdown({
   onChange,
   disabled = false,
 }) {
-  const yearOptions =
-    getYearOptions(value);
+  const monthOptions =
+    getAvailableMonths();
 
   return (
     <div className="relative">
       <select
         value={value}
         onChange={(event) =>
-          onChange?.(event.target.value)
+          onChange?.(
+            event.target.value
+          )
         }
         disabled={disabled}
         className="
@@ -98,15 +121,15 @@ function MonthDropdown({
           disabled:opacity-60
         "
       >
-        {yearOptions.flatMap((year) =>
-          MONTHS_KM.map((month) => (
+        {monthOptions.map(
+          (month) => (
             <option
-              key={`${year}-${month.value}`}
-              value={`${year}-${month.value}`}
+              key={month.value}
+              value={month.value}
             >
-              {month.label} {year}
+              {month.label}
             </option>
-          ))
+          )
         )}
       </select>
 
@@ -155,11 +178,15 @@ function LegendRow({
         }}
       />
 
-      <span>{label}</span>
+      <span>
+        {label}
+      </span>
 
       <span className="font-semibold text-text-primary">
         ចំនួន{" "}
-        {Number(count || 0).toLocaleString()}
+        {Number(
+          count || 0
+        ).toLocaleString()}
       </span>
     </div>
   );
@@ -184,64 +211,65 @@ export default function ActivitySummaryChart({
   onMonthChange,
   loading = false,
 }) {
-  /*
-   * Backend response:
-   *
-   * {
-   *   "period": "2026-07",
-   *   "internal": 5,
-   *   "external": 3,
-   *   "total": 8
-   * }
-   */
-
   const internalCount =
-    Number(data?.internal) || 0;
+    Number(
+      data?.internal
+    ) || 0;
 
   const externalCount =
-    Number(data?.external) || 0;
+    Number(
+      data?.external
+    ) || 0;
 
   const calculatedTotal =
-    internalCount + externalCount;
+    internalCount +
+    externalCount;
 
   const total =
-    Number(data?.total) ||
+    Number(
+      data?.total
+    ) ||
     calculatedTotal;
 
-  /*
-   * Recharts does not display a useful empty
-   * pie when both values are zero.
-   *
-   * During zero-data state, two temporary gray
-   * values preserve the donut shape.
-   */
-  const hasData = total > 0;
+  const hasData =
+    total > 0;
 
-  const chartData = hasData
-    ? [
-        {
-          name: "កម្មវិធីខាងក្នុង",
-          value: internalCount,
-          key: "internal",
-        },
-        {
-          name: "កម្មវិធីខាងក្រៅ",
-          value: externalCount,
-          key: "external",
-        },
-      ]
-    : [
-        {
-          name: "កម្មវិធីខាងក្នុង",
-          value: 1,
-          key: "internal",
-        },
-        {
-          name: "កម្មវិធីខាងក្រៅ",
-          value: 1,
-          key: "external",
-        },
-      ];
+  const chartData =
+    hasData
+      ? [
+          {
+            name:
+              "កម្មវិធីខាងក្នុង",
+            value:
+              internalCount,
+            key:
+              "internal",
+          },
+          {
+            name:
+              "កម្មវិធីខាងក្រៅ",
+            value:
+              externalCount,
+            key:
+              "external",
+          },
+        ]
+      : [
+          {
+            name:
+              "កម្មវិធីខាងក្នុង",
+            value: 1,
+            key:
+              "internal",
+          },
+          {
+            name:
+              "កម្មវិធីខាងក្រៅ",
+            value: 1,
+            key:
+              "external",
+          },
+        ];
 
   return (
     <section
@@ -265,8 +293,12 @@ export default function ActivitySummaryChart({
 
         <MonthDropdown
           value={month}
-          onChange={onMonthChange}
-          disabled={loading}
+          onChange={
+            onMonthChange
+          }
+          disabled={
+            loading
+          }
         />
       </div>
 
@@ -277,8 +309,10 @@ export default function ActivitySummaryChart({
           <div
             className="relative shrink-0"
             style={{
-              width: DONUT_SIZE,
-              height: DONUT_SIZE,
+              width:
+                DONUT_SIZE,
+              height:
+                DONUT_SIZE,
             }}
           >
             <ResponsiveContainer
@@ -300,7 +334,8 @@ export default function ActivitySummaryChart({
                       offset="0%"
                       stopColor={
                         GRADIENT_STOPS
-                          .internal.from
+                          .internal
+                          .from
                       }
                     />
 
@@ -308,7 +343,8 @@ export default function ActivitySummaryChart({
                       offset="100%"
                       stopColor={
                         GRADIENT_STOPS
-                          .internal.to
+                          .internal
+                          .to
                       }
                     />
                   </linearGradient>
@@ -326,7 +362,8 @@ export default function ActivitySummaryChart({
                       offset="0%"
                       stopColor={
                         GRADIENT_STOPS
-                          .external.from
+                          .external
+                          .from
                       }
                     />
 
@@ -334,14 +371,17 @@ export default function ActivitySummaryChart({
                       offset="100%"
                       stopColor={
                         GRADIENT_STOPS
-                          .external.to
+                          .external
+                          .to
                       }
                     />
                   </linearGradient>
                 </defs>
 
                 <Pie
-                  data={chartData}
+                  data={
+                    chartData
+                  }
                   dataKey="value"
                   nameKey="name"
                   innerRadius={
@@ -354,13 +394,16 @@ export default function ActivitySummaryChart({
                   stroke="#FFFFFF"
                   strokeWidth={2}
                   isAnimationActive={
-                    !loading && hasData
+                    !loading &&
+                    hasData
                   }
                 >
                   {chartData.map(
                     (entry) => (
                       <Cell
-                        key={entry.key}
+                        key={
+                          entry.key
+                        }
                         fill={
                           hasData
                             ? `url(#${
@@ -371,7 +414,9 @@ export default function ActivitySummaryChart({
                             : "#EDEEF2"
                         }
                         opacity={
-                          loading ? 0.6 : 1
+                          loading
+                            ? 0.6
+                            : 1
                         }
                       />
                     )
@@ -380,38 +425,51 @@ export default function ActivitySummaryChart({
               </PieChart>
             </ResponsiveContainer>
 
-            {!loading && !hasData && (
-              <div
-                className="
-                  absolute
-                  inset-0
-                  flex
-                  items-center
-                  justify-center
-                  px-6
-                  text-center
-                  text-xs
-                  text-[#9AA0A8]
-                "
-              >
-                មិនទាន់មានទិន្នន័យ
-              </div>
-            )}
+            {!loading &&
+              !hasData && (
+                <div
+                  className="
+                    absolute
+                    inset-0
+                    flex
+                    items-center
+                    justify-center
+                    px-6
+                    text-center
+                    text-xs
+                    text-[#9AA0A8]
+                  "
+                >
+                  មិនទាន់មានទិន្នន័យ
+                </div>
+              )}
           </div>
 
           <div>
             <LegendRow
-              color={COLORS.internal}
+              color={
+                COLORS.internal
+              }
               label="កម្មវិធីខាងក្នុង"
-              count={internalCount}
-              loading={loading}
+              count={
+                internalCount
+              }
+              loading={
+                loading
+              }
             />
 
             <LegendRow
-              color={COLORS.external}
+              color={
+                COLORS.external
+              }
               label="កម្មវិធីខាងក្រៅ"
-              count={externalCount}
-              loading={loading}
+              count={
+                externalCount
+              }
+              loading={
+                loading
+              }
             />
           </div>
         </div>
