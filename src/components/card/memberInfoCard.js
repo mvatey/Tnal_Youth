@@ -310,15 +310,14 @@ function getRoleLabel(role) {
     getRoleCode(role);
 
   return (
-    ROLE_LABELS[code] ||
-    ROLE_LABELS[
-      String(role || "")
-        .trim()
-        .toLowerCase()
-    ] ||
-    role ||
-    ROLE_LABELS.MEMBER
-  );
+  ROLE_LABELS[code] ||
+  ROLE_LABELS[
+    String(role || "")
+      .trim()
+      .toLowerCase()
+  ] ||
+  role ||
+  "-");
 }
 
 /*
@@ -576,12 +575,12 @@ export default function MemberInfoCard({
    * So check it BEFORE generic role.
    */
   const role =
-    member?.account_role ||
-    member?.accountRole ||
-    member?.role ||
-    member?.user_role ||
-    member?.userRole ||
-    "MEMBER";
+  member?.account_role ||
+  member?.accountRole ||
+  member?.role ||
+  member?.user_role ||
+  member?.userRole ||
+  "";
 
   const roleLabel =
     getRoleLabel(role);

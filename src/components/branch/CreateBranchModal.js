@@ -241,6 +241,20 @@ function getInitialForm(branch) {
     branchLeaderId: String(
       branch?.leader?.id ??
         branch?.branchLeaderId ??
+        branch?.leaders?.find(
+          (person) =>
+            String(
+              person?.role ?? "",
+            ).toUpperCase() ===
+            "BRANCH_LEADER",
+        )?.member_id ??
+        branch?.leaders?.find(
+          (person) =>
+            String(
+              person?.role ?? "",
+            ).toUpperCase() ===
+            "BRANCH_LEADER",
+        )?.id ??
         "",
     ),
   };
@@ -259,6 +273,26 @@ export default function CreateBranchModal({
 
   const [form, setForm] =
     useState(EMPTY_FORM);
+
+    const currentLeader =
+  useMemo(() => {
+    const leaders =
+      Array.isArray(
+        initialData?.leaders,
+      )
+        ? initialData.leaders
+        : [];
+
+    return (
+      leaders.find(
+        (person) =>
+          String(
+            person?.role ?? "",
+          ).toUpperCase() ===
+          "BRANCH_LEADER",
+      ) ?? null
+    );
+  }, [initialData]);
 
   const [provinceOptions, setProvinceOptions] =
     useState([]);
@@ -301,17 +335,62 @@ export default function CreateBranchModal({
     form.branchLevelId === "3";
 
   const branchLeaderOptions =
-    useMemo(
-      () => [
+    useMemo(() => {
+      const options = [
         {
           label:
             "មិនទាន់កំណត់ប្រធានសាខា",
           value: "",
         },
-        ...leaderOptions,
-      ],
-      [leaderOptions],
-    );
+      ];
+
+      if (currentLeader) {
+        const currentLeaderId =
+          currentLeader?.member_id ??
+          currentLeader?.id;
+
+        const currentLeaderName =
+          currentLeader?.full_name_km ||
+          currentLeader?.fullNameKm ||
+          currentLeader?.full_name_en ||
+          currentLeader?.fullNameEn ||
+          "ប្រធានសាខាបច្ចុប្បន្ន";
+
+        options.push({
+          label: currentLeaderName,
+          value: String(
+            currentLeaderId,
+          ),
+        });
+      }
+
+      for (
+        const option
+        of leaderOptions
+      ) {
+        const alreadyExists =
+          options.some(
+            (existing) =>
+              String(
+                existing.value,
+              ) ===
+              String(
+                option.value,
+              ),
+          );
+
+        if (!alreadyExists) {
+          options.push(
+            option,
+          );
+        }
+      }
+
+      return options;
+    }, [
+      currentLeader,
+      leaderOptions,
+    ]);
 
   useEffect(() => {
     setMounted(true);
@@ -813,7 +892,7 @@ try {
             {
               method: "PUT",
               body: {
-                memberId:
+                member_id:
                   Number(
                     form.branchLeaderId,
                   ),

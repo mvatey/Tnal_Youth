@@ -100,15 +100,31 @@ async function createMember(
   let body = null;
 
   if (text) {
-    try {
-      body =
-        JSON.parse(text);
-    } catch {
-      body = text;
-    }
+  try {
+    body =
+      JSON.parse(text);
+  } catch {
+    body = text;
   }
+}
 
-  if (!response.ok) {
+/* TEMP DEBUG */
+console.log(
+  "CREATE MEMBER STATUS:",
+  response.status,
+);
+
+console.log(
+  "CREATE MEMBER RESPONSE:",
+  body,
+);
+
+console.log(
+  "CREATE MEMBER PAYLOAD:",
+  payload,
+);
+
+if (!response.ok) {
     const message =
       typeof body ===
       "object"
@@ -158,6 +174,10 @@ export default function CreateMemberModal({
   open,
   onClose,
   onSave,
+
+  fixedBranchId = null,
+  fixedBranchName = "",
+  lockBranch = false,
 }) {
   const [
     mounted,
@@ -221,20 +241,28 @@ export default function CreateMemberModal({
   }, []);
 
   useEffect(() => {
-    if (!open) {
+  if (!open) {
       return;
     }
 
-    setForm(
-      EMPTY_FORM,
-    );
+    setForm({
+      ...EMPTY_FORM,
+
+      branchId:
+        fixedBranchId != null
+          ? String(fixedBranchId)
+          : "",
+    });
 
     setShowValidationError(
       false,
     );
 
     setSubmitError("");
-  }, [open]);
+  }, [
+    open,
+    fixedBranchId,
+  ]);
 
   useEffect(() => {
     if (!open) {
@@ -561,51 +589,74 @@ export default function CreateMemberModal({
     );
 
   const branchOptions =
-    useMemo(
-      () =>
-        branchLookups
-          .map(
-            (branch) => {
-              const id =
-                branch?.id ??
-                branch?.value ??
-                "";
+  useMemo(() => {
+    /*
+     * Branch Detail page:
+     * only the current branch is allowed.
+     */
+    if (
+      lockBranch &&
+      fixedBranchId != null
+    ) {
+      return [
+        {
+          label:
+            fixedBranchName ||
+            `Branch ${fixedBranchId}`,
 
-              const label =
-                branch?.label_km ||
-                branch?.labelKm ||
-                branch?.name_km ||
-                branch?.nameKm ||
-                branch?.name_en ||
-                branch?.nameEn ||
-                branch?.branch_code ||
-                branch?.branchCode ||
-                "";
+          value:
+            String(
+              fixedBranchId
+            ),
+        },
+      ];
+    }
 
-              return {
-                label,
+    /*
+     * Normal Member page:
+     * use accessible branch options.
+     */
+    return branchLookups
+      .map(
+        (branch) => {
+          const id =
+            branch?.id ??
+            branch?.value ??
+            "";
 
-                value:
-                  id !==
-                    null &&
-                  id !==
-                    undefined
-                    ? String(
-                        id,
-                      )
-                    : "",
-              };
-            },
-          )
-          .filter(
-            (option) =>
-              option.value !==
-                "" &&
-              option.label !==
-                "",
-          ),
-      [branchLookups],
-    );
+          const label =
+            branch?.label_km ||
+            branch?.labelKm ||
+            branch?.name_km ||
+            branch?.nameKm ||
+            branch?.name_en ||
+            branch?.nameEn ||
+            branch?.branch_code ||
+            branch?.branchCode ||
+            "";
+
+          return {
+            label,
+
+            value:
+              id !== null &&
+              id !== undefined
+                ? String(id)
+                : "",
+          };
+        },
+      )
+      .filter(
+        (option) =>
+          option.value !== "" &&
+          option.label !== "",
+      );
+  }, [
+    branchLookups,
+    fixedBranchId,
+    fixedBranchName,
+    lockBranch,
+  ]);
 
   const statusOptions =
     useMemo(
@@ -1022,6 +1073,9 @@ export default function CreateMemberModal({
                   onChange={update(
                     "branchId",
                   )}
+                  disabled={
+                    lockBranch
+                  }
                 />
 
                 <FormSelect

@@ -262,7 +262,7 @@ function getProfileImage(member) {
     "";
 
   if (!imagePath) {
-    return "/member.png";
+    return "/profiles/default-avatar.jpg";
   }
 
   if (
@@ -380,7 +380,7 @@ function LeaderCard({
             <Image
               src={
                 person.profileImage ||
-                "/member.png"
+                "/profiles/default-avatar.jpg"
               }
               alt={
                 person.nameKm ||
@@ -419,11 +419,11 @@ function LeaderCard({
               className="shrink-0 text-text-secondary"
             />
 
-            <span className="text-xs text-text-secondary">
+            <span className="text-[11px] text-text-secondary">
               ភេទ
             </span>
 
-            <span className="truncate text-sm font-medium text-text-primary">
+            <span className="truncate text-[13px] font-normal text-text-primary">
               {person.gender || "-"}
             </span>
           </div>
@@ -434,11 +434,11 @@ function LeaderCard({
               className="shrink-0 text-text-secondary"
             />
 
-            <span className="text-xs text-text-secondary">
+            <span className="text-[11px] text-text-secondary">
               តួនាទី
             </span>
 
-            <span className="truncate text-sm font-medium text-text-primary">
+            <span className="truncate text-[13px] font-normal text-text-primary">
               {person.roleLabel || "-"}
             </span>
           </div>
@@ -567,45 +567,40 @@ export default function BranchDetailPage() {
   const [loadError, setLoadError] =
     useState("");
 
-  const loadBranchDetails =
-    useCallback(
-      async (signal) => {
-        const [branch, leader] = await Promise.all([
-          fetchJson(`/branches/${branchId}`, signal),
-          fetchJson(`/branches/${branchId}/leader`, signal).catch(() => null),
-        ]);
+const loadBranchDetails =
+  useCallback(
+    async (signal) => {
+      const details =
+        await fetchJson(
+          `/branches/${branchId}/details`,
+          signal,
+        );
 
-        setBranchDetails({
-          branch,
-          leaders: leader
-            ? [
-                {
-                  member_id: leader.id,
-                  full_name_km: leader.nameKm,
-                  full_name_en: leader.nameEn,
-                  gender: leader.gender,
-                  status: leader.status,
-                  phone: leader.phone,
-                  email: leader.email,
-                  date_of_birth: leader.dateOfBirth,
-                  joined_on: leader.joinedAt,
-                  profile_photo_id: leader.profilePhotoId,
-                  profile_image: leader.profileImage,
-                  // This endpoint only returns the active branch leader.
-                  // Use the stable role code even if an older backend
-                  // returns a translated display label.
-                  role: "BRANCH_LEADER",
-                },
-              ]
-            : [],
-          summary: {
-            total_members: null,
-            total_activities: null,
+      setBranchDetails({
+        branch:
+          details?.branch ??
+          null,
+
+        leaders:
+          Array.isArray(
+            details?.leaders,
+          )
+            ? details.leaders
+            : Array.isArray(
+                  details?.management_members,
+                )
+              ? details.management_members
+              : [],
+
+        summary:
+          details?.summary ?? {
+            total_members: 0,
+            total_activities: 0,
           },
-        });
-      },
-      [branchId],
-    );
+      });
+    },
+    [branchId],
+  );
 
   const loadLeaderCandidates =
     useCallback(
@@ -620,9 +615,9 @@ export default function BranchDetailPage() {
       try {
         const firstPage =
           await fetchJson(
-            `/members?branchId=${encodeURIComponent(
+            `/branches/${encodeURIComponent(
               branchId,
-            )}&page=0&size=100`,
+            )}/members?page=0&size=100`,
             signal,
           );
 
@@ -659,9 +654,9 @@ export default function BranchDetailPage() {
               },
               (_, index) =>
                 fetchJson(
-                  `/members?branchId=${encodeURIComponent(
-                    branchId,
-                  )}&page=${index + 1}&size=100`,
+                  `/branches/${encodeURIComponent(
+                      branchId,
+                    )}/members?page=${index + 1}&size=100`,
                   signal,
                 ),
             ),
@@ -1521,8 +1516,28 @@ export default function BranchDetailPage() {
         }
         initialData={{
           ...branch,
+
           branchLeaderId:
-            branchLeader?.id ?? "",
+            branchLeader?.id ??
+            branchDetails?.leaders?.find(
+              (person) =>
+                String(
+                  person?.role ?? "",
+                ).toUpperCase() ===
+                "BRANCH_LEADER",
+            )?.member_id ??
+            branchDetails?.leaders?.find(
+              (person) =>
+                String(
+                  person?.role ?? "",
+                ).toUpperCase() ===
+                "BRANCH_LEADER",
+            )?.id ??
+            "",
+
+          leaders:
+            branchDetails?.leaders ??
+            [],
         }}
         leaderOptions={leaderOptions}
         onSave={handleBranchSaved}
@@ -1536,6 +1551,16 @@ export default function BranchDetailPage() {
         onSave={
           handleCreateMember
         }
+
+        fixedBranchId={
+          branch.id
+        }
+
+        fixedBranchName={
+          branch.name
+        }
+
+        lockBranch
       />
     </div>
   );
