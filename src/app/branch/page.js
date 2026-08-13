@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import { RiDownloadCloud2Line } from "react-icons/ri";
-
+import { downloadExcel } from "@/utils/downloadExcel";
 import CreateBranchModal from "@/components/branch/CreateBranchModal";
 import BranchStats from "@/components/branch/branchStats";
 
@@ -30,6 +30,7 @@ import Button from "@/components/ui/Button";
  * FILTER LABELS
  * =========================================================
  */
+
 
 const ALL_LEVELS_LABEL =
   "កម្រិតសាខាទាំងអស់";
@@ -1331,6 +1332,7 @@ export default function BranchPage() {
         controller.signal,
       );
     };
+    
 
   /*
    * =======================================================
@@ -1550,6 +1552,45 @@ export default function BranchPage() {
     },
   ];
 
+    const handleDownload = () => {
+      const rows =
+        filteredBranches.map(
+          (branch, index) => ({
+            "ល.រ": index + 1,
+            "ឈ្មោះសាខា":
+              branch.name || "-",
+            "លេខកូដសាខា":
+              branch.code || "-",
+            "កម្រិតសាខា":
+              branch.level || "-",
+            "រាជធានី/ខេត្ត":
+              branch.province || "-",
+            "ក្រុង/ស្រុក/ខណ្ឌ":
+              branch.district || "-",
+            "ចំនួនសមាជិក":
+              branch.memberCount ??
+              0,
+            "ស្ថានភាព":
+              branch.statusLabel ||
+              "-",
+            "ថ្ងៃបង្កើត":
+              branch.createdAt ||
+              "-",
+          }),
+        );
+
+      const downloaded =
+        downloadExcel({
+          rows,
+          fileName: "branches",
+          sheetName: "Branches",
+        });
+
+      if (downloaded) {
+        setShowSaveFile(false);
+      }
+    };
+
   /*
    * =======================================================
    * PAGE
@@ -1605,57 +1646,29 @@ export default function BranchPage() {
 
           {/* Actions */}
           <div className="ml-auto flex shrink-0 items-center gap-3">
-            <div className="relative">
-              <Button
-                type="button"
-                variant="primary"
-                icon={
-                  <RiDownloadCloud2Line
-                    size={
-                      16
-                    }
-                  />
-                }
-                onClick={() =>
-                  setShowSaveFile(
-                    (
-                      open,
-                    ) =>
-                      !open,
-                  )
-                }
-                aria-expanded={
-                  showSaveFile
-                }
-                aria-controls="branch-save-file"
-              >
-                ទាញយក
-              </Button>
-
-              {showSaveFile && (
-                <div
-                  id="branch-save-file"
-                  className="absolute right-0 top-full z-50 mt-3"
-                >
-                  <SaveFile />
-                </div>
-              )}
-            </div>
+            <Button
+              type="button"
+              variant="primary"
+              icon={
+                <RiDownloadCloud2Line
+                  size={16}
+                />
+              }
+              onClick={handleDownload}
+            >
+              ទាញយក
+            </Button>
 
             <Button
               type="button"
               variant="success"
               icon={
                 <PlusCircle
-                  size={
-                    16
-                  }
+                  size={16}
                 />
               }
               onClick={() =>
-                setShowCreateModal(
-                  true,
-                )
+                setShowCreateModal(true)
               }
             >
               បង្កើតសាខាថ្មី
