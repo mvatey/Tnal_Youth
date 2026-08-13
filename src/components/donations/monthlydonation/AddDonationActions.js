@@ -1,6 +1,14 @@
 import Button from "../../forms/button";
 
-export default function AddDonationActions({ onReset, onCancel, onSave }) {
+export default function AddDonationActions({ onReset, onCancel, onSave, readOnly = false, onEdit }) {
+  if (readOnly) {
+    return (
+      <div className="mt-3 flex justify-end">
+        <Button action="edit" onClick={onEdit} />
+      </div>
+    );
+  }
+
   return (
     <div className="mt-3 flex items-center justify-between gap-3">
       <Button action="reset" onClick={onReset} />

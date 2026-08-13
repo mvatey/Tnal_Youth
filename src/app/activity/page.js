@@ -56,11 +56,31 @@ function formatDuration(startsAt, endsAt) {
   return `${hours} ម៉ោង`;
 }
 
+function getEffectiveActivityStatus(status, startsAt, endsAt) {
+  const storedStatus = String(status?.code || status || "").toLowerCase();
+  if (storedStatus === "cancelled" || storedStatus === "canceled") {
+    return "cancelled";
+  }
+
+  const now = Date.now();
+  const start = new Date(startsAt).getTime();
+  const end = new Date(endsAt).getTime();
+
+  if (Number.isFinite(end) && now >= end) return "completed";
+  if (storedStatus === "completed") return "completed";
+  if (Number.isFinite(start) && now >= start) return "ongoing";
+  return storedStatus || "upcoming";
+}
+
 function normalizeActivity(item, branchOptions) {
   const branch = branchOptions.find(
     (option) => String(option.value) === String(item.branchId),
   );
-  const status = String(item.status?.code || "").toLowerCase();
+  const status = getEffectiveActivityStatus(
+    item.status,
+    item.startsAt,
+    item.endsAt,
+  );
   const capacity = Number(item.capacity || 0);
 
   return {
@@ -72,11 +92,16 @@ function normalizeActivity(item, branchOptions) {
     sectorId: item.sector?.id,
     branch: branch?.label || `#${item.branchId}`,
     branchId: item.branchId,
-    location: item.locationName || "-",
+    location: item.locationName || item.address || "-",
     date: formatDate(item.startsAt),
     dateValue: item.startsAt?.slice(0, 10) || "",
     duration: formatDuration(item.startsAt, item.endsAt),
-    participants: capacity > 0 ? `-/${capacity}` : "-",
+    participants:
+      item.participantCount != null
+        ? `${item.participantCount}/${capacity || "-"}`
+        : capacity > 0
+          ? `-/${capacity}`
+          : "-",
     status,
   };
 }
@@ -98,14 +123,24 @@ function TypeBadge({ type }) {
 
 function StatusBadge({ status }) {
   const isUpcoming = status === "upcoming";
+  const isOngoing = status === "ongoing";
+  const isCancelled = status === "cancelled";
 
-  const label = isUpcoming
-    ? "ឆាប់ៗនេះ"
-    : "បានបញ្ចប់";
+  const label = isCancelled
+    ? "បានលុបចោល"
+    : isOngoing
+      ? "កំពុងដំណើរការ"
+      : isUpcoming
+        ? "ឆាប់ៗនេះ"
+        : "បានបញ្ចប់";
 
-  const style = isUpcoming
-    ? "bg-secondary-light text-secondary"
-    : "bg-success-bg text-success";
+  const style = isCancelled
+    ? "bg-danger-bg text-danger"
+    : isOngoing
+      ? "bg-warning-bg text-warning"
+      : isUpcoming
+        ? "bg-secondary-light text-secondary"
+        : "bg-success-bg text-success";
 
   return (
     <span

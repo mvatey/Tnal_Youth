@@ -64,6 +64,32 @@ function formatDuration(startsAt, endsAt) {
   return `${Math.round((end - start) / 3_600_000)} ម៉ោង`;
 }
 
+function getEffectiveActivityStatus(status, startsAt, endsAt) {
+  const storedStatus = String(status?.code || status || "").toLowerCase();
+  if (storedStatus === "cancelled" || storedStatus === "canceled") {
+    return "cancelled";
+  }
+
+  const now = Date.now();
+  const start = new Date(startsAt).getTime();
+  const end = new Date(endsAt).getTime();
+
+  if (Number.isFinite(end) && now >= end) return "completed";
+  if (storedStatus === "completed") return "completed";
+  if (Number.isFinite(start) && now >= start) return "ongoing";
+  return storedStatus || "upcoming";
+}
+
+function participantAttendanceCode(participant) {
+  return String(
+    participant.attendanceStatus?.code ||
+      participant.attendance_status?.code ||
+      participant.attendanceStatusCode ||
+      participant.attendance_status_code ||
+      "",
+  ).toLowerCase();
+}
+
 async function backendGet(path, accessToken) {
   const response = await fetch(`${BACKEND_URL}${path}`, {
     headers: {
@@ -107,15 +133,20 @@ export default async function ActivityDetailPage({ params }) {
 
   const activity = {
     id: record.id,
+    branchId: record.branchId,
     name: record.titleKm || record.titleEn || "-",
     descriptionBrief: record.description || "-",
     descriptionDetail: record.description || "-",
     type: lookupLabel(record.type),
     sector: lookupLabel(record.sector),
-    status: String(record.status?.code || "").toLowerCase(),
+    status: getEffectiveActivityStatus(
+      record.status,
+      record.startsAt,
+      record.endsAt,
+    ),
     branch:
       branch?.labelKm || branch?.labelEn || branch?.code || `#${record.branchId}`,
-    location: record.locationName || "-",
+    location: record.locationName || record.address || "-",
     address: record.address || record.locationName || "-",
     mapLink: record.googleMapUrl || "#",
     mapImage: "/map.png",
@@ -130,8 +161,16 @@ export default async function ActivityDetailPage({ params }) {
     duration: formatDuration(record.startsAt, record.endsAt),
     participants: `${activityParticipants.length}/${record.capacity || "-"}`,
     visibility: record.publicActivity ? "សាធារណៈ" : "ផ្ទៃក្នុង",
-    leader: "-",
-    phone: "-",
+    leader:
+      record.organizerName ||
+      record.createdByName ||
+      record.creatorName ||
+      (record.createdBy ? `#${record.createdBy}` : "-"),
+    phone:
+      record.organizerPhone ||
+      record.createdByPhone ||
+      record.creatorPhone ||
+      "-",
     donation: "$ 0",
     budget: "$ 0",
     documents: [],
@@ -139,18 +178,34 @@ export default async function ActivityDetailPage({ params }) {
 
 const attendedCount = activityParticipants.filter(
   (participant) =>
+    participantAttendanceCode(participant) === "present" ||
+    participantAttendanceCode(participant) === "attended" ||
     Boolean(participant.checked_in_at || participant.checkedInAt)
 ).length;
 
 const absentCount = activityParticipants.filter(
   (participant) =>
-    !Boolean(participant.checked_in_at || participant.checkedInAt)
+    participantAttendanceCode(participant) === "absent"
 ).length;
 
 const totalParticipantCount = activityParticipants.length;
 
-  const statusLabel = activity.status === "completed" ? "បានបញ្ចប់" : "នាពេលខាងមុខ";
-  const statusStyle = activity.status === "completed" ? "bg-success-bg text-success" : "bg-secondary-light text-secondary";
+  const statusLabel =
+    activity.status === "completed"
+      ? "បានបញ្ចប់"
+      : activity.status === "ongoing"
+        ? "កំពុងដំណើរការ"
+        : activity.status === "cancelled"
+          ? "បានលុបចោល"
+          : "នាពេលខាងមុខ";
+  const statusStyle =
+    activity.status === "completed"
+      ? "bg-success-bg text-success"
+      : activity.status === "ongoing"
+        ? "bg-warning-bg text-warning"
+        : activity.status === "cancelled"
+          ? "bg-danger-bg text-danger"
+          : "bg-secondary-light text-secondary";
   const visibilityLabel = activity.visibility || "សាធារណៈ";
 
   return (
@@ -346,7 +401,13 @@ const totalParticipantCount = activityParticipants.length;
 
   <div className="mt-5 grid grid-cols-2 gap-3">
     <Link
-      href={`/activity/create/income?activityId=${activity.id}`}
+      href={{
+        pathname: "/donation/eventdonation/detail",
+        query: {
+          branch: activity.branchId,
+          event: activity.id,
+        },
+      }}
       className="flex h-10 items-center justify-center gap-2 rounded-lg bg-[#D3AF3C] text-sm font-semibold text-white transition-colors hover:bg-[#BF9C2D]"
     >
       <CircleDollarSign size={16} />

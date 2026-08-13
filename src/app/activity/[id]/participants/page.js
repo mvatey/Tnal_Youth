@@ -54,6 +54,9 @@ function normalizeExistingParticipant(participant) {
     ...participant,
     memberId: Number(getValue(participant, "memberId", "member_id")),
     branchId: Number(getValue(participant, "branchId", "branch_id")),
+    attendanceStatus: String(
+      getValue(participant, "attendanceStatus", "attendance_status") || "",
+    ).toUpperCase(),
     checkedInAt: getValue(participant, "checkedInAt", "checked_in_at"),
   };
 }
@@ -64,9 +67,20 @@ function isCompletedActivity(activity) {
       activity?.status?.code ??
       activity?.status ??
       "",
-  ).toUpperCase();
+  ).trim().toLowerCase();
 
-  return status === "COMPLETED" || status === "បានបញ្ចប់";
+  if (status === "cancelled" || status === "canceled") {
+    return false;
+  }
+
+  const endsAt = getValue(activity, "endsAt", "ends_at");
+  const endTime = new Date(endsAt).getTime();
+
+  return (
+    status === "completed" ||
+    status === "បានបញ្ចប់" ||
+    (Number.isFinite(endTime) && Date.now() >= endTime)
+  );
 }
 
 export default function ActivityParticipantsPage({ params }) {
@@ -121,15 +135,19 @@ export default function ActivityParticipantsPage({ params }) {
             ? existingResponse.content
             : []
         ).map(normalizeExistingParticipant);
-        const existingByMemberId = new Map(
-          existingParticipants.map((participant) => [participant.memberId, participant]),
+        const membersById = new Map(
+          members.map((member) => [Number(member.id), member]),
         );
 
-        const rows = members.map((member) => {
-          const memberId = Number(member.id);
-          const existing = existingByMemberId.get(memberId);
+        // The activity's saved participant records are authoritative. A member
+        // may have moved branch or may not be present in the current branch page,
+        // but they must still remain visible in this activity's attendance list.
+        const rows = existingParticipants.map((existing) => {
+          const memberId = existing.memberId;
+          const member = membersById.get(memberId) || {};
           const joinedDateValue = getValue(member, "joinedOn", "joined_on") ||
             getValue(existing, "registeredAt", "registered_at") || "";
+          const attendanceStatus = existing.attendanceStatus;
 
           return {
             id: memberId,
@@ -144,13 +162,15 @@ export default function ActivityParticipantsPage({ params }) {
             branch: getLabel(member.branch) ||
               getValue(existing, "branchNameKm", "branch_name_km") ||
               getValue(existing, "branchNameEn", "branch_name_en") || "-",
-            branchId,
+            branchId: existing.branchId || branchId,
             joinedDateValue: joinedDateValue ? String(joinedDateValue).slice(0, 10) : "",
             joinedDate: formatDate(joinedDateValue),
-            isInvited: Boolean(existing),
-            isParticipated: Boolean(existing?.checkedInAt),
+            isInvited: true,
+            isParticipated: attendanceStatus
+              ? attendanceStatus === "PRESENT"
+              : Boolean(existing.checkedInAt),
           };
-        }).filter((member) => member.isInvited);
+        });
 
         if (!cancelled) {
           setActivity({

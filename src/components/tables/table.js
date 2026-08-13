@@ -19,10 +19,14 @@ export default function Table({
   onCancel,
   onSave,
   onReceiptSave,
+  readOnly = false,
+  rowEditMode = false,
 }) {
   const [rows, setRows] = useState(members);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedReceiptMember, setSelectedReceiptMember] = useState(null);
+  const [editingRowId, setEditingRowId] = useState(null);
+  const [editingSnapshot, setEditingSnapshot] = useState(null);
   const receiptUrlsRef = useRef(new Set());
 
   useEffect(() => {
@@ -182,6 +186,25 @@ export default function Table({
     onReset?.(resetRows);
   };
 
+  const handleStartRowEdit = (member) => {
+    setEditingRowId(member.id);
+    setEditingSnapshot({ ...member });
+  };
+
+  const handleCancelRowEdit = () => {
+    if (editingSnapshot) updateRow(editingSnapshot.id, editingSnapshot);
+    setEditingRowId(null);
+    setEditingSnapshot(null);
+  };
+
+  const handleSaveRow = async (member) => {
+    const saved = await onSave?.([member]);
+    if (saved === true) {
+      setEditingRowId(null);
+      setEditingSnapshot(null);
+    }
+  };
+
   return (
     <div>
       <div className="overflow-x-auto rounded-sm border border-[#e5eaf0] bg-white">
@@ -199,6 +222,13 @@ export default function Table({
                   onPaymentMethodChange={(id, paymentMethod) =>
                     updateRow(id, { paymentMethod })
                   }
+                  readOnly={readOnly || (rowEditMode && editingRowId !== member.id)}
+                  rowEditMode={rowEditMode}
+                  isEditing={editingRowId === member.id}
+                  editDisabled={editingRowId !== null && editingRowId !== member.id}
+                  onEdit={() => handleStartRowEdit(member)}
+                  onCancelEdit={handleCancelRowEdit}
+                  onSaveEdit={() => handleSaveRow(member)}
                   onShowInfo={setSelectedReceiptMember}
                   onRemoveReceipt={handleReceiptRemove}
                 />
@@ -220,11 +250,14 @@ export default function Table({
         onPageChange={setCurrentPage}
       />
 
-      <AddDonationActions
-        onReset={handleReset}
-        onCancel={onCancel}
-        onSave={() => onSave?.(filteredRows)}
-      />
+      {!rowEditMode && (
+        <AddDonationActions
+          onReset={handleReset}
+          onCancel={onCancel}
+          onSave={() => onSave?.(filteredRows)}
+          readOnly={readOnly}
+        />
+      )}
 
       {selectedReceiptMember && (
         <UploadPopup

@@ -1,4 +1,4 @@
-import { RefreshCw } from "lucide-react";
+import { Pencil, RefreshCw } from "lucide-react";
 import { HiSaveAs } from "react-icons/hi";
 
 const BUTTONS = {
@@ -16,6 +16,11 @@ const BUTTONS = {
     label: "បោះបង់",
     Icon: null,
     className: "border border-border bg-[#F3F5FC] text-text-secondary hover:bg-bg-page-gray w-[91px] h-[34px]",
+  },
+  edit: {
+    label: "កែប្រែ",
+    Icon: Pencil,
+    className: "bg-[#4B2E91] text-white text-center hover:bg-[#3d2577] w-[120px] h-[34px]",
   },
 };
 

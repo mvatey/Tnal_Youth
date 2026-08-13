@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check, SquarePen, X } from "lucide-react";
 import donationOptions from "@/data/donation/donationOptions.json";
 
 const RECEIPT_ICON_COLOR = "#4B2E91";
@@ -77,6 +78,13 @@ export default function AddDonationTableRow({
   onDollarAmountChange,
   onPaymentMethodChange,
   onShowInfo,
+  readOnly = false,
+  rowEditMode = false,
+  isEditing = false,
+  editDisabled = false,
+  onEdit,
+  onCancelEdit,
+  onSaveEdit,
 }) {
   const [focusedAmountField, setFocusedAmountField] = useState(null);
   const receipt = member.receipt;
@@ -135,6 +143,7 @@ export default function AddDonationTableRow({
           <input
             type="text"
             inputMode="decimal"
+            disabled={readOnly}
             value={member.realAmount ?? ""}
             onChange={handleAmountInput(onRealAmountChange)}
             onFocus={handleAmountFocus(
@@ -144,7 +153,7 @@ export default function AddDonationTableRow({
             )}
             onBlur={() => setFocusedAmountField(null)}
             placeholder={focusedAmountField === "realAmount" ? "" : "0"}
-            className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500"
+            className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500 disabled:cursor-not-allowed"
           />
           <span className="text-[13px] text-slate-500">៛</span>
         </div>
@@ -160,6 +169,7 @@ export default function AddDonationTableRow({
           <input
             type="text"
             inputMode="decimal"
+            disabled={readOnly}
             value={member.dollarAmount ?? ""}
             onChange={handleAmountInput(onDollarAmountChange)}
             onFocus={handleAmountFocus(
@@ -169,7 +179,7 @@ export default function AddDonationTableRow({
             )}
             onBlur={() => setFocusedAmountField(null)}
             placeholder={focusedAmountField === "dollarAmount" ? "" : "0.00"}
-            className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500"
+            className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500 disabled:cursor-not-allowed"
           />
           <span className="text-[13px] text-slate-500">$</span>
         </div>
@@ -178,9 +188,10 @@ export default function AddDonationTableRow({
       {/* វិធីសាស្ត្រទូទាត់ */}
       <td className="px-3">
         <select
+          disabled={readOnly}
           value={member.paymentMethod || "Cash"}
           onChange={(e) => onPaymentMethodChange(member.id, e.target.value)}
-          className="mx-auto block h-7 w-[82px] rounded-md border border-slate-400 bg-white px-2 text-[12px] text-slate-600 outline-none focus:border-[#4B2E91]"
+          className="mx-auto block h-7 w-[82px] rounded-md border border-slate-400 bg-white px-2 text-[12px] text-slate-600 outline-none focus:border-[#4B2E91] disabled:cursor-not-allowed disabled:bg-slate-100"
         >
           {monthlyDonationPaymentMethods.map((method) => (
             <option key={method} value={method}>
@@ -192,17 +203,42 @@ export default function AddDonationTableRow({
 
       {/* វិក្ក័យបត្រ */}
       <td className="px-3 text-center">
-        <div className="relative inline-flex">
+        <div className="relative inline-flex items-center gap-1">
           <button
             key={receipt?.previewUrl || "receipt-icon"}
             type="button"
+            disabled={readOnly}
             onClick={() => onShowInfo(member)}
-            className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-md text-[#4B2E91] transition hover:bg-[#4B2E91]/10"
+            className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-md text-[#4B2E91] transition hover:bg-[#4B2E91]/10 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="receipt"
             title={receipt?.name || "receipt"}
           >
             <ReceiptIcon size={18} />
           </button>
+
+          {rowEditMode && !isEditing ? (
+            <button
+              type="button"
+              onClick={onEdit}
+              disabled={editDisabled}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#F2A900] transition hover:bg-[#F2A900]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2A900]/40 disabled:cursor-not-allowed disabled:opacity-40"
+              title="Edit this donation"
+              aria-label="Edit this donation"
+            >
+              <SquarePen size={20} strokeWidth={2.1} />
+            </button>
+          ) : null}
+
+          {rowEditMode && isEditing ? (
+            <>
+              <button type="button" onClick={onCancelEdit} className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-600 hover:bg-slate-50" title="Cancel">
+                <X size={14} />
+              </button>
+              <button type="button" onClick={onSaveEdit} className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#4B2E91] text-white hover:bg-[#3f267a]" title="Save">
+                <Check size={14} />
+              </button>
+            </>
+          ) : null}
 
         </div>
       </td>
