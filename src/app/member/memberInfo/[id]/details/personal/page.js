@@ -350,7 +350,7 @@ function normalizePersonalInfo(
  * ========================================================= */
 
 export default function PersonalPage() {
-  const { isAdmin, canEditMemberDetails } = useMemberPermissions();
+  const { role, isAdmin, canEditMemberDetails, canManageMemberAccount } = useMemberPermissions();
   const isReadOnly = !canEditMemberDetails;
   const params =
     useParams();
@@ -375,6 +375,20 @@ export default function PersonalPage() {
     setOriginalRole,
   ] = useState("");
 
+  const normalizedTargetRole = String(originalRole || form.account_role || "MEMBER")
+    .replace(/^ROLE_/i, "")
+    .toUpperCase();
+  const canManageSensitiveFields =
+    isAdmin
+      ? true
+      : role === "BRANCH_LEADER"
+      ? ["MEMBER", "SECRETARY"].includes(normalizedTargetRole)
+      : role === "SECRETARY"
+        ? normalizedTargetRole === "MEMBER"
+        : false;
+  const canSavePersonalInfo = canEditMemberDetails ||
+    (canManageMemberAccount && canManageSensitiveFields);
+
   const [
     cvFile,
     setCvFile,
@@ -384,6 +398,7 @@ export default function PersonalPage() {
     fileName,
     setFileName,
   ] = useState("");
+  const [cvPreviewUrl, setCvPreviewUrl] = useState("");
 
   const [
     loading,
@@ -820,7 +835,10 @@ export default function PersonalPage() {
   const handleChange =
     (field) =>
     (event) => {
-      if (isReadOnly) {
+      if (isReadOnly && !(
+        canManageSensitiveFields &&
+        ["branch_id", "account_role"].includes(field)
+      )) {
         return;
       }
       const value =
@@ -931,6 +949,11 @@ export default function PersonalPage() {
         file,
       );
 
+      setCvPreviewUrl((previous) => {
+        if (previous?.startsWith("blob:")) URL.revokeObjectURL(previous);
+        return URL.createObjectURL(file);
+      });
+
       setFileName(
         file.name,
       );
@@ -942,7 +965,7 @@ export default function PersonalPage() {
 
     const handleAccountStatusChange =
       async (event) => {
-        if (isReadOnly) {
+        if (isReadOnly && !canManageSensitiveFields) {
           return;
         }
 
@@ -1033,7 +1056,7 @@ export default function PersonalPage() {
 
   const handleSave =
     async () => {
-      if (isReadOnly) {
+      if (!canSavePersonalInfo) {
         return;
       }
 
@@ -1557,6 +1580,7 @@ export default function PersonalPage() {
               options={
                 branches
               }
+              disabled={!canManageSensitiveFields}
               selectClassName={isAdmin ? "!pointer-events-auto !bg-white !text-gray-600" : ""}
               adminEditable={isAdmin}
             />
@@ -1582,7 +1606,7 @@ export default function PersonalPage() {
                 roles
               }
               disabled={
-                !form.has_account
+                !canManageSensitiveFields || !form.has_account
               }
               selectClassName={isAdmin ? "!pointer-events-auto !bg-white !text-gray-600" : ""}
               adminEditable={isAdmin}
@@ -1652,6 +1676,7 @@ export default function PersonalPage() {
                 },
               ]}
               disabled={
+                !canManageSensitiveFields ||
                 !form.has_account ||
                 changingStatus
               }
@@ -1685,26 +1710,6 @@ export default function PersonalPage() {
                 text-center
               "
             >
-              <div
-                className="
-                  mb-3
-                  flex
-                  h-10
-                  w-10
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-gray-100
-                "
-              >
-                <UploadCloud
-                  size={
-                    22
-                  }
-                  className="text-gray-400"
-                />
-              </div>
-
               <input
                 ref={
                   fileRef
@@ -1717,57 +1722,35 @@ export default function PersonalPage() {
                 }
               />
 
+              {fileName && (
+                <div className="h-[260px] w-full overflow-hidden rounded-lg border border-gray-200 bg-white">
+                  {/\.(png|jpe?g)$/i.test(fileName) ? (
+                    <img
+                      src={cvPreviewUrl || `/api/files/${form.cv_file_id}/content`}
+                      alt={fileName}
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <iframe
+                      src={`${cvPreviewUrl || `/api/files/${form.cv_file_id}/content`}#toolbar=0&view=FitH`}
+                      title={fileName}
+                      className="h-full w-full border-0"
+                    />
+                  )}
+                </div>
+              )}
+
+              {!fileName && <UploadCloud size={30} className="text-gray-400" />}
               {!isReadOnly && <button
                 type="button"
-                onClick={() =>
-                  fileRef.current?.click()
-                }
-                className="
-                  text-sm
-                  font-semibold
-                  text-primary
-                  hover:underline
-                "
+                onClick={() => fileRef.current?.click()}
+                className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
               >
-                បញ្ចូលឯកសារ
+                {fileName ? "ជំនួស CV" : "បញ្ចូលឯកសារ"}
               </button>}
-
-              <p className="mt-2 text-xs text-gray-400">
-                JPG, JPEG, DOCX,
-                PDF, PNG
-                (មិនលើស 5MB)
+              <p className="mt-2 max-w-full truncate text-xs text-gray-500" title={fileName}>
+                {fileName || "JPG, JPEG, DOCX, PDF, PNG (មិនលើស 5MB)"}
               </p>
-
-              {fileName && (
-                <a
-                  href={form.cv_file_id ? `/api/files/${form.cv_file_id}/content` : undefined}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-2 text-sm font-semibold text-primary hover:underline"
-                >
-                  មើល CV
-                </a>
-              )}
-
-              {fileName && (
-                <p
-                  className="
-                    mt-2
-                    max-w-[240px]
-                    truncate
-                    text-xs
-                    font-medium
-                    text-primary
-                  "
-                  title={
-                    fileName
-                  }
-                >
-                  {
-                    fileName
-                  }
-                </p>
-              )}
             </div>
           </div>
         </div>
@@ -1795,13 +1778,13 @@ export default function PersonalPage() {
 
       {/* SAVE */}
 
-      <div className="flex justify-end">
+      {canSavePersonalInfo && <div className="flex justify-end">
         <SaveButton
           onClick={
             handleSave
           }
           disabled={
-            isReadOnly ||
+            !canSavePersonalInfo ||
             saving ||
             changingStatus
           }
@@ -1810,7 +1793,7 @@ export default function PersonalPage() {
             ? "កំពុងរក្សាទុក..."
             : "រក្សាទុក"}
         </SaveButton>
-      </div>
+      </div>}
     </div>
   );
 }

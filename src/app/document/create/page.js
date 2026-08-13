@@ -335,92 +335,36 @@ export default function CreateDocumentPage() {
       if (!createResponse.ok) {
         throw new Error(createdDocument?.message || "Unable to save certificate.");
       }
+
+      if (data.activityId) {
+        const credentialResponse = await fetch(
+          `/api/backend/members/${memberId}/credentials`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: data.title?.trim() || "Certificate",
+              credentialKind: "ACTIVITY_CERTIFICATE",
+              credentialNo: `CERT-${memberId}-${Date.now()}-${generatedDocuments.indexOf(generatedDocument) + 1}`,
+              activityId: Number(data.activityId),
+              issuedOn: new Date().toISOString().slice(0, 10),
+              fileId: Number(uploadedFile.id),
+            }),
+          },
+        );
+        const credentialBody = await credentialResponse.json().catch(() => null);
+
+        if (!credentialResponse.ok) {
+          throw new Error(
+            credentialBody?.message || "Unable to connect the certificate to the member credential tab.",
+          );
+        }
+      }
     }
 
     return String(generatedDocuments[0].member.id);
   };
 
-  const saveActivityCertificates = async (data, allDocuments) => {
-    const activityMembers = data.selectedActivityMembers || [];
-
-    if (activityMembers.length === 0) {
-      throw new Error("កម្មវិធីនេះមិនមានសមាជិកចូលរួមទេ");
-    }
-
-    if (!data.templateFile) {
-      throw new Error("សូមបញ្ចូលរូបភាពគំរូវិញ្ញាបនបត្រ");
-    }
-
-    /*
-     * Save the uploaded activity template
-     * one time in IndexedDB.
-     *
-     * Every participant certificate uses
-     * the same templateStorageId.
-     */
-    const templateGroupId = createDocumentId();
-
-    const templateStorageId = `activity-certificate-${templateGroupId}`;
-
-    await saveTemplateFile({
-      id: templateStorageId,
-      file: data.templateFile,
-    });
-
-    activityMembers.forEach((member) => {
-      const memberKey = String(member.id);
-
-      const existingMemberDocuments = allDocuments[memberKey] || {};
-
-      const existingCertificates = normalizeArray(
-        existingMemberDocuments.certificates,
-      );
-
-      const newCertificate = {
-        id: createDocumentId(),
-
-        title: data.title || "វិញ្ញាបនបត្រ",
-
-        recipientType: "activity",
-
-        memberId: memberKey,
-
-        member: member.name_kh || "",
-
-        memberNameEn: member.name_en || "",
-
-        activityId: data.activityId || data.selectedActivity?.id || "",
-
-        activity: data.selectedActivity || null,
-
-        branch: getBranchName(data.branch) || getBranchName(member.branch),
-
-        description: data.description || "",
-
-        language: data.language || "km",
-
-        color: data.color || "#12224c",
-
-        font: data.font || "Noto Sans",
-
-        fontSize: data.fontSize || "medium",
-
-        templateStorageId,
-
-        createdAt: new Date().toISOString(),
-      };
-
-      allDocuments[memberKey] = {
-        ...existingMemberDocuments,
-
-        certificates: [...existingCertificates, newCertificate],
-      };
-    });
-
-    writeSavedDocuments(allDocuments);
-
-    return String(activityMembers[0].id);
-  };
   const saveAppointmentLetter = async (data, allDocuments) => {
     const memberId = data.memberId || data.selectedMember?.id || data.user?.id;
 
@@ -481,11 +425,13 @@ export default function CreateDocumentPage() {
 
   const saveAppointmentLettersToBackend = async (data) => {
     const selectedMembers = normalizeArray(data.selectedMembers);
-    const memberId = Number(data.memberId || normalizeArray(data.memberIds)[0]);
+    const memberIds = normalizeArray(data.memberIds).map(Number).filter(Number.isInteger);
+    const memberId = Number(data.memberId || memberIds[0]);
 
     if (!Number.isInteger(memberId) || memberId <= 0) {
       throw new Error("សូមជ្រើសរើសសមាជិកម្នាក់");
     }
+    const appointmentMemberIds = memberIds.length > 0 ? memberIds : [memberId];
 
     if (!data.templateFile) {
       throw new Error("សូមបញ្ចូលលិខិតតែងតាំង");
@@ -527,26 +473,48 @@ export default function CreateDocumentPage() {
       );
     }
 
-    const member = selectedMembers.find((item) => Number(item.id) === memberId);
-    const createResponse = await fetch("/api/backend/documents", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type_id: Number(memberDocumentType.id),
-        file_id: Number(uploadedFile.id),
-        title: data.title?.trim() || "លិខិតតែងតាំង",
-        description: data.description?.trim() || `លិខិតតែងតាំងសម្រាប់ ${getBranchName(data.branch) || getBranchName(member?.branch)}`,
-        member_id: memberId,
-      }),
-    });
-    const createdDocument = await createResponse.json().catch(() => null);
-    if (!createResponse.ok) {
-      throw new Error(
-        createdDocument?.message ||
-          createdDocument?.detail ||
-          createdDocument?.error ||
-          "Unable to save appointment letter.",
+    for (const [index, selectedMemberId] of appointmentMemberIds.entries()) {
+      const member = selectedMembers.find((item) => Number(item.id) === selectedMemberId);
+      const title = data.title?.trim() || "លិខិតតែងតាំង";
+      const createResponse = await fetch("/api/backend/documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type_id: Number(memberDocumentType.id),
+          file_id: Number(uploadedFile.id),
+          title,
+          description: data.description?.trim() || `លិខិតតែងតាំងសម្រាប់ ${getBranchName(data.branch) || getBranchName(member?.branch)}`,
+          member_id: selectedMemberId,
+        }),
+      });
+      const createdDocument = await createResponse.json().catch(() => null);
+      if (!createResponse.ok) {
+        throw new Error(
+          createdDocument?.message || createdDocument?.detail || createdDocument?.error ||
+            "Unable to save appointment letter.",
+        );
+      }
+
+      const credentialResponse = await fetch(
+        `/api/backend/members/${selectedMemberId}/credentials`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title,
+            credentialKind: "APPOINTMENT_LETTER",
+            credentialNo: `APPT-${selectedMemberId}-${Date.now()}-${index + 1}`,
+            issuedOn: new Date().toISOString().slice(0, 10),
+            fileId: Number(uploadedFile.id),
+          }),
+        },
       );
+      const credentialBody = await credentialResponse.json().catch(() => null);
+      if (!credentialResponse.ok) {
+        throw new Error(
+          credentialBody?.message || "Unable to connect the appointment letter to the member credential tab.",
+        );
+      }
     }
 
     return String(memberId);
@@ -585,10 +553,7 @@ export default function CreateDocumentPage() {
       }
 
       if (type === "certificate" && data.recipientType === "activity") {
-        const firstMemberId = await saveActivityCertificates(
-          data,
-          allDocuments,
-        );
+        const firstMemberId = await saveMemberCertificatesToBackend(data);
 
         alert("✅ បង្កើតវិញ្ញាបនបត្រដោយជោគជ័យ!");
 

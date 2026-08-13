@@ -76,9 +76,20 @@ export default function DocumentPreviewCard({
         );
       }
 
-      const canvas =
-        await html2canvas(
+      const captureTarget =
+        createFullSizeCapture(
           contentElement,
+        );
+
+      const captureElement =
+        captureTarget.element;
+
+      let canvas;
+
+      try {
+        canvas =
+          await html2canvas(
+          captureElement,
           {
             scale: 3,
             useCORS: true,
@@ -88,16 +99,16 @@ export default function DocumentPreviewCard({
             logging: false,
 
             width:
-              contentElement.scrollWidth,
+              captureElement.scrollWidth,
 
             height:
-              contentElement.scrollHeight,
+              captureElement.scrollHeight,
 
             windowWidth:
-              contentElement.scrollWidth,
+              captureElement.scrollWidth,
 
             windowHeight:
-              contentElement.scrollHeight,
+              captureElement.scrollHeight,
 
             onclone: (
               clonedDocument,
@@ -115,10 +126,10 @@ export default function DocumentPreviewCard({
                 "none";
 
               clonedContent.style.width =
-                `${contentElement.scrollWidth}px`;
+                `${captureElement.scrollWidth}px`;
 
               clonedContent.style.height =
-                `${contentElement.scrollHeight}px`;
+                `${captureElement.scrollHeight}px`;
 
               clonedContent.style.maxWidth =
                 "none";
@@ -167,6 +178,9 @@ export default function DocumentPreviewCard({
             },
           },
         );
+      } finally {
+        captureTarget.cleanup();
+      }
 
       if (
         !canvas.width ||
@@ -185,23 +199,57 @@ export default function DocumentPreviewCard({
 
       const pdf = new jsPDF({
         orientation,
-        unit: "px",
-        format: [
-          canvas.width,
-          canvas.height,
-        ],
-        hotfixes: [
-          "px_scaling",
-        ],
+        unit: "mm",
+        format: "a4",
       });
+
+      const pageWidth =
+        pdf.internal.pageSize.getWidth();
+
+      const pageHeight =
+        pdf.internal.pageSize.getHeight();
+
+      const margin = 8;
+
+      const availableWidth =
+        pageWidth - margin * 2;
+
+      const availableHeight =
+        pageHeight - margin * 2;
+
+      const imageRatio =
+        canvas.width / canvas.height;
+
+      let imageWidth =
+        availableWidth;
+
+      let imageHeight =
+        imageWidth / imageRatio;
+
+      if (
+        imageHeight >
+        availableHeight
+      ) {
+        imageHeight =
+          availableHeight;
+
+        imageWidth =
+          imageHeight * imageRatio;
+      }
+
+      const imageX =
+        (pageWidth - imageWidth) / 2;
+
+      const imageY =
+        (pageHeight - imageHeight) / 2;
 
       pdf.addImage(
         imageData,
         "PNG",
-        0,
-        0,
-        canvas.width,
-        canvas.height,
+        imageX,
+        imageY,
+        imageWidth,
+        imageHeight,
         undefined,
         "FAST",
       );
@@ -504,6 +552,79 @@ export default function DocumentPreviewCard({
       </button>
     </div>
   );
+}
+
+function createFullSizeCapture(
+  previewContent,
+) {
+  const sourceDocument =
+    previewContent.firstElementChild ||
+    previewContent;
+
+  const sourceRect =
+    sourceDocument.getBoundingClientRect();
+
+  const sourceWidth = Math.max(
+    sourceDocument.scrollWidth,
+    sourceDocument.offsetWidth,
+    sourceRect.width,
+    1,
+  );
+
+  const sourceHeight = Math.max(
+    sourceDocument.scrollHeight,
+    sourceDocument.offsetHeight,
+    sourceRect.height,
+    1,
+  );
+
+  const host =
+    document.createElement("div");
+
+  host.setAttribute(
+    "data-pdf-capture-host",
+    "true",
+  );
+
+  Object.assign(host.style, {
+    position: "fixed",
+    left: "-100000px",
+    top: "0",
+    width: `${sourceWidth}px`,
+    height: `${sourceHeight}px`,
+    overflow: "visible",
+    background: "#ffffff",
+    transform: "none",
+    zIndex: "-1",
+  });
+
+  const clone =
+    sourceDocument.cloneNode(true);
+
+  clone.setAttribute(
+    "data-document-content",
+    "true",
+  );
+
+  Object.assign(clone.style, {
+    width: `${sourceWidth}px`,
+    minWidth: `${sourceWidth}px`,
+    maxWidth: "none",
+    height: `${sourceHeight}px`,
+    minHeight: `${sourceHeight}px`,
+    maxHeight: "none",
+    overflow: "visible",
+    transform: "none",
+    transformOrigin: "top left",
+  });
+
+  host.appendChild(clone);
+  document.body.appendChild(host);
+
+  return {
+    element: clone,
+    cleanup: () => host.remove(),
+  };
 }
 
 function ensurePdfFilename(

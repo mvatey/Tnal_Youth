@@ -156,7 +156,7 @@ const paymentSummary = useMemo(
     let cancelled = false;
     Promise.all([
       fetchJson("/api/lookups/branches"),
-      fetchJson("/api/backend/payment-methods?activeOnly=true"),
+      fetchJson("/api/lookups/payment-methods?activeOnly=true&includeMaterial=false"),
     ])
       .then(([branchItems, methodItems]) => {
         if (cancelled) return;

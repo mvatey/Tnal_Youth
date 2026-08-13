@@ -3,7 +3,6 @@
 import {
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { Search } from "lucide-react";
@@ -11,7 +10,7 @@ import { Search } from "lucide-react";
 import FormSelect from "@/components/forms/FormSelect.js";
 import FormDate from "@/components/forms/FormDate.js";
 import Pagination from "@/components/navigation/Pagination";
-import DownloadButton from "@/components/forms/download";
+import DownloadButton from "@/components/ui/actions/DownloadButton";
 
 export default function DataTable({
   title,
@@ -22,14 +21,12 @@ export default function DataTable({
   searchQuery = "",
   onSearchChange,
   actionButton,
+  onDownload,
   emptyMessage = "មិនមានទិន្នន័យត្រូវនឹងលក្ខខណ្ឌស្វែងរកទេ",
   pageSize = 10,
-  downloadFilename = "table-data.pdf",
 }) {
   const [currentPage, setCurrentPage] =
     useState(1);
-
-  const tableRef = useRef(null);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -310,8 +307,6 @@ export default function DataTable({
 
       {/* Responsive table */}
       <div
-        ref={tableRef}
-        data-pdf-table
         className="
           w-full
           min-w-0
@@ -493,12 +488,11 @@ export default function DataTable({
               sm:justify-end
             "
           >
-            <DownloadButton
-              targetRef={tableRef}
-              filename={
-                downloadFilename
-              }
-            />
+            {onDownload && (
+              <DownloadButton
+                onDownload={onDownload}
+              />
+            )}
           </div>
         </div>
       )}

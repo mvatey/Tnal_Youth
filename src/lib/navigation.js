@@ -66,7 +66,6 @@ export const NAV_ITEMS = [
     href: "/myAcc",
     icon: "profile",
     roles: [
-      "admin",
       "secretary",
       "branch_leader",
       "member",

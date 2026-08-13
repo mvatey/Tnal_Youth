@@ -10,6 +10,7 @@ export default function DonationPage() {
   const [donations, setDonations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [paymentMethods, setPaymentMethods] = useState([]);
 
   const [query, setQuery] = useState("");
 
@@ -23,25 +24,30 @@ export default function DonationPage() {
         setIsLoading(true);
         setError("");
 
-        const response = await fetch(
-          `/api/backend/donations?memberId=${encodeURIComponent(id)}&page=0&size=100`,
-          {
-            cache: "no-store",
-            signal: controller.signal,
-          },
-        );
-        const payload = await response.json().catch(() => ({}));
+        const items = [];
+        let page = 0;
+        let total = Number.POSITIVE_INFINITY;
 
-        if (!response.ok) {
-          throw new Error(
-            payload.message || "មិនអាចទាញយកទិន្នន័យវិភាគទានបានទេ។",
+        while (items.length < total) {
+          const response = await fetch(
+            `/api/backend/donations?memberId=${encodeURIComponent(id)}&page=${page}&size=100`,
+            { cache: "no-store", signal: controller.signal },
           );
-        }
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(payload.message || "Unable to load monthly donations.");
+          }
 
-        const items = payload.data?.items || payload.items || [];
+          const pageData = payload.data || payload;
+          const pageItems = Array.isArray(pageData.items) ? pageData.items : [];
+          items.push(...pageItems);
+          total = Number.isFinite(Number(pageData.total)) ? Number(pageData.total) : items.length;
+          if (pageItems.length === 0) break;
+          page += 1;
+        }
         setDonations(
           items
-            .filter((item) => item.typeCode !== "SPONSOR_DONATION")
+            .filter((item) => item.typeCode === "MONTHLY_DONATION")
             .map((item) => {
               const period = item.donationPeriod
                 ? new Date(`${item.donationPeriod}T00:00:00`)
@@ -92,15 +98,26 @@ export default function DonationPage() {
     return () => controller.abort();
   }, [id]);
 
-  const paymentMethods = useMemo(() => {
-    return [
-      ...new Set(
-        donations
-          .map((item) => item.paymentMethod)
-          .filter(Boolean),
-      ),
-    ];
-  }, [donations]);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/lookups/payment-methods?activeOnly=true&includeMaterial=false", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message || "Unable to load payment methods.");
+        const rows = Array.isArray(body) ? body : (body?.data || []);
+        setPaymentMethods(rows.map((method) => ({
+          label: method.label_km || method.labelKm || method.label_en || method.labelEn || method.code,
+          value: method.label_km || method.labelKm || method.label_en || method.labelEn || method.code,
+        })).filter((method) => method.value));
+      })
+      .catch((lookupError) => {
+        if (lookupError.name !== "AbortError") console.error("Cannot load payment methods:", lookupError);
+      });
+    return () => controller.abort();
+  }, []);
 
   const filteredData = useMemo(() => {
     const normalizedQuery = query
@@ -196,12 +213,7 @@ export default function DonationPage() {
       name: "paymentMethod",
       value: methodFilter,
       onChange: setMethodFilter,
-      options: paymentMethods.map(
-        (method) => ({
-          label: method,
-          value: method,
-        }),
-      ),
+      options: paymentMethods,
       placeholder: "វិធីសាស្រ្តទូទាត់",
     },
   ];

@@ -16,7 +16,7 @@ export default function useMemberPermissions() {
     role,
     loading,
     isAdmin: role === "ADMIN",
-    canEditMemberDetails: ["ADMIN", "SECRETARY", "BRANCH_LEADER"].includes(role),
+    canEditMemberDetails: ["SECRETARY", "BRANCH_LEADER"].includes(role),
     canManageMemberAccount: ["ADMIN", "SECRETARY", "BRANCH_LEADER"].includes(role),
   };
 }

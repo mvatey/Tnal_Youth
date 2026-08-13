@@ -37,3 +37,20 @@ export async function deleteMemberRecord(memberId, resource, recordId) {
   if (!Number.isInteger(Number(recordId)) || String(recordId).includes("-")) return;
   await parseResponse(await fetch(memberRecordsUrl(memberId, resource, recordId), { method: "DELETE" }));
 }
+
+export async function uploadMemberRecordCertificate(memberId, resource, recordId, file) {
+  if (!file || !recordId) return null;
+  const body = new FormData();
+  body.append("file", file);
+  return parseResponse(await fetch(
+    `${memberRecordsUrl(memberId, resource, recordId)}/certificate`,
+    { method: "PUT", body },
+  ));
+}
+
+export async function removeMemberRecordCertificate(memberId, resource, recordId) {
+  return parseResponse(await fetch(
+    `${memberRecordsUrl(memberId, resource, recordId)}/certificate`,
+    { method: "DELETE" },
+  ));
+}

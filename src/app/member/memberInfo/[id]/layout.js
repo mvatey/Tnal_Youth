@@ -73,6 +73,29 @@ async function fetchJson(
   return body;
 }
 
+function formatDonationTotal(
+  amountKhr,
+  amountUsd,
+) {
+  const parts = [];
+
+  if (amountKhr) {
+    parts.push(
+      `${amountKhr.toLocaleString()} ៛`,
+    );
+  }
+
+  if (amountUsd) {
+    parts.push(
+      `$${amountUsd.toLocaleString()}`,
+    );
+  }
+
+  return parts.length > 0
+    ? parts.join(" / ")
+    : "0";
+}
+
 export default function MemberInfoLayout({
   children,
   params,
@@ -86,6 +109,34 @@ export default function MemberInfoLayout({
     member,
     setMember,
   ] = useState(null);
+
+  const [
+    activitySummary,
+    setActivitySummary,
+  ] = useState({
+    joinedActivityCount: 0,
+    notJoinedActivityCount: 0,
+    totalDonationKhr: 0,
+    totalDonationUsd: 0,
+  });
+
+  const [monthlyDonationSummary, setMonthlyDonationSummary] =
+    useState({
+      donationCount: 0,
+      totalDonationKhr: 0,
+      totalDonationUsd: 0,
+      cashPaymentCount: 0,
+      bankPaymentCount: 0,
+    });
+
+  const [activityDonationSummary, setActivityDonationSummary] =
+    useState({
+      donationCount: 0,
+      totalDonationKhr: 0,
+      totalDonationUsd: 0,
+      materialDonationCount: 0,
+      bankPaymentCount: 0,
+    });
 
   const [
     loading,
@@ -183,6 +234,131 @@ export default function MemberInfoLayout({
     };
   }, [id]);
 
+  useEffect(() => {
+    if (
+      !id ||
+      !showDefaultStats
+    ) {
+      return undefined;
+    }
+
+    const controller =
+      new AbortController();
+
+    async function loadActivitySummary() {
+      try {
+        const data =
+          await fetchJson(
+            `/backend/members/${id}/activities/summary`,
+            controller.signal,
+          );
+
+        setActivitySummary({
+          joinedActivityCount:
+            Number(
+              data?.joinedActivityCount,
+            ) || 0,
+          notJoinedActivityCount:
+            Number(
+              data?.notJoinedActivityCount,
+            ) || 0,
+          totalDonationKhr:
+            Number(
+              data?.totalDonationKhr,
+            ) || 0,
+          totalDonationUsd:
+            Number(
+              data?.totalDonationUsd,
+            ) || 0,
+        });
+      } catch (summaryError) {
+        if (
+          summaryError.name !==
+          "AbortError"
+        ) {
+          console.error(
+            "Cannot load member summary:",
+            summaryError,
+          );
+
+          setActivitySummary({
+            joinedActivityCount: 0,
+            notJoinedActivityCount: 0,
+            totalDonationKhr: 0,
+            totalDonationUsd: 0,
+          });
+        }
+      }
+    }
+
+    loadActivitySummary();
+
+    return () => {
+      controller.abort();
+    };
+  }, [id, showDefaultStats]);
+
+  useEffect(() => {
+    if (!id || !isDonation) return undefined;
+
+    const controller = new AbortController();
+
+    fetchJson(
+      `/backend/members/${id}/monthly-donations/summary`,
+      controller.signal,
+    )
+      .then((data) => {
+        setMonthlyDonationSummary({
+          donationCount: Number(data?.donationCount) || 0,
+          totalDonationKhr: Number(data?.totalDonationKhr) || 0,
+          totalDonationUsd: Number(data?.totalDonationUsd) || 0,
+          cashPaymentCount: Number(data?.cashPaymentCount) || 0,
+          bankPaymentCount: Number(data?.bankPaymentCount) || 0,
+        });
+      })
+      .catch((summaryError) => {
+        if (summaryError.name !== "AbortError") {
+          console.error(
+            "Cannot load monthly donation summary:",
+            summaryError,
+          );
+        }
+      });
+
+    return () => controller.abort();
+  }, [id, isDonation]);
+
+  useEffect(() => {
+    if (!id || !isSponsor) return undefined;
+
+    const controller = new AbortController();
+
+    fetchJson(
+      `/backend/members/${id}/activity-donations/summary`,
+      controller.signal,
+    )
+      .then((data) => {
+        setActivityDonationSummary({
+          donationCount: Number(data?.donationCount) || 0,
+          totalDonationKhr: Number(data?.totalDonationKhr) || 0,
+          totalDonationUsd: Number(data?.totalDonationUsd) || 0,
+          materialDonationCount:
+            Number(data?.materialDonationCount) || 0,
+          bankPaymentCount: Number(data?.bankPaymentCount) || 0,
+        });
+      })
+      .catch((summaryError) => {
+        if (summaryError.name !== "AbortError") {
+          console.error(
+            "Cannot load activity donation summary:",
+            summaryError,
+          );
+        }
+      });
+
+    return () => controller.abort();
+  }, [id, isSponsor]);
+
   const handleOpenDetails = () => {
     router.push(
       `/member/memberInfo/${id}/details/personal`,
@@ -275,8 +451,10 @@ export default function MemberInfoLayout({
             <StatCard
               icon={Users}
               label="ចំនួនសកម្មភាពចូលរួម"
-              value="25"
-              growth="12"
+              value={
+                activitySummary
+                  .joinedActivityCount
+              }
               iconColor="text-primary"
               iconBg="bg-secondary-light"
             />
@@ -284,17 +462,23 @@ export default function MemberInfoLayout({
             <StatCard
               icon={InfoIcon}
               label="ចំនួនមិនបានចូលរួម"
-              value="150"
-              growth="8"
+              value={
+                activitySummary
+                  .notJoinedActivityCount
+              }
               iconColor="text-error"
               iconBg="bg-error-bg"
             />
 
             <StatCard
               icon={FaHandHoldingDollar}
-              label="ចំនួនធ្វើវិភាគទាន"
-              value="150"
-              growth="8"
+              label="ទឹកប្រាក់វិភាគទានសរុប"
+              value={formatDonationTotal(
+                activitySummary
+                  .totalDonationKhr,
+                activitySummary
+                  .totalDonationUsd,
+              )}
               iconColor="text-warning"
               iconBg="bg-warning-bg"
             />
@@ -315,8 +499,7 @@ export default function MemberInfoLayout({
             <StatCard
               icon={FaHandHoldingDollar}
               label="ចំនួនវិភាគទាន"
-              value="25"
-              growth="12"
+              value={monthlyDonationSummary.donationCount}
               iconColor="text-primary"
               iconBg="bg-secondary-light"
             />
@@ -324,8 +507,10 @@ export default function MemberInfoLayout({
             <StatCard
               icon={CircleDollarSign}
               label="ទឹកប្រាក់សរុប"
-              value="150"
-              growth="8"
+              value={formatDonationTotal(
+                monthlyDonationSummary.totalDonationKhr,
+                monthlyDonationSummary.totalDonationUsd,
+              )}
               iconColor="text-error"
               iconBg="bg-error-bg"
             />
@@ -333,8 +518,7 @@ export default function MemberInfoLayout({
             <StatCard
               icon={HiCash}
               label="ការទូទាត់តាម Cash"
-              value="12"
-              growth="5"
+              value={monthlyDonationSummary.cashPaymentCount}
               iconColor="text-warning"
               iconBg="bg-warning-bg"
             />
@@ -342,8 +526,7 @@ export default function MemberInfoLayout({
             <StatCard
               icon={CreditCard}
               label="ការទូទាត់តាមធនាគារ"
-              value="12"
-              growth="5"
+              value={monthlyDonationSummary.bankPaymentCount}
               iconColor="text-secondary"
               iconBg="bg-secondary-light"
             />
@@ -364,8 +547,7 @@ export default function MemberInfoLayout({
             <StatCard
               icon={Users}
               label="ចំនួនការបរិច្ចាក"
-              value="8"
-              growth="4"
+              value={activityDonationSummary.donationCount}
               iconColor="text-primary"
               iconBg="bg-secondary-light"
             />
@@ -373,8 +555,10 @@ export default function MemberInfoLayout({
             <StatCard
               icon={CircleDollarSign}
               label="ទឹកប្រាក់សរុប"
-              value="2,000,000៛"
-              growth="10"
+              value={formatDonationTotal(
+                activityDonationSummary.totalDonationKhr,
+                activityDonationSummary.totalDonationUsd,
+              )}
               iconColor="text-success"
               iconBg="bg-success-bg"
             />
@@ -382,8 +566,7 @@ export default function MemberInfoLayout({
             <StatCard
               icon={HandCoins}
               label="ចំនួនសម្ភារៈ"
-              value="500"
-              growth="7"
+              value={activityDonationSummary.materialDonationCount}
               iconColor="text-warning"
               iconBg="bg-warning-bg"
             />
@@ -391,8 +574,7 @@ export default function MemberInfoLayout({
             <StatCard
               icon={CreditCard}
               label="ការទូទាត់តាម ធនាគារ"
-              value="500"
-              growth="7"
+              value={activityDonationSummary.bankPaymentCount}
               iconColor="text-secondary"
               iconBg="bg-secondary-light"
             />

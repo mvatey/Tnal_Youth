@@ -406,23 +406,20 @@ export default function ParticipationPage() {
           );
         }
 
-        const data =
-          await fetchJson(
+        const content = [];
+        let page = 0;
+        let totalPages = 1;
+
+        do {
+          searchParams.set("page", String(page));
+          const data = await fetchJson(
             `/members/${memberId}/participations?${searchParams.toString()}`,
             controller.signal,
           );
-
-        console.log(
-          "Member participation response:",
-          data,
-        );
-
-        const content =
-          Array.isArray(
-            data?.content,
-          )
-            ? data.content
-            : [];
+          content.push(...(Array.isArray(data?.content) ? data.content : []));
+          totalPages = Math.max(1, Number(data?.totalPages) || 1);
+          page += 1;
+        } while (page < totalPages);
 
         setParticipations(
           content.map(

@@ -301,51 +301,44 @@ export default function MyAccountPersonalPage() {
   const handleRealSave = async () => {
     setSaving(true);
     try {
-      let cvFileId = member.cvFileId || null;
-      if (cvFile) {
-        const upload = new FormData();
-        upload.append("file", cvFile);
-        const uploaded = await readJson(await fetch("/api/backend/files/attachments", {
-          method: "POST",
-          credentials: "include",
-          body: upload,
-        }));
-        cvFileId = uploaded.id;
-      }
-
-      const [nationalityId, ethnicityId, religionId] = await Promise.all([
+      const [nationalityId, ethnicityId, religionId, memberLevelId] = await Promise.all([
         resolveLookupId("nationalities", form.nationality, member.nationalityId),
         resolveLookupId("ethnicities", form.ethnicity, member.ethnicityId),
         resolveLookupId("religions", form.religion, member.religionId),
+        resolveLookupId("member-levels", form.level, member.levelId),
       ]);
 
-      await readJson(await fetch("/api/backend/my-account", {
+      await readJson(await fetch("/api/backend/my-account/personal-info", {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phone: member.phone,
-          email: member.email === "-" ? null : member.email,
-          fullNameKm: member.name_kh,
-          fullNameEn: member.name_en === "-" ? null : member.name_en,
+          phone: form.phone === "-" ? null : form.phone,
+          email: form.email === "-" ? null : form.email,
+          full_name_km: form.name_kh,
+          full_name_en: form.name_en === "-" ? null : form.name_en,
           gender: form.gender === "-" ? null : form.gender,
-          nationalityId,
-          religionId,
-          ethnicityId,
-          dateOfBirth: form.date_of_birth || null,
-          placeOfBirth: member.placeOfBirth || null,
-          currentAddress: member.currentAddress || null,
-          permanentAddress: member.permanentAddress || null,
-          bio: member.bio || null,
-          tshirtSize: form.shirtSize === "-" ? null : form.shirtSize,
-          branchId: member.branchId,
-          memberStatusId: member.statusId,
-          memberLevelId: member.levelId,
-          joinedOn: member.joinedAt === "-" ? null : member.joinedAt,
-          profilePhotoId: null,
-          cvFileId,
+          nationality_id: nationalityId,
+          religion_id: religionId,
+          ethnicity_id: ethnicityId,
+          date_of_birth: form.date_of_birth || null,
+          current_address: form.currentAddress || member.currentAddress || null,
+          permanent_address: form.permanentAddress || member.permanentAddress || null,
+          tshirt_size: form.shirtSize === "-" ? null : form.shirtSize,
+          member_level_id: memberLevelId,
+          joined_on: form.joinedAt === "-" ? null : form.joinedAt,
         }),
       }));
+
+      if (cvFile) {
+        const upload = new FormData();
+        upload.append("file", cvFile);
+        await readJson(await fetch("/api/backend/my-account/personal-info/cv", {
+          method: "PUT",
+          credentials: "include",
+          body: upload,
+        }));
+      }
 
       setCvFile(null);
       if (fileRef.current) fileRef.current.value = "";
@@ -436,14 +429,14 @@ export default function MyAccountPersonalPage() {
     label="ឈ្មោះជាភាសាខ្មែរ"
     name="name_kh"
     value={form.name_kh || "-"}
-    readOnly
+    onChange={handleChange("name_kh")}
   />
 
   <BoxFill
     label="ឈ្មោះជាអក្សរឡាតាំង"
     name="name_en"
     value={form.name_en || "-"}
-    readOnly
+    onChange={handleChange("name_en")}
   />
 
   {/* Editable */}
@@ -471,7 +464,7 @@ export default function MyAccountPersonalPage() {
     name="email"
     type="email"
     value={form.email || "-"}
-    readOnly
+    onChange={handleChange("email")}
   />
 
   <BoxFill
@@ -479,7 +472,7 @@ export default function MyAccountPersonalPage() {
     name="phone"
     type="tel"
     value={form.phone || "-"}
-    readOnly
+    onChange={handleChange("phone")}
   />
 
   {/* Editable */}
@@ -514,7 +507,8 @@ export default function MyAccountPersonalPage() {
     label="ថ្ងៃខែឆ្នាំចូលរួម"
     name="joinedAt"
     value={form.joinedAt || "-"}
-    readOnly
+    type="date"
+    onChange={handleChange("joinedAt")}
   />
 
   <BoxFill
@@ -535,7 +529,7 @@ export default function MyAccountPersonalPage() {
     label="កម្រិតសមាជិក (កាំ)"
     name="level"
     value={form.level || "-"}
-    readOnly
+    onChange={handleChange("level")}
   />
 
   {/* Editable */}

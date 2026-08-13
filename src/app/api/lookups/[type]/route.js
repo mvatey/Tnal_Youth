@@ -30,6 +30,7 @@ const ALLOWED_LOOKUPS =
     "activity-sectors",
     "activity-statuses",
     "activity-invitable-branches",
+    "payment-methods",
 
     "provinces",
     "districts",

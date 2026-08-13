@@ -28,6 +28,11 @@ export default function StatCard({
   iconBg = "bg-secondary-light",
   accent,
 }) {
+  const hasGrowth =
+    growth !== undefined &&
+    growth !== null &&
+    growth !== "";
+
   const growthNumber = Number(growth) || 0;
   const isUp = growthNumber >= 0;
 
@@ -79,6 +84,7 @@ export default function StatCard({
           </div>
         </div>
 
+        {hasGrowth && (
         <div className="flex shrink-0 flex-col items-end gap-1">
           <div
             className={`
@@ -100,6 +106,7 @@ export default function StatCard({
             ក្នុងខែនេះ
           </span>
         </div>
+        )}
       </div>
     </div>
   );

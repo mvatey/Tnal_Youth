@@ -15,6 +15,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { downloadExcel } from "@/utils/downloadExcel";
 import { AiOutlineWoman } from "react-icons/ai";
 import { FaDharmachakra } from "react-icons/fa";
 import { RiAddCircleLine } from "react-icons/ri";
@@ -973,6 +974,37 @@ export default function MembersPage() {
    * =========================================
    */
 
+  const handleDownloadMembers = () => {
+  if (
+    !Array.isArray(members) ||
+    members.length === 0
+  ) {
+    return;
+  }
+
+  const rows = members.map(
+    (member, index) => ({
+      "ល.រ": index + 1,
+      "ឈ្មោះសមាជិក":
+        member.nameKh || "-",
+      "ភេទ":
+        member.genderLabel || "-",
+      "សាខា":
+        member.branchLabel || "-",
+      "ស្ថានភាព":
+        member.statusLabel || "-",
+      "ថ្ងៃចូលរួម":
+        member.joinedAt || "-",
+    }),
+  );
+
+  downloadExcel({
+    rows,
+    fileName: "members",
+    sheetName: "Members",
+  });
+};
+
   const tableColumns = [
     {
       header: "ល.រ",
@@ -1217,27 +1249,18 @@ export default function MembersPage() {
         <DataTable
           title="បញ្ជីសមាជិក"
           data={members}
-          columns={
-            tableColumns
-          }
-          filters={
-            filterConfig
-          }
-          searchQuery={
-            query
-          }
-          onSearchChange={
-            setQuery
-          }
+          columns={tableColumns}
+          filters={filterConfig}
+          searchQuery={query}
+          onSearchChange={setQuery}
           searchPlaceholder="ស្វែងរកតាមរយៈឈ្មោះ..."
           pageSize={20}
+          onDownload={handleDownloadMembers}
           actionButton={
             <button
               type="button"
               onClick={() =>
-                setIsCreateOpen(
-                  true,
-                )
+                setIsCreateOpen(true)
               }
               className="
                 inline-flex

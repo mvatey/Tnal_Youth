@@ -7,10 +7,10 @@ import { RiAddCircleLine } from "react-icons/ri";
 import SaveButton from "@/components/forms/SaveButton";
 import FormSelect from "@/components/forms/FormSelect";
 import DeleteButton from "@/components/forms/DeleteButton";
-import ButtonDropLink from "@/components/forms/ButtonDropLink";
+import MemberAttachmentField from "@/components/forms/MemberAttachmentField";
 
 import educationData from "@/data/education.json";
-import { deleteMemberRecord, loadMemberRecords, saveMemberRecords } from "@/lib/memberRecords";
+import { deleteMemberRecord, loadMemberRecords, removeMemberRecordCertificate, saveMemberRecords, uploadMemberRecordCertificate } from "@/lib/memberRecords";
 import useMemberPermissions from "@/hooks/useMemberPermissions";
 
 function createId(prefix) {
@@ -86,8 +86,8 @@ export default function SkillPage() {
       loadMemberRecords(memberId, "languages", controller.signal),
       loadMemberRecords(memberId, "skills", controller.signal),
     ]).then(([languages, skills]) => {
-      setLanguageSkills(languages.length ? languages.map((row) => ({ id: row.id, language: row.language_name || "", listening: row.listening_level_id || "", speaking: row.speaking_level_id || "", reading: row.reading_level_id || "", writing: row.writing_level_id || "", documentLink: row.certificate_file?.file_path || "" })) : [createLanguageSkill()]);
-      setComputerSkills(skills.length ? skills.map((row) => ({ id: row.id, skill: row.skill_name || "", level: row.proficiency_level_id || "", documentLink: row.certificate_file?.file_path || "" })) : [createComputerSkill()]);
+      setLanguageSkills(languages.length ? languages.map((row) => ({ id: row.id, language: row.language_name || "", listening: row.listening_level_id || "", speaking: row.speaking_level_id || "", reading: row.reading_level_id || "", writing: row.writing_level_id || "", attachment: row.certificate_file || null })) : [createLanguageSkill()]);
+      setComputerSkills(skills.length ? skills.map((row) => ({ id: row.id, skill: row.skill_name || "", level: row.proficiency_level_id || "", attachment: row.certificate_file || null })) : [createComputerSkill()]);
     }).catch((error) => { if (error.name !== "AbortError") console.error(error); });
     return () => controller.abort();
   }, [memberId]);
@@ -188,8 +188,24 @@ export default function SkillPage() {
       saveMemberRecords(memberId, "languages", languageSkills, (item) => ({ language_name: item.language, listening_level_id: Number(item.listening) || null, speaking_level_id: Number(item.speaking) || null, reading_level_id: Number(item.reading) || null, writing_level_id: Number(item.writing) || null })),
       saveMemberRecords(memberId, "skills", computerSkills, (item) => ({ skill_name: item.skill, proficiency_level_id: Number(item.level) })),
     ]);
-    setLanguageSkills(languages.map((row) => ({ id: row.id, language: row.language_name || "", listening: row.listening_level_id || "", speaking: row.speaking_level_id || "", reading: row.reading_level_id || "", writing: row.writing_level_id || "", documentLink: row.certificate_file?.file_path || "" })));
-    setComputerSkills(skills.map((row) => ({ id: row.id, skill: row.skill_name || "", level: row.proficiency_level_id || "", documentLink: row.certificate_file?.file_path || "" })));
+    const syncAttachments = (savedRows, sourceRows, resource) => Promise.all(
+      savedRows.map(async (row, index) => {
+        const attachment = sourceRows[index]?.attachment;
+        if (attachment?.pendingFile) {
+          return uploadMemberRecordCertificate(memberId, resource, row.id, attachment.pendingFile);
+        }
+        if (attachment?.removeExisting && attachment?.removedFileId) {
+          return removeMemberRecordCertificate(memberId, resource, row.id);
+        }
+        return row;
+      }),
+    );
+    const [completedLanguages, completedSkills] = await Promise.all([
+      syncAttachments(languages, languageSkills, "languages"),
+      syncAttachments(skills, computerSkills, "skills"),
+    ]);
+    setLanguageSkills(completedLanguages.map((row) => ({ id: row.id, language: row.language_name || "", listening: row.listening_level_id || "", speaking: row.speaking_level_id || "", reading: row.reading_level_id || "", writing: row.writing_level_id || "", attachment: row.certificate_file || null })));
+    setComputerSkills(completedSkills.map((row) => ({ id: row.id, skill: row.skill_name || "", level: row.proficiency_level_id || "", attachment: row.certificate_file || null })));
 
     alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
   };
@@ -233,6 +249,7 @@ export default function SkillPage() {
               onDelete={() =>
                 removeLanguageSkill(item.id)
               }
+              readOnly={isReadOnly}
             />
           ))}
         </div>
@@ -276,6 +293,7 @@ export default function SkillPage() {
               onDelete={() =>
                 removeComputerSkill(item.id)
               }
+              readOnly={isReadOnly}
             />
           ))}
         </div>
@@ -298,6 +316,7 @@ function LanguageSkillGroup({
   canDelete,
   onChange,
   onDelete,
+  readOnly,
 }) {
   return (
     <div
@@ -396,20 +415,20 @@ function LanguageSkillGroup({
 
       {/* Document link */}
 
-      <div className="mt-5">
+      <div className="mt-5 border-t border-gray-100 pt-4">
         <label className="mb-2 block text-sm font-semibold text-text-primary">
-          តំណភ្ជាប់ឯកសារ
+          ភ្ជាប់ឯកសារ
         </label>
 
-        <ButtonDropLink
-          value={item.documentLink || ""}
+        <MemberAttachmentField
+          value={item.attachment}
           onChange={(value) =>
             onChange(
-              "documentLink",
+              "attachment",
               value,
             )
           }
-          placeholder="បញ្ចូលតំណភ្ជាប់វិញ្ញាបនបត្រ ឬឯកសារភាសា"
+          readOnly={readOnly}
         />
       </div>
 
@@ -430,6 +449,7 @@ function ComputerSkillGroup({
   canDelete,
   onChange,
   onDelete,
+  readOnly,
 }) {
   return (
     <div
@@ -487,20 +507,20 @@ function ComputerSkillGroup({
 
       {/* Document link */}
 
-      <div className="mt-5">
+      <div className="mt-5 border-t border-gray-100 pt-4">
         <label className="mb-2 block text-sm font-semibold text-text-primary">
-          តំណភ្ជាប់ឯកសារ
+          ភ្ជាប់ឯកសារ
         </label>
 
-        <ButtonDropLink
-          value={item.documentLink || ""}
+        <MemberAttachmentField
+          value={item.attachment}
           onChange={(value) =>
             onChange(
-              "documentLink",
+              "attachment",
               value,
             )
           }
-          placeholder="បញ្ចូលតំណភ្ជាប់វិញ្ញាបនបត្រ ឬឯកសារជំនាញ"
+          readOnly={readOnly}
         />
       </div>
 

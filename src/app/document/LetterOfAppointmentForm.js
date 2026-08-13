@@ -91,16 +91,24 @@ export default function LetterOfAppointmentForm({
     const controller = new AbortController();
     setLoadingMembers(true);
     setDataError("");
-    fetch(`/api/members?branchId=${encodeURIComponent(form.branchId)}&page=0&size=100`, {
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then(async (response) => {
+    (async () => {
+      const rows = [];
+      let page = 0;
+      let totalPages = 1;
+      do {
+        const response = await fetch(
+          `/api/members?branchId=${encodeURIComponent(form.branchId)}&page=${page}&size=100`,
+          { cache: "no-store", signal: controller.signal },
+        );
         const body = await response.json().catch(() => null);
         if (!response.ok) throw new Error(body?.message || "Unable to load members.");
-        const rows = body?.content ?? body?.data?.content ?? body?.data ?? body;
-        setMembers(Array.isArray(rows) ? rows : []);
-      })
+        const pageRows = body?.content ?? body?.data?.content ?? body?.data ?? body;
+        rows.push(...(Array.isArray(pageRows) ? pageRows : []));
+        totalPages = Math.max(1, Number(body?.totalPages ?? body?.data?.totalPages) || 1);
+        page += 1;
+      } while (page < totalPages);
+      setMembers(rows);
+    })()
       .catch((error) => {
         if (error.name !== "AbortError") setDataError(error.message || "Unable to load members.");
       })

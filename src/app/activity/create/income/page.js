@@ -175,7 +175,7 @@ export default function IncomePage() {
         const activityRecord = await fetchJson(`/api/backend/activities/${encodeURIComponent(activityId)}`);
         const [memberPage, methods, incomeDetailResponse] = await Promise.all([
           fetchJson(`/api/backend/members?branchId=${activityRecord.branchId}&page=0&size=100`),
-          fetchJson("/api/backend/payment-methods?activeOnly=true"),
+          fetchJson("/api/lookups/payment-methods?activeOnly=true&includeMaterial=true"),
           fetchJson(`/api/backend/activities/${encodeURIComponent(activityId)}/incomes`),
         ]);
         const members = Array.isArray(memberPage) ? memberPage : memberPage?.content || [];

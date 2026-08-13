@@ -11,12 +11,12 @@ import BoxFill from "@/components/forms/boxFill.js";
 import FormDate from "@/components/forms/FormDate.js";
 import SelectArrow from "@/components/forms/SelectArrow";
 import DeleteButton from "@/components/forms/DeleteButton";
-import ButtonDropLink from "@/components/forms/ButtonDropLink";
+import MemberAttachmentField from "@/components/forms/MemberAttachmentField";
 import useMemberPermissions from "@/hooks/useMemberPermissions";
 
 import locationData from "@/data/location.json";
 import educationData from "@/data/education.json";
-import { deleteMemberRecord, loadMemberRecords, saveMemberRecords } from "@/lib/memberRecords";
+import { deleteMemberRecord, loadMemberRecords, saveMemberRecords, uploadMemberRecordCertificate } from "@/lib/memberRecords";
 
 function createEmptyEducation() {
   return {
@@ -40,7 +40,7 @@ export default function EducationPage() {
     loadMemberRecords(memberId, "education", controller.signal)
       .then((rows) => {
         setMember({ id: memberId });
-        setEducations(rows.length ? rows.map((row) => ({ id: row.id, school: row.school_name || "", province: row.province_name || "", country: row.country_name || "", degree: row.education_level_id || "", startDate: row.start_date || "", endDate: row.end_date || "", documentLink: row.certificate_file?.file_path || "" })) : [createEmptyEducation()]);
+        setEducations(rows.length ? rows.map((row) => ({ id: row.id, school: row.school_name || "", province: row.province_name || "", country: row.country_name || "", degree: row.education_level_id || "", startDate: row.start_date || "", endDate: row.end_date || "", attachment: row.certificate_file || null })) : [createEmptyEducation()]);
       })
       .catch((error) => { if (error.name !== "AbortError") setMember(null); });
     return () => controller.abort();
@@ -110,7 +110,11 @@ export default function EducationPage() {
       start_date: item.startDate || null,
       end_date: item.endDate || null,
     }));
-    setEducations(rows.map((row) => ({ id: row.id, school: row.school_name || "", province: row.province_name || "", country: row.country_name || "", degree: row.education_level_id || "", fieldOfStudy: row.field_of_study || "", startDate: row.start_date || "", endDate: row.end_date || "", documentLink: row.certificate_file?.file_path || "" })));
+    const completedRows = await Promise.all(rows.map(async (row, index) => {
+      const file = educations[index]?.attachment?.pendingFile;
+      return file ? uploadMemberRecordCertificate(memberId, "education", row.id, file) : row;
+    }));
+    setEducations(completedRows.map((row) => ({ id: row.id, school: row.school_name || "", province: row.province_name || "", country: row.country_name || "", degree: row.education_level_id || "", fieldOfStudy: row.field_of_study || "", startDate: row.start_date || "", endDate: row.end_date || "", attachment: row.certificate_file || null })));
   }
 
   if (!member) {
@@ -151,6 +155,7 @@ export default function EducationPage() {
               onDelete={() =>
                 removeEducation(education.id)
               }
+              readOnly={isReadOnly}
             />
           ))}
         </div>
@@ -182,6 +187,7 @@ function EducationGroup({
   canDelete,
   onDelete,
   onChange,
+  readOnly,
 }) {
   const provinces = Array.isArray(locationData.provinces)
     ? locationData.provinces
@@ -236,15 +242,6 @@ function EducationGroup({
           options={degrees}
         />
 
-        <div className="flex items-end">
-          <ButtonDropLink
-            value={education.documentLink ?? ""}
-            onChange={(value) =>
-              onChange("documentLink", value)
-            }
-          />
-        </div>
-
         <FormDate
           label="ថ្ងៃចាប់ផ្តើម"
           name={`startDate-${education.id}`}
@@ -261,6 +258,17 @@ function EducationGroup({
           onChange={(event) =>
             onChange("endDate", event.target.value)
           }
+        />
+      </div>
+
+      <div className="mt-5 border-t border-gray-100 pt-4">
+        <label className="mb-2 block text-sm font-semibold text-text-primary">
+          ភ្ជាប់ឯកសារ
+        </label>
+        <MemberAttachmentField
+          value={education.attachment}
+          onChange={(value) => onChange("attachment", value)}
+          readOnly={readOnly}
         />
       </div>
 

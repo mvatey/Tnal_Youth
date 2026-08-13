@@ -86,7 +86,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     Promise.all([
       fetchJson("/api/lookups/branches"),
       fetchJson("/api/backend/activities?page=0&size=100"),
-      fetchJson("/api/backend/payment-methods?activeOnly=true"),
+      fetchJson("/api/lookups/payment-methods?activeOnly=true&includeMaterial=true"),
       fetchJson("/api/backend/donation-types?activeOnly=true"),
     ])
       .then(([branchItems, activityPage, methods, types]) => {

@@ -19,8 +19,6 @@ import MultiSelect from "@/components/forms/multiselect";
 import CertificateCard from "@/components/card/certificate";
 import DocumentActionButton from "@/components/forms/documentActionbutton";
 
-import activities from "@/data/activity.json";
-import participantsData from "@/data/participants.json";
 
 const MAX_TEMPLATE_SIZE =
   5 * 1024 * 1024;
@@ -41,17 +39,6 @@ const DOCUMENT_TYPE_OPTIONS = [
     value: "បណ្ណសរសើរ",
   },
 ];
-
-const ACTIVITY_OPTIONS = activities
-  .filter(
-    (activity) =>
-      activity?.id &&
-      activity?.title_kh,
-  )
-  .map((activity) => ({
-    label: activity.title_kh,
-    value: String(activity.id),
-  }));
 
 const FONT_OPTIONS = [
   {
@@ -227,9 +214,58 @@ export default function CertificateForm({
 
   const [branchOptions, setBranchOptions] = useState([]);
   const [members, setMembers] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [activityParticipants, setActivityParticipants] = useState([]);
   const [loadingBranches, setLoadingBranches] = useState(true);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [dataError, setDataError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const rows = [];
+        let page = 0;
+        let totalPages = 1;
+        do {
+          const response = await fetch(`/api/backend/activities?page=${page}&size=100`, {
+            cache: "no-store",
+            signal: controller.signal,
+          });
+          const body = await response.json().catch(() => null);
+          if (!response.ok) throw new Error(body?.message || "Unable to load activities");
+          rows.push(...(Array.isArray(body?.content) ? body.content : []));
+          totalPages = Math.max(1, Number(body?.totalPages) || 1);
+          page += 1;
+        } while (page < totalPages);
+        setActivities(rows);
+      } catch (error) {
+        if (error.name !== "AbortError") setDataError(error.message || "Unable to load activities");
+      }
+    })();
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!form.activityId) {
+      setActivityParticipants([]);
+      return undefined;
+    }
+    const controller = new AbortController();
+    fetch(`/api/backend/activities/${encodeURIComponent(form.activityId)}/participants`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message || "Unable to load activity attendees");
+        setActivityParticipants(Array.isArray(body) ? body : (body?.content || []));
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") setDataError(error.message || "Unable to load activity attendees");
+      });
+    return () => controller.abort();
+  }, [form.activityId]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -281,17 +317,23 @@ export default function CertificateForm({
       setDataError("");
 
       try {
-        const response = await fetch(
-          `/api/members?branchId=${encodeURIComponent(branchId)}&page=0&size=100`,
-          { cache: "no-store", signal: controller.signal },
-        );
-        const body = await response.json().catch(() => null);
-        if (!response.ok) {
-          throw new Error(body?.message || "Unable to load members");
-        }
+        const rows = [];
+        let page = 0;
+        let totalPages = 1;
+        do {
+          const response = await fetch(
+            `/api/members?branchId=${encodeURIComponent(branchId)}&page=${page}&size=100`,
+            { cache: "no-store", signal: controller.signal },
+          );
+          const body = await response.json().catch(() => null);
+          if (!response.ok) throw new Error(body?.message || "Unable to load members");
+          rows.push(...unwrapList(body));
+          totalPages = Math.max(1, Number(body?.totalPages ?? body?.data?.totalPages) || 1);
+          page += 1;
+        } while (page < totalPages);
 
         setMembers(
-          unwrapList(body)
+          rows
             .map(mapApiMember)
             .filter((member) => member.id && member.name_kh),
         );
@@ -346,23 +388,24 @@ export default function CertificateForm({
         ),
     );
 
+  const activityOptions = activities
+    .map((activity) => ({
+      label: activity.titleKm || activity.title_km || activity.titleEn || activity.title_en,
+      value: String(activity.id),
+    }))
+    .filter((option) => option.label && option.value);
+
   /*
    * Members participating in
    * the selected activity.
    */
   const selectedActivityMembers =
     recipientType === "activity"
-      ? participantsData
+      ? activityParticipants
           .filter(
             (participant) =>
-              String(
-                participant.activityId,
-              ) ===
-                String(
-                  form.activityId,
-                ) &&
-              participant.status !==
-                "CANCELLED",
+              Boolean(participant.checkedInAt || participant.checked_in_at) ||
+              String(participant.attendanceStatusCode || participant.attendance_status_code || "").toUpperCase() === "PRESENT",
           )
           .map(
             (participant) =>
@@ -372,7 +415,7 @@ export default function CertificateForm({
                     member.id,
                   ) ===
                   String(
-                    participant.memberId,
+                    participant.memberId || participant.member_id,
                   ),
               ),
           )
@@ -616,11 +659,11 @@ export default function CertificateForm({
             ),
 
           activity:
-            activity.title_kh ||
+            activity.titleKm || activity.title_kh || activity.titleEn || activity.title_en ||
             "",
 
           branch:
-            activity.branch ||
+            activity.branchId || activity.branch_id || activity.branch ||
             previous.branch ||
             "",
         }),
@@ -763,8 +806,12 @@ export default function CertificateForm({
         await document.fonts?.ready;
 
         const generatedDocuments = [];
+        const recipients =
+          recipientType === "activity"
+            ? selectedActivityMembers
+            : selectedMembers;
 
-        for (const member of selectedMembers) {
+        for (const member of recipients) {
           const captureElement = document.querySelector(
             `[data-certificate-capture="member-${member.id}"]`,
           );
@@ -1041,7 +1088,7 @@ export default function CertificateForm({
               }
               placeholder="ជ្រើសរើសកម្មវិធី"
               options={
-                ACTIVITY_OPTIONS
+                activityOptions
               }
             />
           )}

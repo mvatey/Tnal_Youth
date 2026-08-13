@@ -478,7 +478,7 @@ export default function SponsorDonationForm({ initialData = null }) {
     Promise.all([
       fetchJson("/api/lookups/branches"),
       fetchJson("/api/backend/activities?page=0&size=1000"),
-      fetchJson("/api/backend/payment-methods?activeOnly=true"),
+      fetchJson("/api/lookups/payment-methods?activeOnly=true&includeMaterial=true"),
     ])
       .then(([branchItems, activityPage, methodItems]) => {
         if (cancelled) return;
