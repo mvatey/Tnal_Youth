@@ -58,6 +58,9 @@ function normalizeExistingParticipant(participant) {
       getValue(participant, "attendanceStatus", "attendance_status") || "",
     ).toUpperCase(),
     checkedInAt: getValue(participant, "checkedInAt", "checked_in_at"),
+    registrationSource: String(
+      getValue(participant, "registrationSource", "registration_source") || "",
+    ).toUpperCase(),
   };
 }
 
@@ -117,35 +120,67 @@ export default function ActivityParticipantsPage({ params }) {
           throw new Error("This activity is not assigned to a branch.");
         }
 
-        const [memberPage, existingResponse] = await Promise.all([
+        // A branch leader/secretary of a branch with an ACCEPTED invitation
+        // to co-host this activity can walk-in mark their OWN branch's
+        // members too (see ActivityAttendanceServiceImpl.createWalkInParticipant
+        // on the backend) — so their own roster needs to be fetched here as
+        // well, not just the host branch's.
+        const managedInvitedBranchId = Number(
+          getValue(
+            activityRecord,
+            "managedInvitedBranchId",
+            "managed_invited_branch_id",
+          ),
+        );
+        const hasManagedInvitedBranch =
+          Boolean(getValue(activityRecord, "canManageAsInvitedBranch", "can_manage_as_invited_branch")) &&
+          Number.isFinite(managedInvitedBranchId) &&
+          managedInvitedBranchId !== branchId;
+
+        const [hostMemberPage, invitedMemberPage, existingResponse] = await Promise.all([
           fetchApi(`/members?branchId=${branchId}&page=0&size=100`),
+          hasManagedInvitedBranch
+            ? fetchApi(`/members?branchId=${managedInvitedBranchId}&page=0&size=100`).catch(() => [])
+            : Promise.resolve([]),
           fetchApi(`/activities/${id}/participants`),
         ]);
 
-        const members = Array.isArray(memberPage)
-          ? memberPage
-          : Array.isArray(memberPage?.content)
-            ? memberPage.content
-            : [];
-        const existingParticipants = (Array.isArray(existingResponse)
-          ? existingResponse
-          : Array.isArray(existingResponse?.content)
-            ? existingResponse.content
-            : []
-        ).map(normalizeExistingParticipant);
+        const asList = (page) =>
+          Array.isArray(page) ? page : Array.isArray(page?.content) ? page.content : [];
+
+        const hostMembers = asList(hostMemberPage);
+        const invitedMembers = asList(invitedMemberPage);
+        // A member could theoretically appear in both lists (shouldn't happen
+        // in practice, since branch membership is exclusive) — de-dupe by id
+        // so the roster never lists the same person twice.
+        const seenRosterIds = new Set(hostMembers.map((member) => Number(member.id)));
+        const members = [
+          ...hostMembers,
+          ...invitedMembers.filter((member) => !seenRosterIds.has(Number(member.id))),
+        ];
+
+        const existingParticipants = asList(existingResponse).map(normalizeExistingParticipant);
         const membersById = new Map(
           members.map((member) => [Number(member.id), member]),
         );
+        const existingByMemberId = new Map(
+          existingParticipants.map((existing) => [existing.memberId, existing]),
+        );
 
-        // The activity's saved participant records are authoritative. A member
-        // may have moved branch or may not be present in the current branch page,
-        // but they must still remain visible in this activity's attendance list.
-        const rows = existingParticipants.map((existing) => {
-          const memberId = existing.memberId;
-          const member = membersById.get(memberId) || {};
+        function buildRow(memberId, member, existing) {
           const joinedDateValue = getValue(member, "joinedOn", "joined_on") ||
             getValue(existing, "registeredAt", "registered_at") || "";
-          const attendanceStatus = existing.attendanceStatus;
+          const attendanceStatus = existing?.attendanceStatus || "";
+
+          // No participant record at all → never invited or recorded. A
+          // record that exists only because staff walked them in
+          // (registrationSource WALK_IN) also counts as "not invited" —
+          // they attended without having been formally invited/divided
+          // beforehand. Everything else (HOST_BRANCH / INVITED_BRANCH /
+          // MANUAL / SELF_REGISTERED) counts as invited.
+          const isInvited = existing
+            ? existing.registrationSource !== "WALK_IN"
+            : false;
 
           return {
             id: memberId,
@@ -160,15 +195,44 @@ export default function ActivityParticipantsPage({ params }) {
             branch: getLabel(member.branch) ||
               getValue(existing, "branchNameKm", "branch_name_km") ||
               getValue(existing, "branchNameEn", "branch_name_en") || "-",
-            branchId: existing.branchId || branchId,
+            branchId:
+              existing?.branchId ||
+              Number(getValue(member, "branchId", "branch_id")) ||
+              branchId,
             joinedDateValue: joinedDateValue ? String(joinedDateValue).slice(0, 10) : "",
             joinedDate: formatDate(joinedDateValue),
-            isInvited: true,
+            isInvited,
             isParticipated: attendanceStatus
               ? attendanceStatus === "PRESENT"
-              : Boolean(existing.checkedInAt),
+              : Boolean(existing?.checkedInAt),
           };
-        });
+        }
+
+        // Union of every host-branch (and, when applicable, own-invited-
+        // branch) roster member — so staff can mark someone who was never
+        // formally invited/divided as having participated — with every
+        // existing participant record, which stays authoritative even for
+        // a member who has since moved branch or belongs to a branch whose
+        // roster wasn't fetched here.
+        const seenMemberIds = new Set();
+        const rows = [];
+
+        for (const member of members) {
+          const memberId = Number(member.id);
+          seenMemberIds.add(memberId);
+          rows.push(buildRow(memberId, member, existingByMemberId.get(memberId)));
+        }
+
+        for (const existing of existingParticipants) {
+          if (seenMemberIds.has(existing.memberId)) continue;
+          rows.push(
+            buildRow(
+              existing.memberId,
+              membersById.get(existing.memberId) || {},
+              existing,
+            ),
+          );
+        }
 
         if (!cancelled) {
           setActivity({
@@ -286,23 +350,32 @@ export default function ActivityParticipantsPage({ params }) {
       {
         key: "role",
         label: "តួនាទី",
-        width: "13%",
+        width: "10%",
         align: "center",
         render: (row) => row.role || "-",
       },
       {
         key: "branch",
         label: "សាខា",
-        width: "14%",
+        width: "10%",
         align: "center",
         render: (row) => row.branch || "-",
       },
       {
         key: "joinedDate",
         label: "ថ្ងៃ/ខែ/ឆ្នាំ ចូលរួម",
-        width: "17%",
+        width: "12%",
         align: "center",
         render: (row) => row.joinedDate || "-",
+      },
+      {
+        key: "isInvited",
+        label: "ស្ថានភាពអញ្ជើញ",
+        width: "12%",
+        align: "center",
+        render: (row) => (
+          <StatusBadge status={row.isInvited ? "បានអញ្ជើញ" : "មិនបានអញ្ជើញ"} />
+        ),
       },
       {
         key: "isParticipated",
@@ -413,11 +486,18 @@ export default function ActivityParticipantsPage({ params }) {
     );
   }
 
-  // Manual attendance editing is only for a branch leader/secretary of this
-  // activity's own host branch — computed server-side and returned as
-  // `canManage`. Admin can view participation but never edit it here.
+  // Manual attendance editing is for a branch leader/secretary of this
+  // activity's own host branch (`canManage`), OR a branch leader/secretary
+  // whose own branch has an ACCEPTED invitation to co-host this activity
+  // (`canManageAsInvitedBranch` — see PendingInvitationBanner) — both
+  // computed server-side by GET /activities/{id}. The backend
+  // (ActivityAttendanceServiceImpl.validateManualAttendancePermission)
+  // enforces the same split: host staff may correct anyone, invited-branch
+  // staff only their own branch's members. Admin can view participation
+  // but never edit it here.
   const canEditParticipation = Boolean(
-    getValue(activity, "canManage", "can_manage"),
+    getValue(activity, "canManage", "can_manage") ||
+      getValue(activity, "canManageAsInvitedBranch", "can_manage_as_invited_branch"),
   );
 
   return (

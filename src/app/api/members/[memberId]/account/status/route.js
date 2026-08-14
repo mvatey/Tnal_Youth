@@ -29,8 +29,15 @@ export async function GET(
     const authorization = request.headers.get("authorization");
     const accessToken = (await cookies()).get("accessToken")?.value;
 
+    /*
+     * The real endpoint lives under .../personal-info/account, not
+     * .../account/status — that path was never registered on the
+     * backend, so every call here hit Spring's static-resource
+     * fallback and logged a NoResourceFoundException (a routing
+     * mismatch, not an actual server error).
+     */
     const response = await fetch(
-      `${BACKEND_URL}/members/${memberId}/account/status`,
+      `${BACKEND_URL}/members/${memberId}/personal-info/account`,
       {
         method: "GET",
         headers: {

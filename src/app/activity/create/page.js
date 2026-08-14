@@ -413,6 +413,20 @@ function SearchableBranchMultiSelect({
   );
 }
 
+function formatFileSize(size) {
+  if (!size && size !== 0) return "";
+
+  if (size < 1024) {
+    return `${size} B`;
+  }
+
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(size / 1024 / 1024).toFixed(2)} MB`;
+}
+
 function MultipleFileUpload({
   label,
   files,
@@ -605,6 +619,12 @@ export default function CreateActivityPage() {
 
   const [activityImages, setActivityImages] = useState([]);
   const [activityDocuments, setActivityDocuments] = useState([]);
+  // Photos/attachments already saved on the server for this activity
+  // (edit mode only) — separate from activityImages/activityDocuments
+  // above, which only ever hold newly-selected files pending upload.
+  const [existingImages, setExistingImages] = useState([]);
+  const [existingDocuments, setExistingDocuments] = useState([]);
+  const [deletingExistingId, setDeletingExistingId] = useState(null);
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [memberOptions, setMemberOptions] = useState([]);
@@ -666,10 +686,16 @@ export default function CreateActivityPage() {
         setLookupData(nextLookups);
 
         if (editId) {
-          const [activity, invitations, participants] = await Promise.all([
+          const [activity, invitations, participants, gallery, attachments] = await Promise.all([
             fetchJson(`/api/backend/activities/${encodeURIComponent(editId)}`),
             fetchJson(`/api/backend/activities/${encodeURIComponent(editId)}/invited-branches`).catch(() => []),
             fetchJson(`/api/backend/activities/${encodeURIComponent(editId)}/participants`).catch(() => []),
+            // Photos/documents already uploaded for this activity — the
+            // activity detail endpoint above never includes these, so
+            // without this fetch the edit form always looked empty even
+            // when files had already been uploaded.
+            fetchJson(`/api/backend/activities/${encodeURIComponent(editId)}/gallery`).catch(() => []),
+            fetchJson(`/api/backend/activities/${encodeURIComponent(editId)}/attachments`).catch(() => []),
           ]);
           const branch = branches.find((option) => getOptionValue(option) === Number(activity.branchId));
           const province = provinces.find((option) => getOptionValue(option) === Number(activity.provinceId));
@@ -686,11 +712,31 @@ export default function CreateActivityPage() {
           const currentParticipantIds = (Array.isArray(participants) ? participants : [])
             .map((participant) => Number(participant.memberId ?? participant.member_id))
             .filter((memberId) => Number.isFinite(memberId));
+          const normalizedImages = (Array.isArray(gallery) ? gallery : []).map((photo) => ({
+            id: photo.photo_id ?? photo.photoId,
+            fileId: photo.file_id ?? photo.fileId,
+            name: photo.original_name || photo.originalName || "រូបភាព",
+            url: (photo.file_id ?? photo.fileId)
+              ? `/api/backend/files/${photo.file_id ?? photo.fileId}/content`
+              : null,
+          }));
+          const normalizedDocuments = (Array.isArray(attachments) ? attachments : []).map((attachment) => ({
+            id: attachment.attachment_id ?? attachment.attachmentId,
+            fileId: attachment.file_id ?? attachment.fileId,
+            name: attachment.original_name || attachment.originalName || attachment.title || "ឯកសារ",
+            size: formatFileSize(attachment.size_bytes ?? attachment.sizeBytes),
+            mimeType: attachment.mime_type || attachment.mimeType || "",
+            url: (attachment.file_id ?? attachment.fileId)
+              ? `/api/backend/files/${attachment.file_id ?? attachment.fileId}/content`
+              : null,
+          }));
           if (!cancelled) {
             setEditingActivity(normalized);
             setForm(createInitialForm(normalized));
             setExistingParticipantIds(currentParticipantIds);
             setSelectedMemberIds(currentParticipantIds);
+            setExistingImages(normalizedImages);
+            setExistingDocuments(normalizedDocuments);
           }
         }
       } catch (error) {
@@ -785,6 +831,60 @@ export default function CreateActivityPage() {
         (branch) => branch !== value
       ),
     }));
+  };
+
+  const handleDeleteExistingImage = async (photo) => {
+    if (!photo?.id || !editId) return;
+    if (!window.confirm("តើអ្នកចង់លុបរូបភាពនេះមែនទេ?")) return;
+
+    setDeletingExistingId(`image-${photo.id}`);
+    try {
+      await fetchJson(
+        `/api/backend/activities/${encodeURIComponent(editId)}/gallery/${photo.id}`,
+        { method: "DELETE" }
+      );
+
+      const remaining = existingImages.filter((item) => item.id !== photo.id);
+      setExistingImages(remaining);
+
+      // The backend re-points the activity's cover image to the next
+      // remaining gallery photo (in this same order) whenever the
+      // deleted photo was the current cover — mirror that here so
+      // Save doesn't resend the now-stale coverImageId and fail.
+      setEditingActivity((currentActivity) => {
+        if (!currentActivity || currentActivity.coverImageId !== photo.fileId) {
+          return currentActivity;
+        }
+        return {
+          ...currentActivity,
+          coverImageId: remaining[0]?.fileId ?? null,
+        };
+      });
+    } catch (error) {
+      console.error("Delete activity photo error:", error);
+      alert(error.message || "លុបរូបភាពមិនបានសម្រេច");
+    } finally {
+      setDeletingExistingId(null);
+    }
+  };
+
+  const handleDeleteExistingDocument = async (document) => {
+    if (!document?.id || !editId) return;
+    if (!window.confirm("តើអ្នកចង់លុបឯកសារនេះមែនទេ?")) return;
+
+    setDeletingExistingId(`document-${document.id}`);
+    try {
+      await fetchJson(
+        `/api/backend/activities/${encodeURIComponent(editId)}/attachments/${document.id}`,
+        { method: "DELETE" }
+      );
+      setExistingDocuments((current) => current.filter((item) => item.id !== document.id));
+    } catch (error) {
+      console.error("Delete activity attachment error:", error);
+      alert(error.message || "លុបឯកសារមិនបានសម្រេច");
+    } finally {
+      setDeletingExistingId(null);
+    }
   };
 
   const handleOpenMemberModal = () => {
@@ -1367,49 +1467,67 @@ export default function CreateActivityPage() {
           </h2>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <MultipleFileUpload
-              label="រូបភាពកម្មវិធី"
-              files={activityImages}
-              onChange={setActivityImages}
-              accept="image/png,image/jpeg,image/jpg,image/webp"
-              uploadText="បញ្ចូលរូបភាព"
-              helperText="PNG, JPG, JPEG, WEBP — អតិបរមា 5MB ក្នុងមួយរូប"
-              maxSize={MAX_IMAGE_SIZE}
-              kind="image"
-            />
+            <div>
+              {isEditMode && existingImages.length > 0 && (
+                <div className="mb-3 grid grid-cols-3 gap-2">
+                  {existingImages.map((photo) => (
+                    <div
+                      key={photo.id ?? photo.url}
+                      className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-gray-50"
+                    >
+                      {photo.url ? (
+                        <img
+                          src={photo.url}
+                          alt={photo.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-text-secondary">
+                          <ImageIcon size={20} />
+                        </div>
+                      )}
 
-            <MultipleFileUpload
-              label="ឯកសារផ្សេងៗ"
-              files={activityDocuments}
-              onChange={setActivityDocuments}
-              accept=".pdf,.doc,.docx,.xls,.xlsx"
-              uploadText="បញ្ចូលឯកសារ"
-              helperText="PDF, DOC, DOCX, XLS, XLSX — អតិបរមា 5MB"
-              maxSize={MAX_DOCUMENT_SIZE}
-              kind="file"
-            />
-          </div>
-        </section>
-        )}
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteExistingImage(photo)}
+                        disabled={deletingExistingId === `image-${photo.id}`}
+                        className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100 disabled:opacity-60"
+                        aria-label={`លុប ${photo.name}`}
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-        {isEditMode &&
-          editingActivity?.documents?.length > 0 && (
-            <section className="rounded-xl border border-border bg-white p-5">
-              <h3 className="mb-4 text-base font-bold text-secondary">
-                ឯកសារដែលមានស្រាប់
-              </h3>
+              <MultipleFileUpload
+                label="រូបភាពកម្មវិធី"
+                files={activityImages}
+                onChange={setActivityImages}
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                uploadText="បញ្ចូលរូបភាព"
+                helperText="PNG, JPG, JPEG, WEBP — អតិបរមា 5MB ក្នុងមួយរូប"
+                maxSize={MAX_IMAGE_SIZE}
+                kind="image"
+              />
+            </div>
 
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                {editingActivity?.documents?.map(
-                  (document, index) => (
-                    <div key={`${document.name}-${index}`} className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div>
+              {isEditMode && existingDocuments.length > 0 && (
+                <div className="mb-3 space-y-2">
+                  {existingDocuments.map((document) => (
+                    <div
+                      key={document.id ?? document.url}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border bg-white px-3 py-2.5"
+                    >
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${document.type === "pdf" ? "bg-error-bg text-error" : "bg-secondary-light text-secondary"}`}>
-                          <FileText size={18} />
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary-light text-secondary">
+                          <FileText size={17} />
                         </div>
 
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-text-primary">
+                          <p className="truncate text-sm font-medium text-text-primary">
                             {document.name}
                           </p>
 
@@ -1419,15 +1537,48 @@ export default function CreateActivityPage() {
                         </div>
                       </div>
 
-                      <button type="button" className="ml-3 shrink-0 rounded-md p-1.5 text-primary transition hover:bg-primary/10" aria-label={`មើល ${document.name}`}>
-                        <Eye size={17} />
-                      </button>
+                      <div className="flex shrink-0 items-center gap-1">
+                        {document.url && (
+                          <a
+                            href={document.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-md p-1.5 text-primary transition hover:bg-primary/10"
+                            aria-label={`មើល ${document.name}`}
+                          >
+                            <Eye size={16} />
+                          </a>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExistingDocument(document)}
+                          disabled={deletingExistingId === `document-${document.id}`}
+                          className="rounded-md p-1.5 text-error transition hover:bg-error-bg disabled:opacity-60"
+                          aria-label={`លុប ${document.name}`}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
                     </div>
-                  )
-                )}
-              </div>
-            </section>
-          )}
+                  ))}
+                </div>
+              )}
+
+              <MultipleFileUpload
+                label="ឯកសារផ្សេងៗ"
+                files={activityDocuments}
+                onChange={setActivityDocuments}
+                accept=".pdf,.doc,.docx,.xls,.xlsx"
+                uploadText="បញ្ចូលឯកសារ"
+                helperText="PDF, DOC, DOCX, XLS, XLSX — អតិបរមា 5MB"
+                maxSize={MAX_DOCUMENT_SIZE}
+                kind="file"
+              />
+            </div>
+          </div>
+        </section>
+        )}
 
         <div className="flex items-center justify-between gap-3">
           <FormActionButton

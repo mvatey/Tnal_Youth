@@ -9,6 +9,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FaUsers } from "react-icons/fa";
 import { notFound } from "next/navigation";
+import PendingInvitationBanner from "@/components/activity/PendingInvitationBanner";
 import {
   Banknote,
   CalendarDays,
@@ -286,21 +287,30 @@ const totalParticipantCount = activityParticipants.length;
         )}
       </div>
 
+      {!isMember && <PendingInvitationBanner activityId={activity.id} />}
+
       {/* SECTION 1: Hero + status summary */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         <div className="xl:col-span-2 rounded-xl border border-border bg-white p-5">
           <div className="flex flex-col gap-5 md:flex-row">
-            {!isMember && (
-              <Image
-                src={activity.image}
-                width={300}
-                height={200}
-                className="h-[200px] w-full shrink-0 rounded-lg object-cover md:w-[300px]"
-                alt={activity.name}
-                // Let the browser include its session cookie for protected files.
-                unoptimized={activity.image.startsWith("/api/")}
-              />
-            )}
+            {/*
+              Previously gated behind `!isMember`, which hid the cover
+              image from every MEMBER-role viewer regardless of whether
+              one had been uploaded — members always saw nothing here
+              while admins/staff saw the real image. The cover image is
+              purely informational (unlike the Membership/Budget panels
+              below, which are intentionally management-only), so it
+              should render for every role.
+            */}
+            <Image
+              src={activity.image}
+              width={300}
+              height={200}
+              className="h-[200px] w-full shrink-0 rounded-lg object-cover md:w-[300px]"
+              alt={activity.name}
+              // Let the browser include its session cookie for protected files.
+              unoptimized={activity.image.startsWith("/api/")}
+            />
 
             {/* no more justify-between — content hugs the top, icon row sits right under description */}
             <div className="flex flex-1 flex-col">
