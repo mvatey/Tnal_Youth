@@ -216,7 +216,7 @@ export default function AddDonationTableRow({
             <ReceiptIcon size={18} />
           </button>
 
-          {rowEditMode && !isEditing ? (
+          {rowEditMode && !isEditing && !readOnly ? (
             <button
               type="button"
               onClick={onEdit}
@@ -229,7 +229,7 @@ export default function AddDonationTableRow({
             </button>
           ) : null}
 
-          {rowEditMode && isEditing ? (
+          {rowEditMode && isEditing && !readOnly ? (
             <>
               <button type="button" onClick={onCancelEdit} className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-600 hover:bg-slate-50" title="Cancel">
                 <X size={14} />

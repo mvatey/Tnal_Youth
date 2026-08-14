@@ -4,58 +4,7 @@ import { useMemo, useState } from "react";
 import { Eye, Search } from "lucide-react";
 import { HiSaveAs } from "react-icons/hi";
 import FilterBar from "@/components/table-items/FilterBar";
-
-const members = [
-  { id: 1, name: "ឌី រីយ៉ា", email: "riya@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 2, name: "ចាន់ សុភា", email: "sophea@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 3, name: "ឡេង ដារ៉ា", email: "dara@example.com", gender: "ប្រុស", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 4, name: "ហេង ស្រីនា", email: "sreyna@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 5, name: "គឹម សុវណ្ណ", email: "sovann@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 6, name: "ណារី សុជាតា", email: "socheata@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 7, name: "ម៉ៅ រដ្ឋា", email: "ratha@example.com", gender: "ប្រុស", role: "ប្រធាន", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 8, name: "អ៊ុំ ស្រីពេជ្រ", email: "sreypich@example.com", gender: "ស្រី", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 9, name: "វង្ស វណ្ណៈ", email: "vannak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 10, name: "សាន សុភ័ក្រ", email: "sopheak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 11, name: "លីណា ស្រីមុំ", email: "sreymom@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 12, name: "ថន ចាន់រ៉ា", email: "chanra@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 13, name: "ឌី រីយ៉ា", email: "riya@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 14, name: "ចាន់ សុភា", email: "sophea@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 15, name: "ឡេង ដារ៉ា", email: "dara@example.com", gender: "ប្រុស", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 16, name: "ហេង ស្រីនា", email: "sreyna@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 17, name: "គឹម សុវណ្ណ", email: "sovann@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 18, name: "ណារី សុជាតា", email: "socheata@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 19, name: "ម៉ៅ រដ្ឋា", email: "ratha@example.com", gender: "ប្រុស", role: "ប្រធាន", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 20, name: "អ៊ុំ ស្រីពេជ្រ", email: "sreypich@example.com", gender: "ស្រី", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 21, name: "វង្ស វណ្ណៈ", email: "vannak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 22, name: "សាន សុភ័ក្រ", email: "sopheak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 23, name: "លីណា ស្រីមុំ", email: "sreymom@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 24, name: "ថន ចាន់រ៉ា", email: "chanra@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 25, name: "ឌី រីយ៉ា", email: "riya@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 26, name: "ចាន់ សុភា", email: "sophea@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 27, name: "ឡេង ដារ៉ា", email: "dara@example.com", gender: "ប្រុស", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 28, name: "ហេង ស្រីនា", email: "sreyna@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 29, name: "គឹម សុវណ្ណ", email: "sovann@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 30, name: "ណារី សុជាតា", email: "socheata@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 31, name: "ម៉ៅ រដ្ឋា", email: "ratha@example.com", gender: "ប្រុស", role: "ប្រធាន", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 32, name: "អ៊ុំ ស្រីពេជ្រ", email: "sreypich@example.com", gender: "ស្រី", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 33, name: "វង្ស វណ្ណៈ", email: "vannak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 34, name: "សាន សុភ័ក្រ", email: "sopheak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 35, name: "លីណា ស្រីមុំ", email: "sreymom@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 36, name: "ថន ចាន់រ៉ា", email: "chanra@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 37, name: "ឌី រីយ៉ា", email: "riya@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 38, name: "ចាន់ សុភា", email: "sophea@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 39, name: "ឡេង ដារ៉ា", email: "dara@example.com", gender: "ប្រុស", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 40, name: "ហេង ស្រីនា", email: "sreyna@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 41, name: "គឹម សុវណ្ណ", email: "sovann@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 42, name: "ណារី សុជាតា", email: "socheata@example.com", gender: "ស្រី", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 43, name: "ម៉ៅ រដ្ឋា", email: "ratha@example.com", gender: "ប្រុស", role: "ប្រធាន", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 44, name: "អ៊ុំ ស្រីពេជ្រ", email: "sreypich@example.com", gender: "ស្រី", role: "លេខាធិការ", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 45, name: "វង្ស វណ្ណៈ", email: "vannak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "មិនបានចូលរួម" },
-  { id: 46, name: "សាន សុភ័ក្រ", email: "sopheak@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 47, name: "លីណា ស្រីមុំ", email: "sreymom@example.com", gender: "ស្រី", role: "សមាជិក", branch: "ភ្នំពេញ", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" },
-  { id: 48, name: "ថន ចាន់រ៉ា", email: "chanra@example.com", gender: "ប្រុស", role: "សមាជិក", branch: "កណ្ដាល", joinedDate: "03 កក្កដា 2026", status: "បានចូលរួម" }
-];
-
+import MemberPreviewModal from "@/components/activity/MemberPreviewModal";
 
 function MemberAvatar({ member }) {
   return (
@@ -84,6 +33,8 @@ export default function MemberSelectModal({
   const [query, setQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
   const [selectedDate, setSelectedDate] = useState(null);
+  const [previewMember, setPreviewMember] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   const roles = useMemo(
     () => [...new Set(members.map((member) => member.role).filter(Boolean))],
@@ -117,9 +68,14 @@ export default function MemberSelectModal({
     }
   };
 
-  const handleSave = () => {
-    onSave?.(selected);
-    onClose();
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await onSave?.(selected);
+      onClose();
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -187,7 +143,14 @@ export default function MemberSelectModal({
                     </td>
 
                     <td className="text-center">
-                      <Eye size={16} className="mx-auto cursor-pointer text-primary" />
+                      <button
+                        type="button"
+                        onClick={() => setPreviewMember(member)}
+                        aria-label={`មើលព័ត៌មាន ${member.name || "សមាជិក"}`}
+                        className="mx-auto flex w-fit rounded-md p-1 text-primary transition hover:bg-primary-light"
+                      >
+                        <Eye size={16} />
+                      </button>
                     </td>
                   </tr>
                 );
@@ -225,12 +188,24 @@ export default function MemberSelectModal({
         <div className="mt-5 flex items-center justify-between">
           <button type="button" onClick={onClose} className="h-[34px] w-[91px] rounded-lg border border-border bg-white text-sm font-semibold text-text-secondary">បោះបង់</button>
 
-          <button type="button" onClick={handleSave} className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
             <HiSaveAs size={16} />
-            រក្សាទុក
+            {saving ? "កំពុងរក្សាទុក..." : "រក្សាទុក"}
           </button>
         </div>
       </div>
+
+      {previewMember && (
+        <MemberPreviewModal
+          member={previewMember}
+          onClose={() => setPreviewMember(null)}
+        />
+      )}
     </div>
   );
 }

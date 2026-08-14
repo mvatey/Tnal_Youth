@@ -86,12 +86,10 @@ function isCompletedActivity(activity) {
 export default function ActivityParticipantsPage({ params }) {
   const { id } = use(params);
   const { user } = useAuth();
-  const role = normalizeRole(user?.role);
-  const canEditParticipation = [
-    "admin",
-    "secretary",
-    "branch_leader",
-  ].includes(role);
+  // Members only get the activity's basic detail and its documents — the
+  // participant/attendance roster is management information, so this page
+  // is not for them even if they navigate here directly.
+  const isMember = normalizeRole(user?.role) === "member";
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
@@ -190,11 +188,15 @@ export default function ActivityParticipantsPage({ params }) {
       }
     }
 
-    loadParticipants();
+    if (isMember) {
+      setLoading(false);
+    } else {
+      loadParticipants();
+    }
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, isMember]);
 
   const roles = useMemo(
     () => [...new Set(activityParticipants.map((item) => item.role).filter((value) => value && value !== "-"))],
@@ -379,6 +381,14 @@ export default function ActivityParticipantsPage({ params }) {
     }
   };
 
+  if (isMember) {
+    return (
+      <div className="rounded-xl border border-error/30 bg-error-bg p-6 text-center text-error">
+        អ្នកមិនមានសិទ្ធិមើលទំព័រនេះទេ
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="rounded-xl border border-border bg-white p-6 text-center text-text-secondary">
@@ -402,6 +412,13 @@ export default function ActivityParticipantsPage({ params }) {
       </div>
     );
   }
+
+  // Manual attendance editing is only for a branch leader/secretary of this
+  // activity's own host branch — computed server-side and returned as
+  // `canManage`. Admin can view participation but never edit it here.
+  const canEditParticipation = Boolean(
+    getValue(activity, "canManage", "can_manage"),
+  );
 
   return (
     <div className="space-y-5">

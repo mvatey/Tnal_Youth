@@ -16,6 +16,8 @@ import { PiPencilSlash } from "react-icons/pi";
 import { VscEditSparkle } from "react-icons/vsc";
 import { downloadCsv } from "@/utils/downloadCsv";
 import DonationFilterSelect from "@/components/donations/monthlydonation/DonationFilterSelect";
+import useCurrentMember from "@/hooks/useCurrentMember";
+import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 
 const { sponsorHeaders: headers } = tableHeaders;
 const rowsPerPage = 12;
@@ -71,6 +73,12 @@ export default function SponsorPanel({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { member: currentMember } = useCurrentMember();
+  // Only entry staff (secretary / branch_leader) may add or edit sponsor
+  // donations — admin/viewer are view-only, members see only their own
+  // (read-only) sponsor donations.
+  const canManage = ["secretary", "branch_leader"].includes(currentMember?.role);
+  const isMemberScoped = currentMember?.role === "member";
   const routePrefix = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/sponsor"
     : "/donation/sponsor";
@@ -95,6 +103,12 @@ export default function SponsorPanel({
       setLoading(true);
       setError("");
       try {
+        if (isMemberScoped) {
+          const myRows = await fetchMyAccountCollection("donations/sponsors");
+          if (!cancelled) setAllRows(myRows.map(mapMySponsorRow));
+          return;
+        }
+
         const response = await fetch("/api/backend/donations/sponsor?page=0&size=100", { cache: "no-store" });
         const body = await response.json().catch(() => null);
         if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load sponsor donations.");
@@ -111,7 +125,7 @@ export default function SponsorPanel({
     }
     loadRows();
     return () => { cancelled = true; };
-  }, []);
+  }, [isMemberScoped]);
 
   useEffect(() => {
     let cancelled = false;
@@ -242,7 +256,7 @@ export default function SponsorPanel({
             onChange={updateFilter(setSelectedDate)}
           />
 
-          {showAddButton && (
+          {showAddButton && canManage && (
             <button
               type="button"
               onClick={() => router.push(`${routePrefix}/add`)}
@@ -313,14 +327,16 @@ export default function SponsorPanel({
                 <td className="px-4">{row.method}</td>
                 <td className="px-4">
                   <div className="inline-flex items-center justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => router.push(`${routePrefix}/edit?id=${row.id}`)}
-                      className="inline-flex h-[20px] w-[24px] items-center justify-center rounded-[8px] text-[#D4AF37] transition hover:text-[#b88f1f]"
-                      aria-label={`Edit sponsor ${row.id}`}
-                    >
-                      <BsPencilSquare size={16}  />
-                    </button>
+                    {canManage && (
+                      <button
+                        type="button"
+                        onClick={() => router.push(`${routePrefix}/edit?id=${row.id}`)}
+                        className="inline-flex h-[20px] w-[24px] items-center justify-center rounded-[8px] text-[#D4AF37] transition hover:text-[#b88f1f]"
+                        aria-label={`Edit sponsor ${row.id}`}
+                      >
+                        <BsPencilSquare size={16}  />
+                      </button>
+                    )}
                     <SponsorReceiptPreview receipt={row.receipt} />
                   </div>
                 </td>
@@ -368,6 +384,32 @@ function mapSponsorRow(row) {
       name: "Receipt",
       dataUrl: `/api/backend/files/${row.receiptFileId}/content`,
       type: "image/unknown",
+    } : null,
+  };
+}
+
+// Maps a single MyDonationResponse (member's own sponsor-type donation)
+// into the same row shape mapSponsorRow produces, so this table is reused
+// as-is for the member's read-only "my donations" view.
+function mapMySponsorRow(row) {
+  return {
+    id: row.id,
+    name: row.sponsor?.name || row.donorName || "-",
+    type: "សមាជិក",
+    donorKind: "MEMBER",
+    phone: row.sponsor?.phone || "-",
+    email: row.sponsor?.email || "-",
+    branch: row.branch?.nameKm || row.branch?.nameEn || "-",
+    branchId: row.branch?.id,
+    date: row.paidAt ? new Date(row.paidAt).toLocaleDateString("en-GB") : "-",
+    dateValue: row.paidAt ? row.paidAt.slice(0, 10) : "",
+    rielAmount: Number(row.amountKhr || 0).toLocaleString(),
+    dollarAmount: Number(row.amountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
+    method: row.paymentMethod?.labelKm || row.paymentMethod?.labelEn || row.paymentMethod?.code || "-",
+    receipt: row.receipt?.id ? {
+      name: row.receipt.originalName || "Receipt",
+      dataUrl: `/api/backend/files/${row.receipt.id}/content`,
+      type: row.receipt.mimeType || "image/unknown",
     } : null,
   };
 }

@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -60,6 +61,30 @@ const TSHIRT_SIZE_OPTIONS = [
   { value: "2XL", label: "2XL" },
   { value: "3XL", label: "3XL" },
 ];
+
+/*
+ * The enable/disable buttons on this page only ever toggle between
+ * ACTIVE and INACTIVE, so those two stay the only real actions. But
+ * the backend's account status can carry other values we don't
+ * actively set from here (e.g. a newly-created account still
+ * PENDING activation) — if the <select>'s value doesn't match any
+ * <option>, the browser silently falls back to showing nothing,
+ * which reads as "the field is empty" when it isn't. We always
+ * inject whatever the real current status is as an extra option so
+ * it's visible instead of vanishing.
+ */
+const BASE_ACCOUNT_STATUS_OPTIONS = [
+  { label: "សកម្ម", value: "ACTIVE" },
+  { label: "អសកម្ម", value: "INACTIVE" },
+];
+
+const ACCOUNT_STATUS_LABELS = {
+  ACTIVE: "សកម្ម",
+  INACTIVE: "អសកម្ម",
+  PENDING: "កំពុងរង់ចាំសកម្មភាព",
+  SUSPENDED: "បានផ្អាក",
+  LOCKED: "បានចាក់សោ",
+};
 
 /* =========================================================
  * REQUEST HELPER
@@ -468,6 +493,27 @@ export default function PersonalPage() {
     tshirtSizes,
     setTshirtSizes,
   ] = useState(TSHIRT_SIZE_OPTIONS);
+
+  const accountStatusOptions = useMemo(() => {
+    const current = form.account_status;
+
+    if (
+      !current ||
+      BASE_ACCOUNT_STATUS_OPTIONS.some(
+        (option) => option.value === current,
+      )
+    ) {
+      return BASE_ACCOUNT_STATUS_OPTIONS;
+    }
+
+    return [
+      ...BASE_ACCOUNT_STATUS_OPTIONS,
+      {
+        label: ACCOUNT_STATUS_LABELS[current] || current,
+        value: current,
+      },
+    ];
+  }, [form.account_status]);
 
   /* =======================================================
    * LOAD PERSONAL INFO
@@ -1661,20 +1707,9 @@ export default function PersonalPage() {
                     ? "ជ្រើសរើសស្ថានភាព"
                     : "មិនមានគណនី"
               }
-              options={[
-                {
-                  label:
-                    "សកម្ម",
-                  value:
-                    "ACTIVE",
-                },
-                {
-                  label:
-                    "អសកម្ម",
-                  value:
-                    "INACTIVE",
-                },
-              ]}
+              options={
+                accountStatusOptions
+              }
               disabled={
                 !canManageSensitiveFields ||
                 !form.has_account ||

@@ -64,6 +64,20 @@ function formatDuration(startsAt, endsAt) {
   return `${Math.round((end - start) / 3_600_000)} ម៉ោង`;
 }
 
+function formatFileSize(bytes) {
+  const size = Number(bytes);
+  if (!Number.isFinite(size) || size <= 0) return "-";
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function isPdfDocument(doc) {
+  const mime = String(doc?.mimeType || "").toLowerCase();
+  const name = String(doc?.name || "").toLowerCase();
+  return mime.includes("pdf") || name.endsWith(".pdf");
+}
+
 function getEffectiveActivityStatus(status, startsAt, endsAt) {
   const storedStatus = String(status?.code || status || "").toLowerCase();
   if (storedStatus === "cancelled" || storedStatus === "canceled") {
@@ -110,18 +124,35 @@ export default async function ActivityDetailPage({ params }) {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
 
-  const [record, participantData, branchData] = await Promise.all([
-    backendGet(`/activities/${encodeURIComponent(id)}`, accessToken),
-    backendGet(
-      `/activities/${encodeURIComponent(id)}/participants`,
-      accessToken,
-    ),
-    backendGet("/lookups/branches", accessToken),
-  ]);
+  const [record, currentUser, participantData, branchData, attachmentData] =
+    await Promise.all([
+      backendGet(`/activities/${encodeURIComponent(id)}`, accessToken),
+      backendGet("/auth/me", accessToken),
+      backendGet(
+        `/activities/${encodeURIComponent(id)}/participants`,
+        accessToken,
+      ),
+      backendGet("/lookups/branches", accessToken),
+      backendGet(
+        `/activities/${encodeURIComponent(id)}/attachments`,
+        accessToken,
+      ),
+    ]);
 
   if (!record) {
     notFound();
   }
+
+  const role = String(currentUser?.role || "").toLowerCase();
+  const isMember = role === "member";
+  // Computed server-side by the backend: true only for a branch leader or
+  // secretary who is staff of this activity's own host branch.
+  const canManage = Boolean(record.canManage);
+  // True for a branch leader/secretary of a branch with an ACCEPTED
+  // invitation to co-host this activity — they may invite their own
+  // branch's members and record income/expense, but never edit the
+  // activity's own info (that stays canManage-only).
+  const canManageAsInvitedBranch = Boolean(record.canManageAsInvitedBranch);
 
   const branches = Array.isArray(branchData) ? branchData : [];
   const branch = branches.find(
@@ -130,6 +161,7 @@ export default async function ActivityDetailPage({ params }) {
   const activityParticipants = Array.isArray(participantData)
     ? participantData
     : [];
+  const attachments = Array.isArray(attachmentData) ? attachmentData : [];
 
   const activity = {
     id: record.id,
@@ -151,7 +183,7 @@ export default async function ActivityDetailPage({ params }) {
     mapLink: record.googleMapUrl || "#",
     mapImage: "/map.png",
     image: record.coverImageId
-      ? `/api/files/${record.coverImageId}/content`
+      ? `/api/backend/files/${record.coverImageId}/content`
       : "/activity-placeholder.svg",
     date: formatDate(record.startsAt),
     startDate: formatDate(record.startsAt),
@@ -173,7 +205,21 @@ export default async function ActivityDetailPage({ params }) {
       "-",
     donation: "$ 0",
     budget: "$ 0",
-    documents: [],
+    documents: attachments.map((attachment) => ({
+      name:
+        attachment.original_name ||
+        attachment.originalName ||
+        attachment.title ||
+        "ឯកសារ",
+      size: formatFileSize(attachment.size_bytes ?? attachment.sizeBytes),
+      mimeType: attachment.mime_type || attachment.mimeType || "",
+      url: attachment.file_id
+        ? `/api/backend/files/${attachment.file_id}/content`
+        : attachment.fileId
+          ? `/api/backend/files/${attachment.fileId}/content`
+          : null,
+      key: attachment.attachment_id ?? attachment.attachmentId,
+    })),
   };
 
 const attendedCount = activityParticipants.filter(
@@ -232,25 +278,29 @@ const totalParticipantCount = activityParticipants.length;
           <h1 className="text-xl font-bold text-secondary">ព័ត៌មានកម្មវិធី</h1>
         </div>
 
-        <Link href={`/activity/create?edit=${activity.id}`} className="flex h-[34px] items-center gap-2 rounded-lg bg-secondary px-4 text-sm font-medium text-white hover:bg-secondary-hover">
-          <Pencil size={15} />
-          កែព័ត៌មាន
-        </Link>
+        {(canManage || canManageAsInvitedBranch) && (
+          <Link href={`/activity/create?edit=${activity.id}`} className="flex h-[34px] items-center gap-2 rounded-lg bg-secondary px-4 text-sm font-medium text-white hover:bg-secondary-hover">
+            <Pencil size={15} />
+            {canManage ? "កែព័ត៌មាន" : "គ្រប់គ្រងសមាជិក/ថវិកា"}
+          </Link>
+        )}
       </div>
 
       {/* SECTION 1: Hero + status summary */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         <div className="xl:col-span-2 rounded-xl border border-border bg-white p-5">
           <div className="flex flex-col gap-5 md:flex-row">
-            <Image
-              src={activity.image}
-              width={300}
-              height={200}
-              className="h-[200px] w-full shrink-0 rounded-lg object-cover md:w-[300px]"
-              alt={activity.name}
-              // Let the browser include its session cookie for protected files.
-              unoptimized={activity.image.startsWith("/api/")}
-            />
+            {!isMember && (
+              <Image
+                src={activity.image}
+                width={300}
+                height={200}
+                className="h-[200px] w-full shrink-0 rounded-lg object-cover md:w-[300px]"
+                alt={activity.name}
+                // Let the browser include its session cookie for protected files.
+                unoptimized={activity.image.startsWith("/api/")}
+              />
+            )}
 
             {/* no more justify-between — content hugs the top, icon row sits right under description */}
             <div className="flex flex-1 flex-col">
@@ -344,9 +394,10 @@ const totalParticipantCount = activityParticipants.length;
         </div>
       </div>
 
-      {/* SECTION 3: Membership + Finance + Documents */}
+      {/* SECTION 3: Membership + Finance + Documents — members only get Documents */}
 <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
-  {/* Member */}
+  {/* Member — admin and staff see full participation info; members do not */}
+  {!isMember && (
   <div className="rounded-xl border border-border bg-white p-5">
     <h3 className="mb-4 text-base font-bold text-secondary">សមាសភាព</h3>
 
@@ -376,8 +427,10 @@ const totalParticipantCount = activityParticipants.length;
         សមាសភាពចូលរួម
       </Link>
   </div>
+  )}
 
-{/* Budget */}
+{/* Budget — hidden entirely for members; income/expense are management-only info */}
+{!isMember && (
 <div className="rounded-xl border border-border bg-white p-5">
   <h3 className="mb-4 text-base font-bold text-secondary">
     ថវិកា
@@ -408,21 +461,28 @@ const totalParticipantCount = activityParticipants.length;
           event: activity.id,
         },
       }}
-      className="flex h-10 items-center justify-center gap-2 rounded-lg bg-[#D3AF3C] text-sm font-semibold text-white transition-colors hover:bg-[#BF9C2D]"
+      className={`flex h-10 items-center justify-center gap-2 rounded-lg bg-[#D3AF3C] text-sm font-semibold text-white transition-colors hover:bg-[#BF9C2D] ${!(canManage || canManageAsInvitedBranch) ? "col-span-2" : ""}`}
     >
       <CircleDollarSign size={16} />
       ចំណូល
     </Link>
 
-    <Link
-      href={`/activity/create/expense?activityId=${activity.id}`}
-      className="flex h-10 items-center justify-center gap-2 rounded-lg bg-[#D9534F] text-sm font-semibold text-white transition-colors hover:bg-[#C4413E]"
-    >
-      <Banknote size={16} />
-      ចំណាយ
-    </Link>
+    {/* Expense creation is an editing action — restricted to the branch
+        leader/secretary of this activity's own host branch, or of a branch
+        with an ACCEPTED invitation to co-host it. Admin can still see the
+        expense total above, just not create/edit one from here. */}
+    {(canManage || canManageAsInvitedBranch) && (
+      <Link
+        href={`/activity/create/expense?activityId=${activity.id}`}
+        className="flex h-10 items-center justify-center gap-2 rounded-lg bg-[#D9534F] text-sm font-semibold text-white transition-colors hover:bg-[#C4413E]"
+      >
+        <Banknote size={16} />
+        ចំណាយ
+      </Link>
+    )}
   </div>
 </div>
+)}
 
   {/* Documents */}
   <div className="rounded-xl border border-border bg-white p-5">
@@ -430,14 +490,13 @@ const totalParticipantCount = activityParticipants.length;
 
     <div className="space-y-3">
       {(activity.documents || []).map((doc) => {
-        const fileStyle =
-          doc.type === "pdf"
-            ? "bg-error-bg text-error"
-            : "bg-blue-100 text-blue-600";
+        const fileStyle = isPdfDocument(doc)
+          ? "bg-error-bg text-error"
+          : "bg-blue-100 text-blue-600";
 
         return (
           <div
-            key={doc.name}
+            key={doc.key ?? doc.name}
             className="flex items-center justify-between rounded-lg border border-border p-3"
           >
             <div className="flex items-center gap-3">
@@ -458,13 +517,30 @@ const totalParticipantCount = activityParticipants.length;
               </div>
             </div>
 
-            <Eye
-              size={17}
-              className="cursor-pointer text-primary transition hover:text-primary-hover"
-            />
+            {doc.url ? (
+              <a
+                href={doc.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`មើល ${doc.name}`}
+              >
+                <Eye
+                  size={17}
+                  className="cursor-pointer text-primary transition hover:text-primary-hover"
+                />
+              </a>
+            ) : (
+              <Eye size={17} className="text-text-secondary opacity-40" />
+            )}
           </div>
         );
       })}
+
+      {(activity.documents || []).length === 0 && (
+        <p className="py-6 text-center text-sm text-text-secondary">
+          មិនទាន់មានឯកសារនៅឡើយទេ
+        </p>
+      )}
     </div>
   </div>
 </div>

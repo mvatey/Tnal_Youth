@@ -12,8 +12,10 @@ import {
 import SaveButton from "@/components/forms/SaveButton";
 
 export default function PasswordPage() {
+  const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
@@ -23,17 +25,20 @@ export default function PasswordPage() {
   const handleSave = async () => {
     setError("");
     setMessage("");
+    if (!currentPassword) return setError("សូមបញ្ចូលពាក្យសម្ងាត់បច្ចុប្បន្នរបស់អ្នក។");
     if (newPassword.length < 6) return setError("ពាក្យសម្ងាត់ថ្មីត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ។");
     if (newPassword !== confirmPassword) return setError("Password confirmation does not match.");
+    if (newPassword === currentPassword) return setError("ពាក្យសម្ងាត់ថ្មីត្រូវខុសពីពាក្យសម្ងាត់បច្ចុប្បន្ន។");
     setSaving(true);
     try {
       const response = await fetch("/api/backend/my-account/password", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newPassword, confirmPassword }),
+        body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
       });
       const body = response.status === 204 ? null : await response.json().catch(() => null);
       if (!response.ok) throw new Error(body?.message || "Unable to change password.");
+      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       setMessage("Password changed successfully.");
@@ -62,6 +67,14 @@ export default function PasswordPage() {
 
 
         <div className="space-y-5">
+          <BoxFill
+            label="ពាក្យសម្ងាត់បច្ចុប្បន្ន"
+            show={showCurrent}
+            setShow={setShowCurrent}
+            value={currentPassword}
+            onChange={setCurrentPassword}
+          />
+
           <BoxFill
             label="ពាក្យសម្ងាត់ថ្មី"
             show={showNew}

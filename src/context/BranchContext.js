@@ -45,11 +45,21 @@ export function BranchProvider({ children, branches = [] }) {
 
         setAccessibleBranches(normalized);
         setSelectedBranch((current) => {
-          if (normalized.some((branch) => String(branch.id) === String(current))) {
+          // Keep the current selection ("all" or a specific branch id)
+          // whenever it is still valid — reloading the branch list
+          // (e.g. after the sidebar filter was reset back to "all")
+          // must not silently jump back to a specific branch.
+          if (current === "all" || normalized.some((branch) => String(branch.id) === String(current))) {
             return String(current);
           }
 
-          return normalized.length > 0 ? String(normalized[0].id) : "all";
+          // Someone with access to exactly one branch (a branch
+          // leader/secretary) has no real "all branches" choice to
+          // make, so default straight to that branch. Anyone with
+          // access to more than one branch (e.g. an admin) should
+          // default to the aggregate "all branches" view instead of
+          // silently landing on whichever branch happens to be first.
+          return normalized.length === 1 ? String(normalized[0].id) : "all";
         });
       } catch {
         // Authentication pages can render before a user is logged in.

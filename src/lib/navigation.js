@@ -8,6 +8,7 @@ export const NAV_ITEMS = [
       "admin",
       "secretary",
       "branch_leader",
+      "viewer",
     ],
   },
   {
@@ -15,14 +16,14 @@ export const NAV_ITEMS = [
     label: "សាខា",
     href: "/branch",
     icon: "building",
-    roles: ["admin"],
+    roles: ["admin", "viewer"],
   },
   {
     id: "members",
     label: "សមាជិក",
     href: "/member",
     icon: "users",
-    roles: ["admin", "secretary"],
+    roles: ["admin", "secretary", "viewer"],
   },
   {
     id: "activities",
@@ -34,6 +35,7 @@ export const NAV_ITEMS = [
       "secretary",
       "branch_leader",
       "member",
+      "viewer",
     ],
   },
   {
@@ -46,6 +48,7 @@ export const NAV_ITEMS = [
       "secretary",
       "branch_leader",
       "member",
+      "viewer",
     ],
   },
   {
@@ -58,6 +61,7 @@ export const NAV_ITEMS = [
       "secretary",
       "branch_leader",
       "member",
+      "viewer",
     ],
   },
   {
@@ -70,6 +74,13 @@ export const NAV_ITEMS = [
       "branch_leader",
       "member",
     ],
+  },
+  {
+    id: "users",
+    label: "អ្នកប្រើប្រាស់",
+    href: "/users",
+    icon: "userAccounts",
+    roles: ["admin"],
   },
   {
     id: "variables",
@@ -117,6 +128,7 @@ export function getRoleHomePath(role) {
     secretary: "/dashboard",
     branch_leader: "/dashboard",
     member: "/activity",
+    viewer: "/dashboard",
   };
 
   return (

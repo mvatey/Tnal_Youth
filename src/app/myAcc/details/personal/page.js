@@ -15,10 +15,54 @@ import {
 import useCurrentMember from "@/hooks/useCurrentMember";
 
 import BoxFill from "@/components/forms/boxFill";
+import FormSelect from "@/components/forms/FormSelect";
 import SaveButton from "@/components/forms/SaveButton";
 
 const MAX_FILE_SIZE =
   5 * 1024 * 1024;
+
+const GENDER_OPTIONS = [
+  { value: "MALE", label: "ប្រុស" },
+  { value: "FEMALE", label: "ស្រី" },
+];
+
+const TSHIRT_SIZE_OPTIONS = [
+  { value: "XS", label: "XS" },
+  { value: "S", label: "S" },
+  { value: "M", label: "M" },
+  { value: "L", label: "L" },
+  { value: "XL", label: "XL" },
+  { value: "2XL", label: "2XL" },
+  { value: "3XL", label: "3XL" },
+];
+
+function normalizeLookupOptions(data) {
+  const list = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.content)
+        ? data.content
+        : [];
+
+  return list
+    .map((item) => ({
+      value:
+        item?.value != null
+          ? String(item.value)
+          : item?.id != null
+            ? String(item.id)
+            : "",
+      label:
+        item?.labelKm ||
+        item?.label_km ||
+        item?.labelEn ||
+        item?.label_en ||
+        item?.code ||
+        "",
+    }))
+    .filter((option) => option.value !== "" && option.label !== "");
+}
 
 const ALLOWED_FILE_TYPES = [
   "image/jpeg",
@@ -32,23 +76,6 @@ async function readJson(response) {
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.message || body.error || "Something went wrong");
   return body.data || body;
-}
-
-async function resolveLookupId(type, label, existingId) {
-  const value = String(label || "").trim();
-  if (!value || value === "-") return null;
-  const options = await readJson(await fetch(`/api/lookups/${type}`, {
-    credentials: "include",
-    cache: "no-store",
-  }));
-  const match = (Array.isArray(options) ? options : []).find((option) =>
-    [option.labelKm, option.label_km, option.labelEn, option.label_en, option.label, option.code]
-      .filter(Boolean)
-      .some((candidate) => String(candidate).trim().toLowerCase() === value.toLowerCase()),
-  );
-  if (match) return Number(match.value ?? match.id);
-  if (existingId) throw new Error(`Please choose a valid ${type.replaceAll("-", " ")} value`);
-  throw new Error(`The ${type.replaceAll("-", " ")} value does not exist`);
 }
 
 const ROLE_LABELS = {
@@ -70,38 +97,6 @@ function getRoleLabel(role) {
   return (
     ROLE_LABELS[normalizedRole] ||
     normalizedRole ||
-    "-"
-  );
-}
-
-function getLevelValue(member) {
-  const level =
-    member?.level ||
-    member?.memberLevel ||
-    member?.rank ||
-    "";
-
-  if (!level) {
-    return "-";
-  }
-
-  const stringLevel =
-    String(level).trim();
-
-  if (
-    stringLevel.startsWith("កាំ")
-  ) {
-    return stringLevel;
-  }
-
-  return `កាំ ${stringLevel}`;
-}
-
-function getShirtSize(member) {
-  return (
-    member?.shirtSize ||
-    member?.shirt_size ||
-    member?.tshirtSize ||
     "-"
   );
 }
@@ -146,6 +141,51 @@ export default function MyAccountPersonalPage() {
   const [saving, setSaving] =
     useState(false);
 
+  /* Lookup options for the editable dropdown fields, matching the
+   * same options the Member module's personal-info tab uses so the
+   * two forms behave the same way. */
+  const [nationalityOptions, setNationalityOptions] = useState([]);
+  const [ethnicityOptions, setEthnicityOptions] = useState([]);
+  const [religionOptions, setReligionOptions] = useState([]);
+  const [memberLevelOptions, setMemberLevelOptions] = useState([]);
+  const [lookupsLoading, setLookupsLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadLookups() {
+      setLookupsLoading(true);
+      const [nationalities, ethnicities, religions, memberLevels] = await Promise.all([
+        fetch("/api/lookups/nationalities", { credentials: "include", cache: "no-store" })
+          .then((response) => (response.ok ? response.json() : []))
+          .catch(() => []),
+        fetch("/api/lookups/ethnicities", { credentials: "include", cache: "no-store" })
+          .then((response) => (response.ok ? response.json() : []))
+          .catch(() => []),
+        fetch("/api/lookups/religions", { credentials: "include", cache: "no-store" })
+          .then((response) => (response.ok ? response.json() : []))
+          .catch(() => []),
+        fetch("/api/lookups/member-levels", { credentials: "include", cache: "no-store" })
+          .then((response) => (response.ok ? response.json() : []))
+          .catch(() => []),
+      ]);
+
+      if (!active) return;
+
+      setNationalityOptions(normalizeLookupOptions(nationalities));
+      setEthnicityOptions(normalizeLookupOptions(ethnicities));
+      setReligionOptions(normalizeLookupOptions(religions));
+      setMemberLevelOptions(normalizeLookupOptions(memberLevels));
+      setLookupsLoading(false);
+    }
+
+    loadLookups();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   useEffect(() => {
     if (!member) {
       setForm(null);
@@ -174,27 +214,37 @@ export default function MyAccountPersonalPage() {
       date_of_birth:
         member.date_of_birth || "",
 
-      nationality:
-        member.nationality || "",
+      nationalityId:
+        member.nationalityId != null
+          ? String(member.nationalityId)
+          : "",
 
-      ethnicity:
-        member.ethnicity || "",
+      ethnicityId:
+        member.ethnicityId != null
+          ? String(member.ethnicityId)
+          : "",
 
       role: getRoleLabel(
         member.role,
       ),
 
-      level:
-        getLevelValue(member),
+      levelId:
+        member.levelId != null
+          ? String(member.levelId)
+          : "",
 
       shirtSize:
-        getShirtSize(member),
+        member.shirtSize && member.shirtSize !== "-"
+          ? member.shirtSize
+          : "",
 
       status:
         member.status || "",
 
-      religion:
-        member.religion || "",
+      religionId:
+        member.religionId != null
+          ? String(member.religionId)
+          : "",
 
       joinedAt:
         member.joinedAt ||
@@ -209,6 +259,27 @@ export default function MyAccountPersonalPage() {
       fileRef.current.value = "";
     }
   }, [member]);
+
+  /* Object URLs must be created/revoked deliberately, otherwise every
+   * render leaks a new blob URL. When no new file is picked yet, fall
+   * back to the member's already-saved CV so it can still be viewed. */
+  const [cvObjectUrl, setCvObjectUrl] = useState("");
+
+  useEffect(() => {
+    if (!cvFile) {
+      setCvObjectUrl("");
+      return undefined;
+    }
+
+    const objectUrl = URL.createObjectURL(cvFile);
+    setCvObjectUrl(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [cvFile]);
+
+  const cvViewUrl =
+    cvObjectUrl ||
+    (member?.cvFileId ? `/api/files/${member.cvFileId}/content` : "");
 
   const handleChange = (field) => (event) => {
   setForm((previousForm) => ({
@@ -301,13 +372,13 @@ export default function MyAccountPersonalPage() {
   const handleRealSave = async () => {
     setSaving(true);
     try {
-      const [nationalityId, ethnicityId, religionId, memberLevelId] = await Promise.all([
-        resolveLookupId("nationalities", form.nationality, member.nationalityId),
-        resolveLookupId("ethnicities", form.ethnicity, member.ethnicityId),
-        resolveLookupId("religions", form.religion, member.religionId),
-        resolveLookupId("member-levels", form.level, member.levelId),
-      ]);
-
+      /*
+       * The dropdown fields below are now bound directly to lookup
+       * IDs (like the Member module's personal-info tab), so there is
+       * no more guessing a label back into an ID here — that guess
+       * was the reason "save" used to fail whenever the typed text
+       * did not exactly match a lookup label.
+       */
       await readJson(await fetch("/api/backend/my-account/personal-info", {
         method: "PUT",
         credentials: "include",
@@ -317,15 +388,15 @@ export default function MyAccountPersonalPage() {
           email: form.email === "-" ? null : form.email,
           full_name_km: form.name_kh,
           full_name_en: form.name_en === "-" ? null : form.name_en,
-          gender: form.gender === "-" ? null : form.gender,
-          nationality_id: nationalityId,
-          religion_id: religionId,
-          ethnicity_id: ethnicityId,
+          gender: form.gender || null,
+          nationality_id: form.nationalityId ? Number(form.nationalityId) : null,
+          religion_id: form.religionId ? Number(form.religionId) : null,
+          ethnicity_id: form.ethnicityId ? Number(form.ethnicityId) : null,
           date_of_birth: form.date_of_birth || null,
           current_address: form.currentAddress || member.currentAddress || null,
           permanent_address: form.permanentAddress || member.permanentAddress || null,
-          tshirt_size: form.shirtSize === "-" ? null : form.shirtSize,
-          member_level_id: memberLevelId,
+          tshirt_size: form.shirtSize || null,
+          member_level_id: form.levelId ? Number(form.levelId) : null,
           joined_on: form.joinedAt === "-" ? null : form.joinedAt,
         }),
       }));
@@ -441,12 +512,13 @@ export default function MyAccountPersonalPage() {
 
   {/* Editable */}
 
-  <BoxFill
+  <FormSelect
     label="ភេទ"
     name="gender"
     value={form.gender || ""}
-    placeholder="បញ្ចូលភេទ"
+    placeholder="ជ្រើសរើសភេទ"
     onChange={handleChange("gender")}
+    options={GENDER_OPTIONS}
   />
 
   <BoxFill
@@ -477,28 +549,34 @@ export default function MyAccountPersonalPage() {
 
   {/* Editable */}
 
-  <BoxFill
+  <FormSelect
     label="ជនជាតិ"
-    name="ethnicity"
-    value={form.ethnicity || ""}
-    placeholder="បញ្ចូលជនជាតិ"
-    onChange={handleChange("ethnicity")}
+    name="ethnicityId"
+    value={form.ethnicityId || ""}
+    placeholder="ជ្រើសរើសជនជាតិ"
+    onChange={handleChange("ethnicityId")}
+    options={ethnicityOptions}
+    loading={lookupsLoading}
   />
 
-  <BoxFill
+  <FormSelect
     label="សញ្ជាតិ"
-    name="nationality"
-    value={form.nationality || ""}
-    placeholder="បញ្ចូលសញ្ជាតិ"
-    onChange={handleChange("nationality")}
+    name="nationalityId"
+    value={form.nationalityId || ""}
+    placeholder="ជ្រើសរើសសញ្ជាតិ"
+    onChange={handleChange("nationalityId")}
+    options={nationalityOptions}
+    loading={lookupsLoading}
   />
 
-  <BoxFill
+  <FormSelect
     label="សាសនា"
-    name="religion"
-    value={form.religion || ""}
-    placeholder="បញ្ចូលសាសនា"
-    onChange={handleChange("religion")}
+    name="religionId"
+    value={form.religionId || ""}
+    placeholder="ជ្រើសរើសសាសនា"
+    onChange={handleChange("religionId")}
+    options={religionOptions}
+    loading={lookupsLoading}
   />
 
   {/* Read only */}
@@ -525,21 +603,25 @@ export default function MyAccountPersonalPage() {
     readOnly
   />
 
-  <BoxFill
+  <FormSelect
     label="កម្រិតសមាជិក (កាំ)"
-    name="level"
-    value={form.level || "-"}
-    onChange={handleChange("level")}
+    name="levelId"
+    value={form.levelId || ""}
+    placeholder="ជ្រើសរើសកម្រិតសមាជិក"
+    onChange={handleChange("levelId")}
+    options={memberLevelOptions}
+    loading={lookupsLoading}
   />
 
   {/* Editable */}
 
-  <BoxFill
+  <FormSelect
     label="ទំហំអាវ"
     name="shirtSize"
     value={form.shirtSize || ""}
-    placeholder="បញ្ចូលទំហំអាវ"
+    placeholder="ជ្រើសរើសទំហំអាវ"
     onChange={handleChange("shirtSize")}
+    options={TSHIRT_SIZE_OPTIONS}
   />
 
   {/* Read only */}
@@ -577,7 +659,7 @@ export default function MyAccountPersonalPage() {
               }
             />
 
-            {!cvFile ? (
+            {!cvFile && !member?.cvFileId ? (
               <button
                 type="button"
                 onClick={() =>
@@ -647,29 +729,31 @@ export default function MyAccountPersonalPage() {
                   text-center
                 "
               >
-                <button
-                  type="button"
-                  onClick={removeFile}
-                  aria-label="លុបឯកសារ"
-                  className="
-                    absolute
-                    right-3
-                    top-3
-                    flex
-                    h-8
-                    w-8
-                    items-center
-                    justify-center
-                    rounded-full
-                    bg-white
-                    text-red-500
-                    shadow-sm
-                    transition
-                    hover:bg-red-50
-                  "
-                >
-                  <X size={17} />
-                </button>
+                {cvFile && (
+                  <button
+                    type="button"
+                    onClick={removeFile}
+                    aria-label="លុបឯកសារ"
+                    className="
+                      absolute
+                      right-3
+                      top-3
+                      flex
+                      h-8
+                      w-8
+                      items-center
+                      justify-center
+                      rounded-full
+                      bg-white
+                      text-red-500
+                      shadow-sm
+                      transition
+                      hover:bg-red-50
+                    "
+                  >
+                    <X size={17} />
+                  </button>
+                )}
 
                 <div
                   className="
@@ -697,32 +781,46 @@ export default function MyAccountPersonalPage() {
                     font-semibold
                     text-text-primary
                   "
-                  title={cvFile.name}
+                  title={cvFile ? cvFile.name : "CV"}
                 >
-                  {cvFile.name}
+                  {cvFile ? cvFile.name : "CV"}
                 </p>
 
-                <p className="mt-1 text-xs text-gray-400">
-                  {formatFileSize(
-                    cvFile.size,
+                {cvFile && (
+                  <p className="mt-1 text-xs text-gray-400">
+                    {formatFileSize(
+                      cvFile.size,
+                    )}
+                  </p>
+                )}
+
+                <div className="mt-3 flex items-center gap-4">
+                  {cvViewUrl && (
+                    <a
+                      href={cvViewUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-semibold text-primary hover:underline"
+                    >
+                      មើលឯកសារ
+                    </a>
                   )}
-                </p>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    fileRef.current?.click()
-                  }
-                  className="
-                    mt-3
-                    text-xs
-                    font-semibold
-                    text-primary
-                    hover:underline
-                  "
-                >
-                  ផ្លាស់ប្តូរឯកសារ
-                </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      fileRef.current?.click()
+                    }
+                    className="
+                      text-xs
+                      font-semibold
+                      text-primary
+                      hover:underline
+                    "
+                  >
+                    ផ្លាស់ប្តូរឯកសារ
+                  </button>
+                </div>
               </div>
             )}
 

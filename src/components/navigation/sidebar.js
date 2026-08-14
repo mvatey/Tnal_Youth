@@ -24,6 +24,7 @@ import {
   FaSignOutAlt,
   FaUniversity,
   FaUserCircle,
+  FaUserShield,
   FaUsers,
 } from "react-icons/fa";
 
@@ -43,6 +44,7 @@ const ICON_MAP = {
   dashboard: ChartIcon,
   building: FaUniversity,
   users: FaUsers,
+  userAccounts: FaUserShield,
   calendar: FaCalendarAlt,
   donation: FaHandHoldingHeart,
   file: FaFileAlt,
@@ -56,11 +58,13 @@ const ROLE_LABELS = {
   SECRETARY: "លេខាធិការ",
   BRANCH_LEADER: "ប្រធានសាខា",
   MEMBER: "សមាជិក",
+  VIEWER: "អ្នកមើលប៉ុណ្ណោះ",
 
   admin: "អ្នកគ្រប់គ្រងប្រព័ន្ធ",
   secretary: "លេខាធិការ",
   branch_leader: "ប្រធានសាខា",
   member: "សមាជិក",
+  viewer: "អ្នកមើលប៉ុណ្ណោះ",
 
   អ្នកគ្រប់គ្រង: "អ្នកគ្រប់គ្រងប្រព័ន្ធ",
   លេខាធិការ: "លេខាធិការ",

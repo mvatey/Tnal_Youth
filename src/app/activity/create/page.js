@@ -611,6 +611,33 @@ export default function CreateActivityPage() {
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [memberLoadError, setMemberLoadError] = useState("");
+  const [existingParticipantIds, setExistingParticipantIds] = useState([]);
+
+  // `canManage` = full edit rights (the activity's own host branch).
+  // `canManageAsInvitedBranch` = a co-hosting branch's leader/secretary —
+  // may only invite/remove their own branch's members and record
+  // income/expense, never edit the activity's own info. Both are computed
+  // server-side and returned on every activity detail fetch.
+  const canManage = Boolean(editingActivity?.canManage);
+  const canManageAsInvitedBranch = Boolean(
+    editingActivity?.canManageAsInvitedBranch,
+  );
+  const invitedBranchId = editingActivity?.managedInvitedBranchId ?? null;
+  const isInvitedBranchOnly =
+    isEditMode && !canManage && canManageAsInvitedBranch;
+  const invitedBranchLabel = getOptionLabel(
+    lookupData.branches.find(
+      (option) => getOptionValue(option) === invitedBranchId,
+    ),
+  );
+
+  const canInviteMoreMembers =
+    isEditMode &&
+    editingActivity != null &&
+    (canManage || canManageAsInvitedBranch) &&
+    !["COMPLETED", "CANCELLED"].includes(
+      String(getOptionCode(editingActivity?.status) || "").toUpperCase(),
+    );
 
   const branchOptions = lookupData.branches.map(getOptionLabel).filter(Boolean);
   const allInvitableBranchOptions = lookupData.invitableBranches
@@ -639,9 +666,10 @@ export default function CreateActivityPage() {
         setLookupData(nextLookups);
 
         if (editId) {
-          const [activity, invitations] = await Promise.all([
+          const [activity, invitations, participants] = await Promise.all([
             fetchJson(`/api/backend/activities/${encodeURIComponent(editId)}`),
             fetchJson(`/api/backend/activities/${encodeURIComponent(editId)}/invited-branches`).catch(() => []),
+            fetchJson(`/api/backend/activities/${encodeURIComponent(editId)}/participants`).catch(() => []),
           ]);
           const branch = branches.find((option) => getOptionValue(option) === Number(activity.branchId));
           const province = provinces.find((option) => getOptionValue(option) === Number(activity.provinceId));
@@ -655,9 +683,14 @@ export default function CreateActivityPage() {
             provinceLabel: getOptionLabel(province),
             invitedBranches,
           };
+          const currentParticipantIds = (Array.isArray(participants) ? participants : [])
+            .map((participant) => Number(participant.memberId ?? participant.member_id))
+            .filter((memberId) => Number.isFinite(memberId));
           if (!cancelled) {
             setEditingActivity(normalized);
             setForm(createInitialForm(normalized));
+            setExistingParticipantIds(currentParticipantIds);
+            setSelectedMemberIds(currentParticipantIds);
           }
         }
       } catch (error) {
@@ -673,8 +706,16 @@ export default function CreateActivityPage() {
   }, [editId]);
 
   useEffect(() => {
-    const branch = lookupData.branches.find((option) => getOptionLabel(option) === form.branch);
-    const branchId = getOptionValue(branch);
+    // A co-hosting (invited) branch's staff can only ever pick from their
+    // OWN branch's members — never the host's form.branch selection, which
+    // they cannot see or edit in the first place.
+    let branchId;
+    if (isInvitedBranchOnly) {
+      branchId = invitedBranchId;
+    } else {
+      const branch = lookupData.branches.find((option) => getOptionLabel(option) === form.branch);
+      branchId = getOptionValue(branch);
+    }
     if (!Number.isFinite(branchId) || branchId <= 0) {
       setMemberOptions([]);
       setSelectedMemberIds([]);
@@ -717,7 +758,7 @@ export default function CreateActivityPage() {
     return () => {
       cancelled = true;
     };
-  }, [form.branch, lookupData.branches]);
+  }, [form.branch, lookupData.branches, isInvitedBranchOnly, invitedBranchId]);
 
   const invitedBranchOptions = useMemo(() => {
     return allInvitableBranchOptions.filter(
@@ -747,12 +788,63 @@ export default function CreateActivityPage() {
   };
 
   const handleOpenMemberModal = () => {
+    if (isInvitedBranchOnly) {
+      if (!invitedBranchId) {
+        alert("មិនអាចកំណត់អត្តសញ្ញាណសាខារបស់អ្នកទេ");
+        return;
+      }
+      setShowMemberModal(true);
+      return;
+    }
+
     if (!form.branch) {
       alert("សូមជ្រើសរើសសាខាជាមុនសិន");
       return;
     }
 
     setShowMemberModal(true);
+  };
+
+  /*
+   * In create mode this just stages the selection locally — the actual
+   * invite call happens once the activity itself is saved (see handleSave).
+   *
+   * In edit mode the activity already exists, so members are invited right
+   * away. Only members NOT already in existingParticipantIds are sent to
+   * the invite endpoint, so re-opening this modal and saving again never
+   * re-invites (and never re-notifies) someone who already joined.
+   */
+  const handleMemberModalSave = async (selectedIds) => {
+    if (!isEditMode) {
+      setSelectedMemberIds(selectedIds);
+      return;
+    }
+
+    const previouslyInvited = new Set(existingParticipantIds.map(Number));
+    const newlySelectedIds = selectedIds
+      .map(Number)
+      .filter((memberId) => !previouslyInvited.has(memberId));
+
+    if (newlySelectedIds.length === 0) {
+      setSelectedMemberIds(selectedIds);
+      return;
+    }
+
+    try {
+      await fetchJson(`/api/backend/activities/${encodeURIComponent(editId)}/participants/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ member_ids: newlySelectedIds }),
+      });
+
+      const updatedParticipantIds = [...existingParticipantIds, ...newlySelectedIds];
+      setExistingParticipantIds(updatedParticipantIds);
+      setSelectedMemberIds(updatedParticipantIds);
+    } catch (error) {
+      console.error("Invite additional members error:", error);
+      alert(error.message || "មិនអាចអញ្ជើញសមាជិកបន្ថែមបានទេ");
+      throw error;
+    }
   };
 
   const handleCancel = () => {
@@ -950,6 +1042,37 @@ export default function CreateActivityPage() {
     }
   };
 
+  // `canManage` (host) or `canManageAsInvitedBranch` (an accepted co-hosting
+  // branch) are both computed server-side. Block the edit form entirely for
+  // anyone with neither — the backend would reject every action anyway, but
+  // this avoids a confusing failed submit.
+  if (
+    isEditMode &&
+    editingActivity != null &&
+    !canManage &&
+    !canManageAsInvitedBranch
+  ) {
+    return (
+      <div className="rounded-xl border border-error/30 bg-error-bg p-6 text-center text-error">
+        <p className="text-sm font-semibold">
+          អ្នកមិនមានសិទ្ធិកែប្រែកម្មវិធីនេះទេ
+        </p>
+
+        <p className="mt-1 text-xs">
+          មានតែអ្នកដឹកនាំសាខា ឬលេខាធិការនៃសាខារៀបចំកម្មវិធីនេះ ឬសាខាដែលបានទទួល
+          ការអញ្ជើញចូលរួមរៀបចំកម្មវិធីនេះប៉ុណ្ណោះ ដែលអាចចូលមើលទំព័រនេះបាន។
+        </p>
+
+        <Link
+          href={`/activity/${editId}`}
+          className="mt-4 inline-flex h-9 items-center justify-center rounded-lg bg-secondary px-4 text-sm font-medium text-white hover:bg-secondary-hover"
+        >
+          ត្រឡប់ទៅព័ត៌មានកម្មវិធី
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <>
       <form onSubmit={handleSave} className="activity-create-form space-y-6">
@@ -983,6 +1106,14 @@ export default function CreateActivityPage() {
               ? "កែប្រែកម្មវិធី"
               : "បង្កើតកម្មវិធីថ្មី"}
           </h1>
+
+          {isInvitedBranchOnly && (
+            <p className="mt-2 rounded-lg border border-warning/30 bg-warning-bg px-4 py-3 text-sm text-warning">
+              សាខារបស់អ្នកត្រូវបានអញ្ជើញចូលរួមរៀបចំកម្មវិធីនេះ។ អ្នកអាចអញ្ជើញ
+              សមាជិកនៃសាខារបស់អ្នក និងកត់ត្រាចំណូល/ចំណាយបានប៉ុណ្ណោះ —
+              ព័ត៌មានផ្សេងទៀតរបស់កម្មវិធីនេះកែប្រែបានតែពីសាខារៀបចំកម្មវិធីប៉ុណ្ណោះ។
+            </p>
+          )}
         </div>
 
         <section className="rounded-xl border border-border bg-white p-5">
@@ -991,6 +1122,10 @@ export default function CreateActivityPage() {
             ព័ត៌មានកម្មវិធី
           </h2>
 
+          {/* A co-hosting (invited) branch may never edit the activity's own
+              info — only the host branch can. Locking the whole fieldset is
+              simpler and safer than disabling each field individually. */}
+          <fieldset disabled={isInvitedBranchOnly} className="m-0 min-w-0 border-0 p-0">
           <div className="space-y-5">
             <div className="grid grid-cols-1 items-end gap-5 md:grid-cols-2 xl:grid-cols-3">
               <FormControl
@@ -1058,8 +1193,10 @@ export default function CreateActivityPage() {
               className="h-32 w-full resize-none rounded-lg border border-border bg-white px-4 py-3 text-sm text-text-primary outline-none transition placeholder:text-text-secondary focus:border-primary"
             />
           </div>
+          </fieldset>
         </section>
 
+        <fieldset disabled={isInvitedBranchOnly} className="m-0 min-w-0 border-0 p-0">
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <div className="rounded-xl border border-border bg-white p-5">
             <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
@@ -1146,6 +1283,7 @@ export default function CreateActivityPage() {
             </div>
           </div>
         </section>
+        </fieldset>
 
         <section className="rounded-xl border border-border bg-white p-5">
           <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
@@ -1153,6 +1291,10 @@ export default function CreateActivityPage() {
             ព័ត៌មានបន្ថែម
           </h2>
 
+          {/* Which branches are invited, and the activity's status, stay
+              host-only — but the action buttons below (member invite /
+              income / expense) must stay enabled for a co-hosting branch. */}
+          <fieldset disabled={isInvitedBranchOnly} className="m-0 min-w-0 border-0 p-0">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <SearchableBranchMultiSelect
               label="សាខាដែលត្រូវអញ្ជើញ"
@@ -1170,6 +1312,7 @@ export default function CreateActivityPage() {
                 options={statusOptions}
             />
           </div>
+          </fieldset>
 
           <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
             {isEditMode ? (
@@ -1182,16 +1325,41 @@ export default function CreateActivityPage() {
               </button>
             )}
 
-            <Link href={isEditMode ? `/activity/create/income?activityId=${editId}` : "/activity/create/income"} className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90">
-              ចំណូល
-            </Link>
+            {isEditMode ? (
+              <Link href={`/activity/create/income?activityId=${editId}`} className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90">
+                ចំណូល
+              </Link>
+            ) : (
+              <button type="button" disabled title="សូមរក្សាទុកសកម្មភាពជាមុនសិន" className="flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white opacity-60">
+                ចំណូល
+              </button>
+            )}
 
-            <Link href={isEditMode ? `/activity/create/expense?activityId=${editId}` : "/activity/create/expense"} className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90">
-              ចំណាយ
-            </Link>
+            {isEditMode ? (
+              <Link href={`/activity/create/expense?activityId=${editId}`} className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90">
+                ចំណាយ
+              </Link>
+            ) : (
+              <button type="button" disabled title="សូមរក្សាទុកសកម្មភាពជាមុនសិន" className="flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white opacity-60">
+                ចំណាយ
+              </button>
+            )}
           </div>
+
+          {canInviteMoreMembers && (
+            <button
+              type="button"
+              onClick={handleOpenMemberModal}
+              className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-primary text-sm font-semibold text-primary transition hover:bg-primary-light md:w-auto md:px-5"
+            >
+              អញ្ជើញសមាជិកបន្ថែម
+            </button>
+          )}
         </section>
 
+        {/* A co-hosting (invited) branch never manages the activity's own
+            cover image/gallery/attachments — only the host branch does. */}
+        {!isInvitedBranchOnly && (
         <section className="rounded-xl border border-border bg-white p-5">
           <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
             <Paperclip size={18} />
@@ -1222,6 +1390,7 @@ export default function CreateActivityPage() {
             />
           </div>
         </section>
+        )}
 
         {isEditMode &&
           editingActivity?.documents?.length > 0 && (
@@ -1265,20 +1434,26 @@ export default function CreateActivityPage() {
             action="cancel"
             onClick={handleCancel}
             disabled={isSaving}
+            label={isInvitedBranchOnly ? "ត្រឡប់ក្រោយ" : undefined}
           />
 
-          <FormActionButton
-            action="save"
-            type="submit"
-            disabled={isSaving}
-            label={
-              isSaving
-                ? "កំពុងរក្សាទុក..."
-                : isEditMode
-                  ? "រក្សាទុកការកែប្រែ"
-                  : "រក្សាទុក"
-            }
-          />
+          {/* Nothing on the main form is editable in invited-branch-only
+              mode, so there is nothing to save here — member invite /
+              income / expense above are their own immediate actions. */}
+          {!isInvitedBranchOnly && (
+            <FormActionButton
+              action="save"
+              type="submit"
+              disabled={isSaving}
+              label={
+                isSaving
+                  ? "កំពុងរក្សាទុក..."
+                  : isEditMode
+                    ? "រក្សាទុកការកែប្រែ"
+                    : "រក្សាទុក"
+              }
+            />
+          )}
         </div>
       </form>
 
@@ -1287,8 +1462,8 @@ export default function CreateActivityPage() {
           onClose={() => setShowMemberModal(false)}
           members={memberOptions}
           selectedIds={selectedMemberIds}
-          onSave={setSelectedMemberIds}
-          branchName={form.branch}
+          onSave={handleMemberModalSave}
+          branchName={isInvitedBranchOnly ? invitedBranchLabel : form.branch}
           loading={membersLoading}
           error={memberLoadError}
         />

@@ -171,13 +171,14 @@ export default function MyAccountPoliticalPage() {
               </h3>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-                <BoxFill
-                  label="ឈ្មោះ ស្ថាប័ន"
+                <FormSelect
+                  label="បក្ស"
+                  placeholder="ជ្រើសរើសបក្ស"
                   value={item.organization || ""}
                   onChange={(event) =>
                     updatePolitical(item.id, "organization", event.target.value)
                   }
-                  placeholder="បញ្ចូលឈ្មោះស្ថាប័ន"
+                  options={politicalData.organizationTypes || []}
                 />
 
                 <FormSelect

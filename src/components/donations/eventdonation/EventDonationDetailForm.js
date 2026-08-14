@@ -6,6 +6,7 @@ import DonationFilterSelect from "../monthlydonation/DonationFilterSelect";
 import DonationSearchInput from "@/components/forms/searchBar";
 import Table from "@/components/tables/table";
 import { Check, X } from "lucide-react";
+import useCurrentMember from "@/hooks/useCurrentMember";
 
 async function fetchJson(url, options) {
   const response = await fetch(url, { cache: "no-store", ...options });
@@ -61,6 +62,11 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { member: currentMember } = useCurrentMember();
+  // Only entry staff (secretary / branch_leader) may record or edit event
+  // donations here — admin/viewer are view-only, and members use their own
+  // read-only "my donations" view instead of this staff-entry form.
+  const canEdit = ["secretary", "branch_leader"].includes(currentMember?.role);
   const listPath = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/eventdonation"
     : "/donation/eventdonation";
@@ -186,6 +192,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   }, [showSaveAlert]);
 
   const handleSave = async (rows) => {
+    if (!canEdit) { setError("អ្នកមិនមានសិទ្ធិកែប្រែវិភាគទាននេះទេ។"); return false; }
     const completed = rows.filter((row) => Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0);
     if (!donationTypeId) { setError("Event donation type is missing in the backend."); return false; }
     if (selectedBranch === "all" || selectedEvent === "all") { setError("Please choose a branch and activity."); return false; }
@@ -299,6 +306,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
             selectedBranch={selectedBranch}
             searchQuery={searchQuery}
             rowEditMode={isDetailPage}
+            readOnly={!canEdit}
             onRowsChange={setMembers}
             onReset={() => setMembers((rows) => rows.map((row) => ({ ...row, realAmount: "0", dollarAmount: "0" })))}
             onCancel={onCancel || (() => router.push(listPath))}

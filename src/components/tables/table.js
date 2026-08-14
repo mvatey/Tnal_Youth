@@ -250,7 +250,7 @@ export default function Table({
         onPageChange={setCurrentPage}
       />
 
-      {!rowEditMode && (
+      {!rowEditMode && !readOnly && (
         <AddDonationActions
           onReset={handleReset}
           onCancel={onCancel}

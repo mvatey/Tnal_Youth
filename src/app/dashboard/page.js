@@ -47,6 +47,7 @@ async function parseJsonSafely(response) {
 export default function DashboardPage() {
   const {
     branches,
+    selectedBranch,
   } = useBranch();
 
   /*
@@ -118,13 +119,25 @@ export default function DashboardPage() {
           });
 
         /*
-         * IMPORTANT:
+         * The sidebar's global branch selector scopes the whole
+         * dashboard (summary cards, charts, activity lists).
          *
-         * Do NOT send branchId here.
-         *
-         * performanceBranchId is handled separately
-         * inside /api/dashboard/route.js.
+         * performanceBranchId is a SEPARATE, independent selector
+         * that only scopes the Performance Summary card and must
+         * keep being handled on its own below.
          */
+        if (
+          selectedBranch !== "all" &&
+          selectedBranch != null
+        ) {
+          params.set(
+            "branchId",
+            String(
+              selectedBranch
+            )
+          );
+        }
+
         if (
           performanceBranch !== "all" &&
           performanceBranch != null
@@ -181,6 +194,7 @@ export default function DashboardPage() {
     }, [
       selectedMonth,
       selectedYear,
+      selectedBranch,
       performanceBranch,
     ]);
 

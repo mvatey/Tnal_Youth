@@ -10,6 +10,7 @@ import Pagination from "../../navigation/Pagination";
 import TableRow from "./TableRow";
 import { downloadCsv } from "@/utils/downloadCsv";
 import useCurrentMember from "@/hooks/useCurrentMember";
+import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
@@ -40,6 +41,7 @@ export default function DonationTable() {
   const isBranchScoped = ["secretary", "branch_leader"].includes(
     currentMember?.role,
   );
+  const isMemberScoped = currentMember?.role === "member";
   const scopedBranchId = isBranchScoped ? currentMember?.branchId : null;
   const rowsPerPage = 12;
   const headers = [
@@ -141,6 +143,12 @@ export default function DonationTable() {
           throw new Error("គណនីនេះមិនទាន់បានកំណត់សាខា។");
         }
 
+        if (isMemberScoped) {
+          const myRows = await fetchMyAccountCollection("donations/monthly");
+          if (!cancelled) setRows(myRows.map(mapMyMonthlyRow));
+          return;
+        }
+
         const query = new URLSearchParams({ page: "0", size: "100" });
         if (isBranchScoped) query.set("branchId", String(scopedBranchId));
 
@@ -163,7 +171,7 @@ export default function DonationTable() {
     }
     loadRows();
     return () => { cancelled = true; };
-  }, [currentMemberLoading, isBranchScoped, scopedBranchId]);
+  }, [currentMemberLoading, isBranchScoped, isMemberScoped, scopedBranchId]);
 
   useEffect(() => {
     if (!showDownloadAlert && !showSaveAlert) return undefined;
@@ -249,6 +257,7 @@ export default function DonationTable() {
                 rowNumber={(safePage - 1) * rowsPerPage + index + 1}
                 onDelete={handleDelete}
                 hasMoney={row.donorCount > 0}
+                canManage={isBranchScoped}
               />
             ))}
             {filteredRows.length === 0 && (
@@ -289,5 +298,24 @@ function mapMonthlyRow(row) {
     monthlyUsd: Number(row.totalUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
     total: Number(row.overallTotalUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
     donorCount: Number(row.donorCount || 0),
+  };
+}
+
+// Maps a single MyDonationResponse (member's own monthly donation record)
+// into the same row shape mapMonthlyRow produces, so the table/columns are
+// reused as-is for the member's read-only "my donations" view.
+function mapMyMonthlyRow(row) {
+  const period = row.donationPeriod ? new Date(`${row.donationPeriod}T00:00:00`) : null;
+  return {
+    id: row.id,
+    branchId: row.branch?.id ?? null,
+    branch: row.branch?.nameKm || row.branch?.nameEn || "-",
+    month: period ? String(period.getMonth() + 1).padStart(2, "0") : "-",
+    monthLabel: period ? getKhmerMonth(period.getMonth() + 1) : "-",
+    year: period ? String(period.getFullYear()) : "-",
+    monthlyRiel: Number(row.amountKhr || 0).toLocaleString(),
+    monthlyUsd: Number(row.amountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
+    total: Number(row.totalAmountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
+    donorCount: 1,
   };
 }
