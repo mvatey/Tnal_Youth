@@ -3,85 +3,37 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-
-const MY_ACCOUNT_DETAIL_TABS = [
-  {
-    label: "ព័ត៌មានផ្ទាល់ខ្លួន",
-    href: "/myAcc/details/personal",
-  },
-  {
-    label: "ព័ត៌មានគ្រួសារ",
-    href: "/myAcc/details/family",
-  },
-  {
-    label: "ប្រវត្តិការងារ",
-    href: "/myAcc/details/work",
-  },
-  {
-    label: "ការអប់រំ/បណ្ដុះបណ្ដាល",
-    href: "/myAcc/details/education",
-  },
-  {
-    label: "ជំនាញបច្ចេកទេស",
-    href: "/myAcc/details/skill",
-  },
-  {
-    label: "កិច្ចការនយោបាយ",
-    href: "/myAcc/details/political",
-  },
-];
-
-
 export default function MyAccountDetailTabNav() {
-
   const pathname = usePathname();
-
+  const tabs = [
+    { name: "ព័ត៌មានផ្ទាល់ខ្លួន", href: "/myAcc/details/personal" },
+    { name: "ព័ត៌មានគ្រួសារ", href: "/myAcc/details/family" },
+    { name: "ប្រវត្តិការងារ", href: "/myAcc/details/work" },
+    { name: "ការអប់រំ/បណ្តុះបណ្តាល", href: "/myAcc/details/education" },
+    { name: "ជំនាញបច្ចេកទេស", href: "/myAcc/details/skill" },
+    { name: "កិច្ចការនយោបាយ", href: "/myAcc/details/political" },
+  ];
 
   return (
-    <div className="overflow-hidden rounded-lg bg-white shadow-sm">
-
+    <div className="rounded-lg bg-white shadow-sm overflow-hidden">
       <div className="grid grid-cols-6">
-
-        {MY_ACCOUNT_DETAIL_TABS.map((tab)=>{
-
-          const active =
-            pathname === tab.href ||
-            pathname.startsWith(tab.href + "/");
-
-
+        {tabs.map((tab) => {
+          const active = pathname === tab.href;
           return (
             <Link
               key={tab.href}
               href={tab.href}
-              className={`
-                flex
-                h-10
-                items-center
-                justify-center
-                border-t-2
-                px-3
-                text-sm
-                font-medium
-                transition-all
-                duration-200
-
-                ${
-                  active
+              className={`flex h-10 items-center justify-center border-t-2 px-3 text-sm font-medium transition-all ${
+                active
                   ? "border-secondary bg-secondary-light text-secondary"
-                  : "border-transparent bg-white text-text-secondary hover:bg-gray-50"
-                }
-              `}
+                  : "border-transparent text-text-secondary hover:bg-gray-50"
+              }`}
             >
-              <span className="truncate">
-                {tab.label}
-              </span>
+              <span className="truncate">{tab.name}</span>
             </Link>
           );
-
         })}
-
       </div>
-
     </div>
   );
 }

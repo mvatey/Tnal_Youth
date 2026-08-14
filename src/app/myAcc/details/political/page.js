@@ -1,73 +1,96 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import useCurrentMember from "@/hooks/useCurrentMember";
 import { RiAddCircleLine } from "react-icons/ri";
 
-import useCurrentMember from "@/hooks/useCurrentMember";
-import politicalData from "@/data/political.json";
-import locationData from "@/data/location.json";
-
 import SaveButton from "@/components/forms/SaveButton";
-import DeleteButton from "@/components/forms/DeleteButton";
-import BoxFill from "@/components/forms/boxFill";
-import FormDate from "@/components/forms/FormDate";
+import BoxFill from "@/components/forms/boxFill.js";
+import FormDate from "@/components/forms/FormDate.js";
 import FormSelect from "@/components/forms/FormSelect";
-import {
-  fetchMyAccountCollection,
-  saveMyAccountCollection,
-} from "@/lib/myAccountCollections";
+import DeleteButton from "@/components/forms/DeleteButton";
+
+import { deleteMemberRecord, loadMemberRecords, saveMemberRecords } from "@/lib/myAccountRecords";
+import politicalData from "@/data/political.json";
 
 function createEmptyPolitical() {
   return {
     id: `political-${Date.now()}-${Math.random()}`,
-    organization: "",
-    workLevel: "",
-    country: "",
-    position: "",
-    appointmentNumber: "",
-    startDate: "",
-    endDate: "",
+    ...politicalData.emptyPolitical,
   };
 }
 
-export default function MyAccountPoliticalPage() {
-  const {
-    member,
-    loading,
-    error,
-  } = useCurrentMember();
+export default function PoliticalPage() {
+  const isReadOnly = false;
+  const { member: currentMember } = useCurrentMember();
+  const memberId = String(currentMember?.id ?? "self");
 
+  const [member, setMember] = useState(null);
   const [politicals, setPoliticals] = useState([]);
-  const [originalPoliticals, setOriginalPoliticals] = useState([]);
-  const [saveError, setSaveError] = useState("");
+  const [parties, setParties] = useState([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!member) {
-      setPoliticals([]);
-      return;
-    }
-
-    let active = true;
-    fetchMyAccountCollection("political-affiliations")
+    const controller = new AbortController();
+    setError("");
+    loadMemberRecords(memberId, "political-affiliations", controller.signal)
       .then((rows) => {
-        if (!active) return;
-        setOriginalPoliticals(rows);
+        setMember({ id: memberId });
         setPoliticals(rows.length ? rows.map((row) => ({
           id: row.id,
-          organization: row.affiliationName || row.affiliation_name || "",
-          workLevel: row.location || "",
-          country: "",
-          position: row.positionTitle || row.position_title || "",
-          appointmentNumber: "",
-          startDate: row.startDate || row.start_date || "",
-          endDate: row.endDate || row.end_date || "",
+          organization: String(row.party_id ?? row.partyId ?? ""),
+          workLocation: row.location || "",
+          country: row.country || "",
+          position: row.position_title || row.positionTitle || "",
+          cardNumber: row.card_no || row.cardNo || "",
+          joinedDate: row.start_date || row.startDate || "",
+          leftDate: row.end_date || row.endDate || "",
         })) : [createEmptyPolitical()]);
       })
-      .catch((requestError) => setSaveError(requestError.message));
-    return () => { active = false; };
-  }, [member]);
+      .catch((loadError) => {
+        if (loadError.name !== "AbortError") {
+          setMember({ id: memberId });
+          setPoliticals([createEmptyPolitical()]);
+          setError(loadError.message || "មិនអាចទាញយកព័ត៌មាននយោបាយបានទេ។");
+        }
+      });
+    return () => controller.abort();
+  }, [memberId]);
 
-  const updatePolitical = (id, field, value) => {
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch("/api/lookups/political-parties", {
+      cache: "no-store",
+      credentials: "include",
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : []))
+      .then((items) => {
+        const rows = Array.isArray(items) ? items : [];
+        setParties(rows.map((item) => ({
+          value: String(item.value ?? item.id ?? ""),
+          label:
+            item.labelKm ||
+            item.label_km ||
+            item.nameKm ||
+            item.name_km ||
+            item.labelEn ||
+            item.label_en ||
+            item.nameEn ||
+            item.name_en ||
+            item.code ||
+            String(item.value ?? item.id ?? ""),
+        })));
+      })
+      .catch((lookupError) => {
+        if (lookupError.name !== "AbortError") setParties([]);
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  function handlePoliticalChange(id, field, value) {
     setPoliticals((previous) =>
       previous.map((item) =>
         item.id === id
@@ -78,178 +101,90 @@ export default function MyAccountPoliticalPage() {
           : item,
       ),
     );
-  };
-
-  const addPolitical = () => {
-    setPoliticals((previous) => [...previous, createEmptyPolitical()]);
-  };
-
-  const removePolitical = (id) => {
-    setPoliticals((previous) =>
-      previous.length === 1
-        ? previous
-        : previous.filter(
-            (item) => item.id !== id,
-          ),
-    );
-  };
-
-  const handleSave = async () => {
-    try {
-      setSaveError("");
-      const current = politicals.filter((item) => String(item.organization || "").trim());
-      const rows = await saveMyAccountCollection("political-affiliations", originalPoliticals, current, (item) => ({
-        affiliation_name: item.organization.trim(),
-        position_title: item.position?.trim() || null,
-        location: [item.workLevel, item.country].filter(Boolean).join(" - ") || null,
-        start_date: item.startDate || null,
-        end_date: item.endDate || null,
-      }));
-      setOriginalPoliticals(rows);
-      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
-    } catch (requestError) {
-      setSaveError(requestError.message);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="rounded-xl border border-border bg-white p-6">
-        កំពុងទាញយកព័ត៌មានសមាជិក...
-      </div>
-    );
   }
 
-  if (error) {
-    return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">
-          {error}
-        </p>
-      </div>
-    );
+  function addPolitical() {
+    setPoliticals((previous) => [...previous, createEmptyPolitical()]);
+  }
+
+  async function removePolitical(id) {
+    await deleteMemberRecord(memberId, "political-affiliations", id);
+    setPoliticals((previous) => {
+      if (previous.length === 1) {
+        return previous;
+      }
+
+      return previous.filter((item) => item.id !== id);
+    });
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    if (!member) return;
+
+    try {
+      setError("");
+      const current = politicals.filter((item) => String(item.organization || "").trim());
+      const rows = await saveMemberRecords(memberId, "political-affiliations", current, (item) => ({
+        party_id: Number(item.organization),
+        country: item.country?.trim() || null,
+        location: item.workLocation?.trim() || null,
+        position_title: item.position?.trim() || null,
+        card_no: item.cardNumber?.trim() || null,
+        start_date: item.joinedDate || null,
+        end_date: item.leftDate || null,
+        is_current: !item.leftDate,
+        note: null,
+      }));
+      setPoliticals(rows.map((row) => ({
+        id: row.id,
+        organization: String(row.party_id ?? row.partyId ?? ""),
+        workLocation: row.location || "",
+        country: row.country || "",
+        position: row.position_title || row.positionTitle || "",
+        cardNumber: row.card_no || row.cardNo || "",
+        joinedDate: row.start_date || row.startDate || "",
+        leftDate: row.end_date || row.endDate || "",
+      })));
+      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+    } catch (saveError) {
+      setError(saveError.message || "មិនអាចរក្សាទុកព័ត៌មាននយោបាយបានទេ។");
+    }
   }
 
   if (!member) {
-    return <NotFound />;
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6">
+        <p className="text-sm text-red-500">រកមិនឃើញព័ត៌មានសមាជិក</p>
+      </div>
+    );
   }
 
-  const workLevels = politicalData.workLevels || [
-    "ថ្នាក់ជាតិ",
-    "ថ្នាក់រាជធានី/ខេត្ត",
-    "ថ្នាក់ក្រុង/ស្រុក/ខណ្ឌ",
-    "ថ្នាក់ឃុំ/សង្កាត់",
-  ];
-
-  const positions = politicalData.positions || [
-    "ប្រធាន",
-    "អនុប្រធាន",
-    "លេខាធិការ",
-    "សមាជិក",
-    "អ្នកស្ម័គ្រចិត្ត",
-  ];
-
-  const countries = Array.isArray(
-    locationData.countries,
-  )
-    ? locationData.countries
-    : [];
-
   return (
-    <div className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <fieldset disabled={isReadOnly} className={isReadOnly ? "member-readonly contents [&_button]:hidden" : "contents"}>
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
       <div className="rounded-xl border border-gray-200 bg-white p-5">
         <h2 className="text-lg font-bold text-primary">កិច្ចការនយោបាយ</h2>
 
         <div className="mt-5 space-y-5">
           {politicals.map((item, index) => (
-            <div
+            <PoliticalGroup
               key={item.id}
-              className="rounded-xl border border-gray-300 p-6"
-            >
-              <h3 className="mb-5 text-sm font-semibold text-text-primary">
-                ប្រវត្តិកិច្ចការនយោបាយ ទី {index + 1}
-              </h3>
-
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-                <FormSelect
-                  label="បក្ស"
-                  placeholder="ជ្រើសរើសបក្ស"
-                  value={item.organization || ""}
-                  onChange={(event) =>
-                    updatePolitical(item.id, "organization", event.target.value)
-                  }
-                  options={politicalData.organizationTypes || []}
-                />
-
-                <FormSelect
-                  label="ទីកន្លែងបំពេញការងារ"
-                  value={item.workLevel || ""}
-                  onChange={(event) =>
-                    updatePolitical(item.id, "workLevel", event.target.value)
-                  }
-                  placeholder="ជ្រើសរើសទីកន្លែង"
-                  options={workLevels}
-                />
-
-                <BoxFill
-                  label="ប្រទេស"
-                  placeholder="បញ្ចូលឈ្មោះប្រទេស"
-                  value={item.country ?? ""}
-                  onChange={(event) =>
-                    updatePolitical(item.id, "country", event.target.value)
-                  }
-                />
-
-                <BoxFill
-                  label="តួនាទី"
-                  placeholder="បញ្ចូលឈ្មោះតួនាទី"
-                  value={item.position ?? ""}
-                  onChange={(event) =>
-                    updatePolitical(item.id, "position", event.target.value)
-                  }
-                />
-
-                <BoxFill
-                  label="លេខកាត/លិខិតតែងតាំង"
-                  value={item.appointmentNumber || ""}
-                  onChange={(event) =>
-                    updatePolitical(
-                      item.id,
-                      "appointmentNumber",
-                      event.target.value,
-                    )
-                  }
-                  placeholder="បញ្ចូលលេខកាត/លិខិតតែងតាំង"
-                />
-
-                <FormDate
-                  label="ថ្ងៃខែឆ្នាំចាប់ផ្ដើម"
-                  name={`political-start-${item.id}`}
-                  value={item.startDate || ""}
-                  onChange={(event) =>
-                    updatePolitical(item.id, "startDate", event.target.value)
-                  }
-                />
-
-                <FormDate
-                  label="ថ្ងៃខែឆ្នាំបញ្ចប់"
-                  name={`political-end-${item.id}`}
-                  value={item.endDate || ""}
-                  onChange={(event) =>
-                    updatePolitical(item.id, "endDate", event.target.value)
-                  }
-                />
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <DeleteButton
-                  canDelete={politicals.length > 1}
-                  onClick={() =>
-                    removePolitical(item.id)
-                  }
-                />
-              </div>
-            </div>
+              index={index}
+              item={item}
+              parties={parties}
+              canDelete={politicals.length > 1}
+              onChange={(field, value) =>
+                handlePoliticalChange(item.id, field, value)
+              }
+              onDelete={() => removePolitical(item.id)}
+            />
           ))}
         </div>
 
@@ -257,7 +192,7 @@ export default function MyAccountPoliticalPage() {
           <button
             type="button"
             onClick={addPolitical}
-            className="inline-flex items-center gap-2 rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white hover:bg-green-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
           >
             <RiAddCircleLine size={17} />
             បន្ថែម
@@ -266,17 +201,75 @@ export default function MyAccountPoliticalPage() {
       </div>
 
       <div className="flex justify-end">
-        {saveError && <p className="mr-4 self-center text-sm text-red-500">{saveError}</p>}
-        <SaveButton onClick={handleSave} />
+        <SaveButton type="submit" />
       </div>
-    </div>
+      </fieldset>
+    </form>
   );
 }
 
-function NotFound() {
+function PoliticalGroup({ index, item, parties, canDelete, onChange, onDelete }) {
   return (
-    <div className="rounded-xl border border-red-200 bg-white p-6">
-      <p className="text-sm text-red-500">រកមិនឃើញព័ត៌មានសមាជិក</p>
+    <div className="rounded-xl border border-gray-300 p-6">
+      <h3 className="mb-5 text-sm font-semibold text-text-primary">
+        កិច្ចការនយោបាយ ទី {index + 1}
+      </h3>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <FormSelect
+          label="បក្ស"
+          placeholder="ជ្រើសរើសបក្ស"
+          value={item.organization ?? ""}
+          onChange={(event) => onChange("organization", event.target.value)}
+          options={parties}
+        />
+
+        <BoxFill
+          label="ទីកន្លែងបំពេញការងារ"
+          placeholder="បញ្ចូលទីកន្លែងបំពេញការងារ"
+          value={item.workLocation ?? ""}
+          onChange={(event) => onChange("workLocation", event.target.value)}
+        />
+
+        <BoxFill
+          label="ប្រទេស"
+          placeholder="បញ្ចូលឈ្មោះប្រទេស"
+          value={item.country ?? ""}
+          onChange={(event) => onChange("country", event.target.value)}
+        />
+
+        <BoxFill
+          label="តួនាទី"
+          placeholder="បញ្ចូលឈ្មោះតួនាទី"
+          value={item.position ?? ""}
+          onChange={(event) => onChange("position", event.target.value)}
+        />
+
+        <BoxFill
+          label="លេខកាត/លិខិតតែងតាំង"
+          placeholder="បញ្ចូលលេខកាត/លិខិតតែងតាំង"
+          value={item.cardNumber ?? ""}
+          onChange={(event) => onChange("cardNumber", event.target.value)}
+        />
+
+        <FormDate
+          label="ថ្ងៃខែឆ្នាំ ចាប់ផ្ដើម"
+          name={`joinedDate-${item.id}`}
+          value={item.joinedDate ?? ""}
+          onChange={(event) => onChange("joinedDate", event.target.value)}
+        />
+
+        <FormDate
+          label="ថ្ងៃខែឆ្នាំ បញ្ចប់"
+          name={`leftDate-${item.id}`}
+          value={item.leftDate ?? ""}
+          onChange={(event) => onChange("leftDate", event.target.value)}
+        />
+      </div>
+
+      <div className="mt-6 flex justify-end">
+        <DeleteButton canDelete={canDelete} onClick={onDelete} />
+      </div>
     </div>
   );
 }

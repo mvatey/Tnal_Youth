@@ -116,9 +116,51 @@ function getLabel(value) {
     value?.labelEn ||
     value?.name_en ||
     value?.nameEn ||
+    value?.name ||
     value?.code ||
     ""
   );
+}
+
+
+function getLocationLabel(value) {
+  if (!value) {
+    return "";
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value !== "object") {
+    return String(value);
+  }
+
+  const name =
+    value?.name_km ||
+    value?.nameKm ||
+    value?.name_en ||
+    value?.nameEn ||
+    value?.name ||
+    value?.label_km ||
+    value?.labelKm ||
+    value?.label_en ||
+    value?.labelEn ||
+    "";
+
+  const address =
+    value?.address_km ||
+    value?.addressKm ||
+    value?.address_en ||
+    value?.addressEn ||
+    value?.address ||
+    "";
+
+  if (name && address && name !== address) {
+    return `${name} - ${address}`;
+  }
+
+  return name || address || "";
 }
 
 function getCode(value) {
@@ -206,13 +248,14 @@ function mapParticipation(item) {
       attendanceCode,
 
     location:
-      item?.location_name ||
-      item?.locationName ||
-      activity?.location_name ||
-      activity?.locationName ||
-      activity?.location ||
-      item?.location ||
-      "-",
+      getLocationLabel(
+        item?.location_name ||
+          item?.locationName ||
+          activity?.location_name ||
+          activity?.locationName ||
+          activity?.location ||
+          item?.location,
+      ) || "-",
 
     date:
       item?.attended_on ||

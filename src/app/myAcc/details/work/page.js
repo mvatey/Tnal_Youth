@@ -1,19 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RiAddCircleLine } from "react-icons/ri";
-
 import useCurrentMember from "@/hooks/useCurrentMember";
-
+import { RiAddCircleLine } from "react-icons/ri";
 import SaveButton from "@/components/forms/SaveButton";
-import DeleteButton from "@/components/forms/DeleteButton";
-import BoxFill from "@/components/forms/boxFill";
-import FormDate from "@/components/forms/FormDate";
+import BoxFill from "@/components/forms/boxFill.js";
+import FormDate from "@/components/forms/FormDate.js";
 import FormSelect from "@/components/forms/FormSelect";
-import {
-  fetchMyAccountCollection,
-  saveMyAccountCollection,
-} from "@/lib/myAccountCollections";
+import DeleteButton from "@/components/forms/DeleteButton";
+import { deleteMemberRecord, loadMemberRecords, saveMemberRecords } from "@/lib/myAccountRecords";
 
 function createEmptyWork() {
   return {
@@ -27,161 +22,107 @@ function createEmptyWork() {
   };
 }
 
-export default function MyAccountWorkPage() {
-  const {
-    member,
-    loading,
-    error,
-  } = useCurrentMember();
-
+export default function WorkPage() {
+  const isReadOnly = false;
+  const { member: currentMember } = useCurrentMember();
+  const memberId = String(currentMember?.id ?? "self");
+  const [member, setMember] = useState(null);
   const [works, setWorks] = useState([]);
-  const [originalWorks, setOriginalWorks] = useState([]);
-  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
-    if (!member) {
-      setWorks([]);
-      return;
-    }
-
-    let active = true;
-    fetchMyAccountCollection("work-history")
+    const controller = new AbortController();
+    loadMemberRecords(memberId, "work-history", controller.signal)
       .then((rows) => {
-        if (!active) return;
-        setOriginalWorks(rows);
+        setMember({ id: memberId });
         setWorks(rows.length ? rows.map((row) => ({
           id: row.id,
           company: row.organization_name || "",
           address: row.address || "",
           position: row.position_title || "",
-          appointment: "",
+          appointment: row.role_title || "",
           startDate: row.start_date || "",
           endDate: row.end_date || "",
         })) : [createEmptyWork()]);
       })
-      .catch((requestError) => setSaveError(requestError.message));
-    return () => { active = false; };
-  }, [member]);
+      .catch((error) => {
+        if (error.name !== "AbortError") setMember(null);
+      });
+    return () => controller.abort();
+  }, [memberId]);
 
-  const updateWork = (id, field, value) => {
-    setWorks((previous) =>
-      previous.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              [field]: value,
-            }
-          : item,
-      ),
-    );
-  };
-
-  // The V1 fields call this name; keep them connected to the same state updater.
-  const handleWorkChange = updateWork;
-
-  const removeWork = (id) => {
-    setWorks((previous) =>
-      previous.length === 1
-        ? previous
-        : previous.filter(
-            (item) => item.id !== id,
-          ),
-    );
-  };
-
-  const handleSave = async () => {
-    try {
-      setSaveError("");
-      const current = works.filter((item) => String(item.company || "").trim());
-      const rows = await saveMyAccountCollection("work-history", originalWorks, current, (item) => ({
-        organization_name: item.company.trim(),
-        position_title: String(item.position || item.appointment || "").trim(),
-        address: item.address?.trim() || null,
-        start_date: item.startDate || null,
-        end_date: item.endDate || null,
-      }));
-      setOriginalWorks(rows);
-      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
-    } catch (requestError) {
-      setSaveError(requestError.message);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="rounded-xl border border-border bg-white p-6">
-        កំពុងទាញយកព័ត៌មានសមាជិក...
-      </div>
-    );
+  function handleWorkChange(id, field, value) {
+    setWorks((previousWorks) => previousWorks.map((work) => work.id === id ? { ...work, [field]: value } : work));
   }
 
-  if (error) {
-    return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">
-          {error}
-        </p>
-      </div>
-    );
+  function addWork() {
+    setWorks((previousWorks) => [...previousWorks, createEmptyWork()]);
+  }
+
+  async function removeWork(id) {
+    await deleteMemberRecord(memberId, "work-history", id);
+    setWorks((previousWorks) => {
+      if (previousWorks.length === 1) return previousWorks;
+      return previousWorks.filter((work) => work.id !== id);
+    });
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    const current = works.filter((item) => String(item.company || "").trim());
+    const rows = await saveMemberRecords(memberId, "work-history", current, (item) => ({
+      organization_name: item.company.trim(),
+      position_title: String(item.position || item.appointment || "").trim(),
+      role_title: item.appointment || null,
+      address: item.address || null,
+      start_date: item.startDate || null,
+      end_date: item.endDate || null,
+    }));
+    setWorks(rows.map((row) => ({ id: row.id, company: row.organization_name || "", address: row.address || "", position: row.position_title || "", appointment: row.role_title || "", startDate: row.start_date || "", endDate: row.end_date || "" })));
+    alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
   }
 
   if (!member) {
-    return <NotFound />;
+    return (
+      <div className="rounded-xl border border-red-200 bg-white p-6">
+        <p className="text-sm text-red-500">រកមិនឃើញព័ត៌មានសមាជិក</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <fieldset disabled={isReadOnly} className={isReadOnly ? "member-readonly contents [&_button]:hidden" : "contents"}>
       <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-bold text-primary">
-          ប្រវត្តិការងារ
-        </h2>
+        <h2 className="text-lg font-bold text-primary">ប្រវត្តិការងារ</h2>
 
         <div className="mt-6 space-y-6">
           {works.map((work, index) => (
-            <div
-              key={work.id}
-              className="rounded-xl border border-gray-300 p-6"
-            >
-              <h3 className="mb-5 text-sm font-semibold text-text-primary">
-                ប្រវត្តិការងារ ទី {index + 1}
-              </h3>
+            <div key={work.id} className="rounded-xl border border-gray-300 p-6">
+              <h3 className="mb-5 text-sm font-semibold text-text-primary">ប្រវត្តិការងារ ទី {index + 1}</h3>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                 <BoxFill label="ឈ្មោះ ស្ថាប័ន" placeholder="បញ្ចូលឈ្មោះស្ថាប័ន" value={work.company} onChange={(event) => handleWorkChange(work.id, "company", event.target.value)} />
-                
-                                <BoxFill label="អាស័យដ្ឋាន" placeholder="បញ្ចូលអាស័យដ្ឋាន" value={work.address} onChange={(event) => handleWorkChange(work.id, "address", event.target.value)} />
-                
-                                <BoxFill label="តួនាទី" placeholder="តួនាទី" value={work.position} onChange={(event) => handleWorkChange(work.id, "position", event.target.value)}  />
-                
-                                <BoxFill label="មុខតំណែង" placeholder="មុខតំណែង" value={work.appointment} onChange={(event) => handleWorkChange(work.id, "appointment", event.target.value)}  />
-                
-                                <FormDate label="ថ្ងៃខែចាប់ផ្ដើម" name={`startDate-${work.id}`} value={work.startDate} onChange={(event) => handleWorkChange(work.id, "startDate", event.target.value)} />
-                
-                                <FormDate label="ថ្ងៃខែបញ្ចប់" name={`endDate-${work.id}`} value={work.endDate} onChange={(event) => handleWorkChange(work.id, "endDate", event.target.value)} />
+
+                <BoxFill label="អាស័យដ្ឋាន" placeholder="បញ្ចូលអាស័យដ្ឋាន" value={work.address} onChange={(event) => handleWorkChange(work.id, "address", event.target.value)} />
+
+                <BoxFill label="តួនាទី" placeholder="តួនាទី" value={work.position} onChange={(event) => handleWorkChange(work.id, "position", event.target.value)}  />
+
+                <BoxFill label="មុខតំណែង" placeholder="មុខតំណែង" value={work.appointment} onChange={(event) => handleWorkChange(work.id, "appointment", event.target.value)}  />
+
+                <FormDate label="ថ្ងៃខែចាប់ផ្ដើម" name={`startDate-${work.id}`} value={work.startDate} onChange={(event) => handleWorkChange(work.id, "startDate", event.target.value)} />
+
+                <FormDate label="ថ្ងៃខែបញ្ចប់" name={`endDate-${work.id}`} value={work.endDate} onChange={(event) => handleWorkChange(work.id, "endDate", event.target.value)} />
               </div>
 
               <div className="mt-6 flex justify-end">
-                <DeleteButton
-                  canDelete={works.length > 1}
-                  onClick={() =>
-                    removeWork(work.id)
-                  }
-                />
+                <DeleteButton canDelete={works.length > 1} onClick={() => removeWork(work.id)} />
               </div>
             </div>
           ))}
 
           <div className="flex justify-center">
-            <button
-              type="button"
-              onClick={() =>
-                setWorks((previous) => [
-                  ...previous,
-                  createEmptyWork(),
-                ])
-              }
-              className="inline-flex items-center gap-2 rounded-lg bg-success px-6 py-2 text-sm font-semibold text-white hover:bg-green-700"
-            >
+            <button type="button" onClick={addWork} className="flex items-center gap-2 rounded-lg bg-success px-6 py-2 text-sm font-semibold text-white hover:bg-green-700">
               <RiAddCircleLine size={18} />
               បន្ថែម
             </button>
@@ -190,19 +131,9 @@ export default function MyAccountWorkPage() {
       </div>
 
       <div className="flex justify-end">
-        {saveError && <p className="mr-4 self-center text-sm text-red-500">{saveError}</p>}
-        <SaveButton onClick={handleSave} />
+        <SaveButton />
       </div>
-    </div>
-  );
-}
-
-function NotFound() {
-  return (
-    <div className="rounded-xl border border-red-200 bg-white p-6">
-      <p className="text-sm text-red-500">
-        រកមិនឃើញព័ត៌មានសមាជិក
-      </p>
-    </div>
+      </fieldset>
+    </form>
   );
 }

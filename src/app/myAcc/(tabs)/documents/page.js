@@ -6,9 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import useCurrentMember from "@/hooks/useCurrentMember";
 
 import IdCard from "@/components/card/idCard";
-import CertificateCard from "@/components/card/certificate";
 import DocumentPreviewCard from "@/components/card/DocumentPreviewCard";
-import LetterOfAppointment from "@/components/card/LetterOfAppointment";
 import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
 import BackendDocumentCard from "@/components/document/BackendDocumentCard";
 
@@ -206,27 +204,164 @@ export default function DocumentsPage() {
 
   useEffect(() => {
     const memberId = currentMember?.id;
+
     if (!memberId) {
       setBackendDocuments([]);
       return undefined;
     }
 
     const controller = new AbortController();
-    fetch(`/api/backend/documents?memberId=${encodeURIComponent(memberId)}`, {
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || "Unable to load member documents.");
-        setBackendDocuments(Array.isArray(body) ? body : []);
-      })
-      .catch((documentError) => {
+
+    async function readJson(response) {
+      const text = await response.text();
+
+      let body = null;
+      if (text) {
+        try {
+          body = JSON.parse(text);
+        } catch {
+          body = text;
+        }
+      }
+
+      if (!response.ok) {
+        const message =
+          typeof body === "object"
+            ? body?.message ||
+              body?.detail ||
+              body?.error
+            : body;
+
+        throw new Error(
+          message ||
+            `Request failed with status ${response.status}`,
+        );
+      }
+
+      return body;
+    }
+
+    async function loadDocuments() {
+      try {
+        const documents = [];
+        let page = 0;
+        let totalPages = 1;
+
+        do {
+          const response = await fetch(
+            `/api/backend/documents?memberId=${encodeURIComponent(memberId)}&page=${page}&size=100`,
+            {
+              cache: "no-store",
+              signal: controller.signal,
+              headers: {
+                Accept: "application/json",
+              },
+            },
+          );
+
+          const body = await readJson(response);
+          const rows = Array.isArray(body)
+            ? body
+            : Array.isArray(body?.content)
+              ? body.content
+              : Array.isArray(body?.data)
+                ? body.data
+                : [];
+
+          documents.push(...rows);
+
+          totalPages = Math.max(
+            1,
+            Number(body?.totalPages) || 1,
+          );
+
+          page += 1;
+        } while (page < totalPages);
+
+        /*
+         * Credentials are also documents in Member Detail.
+         * Try to include them here too. If the current role is not
+         * authorized for this endpoint, the normal document list still works.
+         */
+        try {
+          const credentialResponse = await fetch(
+            `/api/backend/members/${encodeURIComponent(memberId)}/credentials`,
+            {
+              cache: "no-store",
+              signal: controller.signal,
+              headers: {
+                Accept: "application/json",
+              },
+            },
+          );
+
+          if (credentialResponse.ok) {
+            const credentialBody =
+              await credentialResponse.json().catch(() => null);
+
+            const credentials = [
+              ...(Array.isArray(credentialBody?.certificates)
+                ? credentialBody.certificates
+                : []),
+              ...(Array.isArray(credentialBody?.appointment_letters)
+                ? credentialBody.appointment_letters
+                : []),
+            ];
+
+            const existingFileIds = new Set(
+              documents
+                .map((document) => Number(document?.file?.id))
+                .filter(Boolean),
+            );
+
+            for (const credential of credentials) {
+              const fileId = Number(credential?.file?.id);
+
+              if (!credential?.file || existingFileIds.has(fileId)) {
+                continue;
+              }
+
+              documents.push({
+                id: `credential-${credential.id}`,
+                title: credential.title,
+                created_at:
+                  credential.created_at ||
+                  credential.issued_on,
+                file: {
+                  id: credential.file.id,
+                  url: credential.file.url,
+                  originalName:
+                    credential.file.original_name,
+                  mimeType:
+                    credential.file.mime_type,
+                  sizeKb:
+                    credential.file.size_kb,
+                },
+              });
+            }
+          }
+        } catch (credentialError) {
+          if (credentialError.name !== "AbortError") {
+            console.warn(
+              "Cannot load my account credentials:",
+              credentialError,
+            );
+          }
+        }
+
+        setBackendDocuments(documents);
+      } catch (documentError) {
         if (documentError.name !== "AbortError") {
-          console.error("Cannot load my account documents:", documentError);
+          console.error(
+            "Cannot load my account documents:",
+            documentError,
+          );
           setBackendDocuments([]);
         }
-      });
+      }
+    }
+
+    loadDocuments();
 
     return () => controller.abort();
   }, [currentMember?.id]);
@@ -287,80 +422,45 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div
-      className="
-        grid
-        min-w-0
-        grid-cols-1
-        gap-6
-        p-4
-        md:p-6
-        xl:grid-cols-2
-        2xl:grid-cols-3
-        2xl:gap-10
-      "
-    >
-      {/* ID CARD */}
-
-      <DocumentPreviewCard
-  title="ប័ណ្ណសម្គាល់សមាជិក"
-  actionType="download"
-  downloadText="ទាញយក"
-  filename={`member-id-card-${currentMember.id || "account"}.pdf`}
-  orientation="landscape"
-  previewClass="scale-[0.55]"
->
-  <IdCard
-    user={currentMember}
-    templatePreview=""
-  />
-</DocumentPreviewCard>
-
-      {/* LETTER OF APPOINTMENT */}
-
-      <DocumentPreviewCard
-        title="លិខិតតែងតាំង"
-        actionType="download"
-        downloadText="ទាញយក"
-        filename={`letter-of-appointment-${currentMember.id || "account"}.pdf`}
-        orientation="landscape"
-        previewClass="scale-[0.35]"
+    <>
+      <div
+        className="
+          grid
+          min-w-0
+          grid-cols-1
+          gap-6
+          p-4
+          md:p-6
+          xl:grid-cols-2
+          2xl:grid-cols-3
+          2xl:gap-10
+        "
       >
-        <LetterOfAppointment
-          user={currentMember}
-          templatePreview=""
-        />
-      </DocumentPreviewCard>
+        <DocumentPreviewCard
+          title="ប័ណ្ណសម្គាល់សមាជិក"
+          actionType="print"
+          printText="បោះពុម្ព"
+          previewClass="scale-[0.55]"
+        >
+          <IdCard
+            user={currentMember}
+            templatePreview=""
+          />
+        </DocumentPreviewCard>
 
-      {/* CERTIFICATE */}
-
-      <DocumentPreviewCard
-        title="បណ្ណសរសើរ"
-        actionType="download"
-        downloadText="ទាញយក"
-        filename={`certificate-${currentMember.id || "account"}.pdf`}
-        orientation="landscape"
-        previewClass="scale-[0.35]"
-      >
-        <CertificateCard
-          recipientType="member"
-          member={currentMember}
-          templatePreview=""
-        />
-      </DocumentPreviewCard>
-
-      {backendDocuments.map((document) => (
-        <BackendDocumentCard
-          key={`account-document-${document.id}`}
-          document={document}
-          onView={setSelectedBackendDocument}
-        />
-      ))}
+        {backendDocuments.map((document) => (
+          <BackendDocumentCard
+            key={`account-document-${document.id}`}
+            document={document}
+            onView={setSelectedBackendDocument}
+          />
+        ))}
+      </div>
 
       <CompanyDocumentPreview
         document={selectedBackendDocument}
         onClose={() => setSelectedBackendDocument(null)}
       />
-    </div>
+    </>
   );
 }

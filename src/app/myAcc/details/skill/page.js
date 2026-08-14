@@ -1,19 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import useCurrentMember from "@/hooks/useCurrentMember";
 import { RiAddCircleLine } from "react-icons/ri";
 
-import useCurrentMember from "@/hooks/useCurrentMember";
-import educationData from "@/data/education.json";
-
 import SaveButton from "@/components/forms/SaveButton";
-import DeleteButton from "@/components/forms/DeleteButton";
 import FormSelect from "@/components/forms/FormSelect";
-import ButtonDropLink from "@/components/forms/ButtonDropLink";
-import {
-  fetchMyAccountCollection,
-  saveMyAccountCollection,
-} from "@/lib/myAccountCollections";
+import DeleteButton from "@/components/forms/DeleteButton";
+import MemberAttachmentField from "@/components/forms/MemberAttachmentField";
+
+import educationData from "@/data/education.json";
+import { deleteMemberRecord, loadMemberRecords, removeMemberRecordCertificate, saveMemberRecords, uploadMemberRecordCertificate } from "@/lib/myAccountRecords";
 
 function createId(prefix) {
   if (
@@ -31,456 +28,412 @@ function createId(prefix) {
 function createLanguageSkill() {
   return {
     id: createId("language"),
-    language: "",
-    listening: "",
-    reading: "",
-    speaking: "",
-    writing: "",
-    documentLink: "",
+    ...educationData.emptyLanguageSkill,
+
+    language:
+      educationData.emptyLanguageSkill?.language || "",
+
+    listening:
+      educationData.emptyLanguageSkill?.listening || "",
+
+    reading:
+      educationData.emptyLanguageSkill?.reading || "",
+
+    speaking:
+      educationData.emptyLanguageSkill?.speaking || "",
+
+    writing:
+      educationData.emptyLanguageSkill?.writing || "",
+
+    documentLink:
+      educationData.emptyLanguageSkill?.documentLink || "",
   };
 }
 
 function createComputerSkill() {
   return {
     id: createId("computer"),
-    skill: "",
-    level: "",
-    documentLink: "",
-  };
-}
+    ...educationData.emptyComputerSkill,
 
-function normalizeLanguageSkill(item) {
-  return {
-    ...createLanguageSkill(),
-    ...(item || {}),
+    skill:
+      educationData.emptyComputerSkill?.skill || "",
+
+    level:
+      educationData.emptyComputerSkill?.level || "",
 
     documentLink:
-      item?.documentLink ||
-      item?.document_link ||
-      item?.attachmentLink ||
-      "",
+      educationData.emptyComputerSkill?.documentLink || "",
   };
 }
 
-function normalizeComputerSkill(item) {
-  return {
-    ...createComputerSkill(),
-    ...(item || {}),
+export default function SkillPage() {
+  const isReadOnly = false;
+  const { member: currentMember } = useCurrentMember();
+  const memberId = String(currentMember?.id ?? "self");
+  const [languageSkills, setLanguageSkills] = useState([
+    createLanguageSkill(),
+  ]);
 
-    documentLink:
-      item?.documentLink ||
-      item?.document_link ||
-      item?.attachmentLink ||
-      "",
-  };
-}
-
-export default function MyAccountSkillPage() {
-  const {
-    member,
-    loading,
-    error,
-  } = useCurrentMember();
-
-  const [
-    languageSkills,
-    setLanguageSkills,
-  ] = useState([]);
-
-  const [
-    computerSkills,
-    setComputerSkills,
-  ] = useState([]);
-  const [originalLanguages, setOriginalLanguages] = useState([]);
-  const [originalSkills, setOriginalSkills] = useState([]);
+  const [computerSkills, setComputerSkills] = useState([
+    createComputerSkill(),
+  ]);
   const [proficiencyOptions, setProficiencyOptions] = useState([]);
-  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
-    if (!member) {
-      setLanguageSkills([]);
-      setComputerSkills([]);
-      return;
-    }
-
-    let active = true;
+    const controller = new AbortController();
     Promise.all([
-      fetchMyAccountCollection("languages"),
-      fetchMyAccountCollection("skills"),
+      loadMemberRecords(memberId, "languages", controller.signal),
+      loadMemberRecords(memberId, "skills", controller.signal),
     ]).then(([languages, skills]) => {
-      if (!active) return;
-      setOriginalLanguages(languages);
-      setOriginalSkills(skills);
-      setLanguageSkills(languages.length ? languages.map((row) => normalizeLanguageSkill({
-        id: row.id,
-        language: row.language_name || "",
-        listening: String(row.listening_level_id || ""),
-        speaking: String(row.speaking_level_id || ""),
-        reading: String(row.reading_level_id || ""),
-        writing: String(row.writing_level_id || ""),
-      })) : [createLanguageSkill()]);
-      setComputerSkills(skills.length ? skills.map((row) => normalizeComputerSkill({
-        id: row.id,
-        skill: row.skill_name || "",
-        level: String(row.proficiency_level_id || ""),
-      })) : [createComputerSkill()]);
-    }).catch((requestError) => setSaveError(requestError.message));
-    return () => { active = false; };
-  }, [member]);
+      setLanguageSkills(languages.length ? languages.map((row) => ({ id: row.id, language: row.language_name || "", listening: row.listening_level_id || "", speaking: row.speaking_level_id || "", reading: row.reading_level_id || "", writing: row.writing_level_id || "", attachment: row.certificate_file || null })) : [createLanguageSkill()]);
+      setComputerSkills(skills.length ? skills.map((row) => ({ id: row.id, skill: row.skill_name || "", level: row.proficiency_level_id || "", attachment: row.certificate_file || null })) : [createComputerSkill()]);
+    }).catch((error) => { if (error.name !== "AbortError") console.error(error); });
+    return () => controller.abort();
+  }, [memberId]);
 
   useEffect(() => {
-    fetch("/api/lookups/proficiency-levels", { cache: "no-store", credentials: "include" })
+    const controller = new AbortController();
+    fetch("/api/lookups/proficiency-levels", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
       .then((response) => response.ok ? response.json() : [])
       .then((items) => setProficiencyOptions((Array.isArray(items) ? items : []).map((item) => ({
         value: String(item.value ?? item.id ?? ""),
         label: item.labelKm || item.label_km || item.labelEn || item.label_en || item.code || "",
-      }))));
+      }))))
+      .catch((error) => {
+        if (error.name !== "AbortError") setProficiencyOptions([]);
+      });
+    return () => controller.abort();
   }, []);
 
-  const updateLanguage = (
+  const updateLanguageSkill = (
     id,
     field,
     value,
   ) => {
-    setLanguageSkills(
-      (previous) =>
-        previous.map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                [field]: value,
-              }
-            : item,
-        ),
+    setLanguageSkills((previousSkills) =>
+      previousSkills.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              [field]: value,
+            }
+          : item,
+      ),
     );
   };
 
-  const updateComputer = (
+  const addLanguageSkill = () => {
+    setLanguageSkills((previousSkills) => [
+      ...previousSkills,
+      createLanguageSkill(),
+    ]);
+  };
+
+  const removeLanguageSkill = async (id) => {
+    await deleteMemberRecord(memberId, "languages", id);
+    setLanguageSkills((previousSkills) => {
+      if (previousSkills.length <= 1) {
+        return previousSkills;
+      }
+
+      return previousSkills.filter(
+        (item) => item.id !== id,
+      );
+    });
+  };
+
+  const updateComputerSkill = (
     id,
     field,
     value,
   ) => {
-    setComputerSkills(
-      (previous) =>
-        previous.map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                [field]: value,
-              }
-            : item,
-        ),
+    setComputerSkills((previousSkills) =>
+      previousSkills.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              [field]: value,
+            }
+          : item,
+      ),
     );
   };
 
-  const addLanguage = () => {
-    setLanguageSkills(
-      (previous) => [
-        ...previous,
-        createLanguageSkill(),
-      ],
-    );
+  const addComputerSkill = () => {
+    setComputerSkills((previousSkills) => [
+      ...previousSkills,
+      createComputerSkill(),
+    ]);
   };
 
-  const addComputer = () => {
-    setComputerSkills(
-      (previous) => [
-        ...previous,
-        createComputerSkill(),
-      ],
-    );
-  };
+  const removeComputerSkill = async (id) => {
+    await deleteMemberRecord(memberId, "skills", id);
+    setComputerSkills((previousSkills) => {
+      if (previousSkills.length <= 1) {
+        return previousSkills;
+      }
 
-  const removeLanguage = (id) => {
-    setLanguageSkills(
-      (previous) =>
-        previous.length === 1
-          ? previous
-          : previous.filter(
-              (item) =>
-                item.id !== id,
-            ),
-    );
-  };
-
-  const removeComputer = (id) => {
-    setComputerSkills(
-      (previous) =>
-        previous.length === 1
-          ? previous
-          : previous.filter(
-              (item) =>
-                item.id !== id,
-            ),
-    );
+      return previousSkills.filter(
+        (item) => item.id !== id,
+      );
+    });
   };
 
   const handleSave = async () => {
-    try {
-      setSaveError("");
-      const [languages, skills] = await Promise.all([
-        saveMyAccountCollection(
-          "languages",
-          originalLanguages,
-          languageSkills.filter((item) => String(item.language || "").trim()),
-          (item) => ({
-            language_name: item.language.trim(),
-            listening_level_id: Number(item.listening) || null,
-            speaking_level_id: Number(item.speaking) || null,
-            reading_level_id: Number(item.reading) || null,
-            writing_level_id: Number(item.writing) || null,
-          }),
-        ),
-        saveMyAccountCollection(
-          "skills",
-          originalSkills,
-          computerSkills.filter((item) => String(item.skill || "").trim()),
-          (item) => ({
-            skill_name: item.skill.trim(),
-            proficiency_level_id: Number(item.level) || null,
-          }),
-        ),
-      ]);
-      setOriginalLanguages(languages);
-      setOriginalSkills(skills);
-      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
-    } catch (requestError) {
-      setSaveError(requestError.message);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="rounded-xl border border-border bg-white p-6">
-        កំពុងទាញយកព័ត៌មានសមាជិក...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">
-          {error}
-        </p>
-      </div>
-    );
-  }
-
-  if (!member) {
-    return <NotFound />;
-  }
-
-  const levels =
-    proficiencyOptions.length ? proficiencyOptions : (educationData.proficiencyLevels || [
-      "ខ្សោយ",
-      "មធ្យម",
-      "ល្អ",
-      "ល្អណាស់",
+    const [languages, skills] = await Promise.all([
+      saveMemberRecords(memberId, "languages", languageSkills.filter((item) => String(item.language || "").trim()), (item) => ({ language_name: item.language.trim(), listening_level_id: Number(item.listening) || null, speaking_level_id: Number(item.speaking) || null, reading_level_id: Number(item.reading) || null, writing_level_id: Number(item.writing) || null })),
+      saveMemberRecords(memberId, "skills", computerSkills.filter((item) => String(item.skill || "").trim()), (item) => ({ skill_name: item.skill.trim(), proficiency_level_id: Number(item.level) || null })),
     ]);
+    const syncAttachments = (savedRows, sourceRows, resource) => Promise.all(
+      savedRows.map(async (row, index) => {
+        const attachment = sourceRows[index]?.attachment;
+        if (attachment?.pendingFile) {
+          return uploadMemberRecordCertificate(memberId, resource, row.id, attachment.pendingFile);
+        }
+        if (attachment?.removeExisting && attachment?.removedFileId) {
+          return removeMemberRecordCertificate(memberId, resource, row.id);
+        }
+        return row;
+      }),
+    );
+    const [completedLanguages, completedSkills] = await Promise.all([
+      syncAttachments(languages, languageSkills, "languages"),
+      syncAttachments(skills, computerSkills, "skills"),
+    ]);
+    setLanguageSkills(completedLanguages.map((row) => ({ id: row.id, language: row.language_name || "", listening: row.listening_level_id || "", speaking: row.speaking_level_id || "", reading: row.reading_level_id || "", writing: row.writing_level_id || "", attachment: row.certificate_file || null })));
+    setComputerSkills(completedSkills.map((row) => ({ id: row.id, skill: row.skill_name || "", level: row.proficiency_level_id || "", attachment: row.certificate_file || null })));
+
+    alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+  };
 
   return (
     <div className="space-y-4">
-      {/* Language skills */}
+      <fieldset disabled={isReadOnly} className={isReadOnly ? "member-readonly contents [&_button]:hidden" : "contents"}>
+      {/* =====================================
+          LANGUAGE SKILLS
+      ===================================== */}
 
-      <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
+      <section
+        className="
+          rounded-xl
+          border
+          border-gray-200
+          bg-white
+          p-4
+          sm:p-5
+        "
+      >
         <h2 className="text-lg font-bold text-primary">
           ការប្រើប្រាស់ភាសាបរទេស
         </h2>
 
         <div className="mt-5 space-y-5">
-          {languageSkills.map(
-            (item, index) => (
-              <LanguageSkillCard
-                key={item.id}
-                index={index}
-                item={item}
-                levels={levels}
-                canDelete={
-                  languageSkills.length >
-                  1
-                }
-                onChange={(
+          {languageSkills.map((item, index) => (
+            <LanguageSkillGroup
+              key={item.id}
+              index={index}
+              item={item}
+              proficiencyOptions={proficiencyOptions}
+              canDelete={languageSkills.length > 1}
+              onChange={(field, value) =>
+                updateLanguageSkill(
+                  item.id,
                   field,
                   value,
-                ) =>
-                  updateLanguage(
-                    item.id,
-                    field,
-                    value,
-                  )
-                }
-                onDelete={() =>
-                  removeLanguage(
-                    item.id,
-                  )
-                }
-              />
-            ),
-          )}
+                )
+              }
+              onDelete={() =>
+                removeLanguageSkill(item.id)
+              }
+              readOnly={isReadOnly}
+            />
+          ))}
         </div>
 
-        <AddButton
-          onClick={addLanguage}
-        />
+        <AddButton onClick={addLanguageSkill} />
       </section>
 
-      {/* Computer skills */}
+      {/* =====================================
+          COMPUTER SKILLS
+      ===================================== */}
 
-      <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
+      <section
+        className="
+          rounded-xl
+          border
+          border-gray-200
+          bg-white
+          p-4
+          sm:p-5
+        "
+      >
         <h2 className="text-lg font-bold text-primary">
           ការប្រើប្រាស់កម្មវិធីកុំព្យូទ័រ
         </h2>
 
         <div className="mt-5 space-y-5">
-          {computerSkills.map(
-            (item, index) => (
-              <ComputerSkillCard
-                key={item.id}
-                index={index}
-                item={item}
-                levels={levels}
-                canDelete={
-                  computerSkills.length >
-                  1
-                }
-                onChange={(
+          {computerSkills.map((item, index) => (
+            <ComputerSkillGroup
+              key={item.id}
+              index={index}
+              item={item}
+              proficiencyOptions={proficiencyOptions}
+              canDelete={computerSkills.length > 1}
+              onChange={(field, value) =>
+                updateComputerSkill(
+                  item.id,
                   field,
                   value,
-                ) =>
-                  updateComputer(
-                    item.id,
-                    field,
-                    value,
-                  )
-                }
-                onDelete={() =>
-                  removeComputer(
-                    item.id,
-                  )
-                }
-              />
-            ),
-          )}
+                )
+              }
+              onDelete={() =>
+                removeComputerSkill(item.id)
+              }
+              readOnly={isReadOnly}
+            />
+          ))}
         </div>
 
-        <AddButton
-          onClick={addComputer}
-        />
+        <AddButton onClick={addComputerSkill} />
       </section>
 
       <div className="flex justify-end">
-        {saveError && <p className="mr-4 self-center text-sm text-red-500">{saveError}</p>}
-        <SaveButton
-          onClick={handleSave}
-        />
+        <SaveButton onClick={handleSave} />
       </div>
+      </fieldset>
     </div>
   );
 }
 
-function LanguageSkillCard({
+function LanguageSkillGroup({
   index,
   item,
-  levels,
+  proficiencyOptions,
   canDelete,
   onChange,
   onDelete,
+  readOnly,
 }) {
-  const skillFields = [
-    {
-      key: "listening",
-      label: "ការស្ដាប់",
-    },
-    {
-      key: "reading",
-      label: "ការអាន",
-    },
-    {
-      key: "speaking",
-      label: "ការនិយាយ",
-    },
-    {
-      key: "writing",
-      label: "ការសរសេរ",
-    },
-  ];
-
   return (
-    <div className="rounded-xl border border-gray-300 p-4 sm:p-5 lg:p-6">
+    <div
+      className="
+        rounded-xl
+        border
+        border-gray-300
+        p-4
+        sm:p-5
+        lg:p-6
+      "
+    >
       <h3 className="mb-5 text-sm font-semibold text-text-primary">
-        ភាសាបរទេស ទី{" "}
-        {index + 1}
+        ភាសាបរទេស ទី {index + 1}
       </h3>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-5">
+      <div
+        className="
+          grid
+          grid-cols-1
+          gap-5
+          sm:grid-cols-2
+          xl:grid-cols-5
+        "
+      >
         <FormSelect
           label="ភាសា"
           name={`language-${item.id}`}
-          value={
-            item.language || ""
-          }
+          placeholder="ជ្រើសរើសភាសា"
+          value={item.language || ""}
           onChange={(event) =>
             onChange(
               "language",
               event.target.value,
             )
           }
-          placeholder="ជ្រើសរើសភាសា"
-          options={
-            educationData.languages ||
-            []
-          }
+          options={educationData.languages || []}
         />
 
-        {skillFields.map(
-          (field) => (
-            <FormSelect
-              key={field.key}
-              label={field.label}
-              name={`${field.key}-${item.id}`}
-              value={
-                item[field.key] ||
-                ""
-              }
-              onChange={(event) =>
-                onChange(
-                  field.key,
-                  event.target.value,
-                )
-              }
-              placeholder="ជ្រើសរើសកម្រិត"
-              options={levels}
-            />
-          ),
-        )}
+        <FormSelect
+          label="ការស្ដាប់"
+          name={`listening-${item.id}`}
+          placeholder="ជ្រើសរើសកម្រិតការស្ដាប់"
+          value={item.listening || ""}
+          onChange={(event) =>
+            onChange(
+              "listening",
+              event.target.value,
+            )
+          }
+          options={proficiencyOptions}
+        />
+
+        <FormSelect
+          label="ការអាន"
+          name={`reading-${item.id}`}
+          placeholder="ជ្រើសរើសកម្រិតការអាន"
+          value={item.reading || ""}
+          onChange={(event) =>
+            onChange(
+              "reading",
+              event.target.value,
+            )
+          }
+          options={proficiencyOptions}
+        />
+
+        <FormSelect
+          label="ការនិយាយ"
+          name={`speaking-${item.id}`}
+          placeholder="ជ្រើសរើសកម្រិតការនិយាយ"
+          value={item.speaking || ""}
+          onChange={(event) =>
+            onChange(
+              "speaking",
+              event.target.value,
+            )
+          }
+          options={proficiencyOptions}
+        />
+
+        <FormSelect
+          label="ការសរសេរ"
+          name={`writing-${item.id}`}
+          placeholder="ជ្រើសរើសកម្រិតការសរសេរ"
+          value={item.writing || ""}
+          onChange={(event) =>
+            onChange(
+              "writing",
+              event.target.value,
+            )
+          }
+          options={proficiencyOptions}
+        />
       </div>
 
-      <div className="mt-5">
+      {/* Document link */}
+
+      <div className="mt-5 border-t border-gray-100 pt-4">
         <label className="mb-2 block text-sm font-semibold text-text-primary">
-          តំណភ្ជាប់ឯកសារ
+          ភ្ជាប់ឯកសារ
         </label>
 
-        <ButtonDropLink
-          value={
-            item.documentLink ||
-            ""
-          }
+        <MemberAttachmentField
+          value={item.attachment}
           onChange={(value) =>
             onChange(
-              "documentLink",
+              "attachment",
               value,
             )
           }
-          placeholder="បញ្ចូលតំណភ្ជាប់វិញ្ញាបនបត្រភាសា"
+          readOnly={readOnly}
         />
       </div>
 
       <div className="mt-6 flex justify-end">
         <DeleteButton
-          canDelete={
-            canDelete
-          }
+          canDelete={canDelete}
           onClick={onDelete}
         />
       </div>
@@ -488,86 +441,91 @@ function LanguageSkillCard({
   );
 }
 
-function ComputerSkillCard({
+function ComputerSkillGroup({
   index,
   item,
-  levels,
+  proficiencyOptions,
   canDelete,
   onChange,
   onDelete,
+  readOnly,
 }) {
   return (
-    <div className="rounded-xl border border-gray-300 p-4 sm:p-5 lg:p-6">
+    <div
+      className="
+        rounded-xl
+        border
+        border-gray-300
+        p-4
+        sm:p-5
+        lg:p-6
+      "
+    >
       <h3 className="mb-5 text-sm font-semibold text-text-primary">
-        ជំនាញកុំព្យូទ័រ ទី{" "}
-        {index + 1}
+        ជំនាញកុំព្យូទ័រ ទី {index + 1}
       </h3>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+      <div
+        className="
+          grid
+          grid-cols-1
+          gap-5
+          md:grid-cols-2
+        "
+      >
         <FormSelect
           label="ជំនាញ"
           name={`computer-skill-${item.id}`}
-          value={
-            item.skill || ""
-          }
+          placeholder="ជ្រើសរើសកម្មវិធី"
+          value={item.skill || ""}
           onChange={(event) =>
             onChange(
               "skill",
               event.target.value,
             )
           }
-          placeholder="ជ្រើសរើសកម្មវិធី"
           options={
-            educationData.computerSkills ||
-            []
+            educationData.computerSkills || []
           }
         />
 
         <FormSelect
           label="កម្រិតជំនាញ"
           name={`computer-level-${item.id}`}
-          value={
-            item.level || ""
-          }
+          placeholder="ជ្រើសរើសកម្រិតជំនាញ"
+          value={item.level || ""}
           onChange={(event) =>
             onChange(
               "level",
               event.target.value,
             )
           }
-          placeholder="ជ្រើសរើសកម្រិត"
-          options={
-            educationData.computerSkillLevels ||
-            levels
-          }
+          options={proficiencyOptions}
         />
       </div>
 
-      <div className="mt-5">
+      {/* Document link */}
+
+      <div className="mt-5 border-t border-gray-100 pt-4">
         <label className="mb-2 block text-sm font-semibold text-text-primary">
-          តំណភ្ជាប់ឯកសារ
+          ភ្ជាប់ឯកសារ
         </label>
 
-        <ButtonDropLink
-          value={
-            item.documentLink ||
-            ""
-          }
+        <MemberAttachmentField
+          value={item.attachment}
           onChange={(value) =>
             onChange(
-              "documentLink",
+              "attachment",
               value,
             )
           }
-          placeholder="បញ្ចូលតំណភ្ជាប់វិញ្ញាបនបត្រជំនាញ"
+          readOnly={readOnly}
         />
       </div>
 
       <div className="mt-6 flex justify-end">
         <DeleteButton
-          canDelete={
-            canDelete
-          }
+          canDelete={canDelete}
           onClick={onDelete}
         />
       </div>
@@ -600,22 +558,10 @@ function AddButton({
           active:scale-[0.99]
         "
       >
-        <RiAddCircleLine
-          size={17}
-        />
+        <RiAddCircleLine size={17} />
 
         បន្ថែម
       </button>
-    </div>
-  );
-}
-
-function NotFound() {
-  return (
-    <div className="rounded-xl border border-red-200 bg-white p-6">
-      <p className="text-sm text-red-500">
-        រកមិនឃើញព័ត៌មានសមាជិក
-      </p>
     </div>
   );
 }

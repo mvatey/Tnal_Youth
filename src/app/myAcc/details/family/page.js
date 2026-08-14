@@ -1,137 +1,455 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
 
 import SaveButton from "@/components/forms/SaveButton";
 import BoxFill from "@/components/forms/boxFill";
 import FormDate from "@/components/forms/FormDate";
-import {
-  fetchMyAccountCollection,
-  saveMyAccountCollection,
-} from "@/lib/myAccountCollections";
+
+const EMPTY_PERSON = {
+  full_name_km: "",
+  full_name_en: "",
+  date_of_birth: "",
+  occupation: "",
+  life_status: "",
+  address: "",
+};
 
 const EMPTY_FAMILY = {
-  spouse: {
-    name_kh: "",
-    name_en: "",
-    occupation: "",
-    date_of_birth: "",
-    address: "",
-  },
+  marital_status: "SINGLE",
 
   father: {
-    name_kh: "",
-    name_en: "",
-    occupation: "",
-    status: "",
-    address: "",
+    ...EMPTY_PERSON,
   },
 
   mother: {
-    name_kh: "",
-    name_en: "",
-    occupation: "",
-    status: "",
-    address: "",
+    ...EMPTY_PERSON,
+  },
+
+  spouse: {
+    ...EMPTY_PERSON,
   },
 };
 
-export default function FamilyPage() {
-  const {
-    member,
-    loading,
-    error,
-  } = useCurrentMember();
+async function requestJson(
+  path,
+  options = {},
+) {
+  const response = await fetch(
+    `/api${path}`,
+    {
+      ...options,
 
-  const [family, setFamily] = useState(EMPTY_FAMILY);
-  const [originalFamily, setOriginalFamily] = useState([]);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState("");
-  const [saveSuccess, setSaveSuccess] = useState("");
+      headers: {
+        Accept: "application/json",
+
+        ...(options.body
+          ? {
+              "Content-Type":
+                "application/json",
+            }
+          : {}),
+
+        ...(options.headers || {}),
+      },
+
+      cache: "no-store",
+    },
+  );
+
+  const text =
+    await response.text();
+
+  let body = null;
+
+  if (text) {
+    try {
+      body =
+        JSON.parse(text);
+    } catch {
+      body = text;
+    }
+  }
+
+  if (!response.ok) {
+    const contentType =
+      response.headers.get(
+        "content-type",
+      ) || "";
+
+    const message =
+      typeof body === "object"
+        ? body?.message ||
+          body?.detail ||
+          body?.error ||
+          body?.title
+        : contentType.includes(
+              "application/json",
+            )
+          ? body
+          : null;
+
+    throw new Error(
+      message ||
+        `Request failed with status ${response.status}`,
+    );
+  }
+
+  return body;
+}
+
+function normalizePerson(
+  person,
+) {
+  return {
+    full_name_km:
+      person?.full_name_km ||
+      person?.fullNameKm ||
+      "",
+
+    full_name_en:
+      person?.full_name_en ||
+      person?.fullNameEn ||
+      "",
+
+    date_of_birth:
+      person?.date_of_birth ||
+      person?.dateOfBirth ||
+      "",
+
+    occupation:
+      person?.occupation ||
+      "",
+
+    life_status:
+      person?.life_status ||
+      person?.lifeStatus ||
+      "",
+
+    address:
+      person?.address ||
+      "",
+  };
+}
+
+function normalizeFamily(
+  data,
+) {
+  return {
+    marital_status:
+      data?.marital_status ||
+      data?.maritalStatus ||
+      "SINGLE",
+
+    father:
+      normalizePerson(
+        data?.father,
+      ),
+
+    mother:
+      normalizePerson(
+        data?.mother,
+      ),
+
+    spouse:
+      normalizePerson(
+        data?.spouse,
+      ),
+  };
+}
+
+function personPayload(
+  person,
+) {
+  const isEmpty =
+    !person.full_name_km.trim() &&
+    !person.full_name_en.trim() &&
+    !person.date_of_birth &&
+    !person.occupation.trim() &&
+    !person.life_status &&
+    !person.address.trim();
+
+  if (isEmpty) {
+    return null;
+  }
+
+  return {
+    full_name_km:
+      person.full_name_km.trim(),
+
+    full_name_en:
+      person.full_name_en.trim() ||
+      null,
+
+    date_of_birth:
+      person.date_of_birth ||
+      null,
+
+    occupation:
+      person.occupation.trim() ||
+      null,
+
+    life_status:
+      person.life_status ||
+      null,
+
+    address:
+      person.address.trim() ||
+      null,
+  };
+}
+
+export default function FamilyPage() {
+  const isReadOnly = false;
+  const { member: currentMember } = useCurrentMember();
+  const memberId = currentMember?.id ?? "self";
+
+  const [
+    family,
+    setFamily,
+  ] = useState(
+    EMPTY_FAMILY,
+  );
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+  const [
+    saving,
+    setSaving,
+  ] = useState(false);
+
+  const [
+    error,
+    setError,
+  ] = useState("");
+
+  const [
+    success,
+    setSuccess,
+  ] = useState("");
+
+  /*
+   * =========================================
+   * LOAD FAMILY
+   * =========================================
+   */
 
   useEffect(() => {
-    if (!member) {
-      setFamily(EMPTY_FAMILY);
-      setOriginalFamily([]);
+    if (!memberId) {
+      setLoading(false);
+
       return;
     }
 
     let active = true;
-    fetchMyAccountCollection("family")
-      .then((items) => {
-        if (!active) return;
-        const next = structuredClone(EMPTY_FAMILY);
-        for (const item of items) {
-          const section = String(item.relationship || "").toLowerCase();
-          if (!next[section]) continue;
-          next[section] = {
-            id: item.id,
-            name_kh: item.fullNameKm || "",
-            name_en: item.fullNameEn || "",
-            occupation: item.occupation || "",
-            date_of_birth: item.dateOfBirth || "",
-            status:
-              item.lifeStatus === "DECEASED" ? "ស្លាប់" :
-              item.lifeStatus === "ALIVE" ? "នៅរស់" : "",
-            address: item.address || "",
-          };
+
+    async function loadFamily() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data =
+          await requestJson(
+            `/backend/my-account/family`,
+          );
+
+        if (!active) {
+          return;
         }
-        setOriginalFamily(items);
-        setFamily(next);
-      })
-      .catch((requestError) => setSaveError(requestError.message));
 
-    return () => { active = false; };
-  }, [member]);
+        setFamily(
+          normalizeFamily(
+            data,
+          ),
+        );
+      } catch (loadError) {
+        console.error(
+          "Cannot load family:",
+          loadError,
+        );
 
-  function handleFamilyChange(section, field, value) {
-    setFamily((previous) => ({
-      ...previous,
+        if (active) {
+          setError(
+            loadError.message ||
+              "មិនអាចទាញយកព័ត៌មានគ្រួសារបានទេ។",
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
 
-      [section]: {
-        ...previous[section],
-        [field]: value,
-      },
-    }));
+    loadFamily();
+
+    return () => {
+      active = false;
+    };
+  }, [memberId]);
+
+  /*
+   * =========================================
+   * FAMILY PERSON CHANGE
+   * =========================================
+   */
+
+  function handleFamilyChange(
+    section,
+    field,
+    value,
+  ) {
+    setError("");
+    setSuccess("");
+
+    setFamily(
+      (previous) => ({
+        ...previous,
+
+        [section]: {
+          ...previous[
+            section
+          ],
+
+          [field]:
+            value,
+        },
+      }),
+    );
   }
 
-  async function handleSubmit(event) {
+  /*
+   * =========================================
+   * MARITAL STATUS CHANGE
+   * =========================================
+   */
+
+  function handleMaritalStatusChange(
+    value,
+  ) {
+    setError("");
+    setSuccess("");
+
+    setFamily(
+      (previous) => ({
+        ...previous,
+
+        marital_status:
+          value,
+
+        /*
+         * Backend deletes spouse
+         * automatically when SINGLE.
+         *
+         * Clear it visually too.
+         */
+        spouse:
+          value === "SINGLE"
+            ? {
+                ...EMPTY_PERSON,
+              }
+            : previous.spouse,
+      }),
+    );
+  }
+
+  /*
+   * =========================================
+   * SAVE
+   * =========================================
+   */
+
+  async function handleSubmit(
+    event,
+  ) {
     event.preventDefault();
-    setSaving(true);
-    setSaveError("");
-    setSaveSuccess("");
+
+    if (!memberId) {
+      setError(
+        "រកមិនឃើញលេខសម្គាល់សមាជិក។",
+      );
+
+      return;
+    }
+
+    if (
+      !family.marital_status
+    ) {
+      setError(
+        "សូមជ្រើសរើសស្ថានភាពគ្រួសារ។",
+      );
+
+      return;
+    }
 
     try {
-      const current = Object.entries(family)
-        .filter(([section, item]) =>
-          ["spouse", "father", "mother"].includes(section) &&
-          String(item.name_kh || "").trim(),
-        )
-        .map(([section, item]) => ({ ...item, relationship: section.toUpperCase() }));
+      setSaving(true);
+      setError("");
+      setSuccess("");
 
-      const saved = await saveMyAccountCollection(
-        "family",
-        originalFamily,
-        current,
-        (item) => ({
-          relationship: item.relationship,
-          fullNameKm: item.name_kh.trim(),
-          fullNameEn: item.name_en?.trim() || null,
-          dateOfBirth: item.date_of_birth || null,
-          occupation: item.occupation?.trim() || null,
-          lifeStatus:
-            item.status === "ស្លាប់" || item.status === "DECEASED"
-              ? "DECEASED"
-              : item.status ? "ALIVE" : null,
-          address: item.address?.trim() || null,
-        }),
+      const payload = {
+        marital_status:
+          family.marital_status,
+
+        father:
+          personPayload(
+            family.father,
+          ),
+
+        mother:
+          personPayload(
+            family.mother,
+          ),
+
+        spouse:
+          family.marital_status ===
+          "SINGLE"
+            ? null
+            : personPayload(
+                family.spouse,
+              ),
+      };
+
+      const updated =
+        await requestJson(
+          `/backend/my-account/family`,
+          {
+            method: "PUT",
+
+            body:
+              JSON.stringify(
+                payload,
+              ),
+          },
+        );
+
+      setFamily(
+        normalizeFamily(
+          updated,
+        ),
       );
-      setOriginalFamily(saved);
-      setSaveSuccess("រក្សាទុកព័ត៌មានបានជោគជ័យ");
-    } catch (requestError) {
-      setSaveError(requestError.message);
+
+      setSuccess(
+        "រក្សាទុកព័ត៌មានគ្រួសារបានជោគជ័យ។",
+      );
+    } catch (saveError) {
+      console.error(
+        "Cannot update family:",
+        saveError,
+      );
+
+      setError(
+        saveError.message ||
+          "មិនអាចរក្សាទុកព័ត៌មានគ្រួសារបានទេ។",
+      );
     } finally {
       setSaving(false);
     }
@@ -139,27 +457,9 @@ export default function FamilyPage() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-border bg-white p-6">
-        កំពុងទាញយកព័ត៌មានសមាជិក...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">
-          {error}
-        </p>
-      </div>
-    );
-  }
-
-  if (!member) {
-    return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">
-          រកមិនឃើញព័ត៌មានសមាជិក
+      <div className="flex min-h-[300px] items-center justify-center">
+        <p className="text-sm text-gray-500">
+          កំពុងទាញយកព័ត៌មានគ្រួសារ...
         </p>
       </div>
     );
@@ -167,157 +467,249 @@ export default function FamilyPage() {
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={
+        handleSubmit
+      }
       className="space-y-4"
     >
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
+      <fieldset disabled={isReadOnly} className={isReadOnly ? "member-readonly contents" : "contents"}>
+      <div
+        className="
+          rounded-xl
+          border
+          border-gray-200
+          bg-white
+          p-4
+          sm:p-5
+          lg:p-6
+        "
+      >
         <h2 className="text-lg font-bold text-primary">
           ព័ត៌មានគ្រួសារ
         </h2>
-        <div className="mt-6">
-  <RadioGroup
-    label="ស្ថានភាពគ្រួសារ"
-    name="familyStatus"
-    value={family.status || ""}
-    options={[
-      {
-        label: "នៅលីវ",
-        value: "នៅលីវ",
-      },
-      {
-        label: "មានគ្រួសារ",
-        value: "មានគ្រួសារ",
-      },
-    ]}
-    onChange={(value) =>
-      setFamily((previous) => ({
-        ...previous,
-        status: value,
-      }))
-    }
-  />
-</div>
 
-        <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2 xl:grid-cols-3">
-          {/* SPOUSE */}
+        {/* FAMILY STATUS */}
 
-          <BoxFill
-            label="ឈ្មោះ ប្ដី/ប្រពន្ធ (ខ្មែរ)"
-            placeholder="បញ្ចូលឈ្មោះ"
-            value={family.spouse.name_kh}
-            onChange={(event) =>
-              handleFamilyChange(
-                "spouse",
-                "name_kh",
-                event.target.value,
-              )
+        <div className="mt-5">
+          <RadioGroup
+            label="ស្ថានភាពគ្រួសារ"
+            name="familyStatus"
+            value={
+              family.marital_status
+            }
+            options={[
+              {
+                label:
+                  "នៅលីវ",
+                value:
+                  "SINGLE",
+              },
+              {
+                label:
+                  "មានគ្រួសារ",
+                value:
+                  "MARRIED",
+              },
+            ]}
+            onChange={
+              handleMaritalStatusChange
             }
           />
+        </div>
+
+        <div
+          className="
+            mt-6
+            grid
+            grid-cols-1
+            gap-x-6
+            gap-y-6
+            md:grid-cols-2
+            xl:grid-cols-3
+          "
+        >
+          {/* =================================
+              SPOUSE
+          ================================= */}
+
+          {family.marital_status !==
+            "SINGLE" && (
+            <>
+              <BoxFill
+                label="ឈ្មោះ ប្ដី/ប្រពន្ធ (ខ្មែរ)"
+                placeholder="បញ្ចូលឈ្មោះប្ដីប្រពន្ធជាភាសាខ្មែរ"
+                value={
+                  family.spouse
+                    .full_name_km
+                }
+                onChange={(
+                  event,
+                ) =>
+                  handleFamilyChange(
+                    "spouse",
+                    "full_name_km",
+                    event.target
+                      .value,
+                  )
+                }
+              />
+
+              <BoxFill
+                label="ឈ្មោះ ប្ដី/ប្រពន្ធ (ឡាតាំង)"
+                placeholder="បញ្ចូលឈ្មោះជាភាសាឡាតាំង"
+                value={
+                  family.spouse
+                    .full_name_en
+                }
+                onChange={(
+                  event,
+                ) =>
+                  handleFamilyChange(
+                    "spouse",
+                    "full_name_en",
+                    event.target
+                      .value,
+                  )
+                }
+              />
+
+              <BoxFill
+                label="មុខរបរ ប្ដី/ប្រពន្ធ"
+                placeholder="បញ្ចូលមុខរបរ ប្ដី/ប្រពន្ធ"
+                value={
+                  family.spouse
+                    .occupation
+                }
+                onChange={(
+                  event,
+                ) =>
+                  handleFamilyChange(
+                    "spouse",
+                    "occupation",
+                    event.target
+                      .value,
+                  )
+                }
+              />
+
+              <FormDate
+                label="ថ្ងៃខែឆ្នាំ កំណើត"
+                name="spouseDateOfBirth"
+                value={
+                  family.spouse
+                    .date_of_birth
+                }
+                onChange={(
+                  event,
+                ) =>
+                  handleFamilyChange(
+                    "spouse",
+                    "date_of_birth",
+                    event.target
+                      .value,
+                  )
+                }
+              />
+
+              <div className="xl:col-span-2">
+                <BoxFill
+                  label="ទីលំនៅប្ដី/ប្រពន្ធ"
+                  placeholder="បញ្ចូលទីលំនៅប្ដី/ប្រពន្ធ"
+                  value={
+                    family.spouse
+                      .address
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    handleFamilyChange(
+                      "spouse",
+                      "address",
+                      event
+                        .target
+                        .value,
+                    )
+                  }
+                />
+              </div>
+            </>
+          )}
+
+          {/* =================================
+              FATHER
+          ================================= */}
 
           <BoxFill
-            label="ឈ្មោះ ប្ដី/ប្រពន្ធ (ឡាតាំង)"
-            placeholder="បញ្ចូលឈ្មោះ"
-            value={family.spouse.name_en}
-            onChange={(event) =>
-              handleFamilyChange(
-                "spouse",
-                "name_en",
-                event.target.value,
-              )
+            label="ឈ្មោះ ឪពុក (ខ្មែរ)"
+            placeholder="បញ្ចូលឈ្មោះឪពុកជាភាសាខ្មែរ"
+            value={
+              family.father
+                .full_name_km
             }
-          />
-
-          <BoxFill
-            label="មុខរបរ ប្ដី/ប្រពន្ធ"
-            placeholder="បញ្ចូលមុខរបរ"
-            value={family.spouse.occupation}
-            onChange={(event) =>
-              handleFamilyChange(
-                "spouse",
-                "occupation",
-                event.target.value,
-              )
-            }
-          />
-
-          <FormDate
-            label="ថ្ងៃខែឆ្នាំកំណើត"
-            value={family.spouse.date_of_birth}
-            onChange={(event) =>
-              handleFamilyChange(
-                "spouse",
-                "date_of_birth",
-                event.target.value,
-              )
-            }
-          />
-
-          <div className="xl:col-span-2">
-            <BoxFill
-              label="ទីលំនៅប្ដី/ប្រពន្ធ"
-              placeholder="បញ្ចូលទីលំនៅ"
-              value={family.spouse.address}
-              onChange={(event) =>
-                handleFamilyChange(
-                  "spouse",
-                  "address",
-                  event.target.value,
-                )
-              }
-            />
-          </div>
-
-          {/* FATHER */}
-
-          <BoxFill
-            label="ឈ្មោះឪពុក (ខ្មែរ)"
-            placeholder="បញ្ចូលឈ្មោះ"
-            value={family.father.name_kh}
-            onChange={(event) =>
+            onChange={(
+              event,
+            ) =>
               handleFamilyChange(
                 "father",
-                "name_kh",
-                event.target.value,
+                "full_name_km",
+                event.target
+                  .value,
               )
             }
           />
 
           <BoxFill
-            label="ឈ្មោះឪពុក (ឡាតាំង)"
-            placeholder="បញ្ចូលឈ្មោះ"
-            value={family.father.name_en}
-            onChange={(event) =>
+            label="ឈ្មោះ ឪពុក (ឡាតាំង)"
+            placeholder="បញ្ចូលឈ្មោះឪពុកជាភាសាឡាតាំង"
+            value={
+              family.father
+                .full_name_en
+            }
+            onChange={(
+              event,
+            ) =>
               handleFamilyChange(
                 "father",
-                "name_en",
-                event.target.value,
+                "full_name_en",
+                event.target
+                  .value,
               )
             }
           />
-
-          
 
           <RadioGroup
             label="ស្ថានភាពឪពុក"
-            name="father"
-            value={family.father.status}
-            onChange={(value) =>
+            name="fatherStatus"
+            value={
+              family.father
+                .life_status
+            }
+            onChange={(
+              value,
+            ) =>
               handleFamilyChange(
                 "father",
-                "status",
+                "life_status",
                 value,
               )
             }
           />
+
           <BoxFill
             label="មុខរបរឪពុក"
-            placeholder="បញ្ចូលមុខរបរ"
-            value={family.father.occupation}
-            onChange={(event) =>
+            placeholder="បញ្ចូលមុខរបរឪពុក"
+            value={
+              family.father
+                .occupation
+            }
+            onChange={(
+              event,
+            ) =>
               handleFamilyChange(
                 "father",
                 "occupation",
-                event.target.value,
+                event.target
+                  .value,
               )
             }
           />
@@ -325,69 +717,99 @@ export default function FamilyPage() {
           <div className="xl:col-span-2">
             <BoxFill
               label="ទីលំនៅឪពុក"
-              placeholder="បញ្ចូលទីលំនៅ"
-              value={family.father.address}
-              onChange={(event) =>
+              placeholder="បញ្ចូលទីលំនៅឪពុក"
+              value={
+                family.father
+                  .address
+              }
+              onChange={(
+                event,
+              ) =>
                 handleFamilyChange(
                   "father",
                   "address",
-                  event.target.value,
+                  event.target
+                    .value,
                 )
               }
             />
           </div>
 
-          {/* MOTHER */}
+          {/* =================================
+              MOTHER
+          ================================= */}
 
           <BoxFill
-            label="ឈ្មោះម្តាយ (ខ្មែរ)"
-            placeholder="បញ្ចូលឈ្មោះ"
-            value={family.mother.name_kh}
-            onChange={(event) =>
+            label="ឈ្មោះ ម្តាយ (ខ្មែរ)"
+            placeholder="បញ្ចូលឈ្មោះម្តាយជាភាសាខ្មែរ"
+            value={
+              family.mother
+                .full_name_km
+            }
+            onChange={(
+              event,
+            ) =>
               handleFamilyChange(
                 "mother",
-                "name_kh",
-                event.target.value,
+                "full_name_km",
+                event.target
+                  .value,
               )
             }
           />
 
           <BoxFill
-            label="ឈ្មោះម្តាយ (ឡាតាំង)"
-            placeholder="បញ្ចូលឈ្មោះ"
-            value={family.mother.name_en}
-            onChange={(event) =>
+            label="ឈ្មោះ ម្តាយ (ឡាតាំង)"
+            placeholder="បញ្ចូលឈ្មោះម្តាយជាភាសាឡាតាំង"
+            value={
+              family.mother
+                .full_name_en
+            }
+            onChange={(
+              event,
+            ) =>
               handleFamilyChange(
                 "mother",
-                "name_en",
-                event.target.value,
+                "full_name_en",
+                event.target
+                  .value,
               )
             }
           />
-
-          
 
           <RadioGroup
             label="ស្ថានភាពម្តាយ"
-            name="mother"
-            value={family.mother.status}
-            onChange={(value) =>
+            name="motherStatus"
+            value={
+              family.mother
+                .life_status
+            }
+            onChange={(
+              value,
+            ) =>
               handleFamilyChange(
                 "mother",
-                "status",
+                "life_status",
                 value,
               )
             }
           />
+
           <BoxFill
             label="មុខរបរម្តាយ"
-            placeholder="បញ្ចូលមុខរបរ"
-            value={family.mother.occupation}
-            onChange={(event) =>
+            placeholder="បញ្ចូលមុខរបរម្តាយ"
+            value={
+              family.mother
+                .occupation
+            }
+            onChange={(
+              event,
+            ) =>
               handleFamilyChange(
                 "mother",
                 "occupation",
-                event.target.value,
+                event.target
+                  .value,
               )
             }
           />
@@ -395,13 +817,19 @@ export default function FamilyPage() {
           <div className="xl:col-span-2">
             <BoxFill
               label="ទីលំនៅម្តាយ"
-              placeholder="បញ្ចូលទីលំនៅ"
-              value={family.mother.address}
-              onChange={(event) =>
+              placeholder="បញ្ចូលទីលំនៅម្តាយ"
+              value={
+                family.mother
+                  .address
+              }
+              onChange={(
+                event,
+              ) =>
                 handleFamilyChange(
                   "mother",
                   "address",
-                  event.target.value,
+                  event.target
+                    .value,
                 )
               }
             />
@@ -409,49 +837,104 @@ export default function FamilyPage() {
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <div className="flex flex-col items-end gap-2">
-          {saveError && <p className="text-sm text-red-500">{saveError}</p>}
-          {saveSuccess && <p className="text-sm text-green-600">{saveSuccess}</p>}
-          <SaveButton type="submit" disabled={saving} />
+      </fieldset>
+
+      {/* ERROR */}
+
+      {error && (
+        <div className="rounded-lg bg-error-bg px-4 py-3">
+          <p className="text-sm font-medium text-error">
+            {error}
+          </p>
         </div>
-      </div>
+      )}
+
+      {/* SUCCESS */}
+
+      {success && (
+        <div className="rounded-lg bg-success-bg px-4 py-3">
+          <p className="text-sm font-medium text-success">
+            {success}
+          </p>
+        </div>
+      )}
+
+      {/* SAVE */}
+
+      {!isReadOnly && <div className="flex justify-end">
+        <SaveButton
+          type="submit"
+          disabled={
+            saving
+          }
+        >
+          {saving
+            ? "កំពុងរក្សាទុក..."
+            : "រក្សាទុក"}
+        </SaveButton>
+      </div>}
     </form>
   );
 }
+
+/* =========================================================
+ * RADIO GROUP
+ * ========================================================= */
 
 function RadioGroup({
   label,
   name,
   value,
   onChange,
+  options = [
+    {
+      label: "នៅរស់",
+      value: "ALIVE",
+    },
+    {
+      label: "ស្លាប់",
+      value: "DECEASED",
+    },
+  ],
 }) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-semibold text-text-primary">
+      <p className="mb-2 text-sm font-semibold text-text-primary">
         {label}
-      </label>
+      </p>
 
-      <div className="flex gap-8 pt-2">
-        <Radio
-          name={name}
-          label="នៅរស់"
-          value="នៅរស់"
-          checked={value === "នៅរស់"}
-          onChange={onChange}
-        />
-
-        <Radio
-          name={name}
-          label="ស្លាប់"
-          value="ស្លាប់"
-          checked={value === "ស្លាប់"}
-          onChange={onChange}
-        />
+      <div className="flex flex-wrap gap-x-8 gap-y-3 pt-2">
+        {options.map(
+          (option) => (
+            <Radio
+              key={`${name}-${option.value}`}
+              name={
+                name
+              }
+              label={
+                option.label
+              }
+              value={
+                option.value
+              }
+              checked={
+                value ===
+                option.value
+              }
+              onChange={
+                onChange
+              }
+            />
+          ),
+        )}
       </div>
     </div>
   );
 }
+
+/* =========================================================
+ * RADIO
+ * ========================================================= */
 
 function Radio({
   name,
@@ -461,17 +944,29 @@ function Radio({
   onChange,
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-3 text-sm text-text-primary">
+    <label className="flex cursor-pointer items-center gap-2 text-sm text-text-secondary">
       <input
         type="radio"
-        name={name}
-        value={value}
-        checked={checked}
-        onChange={() => onChange(value)}
+        name={
+          name
+        }
+        value={
+          value
+        }
+        checked={
+          checked
+        }
+        onChange={() =>
+          onChange(
+            value,
+          )
+        }
         className="h-5 w-5 accent-primary"
       />
 
-      {label}
+      <span>
+        {label}
+      </span>
     </label>
   );
 }
