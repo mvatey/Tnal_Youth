@@ -102,6 +102,25 @@ function normalizeProfilePhoto(value) {
 }
 
 function getDefaultProfilePhoto(user) {
+  /*
+   * When this card receives the raw backend member record (a
+   * FileResponse object, { id, filePath, ... }, with no "url"
+   * property) instead of a component that has already resolved it to
+   * a string, every candidate below used to fail the string-only
+   * check and this silently fell back to the placeholder avatar.
+   */
+  const rawPhoto =
+    user?.profile_photo ||
+    user?.profilePhoto;
+
+  if (
+    rawPhoto &&
+    typeof rawPhoto === "object" &&
+    rawPhoto.id
+  ) {
+    return `/api/files/${rawPhoto.id}/content`;
+  }
+
   const possibleImages = [
     user?.profile_photo?.url,
     user?.profilePhoto?.url,

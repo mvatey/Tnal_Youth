@@ -127,6 +127,7 @@ export default function MyAccountPersonalPage() {
     member,
     loading,
     error,
+    refetch,
   } = useCurrentMember();
 
   const [form, setForm] =
@@ -413,6 +414,16 @@ export default function MyAccountPersonalPage() {
 
       setCvFile(null);
       if (fileRef.current) fileRef.current.value = "";
+
+      /*
+       * Without this, the form kept showing the pre-save values until
+       * a manual page reload, because useCurrentMember() only fetches
+       * once on mount and this component never told it about the new
+       * data. Re-fetching here updates `member`, which the effect
+       * above already re-derives `form` from.
+       */
+      await refetch();
+
       alert("Saved successfully");
     } catch (saveError) {
       console.error(saveError);

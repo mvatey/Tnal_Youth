@@ -12,7 +12,7 @@ const USERS_BASE = "/api/backend/admin/users";
 
 const ROLE_OPTIONS = [
   { label: "អ្នកគ្រប់គ្រង (Admin)", value: "ADMIN" },
-  { label: "អ្នកមើលប៉ុណ្ណោះ (Viewer)", value: "VIEWER" },
+  { label: "អ្នកមើល (Viewer)", value: "VIEWER" },
 ];
 
 const EMPTY_FORM = {
@@ -180,7 +180,7 @@ export default function CreateUserModal({ open, onClose, onSave }) {
       <form onSubmit={submit} className="flex flex-col gap-3">
         <p className="text-xs text-text-secondary">
           គណនីនេះមិនចាំបាច់ភ្ជាប់ទៅសាខា ឬសមាជិកណាមួយឡើយ។
-          តួនាទី &quot;អ្នកមើលប៉ុណ្ណោះ (Viewer)&quot; អាចមើលឃើញដូចអ្នកគ្រប់គ្រង
+          តួនាទី &quot;អ្នកមើល (Viewer)&quot; អាចមើលឃើញដូចអ្នកគ្រប់គ្រង
           ប៉ុន្តែមិនអាចបន្ថែម កែប្រែ ឬលុបទិន្នន័យបានឡើយ។ អ្នកប្រើប្រាស់ថ្មីនឹងកំណត់
           ពាក្យសម្ងាត់ដំបូងដោយខ្លួនឯង តាមរយៈលេខកូដផ្ញើទៅអ៊ីមែលខាងក្រោម
           (ដំណើរការចូលប្រើគណនីលើកដំបូង)។

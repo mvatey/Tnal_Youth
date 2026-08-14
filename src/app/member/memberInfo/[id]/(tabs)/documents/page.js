@@ -177,6 +177,19 @@ function getProfilePhotoUrl(
   if (
     typeof value === "object"
   ) {
+    /*
+     * Prefer the file ID and go through the authenticated
+     * /api/files/{id}/content proxy. Falling through to filePath
+     * below and resolving it against the backend origin builds a
+     * direct link to Spring (bypassing the proxy that attaches the
+     * login cookie as a Bearer token), which fails to load and was
+     * why the uploaded photo never appeared here even though the
+     * same photo showed correctly elsewhere.
+     */
+    if (value?.id) {
+      return `/api/files/${value.id}/content`;
+    }
+
     const objectUrl =
       value?.url ||
       value?.file_url ||

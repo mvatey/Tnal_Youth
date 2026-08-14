@@ -872,7 +872,16 @@ export default function PersonalPage() {
           previous.ethnicity_text || ethnicity?.label || "",
       };
     });
-  }, [nationalities, ethnicities]);
+    /*
+     * Without form.nationality_id/ethnicity_id here, this only ran
+     * once when the nationality/ethnicity lookup lists first loaded.
+     * The personal-info fetch (which sets those IDs) usually resolves
+     * slightly later, so at that first run there was nothing yet to
+     * match against the lookup list and the text was never filled in
+     * afterward — the dropdown looked empty even though the member
+     * had a saved nationality/ethnicity.
+     */
+  }, [nationalities, ethnicities, form.nationality_id, form.ethnicity_id]);
 
   /* =======================================================
    * NORMAL FIELD CHANGE

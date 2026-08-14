@@ -28,7 +28,7 @@ const EMPTY_SUMMARY = {
  */
 const ROLE_LABELS_KM = {
   ADMIN: "អ្នកគ្រប់គ្រង",
-  VIEWER: "អ្នកមើលប៉ុណ្ណោះ",
+  VIEWER: "អ្នកមើល",
   BRANCH_LEADER: "ប្រធានសាខា",
   SECRETARY: "លេខាធិការ",
   MEMBER: "សមាជិក",
@@ -56,7 +56,7 @@ const STATUS_BADGE_STYLES = {
 const ROLE_OPTIONS = [
   { label: "គ្រប់តួនាទី", value: "" },
   { label: "អ្នកគ្រប់គ្រង", value: "ADMIN" },
-  { label: "អ្នកមើលប៉ុណ្ណោះ", value: "VIEWER" },
+  { label: "អ្នកមើល", value: "VIEWER" },
 ];
 
 const STATUS_OPTIONS = [

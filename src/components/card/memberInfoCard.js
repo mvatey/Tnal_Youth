@@ -178,15 +178,37 @@ function normalizeImageUrl(value) {
 function getDefaultProfileImage(
   member,
 ) {
+  /*
+   * The backend's profile_photo/profilePhoto field is a FileResponse
+   * object ({ id, filePath, ... }) — it has no "url" property. Without
+   * this check, the chain below always fell through every candidate to
+   * the raw object itself, normalizeImageUrl() couldn't find a usable
+   * value on it either, and the default placeholder avatar showed even
+   * though a photo was uploaded and saved. This is what allowed a
+   * profile photo uploaded from My Account to show correctly right
+   * after upload (the upload response is handled separately, further
+   * below) but disappear anywhere else the member is loaded fresh —
+   * such as the Members module's own member detail page.
+   */
+  const profilePhoto =
+    member?.profile_photo ||
+    member?.profilePhoto;
+
+  if (
+    profilePhoto &&
+    typeof profilePhoto === "object" &&
+    profilePhoto.id
+  ) {
+    return `/api/files/${profilePhoto.id}/content`;
+  }
+
   const value =
     member?.profile_photo?.url ||
     member?.profilePhoto?.url ||
     member?.profile_photo_url ||
     member?.profilePhotoUrl ||
-    member?.profile_photo ||
     member?.profileImage ||
     member?.profile_image ||
-    member?.profilePhoto ||
     "";
 
   return normalizeImageUrl(
