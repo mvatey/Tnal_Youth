@@ -27,6 +27,8 @@ import HeaderMemberInfo from "@/components/navigation/headerMemberInfo";
 import MemberTabNav from "@/components/navigation/MemberTabNav";
 import StatCard from "@/components/dashboard/statCard";
 
+import useMemberPermissions from "@/hooks/useMemberPermissions";
+
 async function fetchJson(
   path,
   signal,
@@ -104,6 +106,15 @@ export default function MemberInfoLayout({
   const pathname = usePathname();
 
   const { id } = use(params);
+
+  /*
+   * This is the logged-in VIEWER's own role (not the role of the
+   * member being viewed) — an admin managing a member's page should
+   * not be able to change that member's photo, but a secretary or
+   * branch leader managing a member on their behalf still can.
+   */
+  const { isAdmin: viewerIsAdmin } =
+    useMemberPermissions();
 
   const [
     member,
@@ -626,6 +637,14 @@ export default function MemberInfoLayout({
         assignedBranches={assignedBranches}
         profileUploadEndpoint={
           `/api/backend/members/${member.id}/profile-photo`
+        }
+        /*
+         * An admin should not upload a photo on a member's
+         * behalf from here, but a secretary or branch leader
+         * managing that member still can.
+         */
+        allowProfileChange={
+          !viewerIsAdmin
         }
       />
 
