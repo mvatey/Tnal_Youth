@@ -151,19 +151,19 @@ function ChartTooltip({
       className="
         rounded-lg
         border
-        border-[#E7E9EE]
-        bg-white
+        border-border
+        bg-bg-page-white
         px-3
         py-2
         text-xs
         shadow-[0_2px_8px_rgba(16,24,40,0.08)]
       "
     >
-      <div className="mb-0.5 text-[#9AA0A8]">
+      <div className="mb-0.5 text-text-mute">
         {item?.month} {item?.period?.slice(0, 4)}
       </div>
 
-      <div className="font-semibold text-[#232629]">
+      <div className="font-semibold text-text-primary">
         {Number(
           item?.participantCount || 0
         ).toLocaleString()}{" "}
@@ -203,16 +203,16 @@ function YearDropdown({
           appearance-none
           rounded-lg
           border
-          border-[#E7E9EE]
-          bg-[#F7F8FA]
+          border-border
+          bg-bg-page-gray
           py-1.5
           pl-3
           pr-8
           text-[13px]
-          text-[#4A4F59]
+          text-text-secondary
           outline-none
           transition
-          hover:border-gray-300
+          hover:opacity-80
           disabled:cursor-not-allowed
           disabled:opacity-60
         "
@@ -237,7 +237,7 @@ function YearDropdown({
           right-2.5
           top-1/2
           -translate-y-1/2
-          text-[#8A8F98]
+          text-text-secondary
         "
       />
     </div>
@@ -253,7 +253,7 @@ function ChartSkeleton() {
       ].map((height, index) => (
         <div
           key={index}
-          className="flex-1 rounded-t bg-gray-100"
+          className="flex-1 rounded-t bg-bg-page-gray"
           style={{
             height: `${height}%`,
           }}
@@ -310,14 +310,14 @@ export default function ParticipationChart({
         w-full
         flex-col
         rounded-[14px]
-        bg-white
+        bg-bg-page-white
         px-[18px]
         py-4
         shadow-[0_1px_2px_rgba(16,24,40,0.04),0_1px_3px_rgba(16,24,40,0.06)]
       "
     >
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="m-0 text-[15px] font-semibold text-[#232629]">
+        <h3 className="m-0 text-[15px] font-semibold text-text-primary">
           ការចូលរួមប្រចាំខែ
         </h3>
 
@@ -346,7 +346,7 @@ export default function ParticipationChart({
               }}
             >
               <CartesianGrid
-                stroke="#F3F4F6"
+                stroke="var(--color-border, #F3F4F6)"
                 vertical={false}
               />
 
@@ -355,7 +355,7 @@ export default function ParticipationChart({
                   <ChartTooltip />
                 }
                 cursor={{
-                  stroke: "#E4E5EA",
+                  stroke: "var(--color-border, #E4E5EA)",
                   strokeWidth: 1,
                 }}
               />
@@ -364,7 +364,7 @@ export default function ParticipationChart({
                 dataKey="month"
                 tick={{
                   fontSize: 10,
-                  fill: "#9AA0A8",
+                  fill: "var(--color-text-mute, #9AA0A8)",
                 }}
                 axisLine={false}
                 tickLine={false}
@@ -380,7 +380,7 @@ export default function ParticipationChart({
                 allowDecimals={false}
                 tick={{
                   fontSize: 11,
-                  fill: "#9AA0A8",
+                  fill: "var(--color-text-mute, #9AA0A8)",
                 }}
                 axisLine={false}
                 tickLine={false}
@@ -403,7 +403,7 @@ export default function ParticipationChart({
                 activeDot={{
                   r: 4,
                   fill: LINE_COLOR,
-                  stroke: "#FFFFFF",
+                  stroke: "var(--color-bg-page-white, #FFFFFF)",
                   strokeWidth: 2,
                 }}
                 isAnimationActive={
@@ -421,9 +421,9 @@ export default function ParticipationChart({
                 flex
                 items-center
                 justify-center
-                bg-white/60
+                bg-bg-page-white/60
                 text-xs
-                text-[#9AA0A8]
+                text-text-mute
               "
             >
               មិនទាន់មានទិន្នន័យសម្រាប់ឆ្នាំនេះ

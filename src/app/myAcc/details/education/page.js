@@ -118,8 +118,8 @@ export default function EducationPage() {
 
   if (!member) {
     return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">
+      <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
+        <p className="text-sm text-error">
           រកមិនឃើញព័ត៌មានសមាជិក
         </p>
       </div>
@@ -129,7 +129,7 @@ export default function EducationPage() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <fieldset disabled={isReadOnly} className={isReadOnly ? "member-readonly contents [&_button]:hidden" : "contents"}>
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
+      <div className="rounded-xl border border-border bg-bg-page-white p-5">
         <div>
           <h2 className="text-lg font-bold text-primary">
             កម្រិតការបណ្ដុះបណ្ដាល
@@ -163,7 +163,7 @@ export default function EducationPage() {
           <button
             type="button"
             onClick={addEducation}
-            className="inline-flex items-center gap-2 rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
           >
             <RiAddCircleLine size={17} />
             បន្ថែម
@@ -197,7 +197,7 @@ function EducationGroup({
     : [];
 
   return (
-    <div className="rounded-xl border border-gray-300 p-6">
+    <div className="rounded-xl border border-border p-6">
       <h3 className="mb-5 text-sm font-semibold text-text-primary">
         ប្រវត្តិការសិក្សា ទី {index + 1}
       </h3>
@@ -260,7 +260,7 @@ function EducationGroup({
         />
       </div>
 
-      <div className="mt-5 border-t border-gray-100 pt-4">
+      <div className="mt-5 border-t border-border pt-4">
         <label className="mb-2 block text-sm font-semibold text-text-primary">
           ភ្ជាប់ឯកសារ
         </label>

@@ -1630,7 +1630,7 @@ export default function PersonalPage() {
   if (loading) {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-text-secondary">
           កំពុងទាញយកព័ត៌មានផ្ទាល់ខ្លួន...
         </p>
       </div>
@@ -1647,8 +1647,8 @@ export default function PersonalPage() {
         className="
           rounded-xl
           border
-          border-gray-200
-          bg-white
+          border-border
+          bg-bg-page-white
           p-4
           sm:p-5
           lg:p-6
@@ -1675,7 +1675,7 @@ export default function PersonalPage() {
               grid-cols-1
               gap-5
               md:grid-cols-2
-              ${isReadOnly ? "member-readonly cursor-not-allowed [&_input]:pointer-events-none [&_input]:bg-gray-50 [&_select]:pointer-events-none [&_select]:bg-gray-50" : ""}
+              ${isReadOnly ? "member-readonly cursor-not-allowed [&_input]:pointer-events-none [&_input]:bg-bg-page-gray [&_select]:pointer-events-none [&_select]:bg-bg-page-gray" : ""}
             `}
           >
             <BoxFill
@@ -1854,7 +1854,7 @@ export default function PersonalPage() {
                 disabled={
                   !canManageSensitiveFields
                 }
-                selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-white !text-gray-600" : ""}
+                selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
                 adminEditable={isAdmin}
               />
             )}
@@ -1882,7 +1882,7 @@ export default function PersonalPage() {
               disabled={
                 !canManageSensitiveFields || !form.has_account
               }
-              selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-white !text-gray-600" : ""}
+              selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
               adminEditable={isAdmin}
             />
 
@@ -1943,7 +1943,7 @@ export default function PersonalPage() {
                 !form.has_account ||
                 changingStatus
               }
-              selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-white !text-gray-600" : ""}
+              selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
               adminEditable={isAdmin}
             />
 
@@ -1967,8 +1967,8 @@ export default function PersonalPage() {
                 rounded-xl
                 border-2
                 border-dashed
-                border-gray-200
-                bg-gray-50
+                border-border
+                bg-bg-page-gray
                 px-4
                 text-center
               "
@@ -1986,7 +1986,7 @@ export default function PersonalPage() {
               />
 
               {fileName && (
-                <div className="h-[260px] w-full overflow-hidden rounded-lg border border-gray-200 bg-white">
+                <div className="h-[260px] w-full overflow-hidden rounded-lg border border-border bg-bg-page-white">
                   {/\.(png|jpe?g)$/i.test(fileName) ? (
                     <img
                       src={cvPreviewUrl || `/api/files/${form.cv_file_id}/content`}
@@ -2003,7 +2003,7 @@ export default function PersonalPage() {
                 </div>
               )}
 
-              {!fileName && <UploadCloud size={30} className="text-gray-400" />}
+              {!fileName && <UploadCloud size={30} className="text-text-secondary" />}
               {!isReadOnly && <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
@@ -2011,7 +2011,7 @@ export default function PersonalPage() {
               >
                 {fileName ? "ជំនួស CV" : "បញ្ចូលឯកសារ"}
               </button>}
-              <p className="mt-2 max-w-full truncate text-xs text-gray-500" title={fileName}>
+              <p className="mt-2 max-w-full truncate text-xs text-text-secondary" title={fileName}>
                 {fileName || "JPG, JPEG, DOCX, PDF, PNG (មិនលើស 5MB)"}
               </p>
             </div>
@@ -2098,17 +2098,17 @@ function FormSelect({
             appearance-none
             rounded-lg
             border
-            border-gray-200
-            bg-white
+            border-border
+            bg-bg-page-white
             px-4
             pr-10
             text-sm
-            text-gray-600
+            text-text-secondary
             outline-none
             transition
             focus:border-primary
             disabled:cursor-not-allowed
-            disabled:bg-gray-100
+            disabled:bg-bg-page-gray
             disabled:opacity-60
             ${selectClassName}
           `}

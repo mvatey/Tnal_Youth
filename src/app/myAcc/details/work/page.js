@@ -84,8 +84,8 @@ export default function WorkPage() {
 
   if (!member) {
     return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">រកមិនឃើញព័ត៌មានសមាជិក</p>
+      <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
+        <p className="text-sm text-error">រកមិនឃើញព័ត៌មានសមាជិក</p>
       </div>
     );
   }
@@ -93,12 +93,12 @@ export default function WorkPage() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <fieldset disabled={isReadOnly} className={isReadOnly ? "member-readonly contents [&_button]:hidden" : "contents"}>
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
+      <div className="rounded-xl border border-border bg-bg-page-white p-6">
         <h2 className="text-lg font-bold text-primary">ប្រវត្តិការងារ</h2>
 
         <div className="mt-6 space-y-6">
           {works.map((work, index) => (
-            <div key={work.id} className="rounded-xl border border-gray-300 p-6">
+            <div key={work.id} className="rounded-xl border border-border p-6">
               <h3 className="mb-5 text-sm font-semibold text-text-primary">ប្រវត្តិការងារ ទី {index + 1}</h3>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -122,7 +122,7 @@ export default function WorkPage() {
           ))}
 
           <div className="flex justify-center">
-            <button type="button" onClick={addWork} className="flex items-center gap-2 rounded-lg bg-success px-6 py-2 text-sm font-semibold text-white hover:bg-green-700">
+            <button type="button" onClick={addWork} className="flex items-center gap-2 rounded-lg bg-green-600 px-6 py-2 text-sm font-semibold text-white hover:bg-green-700">
               <RiAddCircleLine size={18} />
               បន្ថែម
             </button>

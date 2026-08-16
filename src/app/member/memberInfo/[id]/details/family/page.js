@@ -465,7 +465,7 @@ export default function FamilyPage() {
   if (loading) {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-text-secondary">
           កំពុងទាញយកព័ត៌មានគ្រួសារ...
         </p>
       </div>
@@ -484,8 +484,8 @@ export default function FamilyPage() {
         className="
           rounded-xl
           border
-          border-gray-200
-          bg-white
+          border-border
+          bg-bg-page-white
           p-4
           sm:p-5
           lg:p-6

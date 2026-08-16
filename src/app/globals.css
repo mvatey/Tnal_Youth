@@ -50,13 +50,50 @@
   --font-sans: "Kantumruy Pro", "Khmer UI", sans-serif;
 }
 
-/* app/globals.css — add near your @theme block */
+/*
+ * app/globals.css — dark theme
+ *
+ * Every token from the @theme block above gets a dark-mode value here
+ * so any component built from these semantic classes (bg-bg-page-white,
+ * text-text-primary, border-border, bg-secondary-light, ...) already
+ * flips correctly when <html> gets the "dark" class — see ThemeProvider.
+ * The sidebar's own colors (bg-primary-sidebar) are intentionally left
+ * unchanged: it's already dark in both themes.
+ */
 .dark {
-  --color-bg-page-gray: #111827;
-  --color-bg-page-white: #1F2937;
+  /* Primary */
+  --color-primary: #4C5BC4;
+  --color-primary-hover: #6472D6;
+  --color-primary-pressed: #3A47A0;
+  --color-primary-light: #262E52;
+  --color-primary-lighter: #1A2036;
+
+  /* Secondary */
+  --color-secondary: #8A56D6;
+  --color-secondary-hover: #A379E3;
+  --color-secondary-light: #33235C;
+
+  /* Text */
   --color-text-primary: #F9FAFB;
   --color-text-secondary: #D1D5DB;
-  --color-border: #374151;
+  --color-text-mute: #8B95A5;
+  --color-text-inverse: #F3F4F6;
+
+  /* Border / Background */
+  --color-border: #363E56;
+  --color-bg-page-gray: #12162B;
+  --color-bg-page-white: #1B2140;
+
+  /* Status */
+  --color-success: #4ADE80;
+  --color-success-bg: #163B2C;
+  --color-error: #F87171;
+  --color-error-bg: #4C1D1D;
+  --color-warning: #FBBF24;
+  --color-warning-bg: #4A3812;
+
+  --background: var(--color-bg-page-gray);
+  --foreground: var(--color-text-primary);
 }
 
 :root {
@@ -200,7 +237,7 @@ input[type="reset"] {
 .member-readonly :is(input, select, textarea):disabled {
   color: var(--color-text-primary, #374151);
   opacity: 1;
-  background-color: #f9fafb;
+  background-color: var(--color-bg-page-gray, #f9fafb);
 }
 
 .member-readonly label {

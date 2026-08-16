@@ -119,8 +119,8 @@ export default function PoliticalPage() {
 
   if (!member) {
     return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">រកមិនឃើញព័ត៌មានសមាជិក</p>
+      <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
+        <p className="text-sm text-error">រកមិនឃើញព័ត៌មានសមាជិក</p>
       </div>
     );
   }
@@ -129,11 +129,11 @@ export default function PoliticalPage() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <fieldset disabled={isReadOnly} className={isReadOnly ? "member-readonly contents [&_button]:hidden" : "contents"}>
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div className="rounded-lg border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
           {error}
         </div>
       )}
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
+      <div className="rounded-xl border border-border bg-bg-page-white p-5">
         <h2 className="text-lg font-bold text-primary">កិច្ចការនយោបាយ</h2>
 
         <div className="mt-5 space-y-5">
@@ -156,7 +156,7 @@ export default function PoliticalPage() {
           <button
             type="button"
             onClick={addPolitical}
-            className="inline-flex items-center gap-2 rounded-lg bg-success px-5 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
           >
             <RiAddCircleLine size={17} />
             បន្ថែម
@@ -174,7 +174,7 @@ export default function PoliticalPage() {
 
 function PoliticalGroup({ index, item, parties, canDelete, onChange, onDelete }) {
   return (
-    <div className="rounded-xl border border-gray-300 p-6">
+    <div className="rounded-xl border border-border p-6">
       <h3 className="mb-5 text-sm font-semibold text-text-primary">
         កិច្ចការនយោបាយ ទី {index + 1}
       </h3>

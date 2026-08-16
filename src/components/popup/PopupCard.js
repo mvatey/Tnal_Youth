@@ -46,7 +46,7 @@ export default function PopupCard({
             max-h-[90vh]
             overflow-y-auto
             rounded-2xl
-            bg-white
+            bg-bg-page-white
             p-6
             shadow-xl
             ${className}

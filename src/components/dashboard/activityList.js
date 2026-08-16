@@ -98,7 +98,7 @@ function ActivityThumbnail({ activity }) {
         height: 44,
         flexShrink: 0,
         borderRadius: 8,
-        background: "#F1F2F5",
+        background: "var(--color-bg-page-gray, #F1F2F5)",
         objectFit: "cover",
       }}
     />
@@ -183,7 +183,7 @@ function ActivityRow({
         gap: 10,
         border: "none",
         borderBottom:
-          "1px solid #F2F3F5",
+          "1px solid var(--color-border, #F2F3F5)",
         background: "transparent",
         padding: "7px 0",
         textAlign: "left",
@@ -213,7 +213,7 @@ function ActivityRow({
           <span
             style={{
               overflow: "hidden",
-              color: "#232629",
+              color: "var(--color-text-primary, #232629)",
               fontSize: 12,
               fontWeight: 500,
               textOverflow: "ellipsis",
@@ -239,7 +239,7 @@ function ActivityRow({
           <span
             style={{
               overflow: "hidden",
-              color: "#9AA0A8",
+              color: "var(--color-text-mute, #9AA0A8)",
               fontSize: 10,
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -252,7 +252,7 @@ function ActivityRow({
             <span
               style={{
                 flexShrink: 0,
-                color: "#9AA0A8",
+                color: "var(--color-text-mute, #9AA0A8)",
                 fontSize: 10,
               }}
             >
@@ -281,7 +281,7 @@ function ActivityListSkeleton() {
             display: "flex",
             gap: 10,
             borderBottom:
-              "1px solid #F2F3F5",
+              "1px solid var(--color-border, #F2F3F5)",
             padding: "7px 0",
           }}
         >
@@ -292,7 +292,7 @@ function ActivityListSkeleton() {
               height: 44,
               flexShrink: 0,
               borderRadius: 8,
-              background: "#F1F2F5",
+              background: "var(--color-bg-page-gray, #F1F2F5)",
             }}
           />
 
@@ -308,7 +308,7 @@ function ActivityListSkeleton() {
                 height: 9,
                 marginBottom: 6,
                 borderRadius: 4,
-                background: "#F1F2F5",
+                background: "var(--color-bg-page-gray, #F1F2F5)",
               }}
             />
 
@@ -318,7 +318,7 @@ function ActivityListSkeleton() {
                 width: "40%",
                 height: 7,
                 borderRadius: 4,
-                background: "#F1F2F5",
+                background: "var(--color-bg-page-gray, #F1F2F5)",
               }}
             />
           </div>
@@ -360,9 +360,9 @@ export function ActivityListCard({
         height: "100%",
         boxSizing: "border-box",
         border:
-          "1px solid #EEF0F3",
+          "1px solid var(--color-border, #EEF0F3)",
         borderRadius: 14,
-        background: "#FFFFFF",
+        background: "var(--color-bg-page-white, #FFFFFF)",
         padding: 16,
       }}
     >
@@ -378,7 +378,7 @@ export function ActivityListCard({
         <h3
           style={{
             margin: 0,
-            color: "#232629",
+            color: "var(--color-text-primary, #232629)",
             fontSize: 14,
             fontWeight: 600,
           }}
@@ -403,7 +403,7 @@ export function ActivityListCard({
         <div
           style={{
             padding: "18px 0",
-            color: "#9AA0A8",
+            color: "var(--color-text-mute, #9AA0A8)",
             fontSize: 11,
             textAlign: "center",
           }}

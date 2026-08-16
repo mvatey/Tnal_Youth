@@ -15,7 +15,7 @@ export default function MyAccountDetailTabNav() {
   ];
 
   return (
-    <div className="rounded-lg bg-white shadow-sm overflow-hidden">
+    <div className="rounded-lg bg-bg-page-white shadow-sm overflow-hidden">
       <div className="grid grid-cols-6">
         {tabs.map((tab) => {
           const active = pathname === tab.href;
@@ -26,7 +26,7 @@ export default function MyAccountDetailTabNav() {
               className={`flex h-10 items-center justify-center border-t-2 px-3 text-sm font-medium transition-all ${
                 active
                   ? "border-secondary bg-secondary-light text-secondary"
-                  : "border-transparent text-text-secondary hover:bg-gray-50"
+                  : "border-transparent text-text-secondary hover:bg-bg-page-gray"
               }`}
             >
               <span className="truncate">{tab.name}</span>

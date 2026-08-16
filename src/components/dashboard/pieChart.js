@@ -107,16 +107,16 @@ function MonthDropdown({
           appearance-none
           rounded-lg
           border
-          border-[#E7E9EE]
-          bg-[#F7F8FA]
+          border-border
+          bg-bg-page-gray
           py-1.5
           pl-3
           pr-8
           text-[13px]
-          text-[#4A4F59]
+          text-text-secondary
           outline-none
           transition
-          hover:border-gray-300
+          hover:opacity-80
           disabled:cursor-not-allowed
           disabled:opacity-60
         "
@@ -141,7 +141,7 @@ function MonthDropdown({
           right-2.5
           top-1/2
           -translate-y-1/2
-          text-[#8A8F98]
+          text-text-secondary
         "
       />
     </div>
@@ -195,11 +195,11 @@ function LegendRow({
 function ChartSkeleton() {
   return (
     <div className="flex flex-1 items-center justify-center gap-8">
-      <div className="h-[190px] w-[190px] animate-pulse rounded-full border-[30px] border-gray-100" />
+      <div className="h-[190px] w-[190px] animate-pulse rounded-full border-[30px] border-bg-page-gray" />
 
       <div className="space-y-4">
-        <div className="h-4 w-36 animate-pulse rounded bg-gray-100" />
-        <div className="h-4 w-36 animate-pulse rounded bg-gray-100" />
+        <div className="h-4 w-36 animate-pulse rounded bg-bg-page-gray" />
+        <div className="h-4 w-36 animate-pulse rounded bg-bg-page-gray" />
       </div>
     </div>
   );
@@ -280,14 +280,14 @@ export default function ActivitySummaryChart({
         w-full
         flex-col
         rounded-[14px]
-        bg-white
+        bg-bg-page-white
         px-[18px]
         py-4
         shadow-[0_1px_2px_rgba(16,24,40,0.04),0_1px_3px_rgba(16,24,40,0.06)]
       "
     >
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="m-0 text-[15px] font-semibold text-[#232629]">
+        <h3 className="m-0 text-[15px] font-semibold text-text-primary">
           សង្ខេបកម្មវិធី
         </h3>
 
@@ -391,7 +391,7 @@ export default function ActivitySummaryChart({
                     DONUT_OUTER_RADIUS
                   }
                   paddingAngle={2}
-                  stroke="#FFFFFF"
+                  stroke="var(--color-bg-page-white, #FFFFFF)"
                   strokeWidth={2}
                   isAnimationActive={
                     !loading &&
@@ -411,7 +411,7 @@ export default function ActivitySummaryChart({
                                   entry.key
                                 ]
                               })`
-                            : "#EDEEF2"
+                            : "var(--color-bg-page-gray, #EDEEF2)"
                         }
                         opacity={
                           loading
@@ -437,7 +437,7 @@ export default function ActivitySummaryChart({
                     px-6
                     text-center
                     text-xs
-                    text-[#9AA0A8]
+                    text-text-mute
                   "
                 >
                   មិនទាន់មានទិន្នន័យ

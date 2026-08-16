@@ -221,8 +221,8 @@ export default function SkillPage() {
         className="
           rounded-xl
           border
-          border-gray-200
-          bg-white
+          border-border
+          bg-bg-page-white
           p-4
           sm:p-5
         "
@@ -265,8 +265,8 @@ export default function SkillPage() {
         className="
           rounded-xl
           border
-          border-gray-200
-          bg-white
+          border-border
+          bg-bg-page-white
           p-4
           sm:p-5
         "
@@ -323,7 +323,7 @@ function LanguageSkillGroup({
       className="
         rounded-xl
         border
-        border-gray-300
+        border-border
         p-4
         sm:p-5
         lg:p-6
@@ -415,7 +415,7 @@ function LanguageSkillGroup({
 
       {/* Document link */}
 
-      <div className="mt-5 border-t border-gray-100 pt-4">
+      <div className="mt-5 border-t border-border pt-4">
         <label className="mb-2 block text-sm font-semibold text-text-primary">
           ភ្ជាប់ឯកសារ
         </label>
@@ -456,7 +456,7 @@ function ComputerSkillGroup({
       className="
         rounded-xl
         border
-        border-gray-300
+        border-border
         p-4
         sm:p-5
         lg:p-6
@@ -507,7 +507,7 @@ function ComputerSkillGroup({
 
       {/* Document link */}
 
-      <div className="mt-5 border-t border-gray-100 pt-4">
+      <div className="mt-5 border-t border-border pt-4">
         <label className="mb-2 block text-sm font-semibold text-text-primary">
           ភ្ជាប់ឯកសារ
         </label>
@@ -549,7 +549,7 @@ function AddButton({
           justify-center
           gap-2
           rounded-lg
-          bg-success
+          bg-green-600
           px-5
           text-sm
           font-semibold

@@ -11,17 +11,24 @@ export default function Button({
     primary:
       "bg-primary hover:bg-primary-hover text-white",
 
+    /*
+     * success/danger stay fixed (not the --color-success/--color-error
+     * tokens) on purpose: those tokens are tuned to read as light text
+     * on a dark badge background in dark mode, which would be nearly
+     * invisible white-on-white here — a solid button needs its own
+     * saturated color that pairs with white text in both themes.
+     */
     success:
-      "bg-success hover:bg-green-700 text-white",
+      "bg-green-600 hover:bg-green-700 text-white",
 
     danger:
-      "bg-error hover:bg-red-700 text-white",
+      "bg-red-600 hover:bg-red-700 text-white",
 
     secondary:
-      "bg-gray-200 hover:bg-gray-300 text-text-primary",
+      "bg-border hover:opacity-80 text-text-primary",
 
     outline:
-      "border border-border bg-white hover:bg-gray-50 text-text-primary",
+      "border border-border bg-bg-page-white hover:bg-bg-page-gray text-text-primary",
   };
 
   return (

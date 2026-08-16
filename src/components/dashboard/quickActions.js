@@ -14,7 +14,7 @@ const DEFAULT_ACTIONS = [
     href: "/activity/create",
     icon: CirclePlus,
     color: "text-primary",
-    bg: "bg-gray-100",
+    bg: "bg-bg-page-gray",
   },
   {
     id: "branch",
@@ -22,7 +22,7 @@ const DEFAULT_ACTIONS = [
     href: "/document/create",
     icon: CirclePlus,
     color: "text-primary",
-    bg: "bg-gray-100",
+    bg: "bg-bg-page-gray",
   },
   {
     id: "activity",
@@ -30,7 +30,7 @@ const DEFAULT_ACTIONS = [
     href: "/donation/add",
     icon: CirclePlus,
     color: "text-primary",
-    bg: "bg-gray-100",
+    bg: "bg-bg-page-gray",
   },
   {
     id: "member",
@@ -38,7 +38,7 @@ const DEFAULT_ACTIONS = [
     href: "/member/create",
     icon: CirclePlus,
     color: "text-primary",
-    bg: "bg-gray-100",
+    bg: "bg-bg-page-gray",
   },
 ];
 
@@ -49,7 +49,7 @@ const ADMIN_ACTIONS = [
     href: "/activity",
     icon: Eye,
     color: "text-primary",
-    bg: "bg-gray-100",
+    bg: "bg-bg-page-gray",
   },
   {
     id: "view-branch",
@@ -57,7 +57,7 @@ const ADMIN_ACTIONS = [
     href: "/document",
     icon: Eye,
     color: "text-primary",
-    bg: "bg-gray-100",
+    bg: "bg-bg-page-gray",
   },
   {
     id: "view-activity",
@@ -65,7 +65,7 @@ const ADMIN_ACTIONS = [
     href: "/donation",
     icon: Eye,
     color: "text-primary",
-    bg: "bg-gray-100",
+    bg: "bg-bg-page-gray",
   },
   {
     id: "member",
@@ -73,7 +73,7 @@ const ADMIN_ACTIONS = [
     href: "/member/create",
     icon: CirclePlus,
     color: "text-primary",
-    bg: "bg-gray-100",
+    bg: "bg-bg-page-gray",
   },
 ];
 
@@ -98,15 +98,15 @@ export default function QuickActions() {
 
   if (authLoading) {
     return (
-      <div className="app-card flex h-full items-center justify-center rounded-xl border border-border bg-white p-4">
+      <div className="app-card flex h-full items-center justify-center rounded-xl border border-border bg-bg-page-white p-4">
         <p className="text-sm text-text-secondary">កំពុងផ្ទុក...</p>
       </div>
     );
   }
 
   return (
-    <div className="app-card flex h-full flex-col rounded-xl border border-border bg-white p-4">
-      <h3 className="mb-4 text-sm font-semibold text-[#232629]">
+    <div className="app-card flex h-full flex-col rounded-xl border border-border bg-bg-page-white p-4">
+      <h3 className="mb-4 text-sm font-semibold text-text-primary">
         មុខងារផ្សេងៗ
       </h3>
 
@@ -118,7 +118,7 @@ export default function QuickActions() {
             <Link
               key={action.id}
               href={action.href}
-              className={`flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-xs font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-sm ${action.bg} ${action.color} ${HOVER_STYLES[action.id]}`}
+              className={`flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-xs font-medium transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm ${action.bg} ${action.color} ${HOVER_STYLES[action.id]}`}
             >
               <Icon size={16} strokeWidth={2} />
               {action.label}

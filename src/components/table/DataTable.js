@@ -80,8 +80,8 @@ export default function DataTable({
             min-w-0
             rounded-lg
             border
-            border-[#e5eaf0]
-            bg-white
+            border-border
+            bg-bg-page-white
             p-3
             sm:p-4
           "
@@ -164,14 +164,15 @@ export default function DataTable({
                       min-w-0
                       rounded-lg
                       border
-                      border-gray-200
-                      bg-white
+                      border-border
+                      bg-bg-page-white
                       pl-9
                       pr-3
                       text-sm
+                      text-text-primary
                       outline-none
                       transition
-                      placeholder:text-gray-400
+                      placeholder:text-text-mute
                       focus:border-primary
                     "
                   />
@@ -313,8 +314,8 @@ export default function DataTable({
           overflow-hidden
           rounded-lg
           border
-          border-[#e5eaf0]
-          bg-white
+          border-border
+          bg-bg-page-white
         "
       >
         <div
@@ -346,8 +347,8 @@ export default function DataTable({
               )}
             </colgroup>
 
-            <thead className="bg-[#f8fafc]">
-              <tr className="border-b border-[#e5eaf0]">
+            <thead className="bg-bg-page-gray">
+              <tr className="border-b border-border">
                 {columns.map(
                   (column, index) => (
                     <th
@@ -390,7 +391,7 @@ export default function DataTable({
                         }
                         className="
                           border-b
-                          border-[#edf0f3]
+                          border-border
                           transition
                           last:border-b-0
                           hover:bg-bg-page-gray/60
@@ -446,7 +447,7 @@ export default function DataTable({
                       py-10
                       text-center
                       text-sm
-                      text-gray-400
+                      text-text-mute
                     "
                   >
                     {emptyMessage}

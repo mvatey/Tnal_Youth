@@ -26,7 +26,7 @@ export default function MyAccountTabNav() {
   const pathname = usePathname();
 
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+    <div className="bg-bg-page-white rounded-lg shadow-sm overflow-hidden">
       <div className="grid grid-cols-5">
         {TABS.map((tab) => {
           const active =
@@ -52,7 +52,7 @@ export default function MyAccountTabNav() {
                 ${
                   active
                     ? "border-secondary bg-secondary-light text-secondary"
-                    : "border-transparent bg-white text-text-secondary hover:bg-gray-50"
+                    : "border-transparent bg-bg-page-white text-text-secondary hover:bg-bg-page-gray"
                 }
               `}
             >

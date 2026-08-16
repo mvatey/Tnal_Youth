@@ -515,7 +515,7 @@ export default function MyAccountPersonalPage() {
   if (loading) {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
-        <p className="text-sm text-gray-500">កំពុងទាញយកព័ត៌មានផ្ទាល់ខ្លួន...</p>
+        <p className="text-sm text-text-secondary">កំពុងទាញយកព័ត៌មានផ្ទាល់ខ្លួន...</p>
       </div>
     );
   }
@@ -545,7 +545,7 @@ export default function MyAccountPersonalPage() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5 lg:p-6">
+      <div className="rounded-xl border border-border bg-bg-page-white p-4 sm:p-5 lg:p-6">
         <h2 className="text-lg font-bold text-primary">ព័ត៌មានផ្ទាល់ខ្លួន</h2>
 
         <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
@@ -633,18 +633,18 @@ export default function MyAccountPersonalPage() {
                 សាខា
               </p>
 
-              <div className="flex min-h-[34px] flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-gray-100 px-3 py-1.5">
+              <div className="flex min-h-[34px] flex-wrap items-center gap-2 rounded-lg border border-border bg-bg-page-gray px-3 py-1.5">
                 {branchDisplayList.length > 0 ? (
                   branchDisplayList.map((name) => (
                     <span
                       key={name}
-                      className="inline-flex items-center rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-sm text-gray-600"
+                      className="inline-flex items-center rounded-full border border-border bg-bg-page-white px-2.5 py-0.5 text-sm text-text-secondary"
                     >
                       {name}
                     </span>
                   ))
                 ) : (
-                  <span className="text-sm text-gray-400">-</span>
+                  <span className="text-sm text-text-mute">-</span>
                 )}
               </div>
             </div>
@@ -687,7 +687,7 @@ export default function MyAccountPersonalPage() {
               បញ្ចូល CV
             </label>
 
-            <div className="flex min-h-[190px] w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 text-center">
+            <div className="flex min-h-[190px] w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-bg-page-gray px-4 text-center">
               <input
                 ref={fileRef}
                 type="file"
@@ -697,7 +697,7 @@ export default function MyAccountPersonalPage() {
               />
 
               {fileName && (
-                <div className="h-[260px] w-full overflow-hidden rounded-lg border border-gray-200 bg-white">
+                <div className="h-[260px] w-full overflow-hidden rounded-lg border border-border bg-bg-page-white">
                   {/\.(png|jpe?g)$/i.test(fileName) ? (
                     <img
                       src={cvPreviewUrl || `/api/files/${form.cv_file_id}/content`}
@@ -714,7 +714,7 @@ export default function MyAccountPersonalPage() {
                 </div>
               )}
 
-              {!fileName && <UploadCloud size={30} className="text-gray-400" />}
+              {!fileName && <UploadCloud size={30} className="text-text-secondary" />}
 
               <button
                 type="button"
@@ -724,7 +724,7 @@ export default function MyAccountPersonalPage() {
                 {fileName ? "ជំនួស CV" : "បញ្ចូលឯកសារ"}
               </button>
 
-              <p className="mt-2 max-w-full truncate text-xs text-gray-500" title={fileName}>
+              <p className="mt-2 max-w-full truncate text-xs text-text-secondary" title={fileName}>
                 {fileName || "JPG, JPEG, DOCX, PDF, PNG (មិនលើស 5MB)"}
               </p>
             </div>

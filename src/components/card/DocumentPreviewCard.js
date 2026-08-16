@@ -433,10 +433,10 @@ export default function DocumentPreviewCard({
         w-[380px]
         rounded-xl
         border
-        border-gray-200
+        border-border
         border-t-4
         border-t-secondary
-        bg-[#f8f9fc]
+        bg-bg-page-white
         p-3
         shadow-sm
       "

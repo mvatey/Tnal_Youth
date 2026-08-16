@@ -59,16 +59,16 @@ function BranchDropdown({
           appearance-none
           rounded-lg
           border
-          border-[#E7E9EE]
-          bg-white
+          border-border
+          bg-bg-page-white
           py-[7px]
           pl-[14px]
           pr-8
           text-[13px]
-          text-[#4A4F59]
+          text-text-secondary
           outline-none
           transition
-          hover:border-gray-300
+          hover:border-primary
           disabled:cursor-not-allowed
           disabled:opacity-60
         "
@@ -95,7 +95,7 @@ function BranchDropdown({
           right-3
           top-1/2
           -translate-y-1/2
-          text-[#8A8F98]
+          text-text-secondary
         "
       />
     </div>
@@ -122,15 +122,15 @@ function StatMiniCard({
         height: "100%",
         flexDirection: "column",
         boxSizing: "border-box",
-        border: "1px solid #EEF0F3",
+        border: "1px solid var(--color-border, #EEF0F3)",
         borderRadius: 10,
-        background: "#F7F8FA",
+        background: "var(--color-bg-page-gray, #F7F8FA)",
         padding: "12px 14px",
       }}
     >
       <span
         style={{
-          color: "#6B7280",
+          color: "var(--color-text-secondary, #6B7280)",
           fontSize: 12,
         }}
       >
@@ -147,7 +147,7 @@ function StatMiniCard({
       >
         <span
           style={{
-            color: "#1F2329",
+            color: "var(--color-text-primary, #1F2329)",
             fontSize: 20,
             fontWeight: 700,
           }}
@@ -159,8 +159,8 @@ function StatMiniCard({
           <span
             style={{
               color: isUp
-                ? "#22A35A"
-                : "#D14343",
+                ? "var(--color-success, #22A35A)"
+                : "var(--color-error, #D14343)",
               fontSize: 11,
               fontWeight: 600,
               whiteSpace: "nowrap",
@@ -298,9 +298,9 @@ export default function PerformanceSummary({
         height: "100%",
         flexDirection: "column",
         boxSizing: "border-box",
-        border: "1px solid #EEF0F3",
+        border: "1px solid var(--color-border, #EEF0F3)",
         borderRadius: 14,
-        background: "#FFFFFF",
+        background: "var(--color-bg-page-white, #FFFFFF)",
         padding: "18px 20px",
       }}
     >
@@ -318,7 +318,7 @@ export default function PerformanceSummary({
           <h3
             style={{
               margin: 0,
-              color: "#232629",
+              color: "var(--color-text-primary, #232629)",
               fontSize: 14,
               fontWeight: 600,
             }}
@@ -331,7 +331,7 @@ export default function PerformanceSummary({
               style={{
                 display: "block",
                 marginTop: 3,
-                color: "#9CA3AF",
+                color: "var(--color-text-mute, #9CA3AF)",
                 fontSize: 11,
               }}
             >

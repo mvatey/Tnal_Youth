@@ -73,7 +73,7 @@ export default function FormSelect({
 
   return (
     <div
-      className={`min-w-0 ${isDisabled ? "[&_label]:text-gray-400" : ""} ${className}`}
+      className={`min-w-0 ${isDisabled ? "[&_label]:text-text-mute" : ""} ${className}`}
     >
       {label && (
         <label
@@ -112,20 +112,21 @@ export default function FormSelect({
             appearance-none
             rounded-lg
             border
-            bg-white
+            bg-bg-page-white
             pl-3
             pr-10
             text-sm
             leading-none
+            text-text-secondary
             outline-none
             transition
             ${
               error
                 ? "border-error focus:border-error"
-                : "border-gray-200 focus:border-primary"
+                : "border-border focus:border-primary"
             }
             disabled:cursor-not-allowed
-            disabled:bg-gray-50
+            disabled:bg-bg-page-gray
             disabled:opacity-60
             ${selectClassName}
           `}

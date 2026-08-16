@@ -146,7 +146,7 @@ export default function FormDate({
   };
 
   return (
-    <div className={`min-w-0 ${disabled ? "[&_label]:text-gray-400" : ""}`}>
+    <div className={`min-w-0 ${disabled ? "[&_label]:text-text-mute" : ""}`}>
       {label && (
         <label
           htmlFor={`${name}-display`}
@@ -197,16 +197,16 @@ export default function FormDate({
             cursor-pointer
             rounded-lg
             border
-            border-gray-200
-            bg-white
+            border-border
+            bg-bg-page-white
             px-3
             pr-10
             text-sm
             leading-none
-            text-gray-600
+            text-text-secondary
             outline-none
             transition
-            placeholder:text-gray-400
+            placeholder:text-text-mute
             focus:border-primary
             disabled:cursor-not-allowed
           "
@@ -246,7 +246,7 @@ export default function FormDate({
             right-3
             top-1/2
             -translate-y-1/2
-            text-gray-400
+            text-text-secondary
           "
         />
       </div>

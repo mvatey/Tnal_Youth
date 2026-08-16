@@ -50,23 +50,23 @@ export default function BoxFill({
     w-full
     rounded-lg
     border
-    border-gray-200
-    bg-white
+    border-border
+    bg-bg-page-white
     text-sm
     leading-none
-    text-gray-600
+    text-text-secondary
     outline-none
     transition
     focus:border-primary
     ${
       isLocked
-        ? "cursor-not-allowed bg-gray-100 opacity-60"
+        ? "cursor-not-allowed bg-bg-page-gray opacity-60"
         : ""
     }
   `;
 
   return (
-    <div className={`min-w-0 ${isLocked ? "[&_label]:text-gray-400" : ""} ${className}`}>
+    <div className={`min-w-0 ${isLocked ? "[&_label]:text-text-mute" : ""} ${className}`}>
       {label && (
         <label
           htmlFor={name}
@@ -155,7 +155,7 @@ export default function BoxFill({
               right-3
               top-1/2
               -translate-y-1/2
-              text-gray-400
+              text-text-secondary
             "
           />
         </div>
@@ -169,7 +169,7 @@ export default function BoxFill({
                 left-3
                 top-1/2
                 -translate-y-1/2
-                text-gray-400
+                text-text-secondary
               "
             >
               {leadingIcon}

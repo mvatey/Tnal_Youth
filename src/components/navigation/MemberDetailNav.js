@@ -49,7 +49,7 @@ export default function MemberDetailNav(){
 
   return (
 
-    <div className="rounded-lg bg-white shadow-sm overflow-hidden">
+    <div className="rounded-lg bg-bg-page-white shadow-sm overflow-hidden">
 
       <div className="grid grid-cols-6">
 
@@ -77,7 +77,7 @@ export default function MemberDetailNav(){
                   ?
                   "border-secondary bg-secondary-light text-secondary"
                   :
-                  "border-transparent text-text-secondary hover:bg-gray-50"
+                  "border-transparent text-text-secondary hover:bg-bg-page-gray"
 
                 }`}
 
