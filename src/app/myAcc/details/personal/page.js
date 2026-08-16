@@ -6,25 +6,51 @@ import {
   useState,
 } from "react";
 
-import {
-  FileText,
-  UploadCloud,
-  X,
-} from "lucide-react";
+import { UploadCloud } from "lucide-react";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
 
-import BoxFill from "@/components/forms/boxFill";
+import BoxFill from "@/components/forms/boxFill.js";
 import FormSelect from "@/components/forms/FormSelect";
+import FormDate from "@/components/forms/FormDate.js";
 import SaveButton from "@/components/forms/SaveButton";
 
-const MAX_FILE_SIZE =
-  5 * 1024 * 1024;
+/* =========================================================
+ * EMPTY FORM
+ *
+ * Mirrors the Member module's personal-info tab field-for-field
+ * (see /member/memberInfo/[id]/details/personal/page.js), minus
+ * branch/role/status ever being editable here — those three stay
+ * read-only display fields sourced from the same response.
+ * ========================================================= */
 
-const GENDER_OPTIONS = [
-  { value: "MALE", label: "ប្រុស" },
-  { value: "FEMALE", label: "ស្រី" },
-];
+const EMPTY_FORM = {
+  full_name_km: "",
+  full_name_en: "",
+  gender: "",
+  date_of_birth: "",
+
+  email: "",
+  phone: "",
+
+  nationality_id: "",
+  ethnicity_id: "",
+  religion_id: "",
+
+  member_level_id: "",
+  tshirt_size: "",
+
+  current_address: "",
+  permanent_address: "",
+
+  branch_name_km: "",
+  assigned_branches: [],
+  account_role: "",
+  account_status: "",
+  has_account: false,
+
+  cv_file_id: null,
+};
 
 const TSHIRT_SIZE_OPTIONS = [
   { value: "XS", label: "XS" },
@@ -36,7 +62,93 @@ const TSHIRT_SIZE_OPTIONS = [
   { value: "3XL", label: "3XL" },
 ];
 
-function normalizeLookupOptions(data) {
+const ROLE_LABELS = {
+  ADMIN: "អ្នកគ្រប់គ្រង",
+  BRANCH_LEADER: "ប្រធានសាខា",
+  SECRETARY: "លេខាធិការ",
+  MEMBER: "សមាជិក",
+};
+
+const ACCOUNT_STATUS_LABELS = {
+  ACTIVE: "សកម្ម",
+  INACTIVE: "អសកម្ម",
+  PENDING: "កំពុងរង់ចាំសកម្មភាព",
+  SUSPENDED: "បានផ្អាក",
+  LOCKED: "បានចាក់សោ",
+};
+
+function getRoleLabel(role) {
+  const normalized = String(role || "").trim().toUpperCase();
+  return ROLE_LABELS[normalized] || (role ? String(role) : "-");
+}
+
+function getStatusLabel(status) {
+  const normalized = String(status || "").trim().toUpperCase();
+  return ACCOUNT_STATUS_LABELS[normalized] || (status ? String(status) : "-");
+}
+
+/* =========================================================
+ * REQUEST HELPER
+ * ========================================================= */
+
+async function requestJson(path, options = {}) {
+  const isFormData = options.body instanceof FormData;
+
+  const headers = {
+    Accept: "application/json",
+    ...(options.headers || {}),
+  };
+
+  if (options.body && !isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const response = await fetch(`/api${path}`, {
+    ...options,
+    headers,
+    cache: "no-store",
+  });
+
+  const text = await response.text();
+  let body = null;
+
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = text;
+    }
+  }
+
+  if (!response.ok) {
+    /*
+     * body can fall back to a raw string above when the response
+     * wasn't valid JSON (e.g. an HTML error page). Never surface
+     * that raw markup to the user — only use it as the error
+     * message when it's short, plain text.
+     */
+    const isUsablePlainText =
+      typeof body === "string" && body.length > 0 && body.length < 300 && !/[<>]/.test(body);
+
+    const message =
+      typeof body === "object" && body !== null
+        ? body?.message || body?.detail || body?.error || body?.title
+        : isUsablePlainText
+          ? body
+          : null;
+
+    throw new Error(message || `Request failed with status ${response.status}`);
+  }
+
+  return body;
+}
+
+/* =========================================================
+ * LOOKUP NORMALIZER (same shape as the Member module's version,
+ * so the same lookup endpoints behave identically here)
+ * ========================================================= */
+
+function normalizeLookup(data, { valueMode = "id" } = {}) {
   const list = Array.isArray(data)
     ? data
     : Array.isArray(data?.data)
@@ -46,813 +158,596 @@ function normalizeLookupOptions(data) {
         : [];
 
   return list
-    .map((item) => ({
-      value:
-        item?.value != null
-          ? String(item.value)
-          : item?.id != null
-            ? String(item.id)
-            : "",
-      label:
+    .map((item) => {
+      let rawValue = "";
+
+      if (valueMode === "code") {
+        rawValue = item?.code ?? item?.value ?? item?.id ?? "";
+      } else if (valueMode === "value") {
+        rawValue = item?.value ?? item?.code ?? item?.id ?? "";
+      } else {
+        rawValue = item?.id ?? item?.value ?? item?.code ?? "";
+      }
+
+      const label =
         item?.labelKm ||
         item?.label_km ||
+        item?.nameKm ||
+        item?.name_km ||
         item?.labelEn ||
         item?.label_en ||
+        item?.nameEn ||
+        item?.name_en ||
         item?.code ||
-        "",
-    }))
+        "";
+
+      return {
+        label,
+        value: rawValue !== null && rawValue !== undefined ? String(rawValue) : "",
+      };
+    })
     .filter((option) => option.value !== "" && option.label !== "");
 }
 
-const ALLOWED_FILE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-];
+/* =========================================================
+ * PERSONAL INFO NORMALIZER
+ *
+ * `preserve` carries fields the my-account personal-info endpoint
+ * cannot return (joined date, addresses used to also come through
+ * here in some builds) so a save never silently wipes them — see
+ * the note above handleSave.
+ * ========================================================= */
 
-async function readJson(response) {
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body.message || body.error || "Something went wrong");
-  return body.data || body;
+function normalizePersonalInfo(data, preserve = {}) {
+  return {
+    ...EMPTY_FORM,
+
+    full_name_km: data?.full_name_km || data?.fullNameKm || "",
+    full_name_en: data?.full_name_en || data?.fullNameEn || "",
+
+    gender: data?.gender ? String(data.gender) : "",
+
+    date_of_birth: data?.date_of_birth || data?.dateOfBirth || "",
+
+    email: data?.email || "",
+    phone: data?.phone || "",
+
+    religion_id:
+      data?.religion_id != null ? String(data.religion_id) : "",
+
+    ethnicity_id:
+      data?.ethnicity_id != null ? String(data.ethnicity_id) : "",
+
+    nationality_id:
+      data?.nationality_id != null ? String(data.nationality_id) : "",
+
+    member_level_id:
+      data?.member_level_id != null ? String(data.member_level_id) : "",
+
+    tshirt_size: data?.tshirt_size || "",
+
+    current_address:
+      data?.current_address ?? preserve.currentAddress ?? "",
+
+    permanent_address:
+      data?.permanent_address ?? preserve.permanentAddress ?? "",
+
+    branch_name_km: data?.branch_name_km || data?.branchNameKm || "-",
+
+    /*
+     * Staff (mainly secretaries) can be assigned to more than one
+     * branch via branch_staff — shown read-only alongside the
+     * primary branch above.
+     */
+    assigned_branches: Array.isArray(data?.assigned_branches)
+      ? data.assigned_branches
+      : [],
+
+    account_role: data?.account_role
+      ? String(data.account_role)
+      : "",
+
+    account_status: data?.account_status
+      ? String(data.account_status)
+      : "",
+
+    has_account: Boolean(data?.has_account ?? data?.hasAccount),
+
+    cv_file_id: data?.cv_file_id ?? data?.cvFileId ?? null,
+  };
 }
 
-const ROLE_LABELS = {
-  admin: "អ្នកគ្រប់គ្រង",
-  branch_leader: "ប្រធានសាខា",
-  secretary: "លេខាធិការ",
-  member: "សមាជិក",
-
-  អ្នកគ្រប់គ្រង: "អ្នកគ្រប់គ្រង",
-  ប្រធានសាខា: "ប្រធានសាខា",
-  លេខាធិការ: "លេខាធិការ",
-  សមាជិក: "សមាជិក",
-};
-
-function getRoleLabel(role) {
-  const normalizedRole =
-    String(role || "").trim();
-
-  return (
-    ROLE_LABELS[normalizedRole] ||
-    normalizedRole ||
-    "-"
-  );
-}
-
-function formatFileSize(size) {
-  if (!size) {
-    return "0 KB";
-  }
-
-  const sizeInMb =
-    size / 1024 / 1024;
-
-  if (sizeInMb >= 1) {
-    return `${sizeInMb.toFixed(
-      2,
-    )} MB`;
-  }
-
-  return `${(
-    size / 1024
-  ).toFixed(1)} KB`;
-}
+/* =========================================================
+ * PAGE
+ * ========================================================= */
 
 export default function MyAccountPersonalPage() {
   const fileRef = useRef(null);
 
-  const {
-    member,
-    loading,
-    error,
-    refetch,
-  } = useCurrentMember();
+  /*
+   * useCurrentMember() still backs the page header/sidebar in
+   * layout.js. Here it is only used for `member.joinedAt` — the
+   * my-account personal-info endpoint accepts a joined_on field on
+   * save but never returns one on read (the Member module's own
+   * personal-info tab does not expose a joined-date field either,
+   * so there is nothing to show/edit here) — without threading the
+   * value through from this broader endpoint, every save would
+   * silently blank out the member's joined date.
+   */
+  const { member } = useCurrentMember();
 
-  const [form, setForm] =
-    useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
 
-  const [cvFile, setCvFile] =
-    useState(null);
+  const [cvFile, setCvFile] = useState(null);
+  const [fileName, setFileName] = useState("");
+  const [cvPreviewUrl, setCvPreviewUrl] = useState("");
 
-  const [fileError, setFileError] =
-    useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const [saving, setSaving] =
-    useState(false);
+  const [genders, setGenders] = useState([]);
+  const [nationalities, setNationalities] = useState([]);
+  const [ethnicities, setEthnicities] = useState([]);
+  const [religions, setReligions] = useState([]);
+  const [levels, setLevels] = useState([]);
+  const [tshirtSizes, setTshirtSizes] = useState(TSHIRT_SIZE_OPTIONS);
 
-  /* Lookup options for the editable dropdown fields, matching the
-   * same options the Member module's personal-info tab uses so the
-   * two forms behave the same way. */
-  const [nationalityOptions, setNationalityOptions] = useState([]);
-  const [ethnicityOptions, setEthnicityOptions] = useState([]);
-  const [religionOptions, setReligionOptions] = useState([]);
-  const [memberLevelOptions, setMemberLevelOptions] = useState([]);
-  const [lookupsLoading, setLookupsLoading] = useState(true);
+  /* =======================================================
+   * LOAD PERSONAL INFO — a dedicated fetch/refetch, not routed
+   * through useCurrentMember(), which has no refetch() at all
+   * (calling one here used to throw after every save and made
+   * every save look like it failed even when it had succeeded).
+   * ======================================================= */
+
+  const loadPersonalInfo = async () => {
+    try {
+      setError("");
+
+      const data = await requestJson("/backend/my-account/personal-info");
+
+      const normalized = normalizePersonalInfo(data, {
+        currentAddress: member?.currentAddress,
+        permanentAddress: member?.permanentAddress,
+      });
+
+      setForm(normalized);
+
+      if (normalized.cv_file_id) {
+        setFileName(`CV #${normalized.cv_file_id}`);
+      } else {
+        setFileName("");
+      }
+    } catch (loadError) {
+      console.error("Cannot load my-account personal info:", loadError);
+      setError(loadError.message || "មិនអាចទាញយកព័ត៌មានផ្ទាល់ខ្លួនបានទេ។");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    loadPersonalInfo();
+    // Only re-run when the linked member's address snapshot first
+    // becomes available, so the initial load can preserve it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member?.currentAddress, member?.permanentAddress]);
+
+  /* =======================================================
+   * LOAD LOOKUPS
+   * ======================================================= */
 
   useEffect(() => {
     let active = true;
 
-    async function loadLookups() {
-      setLookupsLoading(true);
-      const [nationalities, ethnicities, religions, memberLevels] = await Promise.all([
-        fetch("/api/lookups/nationalities", { credentials: "include", cache: "no-store" })
-          .then((response) => (response.ok ? response.json() : []))
-          .catch(() => []),
-        fetch("/api/lookups/ethnicities", { credentials: "include", cache: "no-store" })
-          .then((response) => (response.ok ? response.json() : []))
-          .catch(() => []),
-        fetch("/api/lookups/religions", { credentials: "include", cache: "no-store" })
-          .then((response) => (response.ok ? response.json() : []))
-          .catch(() => []),
-        fetch("/api/lookups/member-levels", { credentials: "include", cache: "no-store" })
-          .then((response) => (response.ok ? response.json() : []))
-          .catch(() => []),
-      ]);
+    async function loadLookup(path, setter, options) {
+      try {
+        const data = await requestJson(path);
+        if (!active) return;
 
-      if (!active) return;
-
-      setNationalityOptions(normalizeLookupOptions(nationalities));
-      setEthnicityOptions(normalizeLookupOptions(ethnicities));
-      setReligionOptions(normalizeLookupOptions(religions));
-      setMemberLevelOptions(normalizeLookupOptions(memberLevels));
-      setLookupsLoading(false);
+        const normalized = normalizeLookup(data, options);
+        setter(normalized.length > 0 ? normalized : options?.fallback || []);
+      } catch (lookupError) {
+        console.error(`Cannot load lookup ${path}:`, lookupError);
+        if (active) setter(options?.fallback || []);
+      }
     }
 
-    loadLookups();
+    loadLookup("/lookups/genders", setGenders, { valueMode: "code" });
+    loadLookup("/lookups/nationalities", setNationalities, { valueMode: "id" });
+    loadLookup("/lookups/ethnicities", setEthnicities, { valueMode: "id" });
+    loadLookup("/lookups/religions", setReligions, { valueMode: "id" });
+    loadLookup("/lookups/member-levels", setLevels, { valueMode: "id" });
+    loadLookup("/lookups/tshirt-sizes", setTshirtSizes, {
+      valueMode: "value",
+      fallback: TSHIRT_SIZE_OPTIONS,
+    });
 
     return () => {
       active = false;
     };
   }, []);
 
-  useEffect(() => {
-    if (!member) {
-      setForm(null);
-      return;
-    }
-
-    setForm({
-      name_kh:
-        member.name_kh || "",
-
-      name_en:
-        member.name_en || "",
-
-      branch:
-        member.branch || "",
-
-      gender:
-        member.gender || "",
-
-      email:
-        member.email || "",
-
-      phone:
-        member.phone || "",
-
-      date_of_birth:
-        member.date_of_birth || "",
-
-      nationalityId:
-        member.nationalityId != null
-          ? String(member.nationalityId)
-          : "",
-
-      ethnicityId:
-        member.ethnicityId != null
-          ? String(member.ethnicityId)
-          : "",
-
-      role: getRoleLabel(
-        member.role,
-      ),
-
-      levelId:
-        member.levelId != null
-          ? String(member.levelId)
-          : "",
-
-      shirtSize:
-        member.shirtSize && member.shirtSize !== "-"
-          ? member.shirtSize
-          : "",
-
-      status:
-        member.status || "",
-
-      religionId:
-        member.religionId != null
-          ? String(member.religionId)
-          : "",
-
-      joinedAt:
-        member.joinedAt ||
-        member.joined_at ||
-        "",
-    });
-
-    setCvFile(null);
-    setFileError("");
-
-    if (fileRef.current) {
-      fileRef.current.value = "";
-    }
-  }, [member]);
-
-  /* Object URLs must be created/revoked deliberately, otherwise every
-   * render leaks a new blob URL. When no new file is picked yet, fall
-   * back to the member's already-saved CV so it can still be viewed. */
-  const [cvObjectUrl, setCvObjectUrl] = useState("");
-
-  useEffect(() => {
-    if (!cvFile) {
-      setCvObjectUrl("");
-      return undefined;
-    }
-
-    const objectUrl = URL.createObjectURL(cvFile);
-    setCvObjectUrl(objectUrl);
-
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [cvFile]);
-
-  const cvViewUrl =
-    cvObjectUrl ||
-    (member?.cvFileId ? `/api/files/${member.cvFileId}/content` : "");
+  /* =======================================================
+   * FIELD CHANGE
+   * ======================================================= */
 
   const handleChange = (field) => (event) => {
-  setForm((previousForm) => ({
-    ...previousForm,
-    [field]: event.target.value,
-  }));
-};
+    const value = event.target.value;
 
-  const handleFileChange = (
-    event,
-  ) => {
-    const selectedFile =
-      event.target.files?.[0];
+    setError("");
+    setSuccess("");
 
-    setFileError("");
-
-    if (!selectedFile) {
-      return;
-    }
-
-    if (
-      !ALLOWED_FILE_TYPES.includes(
-        selectedFile.type,
-      )
-    ) {
-      setFileError(
-        "សូមជ្រើសរើសឯកសារ JPG, PNG, PDF, DOC ឬ DOCX។",
-      );
-
-      event.target.value = "";
-      setCvFile(null);
-
-      return;
-    }
-
-    if (
-      selectedFile.size >
-      MAX_FILE_SIZE
-    ) {
-      setFileError(
-        "ទំហំឯកសារមិនត្រូវលើស 5MB។",
-      );
-
-      event.target.value = "";
-      setCvFile(null);
-
-      return;
-    }
-
-    setCvFile(selectedFile);
+    setForm((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
   };
 
-  const removeFile = () => {
-    setCvFile(null);
-    setFileError("");
+  /* =======================================================
+   * CV FILE
+   * ======================================================= */
 
-    if (fileRef.current) {
-      fileRef.current.value = "";
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setError("");
+    setSuccess("");
+
+    const allowedExtensions = ["pdf", "docx", "jpg", "jpeg", "png"];
+    const extension = file.name.split(".").pop()?.toLowerCase();
+
+    if (!allowedExtensions.includes(extension)) {
+      setError("អនុញ្ញាតតែ PDF, DOCX, JPG, JPEG និង PNG ប៉ុណ្ណោះ។");
+      event.target.value = "";
+      return;
     }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("ទំហំឯកសារមិនត្រូវលើស 5MB។");
+      event.target.value = "";
+      return;
+    }
+
+    setCvFile(file);
+
+    setCvPreviewUrl((previous) => {
+      if (previous?.startsWith("blob:")) URL.revokeObjectURL(previous);
+      return URL.createObjectURL(file);
+    });
+
+    setFileName(file.name);
   };
+
+  /* =======================================================
+   * SAVE PERSONAL INFO
+   * ======================================================= */
 
   const handleSave = async () => {
-  setSaving(true);
-
-  try {
-    const formData = new FormData();
-
-    formData.append(
-      "memberId",
-      String(member.id),
-    );
-
-    if (cvFile) {
-      formData.append("cv", cvFile);
+    if (!form.full_name_km.trim()) {
+      setError("សូមបញ្ចូលឈ្មោះជាភាសាខ្មែរ។");
+      return;
     }
 
-    // TODO:
-    // Replace this with your backend API later.
+    if (!form.gender) {
+      setError("សូមជ្រើសរើសភេទ។");
+      return;
+    }
 
-    alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
-  } catch (error) {
-    console.error(error);
-
-    alert("រក្សាទុកព័ត៌មានមិនបានជោគជ័យ");
-  } finally {
-    setSaving(false);
-  }
-};
-
-  const handleRealSave = async () => {
-    setSaving(true);
     try {
-      /*
-       * The dropdown fields below are now bound directly to lookup
-       * IDs (like the Member module's personal-info tab), so there is
-       * no more guessing a label back into an ID here — that guess
-       * was the reason "save" used to fail whenever the typed text
-       * did not exactly match a lookup label.
-       */
-      await readJson(await fetch("/api/backend/my-account/personal-info", {
+      setSaving(true);
+      setError("");
+      setSuccess("");
+
+      const payload = {
+        full_name_km: form.full_name_km.trim(),
+        full_name_en: form.full_name_en.trim() || null,
+        gender: form.gender,
+        date_of_birth: form.date_of_birth || null,
+        email: form.email.trim() || null,
+        phone: form.phone.trim() || null,
+        religion_id: form.religion_id ? Number(form.religion_id) : null,
+        ethnicity_id: form.ethnicity_id ? Number(form.ethnicity_id) : null,
+        nationality_id: form.nationality_id ? Number(form.nationality_id) : null,
+        member_level_id: form.member_level_id ? Number(form.member_level_id) : null,
+        tshirt_size: form.tshirt_size || null,
+        current_address: form.current_address.trim() || null,
+        permanent_address: form.permanent_address.trim() || null,
+
+        /*
+         * Not shown as a field on this tab (the Member module's own
+         * personal-info tab does not expose one either), but the
+         * backend always overwrites joined_on with whatever is sent
+         * here — passing the value straight through from the wider
+         * member profile keeps it from being silently cleared.
+         */
+        joined_on:
+          member?.joinedAt && member.joinedAt !== "-" ? member.joinedAt : null,
+      };
+
+      const updated = await requestJson("/backend/my-account/personal-info", {
         method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: form.phone === "-" ? null : form.phone,
-          email: form.email === "-" ? null : form.email,
-          full_name_km: form.name_kh,
-          full_name_en: form.name_en === "-" ? null : form.name_en,
-          gender: form.gender || null,
-          nationality_id: form.nationalityId ? Number(form.nationalityId) : null,
-          religion_id: form.religionId ? Number(form.religionId) : null,
-          ethnicity_id: form.ethnicityId ? Number(form.ethnicityId) : null,
-          date_of_birth: form.date_of_birth || null,
-          current_address: form.currentAddress || member.currentAddress || null,
-          permanent_address: form.permanentAddress || member.permanentAddress || null,
-          tshirt_size: form.shirtSize || null,
-          member_level_id: form.levelId ? Number(form.levelId) : null,
-          joined_on: form.joinedAt === "-" ? null : form.joinedAt,
-        }),
-      }));
+        body: JSON.stringify(payload),
+      });
 
       if (cvFile) {
-        const upload = new FormData();
-        upload.append("file", cvFile);
-        await readJson(await fetch("/api/backend/my-account/personal-info/cv", {
+        const formData = new FormData();
+        formData.append("file", cvFile);
+
+        const cvResponse = await requestJson("/backend/my-account/personal-info/cv", {
           method: "PUT",
-          credentials: "include",
-          body: upload,
-        }));
+          body: formData,
+        });
+
+        setCvFile(null);
+        if (fileRef.current) fileRef.current.value = "";
+
+        const normalized = normalizePersonalInfo(cvResponse, {
+          currentAddress: member?.currentAddress,
+          permanentAddress: member?.permanentAddress,
+        });
+        setForm(normalized);
+        if (normalized.cv_file_id) setFileName(`CV #${normalized.cv_file_id}`);
+      } else {
+        const normalized = normalizePersonalInfo(updated, {
+          currentAddress: member?.currentAddress,
+          permanentAddress: member?.permanentAddress,
+        });
+        setForm(normalized);
       }
 
-      setCvFile(null);
-      if (fileRef.current) fileRef.current.value = "";
-
-      /*
-       * Without this, the form kept showing the pre-save values until
-       * a manual page reload, because useCurrentMember() only fetches
-       * once on mount and this component never told it about the new
-       * data. Re-fetching here updates `member`, which the effect
-       * above already re-derives `form` from.
-       */
-      await refetch();
-
-      alert("Saved successfully");
+      setSuccess("រក្សាទុកព័ត៌មានបានជោគជ័យ។");
     } catch (saveError) {
-      console.error(saveError);
-      alert(saveError.message || "Unable to save My Account information");
+      console.error("Cannot save my-account personal info:", saveError);
+      setError(saveError.message || "មិនអាចរក្សាទុកព័ត៌មានបានទេ។");
     } finally {
       setSaving(false);
     }
   };
 
-  if (error) {
+  /* =======================================================
+   * LOADING
+   * ======================================================= */
+
+  if (loading) {
     return (
-      <div
-        className="
-          rounded-xl
-          border
-          border-red-200
-          bg-white
-          p-6
-        "
-      >
-        <p className="text-sm text-red-500">
-          {error}
-        </p>
+      <div className="flex min-h-[300px] items-center justify-center">
+        <p className="text-sm text-gray-500">កំពុងទាញយកព័ត៌មានផ្ទាល់ខ្លួន...</p>
       </div>
     );
   }
 
-  if (!member || !form) {
-    return (
-      <div
-        className="
-          rounded-xl
-          border
-          border-red-200
-          bg-white
-          p-6
-        "
-      >
-        <p className="text-sm text-red-500">
-          គណនីនេះមិនទាន់ភ្ជាប់ជាមួយព័ត៌មានសមាជិកទេ
-        </p>
-      </div>
-    );
-  }
+  /*
+   * Every branch this account is tied to — the primary branch plus
+   * any additional branch_staff coverage — deduped into one list of
+   * names for the read-only chips below.
+   */
+  const branchDisplayList = Array.from(
+    new Set(
+      [
+        form.branch_name_km && form.branch_name_km !== "-"
+          ? form.branch_name_km
+          : null,
+        ...form.assigned_branches.map(
+          (assignedBranch) =>
+            assignedBranch.name_km || assignedBranch.name_en || null,
+        ),
+      ].filter(Boolean),
+    ),
+  );
+
+  /* =======================================================
+   * UI
+   * ======================================================= */
 
   return (
     <div className="space-y-4">
-      <div
-        className="
-          rounded-xl
-          border
-          border-gray-200
-          bg-white
-          p-4
-          sm:p-5
-          lg:p-6
-        "
-      >
-        <h2 className="text-lg font-bold text-primary">
-          ព័ត៌មានផ្ទាល់ខ្លួន
-        </h2>
+      <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5 lg:p-6">
+        <h2 className="text-lg font-bold text-primary">ព័ត៌មានផ្ទាល់ខ្លួន</h2>
 
-        <div
-          className="
-            mt-6
-            grid
-            grid-cols-1
-            gap-6
-            xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]
-          "
-        >
-          {/* Read-only member information */}
+        <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+          {/* FORM */}
 
-          <div
-  className="
-    grid
-    grid-cols-1
-    gap-5
-    md:grid-cols-2
-  "
->
-  {/* Read only */}
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <BoxFill
+              label="ឈ្មោះជាភាសាខ្មែរ"
+              value={form.full_name_km}
+              onChange={handleChange("full_name_km")}
+              placeholder="បញ្ចូលឈ្មោះជាភាសាខ្មែរ"
+            />
 
-  <BoxFill
-    label="ឈ្មោះជាភាសាខ្មែរ"
-    name="name_kh"
-    value={form.name_kh || "-"}
-    onChange={handleChange("name_kh")}
-  />
+            <BoxFill
+              label="ឈ្មោះជាអក្សរឡាតាំង"
+              value={form.full_name_en}
+              onChange={handleChange("full_name_en")}
+              placeholder="បញ្ចូលឈ្មោះជាអក្សរឡាតាំង"
+            />
 
-  <BoxFill
-    label="ឈ្មោះជាអក្សរឡាតាំង"
-    name="name_en"
-    value={form.name_en || "-"}
-    onChange={handleChange("name_en")}
-  />
+            <FormSelect
+              label="ភេទ"
+              value={form.gender}
+              onChange={handleChange("gender")}
+              placeholder="ជ្រើសរើសភេទ"
+              options={genders}
+            />
 
-  {/* Editable */}
+            <FormDate
+              label="ថ្ងៃខែឆ្នាំកំណើត"
+              name="date_of_birth"
+              value={form.date_of_birth}
+              onChange={handleChange("date_of_birth")}
+            />
 
-  <FormSelect
-    label="ភេទ"
-    name="gender"
-    value={form.gender || ""}
-    placeholder="ជ្រើសរើសភេទ"
-    onChange={handleChange("gender")}
-    options={GENDER_OPTIONS}
-  />
+            <BoxFill
+              label="អ៊ីមែល"
+              type="email"
+              value={form.email}
+              onChange={handleChange("email")}
+              placeholder="បញ្ចូលអ៊ីមែល"
+            />
 
-  <BoxFill
-    label="ថ្ងៃខែឆ្នាំកំណើត"
-    name="date_of_birth"
-    type="date"
-    value={form.date_of_birth || ""}
-    onChange={handleChange("date_of_birth")}
-  />
+            <BoxFill
+              label="លេខទូរស័ព្ទ"
+              type="tel"
+              value={form.phone}
+              onChange={handleChange("phone")}
+              placeholder="បញ្ចូលលេខទូរស័ព្ទ"
+            />
 
-  {/* Read only */}
+            <FormSelect
+              label="សញ្ជាតិ"
+              value={form.nationality_id}
+              onChange={handleChange("nationality_id")}
+              placeholder="ជ្រើសរើសសញ្ជាតិ"
+              options={nationalities}
+            />
 
-  <BoxFill
-    label="អ៊ីមែល"
-    name="email"
-    type="email"
-    value={form.email || "-"}
-    onChange={handleChange("email")}
-  />
+            <FormSelect
+              label="ជនជាតិ"
+              value={form.ethnicity_id}
+              onChange={handleChange("ethnicity_id")}
+              placeholder="ជ្រើសរើសជនជាតិ"
+              options={ethnicities}
+            />
 
-  <BoxFill
-    label="លេខទូរស័ព្ទ"
-    name="phone"
-    type="tel"
-    value={form.phone || "-"}
-    onChange={handleChange("phone")}
-  />
+            <FormSelect
+              label="សាសនា"
+              value={form.religion_id}
+              onChange={handleChange("religion_id")}
+              placeholder="ជ្រើសរើសសាសនា"
+              options={religions}
+            />
 
-  {/* Editable */}
+            {/*
+              BRANCH — read-only; only staff can move a member
+              between branches. Shows every branch this account is
+              tied to (primary + any additional branch_staff
+              coverage) as chips in one field instead of a separate
+              "additional branches" row.
+            */}
+            <div className="min-w-0">
+              <p className="mb-2 text-sm font-semibold text-text-primary">
+                សាខា
+              </p>
 
-  <FormSelect
-    label="ជនជាតិ"
-    name="ethnicityId"
-    value={form.ethnicityId || ""}
-    placeholder="ជ្រើសរើសជនជាតិ"
-    onChange={handleChange("ethnicityId")}
-    options={ethnicityOptions}
-    loading={lookupsLoading}
-  />
+              <div className="flex min-h-[34px] flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-gray-100 px-3 py-1.5">
+                {branchDisplayList.length > 0 ? (
+                  branchDisplayList.map((name) => (
+                    <span
+                      key={name}
+                      className="inline-flex items-center rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-sm text-gray-600"
+                    >
+                      {name}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-sm text-gray-400">-</span>
+                )}
+              </div>
+            </div>
 
-  <FormSelect
-    label="សញ្ជាតិ"
-    name="nationalityId"
-    value={form.nationalityId || ""}
-    placeholder="ជ្រើសរើសសញ្ជាតិ"
-    onChange={handleChange("nationalityId")}
-    options={nationalityOptions}
-    loading={lookupsLoading}
-  />
+            {/* ROLE — read-only; only staff can change an account's role */}
+            <BoxFill
+              label="តួនាទី"
+              value={form.has_account ? getRoleLabel(form.account_role) : "-"}
+              readOnly
+            />
 
-  <FormSelect
-    label="សាសនា"
-    name="religionId"
-    value={form.religionId || ""}
-    placeholder="ជ្រើសរើសសាសនា"
-    onChange={handleChange("religionId")}
-    options={religionOptions}
-    loading={lookupsLoading}
-  />
+            <FormSelect
+              label="កម្រិតសមាជិក(កាំ)"
+              value={form.member_level_id}
+              onChange={handleChange("member_level_id")}
+              placeholder="ជ្រើសរើសកម្រិតសមាជិក"
+              options={levels}
+            />
 
-  {/* Read only */}
+            <FormSelect
+              label="ទំហំអាវ"
+              value={form.tshirt_size}
+              onChange={handleChange("tshirt_size")}
+              placeholder="ជ្រើសរើសទំហំអាវ"
+              options={tshirtSizes}
+            />
 
-  <BoxFill
-    label="ថ្ងៃខែឆ្នាំចូលរួម"
-    name="joinedAt"
-    value={form.joinedAt || "-"}
-    type="date"
-    onChange={handleChange("joinedAt")}
-  />
+            {/* ACCOUNT STATUS — read-only; only staff can enable/disable an account */}
+            <BoxFill
+              label="ស្ថានភាព"
+              value={form.has_account ? getStatusLabel(form.account_status) : "-"}
+              readOnly
+            />
+          </div>
 
-  <BoxFill
-    label="សាខា"
-    name="branch"
-    value={form.branch || "-"}
-    readOnly
-  />
-
-  <BoxFill
-    label="តួនាទី"
-    name="role"
-    value={form.role || "-"}
-    readOnly
-  />
-
-  <FormSelect
-    label="កម្រិតសមាជិក (កាំ)"
-    name="levelId"
-    value={form.levelId || ""}
-    placeholder="ជ្រើសរើសកម្រិតសមាជិក"
-    onChange={handleChange("levelId")}
-    options={memberLevelOptions}
-    loading={lookupsLoading}
-  />
-
-  {/* Editable */}
-
-  <FormSelect
-    label="ទំហំអាវ"
-    name="shirtSize"
-    value={form.shirtSize || ""}
-    placeholder="ជ្រើសរើសទំហំអាវ"
-    onChange={handleChange("shirtSize")}
-    options={TSHIRT_SIZE_OPTIONS}
-  />
-
-  {/* Read only */}
-
-  <BoxFill
-    label="ស្ថានភាព"
-    name="status"
-    value={form.status || "-"}
-    readOnly
-  />
-</div>
-
-          {/* CV upload remains editable */}
+          {/* CV */}
 
           <div>
-            <label
-              className="
-                mb-2
-                block
-                text-sm
-                font-semibold
-                text-text-primary
-              "
-            >
+            <label className="mb-2 block text-sm font-semibold text-text-primary">
               បញ្ចូល CV
             </label>
 
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-              className="hidden"
-              onChange={
-                handleFileChange
-              }
-            />
+            <div className="flex min-h-[190px] w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 text-center">
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf,.docx"
+                className="hidden"
+                onChange={handleFileChange}
+              />
 
-            {!cvFile && !member?.cvFileId ? (
+              {fileName && (
+                <div className="h-[260px] w-full overflow-hidden rounded-lg border border-gray-200 bg-white">
+                  {/\.(png|jpe?g)$/i.test(fileName) ? (
+                    <img
+                      src={cvPreviewUrl || `/api/files/${form.cv_file_id}/content`}
+                      alt={fileName}
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <iframe
+                      src={`${cvPreviewUrl || `/api/files/${form.cv_file_id}/content`}#toolbar=0&view=FitH`}
+                      title={fileName}
+                      className="h-full w-full border-0"
+                    />
+                  )}
+                </div>
+              )}
+
+              {!fileName && <UploadCloud size={30} className="text-gray-400" />}
+
               <button
                 type="button"
-                onClick={() =>
-                  fileRef.current?.click()
-                }
-                className="
-                  flex
-                  min-h-[190px]
-                  w-full
-                  flex-col
-                  items-center
-                  justify-center
-                  rounded-xl
-                  border-2
-                  border-dashed
-                  border-gray-200
-                  bg-gray-50
-                  px-4
-                  text-center
-                  transition
-                  hover:border-primary/40
-                  hover:bg-gray-100
-                "
+                onClick={() => fileRef.current?.click()}
+                className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
               >
-                <div
-                  className="
-                    mb-3
-                    flex
-                    h-11
-                    w-11
-                    items-center
-                    justify-center
-                    rounded-full
-                    bg-gray-100
-                  "
-                >
-                  <UploadCloud
-                    size={23}
-                    className="text-gray-400"
-                  />
-                </div>
-
-                <p className="text-sm font-semibold text-primary">
-                  បញ្ចូលឯកសារ
-                </p>
-
-                <p className="mt-2 text-xs text-gray-400">
-                  JPG, DOCX, PDF, PNG
-                  (មិនលើស 5MB)
-                </p>
+                {fileName ? "ជំនួស CV" : "បញ្ចូលឯកសារ"}
               </button>
-            ) : (
-              <div
-                className="
-                  relative
-                  flex
-                  min-h-[190px]
-                  w-full
-                  flex-col
-                  items-center
-                  justify-center
-                  rounded-xl
-                  border
-                  border-gray-200
-                  bg-gray-50
-                  px-6
-                  text-center
-                "
-              >
-                {cvFile && (
-                  <button
-                    type="button"
-                    onClick={removeFile}
-                    aria-label="លុបឯកសារ"
-                    className="
-                      absolute
-                      right-3
-                      top-3
-                      flex
-                      h-8
-                      w-8
-                      items-center
-                      justify-center
-                      rounded-full
-                      bg-white
-                      text-red-500
-                      shadow-sm
-                      transition
-                      hover:bg-red-50
-                    "
-                  >
-                    <X size={17} />
-                  </button>
-                )}
 
-                <div
-                  className="
-                    mb-3
-                    flex
-                    h-12
-                    w-12
-                    items-center
-                    justify-center
-                    rounded-full
-                    bg-secondary-light
-                  "
-                >
-                  <FileText
-                    size={24}
-                    className="text-secondary"
-                  />
-                </div>
-
-                <p
-                  className="
-                    max-w-[240px]
-                    truncate
-                    text-sm
-                    font-semibold
-                    text-text-primary
-                  "
-                  title={cvFile ? cvFile.name : "CV"}
-                >
-                  {cvFile ? cvFile.name : "CV"}
-                </p>
-
-                {cvFile && (
-                  <p className="mt-1 text-xs text-gray-400">
-                    {formatFileSize(
-                      cvFile.size,
-                    )}
-                  </p>
-                )}
-
-                <div className="mt-3 flex items-center gap-4">
-                  {cvViewUrl && (
-                    <a
-                      href={cvViewUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs font-semibold text-primary hover:underline"
-                    >
-                      មើលឯកសារ
-                    </a>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      fileRef.current?.click()
-                    }
-                    className="
-                      text-xs
-                      font-semibold
-                      text-primary
-                      hover:underline
-                    "
-                  >
-                    ផ្លាស់ប្តូរឯកសារ
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {fileError && (
-              <p className="mt-2 text-xs font-medium text-red-500">
-                {fileError}
+              <p className="mt-2 max-w-full truncate text-xs text-gray-500" title={fileName}>
+                {fileName || "JPG, JPEG, DOCX, PDF, PNG (មិនលើស 5MB)"}
               </p>
-            )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Only the CV can be saved */}
+      {error && (
+        <div className="rounded-lg bg-error-bg px-4 py-3">
+          <p className="text-sm font-medium text-error">{error}</p>
+        </div>
+      )}
+
+      {success && (
+        <div className="rounded-lg bg-success-bg px-4 py-3">
+          <p className="text-sm font-medium text-success">{success}</p>
+        </div>
+      )}
 
       <div className="flex justify-end">
-        <SaveButton
-          onClick={handleRealSave}
-          disabled={
-            saving || !member.isLinkedMember
-          }
-        />
+        <SaveButton onClick={handleSave} disabled={saving}>
+          {saving ? "កំពុងរក្សាទុក..." : "រក្សាទុក"}
+        </SaveButton>
       </div>
     </div>
   );

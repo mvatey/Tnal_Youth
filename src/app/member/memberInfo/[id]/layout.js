@@ -110,6 +110,16 @@ export default function MemberInfoLayout({
     setMember,
   ] = useState(null);
 
+  /*
+   * Staff (mainly secretaries) can be assigned to more than one
+   * branch. The profile card's "សាខា" field shows this alongside
+   * the member's primary branch — see MemberInfoCard.
+   */
+  const [
+    assignedBranches,
+    setAssignedBranches,
+  ] = useState([]);
+
   const [
     activitySummary,
     setActivitySummary,
@@ -174,6 +184,7 @@ export default function MemberInfoLayout({
   useEffect(() => {
     if (!id) {
       setMember(null);
+      setAssignedBranches([]);
       setLoading(false);
 
       return undefined;
@@ -201,6 +212,32 @@ export default function MemberInfoLayout({
         setMember(
           data?.member || data,
         );
+
+        /*
+         * Best-effort: pulls the member's full assigned-branch
+         * list (branch_staff) for the profile card's "+N" badge.
+         * A failure here shouldn't block the page or show an
+         * error — the card just falls back to the primary branch.
+         */
+        try {
+          const personalInfo =
+            await fetchJson(
+              `/members/${id}/personal-info`,
+              controller.signal,
+            );
+
+          setAssignedBranches(
+            personalInfo?.assigned_branches ||
+              [],
+          );
+        } catch (assignedBranchesError) {
+          if (
+            assignedBranchesError.name !==
+            "AbortError"
+          ) {
+            setAssignedBranches([]);
+          }
+        }
       } catch (fetchError) {
         if (
           fetchError.name !==
@@ -212,6 +249,7 @@ export default function MemberInfoLayout({
           );
 
           setMember(null);
+          setAssignedBranches([]);
 
           setError(
             fetchError.message ||
@@ -585,6 +623,7 @@ export default function MemberInfoLayout({
 
       <MemberInfoCard
         member={member}
+        assignedBranches={assignedBranches}
         profileUploadEndpoint={
           `/api/backend/members/${member.id}/profile-photo`
         }

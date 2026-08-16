@@ -436,6 +436,57 @@ function getBranchLabel(
   );
 }
 
+/*
+ * Some staff (mainly secretaries) are assigned to more than one
+ * branch — see the `branch_staff` table. The member/personal-info
+ * responses expose the full list as `assigned_branches`; this reads
+ * it off either the `member` object directly or a separate
+ * `assignedBranches` prop, whichever is supplied.
+ */
+function getAssignedBranchNames(
+  assignedBranches,
+) {
+  if (!Array.isArray(assignedBranches)) {
+    return [];
+  }
+
+  return assignedBranches
+    .map(
+      (item) =>
+        item?.name_km ||
+        item?.nameKm ||
+        item?.name_en ||
+        item?.nameEn ||
+        "",
+    )
+    .filter(Boolean);
+}
+
+function formatBranchDisplay(
+  primaryLabel,
+  assignedBranches,
+) {
+  const names =
+    getAssignedBranchNames(
+      assignedBranches,
+    );
+
+  if (names.length <= 1) {
+    return {
+      text: primaryLabel,
+      title: primaryLabel,
+    };
+  }
+
+  const extraCount =
+    names.length - 1;
+
+  return {
+    text: `${primaryLabel} +${extraCount}`,
+    title: names.join(", "),
+  };
+}
+
 function getLookupLabel(value) {
   if (!value) {
     return "-";
@@ -472,6 +523,14 @@ export default function MemberInfoCard({
   allowProfileChange = true,
   profileUploadEndpoint =
     "/api/backend/my-account/profile-photo",
+  /*
+   * Full list of branches this person is actively assigned to
+   * (from branch_staff), for staff — mainly secretaries — who
+   * cover more than one branch. Optional: falls back to
+   * member?.assigned_branches / member?.assignedBranches when
+   * not passed explicitly.
+   */
+  assignedBranches,
 }) {
   const fileInputRef =
     useRef(null);
@@ -638,6 +697,17 @@ export default function MemberInfoCard({
 
   const branch =
     getBranchLabel(member);
+
+  const branchAssignments =
+    assignedBranches ??
+    member?.assigned_branches ??
+    member?.assignedBranches;
+
+  const branchDisplay =
+    formatBranchDisplay(
+      branch,
+      branchAssignments,
+    );
 
   const dateOfBirth =
     member?.date_of_birth ||
@@ -1070,7 +1140,8 @@ export default function MemberInfoCard({
             </span>
           }
           secondLabel="សាខា"
-          secondValue={branch}
+          secondValue={branchDisplay.text}
+          secondTitle={branchDisplay.title}
           secondIcon={
             <Building2 className="h-4 w-4 shrink-0" />
           }
@@ -1152,9 +1223,11 @@ export default function MemberInfoCard({
 function InfoGroup({
   firstLabel,
   firstValue,
+  firstTitle,
   firstIcon,
   secondLabel,
   secondValue,
+  secondTitle,
   secondIcon,
 }) {
   return (
@@ -1173,6 +1246,7 @@ function InfoGroup({
       <InfoItem
         label={firstLabel}
         value={firstValue}
+        title={firstTitle}
         icon={firstIcon}
       />
 
@@ -1180,6 +1254,7 @@ function InfoGroup({
         <InfoItem
           label={secondLabel}
           value={secondValue}
+          title={secondTitle}
           icon={secondIcon}
         />
       </div>
@@ -1196,8 +1271,15 @@ function InfoGroup({
 function InfoItem({
   label,
   value,
+  title,
   icon,
 }) {
+  const tooltip =
+    title ||
+    (typeof value === "string"
+      ? value
+      : "");
+
   return (
     <div className="min-w-0">
       <p
@@ -1224,12 +1306,7 @@ function InfoItem({
             text-sm
             font-semibold
           "
-          title={
-            typeof value ===
-            "string"
-              ? value
-              : ""
-          }
+          title={tooltip}
         >
           {value || "-"}
         </p>

@@ -35,6 +35,15 @@ export default function BoxFill({
         onChange,
       };
 
+  /*
+   * `disabled:` Tailwind variants only fire off the real HTML `disabled`
+   * attribute — a `readOnly` <input> never matches `:disabled`, so it kept
+   * showing the ordinary text I-beam cursor even though it can't be typed
+   * into. Compute the "locked" look in JS so readOnly fields get the same
+   * not-allowed cursor/greyed-out treatment as disabled ones.
+   */
+  const isLocked = disabled || readOnly;
+
   const baseFieldClass = `
     box-border
     h-[34px]
@@ -49,13 +58,15 @@ export default function BoxFill({
     outline-none
     transition
     focus:border-primary
-    disabled:cursor-not-allowed
-    disabled:bg-gray-100
-    disabled:opacity-60
+    ${
+      isLocked
+        ? "cursor-not-allowed bg-gray-100 opacity-60"
+        : ""
+    }
   `;
 
   return (
-    <div className={`min-w-0 ${disabled || readOnly ? "[&_label]:text-gray-400" : ""} ${className}`}>
+    <div className={`min-w-0 ${isLocked ? "[&_label]:text-gray-400" : ""} ${className}`}>
       {label && (
         <label
           htmlFor={name}
@@ -77,7 +88,10 @@ export default function BoxFill({
             id={name}
             name={name}
             {...sharedValueProps}
-            disabled={disabled}
+            /* <select> has no native readOnly — a "read-only" dropdown
+             * has to be locked via disabled so it's both non-interactive
+             * and gets the not-allowed cursor. */
+            disabled={isLocked}
             className={`
               ${baseFieldClass}
               appearance-none

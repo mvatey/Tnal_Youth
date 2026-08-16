@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import Sidebar from "@/components/navigation/sidebar";
@@ -22,6 +23,58 @@ export default function MyAccountLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const { member, loading, error } = useCurrentMember();
+
+  /*
+   * Staff (mainly secretaries) can be assigned to more than one
+   * branch. The self-service personal-info endpoint already
+   * returns the full list as `assigned_branches` — useCurrentMember()
+   * doesn't carry it, so it's fetched separately here just for the
+   * profile card's "+N" badge. Best-effort: a failure just falls
+   * back to showing the primary branch only.
+   */
+  const [assignedBranches, setAssignedBranches] = useState([]);
+
+  const memberId = member?.memberId ?? member?.id ?? null;
+
+  useEffect(() => {
+    if (!memberId) {
+      setAssignedBranches([]);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    async function loadAssignedBranches() {
+      try {
+        const response = await fetch(
+          "/api/backend/my-account/personal-info",
+          {
+            credentials: "include",
+            signal: controller.signal,
+          },
+        );
+
+        if (!response.ok) {
+          setAssignedBranches([]);
+          return;
+        }
+
+        const data = await response.json();
+
+        setAssignedBranches(data?.assigned_branches || []);
+      } catch (fetchError) {
+        if (fetchError.name !== "AbortError") {
+          setAssignedBranches([]);
+        }
+      }
+    }
+
+    loadAssignedBranches();
+
+    return () => {
+      controller.abort();
+    };
+  }, [memberId]);
 
   const isDetailsPage = pathname.startsWith("/myAcc/details");
 
@@ -105,6 +158,7 @@ export default function MyAccountLayout({ children }) {
 
               <MemberInfoCard
                 member={member}
+                assignedBranches={assignedBranches}
                 profileUploadEndpoint="/api/backend/my-account/profile-photo"
               />
 

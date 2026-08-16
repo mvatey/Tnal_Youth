@@ -81,6 +81,27 @@ function getMemberId(member) {
   );
 }
 
+function getBranchOptionValue(
+  branch,
+) {
+  return typeof branch ===
+    "string"
+    ? branch
+    : branch.id;
+}
+
+function getBranchOptionLabel(
+  branch,
+) {
+  return typeof branch ===
+    "string"
+    ? branch
+    : branch.nameKm ||
+      branch.nameEn ||
+      branch.name ||
+      `សាខា ${branch.id}`;
+}
+
 function getDefaultAvatar(
   member,
   user,
@@ -400,7 +421,8 @@ export default function Sidebar() {
 
         {/* Branch selector */}
 
-        {canSelectBranch && (
+        {canSelectBranch &&
+          branches.length > 0 && (
           <div className="mb-2 px-3">
             <div className="relative">
               <FaUniversity
@@ -415,86 +437,114 @@ export default function Sidebar() {
                 "
               />
 
-              <select
-                value={
-                  selectedBranch
-                }
-                onChange={(
-                  event,
-                ) =>
-                  setSelectedBranch(
-                    event.target
-                      .value,
-                  )
-                }
-                className="
-                  h-[38px]
-                  w-full
-                  appearance-none
-                  rounded-lg
-                  bg-white/10
-                  pl-11
-                  pr-8
-                  text-sm
-                  font-medium
-                  text-white
-                  outline-none
-                  transition
-                  hover:bg-white/15
-                "
-              >
-                <option
-                  value="all"
-                  className="text-black"
+              {branches.length > 1 ? (
+                <>
+                  <select
+                    value={
+                      selectedBranch
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      setSelectedBranch(
+                        event.target
+                          .value,
+                      )
+                    }
+                    className="
+                      h-[38px]
+                      w-full
+                      appearance-none
+                      rounded-lg
+                      bg-white/10
+                      pl-11
+                      pr-8
+                      text-sm
+                      font-medium
+                      text-white
+                      outline-none
+                      transition
+                      hover:bg-white/15
+                    "
+                  >
+                    <option
+                      value="all"
+                      className="text-black"
+                    >
+                      ជ្រើសរើសសាខា
+                    </option>
+
+                    {branches.map(
+                      (branch) => {
+                        const branchValue =
+                          getBranchOptionValue(
+                            branch,
+                          );
+
+                        const branchLabel =
+                          getBranchOptionLabel(
+                            branch,
+                          );
+
+                        return (
+                          <option
+                            key={
+                              branchValue
+                            }
+                            value={
+                              branchValue
+                            }
+                            className="text-black"
+                          >
+                            {branchLabel}
+                          </option>
+                        );
+                      },
+                    )}
+                  </select>
+
+                  <FaChevronDown
+                    size={12}
+                    className="
+                      pointer-events-none
+                      absolute
+                      right-4
+                      top-1/2
+                      -translate-y-1/2
+                      text-white/60
+                    "
+                  />
+                </>
+              ) : (
+                /*
+                 * Only one branch to be responsible for — there is
+                 * no real choice to make ("all branches" and "this
+                 * branch" are the same data), so just show its name
+                 * instead of a dropdown with a single, pointless
+                 * option.
+                 */
+                <div
+                  className="
+                    flex
+                    h-[38px]
+                    w-full
+                    items-center
+                    rounded-lg
+                    bg-white/10
+                    pl-11
+                    pr-4
+                    text-sm
+                    font-medium
+                    text-white
+                  "
                 >
-                  ជ្រើសរើសសាខា
-                </option>
-
-                {branches.map(
-                  (branch) => {
-                    const branchValue =
-                      typeof branch ===
-                      "string"
-                        ? branch
-                        : branch.id;
-
-                    const branchLabel =
-                      typeof branch ===
-                      "string"
-                        ? branch
-                        : branch.nameKm ||
-                          branch.nameEn ||
-                          branch.name ||
-                          `សាខា ${branch.id}`;
-
-                    return (
-                      <option
-                        key={
-                          branchValue
-                        }
-                        value={
-                          branchValue
-                        }
-                        className="text-black"
-                      >
-                        {branchLabel}
-                      </option>
-                    );
-                  },
-                )}
-              </select>
-
-              <FaChevronDown
-                size={12}
-                className="
-                  pointer-events-none
-                  absolute
-                  right-4
-                  top-1/2
-                  -translate-y-1/2
-                  text-white/60
-                "
-              />
+                  <span className="truncate">
+                    {getBranchOptionLabel(
+                      branches[0],
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}

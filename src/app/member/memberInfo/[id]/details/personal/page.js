@@ -15,6 +15,7 @@ import BoxFill from "@/components/forms/boxFill.js";
 import SelectArrow from "@/components/forms/SelectArrow";
 import useMemberPermissions from "@/hooks/useMemberPermissions";
 import FormDate from "@/components/forms/FormDate.js";
+import MultiSelect from "@/components/forms/multiselect.js";
 
 /* =========================================================
  * EMPTY FORM
@@ -30,12 +31,11 @@ const EMPTY_FORM = {
   phone: "",
 
   nationality_id: "",
-  nationality_text: "",
   ethnicity_id: "",
-  ethnicity_text: "",
   religion_id: "",
 
   branch_id: "",
+  assigned_branches: [],
   account_role: "",
 
   member_level_id: "",
@@ -84,6 +84,24 @@ const ACCOUNT_STATUS_LABELS = {
   PENDING: "កំពុងរង់ចាំសកម្មភាព",
   SUSPENDED: "បានផ្អាក",
   LOCKED: "បានចាក់សោ",
+};
+
+/*
+ * The /lookups/user-roles list this page fetches is scoped to
+ * whatever role the CURRENT viewer is allowed to assign (e.g. a
+ * secretary can only ever assign MEMBER), not every role that
+ * exists. So when the profile being viewed already holds a role
+ * outside that assignable set — a secretary viewing their own
+ * account, or a branch leader's account — the role <select>'s
+ * value wouldn't match any <option> and would render blank even
+ * though a role is very much set. Same fix as account status
+ * above: always inject the real current role as an extra option.
+ */
+const ROLE_LABELS = {
+  ADMIN: "អ្នកគ្រប់គ្រង",
+  BRANCH_LEADER: "ប្រធានសាខា",
+  SECRETARY: "លេខាធិការ",
+  MEMBER: "សមាជិក",
 };
 
 /* =========================================================
@@ -142,13 +160,28 @@ async function requestJson(
   }
 
   if (!response.ok) {
+    /*
+     * body can fall back to a raw string above when the
+     * response wasn't valid JSON (e.g. an HTML error page
+     * from a missing proxy route or a dead backend). Never
+     * surface that raw markup to the user — only use it as
+     * the error message when it's short, plain text.
+     */
+    const isUsablePlainText =
+      typeof body === "string" &&
+      body.length > 0 &&
+      body.length < 300 &&
+      !/[<>]/.test(body);
+
     const message =
-      typeof body === "object"
+      typeof body === "object" && body !== null
         ? body?.message ||
           body?.detail ||
           body?.error ||
           body?.title
-        : body;
+        : isUsablePlainText
+          ? body
+          : null;
 
     throw new Error(
       message ||
@@ -302,20 +335,6 @@ function normalizePersonalInfo(
           )
         : "",
 
-    nationality_text:
-      data?.nationality_label_km ||
-      data?.nationalityLabelKm ||
-      data?.nationality?.label_km ||
-      data?.nationality?.labelKm ||
-      "",
-
-    ethnicity_text:
-      data?.ethnicity_label_km ||
-      data?.ethnicityLabelKm ||
-      data?.ethnicity?.label_km ||
-      data?.ethnicity?.labelKm ||
-      "",
-
     member_level_id:
       data?.member_level_id != null
         ? String(
@@ -329,6 +348,17 @@ function normalizePersonalInfo(
             data.branch_id,
           )
         : "",
+
+    /*
+     * Staff (mainly secretaries) can be assigned to more than one
+     * branch via branch_staff — this carries the full list so it
+     * can be shown read-only next to the (single, editable)
+     * primary branch above.
+     */
+    assigned_branches:
+      Array.isArray(data?.assigned_branches)
+        ? data.assigned_branches
+        : [],
 
     tshirt_size:
       data?.tshirt_size || "",
@@ -449,6 +479,17 @@ export default function PersonalPage() {
     success,
     setSuccess,
   ] = useState("");
+
+  /*
+   * Additional-branch assignment (assign/remove) fires immediately
+   * on toggle, separate from the page's batched Save — this just
+   * tracks whether that in-flight request should block further
+   * clicks on the branch field.
+   */
+  const [
+    branchAssignmentPending,
+    setBranchAssignmentPending,
+  ] = useState(false);
 
   /* =======================================================
    * LOOKUP STATE
@@ -848,40 +889,216 @@ export default function PersonalPage() {
     };
   }, []);
 
-  useEffect(() => {
-    setForm((previous) => {
-      const nationality = nationalities.find(
-        (option) => String(option.value) === String(previous.nationality_id),
-      );
-      const ethnicity = ethnicities.find(
-        (option) => String(option.value) === String(previous.ethnicity_id),
-      );
+  /*
+   * accountStatusOptions is defined further below (needs `form` to
+   * exist first); roleOptions follows the exact same shape and
+   * sits here so it's grouped with the other lookup-derived memos.
+   */
+  const roleOptions = useMemo(() => {
+    const current = form.account_role;
 
-      if (
-        (previous.nationality_text || !nationality) &&
-        (previous.ethnicity_text || !ethnicity)
-      ) {
-        return previous;
+    if (!current || roles.some((option) => option.value === current)) {
+      return roles;
+    }
+
+    return [
+      ...roles,
+      {
+        label: ROLE_LABELS[current] || current,
+        value: current,
+      },
+    ];
+  }, [roles, form.account_role]);
+
+  /*
+   * The branch field shows every branch this member is tied to as
+   * one multiselect — the primary branch (members.branch_id, via
+   * form.branch_id) plus any additional branch_staff assignments
+   * (form.assigned_branches) — as a flat list of string IDs.
+   */
+  const branchMultiValue = useMemo(() => {
+    const values = new Set();
+
+    if (form.branch_id) {
+      values.add(String(form.branch_id));
+    }
+
+    form.assigned_branches.forEach((assignedBranch) => {
+      if (assignedBranch?.id != null) {
+        values.add(String(assignedBranch.id));
       }
-
-      return {
-        ...previous,
-        nationality_text:
-          previous.nationality_text || nationality?.label || "",
-        ethnicity_text:
-          previous.ethnicity_text || ethnicity?.label || "",
-      };
     });
+
+    return Array.from(values);
+  }, [form.branch_id, form.assigned_branches]);
+
+  /*
+   * Same "inject the current value if it's missing" pattern as
+   * roleOptions/accountStatusOptions, applied to every currently
+   * assigned branch instead of just one value.
+   */
+  const branchOptions = useMemo(() => {
+    const missing = branchMultiValue.filter(
+      (value) =>
+        !branches.some(
+          (option) => option.value === value,
+        ),
+    );
+
+    if (missing.length === 0) {
+      return branches;
+    }
+
+    const labelsById = new Map(
+      form.assigned_branches.map(
+        (assignedBranch) => [
+          String(assignedBranch.id),
+          assignedBranch.name_km ||
+            assignedBranch.name_en ||
+            String(assignedBranch.id),
+        ],
+      ),
+    );
+
+    return [
+      ...branches,
+      ...missing.map((value) => ({
+        label:
+          (value === String(form.branch_id) &&
+            form.branch_name_km) ||
+          labelsById.get(value) ||
+          value,
+        value,
+      })),
+    ];
+  }, [
+    branches,
+    branchMultiValue,
+    form.assigned_branches,
+    form.branch_id,
+    form.branch_name_km,
+  ]);
+
+  /*
+   * Unlike every other field here, adding/removing a branch fires
+   * immediately instead of waiting for the page's Save button —
+   * assigning/terminating a secretary's branch coverage is its own
+   * action, not a draft edit. MultiSelect is a controlled component,
+   * so a failed request simply leaves `form` (and the checkbox)
+   * unchanged.
+   */
+  const handleBranchMultiChange = async (
+    nextValues,
+  ) => {
+    if (
+      isReadOnly &&
+      !canManageSensitiveFields
+    ) {
+      return;
+    }
+
+    const previousValues =
+      branchMultiValue;
+
+    const added = nextValues.filter(
+      (value) =>
+        !previousValues.includes(
+          value,
+        ),
+    );
+
     /*
-     * Without form.nationality_id/ethnicity_id here, this only ran
-     * once when the nationality/ethnicity lookup lists first loaded.
-     * The personal-info fetch (which sets those IDs) usually resolves
-     * slightly later, so at that first run there was nothing yet to
-     * match against the lookup list and the text was never filled in
-     * afterward — the dropdown looked empty even though the member
-     * had a saved nationality/ethnicity.
+     * Anyone other than a secretary only ever has one (primary)
+     * branch — the multiselect still applies here for a consistent
+     * look, but behaves like the old single-select: whichever value
+     * was just toggled on becomes the new (and only) branch, saved
+     * together with the rest of the form via the page's Save
+     * button, same as before this field became a multiselect.
      */
-  }, [nationalities, ethnicities, form.nationality_id, form.ethnicity_id]);
+    if (form.account_role !== "SECRETARY") {
+      const nextBranchId =
+        added[0] ??
+        nextValues[
+          nextValues.length - 1
+        ] ??
+        "";
+
+      setError("");
+      setSuccess("");
+
+      setForm((previous) => ({
+        ...previous,
+        branch_id: nextBranchId,
+      }));
+
+      return;
+    }
+
+    if (branchAssignmentPending) {
+      return;
+    }
+
+    const removed = previousValues.filter(
+      (value) =>
+        !nextValues.includes(value),
+    );
+
+    const branchId =
+      added[0] || removed[0];
+
+    if (!branchId) {
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setBranchAssignmentPending(true);
+
+    try {
+      const data = added.length
+        ? await requestJson(
+            `/members/${memberId}/personal-info/branches`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                branch_id: Number(
+                  branchId,
+                ),
+              }),
+            },
+          )
+        : await requestJson(
+            `/members/${memberId}/personal-info/branches/${branchId}`,
+            {
+              method: "DELETE",
+            },
+          );
+
+      setForm((previous) => ({
+        ...previous,
+        branch_id:
+          data?.branch_id != null
+            ? String(data.branch_id)
+            : previous.branch_id,
+        branch_name_km:
+          data?.branch_name_km ||
+          previous.branch_name_km,
+        assigned_branches:
+          Array.isArray(
+            data?.assigned_branches,
+          )
+            ? data.assigned_branches
+            : previous.assigned_branches,
+      }));
+    } catch (branchError) {
+      setError(
+        branchError.message ||
+          "មិនអាចកែប្រែសាខាទទួលបន្ទុកបានទេ។",
+      );
+    } finally {
+      setBranchAssignmentPending(false);
+    }
+  };
 
   /* =======================================================
    * NORMAL FIELD CHANGE
@@ -909,29 +1126,6 @@ export default function PersonalPage() {
             value,
         }),
       );
-    };
-
-  const handleLookupTextChange =
-    (textField, idField, options) =>
-    (event) => {
-      if (isReadOnly) {
-        return;
-      }
-
-      const value = event.target.value;
-      const match = options.find(
-        (option) =>
-          option.label.trim().toLocaleLowerCase() ===
-          value.trim().toLocaleLowerCase(),
-      );
-
-      setError("");
-      setSuccess("");
-      setForm((previous) => ({
-        ...previous,
-        [textField]: value,
-        [idField]: match?.value || previous[idField],
-      }));
     };
 
   /* =======================================================
@@ -1481,7 +1675,7 @@ export default function PersonalPage() {
               grid-cols-1
               gap-5
               md:grid-cols-2
-              ${isReadOnly ? "member-readonly [&_input]:pointer-events-none [&_input]:bg-gray-50 [&_select]:pointer-events-none [&_select]:bg-gray-50" : ""}
+              ${isReadOnly ? "member-readonly cursor-not-allowed [&_input]:pointer-events-none [&_input]:bg-gray-50 [&_select]:pointer-events-none [&_select]:bg-gray-50" : ""}
             `}
           >
             <BoxFill
@@ -1567,40 +1761,36 @@ export default function PersonalPage() {
               placeholder="បញ្ចូលលេខទូរស័ព្ទ"
             />
 
-            <BoxFill
+            <FormSelect
               label="សញ្ជាតិ"
               value={
-                form.nationality_text
+                form.nationality_id
               }
               onChange={
-                handleLookupTextChange(
-                  "nationality_text",
+                handleChange(
                   "nationality_id",
-                  nationalities,
                 )
               }
-              name="nationality"
-              list="nationality-options"
-              suggestions={nationalities}
-              placeholder="បញ្ចូលសញ្ជាតិ"
+              placeholder="ជ្រើសរើសសញ្ជាតិ"
+              options={
+                nationalities
+              }
             />
 
-            <BoxFill
+            <FormSelect
               label="ជនជាតិ"
               value={
-                form.ethnicity_text
+                form.ethnicity_id
               }
               onChange={
-                handleLookupTextChange(
-                  "ethnicity_text",
+                handleChange(
                   "ethnicity_id",
-                  ethnicities,
                 )
               }
-              name="ethnicity"
-              list="ethnicity-options"
-              suggestions={ethnicities}
-              placeholder="បញ្ចូលជនជាតិ"
+              placeholder="ជ្រើសរើសជនជាតិ"
+              options={
+                ethnicities
+              }
             />
 
             <FormSelect
@@ -1619,26 +1809,55 @@ export default function PersonalPage() {
               }
             />
 
-            {/* BRANCH */}
+            {/*
+              BRANCH — only a SECRETARY account can cover more than
+              one branch (branch_staff), so only secretaries get the
+              multiselect. A branch leader (or any other role) can
+              only ever be tied to a single branch, so they keep the
+              plain single-select they always had — a checkbox list
+              would just be misleading for a role that can't actually
+              have more than one branch checked.
+            */}
 
-            <FormSelect
-              label="សាខា"
-              value={
-                form.branch_id
-              }
-              onChange={
-                handleChange(
+            {form.account_role ===
+            "SECRETARY" ? (
+              <MultiSelect
+                label="សាខា"
+                placeholder="ជ្រើសរើសសាខា"
+                options={
+                  branchOptions
+                }
+                value={
+                  branchMultiValue
+                }
+                onChange={
+                  handleBranchMultiChange
+                }
+                disabled={
+                  !canManageSensitiveFields ||
+                  branchAssignmentPending
+                }
+              />
+            ) : (
+              <FormSelect
+                label="សាខា"
+                value={
+                  form.branch_id
+                }
+                onChange={handleChange(
                   "branch_id",
-                )
-              }
-              placeholder="ជ្រើសរើសសាខា"
-              options={
-                branches
-              }
-              disabled={!canManageSensitiveFields}
-              selectClassName={isAdmin ? "!pointer-events-auto !bg-white !text-gray-600" : ""}
-              adminEditable={isAdmin}
-            />
+                )}
+                placeholder="ជ្រើសរើសសាខា"
+                options={
+                  branchOptions
+                }
+                disabled={
+                  !canManageSensitiveFields
+                }
+                selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-white !text-gray-600" : ""}
+                adminEditable={isAdmin}
+              />
+            )}
 
             {/* ROLE */}
 
@@ -1658,12 +1877,12 @@ export default function PersonalPage() {
                   : "មិនមានគណនី"
               }
               options={
-                roles
+                roleOptions
               }
               disabled={
                 !canManageSensitiveFields || !form.has_account
               }
-              selectClassName={isAdmin ? "!pointer-events-auto !bg-white !text-gray-600" : ""}
+              selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-white !text-gray-600" : ""}
               adminEditable={isAdmin}
             />
 
@@ -1724,7 +1943,7 @@ export default function PersonalPage() {
                 !form.has_account ||
                 changingStatus
               }
-              selectClassName={isAdmin ? "!pointer-events-auto !bg-white !text-gray-600" : ""}
+              selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-white !text-gray-600" : ""}
               adminEditable={isAdmin}
             />
 

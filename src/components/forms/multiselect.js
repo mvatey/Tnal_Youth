@@ -267,16 +267,24 @@ export default function MultiSelect({
       return placeholder;
     }
 
-    if (allSelected) {
-      return `${selectAllLabel} (${selectedLabels.length})`;
-    }
-
+    /*
+     * A small handful of selections should always read as their
+     * actual names — "select all" wording only earns its keep once
+     * there are too many names to comfortably show at once (e.g. a
+     * secretary picked up 1-3 branches; that's just as easy to read
+     * as "branch1, branch2, branch3" as it is to read "select all
+     * (3)", and the real names are more useful).
+     */
     if (
-      selectedLabels.length <= 2
+      selectedLabels.length <= 3
     ) {
       return selectedLabels.join(
         ", ",
       );
+    }
+
+    if (allSelected) {
+      return `${selectAllLabel} (${selectedLabels.length})`;
     }
 
     return `${selectedLabels
