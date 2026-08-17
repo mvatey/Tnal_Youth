@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { List, PlusCircle } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CheckCircle2, List, PlusCircle, XCircle } from "lucide-react";
 
 import SearchBar from "@/components/tables/SearchBar";
 import FilterBar from "@/components/tables/FilterBar";
@@ -114,6 +114,16 @@ function normalizeActivity(item, branchOptions) {
      *          actually has a non-null value.
      */
     ownBranch: item.ownBranch ?? null,
+    /*
+     * Only meaningful when ownBranch === false. "PENDING" -> this branch
+     * hasn't responded to the co-hosting invitation yet (the Action column
+     * shows Accept/Decline). "ACCEPTED" -> already co-hosting (the Action
+     * column falls back to the normal Detail link, which is where members
+     * get invited from). Never DECLINED/CANCELLED — the backend excludes
+     * those from the list entirely rather than showing them inert.
+     */
+    invitationId: item.invitationId ?? null,
+    invitationStatus: item.invitationStatus ?? null,
   };
 }
 
@@ -211,75 +221,115 @@ export default function ActivityPage() {
   const [selectedBranchOption, setSelectedBranchOption] =
     useState("all");
 
+  // Also used to refresh the list right after Accept/Decline (see
+  // handleRespond below), not just on mount.
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
+
+  const loadActivities = useCallback(async () => {
+    setLoading(true);
+    setLoadError("");
+
+    try {
+      const [activityResponse, branchResponse] = await Promise.all([
+        fetch("/api/backend/activities?page=0&size=1000", {
+          cache: "no-store",
+        }),
+        fetch("/api/lookups/activity-invitable-branches", {
+          cache: "no-store",
+        }),
+      ]);
+
+      if (!activityResponse.ok) {
+        throw new Error(`Cannot load activities (${activityResponse.status})`);
+      }
+
+      const activityBody = await activityResponse.json();
+      const branchBody = branchResponse.ok
+        ? await branchResponse.json()
+        : [];
+
+      if (!mountedRef.current) return;
+
+      setActivityRecords(
+        Array.isArray(activityBody?.content)
+          ? activityBody.content
+          : [],
+      );
+      setInvitedActivityCount(
+        typeof activityBody?.invitedActivityCount === "number"
+          ? activityBody.invitedActivityCount
+          : null,
+      );
+      setBranchOptions(
+        (Array.isArray(branchBody) ? branchBody : []).map((branch) => ({
+          value: branch.value ?? branch.id,
+          label:
+            branch.labelKm ||
+            branch.labelEn ||
+            branch.label ||
+            branch.code ||
+            `#${branch.value ?? branch.id}`,
+        })),
+      );
+    } catch (error) {
+      if (mountedRef.current) {
+        setActivityRecords([]);
+        setLoadError(error.message || "Cannot load activities");
+      }
+    } finally {
+      if (mountedRef.current) setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     setSelectedBranchOption("all");
   }, [selectedScope]);
 
   useEffect(() => {
-    let active = true;
+    loadActivities();
+  }, [loadActivities]);
 
-    async function loadActivities() {
-      setLoading(true);
-      setLoadError("");
+  // Which activity's invitation is currently being accepted/declined —
+  // disables that row's buttons and nothing else while the request is in
+  // flight.
+  const [respondingActivityId, setRespondingActivityId] = useState(null);
+  const [respondError, setRespondError] = useState("");
+
+  const handleRespond = useCallback(
+    async (activityId, invitationId, status) => {
+      setRespondingActivityId(activityId);
+      setRespondError("");
 
       try {
-        const [activityResponse, branchResponse] = await Promise.all([
-          fetch("/api/backend/activities?page=0&size=1000", {
-            cache: "no-store",
-          }),
-          fetch("/api/lookups/activity-invitable-branches", {
-            cache: "no-store",
-          }),
-        ]);
+        const response = await fetch(
+          `/api/backend/activities/${encodeURIComponent(activityId)}/invited-branches/${encodeURIComponent(invitationId)}/respond`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ invitation_status: status }),
+          },
+        );
+        const body = await response.json().catch(() => null);
 
-        if (!activityResponse.ok) {
-          throw new Error(`Cannot load activities (${activityResponse.status})`);
+        if (!response.ok) {
+          throw new Error(body?.message || `Request failed (${response.status})`);
         }
 
-        const activityBody = await activityResponse.json();
-        const branchBody = branchResponse.ok
-          ? await branchResponse.json()
-          : [];
-
-        if (!active) return;
-
-        setActivityRecords(
-          Array.isArray(activityBody?.content)
-            ? activityBody.content
-            : [],
-        );
-        setInvitedActivityCount(
-          typeof activityBody?.invitedActivityCount === "number"
-            ? activityBody.invitedActivityCount
-            : null,
-        );
-        setBranchOptions(
-          (Array.isArray(branchBody) ? branchBody : []).map((branch) => ({
-            value: branch.value ?? branch.id,
-            label:
-              branch.labelKm ||
-              branch.labelEn ||
-              branch.label ||
-              branch.code ||
-              `#${branch.value ?? branch.id}`,
-          })),
-        );
+        // A declined invitation drops out of the backend's PENDING/ACCEPTED
+        // scope entirely, so refetching is what actually removes the row —
+        // there is nothing to patch locally.
+        await loadActivities();
       } catch (error) {
-        if (active) {
-          setActivityRecords([]);
-          setLoadError(error.message || "Cannot load activities");
+        if (mountedRef.current) {
+          setRespondError(error.message || "មិនអាចធ្វើបច្ចុប្បន្នភាពការអញ្ជើញបានទេ។");
         }
       } finally {
-        if (active) setLoading(false);
+        if (mountedRef.current) setRespondingActivityId(null);
       }
-    }
-
-    loadActivities();
-
-    return () => {
-      active = false;
-    };
-  }, []);
+    },
+    [loadActivities],
+  );
 
   const activities = useMemo(
     () =>
@@ -307,6 +357,20 @@ export default function ActivityPage() {
       activities.some(
         (item) => item.ownBranch === true || item.ownBranch === false,
       ),
+    [activities],
+  );
+
+  // How many invited activities are still waiting on an Accept/Decline —
+  // drives the badge on the "invited" tab below. Counts across every
+  // invited activity regardless of which branch/type/search filters are
+  // currently applied, so the badge reflects the true outstanding total,
+  // not just what's visible in the current filtered view.
+  const pendingInvitationCount = useMemo(
+    () =>
+      activities.filter(
+        (item) =>
+          item.ownBranch === false && item.invitationStatus === "PENDING",
+      ).length,
     [activities],
   );
 
@@ -506,15 +570,53 @@ export default function ActivityPage() {
       label: "សកម្មភាព",
       width: "12%",
       align: "center",
-      render: (row) => (
-        <Link
-          href={`/activity/${row.id}`}
-          className="mx-auto flex h-[22px] w-fit items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] bg-primary px-3 text-[10px] font-Regular text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-sm active:translate-y-0"
-        >
-          <List size={14} />
-          ព័ត៌មានលម្អិត
-        </Link>
-      ),
+      render: (row) => {
+        // Only an invited-and-not-yet-responded row gets Accept/Decline —
+        // every other row (own-hosted, already-accepted invited, or a role
+        // this backend doesn't compute ownBranch for at all) keeps the
+        // normal Detail link, which is also where an accepted invited
+        // branch goes to invite its own members.
+        if (row.ownBranch === false && row.invitationStatus === "PENDING") {
+          const isResponding = respondingActivityId === row.id;
+
+          return (
+            <div className="mx-auto flex w-fit items-center justify-center gap-1.5">
+              <button
+                type="button"
+                disabled={isResponding}
+                onClick={() =>
+                  handleRespond(row.id, row.invitationId, "ACCEPTED")
+                }
+                className="inline-flex h-[22px] items-center justify-center gap-1 whitespace-nowrap rounded-[8px] bg-success px-2.5 text-[10px] font-Regular text-white transition hover:bg-emerald-700 disabled:opacity-60"
+              >
+                <CheckCircle2 size={12} />
+                ទទួល
+              </button>
+              <button
+                type="button"
+                disabled={isResponding}
+                onClick={() =>
+                  handleRespond(row.id, row.invitationId, "DECLINED")
+                }
+                className="inline-flex h-[22px] items-center justify-center gap-1 whitespace-nowrap rounded-[8px] border border-border px-2.5 text-[10px] font-Regular text-text-secondary transition hover:bg-bg-page-gray disabled:opacity-60"
+              >
+                <XCircle size={12} />
+                បដិសេធ
+              </button>
+            </div>
+          );
+        }
+
+        return (
+          <Link
+            href={`/activity/${row.id}`}
+            className="mx-auto flex h-[22px] w-fit items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] bg-primary px-3 text-[10px] font-Regular text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-sm active:translate-y-0"
+          >
+            <List size={14} />
+            ព័ត៌មានលម្អិត
+          </Link>
+        );
+      },
     },
   ];
 
@@ -566,25 +668,36 @@ export default function ActivityPage() {
         </div>
       )}
 
+      {respondError && (
+        <div className="rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">
+          {respondError}
+        </div>
+      )}
+
       <section className="rounded-xl border border-border bg-bg-page-white p-4 transition-shadow duration-200 hover:shadow-sm">
         {hasOwnBranchData && (
           <div className="mb-4 inline-flex w-fit shrink-0 rounded-lg border border-border bg-bg-page-gray p-1 text-xs font-medium">
             {[
               { key: "all", label: "ទាំងអស់" },
-              { key: "own", label: "កម្មវិធីសាខាផ្ទាល់ខ្លួន" },
-              { key: "invited", label: "កម្មវិធីដែលត្រូវបានអញ្ជើញ" },
+              { key: "own", label: "សាខាខ្លួនឯង" },
+              { key: "invited", label: "សាខាដែលបានអញ្ជើញ" },
             ].map((tab) => (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setSelectedScope(tab.key)}
-                className={`rounded-md px-3 py-1.5 transition ${
+                className={`relative rounded-md px-3 py-1.5 transition ${
                   selectedScope === tab.key
                     ? "bg-secondary text-white"
                     : "text-text-secondary hover:text-text-primary"
                 }`}
               >
                 {tab.label}
+                {tab.key === "invited" && pendingInvitationCount > 0 && (
+                  <span className="absolute -right-2 -top-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-error px-1 text-[10px] font-semibold leading-none text-white">
+                    {pendingInvitationCount > 99 ? "99+" : pendingInvitationCount}
+                  </span>
+                )}
               </button>
             ))}
           </div>
