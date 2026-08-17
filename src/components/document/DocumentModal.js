@@ -32,7 +32,7 @@ export default function DocumentModal({
           className={`
           relative
           rounded-2xl
-          bg-white
+          bg-bg-page-white
           p-6
           shadow-xl
 
@@ -62,8 +62,8 @@ export default function DocumentModal({
             absolute
             right-4
             top-4
-            text-gray-400
-            hover:text-gray-700
+            text-text-mute
+            hover:text-text-secondary
             "
           >
             <X className="h-5 w-5" />

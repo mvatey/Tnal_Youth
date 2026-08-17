@@ -18,17 +18,17 @@ const EMPTY_FORM = {
   files: [],
 };
 const DOCUMENT_TYPE_BADGE_STYLES = {
-  PDF: "bg-red-100 text-red-500",
+  PDF: "bg-error-bg text-error",
   Excel: "bg-success-bg text-success",
-  Word: "bg-blue-50 text-blue-600",
-  PowerPoint: "bg-orange-50 text-orange-600",
-  PNG: "bg-purple-50 text-purple-600",
-  JPG: "bg-yellow-50 text-yellow-600",
-  JPEG: "bg-yellow-50 text-yellow-600",
+  Word: "bg-primary-light text-primary",
+  PowerPoint: "bg-warning-bg text-warning",
+  PNG: "bg-secondary-light text-secondary",
+  JPG: "bg-warning-bg text-warning",
+  JPEG: "bg-warning-bg text-warning",
 };
 
 const DEFAULT_DOCUMENT_TYPE_STYLE =
-  "bg-gray-100 text-text-secondary";
+  "bg-bg-page-gray text-text-secondary";
 
 export default function CompanyDocumentPage() {
   const [documents, setDocuments] = useState([]);
@@ -131,7 +131,7 @@ export default function CompanyDocumentPage() {
         <img
           src={item.image || "/document.jpg"}
           alt={item.title || "document"}
-          className="h-8 w-6 rounded border border-gray-200 object-cover"
+          className="h-8 w-6 rounded border border-border object-cover"
         />
       ),
     },
@@ -212,7 +212,7 @@ export default function CompanyDocumentPage() {
           <button
             type="button"
             onClick={() => setDeleteDocument(item)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-red-50"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-error-bg"
             aria-label="លុបឯកសារ"
           >
             <Trash2 size={18} className="text-red-500" />
@@ -335,7 +335,7 @@ export default function CompanyDocumentPage() {
 
   return (
     <>
-      {error ? <div className="mb-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="mb-3 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
       <DataTable
         data={loading ? [] : filteredDocuments}
         columns={columns}

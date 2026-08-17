@@ -357,9 +357,9 @@ const paymentSummary = useMemo(
         />
       </div>
 
-      <section className="min-h-[545px] rounded-md border border-border bg-[#fbfbfd] p-6">
+      <section className="min-h-[545px] rounded-md border border-border bg-bg-page-white p-6">
         {error || currentMemberError ? (
-          <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
             {error || currentMemberError}
           </div>
         ) : null}
@@ -409,7 +409,7 @@ const paymentSummary = useMemo(
          />
 
     <div
-      className="ml-auto mt-5 w-full max-w-[360px] rounded-lg border border-border bg-white p-4"
+      className="ml-auto mt-5 w-full max-w-[360px] rounded-lg border border-border bg-bg-page-white p-4"
       aria-live="polite"
     >
       <h3 className="mb-3 font-bold text-secondary">

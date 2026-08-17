@@ -69,7 +69,7 @@ export default function BackendDocumentCard({ document, onView }) {
   const openPreview = () => onView?.(previewDocument);
 
   return (
-    <article className="flex w-[380px] min-w-0 flex-col rounded-xl border border-gray-200 border-t-4 border-t-secondary bg-[#f8f9fc] p-3 shadow-sm">
+    <article className="flex w-[380px] min-w-0 flex-col rounded-xl border border-border border-t-4 border-t-secondary bg-bg-page-white p-3 shadow-sm">
       <h2 className="truncate text-base font-bold text-primary">
         {document?.title || "ឯកសារសមាជិក"}
       </h2>
@@ -78,9 +78,9 @@ export default function BackendDocumentCard({ document, onView }) {
         type="button"
         onClick={openPreview}
         aria-label={`មើលឯកសារ ${previewDocument.fileName}`}
-        className="group relative mt-3 flex h-[190px] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white p-2 transition hover:ring-1 hover:ring-primary"
+        className="group relative mt-3 flex h-[190px] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-bg-page-white p-2 transition hover:ring-1 hover:ring-primary"
       >
-        <span className="absolute right-3 top-3 z-10 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-primary shadow-sm">
+        <span className="absolute right-3 top-3 z-10 rounded-full bg-bg-page-white/95 px-3 py-1 text-xs font-semibold text-primary shadow-sm">
           {previewDocument.type}
         </span>
 
@@ -94,10 +94,10 @@ export default function BackendDocumentCard({ document, onView }) {
           <iframe
             src={`${previewDocument.fileUrl}#page=1&view=FitH&toolbar=0&navpanes=0`}
             title={previewDocument.fileName}
-            className="pointer-events-none h-full w-full border-0 bg-white"
+            className="pointer-events-none h-full w-full border-0 bg-bg-page-white"
           />
         ) : (
-          <div className="flex flex-col items-center justify-center gap-3 text-gray-500">
+          <div className="flex flex-col items-center justify-center gap-3 text-text-mute">
             <FileText size={52} strokeWidth={1.5} />
             <span className="text-sm">ចុចដើម្បីមើលឯកសារ</span>
           </div>
@@ -113,14 +113,14 @@ export default function BackendDocumentCard({ document, onView }) {
 
       <div className="mt-3 space-y-2 text-xs">
         <div className="flex min-w-0 items-center justify-between gap-4">
-          <span className="shrink-0 text-gray-500">ឯកសារ</span>
-          <strong className="truncate text-right text-gray-900">
+          <span className="shrink-0 text-text-mute">ឯកសារ</span>
+          <strong className="truncate text-right text-text-primary">
             {previewDocument.fileName}
           </strong>
         </div>
         <div className="flex items-center justify-between gap-4">
-          <span className="text-gray-500">កាលបរិច្ឆេទ</span>
-          <strong className="text-gray-900">{previewDocument.date}</strong>
+          <span className="text-text-mute">កាលបរិច្ឆេទ</span>
+          <strong className="text-text-primary">{previewDocument.date}</strong>
         </div>
       </div>
 

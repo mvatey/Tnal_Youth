@@ -6,11 +6,11 @@ export default function DocumentPagination({
   setCurrentPage,
 }) {
   return (
-    <div className="flex shrink-0 items-center justify-between border-t bg-white p-3">
+    <div className="flex shrink-0 items-center justify-between border-t bg-bg-page-white p-3">
       <button
         disabled={currentPage === 1}
         onClick={() => setCurrentPage((prev) => prev - 1)}
-        className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-40"
+        className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium text-text-secondary disabled:opacity-40"
       >
         <ChevronLeft className="h-4 w-4" />
         Previous
@@ -23,8 +23,8 @@ export default function DocumentPagination({
             onClick={() => setCurrentPage(page)}
             className={`rounded-lg px-3 py-1.5 text-sm ${
               currentPage === page
-                ? "bg-[#f1f5f9] font-semibold text-gray-900"
-                : "text-gray-600"
+                ? "bg-primary-light font-semibold text-primary"
+                : "text-text-secondary"
             }`}
           >
             {page}
@@ -35,7 +35,7 @@ export default function DocumentPagination({
       <button
         disabled={currentPage === totalPages || totalPages === 0}
         onClick={() => setCurrentPage((prev) => prev + 1)}
-        className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-40"
+        className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium text-text-secondary disabled:opacity-40"
       >
         Next
         <ChevronRight className="h-4 w-4" />

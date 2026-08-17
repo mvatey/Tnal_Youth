@@ -24,7 +24,7 @@ function FilterInput({
           placeholderText={value ? "" : "ថ្ងៃ/ខែ/ឆ្នាំ"}
           dateFormat="dd/MM/yyyy"
           isClearable
-          className="h-[34px] w-full rounded-lg border border-border bg-white px-3 pr-14 text-[12px] text-text-primary outline-none"
+          className="h-[34px] w-full rounded-lg border border-border bg-bg-page-white px-3 pr-14 text-[12px] text-text-primary outline-none"
           wrapperClassName="w-full"
           popperClassName="small-calendar"
         />
@@ -38,7 +38,7 @@ function FilterInput({
   return (
     <div className="relative">
 
-      <select value={value} onChange={(e) => onChange?.(e.target.value)} className="h-[34px] min-w-[130px] appearance-none rounded-lg border border-border bg-white px-3 pr-9 text-[12px] font-medium text-text-primary outline-none">
+      <select value={value} onChange={(e) => onChange?.(e.target.value)} className="h-[34px] min-w-[130px] appearance-none rounded-lg border border-border bg-bg-page-white px-3 pr-9 text-[12px] font-medium text-text-primary outline-none">
 
         <option value="all" hidden={value !== "all"}>
           {placeholder}

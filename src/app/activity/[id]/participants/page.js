@@ -464,7 +464,7 @@ export default function ActivityParticipantsPage({ params }) {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-border bg-white p-6 text-center text-text-secondary">
+      <div className="rounded-xl border border-border bg-bg-page-white p-6 text-center text-text-secondary">
         Loading activity members...
       </div>
     );
@@ -480,7 +480,7 @@ export default function ActivityParticipantsPage({ params }) {
 
   if (!activity) {
     return (
-      <div className="rounded-xl border border-border bg-white p-6 text-center text-text-secondary">
+      <div className="rounded-xl border border-border bg-bg-page-white p-6 text-center text-text-secondary">
         មិនអាចរកឃើញកម្មវិធីនេះទេ
       </div>
     );
@@ -538,7 +538,7 @@ export default function ActivityParticipantsPage({ params }) {
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-white p-4">
+      <div className="rounded-xl border border-border bg-bg-page-white p-4">
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <SearchBar
             value={searchQuery}

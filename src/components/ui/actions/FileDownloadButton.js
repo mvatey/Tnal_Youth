@@ -12,7 +12,7 @@ export default function FileDownloadButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-[72px] w-[304px] items-center gap-3 rounded-2xl bg-white px-4 text-left shadow-[0_2px_5px_rgba(0,0,0,0.22)] transition hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary ${className}`}
+      className={`flex h-[72px] w-[304px] items-center gap-3 rounded-2xl bg-bg-page-white px-4 text-left shadow-[0_2px_5px_rgba(0,0,0,0.22)] transition hover:bg-bg-page-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary ${className}`}
       aria-label={`${fileName}, ${fileSize}`}
     >
       <TbFileTypePdf
@@ -23,10 +23,10 @@ export default function FileDownloadButton({
       />
 
       <span className="min-w-0">
-        <span className="block truncate text-[20px] font-semibold leading-7 text-black">
+        <span className="block truncate text-[20px] font-semibold leading-7 text-text-primary">
           {fileName}
         </span>
-        <span className="block text-[14px] font-normal leading-5 text-black">
+        <span className="block text-[14px] font-normal leading-5 text-text-primary">
           {fileSize}
         </span>
       </span>

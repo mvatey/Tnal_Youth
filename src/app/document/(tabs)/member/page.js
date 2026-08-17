@@ -9,22 +9,22 @@ import DataTable from "@/components/table/DataTable";
 import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
 
 const DOCUMENT_TYPE_BADGE_STYLES = {
-  PDF: "bg-red-100 text-red-500",
+  PDF: "bg-error-bg text-error",
   Excel: "bg-success-bg text-success",
   XLS: "bg-success-bg text-success",
   XLSX: "bg-success-bg text-success",
-  Word: "bg-blue-50 text-blue-600",
-  DOC: "bg-blue-50 text-blue-600",
-  DOCX: "bg-blue-50 text-blue-600",
-  PowerPoint: "bg-orange-50 text-orange-600",
-  PPT: "bg-orange-50 text-orange-600",
-  PPTX: "bg-orange-50 text-orange-600",
-  PNG: "bg-purple-50 text-purple-600",
-  JPG: "bg-yellow-50 text-yellow-600",
-  JPEG: "bg-yellow-50 text-yellow-600",
+  Word: "bg-primary-light text-primary",
+  DOC: "bg-primary-light text-primary",
+  DOCX: "bg-primary-light text-primary",
+  PowerPoint: "bg-warning-bg text-warning",
+  PPT: "bg-warning-bg text-warning",
+  PPTX: "bg-warning-bg text-warning",
+  PNG: "bg-secondary-light text-secondary",
+  JPG: "bg-warning-bg text-warning",
+  JPEG: "bg-warning-bg text-warning",
 };
 
-const DEFAULT_DOCUMENT_TYPE_STYLE = "bg-gray-100 text-text-secondary";
+const DEFAULT_DOCUMENT_TYPE_STYLE = "bg-bg-page-gray text-text-secondary";
 
 export default function MemberDocumentPage() {
   const router = useRouter();
@@ -84,10 +84,10 @@ export default function MemberDocumentPage() {
           <img
             src={item.image || "/document.jpg"}
             alt={item.title || "document"}
-            className="h-8 w-6 rounded border border-gray-200 object-cover"
+            className="h-8 w-6 rounded border border-border object-cover"
           />
         ) : (
-          <span className="inline-flex h-8 w-7 items-center justify-center rounded border border-gray-200 bg-gray-50">
+          <span className="inline-flex h-8 w-7 items-center justify-center rounded border border-border bg-bg-page-gray">
             <FileText size={18} className="text-text-secondary" />
           </span>
         ),
@@ -232,7 +232,7 @@ export default function MemberDocumentPage() {
   return (
     <>
       {error ? (
-        <div className="mb-3 flex items-center justify-between rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-3 flex items-center justify-between rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
           <span>{error}</span>
           <button type="button" className="font-semibold underline" onClick={loadDocuments}>Retry</button>
         </div>

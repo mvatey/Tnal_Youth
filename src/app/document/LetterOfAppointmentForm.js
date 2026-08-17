@@ -276,7 +276,7 @@ export default function LetterOfAppointmentForm({
         rounded-xl
         border
         border-[#e4e7ec]
-        bg-white
+        bg-bg-page-white
         px-8
         py-8
       "
@@ -305,13 +305,13 @@ export default function LetterOfAppointmentForm({
               <span>ជ្រើសរើសសមាជិកក្នុងសាខា</span>
               <span>{selectedMemberIds.length > 0 ? "1 នាក់" : "0 នាក់"}</span>
             </div>
-            <div className="h-[255px] overflow-y-auto rounded-xl border border-gray-300 bg-white p-3">
+            <div className="h-[255px] overflow-y-auto rounded-xl border border-border bg-bg-page-white p-3">
               {!form.branchId ? (
-                <p className="py-20 text-center text-sm text-gray-400">សូមជ្រើសរើសសាខាជាមុន</p>
+                <p className="py-20 text-center text-sm text-text-mute">សូមជ្រើសរើសសាខាជាមុន</p>
               ) : loadingMembers ? (
-                <p className="py-20 text-center text-sm text-gray-400">កំពុងទាញយកសមាជិក...</p>
+                <p className="py-20 text-center text-sm text-text-mute">កំពុងទាញយកសមាជិក...</p>
               ) : members.length === 0 ? (
-                <p className="py-20 text-center text-sm text-gray-400">មិនមានសមាជិកក្នុងសាខានេះ</p>
+                <p className="py-20 text-center text-sm text-text-mute">មិនមានសមាជិកក្នុងសាខានេះ</p>
               ) : (
                 <div className="space-y-1">
                   {members.map((member) => {
@@ -376,7 +376,7 @@ export default function LetterOfAppointmentForm({
                 border-2
                 border-dashed
                 border-primary
-                bg-[#f8f8ff]
+                bg-bg-page-gray
                 px-8
                 text-center
                 transition
@@ -388,14 +388,14 @@ export default function LetterOfAppointmentForm({
                 strokeWidth={1.8}
                 className="
                   mb-6
-                  text-[#52617b]
+                  text-text-secondary
                 "
               />
 
               <p
                 className="
                   text-lg
-                  text-gray-400
+                  text-text-mute
                 "
               >
                 បញ្ចូលជាប្រភេទ JPG, Docx, PDF, PNG (អតិបរមា 5MB),
@@ -405,7 +405,7 @@ export default function LetterOfAppointmentForm({
                 className="
                   mt-2
                   text-lg
-                  text-gray-400
+                  text-text-mute
                 "
               >
                 ទំហំគំរូ៖ 16:9
@@ -425,7 +425,7 @@ export default function LetterOfAppointmentForm({
                 border-2
                 border-dashed
                 border-primary
-                bg-[#f8f8ff]
+                bg-bg-page-gray
                 p-6
               "
             >
@@ -467,7 +467,7 @@ export default function LetterOfAppointmentForm({
                     className="
                       mt-2
                       text-sm
-                      text-gray-400
+                      text-text-mute
                     "
                   >
                     {form.fileType} · {form.fileSize}
@@ -489,11 +489,11 @@ export default function LetterOfAppointmentForm({
                   items-center
                   justify-center
                   rounded-full
-                  bg-white
-                  text-red-500
+                  bg-bg-page-white
+                  text-error
                   shadow-sm
                   transition
-                  hover:bg-red-50
+                  hover:bg-error-bg
                 "
               >
                 <X size={19} />
@@ -507,7 +507,7 @@ export default function LetterOfAppointmentForm({
                 mt-2
                 text-xs
                 font-medium
-                text-red-500
+                text-error
               "
             >
               {fileError}
@@ -520,7 +520,7 @@ export default function LetterOfAppointmentForm({
                   mt-4
                   text-xs
                   font-medium
-                  text-red-500
+                  text-error
                 "
             >
               សូមជ្រើសរើសសាខា សមាជិក បំពេញពិពណ៌នា និងបញ្ចូលឯកសារ។

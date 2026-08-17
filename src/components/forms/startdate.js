@@ -7,10 +7,10 @@ export default function DateInputButton() {
         flex h-[34px] w-[167px] 
         items-center justify-between
         rounded-[40px]
-        border border-[#EAECF0]
-        bg-white
+        border border-border
+        bg-bg-page-white
         px-16
-        text-sm font-medium text-[#4B5565]
+        text-sm font-medium text-text-secondary
         shadow-md
       "
     >

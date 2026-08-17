@@ -10,7 +10,7 @@ export default function NotFoundPage({
   const router = useRouter();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white px-5">
+    <div className="flex min-h-screen items-center justify-center bg-bg-page-white px-5">
       <div className="w-full max-w-[620px] text-center">
         <h1 className="text-xl font-bold text-[#4b3192]">
           {title}
@@ -21,10 +21,10 @@ export default function NotFoundPage({
             404
           </span>
 
-          <div className="absolute bottom-0 left-1/2 h-px w-[360px] max-w-full -translate-x-1/2 bg-gray-200" />
+          <div className="absolute bottom-0 left-1/2 h-px w-[360px] max-w-full -translate-x-1/2 bg-border" />
         </div>
 
-        <p className="mx-auto mt-6 max-w-[560px] text-sm leading-7 text-gray-500">
+        <p className="mx-auto mt-6 max-w-[560px] text-sm leading-7 text-text-mute">
           {message}
         </p>
 

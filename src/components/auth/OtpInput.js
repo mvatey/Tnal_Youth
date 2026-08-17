@@ -30,7 +30,7 @@ export default function OtpInput({ value, onChange, length = 6 }) {
           onKeyDown={(e) => handleKeyDown(e, i)}
           maxLength={1}
           inputMode="numeric"
-          className="w-12 h-12 text-center border border-slate-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
+          className="w-12 h-12 text-center border border-border rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
         />
       ))}
     </div>

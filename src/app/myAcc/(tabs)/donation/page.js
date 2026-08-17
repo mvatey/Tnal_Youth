@@ -135,7 +135,7 @@ export default function DonationPage() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-border bg-white p-6">
+      <div className="rounded-xl border border-border bg-bg-page-white p-6">
         កំពុងទាញយកព័ត៌មានសមាជិក...
       </div>
     );
@@ -143,8 +143,8 @@ export default function DonationPage() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">
+      <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
+        <p className="text-sm text-error">
           {error}
         </p>
       </div>
@@ -152,13 +152,13 @@ export default function DonationPage() {
   }
 
   if (dataError) {
-    return <div className="rounded-xl border border-red-200 bg-white p-6 text-sm text-red-500">{dataError}</div>;
+    return <div className="rounded-xl border border-error/30 bg-bg-page-white p-6 text-sm text-error">{dataError}</div>;
   }
 
   if (!member) {
     return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">
+      <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
+        <p className="text-sm text-error">
           រកមិនឃើញព័ត៌មានសមាជិក
         </p>
       </div>

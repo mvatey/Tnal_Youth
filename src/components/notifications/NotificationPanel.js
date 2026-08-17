@@ -95,13 +95,13 @@ export default function NotificationPanel({ type = "system" }) {
     <div className="space-y-4">
       <NotificationTabs />
 
-      <section className="overflow-hidden rounded-md border border-border bg-[#fbfcfe] shadow-sm">
+      <section className="overflow-hidden rounded-md border border-border bg-bg-page-white shadow-sm">
         <div className="min-h-[48px] overflow-visible px-8 pb-1 pt-[10px]">
           <h2 className="overflow-visible text-[16px] font-bold leading-[2] text-secondary">{heading}</h2>
         </div>
 
         {error ? (
-          <div className="mx-8 my-4 flex items-center justify-between rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mx-8 my-4 flex items-center justify-between rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
             <span>{error}</span>
             <button type="button" className="font-semibold underline" onClick={loadNotifications}>
               Retry

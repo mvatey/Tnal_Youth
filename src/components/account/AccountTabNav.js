@@ -21,7 +21,7 @@ export default function AccountTabs() {
   const pathname = usePathname();
 
   return (
-    <nav className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+    <nav className="overflow-hidden rounded-xl border border-border bg-bg-page-white shadow-sm">
       <div className="grid grid-cols-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -49,7 +49,7 @@ export default function AccountTabs() {
                 ${
                   active
                     ? "border-secondary bg-secondary-light text-secondary"
-                    : "border-transparent bg-white text-text-secondary hover:bg-gray-50 hover:text-secondary"
+                    : "border-transparent bg-bg-page-white text-text-secondary hover:bg-bg-page-gray hover:text-secondary"
                 }
               `}
             >

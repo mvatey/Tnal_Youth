@@ -342,7 +342,7 @@ function SearchableBranchMultiSelect({
         {label}
       </label>
 
-      <button type="button" onClick={() => setOpen((current) => !current)} className={`flex h-[34px] w-full items-center justify-between rounded-lg border bg-white px-3 py-2 text-left text-sm outline-none transition ${open ? "border-secondary ring-1 ring-secondary/20" : "border-border hover:border-secondary"}`}>
+      <button type="button" onClick={() => setOpen((current) => !current)} className={`flex h-[34px] w-full items-center justify-between rounded-lg border bg-bg-page-white px-3 py-2 text-left text-sm outline-none transition ${open ? "border-secondary ring-1 ring-secondary/20" : "border-border hover:border-secondary"}`}>
         <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
           {values.length === 0 ? (
             <span className="text-text-secondary">{placeholder}</span>
@@ -361,7 +361,7 @@ function SearchableBranchMultiSelect({
 
         <div className="ml-2 flex shrink-0 items-center gap-1">
           {values.length > 0 && (
-            <span role="button" tabIndex={0} onClick={clearAll} onKeyDown={(event) => event.key === "Enter" && clearAll(event)} className="rounded-md p-1 text-text-secondary transition hover:bg-gray-100 hover:text-error">
+            <span role="button" tabIndex={0} onClick={clearAll} onKeyDown={(event) => event.key === "Enter" && clearAll(event)} className="rounded-md p-1 text-text-secondary transition hover:bg-bg-page-gray hover:text-error">
               <X size={14} />
             </span>
           )}
@@ -371,7 +371,7 @@ function SearchableBranchMultiSelect({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-full min-w-[260px] overflow-hidden rounded-lg border border-border bg-white shadow-xl">
+        <div className="absolute left-0 top-full z-50 mt-2 w-full min-w-[260px] overflow-hidden rounded-lg border border-border bg-bg-page-white shadow-xl">
           <div className="border-b border-border p-2">
             <div className="flex h-9 items-center gap-2 rounded-md border border-border px-3 focus-within:border-secondary">
               <Search size={15} className="shrink-0 text-text-secondary" />
@@ -379,7 +379,7 @@ function SearchableBranchMultiSelect({
               <input ref={searchInputRef} type="text" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ស្វែងរកសាខា..." className="min-w-0 flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-secondary" />
 
               {query && (
-                <button type="button" onClick={() => setQuery("")} className="rounded p-0.5 text-text-secondary transition hover:bg-gray-100 hover:text-text-primary">
+                <button type="button" onClick={() => setQuery("")} className="rounded p-0.5 text-text-secondary transition hover:bg-bg-page-gray hover:text-text-primary">
                   <X size={14} />
                 </button>
               )}
@@ -392,10 +392,10 @@ function SearchableBranchMultiSelect({
                 const selected = values.includes(option);
 
                 return (
-                  <button key={option} type="button" onClick={() => toggleOption(option)} className={`flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm transition ${selected ? "bg-secondary-light text-secondary" : "text-text-primary hover:bg-gray-50"}`}>
+                  <button key={option} type="button" onClick={() => toggleOption(option)} className={`flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm transition ${selected ? "bg-secondary-light text-secondary" : "text-text-primary hover:bg-bg-page-gray"}`}>
                     <span>{option}</span>
 
-                    <span className={`flex h-5 w-5 items-center justify-center rounded border ${selected ? "border-secondary bg-secondary text-white" : "border-gray-300 bg-white"}`}>
+                    <span className={`flex h-5 w-5 items-center justify-center rounded border ${selected ? "border-secondary bg-secondary text-white" : "border-border bg-bg-page-white"}`}>
                       {selected && <Check size={13} />}
                     </span>
                   </button>
@@ -542,7 +542,7 @@ function MultipleFileUpload({
 
       <input ref={inputRef} type="file" accept={accept} multiple onChange={handleInputChange} className="hidden" />
 
-      <button type="button" onClick={() => inputRef.current?.click()} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={(event) => { event.preventDefault(); setDragging(false); }} onDrop={handleDrop} className={`flex min-h-36 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-5 text-center transition ${dragging ? "border-secondary bg-secondary-light/50" : "border-border bg-gray-50 hover:border-secondary hover:bg-secondary-light/30"}`}>
+      <button type="button" onClick={() => inputRef.current?.click()} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={(event) => { event.preventDefault(); setDragging(false); }} onDrop={handleDrop} className={`flex min-h-36 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-5 text-center transition ${dragging ? "border-secondary bg-secondary-light/50" : "border-border bg-bg-page-gray hover:border-secondary hover:bg-secondary-light/30"}`}>
         <UploadCloud size={30} className="mb-2 text-secondary" />
 
         <span className="text-sm font-semibold text-primary">
@@ -563,7 +563,7 @@ function MultipleFileUpload({
       {files.length > 0 && (
         <div className="mt-3 space-y-2">
           {files.map((file, index) => (
-            <div key={`${file.name}-${file.size}-${file.lastModified}-${index}`} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-white px-3 py-2.5">
+            <div key={`${file.name}-${file.size}-${file.lastModified}-${index}`} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-bg-page-white px-3 py-2.5">
               <div className="flex min-w-0 items-center gap-3">
                 <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${kind === "image" ? "bg-success-bg text-success" : "bg-secondary-light text-secondary"}`}>
                   {kind === "image" ? (
@@ -1216,7 +1216,7 @@ export default function CreateActivityPage() {
           )}
         </div>
 
-        <section className="rounded-xl border border-border bg-white p-5">
+        <section className="rounded-xl border border-border bg-bg-page-white p-5">
           <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
             <Info size={18} />
             ព័ត៌មានកម្មវិធី
@@ -1290,7 +1290,7 @@ export default function CreateActivityPage() {
                   ? ""
                   : "ពិពណ៌នាអំពីកម្មវិធី..."
               }
-              className="h-32 w-full resize-none rounded-lg border border-border bg-white px-4 py-3 text-sm text-text-primary outline-none transition placeholder:text-text-secondary focus:border-primary"
+              className="h-32 w-full resize-none rounded-lg border border-border bg-bg-page-white px-4 py-3 text-sm text-text-primary outline-none transition placeholder:text-text-secondary focus:border-primary"
             />
           </div>
           </fieldset>
@@ -1298,7 +1298,7 @@ export default function CreateActivityPage() {
 
         <fieldset disabled={isInvitedBranchOnly} className="m-0 min-w-0 border-0 p-0">
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <div className="rounded-xl border border-border bg-white p-5">
+          <div className="rounded-xl border border-border bg-bg-page-white p-5">
             <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
               <CalendarDays size={18} />
               កាលបរិច្ឆេទ និង ពេលវេលា
@@ -1338,7 +1338,7 @@ export default function CreateActivityPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-white p-5">
+          <div className="rounded-xl border border-border bg-bg-page-white p-5">
             <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
               <MapPin size={18} />
               ទីតាំង
@@ -1360,7 +1360,7 @@ export default function CreateActivityPage() {
                 </label>
 
                 <div className="relative">
-                  <input type="url" value={form.mapLink} onChange={(event) => setValue("mapLink", event.target.value)} placeholder={form.mapLink ? "" : "បញ្ចូល Google Maps link"} className="h-[34px] w-full rounded-lg border border-border bg-white pl-4 pr-11 text-sm outline-none transition focus:border-secondary" />
+                  <input type="url" value={form.mapLink} onChange={(event) => setValue("mapLink", event.target.value)} placeholder={form.mapLink ? "" : "បញ្ចូល Google Maps link"} className="h-[34px] w-full rounded-lg border border-border bg-bg-page-white pl-4 pr-11 text-sm text-text-primary outline-none transition placeholder:text-text-mute focus:border-secondary" />
 
                   {form.mapLink ? (
                     <a href={form.mapLink} target="_blank" rel="noopener noreferrer" className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary transition hover:text-primary">
@@ -1385,7 +1385,7 @@ export default function CreateActivityPage() {
         </section>
         </fieldset>
 
-        <section className="rounded-xl border border-border bg-white p-5">
+        <section className="rounded-xl border border-border bg-bg-page-white p-5">
           <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
             <PencilLine size={18} />
             ព័ត៌មានបន្ថែម
@@ -1460,7 +1460,7 @@ export default function CreateActivityPage() {
         {/* A co-hosting (invited) branch never manages the activity's own
             cover image/gallery/attachments — only the host branch does. */}
         {!isInvitedBranchOnly && (
-        <section className="rounded-xl border border-border bg-white p-5">
+        <section className="rounded-xl border border-border bg-bg-page-white p-5">
           <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
             <Paperclip size={18} />
             រូបភាព និងឯកសារ
@@ -1473,7 +1473,7 @@ export default function CreateActivityPage() {
                   {existingImages.map((photo) => (
                     <div
                       key={photo.id ?? photo.url}
-                      className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-gray-50"
+                      className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-bg-page-gray"
                     >
                       {photo.url ? (
                         <img
@@ -1519,7 +1519,7 @@ export default function CreateActivityPage() {
                   {existingDocuments.map((document) => (
                     <div
                       key={document.id ?? document.url}
-                      className="flex items-center justify-between gap-3 rounded-lg border border-border bg-white px-3 py-2.5"
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border bg-bg-page-white px-3 py-2.5"
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary-light text-secondary">

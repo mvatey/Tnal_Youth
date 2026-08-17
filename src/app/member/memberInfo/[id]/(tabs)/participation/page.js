@@ -631,7 +631,7 @@ export default function ParticipationPage() {
               TYPE_BADGE_STYLES[
                 item.type
               ] ||
-              "bg-gray-100 text-text-secondary"
+              "bg-bg-page-gray text-text-secondary"
             }
           `}
         >
@@ -665,7 +665,7 @@ export default function ParticipationPage() {
               STATUS_BADGE_STYLES[
                 item.status
               ] ||
-              "bg-gray-100 text-text-secondary"
+              "bg-bg-page-gray text-text-secondary"
             }
           `}
         >
@@ -737,7 +737,7 @@ export default function ParticipationPage() {
   if (loading) {
     return (
       <div className="flex min-h-[250px] items-center justify-center">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-text-secondary">
           កំពុងទាញយកប្រវត្តិការចូលរួម...
         </p>
       </div>
@@ -746,7 +746,7 @@ export default function ParticipationPage() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 bg-white p-6 text-center">
+      <div className="rounded-xl border border-error/30 bg-bg-page-white p-6 text-center">
         <p className="text-sm text-error">
           {error}
         </p>

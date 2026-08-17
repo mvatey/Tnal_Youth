@@ -75,7 +75,7 @@ export default function BranchStats({ branches = [] }) {
         }) => (
           <div
             key={key}
-            className={`rounded-xl border border-border border-t-3 bg-white p-5 shadow-sm ${borderClass}`}
+            className={`rounded-xl border border-border border-t-3 bg-bg-page-white p-5 shadow-sm ${borderClass}`}
           >
             <div className="flex items-center gap-4">
               <div

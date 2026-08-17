@@ -61,7 +61,7 @@ function VerifyOtpContent() {
         ផ្ទៀងផ្ទាត់លេខកូដ
       </h2>
 
-      <p className="mb-8 text-center text-sm text-slate-500">
+      <p className="mb-8 text-center text-sm text-text-mute">
         យើងបានផ្ញើលេខកូដ ៦ ខ្ទង់ទៅកាន់អ៊ីមែល
         ឬលេខទូរស័ព្ទរបស់អ្នក
         <br />
@@ -75,7 +75,7 @@ function VerifyOtpContent() {
         />
 
         {error && (
-          <p className="text-center text-sm text-red-600">
+          <p className="text-center text-sm text-error">
             {error}
           </p>
         )}
@@ -89,7 +89,7 @@ function VerifyOtpContent() {
           ផ្ទៀងផ្ទាត់
         </button>
 
-        <p className="pt-2 text-center text-sm text-slate-500">
+        <p className="pt-2 text-center text-sm text-text-mute">
           មិនទាន់ទទួលបានលេខកូដ?{" "}
           <button
             type="button"

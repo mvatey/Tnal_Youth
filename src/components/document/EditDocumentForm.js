@@ -147,7 +147,7 @@ export default function EditDocumentForm({
     rounded-full
     text-text-secondary
     transition
-    hover:bg-gray-100
+    hover:bg-bg-page-gray
     hover:text-text-primary
   "
 >
@@ -198,12 +198,12 @@ export default function EditDocumentForm({
                 resize-none
                 rounded-lg
                 border
-                border-gray-200
+                border-border
                 p-3
                 text-sm
                 outline-none
                 transition
-                placeholder:text-gray-400
+                placeholder:text-text-mute
                 focus:border-primary
               "
             />
@@ -238,7 +238,7 @@ export default function EditDocumentForm({
                     gap-3
                     rounded-lg
                     border
-                    border-gray-200
+                    border-border
                     px-3
                     py-2
                   "
@@ -253,22 +253,22 @@ export default function EditDocumentForm({
                         items-center
                         justify-center
                         rounded
-                        bg-red-100
+                        bg-error-bg
                         px-1
                         text-[10px]
                         font-bold
-                        text-red-500
+                        text-error
                       "
                     >
                       {file.type}
                     </div>
 
                     <div className="min-w-0">
-                      <p className="truncate text-sm text-gray-700">
+                      <p className="truncate text-sm text-text-secondary">
                         {file.name}
                       </p>
 
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-text-mute">
                         {file.type} - {file.size}
                       </p>
                     </div>
@@ -286,9 +286,9 @@ export default function EditDocumentForm({
                       items-center
                       justify-center
                       rounded-full
-                      text-gray-400
+                      text-text-mute
                       transition
-                      hover:bg-gray-100
+                      hover:bg-bg-page-gray
                       hover:text-red-500
                     "
                   >
@@ -312,23 +312,23 @@ export default function EditDocumentForm({
               rounded-xl
               border-2
               border-dashed
-              border-gray-200
+              border-border
               text-center
               transition
               hover:border-primary
-              hover:bg-gray-50
+              hover:bg-bg-page-gray
             "
           >
             <UploadCloud
               size={28}
-              className="mb-2 text-gray-400"
+              className="mb-2 text-text-mute"
             />
 
             <p className="text-sm font-semibold text-primary">
               បញ្ចូលឯកសារ
             </p>
 
-            <p className="text-[11px] text-gray-400">
+            <p className="text-[11px] text-text-mute">
               PDF, Excel, JPG, PNG (Max 5MB)
             </p>
 
@@ -343,7 +343,7 @@ export default function EditDocumentForm({
         </div>
 
         {showValidationError && !isFormValid && (
-          <p className="mt-4 text-xs font-medium text-red-500">
+          <p className="mt-4 text-xs font-medium text-error">
             សូមបំពេញព័ត៌មានទាំងអស់ និងមានឯកសារយ៉ាងតិចមួយ។
           </p>
         )}

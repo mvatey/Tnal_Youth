@@ -205,13 +205,13 @@ export default function SponsorDonationPage() {
       </h2>
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div className="rounded-lg border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
           {error}
         </div>
       )}
 
       {isLoading && (
-        <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-500">
+        <div className="rounded-lg border border-border bg-bg-page-white px-4 py-3 text-sm text-text-secondary">
           កំពុងទាញយកទិន្នន័យ...
         </div>
       )}

@@ -1,9 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
+import { useAuth } from "@/context/AuthContext";
+import { useBranch } from "@/context/BranchContext";
+import { normalizeRole } from "@/lib/navigation";
 
 function getValue(record, camelKey, snakeKey) {
   return record?.[camelKey] ?? record?.[snakeKey];
@@ -17,22 +20,55 @@ function getValue(record, camelKey, snakeKey) {
  * selectable on the participants page (see
  * app/activity/[id]/participants/page.js) and canManageParticipants
  * (returned by GET /activities/{id}) becomes true for their account.
+ *
+ * A branch leader/secretary can be responsible for more than one branch
+ * (see the sidebar's branch switcher, backed by BranchContext / the
+ * `/api/lookups/branches` list of branches this account can access).
+ * Checking only the member's single home branch meant a PENDING
+ * invitation addressed to a second branch someone is responsible for
+ * never surfaced a banner at all, so it could never be accepted — this
+ * pulls in every accessible branch for branch-scoped staff, not just
+ * their home one. Admin's accessible-branches list is org-wide, so it is
+ * deliberately excluded here — accepting on behalf of a branch is a
+ * branch-staff action, not an admin one.
  */
 export default function PendingInvitationBanner({ activityId }) {
   const { member } = useCurrentMember();
+  const { user } = useAuth();
+  const { branches: accessibleBranches = [] } = useBranch();
   const [invitation, setInvitation] = useState(null);
   const [responding, setResponding] = useState(false);
   const [error, setError] = useState("");
   const [dismissed, setDismissed] = useState(false);
 
-  const ownBranchId = Number(
+  const role = normalizeRole(user?.role);
+  const isBranchScopedStaff = role === "branch_leader" || role === "secretary";
+
+  const homeBranchId = Number(
     getValue(member, "branchId", "branch_id") ??
       getValue(member?.branch, "id") ??
       member?.branch?.id,
   );
 
+  const ownBranchIds = useMemo(() => {
+    const ids = new Set();
+
+    if (Number.isFinite(homeBranchId)) {
+      ids.add(homeBranchId);
+    }
+
+    if (isBranchScopedStaff) {
+      accessibleBranches.forEach((branch) => {
+        const id = Number(branch?.id);
+        if (Number.isFinite(id)) ids.add(id);
+      });
+    }
+
+    return ids;
+  }, [homeBranchId, isBranchScopedStaff, accessibleBranches]);
+
   const loadInvitation = useCallback(async () => {
-    if (!Number.isFinite(ownBranchId) || !activityId) return;
+    if (ownBranchIds.size === 0 || !activityId) return;
 
     try {
       const response = await fetch(
@@ -51,14 +87,14 @@ export default function PendingInvitationBanner({ activityId }) {
           getValue(row, "invitationStatus", "invitation_status") || "",
         ).toUpperCase();
 
-        return branchId === ownBranchId && status === "PENDING";
+        return ownBranchIds.has(branchId) && status === "PENDING";
       });
 
       setInvitation(pendingForOwnBranch || null);
     } catch {
       // A failed lookup just means no banner shows — not worth surfacing.
     }
-  }, [activityId, ownBranchId]);
+  }, [activityId, ownBranchIds]);
 
   useEffect(() => {
     loadInvitation();

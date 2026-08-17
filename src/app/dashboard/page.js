@@ -232,7 +232,7 @@ export default function DashboardPage() {
     !dashboard
   ) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center text-sm text-gray-500">
+      <div className="flex min-h-[400px] items-center justify-center text-sm text-text-mute">
         កំពុងទាញយកទិន្នន័យ...
       </div>
     );
@@ -248,9 +248,9 @@ export default function DashboardPage() {
     !dashboard
   ) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-5">
+      <div className="rounded-xl border border-error/30 bg-error-bg p-5">
 
-        <p className="text-sm text-red-700">
+        <p className="text-sm text-error">
           {error}
         </p>
 
@@ -277,7 +277,7 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-4">
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
           {error}
         </div>
       )}

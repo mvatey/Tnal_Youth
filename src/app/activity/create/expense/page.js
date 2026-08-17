@@ -99,8 +99,8 @@ function sanitizeInteger(value) {
 
 const getAmountFieldClass = (value) =>
   parseNumber(value) > 0
-    ? "border-[#65686b] bg-[#eef5f3]"
-    : "border-[#65686b] bg-[#e5e7eb]";
+    ? "border-border bg-success-bg"
+    : "border-border bg-bg-page-gray";
 
 async function fetchJson(path, options = {}) {
   const response = await fetch(path, { cache: "no-store", ...options });
@@ -361,7 +361,7 @@ export default function ExpensePage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-white p-5">
+      <div className="rounded-xl border border-border bg-bg-page-white p-5">
         <div className="mb-4 flex justify-end">
           <button
             type="button"
@@ -418,7 +418,7 @@ export default function ExpensePage() {
                 (row, index) => (
                   <tr
                     key={row.id}
-                    className="h-[42px] border-b border-[#e5eaf0] bg-[#fbfcfe] text-[12px] text-text-secondary transition-colors last:border-b-0 hover:bg-[#f6f8fb]"
+                    className="h-[42px] border-b border-border bg-bg-page-white text-[12px] text-text-secondary transition-colors last:border-b-0 hover:bg-bg-page-gray"
                   >
                     <td className="text-center text-text-secondary">
                       {index + 1}
@@ -547,7 +547,7 @@ export default function ExpensePage() {
 
                     {/* Combined row total */}
                     <td className="px-3">
-                      <div className="mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border border-[#65686b] bg-[#e5e7eb] px-2 text-[12px] text-text-secondary">
+                      <div className="mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border border-border bg-bg-page-gray px-2 text-[12px] text-text-secondary">
                         <span className="min-w-0 flex-1 text-left">
                           {formatDollar(row.totalDollar)}
                         </span>
@@ -647,7 +647,7 @@ export default function ExpensePage() {
         <div className="mt-5 flex justify-between">
           <Link
             href={id ? `/activity/create?edit=${id}` : "/activity/create"}
-            className="flex h-[34px] w-[91px] items-center justify-center rounded-lg border border-border bg-white text-sm font-semibold text-text-secondary"
+            className="flex h-[34px] w-[91px] items-center justify-center rounded-lg border border-border bg-bg-page-white text-sm font-semibold text-text-secondary"
           >
             បោះបង់
           </Link>

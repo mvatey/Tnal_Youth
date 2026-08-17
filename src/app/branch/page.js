@@ -1618,7 +1618,7 @@ export default function BranchPage() {
         }
       />
 
-      <section className="rounded-xl border border-border bg-white p-4 transition-shadow duration-200 hover:shadow-sm">
+      <section className="rounded-xl border border-border bg-bg-page-white p-4 transition-shadow duration-200 hover:shadow-sm">
         <div className="mb-4 flex min-w-0 flex-wrap items-center gap-3 xl:flex-nowrap">
           {/* Search */}
           <div className="w-full shrink-0 sm:w-[265px]">

@@ -291,7 +291,7 @@ const totalParticipantCount = activityParticipants.length;
 
       {/* SECTION 1: Hero + status summary */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
-        <div className="xl:col-span-2 rounded-xl border border-border bg-white p-5">
+        <div className="xl:col-span-2 rounded-xl border border-border bg-bg-page-white p-5">
           <div className="flex flex-col gap-5 md:flex-row">
             {/*
               Previously gated behind `!isMember`, which hid the cover
@@ -344,7 +344,7 @@ const totalParticipantCount = activityParticipants.length;
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-white p-5">
+        <div className="rounded-xl border border-border bg-bg-page-white p-5">
           <h3 className="mb-5 text-base font-bold text-secondary">សង្ខេបស្ថានភាព</h3>
           <StatusRow icon={CheckCircle2} label="ស្ថានភាព">
             <span className={`rounded-full px-3 py-1 text-[11px] ${statusStyle}`}>{statusLabel}</span>
@@ -365,7 +365,7 @@ const totalParticipantCount = activityParticipants.length;
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         <div className="flex flex-col xl:col-span-2">
           <h3 className="mb-2 text-base font-bold text-secondary">ទិដ្ឋភាពទូទៅ</h3>
-          <div className="flex-1 rounded-xl border border-border bg-white p-5">
+          <div className="flex-1 rounded-xl border border-border bg-bg-page-white p-5">
             <p className="mb-5 text-sm leading-7 text-text-secondary">{activity.descriptionDetail}</p>
 
             <div className="grid grid-cols-2 gap-x-8 gap-y-4 border-t border-border pt-5 text-sm">
@@ -383,7 +383,7 @@ const totalParticipantCount = activityParticipants.length;
 
         <div className="flex flex-col">
           <h3 className="mb-2 text-base font-bold text-secondary">ទីតាំង</h3>
-          <div className="flex-1 rounded-xl border border-border bg-white p-5">
+          <div className="flex-1 rounded-xl border border-border bg-bg-page-white p-5">
             <a href={activity.mapLink || "#"}
             target="_blank"
             rel="noopener noreferrer"
@@ -408,7 +408,7 @@ const totalParticipantCount = activityParticipants.length;
 <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
   {/* Member — admin and staff see full participation info; members do not */}
   {!isMember && (
-  <div className="rounded-xl border border-border bg-white p-5">
+  <div className="rounded-xl border border-border bg-bg-page-white p-5">
     <h3 className="mb-4 text-base font-bold text-secondary">សមាសភាព</h3>
 
     <div className="grid grid-cols-2 gap-4">
@@ -441,7 +441,7 @@ const totalParticipantCount = activityParticipants.length;
 
 {/* Budget — hidden entirely for members; income/expense are management-only info */}
 {!isMember && (
-<div className="rounded-xl border border-border bg-white p-5">
+<div className="rounded-xl border border-border bg-bg-page-white p-5">
   <h3 className="mb-4 text-base font-bold text-secondary">
     ថវិកា
   </h3>
@@ -495,7 +495,7 @@ const totalParticipantCount = activityParticipants.length;
 )}
 
   {/* Documents */}
-  <div className="rounded-xl border border-border bg-white p-5">
+  <div className="rounded-xl border border-border bg-bg-page-white p-5">
     <h3 className="mb-4 text-base font-bold text-secondary">ឯកសារ</h3>
 
     <div className="space-y-3">

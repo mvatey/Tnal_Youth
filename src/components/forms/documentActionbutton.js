@@ -28,13 +28,13 @@ export default function DocumentActionButton({
           shrink-0
           rounded-lg
           border
-          border-gray-300
-          bg-white
+          border-border
+          bg-bg-page-white
           text-sm
           font-medium
           text-text-primary
           transition
-          hover:bg-gray-50
+          hover:bg-bg-page-gray
           active:scale-[0.99]
           disabled:cursor-not-allowed
           disabled:opacity-50

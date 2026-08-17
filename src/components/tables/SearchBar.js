@@ -18,7 +18,7 @@ export default function SearchBar({
         </span>
       )}
 
-      <span className="flex h-[34px] items-center rounded-lg border border-border bg-white px-3">
+      <span className="flex h-[34px] items-center rounded-lg border border-border bg-bg-page-white px-3">
         <input
           value={value}
           onChange={(e) => onChange?.(e.target.value)}

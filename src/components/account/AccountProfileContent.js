@@ -56,7 +56,7 @@ const secretary = {
   if (!secretary) {
     return (
       <div className="flex min-h-[500px] items-center justify-center">
-        <div className="rounded-xl border border-border bg-white px-8 py-10 text-center">
+        <div className="rounded-xl border border-border bg-bg-page-white px-8 py-10 text-center">
           <p className="font-semibold text-text-primary">
             មិនរកឃើញព័ត៌មានលេខាធិការ
           </p>
@@ -205,7 +205,7 @@ const secretary = {
       </section>
 
       {/* Two tabs */}
-      <nav className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+      <nav className="overflow-hidden rounded-xl border border-border bg-bg-page-white shadow-sm">
         <div className="grid grid-cols-2">
           {tabs.map((tab) => {
             const active =
@@ -230,7 +230,7 @@ const secretary = {
                   ${
                     active
                       ? "border-secondary bg-secondary-light text-secondary"
-                      : "border-transparent text-text-secondary hover:bg-gray-50 hover:text-secondary"
+                      : "border-transparent text-text-secondary hover:bg-bg-page-gray hover:text-secondary"
                   }
                 `}
               >
@@ -242,7 +242,7 @@ const secretary = {
       </nav>
 
       {/* Current tab */}
-      <section className="rounded-xl border border-border bg-white p-5 shadow-sm">
+      <section className="rounded-xl border border-border bg-bg-page-white p-5 shadow-sm">
         {children}
       </section>
     </div>

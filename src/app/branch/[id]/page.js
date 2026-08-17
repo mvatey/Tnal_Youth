@@ -310,7 +310,7 @@ function DetailStatCard({
 }) {
   return (
     <div
-      className={`rounded-xl border border-border border-t-2 bg-white p-4 shadow-sm ${borderClassName}`}
+      className={`rounded-xl border border-border border-t-2 bg-bg-page-white p-4 shadow-sm ${borderClassName}`}
     >
       <div className="flex items-center gap-4">
         <div
@@ -346,7 +346,7 @@ function LeaderCard({
 }) {
   if (!person) {
   return (
-    <div className="rounded-lg border border-dashed border-border bg-white p-6 text-center shadow-sm">
+    <div className="rounded-lg border border-dashed border-border bg-bg-page-white p-6 text-center shadow-sm">
       <Building2
         size={30}
         className="mx-auto text-text-secondary"
@@ -373,7 +373,7 @@ function LeaderCard({
 }
 
   return (
-    <div className="min-w-0 overflow-x-auto rounded-lg border border-border bg-white px-5 py-4 shadow-sm">
+    <div className="min-w-0 overflow-x-auto rounded-lg border border-border bg-bg-page-white px-5 py-4 shadow-sm">
       <div className="grid grid-cols-1 items-center gap-4 lg:grid-cols-[250px_150px_240px_150px_150px_auto]">
         <div className="flex min-w-0 items-center gap-4">
           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
@@ -1249,7 +1249,7 @@ const loadBranchDetails =
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-white p-6">
+      <div className="rounded-xl border border-border bg-bg-page-white p-6">
         <p className="text-sm text-text-secondary">
           កំពុងទាញយកព័ត៌មានសាខា...
         </p>
@@ -1259,7 +1259,7 @@ const loadBranchDetails =
 
   if (loadError || !branch) {
     return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
+      <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
         <p className="text-sm text-error">
           {loadError ||
             "រកមិនឃើញព័ត៌មានសាខា"}
@@ -1465,7 +1465,7 @@ const loadBranchDetails =
         </section>
       )}
 
-      <section className="rounded-xl border border-border bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-border bg-bg-page-white p-4 shadow-sm">
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <div className="w-full sm:w-[320px]">
             <SearchBar

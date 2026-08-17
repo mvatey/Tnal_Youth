@@ -35,10 +35,10 @@ export default function SponsorTypeSelect({
       <select
         value={value}
         onChange={(event) => onChange?.(event.target.value)}
-        className={`h-full w-full appearance-none bg-white text-text-secondary shadow-sm outline-none transition hover:border-secondary focus:border-secondary ${
+        className={`h-full w-full appearance-none bg-bg-page-white text-text-secondary shadow-sm outline-none transition hover:border-secondary focus:border-secondary ${
           isCompact
             ? "rounded-lg border border-border px-3 pr-8 text-[12px] font-medium"
-            : "rounded-[24px] border-2 border-[#E3E5EA] px-8 pr-14 text-[28px] font-semibold"
+            : "rounded-[24px] border-2 border-border px-8 pr-14 text-[28px] font-semibold"
         }`}
         aria-label={placeholder}
       >
@@ -53,7 +53,7 @@ export default function SponsorTypeSelect({
       <ChevronDown
         size={isCompact ? 16 : 30}
         strokeWidth={isCompact ? 2.4 : 3}
-        className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-black ${
+        className={`pointer-events-none absolute top-1/2 -translate-y-1/2 text-text-primary ${
           isCompact ? "right-3" : "right-7"
         }`}
       />

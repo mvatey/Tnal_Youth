@@ -918,7 +918,7 @@ export default function CertificateForm({
         rounded-xl
         border
         border-[#e5eaf0]
-        bg-white
+        bg-bg-page-white
         p-4
         sm:p-5
         lg:p-6
@@ -1094,7 +1094,7 @@ export default function CertificateForm({
           )}
 
           {dataError && branchOptions.length > 0 ? (
-            <p className="text-xs font-medium text-red-500">{dataError}</p>
+            <p className="text-xs font-medium text-error">{dataError}</p>
           ) : null}
 
           {/* Description */}
@@ -1128,14 +1128,14 @@ export default function CertificateForm({
                 resize-none
                 rounded-lg
                 border
-                border-gray-200
-                bg-white
+                border-border
+                bg-bg-page-white
                 p-4
                 text-sm
                 text-text-primary
                 outline-none
                 transition
-                placeholder:text-gray-400
+                placeholder:text-text-mute
                 focus:border-primary
               "
             />
@@ -1163,8 +1163,8 @@ export default function CertificateForm({
                   overflow-hidden
                   rounded-xl
                   border
-                  border-gray-200
-                  bg-gray-50
+                  border-border
+                  bg-bg-page-gray
                 "
               >
                 <img
@@ -1195,11 +1195,11 @@ export default function CertificateForm({
                     items-center
                     justify-center
                     rounded-full
-                    bg-white
-                    text-red-500
+                    bg-bg-page-white
+                    text-error
                     shadow
                     transition
-                    hover:bg-red-50
+                    hover:bg-error-bg
                   "
                 >
                   <X size={17} />
@@ -1217,8 +1217,8 @@ export default function CertificateForm({
                   rounded-xl
                   border-2
                   border-dashed
-                  border-[#7180a8]
-                  bg-[#f8f9ff]
+                  border-border
+                  bg-bg-page-gray
                   text-center
                   transition
                   hover:bg-secondary-light/30
@@ -1226,19 +1226,19 @@ export default function CertificateForm({
               >
                 <UploadCloud
                   size={27}
-                  className="mb-2 text-[#62708f]"
+                  className="mb-2 text-text-secondary"
                 />
 
                 <p className="text-xs font-semibold text-primary">
                   បញ្ចូលរូបភាពគំរូ
                 </p>
 
-                <p className="mt-1 text-[10px] text-gray-400">
+                <p className="mt-1 text-[10px] text-text-mute">
                   JPG, PNG, WEBP —
                   មិនលើស 5MB
                 </p>
 
-                <p className="text-[10px] text-gray-400">
+                <p className="text-[10px] text-text-mute">
                   ទំហំគំរូណែនាំ
                   1600 × 900 px
                 </p>
@@ -1355,9 +1355,9 @@ export default function CertificateForm({
                           ${
                             selected
                               ? `
-                                border-gray-800
+                                border-text-primary
                                 ring-2
-                                ring-gray-300
+                                ring-border
                               `
                               : "border-transparent"
                           }
@@ -1540,7 +1540,7 @@ export default function CertificateForm({
 
           {showValidationError &&
             !isFormValid && (
-              <p className="mt-4 text-xs font-medium text-red-500">
+              <p className="mt-4 text-xs font-medium text-error">
                 សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
               </p>
             )}

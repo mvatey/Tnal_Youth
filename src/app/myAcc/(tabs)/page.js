@@ -7,7 +7,7 @@ export default function MyAccountPage() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-border bg-white p-6">
+      <div className="rounded-xl border border-border bg-bg-page-white p-6">
         កំពុងទាញយកព័ត៌មានសមាជិក...
       </div>
     );
@@ -15,7 +15,7 @@ export default function MyAccountPage() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-border bg-white p-6 text-error">
+      <div className="rounded-xl border border-border bg-bg-page-white p-6 text-error">
         {error}
       </div>
     );
@@ -23,14 +23,14 @@ export default function MyAccountPage() {
 
   if (!member) {
     return (
-      <div className="rounded-xl border border-border bg-white p-6">
+      <div className="rounded-xl border border-border bg-bg-page-white p-6">
         រកមិនឃើញព័ត៌មានសមាជិក
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-border bg-white p-6">
+    <div className="rounded-xl border border-border bg-bg-page-white p-6">
       <h2 className="mb-4 text-lg font-semibold text-primary">
         ព័ត៌មានផ្ទាល់ខ្លួន
       </h2>

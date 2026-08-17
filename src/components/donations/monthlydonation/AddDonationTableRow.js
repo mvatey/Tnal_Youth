@@ -34,8 +34,8 @@ function normalizeAvatarUrl(value) {
 
 const getAmountFieldClass = (value) =>
   Number(value) > 0
-    ? "border-[#65686b] bg-[#eef5f3]"
-    : "border-[#65686b] bg-[#e5e7eb]";
+    ? "border-border bg-success-bg"
+    : "border-border bg-bg-page-gray";
 
 export function ReceiptIcon({ size = 20 }) {
   return (
@@ -104,14 +104,14 @@ export default function AddDonationTableRow({
   };
 
   return (
-    <tr className="h-[42px] border-b border-[#e5eaf0] bg-[#fbfcfe] text-center text-[12px] text-slate-500 transition-colors hover:bg-[#f6f8fb]">
+    <tr className="h-[42px] border-b border-border bg-bg-page-white text-center text-[12px] text-text-secondary transition-colors hover:bg-bg-page-gray">
       {/* ល.រ */}
       <td className="px-3 font-medium">{index + 1}</td>
 
       {/* សមាជិក (avatar + name) */}
       <td className="px-3 text-left">
         <div className="flex items-center gap-3">
-          <div className="relative h-[26px] w-[26px] shrink-0 overflow-hidden rounded-full bg-slate-200">
+          <div className="relative h-[26px] w-[26px] shrink-0 overflow-hidden rounded-full bg-bg-page-gray">
             <img
               src={avatarUrl}
               alt={member.name || "Member profile"}
@@ -123,7 +123,7 @@ export default function AddDonationTableRow({
               }}
             />
           </div>
-          <span className="whitespace-nowrap font-medium text-slate-500">{member.name}</span>
+          <span className="whitespace-nowrap font-medium text-text-secondary">{member.name}</span>
         </div>
       </td>
 
@@ -153,9 +153,9 @@ export default function AddDonationTableRow({
             )}
             onBlur={() => setFocusedAmountField(null)}
             placeholder={focusedAmountField === "realAmount" ? "" : "0"}
-            className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500 disabled:cursor-not-allowed"
+            className="w-full bg-transparent text-[13px] text-text-primary outline-none placeholder:text-text-mute disabled:cursor-not-allowed"
           />
-          <span className="text-[13px] text-slate-500">៛</span>
+          <span className="text-[13px] text-text-secondary">៛</span>
         </div>
       </td>
 
@@ -179,9 +179,9 @@ export default function AddDonationTableRow({
             )}
             onBlur={() => setFocusedAmountField(null)}
             placeholder={focusedAmountField === "dollarAmount" ? "" : "0.00"}
-            className="w-full bg-transparent text-[13px] text-slate-600 outline-none placeholder:text-slate-500 disabled:cursor-not-allowed"
+            className="w-full bg-transparent text-[13px] text-text-primary outline-none placeholder:text-text-mute disabled:cursor-not-allowed"
           />
-          <span className="text-[13px] text-slate-500">$</span>
+          <span className="text-[13px] text-text-secondary">$</span>
         </div>
       </td>
 
@@ -191,7 +191,7 @@ export default function AddDonationTableRow({
           disabled={readOnly}
           value={member.paymentMethod || "Cash"}
           onChange={(e) => onPaymentMethodChange(member.id, e.target.value)}
-          className="mx-auto block h-7 w-[82px] rounded-md border border-slate-400 bg-white px-2 text-[12px] text-slate-600 outline-none focus:border-[#4B2E91] disabled:cursor-not-allowed disabled:bg-slate-100"
+          className="mx-auto block h-7 w-[82px] rounded-md border border-border bg-bg-page-white px-2 text-[12px] text-text-secondary outline-none focus:border-secondary disabled:cursor-not-allowed disabled:bg-bg-page-gray"
         >
           {monthlyDonationPaymentMethods.map((method) => (
             <option key={method} value={method}>
@@ -209,7 +209,7 @@ export default function AddDonationTableRow({
             type="button"
             disabled={readOnly}
             onClick={() => onShowInfo(member)}
-            className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-md text-[#4B2E91] transition hover:bg-[#4B2E91]/10 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-md text-secondary transition hover:bg-secondary-light/10 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="receipt"
             title={receipt?.name || "receipt"}
           >
@@ -231,7 +231,7 @@ export default function AddDonationTableRow({
 
           {rowEditMode && isEditing && !readOnly ? (
             <>
-              <button type="button" onClick={onCancelEdit} className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-600 hover:bg-slate-50" title="Cancel">
+              <button type="button" onClick={onCancelEdit} className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-bg-page-white text-text-secondary hover:bg-bg-page-gray" title="Cancel">
                 <X size={14} />
               </button>
               <button type="button" onClick={onSaveEdit} className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#4B2E91] text-white hover:bg-[#3f267a]" title="Save">

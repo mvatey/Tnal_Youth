@@ -4,14 +4,14 @@ export default function SaveAlert({
   message = "អបអរសាទរ ! វិភាគទានប្រចាំខែត្រូវបានបន្ថែមដោយជោគជ័យ",
 }) {
   return (
-    <div className="h-[42px] w-[461px] rounded-[8px] bg-white px-5 shadow-sm">
+    <div className="h-[42px] w-[461px] rounded-[8px] bg-bg-page-white px-5 shadow-sm">
       <div className="flex h-full items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-600 text-white">
             <Check size={17} strokeWidth={3} />
           </div>
 
-          <p className="truncate text-[14px] font-medium text-[#6B7280]">
+          <p className="truncate text-[14px] font-medium text-text-secondary">
             {message}
           </p>
         </div>

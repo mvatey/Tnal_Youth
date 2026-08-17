@@ -109,8 +109,8 @@ function sanitizeDecimal(value) {
 
 const getAmountFieldClass = (value) =>
   Number(value) > 0
-    ? "border-[#65686b] bg-[#eef5f3]"
-    : "border-[#65686b] bg-[#e5e7eb]";
+    ? "border-border bg-success-bg"
+    : "border-border bg-bg-page-gray";
 
 function getTotalInDollars(row) {
   return (
@@ -393,7 +393,7 @@ export default function IncomePage() {
       )}
 
       {/* Income table */}
-      <div className="rounded-xl border border-border bg-white p-5">
+      <div className="rounded-xl border border-border bg-bg-page-white p-5">
         <div className="mb-4 flex justify-end">
           <button
             type="button"
@@ -456,7 +456,7 @@ export default function IncomePage() {
                   return (
                     <tr
                       key={row.id}
-                      className="h-[42px] border-b border-[#e5eaf0] bg-[#fbfcfe] text-[12px] text-text-secondary transition-colors hover:bg-[#f6f8fb]"
+                      className="h-[42px] border-b border-border bg-bg-page-white text-[12px] text-text-secondary transition-colors hover:bg-bg-page-gray"
                     >
                       <td className="text-center text-text-secondary">
                         {realIndex + 1}
@@ -590,7 +590,7 @@ export default function IncomePage() {
                                 .value
                             )
                           }
-                          className="mx-auto block h-7 w-[82px] rounded-md border border-slate-400 bg-white px-2 text-[12px] text-text-secondary outline-none focus:border-[#4B2E91]"
+                          className="mx-auto block h-7 w-[82px] rounded-md border border-border bg-bg-page-white px-2 text-[12px] text-text-secondary outline-none focus:border-secondary"
                         >
                           {paymentMethods.map((method) => (
                             <option key={method.id} value={method.code}>
@@ -603,7 +603,7 @@ export default function IncomePage() {
 
                       <td className="px-3 text-center">
                         <label
-                          className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-[#4B2E91] hover:bg-[#4B2E91]/10"
+                          className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-secondary hover:bg-secondary-light/10"
                           aria-label="receipt"
                         >
                           <ReceiptIcon size={18} />
@@ -702,7 +702,7 @@ export default function IncomePage() {
       <div className="flex justify-between">
         <Link
           href={cancelHref}
-          className="flex h-[34px] w-[91px] items-center justify-center rounded-lg border border-border bg-white text-sm font-semibold text-text-secondary transition hover:bg-gray-50"
+          className="flex h-[34px] w-[91px] items-center justify-center rounded-lg border border-border bg-bg-page-white text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray"
         >
           បោះបង់
         </Link>

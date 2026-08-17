@@ -5,7 +5,7 @@ const BUTTONS = {
   reset: {
     label: "ចាប់ផ្ដើមសារថ្មី",
     Icon: RefreshCw,
-    className: "bg-[#E5E7EB] border border-border text-center text-text-secondary hover:bg-bg-page-gray w-[150px] h-[34px]",
+    className: "bg-bg-page-gray border border-border text-center text-text-secondary hover:bg-bg-page-gray/70 w-[150px] h-[34px]",
   },
   save: {
     label: "រក្សាទុក",
@@ -15,7 +15,7 @@ const BUTTONS = {
   cancel: {
     label: "បោះបង់",
     Icon: null,
-    className: "border border-border bg-[#F3F5FC] text-text-secondary hover:bg-bg-page-gray w-[91px] h-[34px]",
+    className: "border border-border bg-bg-page-gray text-text-secondary hover:bg-bg-page-gray/70 w-[91px] h-[34px]",
   },
 };
 

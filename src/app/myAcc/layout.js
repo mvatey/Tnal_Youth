@@ -115,20 +115,20 @@ export default function MyAccountLayout({ children }) {
         <main className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
           {loading && (
             <div className="flex min-h-[300px] items-center justify-center">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-text-mute">
                 កំពុងទាញយកព័ត៌មានសមាជិក...
               </p>
             </div>
           )}
 
           {!loading && error && (
-            <div className="rounded-xl border border-red-200 bg-white p-6 text-center">
+            <div className="rounded-xl border border-error/30 bg-bg-page-white p-6 text-center">
               <p className="text-sm text-error">{error}</p>
             </div>
           )}
 
           {!loading && !error && !member && (
-            <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-500">
+            <div className="rounded-xl border border-border bg-bg-page-white p-6 text-center text-sm text-text-mute">
               រកមិនឃើញព័ត៌មានសមាជិក
             </div>
           )}

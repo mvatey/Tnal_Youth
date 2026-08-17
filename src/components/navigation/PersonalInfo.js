@@ -85,7 +85,7 @@ function InfoField({
         className={`h-11 w-full rounded-lg border border-border px-4 text-sm outline-none ${
           readOnly
             ? "cursor-default bg-bg-page-gray text-text-secondary"
-            : "bg-white text-text-primary focus:border-secondary"
+            : "bg-bg-page-white text-text-primary focus:border-secondary"
         }`}
       />
     </label>

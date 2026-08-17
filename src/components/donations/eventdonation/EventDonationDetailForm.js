@@ -266,19 +266,19 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           <div
             role="status"
             aria-live="polite"
-            className="pointer-events-auto flex items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-4 py-3 shadow-[0_18px_45px_rgba(15,23,42,0.18)]"
+            className="pointer-events-auto flex items-center gap-3 rounded-2xl border border-emerald-100 bg-bg-page-white px-4 py-3 shadow-[0_18px_45px_rgba(15,23,42,0.18)]"
           >
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
               <Check size={22} strokeWidth={2.5} />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-slate-800">បានរក្សាទុកដោយជោគជ័យ</p>
-              <p className="mt-0.5 text-xs text-slate-500">ទិន្នន័យវិភាគទានរបស់សមាជិកត្រូវបានធ្វើបច្ចុប្បន្នភាព។</p>
+              <p className="font-semibold text-text-primary">បានរក្សាទុកដោយជោគជ័យ</p>
+              <p className="mt-0.5 text-xs text-text-secondary">ទិន្នន័យវិភាគទានរបស់សមាជិកត្រូវបានធ្វើបច្ចុប្បន្នភាព។</p>
             </div>
             <button
               type="button"
               onClick={() => setShowSaveAlert(false)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-secondary transition hover:bg-bg-page-gray hover:text-text-primary"
               aria-label="Close notification"
             >
               <X size={18} />
@@ -286,12 +286,12 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           </div>
         </div>
       ) : null}
-      <section className="min-h-[545px] rounded-md border border-border bg-[#fbfbfd] p-6">
+      <section className="min-h-[545px] rounded-md border border-border bg-bg-page-white p-6">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-base font-semibold text-secondary">ការកត់ត្រាវិភាគទានក្នុងកម្មវិធី</h1>
           {savedMessage ? <p className="text-sm font-medium text-success">{savedMessage}</p> : null}
         </div>
-        {error ? <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-wrap items-end gap-6">
             <DonationFilterSelect label="សាខា" value={selectedBranch} onChange={handleBranchChange} options={branches} allLabel="ជ្រើសរើសសាខា" className="w-[158px]" required disabled={isDetailPage} />

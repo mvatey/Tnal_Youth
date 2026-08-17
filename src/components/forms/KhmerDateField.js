@@ -116,11 +116,11 @@ export default function KhmerDateField({
             cursor-pointer
             rounded-lg
             border
-            border-gray-200
+            border-border
             px-3
             pr-10
             text-sm
-            text-gray-600
+            text-text-secondary
             outline-none
             focus:border-primary
           "
@@ -154,7 +154,7 @@ export default function KhmerDateField({
             right-3
             top-1/2
             -translate-y-1/2
-            text-gray-400
+            text-text-mute
           "
         />
 

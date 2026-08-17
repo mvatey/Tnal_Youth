@@ -31,12 +31,12 @@ export default function SaveFile({
         items-center
         gap-3
         rounded-2xl
-        bg-white
+        bg-bg-page-white
         px-4
         text-left
         shadow-[0_2px_5px_rgba(0,0,0,0.22)]
         transition
-        hover:bg-gray-50
+        hover:bg-bg-page-gray
         focus-visible:outline-2
         focus-visible:outline-offset-2
         focus-visible:outline-secondary
@@ -67,7 +67,7 @@ export default function SaveFile({
             text-[20px]
             font-semibold
             leading-7
-            text-black
+            text-text-primary
           "
         >
           {fileName}
@@ -80,7 +80,7 @@ export default function SaveFile({
               text-[14px]
               font-normal
               leading-5
-              text-black
+              text-text-primary
             "
           >
             {fileSize}

@@ -84,7 +84,7 @@ export default function MemberDocumentPage() {
       header: "ប្រភេទឯកសារ",
       width: "w-[10%]",
       render: (item) => (
-        <span className="rounded-md bg-red-100 px-3 py-1 text-xs text-red-500">
+        <span className="rounded-md bg-error-bg px-3 py-1 text-xs text-error">
           {item.type}
         </span>
       ),

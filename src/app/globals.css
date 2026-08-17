@@ -180,6 +180,15 @@ input::-webkit-credentials-auto-fill-button {
   height: 14px;
   font-size: 10px;
 }
+/* Tell the browser to render native date/time control chrome (including
+   the empty "--" placeholder segments) using its dark palette instead of
+   defaulting to black-on-transparent, which is unreadable on dark cards. */
+.dark input[type="date"],
+.dark input[type="time"],
+.dark input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
 /* Hide native calendar icon */
 input[type="date"]::-webkit-calendar-picker-indicator {
   position: absolute;

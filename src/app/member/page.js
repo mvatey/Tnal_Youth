@@ -52,13 +52,13 @@ const STATUS_BADGE_STYLES = {
     "bg-success-bg text-success",
 
   INACTIVE:
-    "bg-red-50 text-red-600",
+    "bg-error-bg text-error",
 
   SUSPENDED:
     "bg-warning-bg text-warning",
 
   RESIGNED:
-    "bg-gray-100 text-text-secondary",
+    "bg-bg-page-gray text-text-secondary",
 };
 
 const KHMER_MONTHS = [
@@ -1080,7 +1080,7 @@ export default function MembersPage() {
                 member
                   .statusCode
               ] ||
-              "bg-gray-100 text-text-secondary"
+              "bg-bg-page-gray text-text-secondary"
             }
           `}
         >

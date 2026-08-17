@@ -30,16 +30,16 @@ export default function FormControl({
     w-full
     rounded-lg
     border
-    border-gray-200
-    bg-white
+    border-border
+    bg-bg-page-white
     text-sm
     leading-6
-    text-gray-600
+    text-text-secondary
     outline-none
     transition
     focus:border-primary
     disabled:cursor-not-allowed
-    disabled:bg-gray-100
+    disabled:bg-bg-page-gray
     disabled:opacity-60
   `;
 
@@ -118,7 +118,7 @@ export default function FormControl({
 
           <Calendar
             size={18}
-            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-mute"
           />
         </div>
       ) : (

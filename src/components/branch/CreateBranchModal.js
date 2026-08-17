@@ -956,7 +956,7 @@ try {
         role="dialog"
         aria-modal="true"
         aria-labelledby="branch-modal-title"
-        className="no-scrollbar max-h-[calc(100vh-4rem)] w-full max-w-[720px] overflow-y-auto rounded-2xl bg-white shadow-2xl"
+        className="no-scrollbar max-h-[calc(100vh-4rem)] w-full max-w-[720px] overflow-y-auto rounded-2xl bg-bg-page-white shadow-2xl"
       >
         <form onSubmit={handleSubmit}>
           <div className="flex items-start justify-between px-7 pb-3 pt-6">
@@ -973,7 +973,7 @@ try {
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-secondary transition hover:bg-gray-100 hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-secondary transition hover:bg-bg-page-gray hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="បិទ"
             >
               <X size={18} />
@@ -1200,7 +1200,7 @@ try {
             />
 
             {isEditMode && (
-              <div className="space-y-2 rounded-xl border border-border bg-gray-50 p-4">
+              <div className="space-y-2 rounded-xl border border-border bg-bg-page-gray p-4">
                 <FormSelect
                   label="ប្រធានសាខា"
                   name="branchLeaderId"
@@ -1240,7 +1240,7 @@ try {
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="flex h-10 w-[110px] shrink-0 items-center justify-center rounded-lg border border-border bg-white px-5 text-sm font-semibold text-text-secondary transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-[110px] shrink-0 items-center justify-center rounded-lg border border-border bg-bg-page-white px-5 text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray disabled:cursor-not-allowed disabled:opacity-50"
               >
                 បោះបង់
               </button>

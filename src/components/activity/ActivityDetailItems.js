@@ -44,7 +44,7 @@ export function InfoItem({ icon: Icon, label, value }) {
 
 export function SummaryCard({ icon: Icon, iconClass, label, value, unit }) {
   return (
-    <div className="flex min-h-[120px] flex-col items-start rounded-lg border border-border bg-white px-4 py-3 text-left shadow-sm">
+    <div className="flex min-h-[120px] flex-col items-start rounded-lg border border-border bg-bg-page-white px-4 py-3 text-left shadow-sm">
       <div
         className={`mb-3 flex h-8 w-8 items-center justify-center rounded-md ${iconClass}`}
       >

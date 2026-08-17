@@ -51,7 +51,7 @@ export default function Pagination({
         <button
           onClick={() => goTo(currentPage - 1)}
           disabled={currentPage === 1}
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-white px-4 text-sm font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-text-secondary"
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-bg-page-white px-4 text-sm font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-text-secondary"
         >
           <ArrowLeft size={15} />
           មុននេះ
@@ -80,7 +80,7 @@ export default function Pagination({
         <button
           onClick={() => goTo(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-white px-4 text-sm font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-text-secondary"
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-bg-page-white px-4 text-sm font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-text-secondary"
         >
           បន្ទាប់
           <ArrowRight size={15} />

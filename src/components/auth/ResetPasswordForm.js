@@ -123,7 +123,7 @@ function ResetPasswordContent() {
         កំណត់លេខសម្ងាត់ថ្មី
       </h2>
 
-      <p className="mb-8 text-center text-sm text-slate-500">
+      <p className="mb-8 text-center text-sm text-text-mute">
         សូមបញ្ចូលលេខសម្ងាត់ថ្មីរបស់អ្នក
         ដើម្បីបន្តប្រើប្រាស់ប្រព័ន្ធ
       </p>
@@ -153,7 +153,7 @@ function ResetPasswordContent() {
         />
 
         {error && (
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-error">
             {error}
           </p>
         )}
@@ -168,7 +168,7 @@ function ResetPasswordContent() {
           {loading ? "..." : "បញ្ជូន"}
         </button>
 
-        <p className="pt-2 text-center text-sm text-slate-500">
+        <p className="pt-2 text-center text-sm text-text-mute">
           ត្រឡប់ទៅ{" "}
           <a
             href="/auth/login"

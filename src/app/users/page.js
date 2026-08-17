@@ -43,9 +43,9 @@ const STATUS_LABELS_KM = {
 
 const STATUS_BADGE_STYLES = {
   ACTIVE: "bg-success-bg text-success",
-  INACTIVE: "bg-red-50 text-red-600",
+  INACTIVE: "bg-error-bg text-error",
   LOCKED: "bg-warning-bg text-warning",
-  PENDING_ACTIVATION: "bg-gray-100 text-text-secondary",
+  PENDING_ACTIVATION: "bg-bg-page-gray text-text-secondary",
 };
 
 /*
@@ -332,7 +332,7 @@ export default function UsersPage() {
               text-[11px]
               ${
                 STATUS_BADGE_STYLES[user.statusCode] ||
-                "bg-gray-100 text-text-secondary"
+                "bg-bg-page-gray text-text-secondary"
               }
             `}
           >
@@ -395,7 +395,7 @@ export default function UsersPage() {
           label="អសកម្ម"
           value={String(summary.inactiveUsers)}
           iconColor="text-error"
-          iconBg="bg-red-50"
+          iconBg="bg-error-bg"
         />
       </div>
 

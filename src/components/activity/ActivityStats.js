@@ -2,10 +2,18 @@ import {
   CalendarDays,
   CheckCircle,
   Activity,
-  RefreshCcw,
+  Handshake,
 } from "lucide-react";
 
-function getStats(activities) {
+function getStats(activities, invitedActivityCount) {
+  // Prefer the backend's own count (ActivityPageResponse.invitedActivityCount
+  // — the full count, not capped by this page's size=1000 fetch); fall back
+  // to counting the already-loaded rows when that isn't available yet.
+  const invitedCount =
+    typeof invitedActivityCount === "number"
+      ? invitedActivityCount
+      : activities.filter((item) => item.ownBranch === false).length;
+
   return [
   {
     label: "កម្មវិធីសរុប",
@@ -24,9 +32,9 @@ function getStats(activities) {
     iconColor: "text-secondary-hover",
   },
   {
-    label: "កំពុងដំណើរការ",
-    value: activities.filter((item) => item.status === "ongoing").length,
-    icon: RefreshCcw,
+    label: "សាខាដែលបានអញ្ជើញ",
+    value: invitedCount,
+    icon: Handshake,
     accent: "bg-warning",
     iconBg: "bg-warning-bg",
     iconColor: "text-warning",
@@ -100,8 +108,11 @@ function StatCard({
 }
 
 
-export default function ActivityStats({ activities = [] }) {
-  const stats = getStats(activities);
+export default function ActivityStats({
+  activities = [],
+  invitedActivityCount = null,
+}) {
+  const stats = getStats(activities, invitedActivityCount);
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

@@ -14,7 +14,7 @@ export default function DocumentFilters({
   const isMember = activeTab === "member";
 
   return (
-    <div className="shrink-0 border-b border-gray-100 p-4">
+    <div className="shrink-0 border-b border-border p-4">
       <div className="flex items-center gap-4">
         <div className="relative w-[260px]">
           <input
@@ -24,9 +24,9 @@ export default function DocumentFilters({
               resetPage();
             }}
             placeholder="ស្វែងរក .."
-            className="h-[38px] w-full rounded-md border border-gray-200 px-4 pr-10 text-sm outline-none focus:border-[#5b2cc9]"
+            className="h-[38px] w-full rounded-md border border-border px-4 pr-10 text-sm outline-none focus:border-[#5b2cc9]"
           />
-          <Search className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
+          <Search className="absolute right-3 top-2.5 h-4 w-4 text-text-mute" />
         </div>
 
         <div className="relative w-[180px]">
@@ -36,14 +36,14 @@ export default function DocumentFilters({
               setBranchFilter(e.target.value);
               resetPage();
             }}
-            className="h-[38px] w-full appearance-none rounded-md border border-gray-200 px-4 pr-10 text-sm outline-none focus:border-[#5b2cc9]"
+            className="h-[38px] w-full appearance-none rounded-md border border-border px-4 pr-10 text-sm outline-none focus:border-[#5b2cc9]"
           >
             <option value="">សាខា</option>
             <option value="សាខាភ្នំពេញ">សាខាភ្នំពេញ</option>
             <option value="សាខាសៀមរាប">សាខាសៀមរាប</option>
           </select>
 
-          <ChevronDown className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-gray-500" />
+          <ChevronDown className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-text-mute" />
         </div>
 
         <div className="w-[240px]">
@@ -54,7 +54,7 @@ export default function DocumentFilters({
               setDateFilter(e.target.value);
               resetPage();
             }}
-            className="h-[38px] w-full rounded-md border border-gray-200 px-4 text-sm outline-none focus:border-[#5b2cc9]"
+            className="h-[38px] w-full rounded-md border border-border px-4 text-sm outline-none focus:border-[#5b2cc9]"
           />
         </div>
 

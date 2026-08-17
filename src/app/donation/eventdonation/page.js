@@ -28,17 +28,17 @@ function mapMyEventRow(row) {
 function MyEventDonationsTable({ rows }) {
   if (!rows.length) {
     return (
-      <section className="min-h-[200px] rounded-md border border-border bg-[#fbfcfe] px-7 py-8 text-center text-xs font-medium text-text-secondary shadow-sm">
+      <section className="min-h-[200px] rounded-md border border-border bg-bg-page-white px-7 py-8 text-center text-xs font-medium text-text-secondary shadow-sm">
         មិនមានទិន្នន័យវិភាគទាននៅឡើយទេ
       </section>
     );
   }
 
   return (
-    <section className="overflow-x-auto rounded-md border border-border bg-[#fbfcfe] px-7 py-4 shadow-sm">
+    <section className="overflow-x-auto rounded-md border border-border bg-bg-page-white px-7 py-4 shadow-sm">
       <table className="w-full min-w-[760px] border-collapse border border-border">
         <thead>
-          <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
+          <tr className="h-12 border-b border-border bg-bg-page-gray text-center text-xs font-medium text-text-secondary">
             <th className="px-4">ល.រ</th>
             <th className="px-4">កម្មវិធី</th>
             <th className="px-4">សាខា</th>
@@ -118,7 +118,7 @@ export default function EventDonationPage() {
     return (
       <div className="space-y-4">
         <DonationTabs />
-        {error ? <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {error ? <div className="rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
         <div className="flex gap-[50px] xl:grid-cols-2">
           <EventDonationSummaryCard
             label="វិភាគទានក្នុងកម្មវិធីរបស់ខ្ញុំ"
@@ -136,7 +136,7 @@ export default function EventDonationPage() {
   return (
     <div className="space-y-4">
       <DonationTabs />
-      {error ? <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
       <div className="flex gap-[50px] xl:grid-cols-2">
         <EventDonationSummaryCard value={`$${totalDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="" note="" />
         <DonorCard label="អ្នកវិភាគទានសរុប" value={`${memberCount + sponsorCount} នាក់`} growth="" note="" />

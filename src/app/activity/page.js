@@ -103,6 +103,17 @@ function normalizeActivity(item, branchOptions) {
           ? `-/${capacity}`
           : "-",
     status,
+    /*
+     * true  -> hosted by the viewer's own branch (or one of their
+     *          staff-assigned branches).
+     * false -> reaches the viewer only through an ACCEPTED co-hosting
+     *          invitation to another branch's activity.
+     * null  -> the backend doesn't compute this for the viewer's role
+     *          (e.g. admin, who sees every activity unscoped) — the
+     *          own/invited tabs below only render when at least one row
+     *          actually has a non-null value.
+     */
+    ownBranch: item.ownBranch ?? null,
   };
 }
 
@@ -167,6 +178,11 @@ export default function ActivityPage() {
 
   const [activityRecords, setActivityRecords] = useState([]);
   const [branchOptions, setBranchOptions] = useState([]);
+  // From the backend's ActivityPageResponse.invitedActivityCount — the full
+  // count of activities reached only via an accepted co-hosting invitation
+  // (not capped by the page's size=1000 fetch). null for any role other
+  // than secretary, since the backend only computes it there.
+  const [invitedActivityCount, setInvitedActivityCount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
@@ -181,6 +197,23 @@ export default function ActivityPage() {
 
   const [selectedDate, setSelectedDate] =
     useState(null);
+
+  // "all" | "own" | "invited" — only meaningful once at least one loaded
+  // activity actually carries a non-null ownBranch (see normalizeActivity).
+  const [selectedScope, setSelectedScope] =
+    useState("all");
+
+  // The branch dropdown's own selection — deliberately separate from the
+  // sidebar's global selectedBranch (useBranch()) so picking a branch here
+  // never changes what the sidebar/other pages are scoped to. Its option
+  // list depends on selectedScope (see branchOptionsForScope below), so a
+  // stale pick from a different scope is reset back to "all" on tab change.
+  const [selectedBranchOption, setSelectedBranchOption] =
+    useState("all");
+
+  useEffect(() => {
+    setSelectedBranchOption("all");
+  }, [selectedScope]);
 
   useEffect(() => {
     let active = true;
@@ -214,6 +247,11 @@ export default function ActivityPage() {
           Array.isArray(activityBody?.content)
             ? activityBody.content
             : [],
+        );
+        setInvitedActivityCount(
+          typeof activityBody?.invitedActivityCount === "number"
+            ? activityBody.invitedActivityCount
+            : null,
         );
         setBranchOptions(
           (Array.isArray(branchBody) ? branchBody : []).map((branch) => ({
@@ -261,6 +299,49 @@ export default function ActivityPage() {
     [activities],
   );
 
+  // Whether the own-branch/invited split is meaningful to show at all —
+  // the backend currently only computes ownBranch for a SECRETARY viewer,
+  // so admin/branch-leader activity lists never show these tabs.
+  const hasOwnBranchData = useMemo(
+    () =>
+      activities.some(
+        (item) => item.ownBranch === true || item.ownBranch === false,
+      ),
+    [activities],
+  );
+
+  // The branch dropdown's option list changes with the active scope tab:
+  // "all" offers every branch in the system (from the org-wide
+  // activity-invitable-branches lookup), "own" only the branches whose
+  // activities are the viewer's own, "invited" only the branches whose
+  // activities reached the viewer through an accepted co-hosting
+  // invitation.
+  const branchOptionsForScope = useMemo(() => {
+    if (selectedScope === "own") {
+      return [
+        ...new Set(
+          activities
+            .filter((item) => item.ownBranch === true)
+            .map((item) => item.branch),
+        ),
+      ].filter(Boolean);
+    }
+
+    if (selectedScope === "invited") {
+      return [
+        ...new Set(
+          activities
+            .filter((item) => item.ownBranch === false)
+            .map((item) => item.branch),
+        ),
+      ].filter(Boolean);
+    }
+
+    return [
+      ...new Set(branchOptions.map((option) => option.label)),
+    ].filter(Boolean);
+  }, [activities, selectedScope, branchOptions]);
+
   const filteredActivities = useMemo(() => {
     const query = searchQuery
       .trim()
@@ -305,12 +386,23 @@ export default function ActivityPage() {
         !selectedDateValue ||
         item.dateValue === selectedDateValue;
 
+      const matchesScope =
+        selectedScope === "all" ||
+        (selectedScope === "own" && item.ownBranch === true) ||
+        (selectedScope === "invited" && item.ownBranch === false);
+
+      const matchesBranchOption =
+        selectedBranchOption === "all" ||
+        item.branch === selectedBranchOption;
+
       return (
         matchesSearch &&
         matchesSector &&
         matchesType &&
         matchesBranch &&
-        matchesDate
+        matchesDate &&
+        matchesScope &&
+        matchesBranchOption
       );
     });
   }, [
@@ -319,6 +411,8 @@ export default function ActivityPage() {
     selectedType,
     selectedBranch,
     selectedDate,
+    selectedScope,
+    selectedBranchOption,
     activities,
     contextBranches,
   ]);
@@ -426,6 +520,13 @@ export default function ActivityPage() {
 
   const filters = [
     {
+      key: "branchOption",
+      value: selectedBranchOption,
+      onChange: setSelectedBranchOption,
+      placeholder: "សាខា",
+      options: branchOptionsForScope,
+    },
+    {
       key: "type",
       value: selectedType,
       onChange: setSelectedType,
@@ -454,7 +555,10 @@ export default function ActivityPage() {
 
   return (
     <div className="min-w-0 space-y-5 overflow-x-hidden">
-      <ActivityStats activities={activities} />
+      <ActivityStats
+        activities={activities}
+        invitedActivityCount={invitedActivityCount}
+      />
 
       {loadError && (
         <div className="rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">
@@ -462,7 +566,30 @@ export default function ActivityPage() {
         </div>
       )}
 
-      <section className="rounded-xl border border-border bg-white p-4 transition-shadow duration-200 hover:shadow-sm">
+      <section className="rounded-xl border border-border bg-bg-page-white p-4 transition-shadow duration-200 hover:shadow-sm">
+        {hasOwnBranchData && (
+          <div className="mb-4 inline-flex w-fit shrink-0 rounded-lg border border-border bg-bg-page-gray p-1 text-xs font-medium">
+            {[
+              { key: "all", label: "ទាំងអស់" },
+              { key: "own", label: "កម្មវិធីសាខាផ្ទាល់ខ្លួន" },
+              { key: "invited", label: "កម្មវិធីដែលត្រូវបានអញ្ជើញ" },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setSelectedScope(tab.key)}
+                className={`rounded-md px-3 py-1.5 transition ${
+                  selectedScope === tab.key
+                    ? "bg-secondary text-white"
+                    : "text-text-secondary hover:text-text-primary"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="mb-4 flex min-w-0 flex-nowrap items-center gap-3">
   <div className="w-[265px] shrink-0">
     <SearchBar
@@ -485,6 +612,7 @@ export default function ActivityPage() {
           <Button
             type="button"
             variant="success"
+            icon={<PlusCircle size={16} />}
           >
             បង្កើតកម្មវិធី
           </Button>

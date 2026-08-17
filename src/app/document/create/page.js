@@ -667,7 +667,7 @@ export default function CreateDocumentPage() {
               rounded-xl
               border
               border-border
-              bg-white
+              bg-bg-page-white
               shadow-sm
               transition-all
               duration-200
@@ -725,7 +725,7 @@ export default function CreateDocumentPage() {
               rounded-xl
               border
               border-border
-              bg-white
+              bg-bg-page-white
               shadow-sm
               transition-all
               duration-200

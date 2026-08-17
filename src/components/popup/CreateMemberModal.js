@@ -888,7 +888,7 @@ export default function CreateMemberModal({
             flex-col
             overflow-hidden
             rounded-xl
-            bg-white
+            bg-bg-page-white
             shadow-2xl
             sm:rounded-2xl
 
@@ -935,7 +935,7 @@ export default function CreateMemberModal({
                 rounded-full
                 text-text-secondary
                 transition
-                hover:bg-gray-100
+                hover:bg-bg-page-gray
                 hover:text-text-primary
               "
             >
@@ -1155,7 +1155,7 @@ export default function CreateMemberModal({
                       mt-4
                       text-xs
                       font-medium
-                      text-red-500
+                      text-error
                     "
                   >
                     សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
@@ -1168,7 +1168,7 @@ export default function CreateMemberModal({
                     mt-4
                     text-xs
                     font-medium
-                    text-red-500
+                    text-error
                   "
                 >
                   {
@@ -1185,7 +1185,7 @@ export default function CreateMemberModal({
                 shrink-0
                 border-t
                 border-border
-                bg-white
+                bg-bg-page-white
                 px-4
                 py-3
                 sm:px-5

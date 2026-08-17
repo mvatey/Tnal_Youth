@@ -68,7 +68,7 @@ function BranchDropdown({
           text-text-secondary
           outline-none
           transition
-          hover:border-primary
+          hover:border-border
           disabled:cursor-not-allowed
           disabled:opacity-60
         "
@@ -95,7 +95,7 @@ function BranchDropdown({
           right-3
           top-1/2
           -translate-y-1/2
-          text-text-secondary
+          text-text-mute
         "
       />
     </div>

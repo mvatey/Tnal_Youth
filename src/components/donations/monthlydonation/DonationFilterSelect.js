@@ -12,7 +12,7 @@ export default function DonationFilterSelect({
 }) {
   const select = (
     <select
-      className={`h-[34px] ${className} rounded-lg border border-border bg-white px-3 text-[12px] font-medium text-text-secondary shadow-sm outline-none transition focus:border-secondary disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-text-secondary`}
+      className={`h-[34px] ${className} rounded-lg border border-border bg-bg-page-white px-3 text-[12px] font-medium text-text-secondary shadow-sm outline-none transition focus:border-secondary disabled:cursor-not-allowed disabled:bg-bg-page-gray disabled:text-text-secondary`}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       disabled={disabled}

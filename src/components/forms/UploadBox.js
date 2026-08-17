@@ -49,8 +49,8 @@ export default function UploadBox({
           onClick={() => inputRef.current?.click()}
           className="
             activity-upload-button flex h-44 w-full items-center justify-center
-            rounded-2xl border-2 border-dashed border-[#E2E5EA]
-            bg-[#F8F9FB]
+            rounded-2xl border-2 border-dashed border-border
+            bg-bg-page-gray
             transition
             hover:border-primary
             hover:bg-primary-light/20
@@ -73,11 +73,11 @@ export default function UploadBox({
           </div>
         ) : (
           <div className="text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#E6E8EC]">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-bg-page-gray">
               <CloudUpload
                 size={25}
                 strokeWidth={2}
-                className="text-[#697386]"
+                className="text-text-secondary"
               />
             </div>
 
@@ -85,7 +85,7 @@ export default function UploadBox({
               {uploadText}
             </p>
 
-            <p className="mt-1 text-xs text-[#98A2B3]">
+            <p className="mt-1 text-xs text-text-mute">
               {helperText}
             </p>
           </div>
@@ -98,7 +98,7 @@ export default function UploadBox({
             type="button"
             onClick={handleRemove}
             aria-label="Remove selected file"
-            className="activity-upload-cancel absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-error shadow-md transition hover:bg-error-bg"
+            className="activity-upload-cancel absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-bg-page-white text-error shadow-md transition hover:bg-error-bg"
           >
             <X size={17} strokeWidth={2.5} />
           </button>

@@ -45,9 +45,9 @@ export default function DocumentTabs() {
             ${
               pathname === tab.path
               ? 
-              "border-t-4 border-[#5b2cc9] bg-[#f1edff] text-[#4b3192]"
+              "border-t-4 border-secondary bg-secondary-light text-secondary"
               :
-              "bg-white text-gray-600 hover:bg-gray-50"
+              "bg-bg-page-white text-text-secondary hover:bg-bg-page-gray"
             }
           `}
         >

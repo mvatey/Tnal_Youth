@@ -227,13 +227,13 @@ function VerifyActivationOtpContent() {
         ផ្ទៀងផ្ទាត់គណនី
       </h2>
 
-      <p className="mb-8 text-center text-sm leading-6 text-slate-500">
+      <p className="mb-8 text-center text-sm leading-6 text-text-mute">
         យើងបានផ្ញើលេខកូដ OTP ៦ ខ្ទង់
         ទៅកាន់អ៊ីមែល ឬលេខទូរស័ព្ទរបស់អ្នក
         <br />
 
         {phoneOrEmail && (
-          <span className="font-medium text-slate-700">
+          <span className="font-medium text-text-primary">
             {phoneOrEmail}
           </span>
         )}
@@ -246,7 +246,7 @@ function VerifyActivationOtpContent() {
         />
 
         {error && (
-          <p className="text-center text-sm text-red-600">
+          <p className="text-center text-sm text-error">
             {error}
           </p>
         )}
@@ -264,7 +264,7 @@ function VerifyActivationOtpContent() {
             : "ផ្ទៀងផ្ទាត់"}
         </button>
 
-        <p className="pt-2 text-center text-sm text-slate-500">
+        <p className="pt-2 text-center text-sm text-text-mute">
           មិនទាន់ទទួលបានលេខកូដ?{" "}
 
           <button

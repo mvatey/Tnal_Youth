@@ -185,8 +185,8 @@ export default function DonationTable() {
   }, [showDownloadAlert, showSaveAlert]);
 
   return (
-    <section className="rounded-md border border-border bg-white px-7 py-4 shadow-sm">
-      {error || currentMemberError ? <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error || currentMemberError}</div> : null}
+    <section className="rounded-md border border-border bg-bg-page-white px-7 py-4 shadow-sm">
+      {error || currentMemberError ? <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error || currentMemberError}</div> : null}
       {showDownloadAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
           <AddAlert />
@@ -215,7 +215,7 @@ export default function DonationTable() {
       <div className="mt-[17px] overflow-x-auto">
         <table className="w-full min-w-[840px] border-collapse border border-border">
           <thead>
-            <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
+            <tr className="h-12 border-b border-border bg-bg-page-gray text-center text-xs font-medium text-text-secondary">
               {headers.map((header, index) => (
                 <th key={header} className="px-4">
                   {index >= 4 && index <= 6 ? (

@@ -40,7 +40,7 @@ export default function ButtonDropLink({
           <div className="relative flex-1">
             <Link2
               size={17}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-mute"
             />
 
             <input
@@ -48,14 +48,14 @@ export default function ButtonDropLink({
               value={value}
               onChange={(event) => onChange?.(event.target.value)}
               placeholder={placeholder}
-              className="h-10 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-3 text-sm text-text-primary outline-none focus:border-primary"
+              className="h-10 w-full rounded-lg border border-border bg-bg-page-white pl-10 pr-3 text-sm text-text-primary outline-none focus:border-primary"
             />
           </div>
 
           <button
             type="button"
             onClick={handleCancel}
-            className="flex size-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-100 hover:text-red-500"
+            className="flex size-10 items-center justify-center rounded-full border border-border bg-bg-page-white text-text-mute transition hover:bg-bg-page-gray hover:text-red-500"
           >
             <Trash2 size={18} />
           </button>

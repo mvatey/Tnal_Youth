@@ -99,7 +99,7 @@ export default function CertificatePreview({
         items-center
         justify-center
         rounded-full
-        hover:bg-gray-100
+        hover:bg-bg-page-gray
         "
 
       >
@@ -285,7 +285,7 @@ function Info({
       <p
         className="
         text-xs
-        text-gray-500
+        text-text-mute
         "
       >
 
@@ -299,7 +299,7 @@ function Info({
         className="
         text-sm
         font-medium
-        text-gray-700
+        text-text-secondary
         truncate
         "
       >

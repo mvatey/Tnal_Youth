@@ -570,7 +570,7 @@ function LoginContent() {
         ចូលប្រើប្រាស់
       </h1>
 
-      <p className="mb-7 text-center text-sm text-slate-500">
+      <p className="mb-7 text-center text-sm text-text-mute">
         {step === LOGIN_STEP.IDENTIFIER
           ? "សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែលរបស់អ្នក"
           : "សូមបញ្ចូលលេខសម្ងាត់របស់អ្នក"}
@@ -583,7 +583,7 @@ function LoginContent() {
           noValidate
         >
         {successMessage && (
-          <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-center text-sm leading-6 text-green-700">
+          <div className="rounded-lg border border-success/30 bg-success-bg px-4 py-3 text-center text-sm leading-6 text-success">
             {successMessage}
           </div>
         )}
@@ -626,7 +626,7 @@ function LoginContent() {
 
         {step === LOGIN_STEP.PASSWORD && (
           <div className="flex items-center justify-between gap-4">
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-text-secondary">
               <input
                 type="checkbox"
                 checked={rememberMe}
@@ -641,7 +641,7 @@ function LoginContent() {
                     );
                   }
                 }}
-                className="h-4 w-4 rounded border-slate-300"
+                className="h-4 w-4 rounded border-border"
               />
 
               ចងចាំខ្ញុំ
@@ -657,7 +657,7 @@ function LoginContent() {
         )}
 
         {error && (
-          <p className="text-center text-sm leading-6 text-red-600">
+          <p className="text-center text-sm leading-6 text-error">
             {error}
           </p>
         )}
@@ -684,7 +684,7 @@ function LoginContent() {
               handleBackToIdentifier
             }
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 text-sm font-medium text-slate-600 transition hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 text-sm font-medium text-text-secondary transition hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
           >
             <ArrowLeft size={17} />
 

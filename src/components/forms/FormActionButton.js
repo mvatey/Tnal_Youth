@@ -23,15 +23,15 @@ export default function FormActionButtons({
           justify-center
           rounded-[10px]
           border
-          border-[#C8CBD2]
-          bg-page-gray
+          border-border
+          bg-bg-page-gray
           px-5
           text-sm
           font-medium
-          text-[#252525]
+          text-text-primary
           shadow-[0_1px_2px_rgba(0,0,0,0.08)]
           transition
-          hover:bg-[#EEEEF1]
+          hover:bg-bg-page-gray/70
           active:scale-[0.99]
           disabled:cursor-not-allowed
           disabled:opacity-60

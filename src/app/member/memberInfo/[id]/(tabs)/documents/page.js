@@ -1232,7 +1232,7 @@ export default function DocumentsPage() {
   if (loading) {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-text-secondary">
           កំពុងទាញយកព័ត៌មានសមាជិក...
         </p>
       </div>
@@ -1247,7 +1247,7 @@ export default function DocumentsPage() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 bg-white p-6 text-center">
+      <div className="rounded-xl border border-error/30 bg-bg-page-white p-6 text-center">
         <p className="text-sm text-error">
           {error}
         </p>
@@ -1263,7 +1263,7 @@ export default function DocumentsPage() {
 
   if (!member) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-500">
+      <div className="rounded-xl border border-border bg-bg-page-white p-6 text-center text-sm text-text-secondary">
         រកមិនឃើញព័ត៌មានសមាជិក
       </div>
     );

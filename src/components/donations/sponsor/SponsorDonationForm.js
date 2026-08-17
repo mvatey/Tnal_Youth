@@ -69,7 +69,7 @@ function TextField({
         {leadingIcon}
         <input
           {...props}
-          className={`${heightClass} w-full rounded-xl border border-[#CBD0D8] bg-white px-4 text-[13px] font-medium text-text-secondary outline-none transition placeholder:text-text-mute focus:border-secondary focus:placeholder:text-transparent disabled:cursor-not-allowed disabled:bg-[#F3F4F6] disabled:opacity-60 ${
+          className={`${heightClass} w-full rounded-xl border border-border bg-bg-page-white px-4 text-[13px] font-medium text-text-secondary outline-none transition placeholder:text-text-mute focus:border-secondary focus:placeholder:text-transparent disabled:cursor-not-allowed disabled:bg-bg-page-gray disabled:opacity-60 ${
             leadingIcon ? "pl-10" : ""
           }`}
         />
@@ -91,8 +91,8 @@ function QuantityField({ label, value, onChange, disabled = false }) {
         {label}
       </span>
       <span
-        className={`flex h-[34px] w-[80px] overflow-hidden rounded-xl border border-[#CBD0D8] focus-within:border-secondary ${
-          disabled ? "bg-[#F3F4F6] opacity-60" : "bg-white"
+        className={`flex h-[34px] w-[80px] overflow-hidden rounded-xl border border-border focus-within:border-secondary ${
+          disabled ? "bg-bg-page-gray opacity-60" : "bg-bg-page-white"
         }`}
       >
         <input
@@ -107,7 +107,7 @@ function QuantityField({ label, value, onChange, disabled = false }) {
           className="min-w-0 flex-1 bg-transparent px-3 text-[13px] font-medium text-text-secondary outline-none disabled:cursor-not-allowed"
           aria-label={label}
         />
-        <span className="flex w-7 shrink-0 flex-col border-l border-[#E5E7EB]">
+        <span className="flex w-7 shrink-0 flex-col border-l border-border">
           <button
             type="button"
             disabled={disabled}
@@ -122,7 +122,7 @@ function QuantityField({ label, value, onChange, disabled = false }) {
             aria-label="បន្ថយចំនួនសម្ភារៈ"
             onClick={() => changeQuantity(quantity - 1)}
             disabled={disabled || quantity === 0}
-            className="flex min-h-0 flex-1 items-center justify-center border-t border-[#E5E7EB] text-text-secondary transition hover:bg-secondary-light hover:text-secondary disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex min-h-0 flex-1 items-center justify-center border-t border-border text-text-secondary transition hover:bg-secondary-light hover:text-secondary disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ChevronDown size={12} strokeWidth={2.5} />
           </button>
@@ -151,7 +151,7 @@ function SelectField({
         <select
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="h-[34px] w-full appearance-none rounded-xl border border-[#CBD0D8] bg-white px-4 pr-10 text-[13px] font-medium text-text-secondary outline-none transition focus:border-secondary"
+          className="h-[34px] w-full appearance-none rounded-xl border border-border bg-bg-page-white px-4 pr-10 text-[13px] font-medium text-text-secondary outline-none transition focus:border-secondary"
         >
           <option value="">{placeholder}</option>
           {options.map((option) => (
@@ -205,8 +205,8 @@ function MemberSelectField({
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         onClick={() => setIsOpen((current) => !current)}
-        className={`flex h-[34px] w-full items-center justify-between rounded-xl border bg-white px-4 text-left text-[13px] font-medium outline-none transition ${
-          isOpen ? "border-secondary" : "border-[#CBD0D8]"
+        className={`flex h-[34px] w-full items-center justify-between rounded-xl border bg-bg-page-white px-4 text-left text-[13px] font-medium outline-none transition ${
+          isOpen ? "border-secondary" : "border-border"
         } ${value ? "text-text-secondary" : "text-text-mute"}`}
       >
         <span className="truncate">
@@ -226,7 +226,7 @@ function MemberSelectField({
       {isOpen && (
         <div
           role="listbox"
-          className="absolute left-0 top-full z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-[#CBD0D8] bg-white py-1 shadow-lg"
+          className="absolute left-0 top-full z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-border bg-bg-page-white py-1 shadow-lg"
         >
           {options.map((option) => (
             <button
@@ -288,8 +288,8 @@ function DateField({ label, value, onChange, required = false, className = "" })
       <button
         type="button"
         onClick={openDatePicker}
-        className={`flex h-[34px] w-full items-center justify-between rounded-xl border bg-white px-4 text-left text-[13px] font-medium text-text-secondary transition hover:border-secondary focus:border-secondary focus:outline-none ${
-          hasSelectedDate ? "border-secondary" : "border-[#CBD0D8]"
+        className={`flex h-[34px] w-full items-center justify-between rounded-xl border bg-bg-page-white px-4 text-left text-[13px] font-medium text-text-secondary transition hover:border-secondary focus:border-secondary focus:outline-none ${
+          hasSelectedDate ? "border-secondary" : "border-border"
         }`}
       >
         <span>{formatKhmerDate(value)}</span>
@@ -312,7 +312,7 @@ function PaymentMethodField({ value, onChange, methods = [], className = "" }) {
         វិធីសាស្ត្រទូទាត់
         <RequiredMark />
       </span>
-      <div className="relative flex h-[34px] items-center rounded-xl border border-[#CBD0D8] bg-white px-4 transition focus-within:border-secondary">
+      <div className="relative flex h-[34px] items-center rounded-xl border border-border bg-bg-page-white px-4 transition focus-within:border-secondary">
         <span className="pointer-events-none inline-flex h-7 min-w-[76px] items-center justify-center gap-2 rounded-lg px-2 text-[13px] font-semibold text-text-secondary">
           {logo ? (
             <Image
@@ -374,7 +374,7 @@ function ReceiptUpload({ value, onChange }) {
       <span className="mb-2 block truncate whitespace-nowrap text-[14px] font-semibold leading-5 text-secondary">
         វិក្កយបត្រ (Optional)
       </span>
-      <span className="relative flex min-h-[86px] items-center justify-center rounded-lg border-2 border-dashed border-[#7F7DB8] bg-[#F8F9FF] px-4 py-3 text-center text-[11px] font-medium leading-5 text-text-mute transition hover:border-secondary">
+      <span className="relative flex min-h-[86px] items-center justify-center rounded-lg border-2 border-dashed border-border bg-bg-page-gray px-4 py-3 text-center text-[11px] font-medium leading-5 text-text-mute transition hover:border-secondary">
         <input
           type="file"
           className="sr-only"
@@ -700,9 +700,9 @@ export default function SponsorDonationForm({ initialData = null }) {
         </div>
       )}
 
-      <section className="min-h-[650px] rounded-md border border-border bg-[#fbfcfe] px-7 py-4 shadow-sm">
+      <section className="min-h-[650px] rounded-md border border-border bg-bg-page-white px-7 py-4 shadow-sm">
         {error ? (
-          <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
             {error}
           </div>
         ) : null}
@@ -934,7 +934,7 @@ export default function SponsorDonationForm({ initialData = null }) {
           <button
             type="button"
             onClick={() => router.push(listPath)}
-            className="inline-flex h-[34px] w-[196px] items-center justify-center rounded-lg border border-[#CBD0D8] bg-[#F3F5FC] px-3 text-[14px] font-semibold text-text-primary shadow-sm transition hover:bg-bg-page-gray"
+            className="inline-flex h-[34px] w-[196px] items-center justify-center rounded-lg border border-border bg-bg-page-gray px-3 text-[14px] font-semibold text-text-primary shadow-sm transition hover:bg-bg-page-gray"
           >
             បោះបង់
           </button>

@@ -295,12 +295,12 @@ export default function AddDocumentForm({
           rounded-full
           bg-transparent
           transition-colors
-          hover:bg-gray-100
+          hover:bg-bg-page-gray
         "
       >
         <X
           size={18}
-          className="text-gray-700"
+          className="text-text-secondary"
         />
       </button>
 
@@ -407,11 +407,11 @@ export default function AddDocumentForm({
                 resize-none
                 rounded-lg
                 border
-                border-gray-200
+                border-border
                 p-3
                 text-sm
                 outline-none
-                placeholder:text-gray-400
+                placeholder:text-text-mute
                 focus:border-primary
               "
             />
@@ -447,17 +447,17 @@ export default function AddDocumentForm({
                 rounded-xl
                 border-2
                 border-dashed
-                border-gray-200
+                border-border
                 transition
                 hover:border-primary
-                hover:bg-gray-50
+                hover:bg-bg-page-gray
               "
             >
               <UploadCloud
                 size={30}
                 className="
                   mb-2
-                  text-gray-400
+                  text-text-mute
                 "
               />
 
@@ -474,7 +474,7 @@ export default function AddDocumentForm({
               <p
                 className="
                   text-xs
-                  text-gray-400
+                  text-text-mute
                 "
               >
                 PDF, Word, Excel,
@@ -502,7 +502,7 @@ export default function AddDocumentForm({
                         justify-between
                         rounded-lg
                         border
-                        border-gray-200
+                        border-border
                         px-3
                         py-2
                       "
@@ -529,7 +529,7 @@ export default function AddDocumentForm({
                               truncate
                               text-sm
                               font-medium
-                              text-gray-700
+                              text-text-secondary
                             "
                           >
                             {
@@ -537,7 +537,7 @@ export default function AddDocumentForm({
                             }
                           </p>
 
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-text-mute">
   {form.type || "មិនទាន់ជ្រើសរើសប្រភេទ"} · {item.size}
 </p>
                         </div>
@@ -560,9 +560,9 @@ export default function AddDocumentForm({
                           items-center
                           justify-center
                           rounded-full
-                          text-gray-500
+                          text-text-mute
                           transition-colors
-                          hover:bg-gray-100
+                          hover:bg-bg-page-gray
                           hover:text-red-500
                         "
                       >
@@ -582,7 +582,7 @@ export default function AddDocumentForm({
                   mt-2
                   text-xs
                   font-medium
-                  text-red-500
+                  text-error
                 "
               >
                 {fileError}
@@ -598,7 +598,7 @@ export default function AddDocumentForm({
                 mt-4
                 text-xs
                 font-medium
-                text-red-500
+                text-error
               "
             >
               សូមបំពេញព័ត៌មានទាំងអស់

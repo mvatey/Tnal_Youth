@@ -310,7 +310,7 @@ export default function IdCardForm({
     : null;
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
+    <div className="rounded-xl border border-border bg-bg-page-white p-5">
       <div
         className="
           grid
@@ -388,8 +388,8 @@ export default function IdCardForm({
                   overflow-hidden
                   rounded-xl
                   border
-                  border-gray-200
-                  bg-gray-50
+                  border-border
+                  bg-bg-page-gray
                 "
               >
                 <img
@@ -419,11 +419,11 @@ export default function IdCardForm({
                     items-center
                     justify-center
                     rounded-full
-                    bg-white
-                    text-red-500
+                    bg-bg-page-white
+                    text-error
                     shadow
                     transition
-                    hover:bg-red-50
+                    hover:bg-error-bg
                   "
                   aria-label="លុបរូបភាពគំរូ"
                 >
@@ -442,8 +442,8 @@ export default function IdCardForm({
                   rounded-xl
                   border-2
                   border-dashed
-                  border-[#7180a8]
-                  bg-[#f8f9ff]
+                  border-border
+                  bg-bg-page-gray
                   text-center
                   transition
                   hover:bg-secondary-light/30
@@ -451,19 +451,19 @@ export default function IdCardForm({
               >
                 <UploadCloud
                   size={28}
-                  className="mb-2 text-[#62708f]"
+                  className="mb-2 text-text-secondary"
                 />
 
                 <p className="text-sm font-semibold text-primary">
                   បញ្ចូលរូបភាពគំរូ
                 </p>
 
-                <p className="mt-1 text-xs text-gray-400">
+                <p className="mt-1 text-xs text-text-mute">
                   JPG, PNG, WEBP —
                   មិនលើស 5MB
                 </p>
 
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-text-mute">
                   ទំហំគំរូណែនាំ 856 ×
                   540 px
                 </p>
@@ -551,7 +551,7 @@ export default function IdCardForm({
 
           {showValidationError &&
             !isFormValid && (
-              <p className="mt-4 text-xs font-medium text-red-500">
+              <p className="mt-4 text-xs font-medium text-error">
                 សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
               </p>
             )}

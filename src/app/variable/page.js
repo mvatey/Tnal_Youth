@@ -546,7 +546,7 @@ export default function VariablePage() {
   return (
     <div className="flex min-h-[calc(100vh-110px)] min-w-0 gap-5">
       {/* Left variable categories */}
-      <aside className="w-[250px] shrink-0 rounded-xl border border-border bg-white p-3">
+      <aside className="w-[250px] shrink-0 rounded-xl border border-border bg-bg-page-white p-3">
         <h2 className="px-3 py-2 text-lg font-semibold text-text-primary">
           ប្រភេទអថេរ
         </h2>
@@ -578,7 +578,7 @@ export default function VariablePage() {
                   className={`flex w-full items-center justify-between rounded-lg border-l-2 px-3 py-3 text-left text-sm transition ${
                     active
                       ? "border-secondary bg-secondary-light text-secondary"
-                      : "border-transparent text-text-secondary hover:bg-gray-50"
+                      : "border-transparent text-text-secondary hover:bg-bg-page-gray"
                   }`}
                 >
                   <span className="truncate">{category.labelKm}</span>
@@ -603,7 +603,7 @@ export default function VariablePage() {
             className={`flex w-full items-center justify-between rounded-lg border-l-2 px-3 py-3 text-left text-sm transition ${
               isExchangeSelected
                 ? "border-secondary bg-secondary-light text-secondary"
-                : "border-transparent text-text-secondary hover:bg-gray-50"
+                : "border-transparent text-text-secondary hover:bg-bg-page-gray"
             }`}
           >
             <span className="truncate">អត្រាប្ដូរប្រាក់</span>
@@ -618,7 +618,7 @@ export default function VariablePage() {
       {/* Right content */}
       <section className="min-w-0 flex-1">
         {isExchangeSelected ? (
-          <div className="rounded-xl border border-border bg-white">
+          <div className="rounded-xl border border-border bg-bg-page-white">
             <div className="border-b border-border p-4">
               <h1 className="text-lg font-semibold text-text-primary">
                 អត្រាប្ដូរប្រាក់ (USD → KHR)
@@ -636,7 +636,7 @@ export default function VariablePage() {
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
                     placeholder="ស្វែងរក..."
-                    className="h-10 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 text-sm outline-none transition focus:border-primary"
+                    className="h-10 w-full rounded-lg border border-border bg-bg-page-white pl-10 pr-4 text-sm outline-none transition focus:border-primary"
                   />
                 </div>
 
@@ -673,7 +673,7 @@ export default function VariablePage() {
 
             <div className="overflow-x-auto">
               <table className="w-full table-fixed border-collapse">
-                <thead className="bg-gray-50">
+                <thead className="bg-bg-page-gray">
                   <tr className="border-b border-border">
                     <th className="w-[7%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
                       ល.រ
@@ -715,7 +715,7 @@ export default function VariablePage() {
                     filteredRateHistory.map((rate, index) => (
                       <tr
                         key={rate.id ?? index}
-                        className="border-b border-border last:border-b-0 hover:bg-gray-50"
+                        className="border-b border-border last:border-b-0 hover:bg-bg-page-gray"
                       >
                         <td className="px-4 py-3 text-center text-sm text-text-secondary">
                           {index + 1}
@@ -758,7 +758,7 @@ export default function VariablePage() {
             </div>
           </div>
         ) : (
-          <div className="rounded-xl border border-border bg-white">
+          <div className="rounded-xl border border-border bg-bg-page-white">
             <div className="border-b border-border p-4">
               <h1 className="text-lg font-semibold text-text-primary">
                 {selectedCategory?.labelKm || "កំណត់អថេរ"}
@@ -776,7 +776,7 @@ export default function VariablePage() {
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
                     placeholder="ស្វែងរក..."
-                    className="h-10 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 text-sm outline-none transition focus:border-primary"
+                    className="h-10 w-full rounded-lg border border-border bg-bg-page-white pl-10 pr-4 text-sm outline-none transition focus:border-primary"
                   />
                 </div>
 
@@ -814,7 +814,7 @@ export default function VariablePage() {
 
             <div className="overflow-x-auto">
               <table className="w-full table-fixed border-collapse">
-                <thead className="bg-gray-50">
+                <thead className="bg-bg-page-gray">
                   <tr className="border-b border-border">
                     <th className="w-[6%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
                       ល.រ
@@ -866,7 +866,7 @@ export default function VariablePage() {
                     filteredItems.map((item, index) => (
                       <tr
                         key={item.id}
-                        className="border-b border-border last:border-b-0 hover:bg-gray-50"
+                        className="border-b border-border last:border-b-0 hover:bg-bg-page-gray"
                       >
                         <td className="px-4 py-3 text-center text-sm text-text-secondary">
                           {index + 1}
@@ -939,7 +939,7 @@ export default function VariablePage() {
             }
           }}
         >
-          <div className="w-full max-w-[580px] rounded-xl bg-white shadow-2xl">
+          <div className="w-full max-w-[580px] rounded-xl bg-bg-page-white shadow-2xl">
             <form onSubmit={handleSubmit}>
               {/* Header */}
               <div className="flex items-start justify-between px-7 pb-3 pt-6">
@@ -954,7 +954,7 @@ export default function VariablePage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition hover:bg-gray-100"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition hover:bg-bg-page-gray"
                   aria-label="បិទ"
                 >
                   <X size={18} />
@@ -973,7 +973,7 @@ export default function VariablePage() {
                     value={form.nameKm}
                     onChange={updateField("nameKm")}
                     placeholder="បញ្ចូលឈ្មោះប្រភេទ"
-                    className="h-11 w-full rounded-lg border border-gray-200 px-4 text-sm leading-6 outline-none transition placeholder:text-gray-400 focus:border-primary"
+                    className="h-11 w-full rounded-lg border border-border px-4 text-sm leading-6 outline-none transition placeholder:text-text-mute focus:border-primary"
                   />
                 </div>
 
@@ -987,7 +987,7 @@ export default function VariablePage() {
                     value={form.nameEn}
                     onChange={updateField("nameEn")}
                     placeholder="Enter name"
-                    className="h-11 w-full rounded-lg border border-gray-200 px-4 text-sm leading-6 outline-none transition placeholder:text-gray-400 focus:border-primary"
+                    className="h-11 w-full rounded-lg border border-border px-4 text-sm leading-6 outline-none transition placeholder:text-text-mute focus:border-primary"
                   />
                 </div>
 
@@ -1024,7 +1024,7 @@ export default function VariablePage() {
                     onChange={updateField("description")}
                     placeholder="សរសេរពិពណ៌នាអំពីប្រភេទអថេរនេះ..."
                     rows={4}
-                    className="min-h-[125px] w-full resize-none rounded-lg border border-gray-200 px-4 py-3 text-sm leading-6 outline-none transition placeholder:text-gray-400 focus:border-primary"
+                    className="min-h-[125px] w-full resize-none rounded-lg border border-border px-4 py-3 text-sm leading-6 outline-none transition placeholder:text-text-mute focus:border-primary"
                   />
                 </div>
 
@@ -1038,7 +1038,7 @@ export default function VariablePage() {
                     type="button"
                     onClick={closeModal}
                     disabled={saving}
-                    className="flex h-11 w-[120px] shrink-0 items-center justify-center rounded-lg border border-border bg-gray-50 text-sm font-semibold text-text-secondary transition hover:bg-gray-100 disabled:opacity-60"
+                    className="flex h-11 w-[120px] shrink-0 items-center justify-center rounded-lg border border-border bg-bg-page-gray text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray/70 disabled:opacity-60"
                   >
                     បោះបង់
                   </button>
@@ -1077,7 +1077,7 @@ export default function VariablePage() {
             }
           }}
         >
-          <div className="w-full max-w-[480px] rounded-xl bg-white shadow-2xl">
+          <div className="w-full max-w-[480px] rounded-xl bg-bg-page-white shadow-2xl">
             <form onSubmit={handleRateSubmit}>
               <div className="flex items-start justify-between px-7 pb-3 pt-6">
                 <h2 className="text-xl font-bold text-text-secondary">
@@ -1087,7 +1087,7 @@ export default function VariablePage() {
                 <button
                   type="button"
                   onClick={closeRateModal}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition hover:bg-gray-100"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition hover:bg-bg-page-gray"
                   aria-label="បិទ"
                 >
                   <X size={18} />
@@ -1095,7 +1095,7 @@ export default function VariablePage() {
               </div>
 
               <div className="space-y-5 px-7 pb-7">
-                <p className="rounded-lg bg-gray-50 px-4 py-2 text-sm text-text-secondary">
+                <p className="rounded-lg bg-bg-page-gray px-4 py-2 text-sm text-text-secondary">
                   ដុល្លារអាមេរិក (USD) → រៀល (KHR)
                 </p>
 
@@ -1111,7 +1111,7 @@ export default function VariablePage() {
                     value={rateForm.rate}
                     onChange={updateRateField("rate")}
                     placeholder="ឧ. 4100"
-                    className="h-11 w-full rounded-lg border border-gray-200 px-4 text-sm leading-6 outline-none transition placeholder:text-gray-400 focus:border-primary"
+                    className="h-11 w-full rounded-lg border border-border px-4 text-sm leading-6 outline-none transition placeholder:text-text-mute focus:border-primary"
                   />
                 </div>
 
@@ -1124,7 +1124,7 @@ export default function VariablePage() {
                     type="date"
                     value={rateForm.effectiveFrom}
                     onChange={updateRateField("effectiveFrom")}
-                    className="h-11 w-full rounded-lg border border-gray-200 px-4 text-sm leading-6 outline-none transition focus:border-primary"
+                    className="h-11 w-full rounded-lg border border-border px-4 text-sm leading-6 outline-none transition focus:border-primary"
                   />
                 </div>
 
@@ -1137,7 +1137,7 @@ export default function VariablePage() {
                     type="button"
                     onClick={closeRateModal}
                     disabled={rateSaving}
-                    className="flex h-11 w-[120px] shrink-0 items-center justify-center rounded-lg border border-border bg-gray-50 text-sm font-semibold text-text-secondary transition hover:bg-gray-100 disabled:opacity-60"
+                    className="flex h-11 w-[120px] shrink-0 items-center justify-center rounded-lg border border-border bg-bg-page-gray text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray/70 disabled:opacity-60"
                   >
                     បោះបង់
                   </button>

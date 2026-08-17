@@ -341,7 +341,7 @@ export default function MultiSelect({
           gap-3
           rounded-lg
           border
-          bg-white
+          bg-bg-page-white
           px-3
           text-left
           text-sm
@@ -350,10 +350,10 @@ export default function MultiSelect({
           ${
             error
               ? "border-error"
-              : "border-gray-200 focus:border-primary"
+              : "border-border focus:border-primary"
           }
           disabled:cursor-not-allowed
-          disabled:bg-gray-50
+          disabled:bg-bg-page-gray
           disabled:opacity-60
         `}
       >
@@ -366,7 +366,7 @@ export default function MultiSelect({
               selectedLabels.length >
               0
                 ? "text-text-primary"
-                : "text-gray-400"
+                : "text-text-mute"
             }
           `}
         >
@@ -402,8 +402,8 @@ export default function MultiSelect({
             overflow-y-auto
             rounded-lg
             border
-            border-gray-200
-            bg-white
+            border-border
+            bg-bg-page-white
             py-1
             shadow-xl
           "
@@ -425,7 +425,7 @@ export default function MultiSelect({
                   justify-between
                   gap-3
                   border-b
-                  border-gray-100
+                  border-border
                   px-3
                   py-2.5
                   text-left
@@ -433,7 +433,7 @@ export default function MultiSelect({
                   font-semibold
                   text-primary
                   transition
-                  hover:bg-gray-50
+                  hover:bg-bg-page-gray
                 "
               >
                 <span className="min-w-0 flex-1 truncate">
@@ -490,7 +490,7 @@ export default function MultiSelect({
                         text-sm
                         text-text-primary
                         transition
-                        hover:bg-gray-50
+                        hover:bg-bg-page-gray
                         disabled:cursor-not-allowed
                         disabled:opacity-50
                       "
@@ -512,7 +512,7 @@ export default function MultiSelect({
               )}
             </>
           ) : (
-            <p className="px-3 py-4 text-center text-sm text-gray-400">
+            <p className="px-3 py-4 text-center text-sm text-text-mute">
               {emptyLabel}
             </p>
           )}
@@ -554,14 +554,14 @@ function CheckboxIndicator({
               text-white
             `
             : `
-              border-gray-300
-              bg-white
+              border-border
+              bg-bg-page-white
             `
         }
       `}
     >
       {indeterminate ? (
-        <span className="h-[2px] w-2 rounded-full bg-white" />
+        <span className="h-[2px] w-2 rounded-full bg-bg-page-white" />
       ) : checked ? (
         <Check
           size={12}

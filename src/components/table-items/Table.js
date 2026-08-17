@@ -19,9 +19,9 @@ export default function Table({ columns = [], data = [], emptyMessage = "មិ�
 
   return (
     <div className="min-w-0">
-      <div className={`max-w-full rounded-lg border border-[#e5eaf0] bg-white ${scrollable ? "overflow-x-auto no-scrollbar" : "overflow-hidden"}`}>
+      <div className={`max-w-full rounded-lg border border-border bg-bg-page-white ${scrollable ? "overflow-x-auto no-scrollbar" : "overflow-hidden"}`}>
         <table className={`w-full table-fixed border-collapse ${tableClassName}`}>
-          <thead className="bg-white">
+          <thead className="bg-bg-page-white">
             <tr className="h-[42px] border-b border-border text-[12px] text-text-secondary">
               {columns.map((column) => (
                 <th key={column.key} style={{ width: column.width }} className={`px-3 py-2 align-middle font-medium ${column.align === "center" ? "text-center" : "text-left"} ${column.headerClassName || ""}`}>
@@ -50,7 +50,7 @@ export default function Table({ columns = [], data = [], emptyMessage = "មិ�
               })
             ) : (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-10 text-center text-sm text-gray-400">
+                <td colSpan={columns.length} className="px-4 py-10 text-center text-sm text-text-mute">
                   {emptyMessage}
                 </td>
               </tr>

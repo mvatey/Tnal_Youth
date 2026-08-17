@@ -23,8 +23,8 @@ export default function DocumentTable({
       overflow-x-auto
       rounded-sm
       border
-      border-[#e5eaf0]
-      bg-white
+      border-border
+      bg-bg-page-white
     ">
 
 
@@ -54,9 +54,9 @@ export default function DocumentTable({
 
 
 
-        <thead className="bg-[#f8fafc]">
+        <thead className="bg-bg-page-gray">
 
-          <tr className="border-b border-[#e5eaf0]">
+          <tr className="border-b border-border">
 
 
             {[
@@ -110,7 +110,7 @@ export default function DocumentTable({
 
                 className="
                 border-b
-                border-[#edf0f3]
+                border-border
                 transition
                 hover:bg-bg-page-gray/60
                 "
@@ -203,11 +203,11 @@ export default function DocumentTable({
                   <span
                     className="
                     rounded-md
-                    bg-red-100
+                    bg-error-bg
                     px-3
                     py-1
                     text-xs
-                    text-red-500
+                    text-error
                     "
                   >
 
@@ -292,7 +292,7 @@ export default function DocumentTable({
                 py-10
                 text-center
                 text-sm
-                text-gray-400
+                text-text-mute
                 "
               >
 

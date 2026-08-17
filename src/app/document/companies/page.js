@@ -235,11 +235,11 @@ export default function CompanyDocumentPage() {
         <span
           className="
           rounded-md
-          bg-red-100
+          bg-error-bg
           px-3
           py-1
           text-xs
-          text-red-500
+          text-error
           "
         >
           {item.type}

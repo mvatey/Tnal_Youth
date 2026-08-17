@@ -6,13 +6,13 @@ import { useState } from "react";
 const TYPE_BADGE = {
   INTERNAL: {
     label: "កម្មវិធីខាងក្នុង",
-    color: "#6D5BD0",
-    tint: "#F1EEFC",
+    color: "var(--color-primary, #6D5BD0)",
+    tint: "var(--color-primary-light, #F1EEFC)",
   },
   EXTERNAL: {
     label: "កម្មវិធីខាងក្រៅ",
-    color: "#2FA36B",
-    tint: "#E9F9F1",
+    color: "var(--color-success, #2FA36B)",
+    tint: "var(--color-success-bg, #E9F9F1)",
   },
 };
 
@@ -29,8 +29,8 @@ function TypeBadge({ type }) {
   const config =
     TYPE_BADGE[normalizedType] ?? {
       label: type || "-",
-      color: "#6B7280",
-      tint: "#F1F2F5",
+      color: "var(--color-text-secondary, #6B7280)",
+      tint: "var(--color-bg-page-gray, #F1F2F5)",
     };
 
   return (

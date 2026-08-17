@@ -47,7 +47,7 @@ export default function DataTable({
   return (
     <div className="w-full">
       {(title || onSearchChange || filters.length > 0 || actionButton) && (
-        <div className="mb-4 rounded-lg border border-[#e5eaf0] bg-white p-3 sm:p-4">
+        <div className="mb-4 rounded-lg border border-border bg-bg-page-white p-3 sm:p-4">
           {title && (
             <h3
               className="
@@ -108,8 +108,8 @@ export default function DataTable({
                   w-full
                   rounded-lg
                   border
-                  border-gray-200
-                  bg-white
+                  border-border
+                  bg-bg-page-white
                   pl-9
                   pr-4
                   text-sm
@@ -150,7 +150,7 @@ export default function DataTable({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-sm border border-[#e5eaf0] bg-white">
+      <div className="overflow-x-auto rounded-sm border border-border bg-bg-page-white">
         <table className="w-full min-w-[760px] table-fixed border-collapse text-xs sm:min-w-[980px] sm:text-sm">
           <colgroup>
             {columns.map((column, index) => (
@@ -158,8 +158,8 @@ export default function DataTable({
             ))}
           </colgroup>
 
-          <thead className="bg-[#f8fafc]">
-            <tr className="border-b border-[#e5eaf0]">
+          <thead className="bg-bg-page-gray">
+            <tr className="border-b border-border">
               {columns.map((column, index) => (
                 <th
                   key={index}
@@ -187,7 +187,7 @@ export default function DataTable({
                     key={item.id ?? itemIndex}
                     className="
                       border-b
-                      border-[#edf0f3]
+                      border-border
                       transition
                       last:border-b-0
                       hover:bg-bg-page-gray/60
@@ -223,7 +223,7 @@ export default function DataTable({
                     py-10
                     text-center
                     text-sm
-                    text-gray-400
+                    text-text-mute
                   "
                 >
                   {emptyMessage}

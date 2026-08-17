@@ -190,8 +190,8 @@ export default function MyAccountSponsorPage() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <p className="text-sm text-gray-500">
+      <div className="rounded-xl border border-border bg-bg-page-white p-6">
+        <p className="text-sm text-text-secondary">
           កំពុងទាញយកទិន្នន័យ...
         </p>
       </div>
@@ -200,8 +200,8 @@ export default function MyAccountSponsorPage() {
 
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">
+      <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
+        <p className="text-sm text-error">
           {error}
         </p>
       </div>
@@ -209,13 +209,13 @@ export default function MyAccountSponsorPage() {
   }
 
   if (dataError) {
-    return <div className="rounded-xl border border-red-200 bg-white p-6 text-sm text-red-500">{dataError}</div>;
+    return <div className="rounded-xl border border-error/30 bg-bg-page-white p-6 text-sm text-error">{dataError}</div>;
   }
 
   if (!member) {
     return (
-      <div className="rounded-xl border border-red-200 bg-white p-6">
-        <p className="text-sm text-red-500">
+      <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
+        <p className="text-sm text-error">
           រកមិនឃើញព័ត៌មានសមាជិក
         </p>
       </div>

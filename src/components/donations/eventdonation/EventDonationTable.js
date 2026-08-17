@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowDown, ArrowUp, ChevronsUpDown, List, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronsUpDown, List } from "lucide-react";
 import Pagination from "@/components/navigation/Pagination";
 import SaveButton from "@/components/forms/save";
 import tableHeaders from "@/data/donation/tableHeaders.json";
@@ -14,7 +14,6 @@ export default function EventDonationTable({
   currentPage,
   totalPages,
   onPageChange,
-  onDelete,
   onDownload,
   moneySort,
   onMoneySort,
@@ -29,7 +28,7 @@ export default function EventDonationTable({
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[980px] border-collapse border border-border">
           <thead>
-            <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
+            <tr className="h-12 border-b border-border bg-bg-page-gray text-center text-xs font-medium text-text-secondary">
               {headers.map((header, index) => (
                 <th key={header} className="px-4">
                   {index === 6 || index === 7 ? (
@@ -83,14 +82,6 @@ export default function EventDonationTable({
                       <List size={11} strokeWidth={2.2} />
                       លម្អិត
                     </Link>
-                    <button
-                      type="button"
-                      className="inline-flex h-[18px] w-[18px] items-center justify-center text-[#E92824] transition hover:text-red-700"
-                      aria-label={`Delete event donation row ${row.id}`}
-                      onClick={() => onDelete(row.id)}
-                    >
-                      <Trash2 size={18} />
-                    </button>
                   </div>
                 </td>
               </tr>

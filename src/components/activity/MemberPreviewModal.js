@@ -26,7 +26,7 @@ export default function MemberPreviewModal({ member, onClose }) {
             type="button"
             onClick={onClose}
             aria-label="បិទ"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-text-secondary shadow-md transition hover:text-primary"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-bg-page-white text-text-secondary shadow-md transition hover:text-primary"
           >
             <X size={18} />
           </button>

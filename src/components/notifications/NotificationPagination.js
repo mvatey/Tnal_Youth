@@ -9,7 +9,7 @@ export default function NotificationPagination() {
     <div className="flex items-center justify-between border-t border-border px-6 py-3">
       <button
         type="button"
-        className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-white px-4 text-sm font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary"
+        className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-bg-page-white px-4 text-sm font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary"
       >
         <ArrowLeft size={15} />
         Previous
@@ -42,7 +42,7 @@ export default function NotificationPagination() {
 
       <button
         type="button"
-        className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-white px-4 text-sm font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary"
+        className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-bg-page-white px-4 text-sm font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary"
       >
         Next
         <ArrowRight size={15} />

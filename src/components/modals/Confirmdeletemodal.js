@@ -35,8 +35,8 @@ export default function DeleteConfirmModal({
           items-center
           justify-center
           rounded-full
-          bg-red-100
-          text-red-600
+          bg-error-bg
+          text-error
           "
         >
           <Trash2 size={24}/>
@@ -65,7 +65,7 @@ export default function DeleteConfirmModal({
           className="
           mb-6
           text-sm
-          text-gray-500
+          text-text-mute
           "
         >
           {message}
@@ -91,12 +91,12 @@ export default function DeleteConfirmModal({
             flex-1
             rounded-lg
             border
-            border-gray-200
+            border-border
             py-2.5
             text-sm
             font-medium
-            text-gray-600
-            hover:bg-gray-50
+            text-text-secondary
+            hover:bg-bg-page-gray
             "
           >
             បោះបង់

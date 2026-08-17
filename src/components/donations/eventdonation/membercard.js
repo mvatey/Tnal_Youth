@@ -22,7 +22,7 @@ export default function MemberCard({
       className={`h-[65px] w-[200px] rounded-2xl border-2 px-3 py-2 text-left shadow-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-55 enabled:hover:-translate-y-0.5 enabled:hover:border-secondary/60 enabled:hover:shadow-md ${
         selected
           ? "border-secondary bg-secondary-light text-secondary ring-2 ring-secondary/15"
-          : "border-border bg-white"
+          : "border-border bg-bg-page-white"
       }`}
     >
       <div className="flex h-full items-center gap-2">
@@ -36,7 +36,7 @@ export default function MemberCard({
               <p className="truncate text-[11px] font-medium leading-tight text-text-primary">
                 {label}
               </p>
-              <p className="mt-1 truncate text-[14px] font-medium leading-none text-black">
+              <p className="mt-1 truncate text-[14px] font-medium leading-none text-text-primary">
                 {mainValue}{" "}
                 {unit && <span className="text-[#1689F2]">{unit}</span>}
               </p>
@@ -51,7 +51,7 @@ export default function MemberCard({
               )}
               {note && (
                 <span
-                  className="max-w-[68px] truncate text-[10px] font-medium leading-none text-black"
+                  className="max-w-[68px] truncate text-[10px] font-medium leading-none text-text-primary"
                   title={note}
                 >
                   {note}

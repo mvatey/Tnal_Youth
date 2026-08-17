@@ -169,7 +169,7 @@ export default function CreateUserModal({ open, onClose, onSave }) {
             rounded-full
             text-text-secondary
             transition
-            hover:bg-gray-100
+            hover:bg-bg-page-gray
             hover:text-text-primary
           "
         >
@@ -231,13 +231,13 @@ export default function CreateUserModal({ open, onClose, onSave }) {
         </div>
 
         {showValidationError && !isFormValid && (
-          <p className="mt-1 text-xs font-medium text-red-500">
+          <p className="mt-1 text-xs font-medium text-error">
             សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
           </p>
         )}
 
         {submitError && (
-          <p className="mt-1 text-xs font-medium text-red-500">
+          <p className="mt-1 text-xs font-medium text-error">
             {submitError}
           </p>
         )}

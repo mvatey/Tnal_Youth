@@ -207,7 +207,7 @@ export default function Table({
 
   return (
     <div>
-      <div className="overflow-x-auto rounded-sm border border-[#e5eaf0] bg-white">
+      <div className="overflow-x-auto rounded-sm border border-border bg-bg-page-white">
         <table className="w-full min-w-[980px] border-collapse">
           <AddDonationTableHeader />
           <tbody>
@@ -235,7 +235,7 @@ export default function Table({
               ))
             ) : (
               <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-sm text-gray-400">
+                <td colSpan={8} className="px-4 py-10 text-center text-sm text-text-mute">
                   មិនមានទិន្នន័យសមាជិកសម្រាប់សាខានេះទេ
                 </td>
               </tr>

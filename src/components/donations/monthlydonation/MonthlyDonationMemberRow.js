@@ -20,7 +20,7 @@ export default function MonthlyDonationMemberRow({ row, rowNumber }) {
   };
 
   return (
-    <tr className="h-[42px] border-b border-border bg-white text-center text-[12px] text-text-secondary last:border-b-0 hover:bg-primary-lighter/50">
+    <tr className="h-[42px] border-b border-border bg-bg-page-white text-center text-[12px] text-text-secondary last:border-b-0 hover:bg-primary-lighter/50">
       <td className="px-3 font-medium">{rowNumber}</td>
       <td className="px-3 text-left">
         <div className="flex items-center gap-3">

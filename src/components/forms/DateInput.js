@@ -31,7 +31,7 @@ export default function DateInput({
           maxDate={max ? new Date(max) : undefined}
           placeholderText={value ? "" : placeholder}
           dateFormat="dd/MM/yyyy"
-          className="h-11 w-full rounded-lg border border-border bg-white px-4 pr-12 text-sm outline-none transition focus:border-secondary"
+          className="h-11 w-full rounded-lg border border-border bg-bg-page-white px-4 pr-12 text-sm text-text-primary outline-none transition placeholder:text-text-mute focus:border-secondary"
           wrapperClassName="w-full"
           popperClassName="small-calendar"
         />
@@ -40,7 +40,7 @@ export default function DateInput({
           <CalendarDays size={19} />
 
           {(isStart || isEnd) && (
-            <span className="absolute -right-1.5 -top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-secondary text-white ring-2 ring-white">
+            <span className="absolute -right-1.5 -top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-secondary text-white ring-2 ring-bg-page-white">
               {isStart ? <Plus size={10} strokeWidth={3} /> : <Minus size={10} strokeWidth={3} />}
             </span>
           )}

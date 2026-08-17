@@ -156,7 +156,7 @@ export default function CompanyDocumentPreview({ document, onClose }) {
         <iframe
           src={`${fileUrl}#view=FitH`}
           title={fileName}
-          className="h-full w-full border-0 bg-white"
+          className="h-full w-full border-0 bg-bg-page-white"
         />
       );
     }
@@ -174,7 +174,7 @@ export default function CompanyDocumentPreview({ document, onClose }) {
     if (isDocx || isText) {
       if (previewState === "loading") {
         return (
-          <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-500">
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-text-mute">
             <LoaderCircle className="animate-spin" size={34} />
             <span className="text-sm">កំពុងបើកឯកសារ...</span>
           </div>
@@ -187,7 +187,7 @@ export default function CompanyDocumentPreview({ document, onClose }) {
             srcDoc={previewHtml}
             sandbox=""
             title={fileName}
-            className="h-full w-full border-0 bg-white"
+            className="h-full w-full border-0 bg-bg-page-white"
           />
         );
       }
@@ -214,20 +214,20 @@ export default function CompanyDocumentPreview({ document, onClose }) {
         <div className="fixed bottom-0 left-64 right-0 top-16 flex items-center justify-center p-4">
           <div
             onClick={(event) => event.stopPropagation()}
-            className="relative w-[560px] max-w-full rounded-2xl bg-white p-5 shadow-xl"
+            className="relative w-[560px] max-w-full rounded-2xl bg-bg-page-white p-5 shadow-xl"
           >
             <button
               type="button"
               onClick={onClose}
               aria-label="Close document preview"
-              className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full hover:bg-gray-100"
+              className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full hover:bg-bg-page-gray"
             >
               <X size={17} />
             </button>
 
             <h2 className="mb-4 text-lg font-bold text-primary">ឯកសារ</h2>
 
-            <div className="mb-4 grid grid-cols-2 gap-x-5 gap-y-3 rounded-xl bg-gray-50 p-4">
+            <div className="mb-4 grid grid-cols-2 gap-x-5 gap-y-3 rounded-xl bg-bg-page-gray p-4">
               <Info label="ឈ្មោះឯកសារ" value={document.title} />
               <Info label="សាខា" value={document.branch} />
               <Info label="កាលបរិច្ឆេទ" value={document.date} />
@@ -245,7 +245,7 @@ export default function CompanyDocumentPreview({ document, onClose }) {
                   setIsExpanded(true);
                 }
               }}
-              className={`group relative flex h-[280px] w-full items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 ${
+              className={`group relative flex h-[280px] w-full items-center justify-center overflow-hidden rounded-xl border border-border bg-bg-page-gray ${
                 hasInlinePreview ? "cursor-pointer" : "cursor-default"
               }`}
               title={hasInlinePreview ? "ចុចដើម្បីមើលពេញអេក្រង់" : undefined}
@@ -297,7 +297,7 @@ export default function CompanyDocumentPreview({ document, onClose }) {
               </button>
             </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-hidden rounded-xl bg-white shadow-2xl">
+          <div className="min-h-0 flex-1 overflow-hidden rounded-xl bg-bg-page-white shadow-2xl">
             {preview(true)}
           </div>
         </div>
@@ -308,7 +308,7 @@ export default function CompanyDocumentPreview({ document, onClose }) {
 
 function EmptyPreview({ message }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-2 text-gray-400">
+    <div className="flex h-full flex-col items-center justify-center gap-2 text-text-mute">
       <FileText size={50} />
       <span className="px-4 text-center text-sm">{message}</span>
     </div>
@@ -318,8 +318,8 @@ function EmptyPreview({ message }) {
 function Info({ label, value }) {
   return (
     <div className="min-w-0">
-      <p className="text-[11px] text-gray-400">{label}</p>
-      <p className="truncate text-sm font-medium text-gray-700">{value || "-"}</p>
+      <p className="text-[11px] text-text-mute">{label}</p>
+      <p className="truncate text-sm font-medium text-text-secondary">{value || "-"}</p>
     </div>
   );
 }

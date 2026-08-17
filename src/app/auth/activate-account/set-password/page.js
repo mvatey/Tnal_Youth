@@ -192,7 +192,7 @@ function SetActivationPasswordContent() {
         បង្កើតលេខសម្ងាត់
       </h2>
 
-      <p className="mb-8 text-center text-sm leading-6 text-slate-500">
+      <p className="mb-8 text-center text-sm leading-6 text-text-mute">
         សូមបង្កើតលេខសម្ងាត់សម្រាប់គណនីរបស់អ្នក
       </p>
 
@@ -226,7 +226,7 @@ function SetActivationPasswordContent() {
         />
 
         {error && (
-          <p className="text-center text-sm text-red-600">
+          <p className="text-center text-sm text-error">
             {error}
           </p>
         )}
@@ -243,7 +243,7 @@ function SetActivationPasswordContent() {
             : "បញ្ជាក់លេខសម្ងាត់"}
         </button>
 
-        <p className="pt-2 text-center text-sm text-slate-500">
+        <p className="pt-2 text-center text-sm text-text-mute">
           ត្រឡប់ទៅ{" "}
 
           <a

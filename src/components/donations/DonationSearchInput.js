@@ -6,9 +6,9 @@ export default function DonationSearchInput({ value, onChange, showLabel = true 
       {showLabel && (
         <span className="mb-1 block text-[12px] font-medium text-text-secondary">ស្វែងរក</span>
       )}
-      <span className="flex h-[34px] items-center rounded-lg border border-border bg-white px-3">
+      <span className="flex h-[34px] items-center rounded-lg border border-border bg-bg-page-white px-3">
         <input
-        className="w-full flex-1 bg-transparent pr-2 text-[12px] font-medium outline-none focus:placeholder-transparent"
+        className="w-full flex-1 bg-transparent pr-2 text-[12px] font-medium text-text-primary outline-none focus:placeholder-transparent"
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder="ស្វែងរកតាមឈ្មោះសមាជិក..."

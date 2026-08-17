@@ -22,7 +22,7 @@ export default function QuantityInput({
   };
 
   return (
-    <div className="mx-auto flex h-8 w-16 overflow-hidden rounded-md border border-border bg-white">
+    <div className="mx-auto flex h-8 w-16 overflow-hidden rounded-md border border-border bg-bg-page-white">
       <input
         type="number"
         min={min}

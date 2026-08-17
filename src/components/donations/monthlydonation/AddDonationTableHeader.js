@@ -5,7 +5,7 @@ const { addDonationHeaders } = tableHeaders;
 export default function AddDonationTableHeader() {
   return (
     <thead>
-      <tr className="h-11 border-b border-[#e5eaf0] bg-white text-center text-[12px] font-medium text-slate-500">
+      <tr className="h-11 border-b border-border bg-bg-page-gray text-center text-[12px] font-medium text-text-secondary">
         {addDonationHeaders.map((header, index) => (
           <th
             key={header}

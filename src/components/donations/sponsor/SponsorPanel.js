@@ -30,7 +30,7 @@ function SponsorReceiptPreview({ receipt }) {
 
   return (
     <span
-      className="inline-flex h-8 w-11 items-center justify-center overflow-hidden rounded-md border border-[#4B2E91]/20 bg-white text-[#4B2E91] shadow-sm"
+      className="inline-flex h-8 w-11 items-center justify-center overflow-hidden rounded-md border border-secondary/20 bg-bg-page-white text-secondary shadow-sm"
       title={receipt.name || "Receipt"}
     >
       {receipt.type?.startsWith("image/") ? (
@@ -57,7 +57,7 @@ function DateFilter({ value, onChange }) {
         aria-label="កាលបរិច្ឆេទ"
        
       />
-      <span className="flex h-full w-full items-center justify-between rounded-lg border border-border bg-white px-3 text-[16px] font-Semibold text-text-secondary shadow-sm transition hover:border-secondary">
+      <span className="flex h-full w-full items-center justify-between rounded-lg border border-border bg-bg-page-white px-3 text-[16px] font-Semibold text-text-secondary shadow-sm transition hover:border-secondary">
         <span className="truncate">{value || "កាលបរិច្ឆេទ"}</span>
         <CalendarDays size={16} strokeWidth={2.2} />
       </span>
@@ -198,7 +198,7 @@ export default function SponsorPanel({
   }, [showDownloadAlert, showSaveAlert]);
 
   return (
-    <section className="min-h-[650px] rounded-md border border-border bg-[#fbfcfe] px-7 py-4 shadow-sm">
+    <section className="min-h-[650px] rounded-md border border-border bg-bg-page-white px-7 py-4 shadow-sm">
       {showDownloadAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
           <AddAlert message="ការទាញយកថវិការឧបត្ថម្ភជោគជ័យ!" />
@@ -211,7 +211,7 @@ export default function SponsorPanel({
         </div>
       )}
 
-      {error ? <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {error ? <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
 
       <div className="mb-4 flex flex-col gap-4">
         <h1 className="text-base font-semibold text-secondary">
@@ -221,7 +221,7 @@ export default function SponsorPanel({
 
         <div className="flex w-full flex-nowrap items-center justify-end gap-[5px] overflow-x-auto pb-1">
           <label className="block h-[34px] w-[260px] shrink-0">
-            <span className="flex h-full items-center rounded-lg border border-border bg-white px-3 shadow-sm">
+            <span className="flex h-full items-center rounded-lg border border-border bg-bg-page-white px-3 shadow-sm">
               <input
                 className=" flex-1 bg-transparent pr-2 text-[12px] font-medium text-text-secondary outline-none placeholder:text-text-secondary focus:placeholder-transparent"
                 value={searchQuery}
@@ -260,7 +260,7 @@ export default function SponsorPanel({
             <button
               type="button"
               onClick={() => router.push(`${routePrefix}/add`)}
-              className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-success px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
+              className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-green-600 px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
             >
               <PlusCircle size={17} />
               បន្ថែមការឧបត្ថម្ភ
@@ -272,7 +272,7 @@ export default function SponsorPanel({
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[980px] border-collapse border border-border">
           <thead>
-            <tr className="h-12 border-b border-border bg-white text-center text-xs font-medium text-text-secondary">
+            <tr className="h-12 border-b border-border bg-bg-page-gray text-center text-xs font-medium text-text-secondary">
               {headers.map((header, index) => (
                 <th
                   key={header}

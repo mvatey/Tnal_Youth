@@ -136,7 +136,7 @@ export default function ParticipationEditModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-5">
-      <div className="w-full max-w-5xl rounded-2xl bg-white p-5 shadow-2xl">
+      <div className="w-full max-w-5xl rounded-2xl bg-bg-page-white p-5 shadow-2xl">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-secondary">
@@ -151,7 +151,7 @@ export default function ParticipationEditModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-text-secondary transition hover:bg-gray-100"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-text-secondary transition hover:bg-bg-page-gray"
           >
             <X size={18} />
           </button>
@@ -165,7 +165,7 @@ export default function ParticipationEditModal({
                 setQuery(event.target.value)
               }
               placeholder="ស្វែងរកសមាជិក..."
-              className="h-10 w-full rounded-lg border border-border bg-white pl-4 pr-10 text-sm outline-none focus:border-primary"
+              className="h-10 w-full rounded-lg border border-border bg-bg-page-white pl-4 pr-10 text-sm outline-none focus:border-primary"
             />
 
             <Search
@@ -200,7 +200,7 @@ export default function ParticipationEditModal({
 
         <div className="max-h-[430px] overflow-y-auto rounded-lg border border-border">
           <table className="w-full table-fixed border-collapse text-xs text-text-secondary">
-            <thead className="sticky top-0 z-10 bg-white">
+            <thead className="sticky top-0 z-10 bg-bg-page-white">
               <tr className="h-11 border-b border-border">
                 <th className="w-[5%] text-center">
                   <input
@@ -321,7 +321,7 @@ export default function ParticipationEditModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-10 min-w-[110px] items-center justify-center rounded-lg border border-border bg-white px-5 text-sm font-semibold text-text-secondary transition hover:bg-gray-50"
+            className="flex h-10 min-w-[110px] items-center justify-center rounded-lg border border-border bg-bg-page-white px-5 text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray"
           >
             បោះបង់
           </button>

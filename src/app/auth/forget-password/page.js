@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
       <h2 className="text-xl font-bold text-text-primary mb-2 text-center">
         ភ្លេចលេខសម្ងាត់?
       </h2>
-      <p className="text-sm text-slate-500 mb-8 text-center">
+      <p className="text-sm text-text-mute mb-8 text-center">
         សូមបញ្ជូលព័ត៌មានលេខទូរស័ព្ទរបស់អ្នក ដើម្បីទទួលបានលេខកូដផ្ទៀងផ្ទាត់
       </p>
 
@@ -102,7 +102,7 @@ export default function ForgotPasswordPage() {
             }
           />
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-error">{error}</p>}
 
         <button
           type="submit"
@@ -113,7 +113,7 @@ export default function ForgotPasswordPage() {
           {loading ? "..." : "ស្វែងរកលេខសម្ងាត់?"}
         </button>
 
-        <p className="text-center text-sm text-slate-500 pt-2">
+        <p className="text-center text-sm text-text-mute pt-2">
           ត្រឡប់ទៅ{" "}
           <a href="/auth/login" className="text-blue-700 hover:underline">
             ទំព័រចូលប្រើប្រាស់

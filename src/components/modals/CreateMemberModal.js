@@ -257,12 +257,12 @@ export default function CreateMemberModal({
     >
       <div className="fixed bottom-0 left-0 right-0 top-[72px] flex items-center justify-center p-4 lg:left-[365px] lg:p-6">
         <div
-          className="flex max-h-[calc(100vh-120px)] w-full max-w-[640px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+          className="flex max-h-[calc(100vh-120px)] w-full max-w-[640px] flex-col overflow-hidden rounded-2xl bg-bg-page-white shadow-2xl"
           onClick={(event) =>
             event.stopPropagation()
           }
         >
-         <div className="relative flex shrink-0 items-center justify-between border-b border-gray-100 px-6 py-5">
+         <div className="relative flex shrink-0 items-center justify-between border-b border-border px-6 py-5">
   <h2 className="text-lg font-bold text-primary">
     បង្កើតសមាជិកថ្មី
   </h2>
@@ -270,7 +270,7 @@ export default function CreateMemberModal({
   <button
     type="button"
     onClick={onClose}
-    className="absolute right-6 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-black bg-white text-black hover:bg-gray-100"
+    className="absolute right-6 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-black bg-bg-page-white text-text-primary hover:bg-bg-page-gray"
     aria-label="បិទផ្ទាំង"
   >
     <X size={16} strokeWidth={1} />
@@ -399,11 +399,11 @@ export default function CreateMemberModal({
             </div>
           </form>
 
-          <div className="flex shrink-0 items-center gap-3 border-t border-gray-100 bg-white px-6 py-3">
+          <div className="flex shrink-0 items-center gap-3 border-t border-border bg-bg-page-white px-6 py-3">
   <button
     type="button"
     onClick={onClose}
-    className="h-[34px] w-[96px] rounded-[8px] border border-[#D1D5DB] bg-[#F9FAFB] text-center text-[14px] font-semibold text-black shadow-md transition hover:bg-[#F3F4F6]"
+    className="h-[34px] w-[96px] rounded-[8px] border border-border bg-bg-page-gray text-center text-[14px] font-semibold text-text-primary shadow-md transition hover:bg-bg-page-gray/70"
   >
     បោះបង់
   </button>

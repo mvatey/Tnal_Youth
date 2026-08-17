@@ -19,7 +19,7 @@ export default function Button({
       "bg-error text-white hover:opacity-90",
 
     outline:
-      "border border-border bg-white text-text-primary hover:bg-bg-page-gray",
+      "border border-border bg-bg-page-white text-text-primary hover:bg-bg-page-gray",
   };
 
 

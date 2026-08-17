@@ -376,7 +376,7 @@ export default function DocumentsPage() {
           justify-center
         "
       >
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-text-secondary">
           កំពុងទាញយកឯកសារ...
         </p>
       </div>
@@ -389,13 +389,13 @@ export default function DocumentsPage() {
         className="
           rounded-xl
           border
-          border-red-200
-          bg-white
+          border-error/30
+          bg-bg-page-white
           p-6
           text-center
         "
       >
-        <p className="text-sm text-red-500">
+        <p className="text-sm text-error">
           {error}
         </p>
       </div>
@@ -408,13 +408,13 @@ export default function DocumentsPage() {
         className="
           rounded-xl
           border
-          border-gray-200
-          bg-white
+          border-border
+          bg-bg-page-white
           p-6
           text-center
         "
       >
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-text-secondary">
           រកមិនឃើញព័ត៌មានគណនី
         </p>
       </div>

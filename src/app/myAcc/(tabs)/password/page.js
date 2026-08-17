@@ -198,7 +198,7 @@ export default function PasswordPage() {
           </div>
         </div>
 
-        <div className="h-fit rounded-xl border border-warning bg-white p-5">
+        <div className="h-fit rounded-xl border border-warning bg-bg-page-white p-5">
           <div className="mb-5 flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-warning-bg">
               <Info
@@ -241,7 +241,7 @@ function BoxFill({
 
       <div className="relative">
         <Lock
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
           size={18}
         />
 
@@ -256,8 +256,8 @@ function BoxFill({
             w-full
             rounded-lg
             border
-            border-gray-200
-            bg-white
+            border-border
+            bg-bg-page-white
             pl-11
             pr-11
             text-sm
@@ -270,7 +270,7 @@ function BoxFill({
         <button
           type="button"
           onClick={() => setShow(!show)}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary"
         >
           {show ? (
             <EyeOff size={18} />
