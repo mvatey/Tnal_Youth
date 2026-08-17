@@ -32,10 +32,24 @@ function normalizeAvatarUrl(value) {
   return `/${source}`;
 }
 
+// Every other "success" surface in this app (ParticipantStatusBadge,
+// NotificationStatusBadge, ...) pairs bg-success-bg with text-success — the
+// fill alone (#C3E4D5) is a pale mint that barely reads as green without
+// that darker green text/border riding on top of it. These fields used to
+// apply bg-success-bg alone, which is why a filled amount looked white/
+// outlined instead of green. Now the border and the digits themselves also
+// pick up the success color when there's an amount, matching that
+// convention so the "green" state is unmistakable at a glance.
 const getAmountFieldClass = (value) =>
   Number(value) > 0
-    ? "border-border bg-success-bg"
+    ? "border-success/40 bg-success-bg"
     : "border-border bg-bg-page-gray";
+
+const getAmountTextClass = (value) =>
+  Number(value) > 0 ? "text-success" : "text-text-primary";
+
+const getAmountUnitClass = (value) =>
+  Number(value) > 0 ? "text-success" : "text-text-secondary";
 
 export function ReceiptIcon({ size = 20 }) {
   return (
@@ -77,8 +91,16 @@ export default function AddDonationTableRow({
   onRealAmountChange,
   onDollarAmountChange,
   onPaymentMethodChange,
+  onPaymentReferenceChange,
   onShowInfo,
   readOnly = false,
+  // Whether the current viewer has NO edit rights at all (e.g. admin, or a
+  // secretary/branch_leader viewing a page they can't edit) — distinct
+  // from `readOnly` above, which ALSO turns true for a row that simply
+  // isn't the one currently being edited in rowEditMode (see Table.js).
+  // The Edit (pencil) button below must key off THIS, not `readOnly` — see
+  // the comment at its render condition.
+  globalReadOnly = false,
   rowEditMode = false,
   isEditing = false,
   editDisabled = false,
@@ -153,9 +175,11 @@ export default function AddDonationTableRow({
             )}
             onBlur={() => setFocusedAmountField(null)}
             placeholder={focusedAmountField === "realAmount" ? "" : "0"}
-            className="w-full bg-transparent text-[13px] text-text-primary outline-none placeholder:text-text-mute disabled:cursor-not-allowed"
+            className={`w-full bg-transparent text-[13px] outline-none placeholder:text-text-mute disabled:cursor-not-allowed ${getAmountTextClass(
+              member.realAmount,
+            )}`}
           />
-          <span className="text-[13px] text-text-secondary">៛</span>
+          <span className={`text-[13px] ${getAmountUnitClass(member.realAmount)}`}>៛</span>
         </div>
       </td>
 
@@ -179,9 +203,11 @@ export default function AddDonationTableRow({
             )}
             onBlur={() => setFocusedAmountField(null)}
             placeholder={focusedAmountField === "dollarAmount" ? "" : "0.00"}
-            className="w-full bg-transparent text-[13px] text-text-primary outline-none placeholder:text-text-mute disabled:cursor-not-allowed"
+            className={`w-full bg-transparent text-[13px] outline-none placeholder:text-text-mute disabled:cursor-not-allowed ${getAmountTextClass(
+              member.dollarAmount,
+            )}`}
           />
-          <span className="text-[13px] text-text-secondary">$</span>
+          <span className={`text-[13px] ${getAmountUnitClass(member.dollarAmount)}`}>$</span>
         </div>
       </td>
 
@@ -201,31 +227,59 @@ export default function AddDonationTableRow({
         </select>
       </td>
 
-      {/* វិក្ក័យបត្រ */}
-      <td className="px-3 text-center">
-        <div className="relative inline-flex items-center gap-1">
+      {/* លេខយោង (payment reference input, + the receipt icon right below it —
+          both describe the same "proof of this payment" concept, so they
+          live together in one column instead of the receipt icon sitting
+          off in the action column). */}
+      <td className="px-3">
+        <div className="mx-auto flex w-[110px] flex-col items-center gap-1">
+          <input
+            type="text"
+            disabled={readOnly}
+            value={member.paymentReference ?? ""}
+            onChange={(e) => onPaymentReferenceChange(member.id, e.target.value)}
+            placeholder="-"
+            className="block h-7 w-full rounded-md border border-border bg-bg-page-white px-2 text-center text-[12px] text-text-secondary outline-none focus:border-secondary disabled:cursor-not-allowed disabled:bg-bg-page-gray"
+          />
+
           <button
             key={receipt?.previewUrl || "receipt-icon"}
             type="button"
             disabled={readOnly}
             onClick={() => onShowInfo(member)}
-            className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-md text-secondary transition hover:bg-secondary-light/10 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-md text-secondary transition hover:bg-secondary-light/10 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="receipt"
             title={receipt?.name || "receipt"}
           >
-            <ReceiptIcon size={18} />
+            <ReceiptIcon size={16} />
           </button>
+        </div>
+      </td>
 
-          {rowEditMode && !isEditing && !readOnly ? (
+      {/* សកម្មភាព (row edit lock only) */}
+      <td className="px-3 text-center">
+        <div className="relative inline-flex items-center gap-1">
+          {/*
+            BUGFIX: this used to key off `readOnly`, but `readOnly` is
+            ALSO true for every row that isn't currently being edited
+            (Table.js: readOnly={globalReadOnly || (rowEditMode &&
+            editingRowId !== member.id)}) — that's the intentional lock
+            protecting an already-saved donation from stray edits. Keying
+            the button that STARTS editing off that same flag meant it
+            could never render: a locked row (readOnly=true) hid the only
+            control that could unlock it. Only `globalReadOnly` (no edit
+            rights at all) should hide this button.
+          */}
+          {rowEditMode && !isEditing && !globalReadOnly ? (
             <button
               type="button"
               onClick={onEdit}
               disabled={editDisabled}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#F2A900] transition hover:bg-[#F2A900]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2A900]/40 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[#F2A900] transition hover:bg-[#F2A900]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2A900]/40 disabled:cursor-not-allowed disabled:opacity-40"
               title="Edit this donation"
               aria-label="Edit this donation"
             >
-              <SquarePen size={20} strokeWidth={2.1} />
+              <SquarePen size={16} strokeWidth={2.1} />
             </button>
           ) : null}
 

@@ -429,12 +429,26 @@ const totalParticipantCount = activityParticipants.length;
       />
     </div>
 
+      {/*
+        For host/co-hosting staff, an upcoming activity leads straight to
+        the member-invite flow (they'd have nothing to tick attendance for
+        yet); once the activity is completed, the same button switches to
+        the attendance roster where they mark who actually showed up. A
+        viewer with no manage rights (e.g. admin) always sees the roster,
+        since inviting isn't theirs to do either way.
+      */}
       <Link
-        href={`/activity/${activity.id}/participants`}
+        href={
+          (canManage || canManageAsInvitedBranch) && activity.status !== "completed"
+            ? `/activity/${activity.id}/members`
+            : `/activity/${activity.id}/participants`
+        }
         className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-white transition hover:bg-primary-hover"
       >
         <FaUsers size={15} />
-        សមាសភាពចូលរួម
+        {(canManage || canManageAsInvitedBranch) && activity.status !== "completed"
+          ? "អញ្ជើញសមាជិក"
+          : "សមាសភាពចូលរួម"}
       </Link>
   </div>
   )}

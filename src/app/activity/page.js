@@ -223,8 +223,24 @@ export default function ActivityPage() {
 
   // Also used to refresh the list right after Accept/Decline (see
   // handleRespond below), not just on mount.
+  //
+  // BUGFIX: this used to only ever set mountedRef.current = false (in the
+  // cleanup), never explicitly back to true. Under React 18 Strict Mode
+  // (dev), every mount is synthetically mounted -> cleaned up -> remounted;
+  // the first pass's cleanup permanently left the ref stuck at false, so
+  // the *second* (real) pass's loadActivities() call always hit the
+  // `if (!mountedRef.current) return;` guards below and never applied its
+  // result — the page stayed on "កំពុងទាញយកទិន្នន័យ..." forever with the
+  // scope tabs never appearing, exactly until a full reload happened to
+  // land the ref back on true. Setting it explicitly on every mount (not
+  // just relying on the initial useRef(true)) fixes that for good.
   const mountedRef = useRef(true);
-  useEffect(() => () => { mountedRef.current = false; }, []);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const loadActivities = useCallback(async () => {
     setLoading(true);

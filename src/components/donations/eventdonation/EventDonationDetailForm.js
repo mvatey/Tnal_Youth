@@ -5,8 +5,15 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import DonationFilterSelect from "../monthlydonation/DonationFilterSelect";
 import DonationSearchInput from "@/components/forms/searchBar";
 import Table from "@/components/tables/table";
+import EventDonationBranchTotals from "./EventDonationBranchTotals";
+import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
 import { Check, X } from "lucide-react";
 import useCurrentMember from "@/hooks/useCurrentMember";
+
+// Matches the flat rate already used elsewhere in this form (see the
+// exchangeRateKhrPerUsd sent in handleSave's payload below) and on the
+// income/expense pages' own totals cards.
+const KHR_PER_USD = 4000;
 
 async function fetchJson(url, options) {
   const response = await fetch(url, { cache: "no-store", ...options });
@@ -76,6 +83,12 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
 
   const [selectedBranch, setSelectedBranch] = useState(initialBranch);
   const [selectedEvent, setSelectedEvent] = useState(initialEvent);
+  // "members" = this branch's own per-member donation entry (the original
+  // table below); "branches" = a read-only, cross-branch totals view for
+  // the chosen activity — see EventDonationBranchTotals. Only meaningful
+  // once both a branch and an activity are picked, same gate as the
+  // members table itself.
+  const [activeTab, setActiveTab] = useState("members");
   const [searchQuery, setSearchQuery] = useState("");
   const [branches, setBranches] = useState([]);
   const [activities, setActivities] = useState([]);
@@ -168,6 +181,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           dollarAmount: "0.00",
           paymentMethod: paymentMethods[0]?.code || "Cash",
           paymentMethodId: paymentMethods[0]?.id,
+          paymentReference: "",
         }));
         setMembers(mergeSavedDonations(
           memberItems,
@@ -257,7 +271,28 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     setSelectedBranch(value);
     setSelectedEvent("all");
     setMembers([]);
+    setActiveTab("members");
   };
+
+  const handleEventChange = (value) => {
+    setSelectedEvent(value);
+    setActiveTab("members");
+  };
+
+  const hasBranchAndEvent = selectedBranch !== "all" && selectedEvent !== "all";
+
+  /*
+   * Derived fresh from `members` every render — never an incrementally
+   * accumulated running total — so editing a row (which replaces that
+   * row's amount in place, see Table.js's updateRow/handleSaveRow) is
+   * automatically reflected correctly with no separate "subtract the old
+   * amount, add the new one" bookkeeping needed here.
+   */
+  const memberTotals = useMemo(() => {
+    const riel = members.reduce((sum, row) => sum + (Number(row.realAmount) || 0), 0);
+    const dollar = members.reduce((sum, row) => sum + (Number(row.dollarAmount) || 0), 0);
+    return { riel, dollar, total: dollar + riel / KHR_PER_USD };
+  }, [members]);
 
   return (
     <>
@@ -295,12 +330,44 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-wrap items-end gap-6">
             <DonationFilterSelect label="សាខា" value={selectedBranch} onChange={handleBranchChange} options={branches} allLabel="ជ្រើសរើសសាខា" className="w-[158px]" required disabled={isDetailPage} />
-            <DonationFilterSelect label="កម្មវិធី" value={selectedEvent} onChange={setSelectedEvent} options={eventOptions} allLabel="ជ្រើសរើសកម្មវិធី" className="w-[158px]" required disabled={isDetailPage} />
+            <DonationFilterSelect label="កម្មវិធី" value={selectedEvent} onChange={handleEventChange} options={eventOptions} allLabel="ជ្រើសរើសកម្មវិធី" className="w-[158px]" required disabled={isDetailPage} />
           </div>
-          <DonationSearchInput value={searchQuery} onChange={setSearchQuery} showLabel={false} />
+          {activeTab === "members" ? (
+            <DonationSearchInput value={searchQuery} onChange={setSearchQuery} showLabel={false} />
+          ) : null}
         </div>
+
+        {/*
+          Only meaningful once a branch + activity are both chosen — before
+          that there is nothing to show either tab's table for. "សាខា"
+          is read-only for every viewer (including this branch's own
+          entry staff): it's a cross-branch summary, not something any
+          single branch edits.
+        */}
+        {hasBranchAndEvent && (
+          <div className="mb-4 inline-flex w-fit shrink-0 rounded-lg border border-border bg-bg-page-gray p-1 text-xs font-medium">
+            {[
+              { key: "members", label: "សមាជិក" },
+              { key: "branches", label: "សាខា" },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={`rounded-md px-3 py-1.5 transition ${
+                  activeTab === tab.key
+                    ? "bg-secondary text-white"
+                    : "text-text-secondary hover:text-text-primary"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {loading ? <div className="py-10 text-center text-sm text-text-secondary">កំពុងទាញទិន្នន័យសមាជិក...</div> : null}
-        {!loading && selectedBranch !== "all" && selectedEvent !== "all" ? (
+        {!loading && hasBranchAndEvent && activeTab === "members" ? (
           <Table
             members={members}
             selectedBranch={selectedBranch}
@@ -313,6 +380,17 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
             onSave={saving ? undefined : handleSave}
             onReceiptSave={(id, receipt) => setMembers((rows) => rows.map((row) => row.id === id ? { ...row, receipt } : row))}
           />
+        ) : null}
+        {!loading && hasBranchAndEvent && activeTab === "members" && members.length > 0 ? (
+          <DonationTotalsCard
+            title="សរុបវិភាគទាន"
+            riel={memberTotals.riel}
+            dollar={memberTotals.dollar}
+            total={memberTotals.total}
+          />
+        ) : null}
+        {hasBranchAndEvent && activeTab === "branches" ? (
+          <EventDonationBranchTotals activityId={selectedEvent} />
         ) : null}
       </section>
     </>

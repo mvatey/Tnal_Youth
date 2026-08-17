@@ -208,7 +208,7 @@ export default function Table({
   return (
     <div>
       <div className="overflow-x-auto rounded-sm border border-border bg-bg-page-white">
-        <table className="w-full min-w-[980px] border-collapse">
+        <table className="w-full min-w-[1080px] border-collapse">
           <AddDonationTableHeader />
           <tbody>
             {pagedRows.length > 0 ? (
@@ -222,7 +222,11 @@ export default function Table({
                   onPaymentMethodChange={(id, paymentMethod) =>
                     updateRow(id, { paymentMethod })
                   }
+                  onPaymentReferenceChange={(id, paymentReference) =>
+                    updateRow(id, { paymentReference })
+                  }
                   readOnly={readOnly || (rowEditMode && editingRowId !== member.id)}
+                  globalReadOnly={readOnly}
                   rowEditMode={rowEditMode}
                   isEditing={editingRowId === member.id}
                   editDisabled={editingRowId !== null && editingRowId !== member.id}
@@ -235,7 +239,7 @@ export default function Table({
               ))
             ) : (
               <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-sm text-text-mute">
+                <td colSpan={9} className="px-4 py-10 text-center text-sm text-text-mute">
                   មិនមានទិន្នន័យសមាជិកសម្រាប់សាខានេះទេ
                 </td>
               </tr>
