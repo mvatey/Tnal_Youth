@@ -1,66 +1,136 @@
-// components/navigation/NotificationBell.jsx
 "use client";
-import { useEffect, useState } from "react";
+
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+
 import Link from "next/link";
 import { Bell } from "lucide-react";
 
 const POLL_INTERVAL_MS = 45000;
 
-export default function NotificationBell({ unreadCount: unreadCountProp }) {
-  // When a caller passes unreadCount explicitly, respect it and skip our
-  // own fetch. Otherwise (the normal case — Topbar renders <NotificationBell
-  // /> with no props) fetch the real count from the backend so the red
-  // badge reflects actual unread notifications instead of always being 0.
-  const [fetchedCount, setFetchedCount] = useState(0);
+export default function NotificationBell({
+  unreadCount: unreadCountProp,
+}) {
+  const [fetchedCount, setFetchedCount] =
+    useState(0);
+
   const unreadCount =
-    unreadCountProp !== undefined ? unreadCountProp : fetchedCount;
+    unreadCountProp !== undefined
+      ? unreadCountProp
+      : fetchedCount;
 
-  useEffect(() => {
-    if (unreadCountProp !== undefined) {
-      return undefined;
-    }
+  const loadUnreadCount =
+    useCallback(async () => {
+      if (
+        unreadCountProp !== undefined
+      ) {
+        return;
+      }
 
-    let cancelled = false;
-
-    async function loadUnreadCount() {
       try {
         const response = await fetch(
           "/api/backend/notifications/me/unread-count",
-          { cache: "no-store" },
+          {
+            cache: "no-store",
+          },
         );
-        const body = await response.json().catch(() => null);
 
-        if (!response.ok) return;
+        const body =
+          await response
+            .json()
+            .catch(() => null);
 
-        const unread = body?.data?.unread ?? body?.unread;
+        if (!response.ok) {
+          return;
+        }
 
-        if (!cancelled && Number.isFinite(Number(unread))) {
-          setFetchedCount(Number(unread));
+        const unread =
+          body?.data?.unread ??
+          body?.unread;
+
+        if (
+          Number.isFinite(
+            Number(unread),
+          )
+        ) {
+          setFetchedCount(
+            Number(unread),
+          );
         }
       } catch {
-        // Silently keep the previous count; the bell just won't update
-        // this cycle. Not worth surfacing an error for a badge count.
+        // Keep previous count if request fails.
       }
+    }, [unreadCountProp]);
+
+  useEffect(() => {
+    if (
+      unreadCountProp !== undefined
+    ) {
+      return undefined;
     }
 
     loadUnreadCount();
-    const intervalId = setInterval(loadUnreadCount, POLL_INTERVAL_MS);
+
+    const intervalId =
+      setInterval(
+        loadUnreadCount,
+        POLL_INTERVAL_MS,
+      );
 
     return () => {
-      cancelled = true;
       clearInterval(intervalId);
     };
-  }, [unreadCountProp]);
+  }, [
+    unreadCountProp,
+    loadUnreadCount,
+  ]);
+
+  useEffect(() => {
+    if (
+      unreadCountProp !== undefined
+    ) {
+      return undefined;
+    }
+
+    function handleNotificationRead() {
+      loadUnreadCount();
+    }
+
+    window.addEventListener(
+      "notification-read",
+      handleNotificationRead,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "notification-read",
+        handleNotificationRead,
+      );
+    };
+  }, [
+    unreadCountProp,
+    loadUnreadCount,
+  ]);
 
   return (
     <Link
       href="/notification"
-      className="relative w-9 h-9 rounded-full border border-border flex items-center justify-center hover:bg-bg-page-gray transition"
+      className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border transition hover:bg-bg-page-gray"
     >
-      <Bell size={18} strokeWidth={2.25} className="text-text-primary" />
+      <Bell
+        size={18}
+        strokeWidth={2.25}
+        className="text-text-primary"
+      />
+
       {unreadCount > 0 && (
-        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] min-h-[18px] px-1 flex items-center justify-center bg-error text-white text-[10px] font-semibold rounded-full border-2 border-white">
-          {unreadCount > 9 ? "9+" : unreadCount}
+        <span className="absolute -right-1.5 -top-1.5 flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-error px-1 text-[10px] font-semibold text-white">
+          {unreadCount > 9
+            ? "9+"
+            : unreadCount}
         </span>
       )}
     </Link>
