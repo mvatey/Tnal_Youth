@@ -1,6 +1,13 @@
-import { UserCheck, UserPlus, Users } from "lucide-react";
+import {
+  Building2,
+  UserCheck,
+  UserPlus,
+  Users,
+} from "lucide-react";
 
-export function ParticipantStatusBadge({ status }) {
+export function ParticipantStatusBadge({
+  status,
+}) {
   const style =
     status === "បានចូលរួម"
       ? "bg-success-bg text-success"
@@ -15,28 +22,61 @@ export function ParticipantStatusBadge({ status }) {
   );
 }
 
-function StatCard({ label, value, icon: Icon, accent, iconBg, iconColor }) {
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  accent,
+  iconBg,
+  iconColor,
+}) {
   return (
     <div className="relative overflow-hidden rounded-xl border border-border bg-bg-page-white">
-      <div className={`h-[3px] w-full ${accent}`} />
+      <div
+        className={`h-[3px] w-full ${accent}`}
+      />
+
       <div className="flex items-center gap-3 p-4">
         <div
           className={`flex h-12 w-12 items-center justify-center rounded-xl ${iconBg}`}
         >
-          <Icon size={21} className={iconColor} />
+          <Icon
+            size={21}
+            className={iconColor}
+          />
         </div>
+
         <div>
-          <p className="text-lg font-bold text-text-primary">{value} នាក់</p>
-          <p className="text-sm text-text-secondary">{label}</p>
+          <p className="text-lg font-bold text-text-primary">
+            {Number(value || 0)} នាក់
+          </p>
+
+          <p className="text-sm text-text-secondary">
+            {label}
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-export default function ParticipantStats({ total, attended, absent }) {
+export default function ParticipantStats({
+  total = 0,
+  attended = 0,
+  absent = 0,
+
+  // Host branch only.
+  showInvitedBranch = false,
+  invitedBranch = 0,
+}) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div
+      className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${
+        showInvitedBranch
+          ? "xl:grid-cols-4"
+          : "xl:grid-cols-3"
+      }`}
+    >
       <StatCard
         icon={Users}
         label="ចំនួនសមាជិកសរុប"
@@ -45,6 +85,7 @@ export default function ParticipantStats({ total, attended, absent }) {
         iconBg="bg-secondary-light"
         iconColor="text-secondary-hover"
       />
+
       <StatCard
         icon={UserCheck}
         label="ចំនួនអ្នកបានចូលរួម"
@@ -53,6 +94,7 @@ export default function ParticipantStats({ total, attended, absent }) {
         iconBg="bg-primary-light"
         iconColor="text-primary"
       />
+
       <StatCard
         icon={UserPlus}
         label="ចំនួនអ្នកមិនបានចូលរួម"
@@ -61,6 +103,17 @@ export default function ParticipantStats({ total, attended, absent }) {
         iconBg="bg-warning-bg"
         iconColor="text-warning"
       />
+
+      {showInvitedBranch && (
+        <StatCard
+          icon={Building2}
+          label="សមាជិកសាខាអញ្ជើញ"
+          value={invitedBranch}
+          accent="bg-secondary"
+          iconBg="bg-secondary-light"
+          iconColor="text-secondary"
+        />
+      )}
     </div>
   );
 }
