@@ -9,7 +9,8 @@ export function ParticipantStatusBadge({
   status,
 }) {
   const style =
-    status === "បានចូលរួម"
+    status === "បានចូលរួម" ||
+    status === "បានអញ្ជើញ"
       ? "bg-success-bg text-success"
       : "bg-warning-bg text-warning";
 

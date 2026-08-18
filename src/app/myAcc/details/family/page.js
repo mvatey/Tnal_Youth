@@ -10,6 +10,7 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 import SaveButton from "@/components/forms/SaveButton";
 import BoxFill from "@/components/forms/boxFill";
 import FormDate from "@/components/forms/FormDate";
+import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 
 const EMPTY_PERSON = {
   full_name_km: "",
@@ -216,6 +217,18 @@ export default function FamilyPage() {
     EMPTY_FAMILY,
   );
 
+  /*
+   * True from the moment the user edits any family field (father,
+   * mother, spouse, marital status) until the next successful Save —
+   * NOT derived from diffing `family`, since `family` is also
+   * rewritten by the load effect. Fed to useUnsavedFormGuard below so
+   * the tab-nav bar knows to confirm before navigating away mid-edit.
+   */
+  const [
+    hasUnsavedChanges,
+    setHasUnsavedChanges,
+  ] = useState(false);
+
   const [
     loading,
     setLoading,
@@ -309,6 +322,7 @@ export default function FamilyPage() {
   ) {
     setError("");
     setSuccess("");
+    setHasUnsavedChanges(true);
 
     setFamily(
       (previous) => ({
@@ -337,6 +351,7 @@ export default function FamilyPage() {
   ) {
     setError("");
     setSuccess("");
+    setHasUnsavedChanges(true);
 
     setFamily(
       (previous) => ({
@@ -367,17 +382,13 @@ export default function FamilyPage() {
    * =========================================
    */
 
-  async function handleSubmit(
-    event,
-  ) {
-    event.preventDefault();
-
+  async function handleSave() {
     if (!memberId) {
       setError(
         "រកមិនឃើញលេខសម្គាល់សមាជិក។",
       );
 
-      return;
+      return false;
     }
 
     if (
@@ -387,7 +398,7 @@ export default function FamilyPage() {
         "សូមជ្រើសរើសស្ថានភាពគ្រួសារ។",
       );
 
-      return;
+      return false;
     }
 
     try {
@@ -440,6 +451,10 @@ export default function FamilyPage() {
       setSuccess(
         "រក្សាទុកព័ត៌មានគ្រួសារបានជោគជ័យ។",
       );
+
+      setHasUnsavedChanges(false);
+
+      return true;
     } catch (saveError) {
       console.error(
         "Cannot update family:",
@@ -450,10 +465,38 @@ export default function FamilyPage() {
         saveError.message ||
           "មិនអាចរក្សាទុកព័ត៌មានគ្រួសារបានទេ។",
       );
+
+      return false;
     } finally {
       setSaving(false);
     }
   }
+
+  /*
+   * Thin wrapper for the form's onSubmit — swallows the submit
+   * event (preventDefault) then delegates to handleSave(), which is
+   * also what useUnsavedFormGuard below calls directly (no event)
+   * when the user chooses "save and continue" from the unsaved-
+   * changes popup.
+   */
+  async function handleSubmit(
+    event,
+  ) {
+    event.preventDefault();
+
+    await handleSave();
+  }
+
+  /*
+   * Registers this page's dirty flag + save function with the
+   * shared unsaved-changes guard (see myAcc/layout.js), so the
+   * account tab-nav bar confirms before navigating away while
+   * hasUnsavedChanges is true.
+   */
+  useUnsavedFormGuard(
+    hasUnsavedChanges,
+    handleSave,
+  );
 
   if (loading) {
     return (

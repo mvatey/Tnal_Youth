@@ -9,6 +9,8 @@ import {
   useState,
 } from "react";
 
+import { clearTelegramBannerDismissal } from "@/lib/telegramReminder";
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -50,6 +52,13 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(async () => {
+    // Captured before setUser(null) below clears it -- the Telegram
+    // reminder's dismissal is keyed by this user's id (see
+    // @/lib/telegramReminder), so it must be cleared here, at logout,
+    // rather than on next login, or there'd be no user id left to key it
+    // to at that point.
+    const loggedOutUserId = user?.id;
+
     try {
       await fetch("/api/auth/logout", {
         method: "POST",
@@ -59,8 +68,9 @@ export function AuthProvider({ children }) {
       console.error("Logout failed:", error);
     } finally {
       setUser(null);
+      clearTelegramBannerDismissal(loggedOutUserId);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     refreshUser();

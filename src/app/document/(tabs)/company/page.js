@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
@@ -9,6 +10,8 @@ import AddDocumentForm from "@/components/document/AddDocumentForm";
 import EditDocumentForm from "@/components/document/EditDocumentForm";
 import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
 import DeleteConfirmModal from "@/components/popup/Confirmdeletemodal";
+import { useAuth } from "@/context/AuthContext";
+import { normalizeRole } from "@/lib/navigation";
 
 const EMPTY_FORM = {
   title: "",
@@ -31,6 +34,32 @@ const DEFAULT_DOCUMENT_TYPE_STYLE =
   "bg-bg-page-gray text-text-secondary";
 
 export default function CompanyDocumentPage() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const role = normalizeRole(user?.role);
+
+  /*
+   * Only SECRETARY / BRANCH_LEADER may add, edit, or delete documents
+   * (matches DocumentController's @PreAuthorize on POST/PUT/DELETE
+   * /api/documents — ADMIN and VIEWER are view-only everywhere in
+   * this module, same as MEMBER). Gating these controls here is a UX
+   * courtesy on top of that real enforcement, not a substitute for it.
+   */
+  const canManageDocuments =
+    role === "secretary" || role === "branch_leader";
+
+  /*
+   * A MEMBER never has anything to see on this tab (the organizational
+   * list is staff/admin/viewer-only — see DocumentServiceImpl.getDocuments),
+   * and DocumentTabs already hides the tab itself for them. This is the
+   * defense-in-depth redirect for a member who reaches the URL directly.
+   */
+  useEffect(() => {
+    if (role === "member") {
+      router.replace("/document/member");
+    }
+  }, [role, router]);
+
   const [documents, setDocuments] = useState([]);
   const [branches, setBranches] = useState([]);
   const [documentTypes, setDocumentTypes] = useState([]);
@@ -52,16 +81,35 @@ export default function CompanyDocumentPage() {
     setLoading(true);
     setError("");
     try {
-      const responses = await Promise.all([
-        fetch("/api/backend/documents", { cache: "no-store" }),
+      // DataTable paginates client-side over whatever array it's given,
+      // so this needs every organizational document, not just the
+      // backend's default first page of 10 — loop through every page
+      // the same way CertificateForm.js does for activities.
+      const documentRows = [];
+      let page = 0;
+      let totalPages = 1;
+      do {
+        const response = await fetch(
+          `/api/backend/documents?page=${page}&size=100`,
+          { cache: "no-store" },
+        );
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message || "Unable to load documents.");
+        const rows = body?.data?.content ?? body?.content ?? body?.data ?? body;
+        documentRows.push(...(Array.isArray(rows) ? rows : []));
+        totalPages = Math.max(1, Number(body?.data?.total_pages ?? body?.total_pages ?? body?.totalPages) || 1);
+        page += 1;
+      } while (page < totalPages);
+
+      const [branchResponse, typeResponse] = await Promise.all([
         fetch("/api/lookups/branches", { cache: "no-store" }),
         fetch("/api/backend/document-types", { cache: "no-store" }),
       ]);
-      if (responses.some((response) => !response.ok)) throw new Error("Unable to load documents.");
-      const [documentBody, branchBody, typeBody] = await Promise.all(responses.map((response) => response.json()));
-      const documentRows = documentBody?.data ?? documentBody;
+      if (!branchResponse.ok || !typeResponse.ok) throw new Error("Unable to load documents.");
+      const [branchBody, typeBody] = await Promise.all([branchResponse.json(), typeResponse.json()]);
+
       setDocuments(
-        (Array.isArray(documentRows) ? documentRows : [])
+        documentRows
           .filter((row) => row.branch && !row.member)
           .map(mapDocument),
       );
@@ -200,23 +248,27 @@ export default function CompanyDocumentPage() {
             <Eye size={18} className="text-blue-500" />
           </button>
 
-          <button
-            type="button"
-            onClick={() => setEditDocument({ ...item })}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-yellow-50"
-            aria-label="កែប្រែឯកសារ"
-          >
-            <Pencil size={18} className="text-yellow-500" />
-          </button>
+          {canManageDocuments && (
+            <>
+              <button
+                type="button"
+                onClick={() => setEditDocument({ ...item })}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-yellow-50"
+                aria-label="កែប្រែឯកសារ"
+              >
+                <Pencil size={18} className="text-yellow-500" />
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setDeleteDocument(item)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-error-bg"
-            aria-label="លុបឯកសារ"
-          >
-            <Trash2 size={18} className="text-red-500" />
-          </button>
+              <button
+                type="button"
+                onClick={() => setDeleteDocument(item)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-error-bg"
+                aria-label="លុបឯកសារ"
+              >
+                <Trash2 size={18} className="text-red-500" />
+              </button>
+            </>
+          )}
         </div>
       ),
     },
@@ -305,12 +357,25 @@ export default function CompanyDocumentPage() {
   };
 
   const handleEditSave = async (updatedDocument) => {
+    let fileId = updatedDocument.fileId;
+
+    if (updatedDocument.replacementFile) {
+      const upload = new FormData();
+      upload.append("file", updatedDocument.replacementFile);
+      const uploadResponse = await fetch("/api/backend/files/attachments", { method: "POST", body: upload });
+      const uploadedFile = await uploadResponse.json().catch(() => null);
+      if (!uploadResponse.ok || !uploadedFile?.id) {
+        throw new Error(uploadedFile?.message || "File upload failed.");
+      }
+      fileId = uploadedFile.id;
+    }
+
     const response = await fetch(`/api/backend/documents/${updatedDocument.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type_id: updatedDocument.typeId,
-        file_id: updatedDocument.fileId,
+        file_id: fileId,
         title: updatedDocument.title,
         description: updatedDocument.description || "",
         branch_id: Number(updatedDocument.branch),
@@ -342,12 +407,12 @@ export default function CompanyDocumentPage() {
         filters={filters}
         searchQuery={search}
         onSearchChange={setSearch}
-        actionButton={addButton}
+        actionButton={canManageDocuments ? addButton : null}
         pageSize={15}
         downloadFilename="company-documents.csv"
       />
 
-      {showAddForm && (
+      {canManageDocuments && showAddForm && (
         <AddDocumentForm
           form={form}
           setForm={setForm}
@@ -359,13 +424,14 @@ export default function CompanyDocumentPage() {
         />
       )}
 
-      {editDocument && (
+      {canManageDocuments && editDocument && (
         <EditDocumentForm
           form={editDocument}
           setForm={setEditDocument}
           onClose={() => setEditDocument(null)}
           onSave={handleEditSave}
           branchOptions={branchOptions}
+          documentTypeOptions={documentTypeOptions}
         />
       )}
 
@@ -376,7 +442,7 @@ export default function CompanyDocumentPage() {
         />
       )}
 
-      {deleteDocument && (
+      {canManageDocuments && deleteDocument && (
         <DeleteConfirmModal
           open
           onClose={() => setDeleteDocument(null)}

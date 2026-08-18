@@ -8,6 +8,7 @@ import SearchBar from "@/components/tables/SearchBar";
 import FilterBar from "@/components/tables/FilterBar";
 import Table from "@/components/tables/GenericTable";
 import ActivityStats from "@/components/activity/ActivityStats";
+import TelegramConnectBanner from "@/components/activity/TelegramConnectBanner";
 import Button from "@/components/ui/Button";
 import PrimaryActionButton from "@/components/ui/actions/PrimaryActionButton";
 
@@ -677,6 +678,8 @@ export default function ActivityPage() {
         activities={activities}
         invitedActivityCount={invitedActivityCount}
       />
+
+      <TelegramConnectBanner />
 
       {loadError && (
         <div className="rounded-xl border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">

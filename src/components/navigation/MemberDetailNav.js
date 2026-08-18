@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
+import { useUnsavedChanges } from "@/context/UnsavedChangesContext";
 
 
 export default function MemberDetailNav(){
 
   const pathname = usePathname();
+  const router = useRouter();
   const params = useParams();
   const memberId = Array.isArray(params?.id) ? params.id[0] : params?.id;
+  const { isDirty, guardNavigate } = useUnsavedChanges();
 
 
   const tabs = [
@@ -71,8 +74,15 @@ export default function MemberDetailNav(){
 
                 href={href}
 
+                onClick={(event) => {
+                  if (isDirty) {
+                    event.preventDefault();
+                    guardNavigate(() => router.push(href));
+                  }
+                }}
+
                 className={`flex h-10 items-center justify-center border-t-2 px-3 text-sm font-medium transition-all ${
-                  
+
                   active
                   ?
                   "border-secondary bg-secondary-light text-secondary"

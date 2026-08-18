@@ -53,6 +53,44 @@ async function fetchApi(
   return body;
 }
 
+/*
+ * /api/backend/[...path]/route.js only forwards to a hardcoded
+ * allowlist of backend roots, and "branches" isn't one of them —
+ * fetchApi("/branches/...") 404s with "This backend API path is not
+ * allowed." Branch endpoints instead go through their own dedicated
+ * Next.js route (/api/branches/[branchId]/..., same one the Branch
+ * page already uses successfully), so this hits /api directly
+ * instead of /api/backend.
+ */
+async function fetchBranchesApi(
+  path,
+) {
+  const response = await fetch(
+    `/api${path}`,
+    {
+      cache: "no-store",
+
+      headers: {
+        Accept: "application/json",
+      },
+    },
+  );
+
+  const body =
+    await response
+      .json()
+      .catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      body?.message ||
+        `Request failed (${response.status})`,
+    );
+  }
+
+  return body;
+}
+
 function asList(value) {
   if (Array.isArray(value)) {
     return value;
@@ -101,6 +139,61 @@ function getOptionLabel(option) {
     option?.branchCode ||
     option?.code ||
     ""
+  );
+}
+
+const ROLE_LABELS_KM = {
+  ADMIN: "អ្នកគ្រប់គ្រង",
+  BRANCH_LEADER: "ប្រធានសាខា",
+  SECRETARY: "លេខាធិការ",
+  MEMBER: "សមាជិក",
+};
+
+/*
+ * The account role (member / secretary / branch leader) — NOT the
+ * member_level ("កាំ") rank, which is a different field entirely and
+ * was being shown here by mistake.
+ *
+ * Confirmed against the backend response DTOs: MemberListResponse
+ * (the old /members?branchId=... source) has NO role field at all —
+ * this table's role column could never have worked against it.
+ * BranchMemberTableItemResponse (/branches/{id}/members, below) has
+ * a `role` field — a UserRole enum, which Jackson serializes as its
+ * plain enum name (e.g. "BRANCH_LEADER").
+ */
+function getMemberRoleLabel(
+  member,
+) {
+  const code = String(
+    member?.role || "",
+  ).toUpperCase();
+
+  return (
+    ROLE_LABELS_KM[code] || "-"
+  );
+}
+
+const GENDER_LABELS_KM = {
+  MALE: "ប្រុស",
+  FEMALE: "ស្រី",
+  MONK: "ព្រះសង្ឃ",
+};
+
+/*
+ * BranchMemberTableItemResponse's `gender` is also a plain enum name
+ * (e.g. "MALE"), not the { label_km, code } lookup object
+ * MemberListResponse used — different DTO, different shape.
+ */
+function getMemberGenderLabel(
+  member,
+) {
+  const code = String(
+    member?.gender || "",
+  ).toUpperCase();
+
+  return (
+    GENDER_LABELS_KM[code] ||
+    (member?.gender ?? "-")
   );
 }
 
@@ -418,9 +511,14 @@ export default function ActivityMembersPage({
              *
              * Do not remove already-invited
              * members.
+             *
+             * Uses /branches/{id}/members (BranchMemberTableItemResponse)
+             * rather than the generic /members?branchId=... list —
+             * only this endpoint's response includes the member's
+             * account role, which this table needs to show.
              */
-            fetchApi(
-              `/members?branchId=${branchId}&page=0&size=100`,
+            fetchBranchesApi(
+              `/branches/${branchId}/members?page=0&size=100`,
             ),
           ]);
 
@@ -476,28 +574,14 @@ export default function ActivityMembersPage({
                   "",
 
                 gender:
-                  member
-                    .gender
-                    ?.label_km ||
-                  member
-                    .gender
-                    ?.labelKm ||
-                  member
-                    .gender
-                    ?.code ||
-                  "-",
+                  getMemberGenderLabel(
+                    member,
+                  ),
 
                 role:
-                  member
-                    .level
-                    ?.label_km ||
-                  member
-                    .level
-                    ?.labelKm ||
-                  member
-                    .level
-                    ?.code ||
-                  "-",
+                  getMemberRoleLabel(
+                    member,
+                  ),
 
                 branch:
                   member
@@ -529,14 +613,17 @@ export default function ActivityMembersPage({
 
                 status:
                   member
-                    .status
-                    ?.label_km ||
+                    .status_label_km ||
                   member
-                    .status
-                    ?.labelKm ||
+                    .statusLabelKm ||
                   member
-                    .status
-                    ?.code ||
+                    .status_label_en ||
+                  member
+                    .statusLabelEn ||
+                  member
+                    .status_code ||
+                  member
+                    .statusCode ||
                   "-",
               }),
             ),

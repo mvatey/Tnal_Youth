@@ -4,11 +4,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import AddDonationFilters from "./AddDonationFilters";
 import Table from "../../tables/table";
-import SaveAlert from "../../forms/savealert";
 import MemberCard from "../eventdonation/membercard";
 import CashCard from "./cashcard";
 import BankCard from "./bankcard";
 import useCurrentMember from "@/hooks/useCurrentMember";
+import { useBranch } from "@/context/BranchContext";
 
 const BANK_PAYMENT_METHODS = new Set([
   "Bank Transfer",
@@ -66,10 +66,22 @@ export default function AddDonationForm() {
     loading: currentMemberLoading,
     error: currentMemberError,
   } = useCurrentMember();
+  // A secretary/branch_leader can be assigned to more than one branch —
+  // useBranch() is the same server-scoped "which branches can this account
+  // access" source the monthly-donation list page uses (see DonationTable.js).
+  // currentMember.branchId is kept only as a fallback for the brief window
+  // before that context resolves.
+  const { branches: accessibleBranches = [] } = useBranch();
   const isBranchScoped = ["secretary", "branch_leader"].includes(
     currentMember?.role,
   );
-  const scopedBranchId = isBranchScoped ? currentMember?.branchId : null;
+  const scopedBranchIds = useMemo(() => {
+    if (!isBranchScoped) return [];
+    if (accessibleBranches.length > 0) {
+      return accessibleBranches.map((branch) => String(branch.id));
+    }
+    return currentMember?.branchId ? [String(currentMember.branchId)] : [];
+  }, [isBranchScoped, accessibleBranches, currentMember?.branchId]);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -91,7 +103,6 @@ export default function AddDonationForm() {
   const [selectedYear, setSelectedYear] = useState(initialFilters.year);
   const [searchQuery, setSearchQuery] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
-  const [showSaveAlert, setShowSaveAlert] = useState(false);
   const [editableRows, setEditableRows] = useState([]);
   const [branchOptions, setBranchOptions] = useState([]);
   const [paymentMethods, setPaymentMethods] = useState([]);
@@ -105,21 +116,97 @@ export default function AddDonationForm() {
 
   const branches = useMemo(() => {
     if (!isBranchScoped) return branchOptions;
-    return branchOptions.filter(
-      (option) => String(option.value) === String(scopedBranchId),
+    const allowed = new Set(scopedBranchIds);
+    return branchOptions.filter((option) => allowed.has(String(option.value)));
+  }, [branchOptions, isBranchScoped, scopedBranchIds]);
+
+  // Recomputed on every render (cheap) instead of memoized with an empty
+  // dep array, so a tab left open across a month/year boundary picks up
+  // the new "today" instead of staying stuck on whatever date the page
+  // first loaded with.
+  const now = new Date();
+  const currentYear = now.getFullYear();
+
+  // No future years — 2026 shouldn't offer 2027+ yet. The upper bound is
+  // always `currentYear`, so this needs no manual bump when the calendar
+  // rolls over; only the (arbitrary) look-back window is fixed.
+  const years = useMemo(() => {
+    const lookBackYears = 3;
+    return Array.from(
+      { length: lookBackYears + 1 },
+      (_, index) => String(currentYear - lookBackYears + index),
     );
-  }, [branchOptions, isBranchScoped, scopedBranchId]);
-  const months = useMemo(
-    () => KHMER_MONTHS.map((label, index) => ({
+  }, [currentYear]);
+
+  // Which (branch, "YYYY-MM") periods already have a monthly donation
+  // recorded for the selected branch — refetched whenever the branch
+  // changes (not after every save, so a month doesn't disappear out from
+  // under an in-progress editing session the moment its first member gets
+  // saved). Drives the month dropdown below: an already-recorded month is
+  // excluded outright rather than just labeled, since this "add" flow has
+  // no way to revisit one — see handleSave, which always creates a fresh
+  // period.
+  const [existingPeriods, setExistingPeriods] = useState(new Set());
+
+  useEffect(() => {
+    if (!selectedBranch || selectedBranch === "all") {
+      setExistingPeriods(new Set());
+      return undefined;
+    }
+
+    let cancelled = false;
+    fetchJson(
+      `/api/backend/donations/monthly?${new URLSearchParams({
+        branchId: selectedBranch,
+        page: "0",
+        size: "100",
+      })}`,
+    )
+      .then((page) => {
+        if (cancelled) return;
+        const items = Array.isArray(page?.items) ? page.items : [];
+        setExistingPeriods(
+          new Set(
+            items
+              .map((item) => String(item.donationPeriod || "").slice(0, 7))
+              .filter(Boolean),
+          ),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setExistingPeriods(new Set());
+      });
+
+    return () => { cancelled = true; };
+  }, [selectedBranch]);
+
+  // Nothing to pick until a year is chosen (see AddDonationFilters, which
+  // asks for branch -> year -> month in that order). Always all 12 months —
+  // this used to cap at the current month and hide any month that already
+  // had a recorded donation, which also meant the "លម្អិត" link from the
+  // list page (which pre-fills branch/year/month for an existing record)
+  // got its month silently reset back to "all" on load, since that exact
+  // month had just been filtered out. Existing periods are surfaced as a
+  // notice instead (periodAlreadyExists below), not hidden.
+  const months = useMemo(() => {
+    if (!selectedYear || selectedYear === "all") return [];
+
+    return KHMER_MONTHS.map((label, index) => ({
       value: String(index + 1).padStart(2, "0"),
       label,
-    })),
-    [],
-  );
-  const years = useMemo(() => {
-    const current = new Date().getFullYear();
-    return Array.from({ length: 7 }, (_, index) => String(current - 3 + index));
-  }, []);
+    }));
+  }, [selectedYear]);
+
+  // True once branch + year + month are all chosen and that exact period
+  // already has a recorded donation for this branch — shown as a notice so
+  // picking an existing month/year (whether by hand or via the list page's
+  // "លម្អិត" link) is clearly understood as editing that existing record,
+  // and choosing it while trying to start a fresh one is caught early
+  // rather than silently overwriting/duplicating it.
+  const periodAlreadyExists = useMemo(() => {
+    if (!allFiltersSelected) return false;
+    return existingPeriods.has(`${selectedYear}-${selectedMonth}`);
+  }, [allFiltersSelected, existingPeriods, selectedYear, selectedMonth]);
 
 const summary = useMemo(() => {
   const riel = editableRows.reduce(
@@ -163,10 +250,15 @@ const paymentSummary = useMemo(
         const normalizedBranches = normalizeOptions(branchItems);
         setBranchOptions(normalizedBranches);
         if (isBranchScoped) {
-          if (!scopedBranchId) {
+          if (scopedBranchIds.length === 0) {
             throw new Error("គណនីនេះមិនទាន់បានកំណត់សាខា។");
           }
-          setSelectedBranch(String(scopedBranchId));
+          // Only auto-pick when there's truly nothing to choose between —
+          // a secretary with more than one branch gets the dropdown left
+          // on its placeholder so they actively pick which one.
+          if (scopedBranchIds.length === 1) {
+            setSelectedBranch(scopedBranchIds[0]);
+          }
         }
         setPaymentMethods((Array.isArray(methodItems) ? methodItems : []).map((method) => ({
           id: String(method.id),
@@ -178,7 +270,17 @@ const paymentSummary = useMemo(
         if (!cancelled) setError(loadError.message || "Unable to load donation options.");
       });
     return () => { cancelled = true; };
-  }, [currentMemberLoading, isBranchScoped, scopedBranchId]);
+  }, [currentMemberLoading, isBranchScoped, scopedBranchIds]);
+
+  // If the currently selected month falls out of the valid list — the
+  // year changed, or that period just got recorded elsewhere — snap it
+  // back to the placeholder instead of silently keeping an invalid value.
+  useEffect(() => {
+    if (selectedMonth === "all") return;
+    if (!months.some((month) => month.value === selectedMonth)) {
+      setSelectedMonth("all");
+    }
+  }, [months, selectedMonth]);
 
   useEffect(() => {
     if (!allFiltersSelected) {
@@ -218,8 +320,8 @@ const paymentSummary = useMemo(
   }, [allFiltersSelected, branchOptions, searchQuery, selectedBranch, selectedMonth, selectedYear]);
 
   useEffect(() => {
-    if (isBranchScoped && scopedBranchId) {
-      setSelectedBranch(String(scopedBranchId));
+    if (isBranchScoped && scopedBranchIds.length === 1) {
+      setSelectedBranch(scopedBranchIds[0]);
     } else {
       setSelectedBranch((currentBranch) =>
         currentBranch === initialFilters.branch
@@ -230,20 +332,10 @@ const paymentSummary = useMemo(
     setSelectedMonth((currentMonth) =>
       currentMonth === initialFilters.month ? currentMonth : initialFilters.month,
     );
-    setSelectedYear((currentYear) =>
-      currentYear === initialFilters.year ? currentYear : initialFilters.year,
+    setSelectedYear((currentYearValue) =>
+      currentYearValue === initialFilters.year ? currentYearValue : initialFilters.year,
     );
-  }, [initialFilters, isBranchScoped, scopedBranchId]);
-
-  useEffect(() => {
-    if (!showSaveAlert) return undefined;
-
-    const timeoutId = window.setTimeout(() => {
-      setShowSaveAlert(false);
-    }, 3000);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [showSaveAlert]);
+  }, [initialFilters, isBranchScoped, scopedBranchIds]);
 
   const handleSave = async (rows) => {
     const completed = rows.filter(
@@ -289,20 +381,21 @@ const paymentSummary = useMemo(
           items,
         }),
       });
-      setShowSaveAlert(true);
     } catch (saveError) {
       setError(saveError.message || "Unable to save monthly donations.");
-      return;
+      return false;
     } finally {
       setSaving(false);
     }
 
-    setSavedMessage(
-      completed.length > 0
-        ? `បានរក្សាទុកវិភាគទាន ${completed.length} នាក់`
-        : "សូមបញ្ចូលចំនួនទឹកប្រាក់យ៉ាងហោចណាស់ម្នាក់",
-    );
-    router.push(listPath);
+    // Every save now goes through the per-row edit button (see rowEditMode
+    // on the <Table> below), never a bulk "save everyone" click — so this
+    // always reads as editing one member's donation for this period, not
+    // creating a second, separate one. Stay on the page (the rest of this
+    // month's members are still right there) and tell table.js the save
+    // succeeded so it can close that row's edit state.
+    setSavedMessage(`បានកែប្រែវិភាគទាន ${completed.length} នាក់`);
+    return true;
   };
 
   const handleReset = (rows) => {
@@ -326,16 +419,6 @@ const paymentSummary = useMemo(
 
   return (
     <>
-      {showSaveAlert && (
-        <div
-          className="fixed inset-0 z-[60] flex items-start justify-center bg-black/25 pt-10"
-          role="status"
-          aria-live="polite"
-        >
-          <SaveAlert message="អបអរសាទរ វិភាគទានត្រូវបានបន្ថែមដោយជោគជ័យ" />
-        </div>
-      )}
-
       <div className="mb-4 flex flex-wrap gap-6 lg:gap-[50px]">
         <MemberCard
           label="សមាជិក"
@@ -370,6 +453,19 @@ const paymentSummary = useMemo(
               {savedMessage}
             </p>
           )}
+          {/*
+            Every row is edit-locked now (see rowEditMode on <Table>
+            below), so the bulk action bar that used to hold a "Cancel"
+            button never renders here anymore — this keeps a way back to
+            the list without relying on the sidebar/browser back button.
+          */}
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="text-sm font-medium text-text-secondary transition hover:text-secondary"
+          >
+            ត្រឡប់ក្រោយ
+          </button>
         </div>
 
         <AddDonationFilters
@@ -384,9 +480,18 @@ const paymentSummary = useMemo(
           onMonthChange={setSelectedMonth}
           onYearChange={setSelectedYear}
           onSearchChange={setSearchQuery}
-          branchScoped={isBranchScoped}
-       
+          // Locks the branch dropdown only when there's truly nothing to
+          // pick between — a secretary/branch_leader assigned to more
+          // than one branch now gets to choose, same fix as the monthly
+          // donation list page.
+          branchScoped={isBranchScoped && scopedBranchIds.length <= 1}
         />
+
+        {periodAlreadyExists && (
+          <div className="mb-4 rounded-md border border-warning/30 bg-warning-bg px-4 py-3 text-sm text-warning">
+            ការកត់ត្រាវិភាគទានសម្រាប់ខែ/ឆ្នាំនេះនិងសាខានេះមានរួចហើយ — កំពុងកែប្រែកំណត់ត្រាដែលមានស្រាប់។
+          </div>
+        )}
 
         {loadingMembers ? (
           <div className="py-12 text-center text-sm text-text-secondary">កំពុងទាញយកសមាជិក...</div>
@@ -406,6 +511,13 @@ const paymentSummary = useMemo(
               onSave={handleSave}
               onReceiptSave={handleReceiptSave}
               saving={saving}
+              // Always edit-lock every row, for every month — the money
+              // fields only become typeable after clicking that row's
+              // pencil icon, and saving always goes through the single-row
+              // path (handleSave above). This is what keeps every save
+              // reading as "editing this member's donation for this
+              // period" rather than risking a second, duplicate entry.
+              rowEditMode
          />
 
     <div

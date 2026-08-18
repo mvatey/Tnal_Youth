@@ -12,6 +12,7 @@ import FormDate from "@/components/forms/FormDate.js";
 import SelectArrow from "@/components/forms/SelectArrow";
 import DeleteButton from "@/components/forms/DeleteButton";
 import MemberAttachmentField from "@/components/forms/MemberAttachmentField";
+import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 
 import locationData from "@/data/location.json";
 import educationData from "@/data/education.json";
@@ -32,6 +33,15 @@ export default function EducationPage() {
   const [member, setMember] = useState(null);
   const [educations, setEducations] = useState([]);
   const [degreeOptions, setDegreeOptions] = useState([]);
+
+  /*
+   * True from the moment the user edits any education row (field
+   * edit, add row) until the next successful Save — same pattern as
+   * the Member module's education tab. Fed to useUnsavedFormGuard
+   * below so the account tab-nav bar confirms before navigating away
+   * mid-edit.
+   */
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -62,6 +72,8 @@ export default function EducationPage() {
   }, []);
 
   function handleEducationChange(id, field, value) {
+    setHasUnsavedChanges(true);
+
     setEducations((previous) =>
       previous.map((education) =>
         education.id === id
@@ -75,6 +87,8 @@ export default function EducationPage() {
   }
 
   function addEducation() {
+    setHasUnsavedChanges(true);
+
     setEducations((previous) => [
       ...previous,
       createEmptyEducation(),
@@ -82,6 +96,10 @@ export default function EducationPage() {
   }
 
   async function removeEducation(id) {
+    // Fires an immediate DELETE against the server for persisted rows
+    // (deleteMemberRecord no-ops for local-only draft rows) — there's
+    // nothing left "unsaved" afterward, so this intentionally does
+    // not set hasUnsavedChanges.
     await deleteMemberRecord(memberId, "education", id);
     setEducations((previous) => {
       if (previous.length === 1) {
@@ -95,26 +113,44 @@ export default function EducationPage() {
   }
 
   async function handleSubmit(event) {
-    event.preventDefault();
+    event?.preventDefault();
 
-    if (!member) return;
+    if (!member) return false;
 
-    const current = educations.filter((item) => String(item.school || "").trim());
-    const rows = await saveMemberRecords(memberId, "education", current, (item) => ({
-      school_name: item.school.trim(),
-      education_level_id: Number(item.degree),
-      field_of_study: item.fieldOfStudy || null,
-      country_name: item.country || null,
-      province_name: item.province || null,
-      start_date: item.startDate || null,
-      end_date: item.endDate || null,
-    }));
-    const completedRows = await Promise.all(rows.map(async (row, index) => {
-      const file = current[index]?.attachment?.pendingFile;
-      return file ? uploadMemberRecordCertificate(memberId, "education", row.id, file) : row;
-    }));
-    setEducations(completedRows.map((row) => ({ id: row.id, school: row.school_name || "", province: row.province_name || "", country: row.country_name || "", degree: row.education_level_id || "", fieldOfStudy: row.field_of_study || "", startDate: row.start_date || "", endDate: row.end_date || "", attachment: row.certificate_file || null })));
+    try {
+      const current = educations.filter((item) => String(item.school || "").trim());
+      const rows = await saveMemberRecords(memberId, "education", current, (item) => ({
+        school_name: item.school.trim(),
+        education_level_id: Number(item.degree),
+        field_of_study: item.fieldOfStudy || null,
+        country_name: item.country || null,
+        province_name: item.province || null,
+        start_date: item.startDate || null,
+        end_date: item.endDate || null,
+      }));
+      const completedRows = await Promise.all(rows.map(async (row, index) => {
+        const file = current[index]?.attachment?.pendingFile;
+        return file ? uploadMemberRecordCertificate(memberId, "education", row.id, file) : row;
+      }));
+      setEducations(completedRows.map((row) => ({ id: row.id, school: row.school_name || "", province: row.province_name || "", country: row.country_name || "", degree: row.education_level_id || "", fieldOfStudy: row.field_of_study || "", startDate: row.start_date || "", endDate: row.end_date || "", attachment: row.certificate_file || null })));
+
+      setHasUnsavedChanges(false);
+
+      return true;
+    } catch (saveError) {
+      console.error("Cannot save education records:", saveError);
+
+      return false;
+    }
   }
+
+  /*
+   * Registers this page's dirty flag + save function with the shared
+   * unsaved-changes guard (see myAcc/layout.js), so the account
+   * tab-nav bar confirms before navigating away while
+   * hasUnsavedChanges is true.
+   */
+  useUnsavedFormGuard(hasUnsavedChanges, handleSubmit);
 
   if (!member) {
     return (

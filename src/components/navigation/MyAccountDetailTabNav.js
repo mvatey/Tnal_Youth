@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useUnsavedChanges } from "@/context/UnsavedChangesContext";
 
 export default function MyAccountDetailTabNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { isDirty, guardNavigate } = useUnsavedChanges();
   const tabs = [
     { name: "ព័ត៌មានផ្ទាល់ខ្លួន", href: "/myAcc/details/personal" },
     { name: "ព័ត៌មានគ្រួសារ", href: "/myAcc/details/family" },
@@ -23,6 +26,12 @@ export default function MyAccountDetailTabNav() {
             <Link
               key={tab.href}
               href={tab.href}
+              onClick={(event) => {
+                if (isDirty) {
+                  event.preventDefault();
+                  guardNavigate(() => router.push(tab.href));
+                }
+              }}
               className={`flex h-10 items-center justify-center border-t-2 px-3 text-sm font-medium transition-all ${
                 active
                   ? "border-secondary bg-secondary-light text-secondary"

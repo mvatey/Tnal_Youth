@@ -22,6 +22,13 @@ export default function Table({
   readOnly = false,
   rowEditMode = false,
 }) {
+  // NOTE: `readOnly` here is this table's own "does this viewer have edit
+  // rights at all" flag — it gets threaded down to AddDonationTableRow as
+  // `globalReadOnly` (distinct from the per-row `readOnly` computed below,
+  // which also locks a row simply for not being the one under active edit
+  // in rowEditMode). This was previously not being passed down at all,
+  // which meant the Edit button's visibility check silently fell back to
+  // its default (false) instead of reflecting real edit rights.
   const [rows, setRows] = useState(members);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedReceiptMember, setSelectedReceiptMember] = useState(null);
@@ -208,7 +215,7 @@ export default function Table({
   return (
     <div>
       <div className="overflow-x-auto rounded-sm border border-border bg-bg-page-white">
-        <table className="w-full min-w-[1080px] border-collapse">
+        <table className="w-full min-w-[980px] border-collapse">
           <AddDonationTableHeader />
           <tbody>
             {pagedRows.length > 0 ? (
@@ -221,9 +228,6 @@ export default function Table({
                   onDollarAmountChange={(id, value) => updateRow(id, { dollarAmount: value })}
                   onPaymentMethodChange={(id, paymentMethod) =>
                     updateRow(id, { paymentMethod })
-                  }
-                  onPaymentReferenceChange={(id, paymentReference) =>
-                    updateRow(id, { paymentReference })
                   }
                   readOnly={readOnly || (rowEditMode && editingRowId !== member.id)}
                   globalReadOnly={readOnly}

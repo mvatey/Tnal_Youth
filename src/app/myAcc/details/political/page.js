@@ -11,6 +11,7 @@ import FormSelect from "@/components/forms/FormSelect";
 import DeleteButton from "@/components/forms/DeleteButton";
 
 import { deleteMemberRecord, loadMemberRecords, saveMemberRecords } from "@/lib/myAccountRecords";
+import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 import politicalData from "@/data/political.json";
 
 function createEmptyPolitical() {
@@ -29,6 +30,16 @@ export default function PoliticalPage() {
   const [politicals, setPoliticals] = useState([]);
   const [parties, setParties] = useState([]);
   const [error, setError] = useState("");
+
+  /*
+   * True from the moment the user edits a political-involvement row
+   * (field edit, add row) until the next successful Save — NOT
+   * derived from diffing `politicals`, since that array is also
+   * rewritten by the load effect and by a successful save itself.
+   * Fed to useUnsavedFormGuard below so the account tab-nav bar
+   * knows to confirm before navigating away mid-edit.
+   */
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -91,6 +102,8 @@ export default function PoliticalPage() {
   }, []);
 
   function handlePoliticalChange(id, field, value) {
+    setHasUnsavedChanges(true);
+
     setPoliticals((previous) =>
       previous.map((item) =>
         item.id === id
@@ -104,6 +117,7 @@ export default function PoliticalPage() {
   }
 
   function addPolitical() {
+    setHasUnsavedChanges(true);
     setPoliticals((previous) => [...previous, createEmptyPolitical()]);
   }
 
@@ -118,10 +132,8 @@ export default function PoliticalPage() {
     });
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault();
-
-    if (!member) return;
+  const handleSave = async () => {
+    if (!member) return false;
 
     try {
       setError("");
@@ -148,10 +160,29 @@ export default function PoliticalPage() {
         leftDate: row.end_date || row.endDate || "",
       })));
       alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+
+      setHasUnsavedChanges(false);
+
+      return true;
     } catch (saveError) {
       setError(saveError.message || "មិនអាចរក្សាទុកព័ត៌មាននយោបាយបានទេ។");
+
+      return false;
     }
+  };
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    await handleSave();
   }
+
+  /*
+   * Registers this page's dirty flag + save function with the
+   * shared unsaved-changes guard (see myAcc/layout.js), so the
+   * account tab-nav bar confirms before navigating away while
+   * hasUnsavedChanges is true.
+   */
+  useUnsavedFormGuard(hasUnsavedChanges, handleSave);
 
   if (!member) {
     return (

@@ -16,6 +16,7 @@ import SelectArrow from "@/components/forms/SelectArrow";
 import useMemberPermissions from "@/hooks/useMemberPermissions";
 import FormDate from "@/components/forms/FormDate.js";
 import MultiSelect from "@/components/forms/multiselect.js";
+import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 
 /* =========================================================
  * EMPTY FORM
@@ -400,6 +401,32 @@ function normalizePersonalInfo(
   };
 }
 
+/*
+ * Flattens a { branch_id, assigned_branches } shape (the primary
+ * branch plus any additional branch_staff coverage) down to a plain
+ * array of string branch ids — used both to seed the branch
+ * multiselect's working selection and to snapshot the
+ * last-known-saved set for diffing at Save time.
+ */
+function computeBranchIds(source) {
+  const values = new Set();
+
+  if (source?.branch_id) {
+    values.add(String(source.branch_id));
+  }
+
+  (Array.isArray(source?.assigned_branches)
+    ? source.assigned_branches
+    : []
+  ).forEach((assignedBranch) => {
+    if (assignedBranch?.id != null) {
+      values.add(String(assignedBranch.id));
+    }
+  });
+
+  return Array.from(values);
+}
+
 /* =========================================================
  * PAGE
  * ========================================================= */
@@ -430,6 +457,18 @@ export default function PersonalPage() {
     setOriginalRole,
   ] = useState("");
 
+  /*
+   * Last-known-saved account status — used at Save time to detect
+   * whether the status dropdown was actually touched, same pattern
+   * as originalRole above. The dropdown itself only ever updates
+   * form.account_status locally now (see handleAccountStatusChange);
+   * the enable/disable request fires from handleSave.
+   */
+  const [
+    originalAccountStatus,
+    setOriginalAccountStatus,
+  ] = useState("");
+
   const normalizedTargetRole = String(originalRole || form.account_role || "MEMBER")
     .replace(/^ROLE_/i, "")
     .toUpperCase();
@@ -443,6 +482,21 @@ export default function PersonalPage() {
         : false;
   const canSavePersonalInfo = canEditMemberDetails ||
     (canManageMemberAccount && canManageSensitiveFields);
+
+  /*
+   * True from the moment the user edits any field (name, branch,
+   * role, account status, CV, ...) until the next successful Save —
+   * NOT derived from diffing `form`, since `form` also gets rewritten
+   * by the load/refresh effects and would otherwise false-positive.
+   * Only the handlers a person actually interacts with set this to
+   * true; only a successful save resets it. Fed to
+   * useUnsavedFormGuard below so the tab-nav bar knows to confirm
+   * before navigating away mid-edit.
+   */
+  const [
+    hasUnsavedChanges,
+    setHasUnsavedChanges,
+  ] = useState(false);
 
   const [
     cvFile,
@@ -481,15 +535,23 @@ export default function PersonalPage() {
   ] = useState("");
 
   /*
-   * Additional-branch assignment (assign/remove) fires immediately
-   * on toggle, separate from the page's batched Save — this just
-   * tracks whether that in-flight request should block further
-   * clicks on the branch field.
+   * Secretary branch coverage (branch_staff) — nextValues from the
+   * multiselect is stored here as the working/pending selection so
+   * the checkboxes can respond instantly, WITHOUT calling the
+   * assign/revoke API until the page's Save button is clicked.
+   * originalBranchIds is the last-known-saved set, used at Save time
+   * to diff against branchSelectionIds and figure out what actually
+   * changed.
    */
   const [
-    branchAssignmentPending,
-    setBranchAssignmentPending,
-  ] = useState(false);
+    branchSelectionIds,
+    setBranchSelectionIds,
+  ] = useState([]);
+
+  const [
+    originalBranchIds,
+    setOriginalBranchIds,
+  ] = useState([]);
 
   /* =======================================================
    * LOOKUP STATE
@@ -617,6 +679,18 @@ export default function PersonalPage() {
             normalized.account_role,
         );
 
+        setOriginalAccountStatus(
+          (previous) =>
+            previous ||
+            normalized.account_status,
+        );
+
+        const loadedBranchIds =
+          computeBranchIds(normalized);
+
+        setOriginalBranchIds(loadedBranchIds);
+        setBranchSelectionIds(loadedBranchIds);
+
         if (
           normalized.cv_file_id
         ) {
@@ -710,6 +784,16 @@ export default function PersonalPage() {
           setOriginalRole(
             String(
               account.role,
+            ),
+          );
+        }
+
+        if (
+          account?.status
+        ) {
+          setOriginalAccountStatus(
+            String(
+              account.status,
             ),
           );
         }
@@ -912,25 +996,18 @@ export default function PersonalPage() {
 
   /*
    * The branch field shows every branch this member is tied to as
-   * one multiselect — the primary branch (members.branch_id, via
-   * form.branch_id) plus any additional branch_staff assignments
-   * (form.assigned_branches) — as a flat list of string IDs.
+   * one multiselect. For a SECRETARY this is the working/pending
+   * selection (branchSelectionIds) — it updates instantly as
+   * checkboxes are toggled, but nothing is sent to the server until
+   * Save is clicked (see handleBranchMultiChange / handleSave). For
+   * anyone else, it's simply the single primary branch.
    */
-  const branchMultiValue = useMemo(() => {
-    const values = new Set();
-
-    if (form.branch_id) {
-      values.add(String(form.branch_id));
-    }
-
-    form.assigned_branches.forEach((assignedBranch) => {
-      if (assignedBranch?.id != null) {
-        values.add(String(assignedBranch.id));
-      }
-    });
-
-    return Array.from(values);
-  }, [form.branch_id, form.assigned_branches]);
+  const branchMultiValue =
+    form.account_role === "SECRETARY"
+      ? branchSelectionIds
+      : form.branch_id
+        ? [String(form.branch_id)]
+        : [];
 
   /*
    * Same "inject the current value if it's missing" pattern as
@@ -980,14 +1057,12 @@ export default function PersonalPage() {
   ]);
 
   /*
-   * Unlike every other field here, adding/removing a branch fires
-   * immediately instead of waiting for the page's Save button —
-   * assigning/terminating a secretary's branch coverage is its own
-   * action, not a draft edit. MultiSelect is a controlled component,
-   * so a failed request simply leaves `form` (and the checkbox)
-   * unchanged.
+   * Branch changes are local-state-only, same as every other field
+   * on this page — nothing is sent to the server until Save is
+   * clicked (handleSave diffs branchSelectionIds against
+   * originalBranchIds and fires the assign/revoke requests then).
    */
-  const handleBranchMultiChange = async (
+  const handleBranchMultiChange = (
     nextValues,
   ) => {
     if (
@@ -997,15 +1072,9 @@ export default function PersonalPage() {
       return;
     }
 
-    const previousValues =
-      branchMultiValue;
-
-    const added = nextValues.filter(
-      (value) =>
-        !previousValues.includes(
-          value,
-        ),
-    );
+    setError("");
+    setSuccess("");
+    setHasUnsavedChanges(true);
 
     /*
      * Anyone other than a secretary only ever has one (primary)
@@ -1016,15 +1085,24 @@ export default function PersonalPage() {
      * button, same as before this field became a multiselect.
      */
     if (form.account_role !== "SECRETARY") {
+      const previousValues =
+        form.branch_id
+          ? [String(form.branch_id)]
+          : [];
+
+      const added = nextValues.filter(
+        (value) =>
+          !previousValues.includes(
+            value,
+          ),
+      );
+
       const nextBranchId =
         added[0] ??
         nextValues[
           nextValues.length - 1
         ] ??
         "";
-
-      setError("");
-      setSuccess("");
 
       setForm((previous) => ({
         ...previous,
@@ -1034,70 +1112,10 @@ export default function PersonalPage() {
       return;
     }
 
-    if (branchAssignmentPending) {
-      return;
-    }
-
-    const removed = previousValues.filter(
-      (value) =>
-        !nextValues.includes(value),
-    );
-
-    const branchId =
-      added[0] || removed[0];
-
-    if (!branchId) {
-      return;
-    }
-
-    setError("");
-    setSuccess("");
-    setBranchAssignmentPending(true);
-
-    try {
-      const data = added.length
-        ? await requestJson(
-            `/members/${memberId}/personal-info/branches`,
-            {
-              method: "POST",
-              body: JSON.stringify({
-                branch_id: Number(
-                  branchId,
-                ),
-              }),
-            },
-          )
-        : await requestJson(
-            `/members/${memberId}/personal-info/branches/${branchId}`,
-            {
-              method: "DELETE",
-            },
-          );
-
-      setForm((previous) => ({
-        ...previous,
-        branch_id:
-          data?.branch_id != null
-            ? String(data.branch_id)
-            : previous.branch_id,
-        branch_name_km:
-          data?.branch_name_km ||
-          previous.branch_name_km,
-        assigned_branches:
-          Array.isArray(
-            data?.assigned_branches,
-          )
-            ? data.assigned_branches
-            : previous.assigned_branches,
-      }));
-    } catch (branchError) {
-      setError(
-        branchError.message ||
-          "មិនអាចកែប្រែសាខាទទួលបន្ទុកបានទេ។",
-      );
-    } finally {
-      setBranchAssignmentPending(false);
-    }
+    // SECRETARY — just track the pending selection. The actual
+    // assign/revoke calls (and the primary-branch bookkeeping that
+    // comes back from them) happen in handleSave.
+    setBranchSelectionIds(nextValues);
   };
 
   /* =======================================================
@@ -1118,6 +1136,7 @@ export default function PersonalPage() {
 
       setError("");
       setSuccess("");
+      setHasUnsavedChanges(true);
 
       setForm(
         (previous) => ({
@@ -1194,6 +1213,8 @@ export default function PersonalPage() {
         return;
       }
 
+      setHasUnsavedChanges(true);
+
       setCvFile(
         file,
       );
@@ -1212,8 +1233,15 @@ export default function PersonalPage() {
    * ACCOUNT STATUS
    * ======================================================= */
 
+    /*
+     * Local-state-only, same as every other field on this page — the
+     * enable/disable request no longer fires on change. It's queued
+     * until Save is clicked, where handleSave compares
+     * form.account_status against originalAccountStatus to decide
+     * whether to call the account endpoint at all.
+     */
     const handleAccountStatusChange =
-      async (event) => {
+      (event) => {
         if (isReadOnly && !canManageSensitiveFields) {
           return;
         }
@@ -1224,8 +1252,7 @@ export default function PersonalPage() {
         if (
           !memberId ||
           !form.has_account ||
-          !nextStatus ||
-          changingStatus
+          !nextStatus
         ) {
           return;
         }
@@ -1237,66 +1264,17 @@ export default function PersonalPage() {
           return;
         }
 
-        const previousStatus =
-          form.account_status;
-
         setError("");
         setSuccess("");
+        setHasUnsavedChanges(true);
 
-        try {
-          setChangingStatus(true);
-
-          const action =
-            nextStatus === "ACTIVE"
-              ? "enable"
-              : "disable";
-
-          const response =
-            await requestJson(
-              `/members/${memberId}/personal-info/account/${action}`,
-              {
-                method: "PATCH",
-              },
-            );
-
-          const confirmedStatus =
-            response?.status ||
-            nextStatus;
-
-          setForm(
-            (previous) => ({
-              ...previous,
-              account_status:
-                confirmedStatus,
-            }),
-          );
-
-          setSuccess(
-            confirmedStatus === "ACTIVE"
-              ? "បានបើកដំណើរការគណនីដោយជោគជ័យ។"
-              : "បានបិទដំណើរការគណនីដោយជោគជ័យ។",
-          );
-        } catch (statusError) {
-          console.error(
-            "Cannot change account status:",
-            statusError,
-          );
-
-          setForm(
-            (previous) => ({
-              ...previous,
-              account_status:
-                previousStatus,
-            }),
-          );
-
-          setError(
-            statusError.message ||
-              "អ្នកមិនមានសិទ្ធិផ្លាស់ប្ដូរស្ថានភាពគណនីនេះទេ។",
-          );
-        } finally {
-          setChangingStatus(false);
-        }
+        setForm(
+          (previous) => ({
+            ...previous,
+            account_status:
+              nextStatus,
+          }),
+        );
       };
 
   /* =======================================================
@@ -1306,7 +1284,7 @@ export default function PersonalPage() {
   const handleSave =
     async () => {
       if (!canSavePersonalInfo) {
-        return;
+        return false;
       }
 
       if (!memberId) {
@@ -1314,7 +1292,7 @@ export default function PersonalPage() {
           "រកមិនឃើញលេខសម្គាល់សមាជិក។",
         );
 
-        return;
+        return false;
       }
 
       if (
@@ -1324,7 +1302,7 @@ export default function PersonalPage() {
           "សូមបញ្ចូលឈ្មោះជាភាសាខ្មែរ។",
         );
 
-        return;
+        return false;
       }
 
       if (!form.gender) {
@@ -1332,7 +1310,7 @@ export default function PersonalPage() {
           "សូមជ្រើសរើសភេទ។",
         );
 
-        return;
+        return false;
       }
 
       if (!form.branch_id) {
@@ -1340,7 +1318,7 @@ export default function PersonalPage() {
           "សូមជ្រើសរើសសាខា។",
         );
 
-        return;
+        return false;
       }
 
       try {
@@ -1485,7 +1463,228 @@ export default function PersonalPage() {
         }
 
         /*
-         * 3. CV
+         * 3. Branch coverage (SECRETARY only)
+         *
+         * Diffs the pending multiselect selection against the
+         * last-known-saved set and replays exactly the add/remove
+         * calls the old immediate-fire handler used to make one at a
+         * time — just deferred until now. Each call's response is
+         * authoritative for branch_id / branch_name_km /
+         * assigned_branches, so later calls' results simply overwrite
+         * earlier ones.
+         *
+         * achievedBranchIds tracks which ids have actually landed on
+         * the server so far in this loop. If a later call in the
+         * same save fails partway through (e.g. removing a branch
+         * that turns out to be the member's only one left), the
+         * catch block below still commits whatever DID succeed to
+         * `form` instead of silently discarding it — otherwise a
+         * branch that was genuinely added on the server could be
+         * missing from the UI until the page is reloaded, which is
+         * exactly the "doesn't bring that branch scope to the
+         * secretary" symptom this was built to fix.
+         */
+        let latestBranchId =
+          form.branch_id;
+        let latestBranchNameKm =
+          form.branch_name_km;
+        let latestAssignedBranches =
+          form.assigned_branches;
+        let latestBranchSelection =
+          originalBranchIds;
+
+        if (
+          updatedRole === "SECRETARY"
+        ) {
+          const addedBranchIds =
+            branchSelectionIds.filter(
+              (id) =>
+                !originalBranchIds.includes(
+                  id,
+                ),
+            );
+
+          const removedBranchIds =
+            originalBranchIds.filter(
+              (id) =>
+                !branchSelectionIds.includes(
+                  id,
+                ),
+            );
+
+          const achievedBranchIds =
+            new Set(originalBranchIds);
+
+          try {
+            for (const branchIdToAdd of addedBranchIds) {
+              const branchData =
+                await requestJson(
+                  `/members/${memberId}/personal-info/branches`,
+                  {
+                    method:
+                      "POST",
+
+                    body:
+                      JSON.stringify({
+                        branch_id:
+                          Number(
+                            branchIdToAdd,
+                          ),
+                      }),
+                  },
+                );
+
+              achievedBranchIds.add(
+                branchIdToAdd,
+              );
+
+              if (
+                branchData?.branch_id !=
+                null
+              ) {
+                latestBranchId =
+                  String(
+                    branchData.branch_id,
+                  );
+              }
+
+              if (
+                branchData?.branch_name_km
+              ) {
+                latestBranchNameKm =
+                  branchData.branch_name_km;
+              }
+
+              if (
+                Array.isArray(
+                  branchData?.assigned_branches,
+                )
+              ) {
+                latestAssignedBranches =
+                  branchData.assigned_branches;
+              }
+            }
+
+            for (const branchIdToRemove of removedBranchIds) {
+              const branchData =
+                await requestJson(
+                  `/members/${memberId}/personal-info/branches/${branchIdToRemove}`,
+                  {
+                    method:
+                      "DELETE",
+                  },
+                );
+
+              achievedBranchIds.delete(
+                branchIdToRemove,
+              );
+
+              if (
+                branchData?.branch_id !=
+                null
+              ) {
+                latestBranchId =
+                  String(
+                    branchData.branch_id,
+                  );
+              }
+
+              if (
+                branchData?.branch_name_km
+              ) {
+                latestBranchNameKm =
+                  branchData.branch_name_km;
+              }
+
+              if (
+                Array.isArray(
+                  branchData?.assigned_branches,
+                )
+              ) {
+                latestAssignedBranches =
+                  branchData.assigned_branches;
+              }
+            }
+
+            latestBranchSelection =
+              branchSelectionIds;
+          } catch (branchSyncError) {
+            latestBranchSelection =
+              Array.from(
+                achievedBranchIds,
+              );
+
+            setForm(
+              (previous) => ({
+                ...previous,
+                branch_id:
+                  latestBranchId ||
+                  previous.branch_id,
+                branch_name_km:
+                  latestBranchNameKm ||
+                  previous.branch_name_km,
+                assigned_branches:
+                  latestAssignedBranches ||
+                  previous.assigned_branches,
+              }),
+            );
+
+            setOriginalBranchIds(
+              latestBranchSelection,
+            );
+            setBranchSelectionIds(
+              latestBranchSelection,
+            );
+
+            setError(
+              branchSyncError.message ||
+                "មិនអាចកែប្រែសាខាទទួលបន្ទុកបានទេ។",
+            );
+
+            return false;
+          }
+        }
+
+        /*
+         * 4. Account status
+         */
+        let latestAccountStatus =
+          form.account_status;
+
+        if (
+          form.has_account &&
+          form.account_status &&
+          form.account_status !==
+            originalAccountStatus
+        ) {
+          setChangingStatus(true);
+
+          try {
+            const action =
+              form.account_status ===
+              "ACTIVE"
+                ? "enable"
+                : "disable";
+
+            const statusResponse =
+              await requestJson(
+                `/members/${memberId}/personal-info/account/${action}`,
+                {
+                  method:
+                    "PATCH",
+                },
+              );
+
+            latestAccountStatus =
+              statusResponse?.status ||
+              form.account_status;
+          } finally {
+            setChangingStatus(false);
+          }
+        }
+
+        /*
+         * 5. CV
          */
         let cvResponse =
           null;
@@ -1524,7 +1723,7 @@ export default function PersonalPage() {
         }
 
         /*
-         * 4. Normalize response
+         * 6. Normalize response
          */
         const latest =
           cvResponse ||
@@ -1544,9 +1743,36 @@ export default function PersonalPage() {
               updatedRole,
 
             account_status:
+              latestAccountStatus ||
               normalized.account_status ||
               previous.account_status,
+
+            branch_id:
+              latestBranchId ||
+              normalized.branch_id ||
+              previous.branch_id,
+
+            branch_name_km:
+              latestBranchNameKm ||
+              normalized.branch_name_km ||
+              previous.branch_name_km,
+
+            assigned_branches:
+              latestAssignedBranches ||
+              normalized.assigned_branches ||
+              previous.assigned_branches,
           }),
+        );
+
+        setOriginalAccountStatus(
+          latestAccountStatus,
+        );
+
+        setOriginalBranchIds(
+          latestBranchSelection,
+        );
+        setBranchSelectionIds(
+          latestBranchSelection,
         );
 
         if (
@@ -1558,7 +1784,7 @@ export default function PersonalPage() {
         }
 
         /*
-         * 5. Refresh account state
+         * 7. Refresh account state
          */
         if (
           form.has_account
@@ -1595,6 +1821,14 @@ export default function PersonalPage() {
                 account.role,
               );
             }
+
+            if (
+              account?.status
+            ) {
+              setOriginalAccountStatus(
+                account.status,
+              );
+            }
           } catch (
             accountRefreshError
           ) {
@@ -1608,6 +1842,10 @@ export default function PersonalPage() {
         setSuccess(
           "រក្សាទុកព័ត៌មានបានជោគជ័យ។",
         );
+
+        setHasUnsavedChanges(false);
+
+        return true;
       } catch (saveError) {
         console.error(
           "Cannot save personal info:",
@@ -1618,10 +1856,23 @@ export default function PersonalPage() {
           saveError.message ||
             "មិនអាចរក្សាទុកព័ត៌មានបានទេ។",
         );
+
+        return false;
       } finally {
         setSaving(false);
       }
     };
+
+  /*
+   * Registers this page's dirty flag + save function with the
+   * shared unsaved-changes guard (see
+   * member/memberInfo/[id]/layout.js), so the tab-nav bar confirms
+   * before navigating away while hasUnsavedChanges is true.
+   */
+  useUnsavedFormGuard(
+    hasUnsavedChanges,
+    handleSave,
+  );
 
   /* =======================================================
    * LOADING
@@ -1835,7 +2086,7 @@ export default function PersonalPage() {
                 }
                 disabled={
                   !canManageSensitiveFields ||
-                  branchAssignmentPending
+                  saving
                 }
               />
             ) : (

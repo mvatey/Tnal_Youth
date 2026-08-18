@@ -14,6 +14,7 @@ import BoxFill from "@/components/forms/boxFill.js";
 import FormSelect from "@/components/forms/FormSelect";
 import FormDate from "@/components/forms/FormDate.js";
 import SaveButton from "@/components/forms/SaveButton";
+import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 
 /* =========================================================
  * EMPTY FORM
@@ -278,6 +279,13 @@ export default function MyAccountPersonalPage() {
 
   const [form, setForm] = useState(EMPTY_FORM);
 
+  /*
+   * True once the user edits a field or picks a CV, until the next
+   * successful Save — fed to useUnsavedFormGuard below so the
+   * account tab-nav bar confirms before navigating away mid-edit.
+   */
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
   const [cvFile, setCvFile] = useState(null);
   const [fileName, setFileName] = useState("");
   const [cvPreviewUrl, setCvPreviewUrl] = useState("");
@@ -379,6 +387,7 @@ export default function MyAccountPersonalPage() {
 
     setError("");
     setSuccess("");
+    setHasUnsavedChanges(true);
 
     setForm((previous) => ({
       ...previous,
@@ -412,6 +421,7 @@ export default function MyAccountPersonalPage() {
       return;
     }
 
+    setHasUnsavedChanges(true);
     setCvFile(file);
 
     setCvPreviewUrl((previous) => {
@@ -429,12 +439,12 @@ export default function MyAccountPersonalPage() {
   const handleSave = async () => {
     if (!form.full_name_km.trim()) {
       setError("សូមបញ្ចូលឈ្មោះជាភាសាខ្មែរ។");
-      return;
+      return false;
     }
 
     if (!form.gender) {
       setError("សូមជ្រើសរើសភេទ។");
-      return;
+      return false;
     }
 
     try {
@@ -500,13 +510,26 @@ export default function MyAccountPersonalPage() {
       }
 
       setSuccess("រក្សាទុកព័ត៌មានបានជោគជ័យ។");
+      setHasUnsavedChanges(false);
+
+      return true;
     } catch (saveError) {
       console.error("Cannot save my-account personal info:", saveError);
       setError(saveError.message || "មិនអាចរក្សាទុកព័ត៌មានបានទេ។");
+
+      return false;
     } finally {
       setSaving(false);
     }
   };
+
+  /*
+   * Registers this page's dirty flag + save function with the
+   * shared unsaved-changes guard (see myAcc/layout.js), so the
+   * account tab-nav bar confirms before navigating away while
+   * hasUnsavedChanges is true.
+   */
+  useUnsavedFormGuard(hasUnsavedChanges, handleSave);
 
   /* =======================================================
    * LOADING

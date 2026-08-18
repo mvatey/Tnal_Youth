@@ -781,7 +781,14 @@ export default function CreateActivityPage() {
             name: member.full_name_km || member.full_name_en || "-",
             email: member.email || "",
             gender: member.gender?.label_km || member.gender?.labelKm || member.gender?.code || "-",
-            role: member.level?.label_km || member.level?.labelKm || member.level?.code || "-",
+            /*
+             * "តួនាទី" is the member's linked login account role
+             * (admin/secretary/branch leader/member) — was reading
+             * member.level (a separate rank/tier lookup) before, which
+             * only looked right by coincidence. "-" now legitimately
+             * means this member has no linked user account.
+             */
+            role: member.account_role?.label_km || member.account_role?.labelKm || member.account_role?.code || "-",
             branch: member.branch?.label_km || member.branch?.labelKm || form.branch,
             joinedDate: member.joined_on || "-",
             joinedDateValue: member.joined_on || "",

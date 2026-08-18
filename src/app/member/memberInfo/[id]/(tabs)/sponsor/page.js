@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+import { HandCoins } from "lucide-react";
 
 import DataTable from "@/components/table/DataTable";
 export default function SponsorDonationPage() {
@@ -77,6 +79,14 @@ export default function SponsorDonationPage() {
                   item.paymentMethodLabelEn ||
                   item.paymentMethodCode ||
                   "-",
+                // Carried through so the "ចំណូល" action below can deep-link
+                // straight into this specific activity's donation detail —
+                // branchId is whichever branch actually recorded this
+                // donation (the organizer's own branch, or an invited
+                // branch once it records its own members), so it always
+                // opens the right side of that activity's data.
+                activityId: item.activityId,
+                branchId: item.branchId,
               };
             }),
         );
@@ -185,6 +195,24 @@ export default function SponsorDonationPage() {
       width: "w-[26%]",
       align: "left",
       accessor: "paymentMethod",
+    },
+    {
+      header: "ចំណូល",
+      width: "w-[10%]",
+      align: "center",
+      render: (item) =>
+        item.activityId && item.branchId ? (
+          <Link
+            href={`/donation/eventdonation/detail?event=${encodeURIComponent(item.activityId)}&branch=${encodeURIComponent(item.branchId)}`}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-secondary transition hover:bg-secondary-light"
+            title="មើលចំណូលនៃកម្មវិធីនេះ"
+            aria-label="មើលចំណូលនៃកម្មវិធីនេះ"
+          >
+            <HandCoins size={16} strokeWidth={2.2} />
+          </Link>
+        ) : (
+          "-"
+        ),
     },
   ];
 

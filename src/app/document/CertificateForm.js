@@ -267,6 +267,26 @@ export default function CertificateForm({
     return () => controller.abort();
   }, [form.activityId]);
 
+  /*
+   * Every time a different activity is selected, reset which of the
+   * host branch's own members are selected (default: every present
+   * one) and clear any previously selected "other branches to notify"
+   * -- both lists are derived from this specific activity's roster and
+   * are meaningless once the activity changes.
+   */
+  useEffect(() => {
+    if (recipientType !== "activity") {
+      return;
+    }
+
+    setForm((previous) => ({
+      ...previous,
+      activityMemberIds: null,
+      notifyBranchIds: [],
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.activityId]);
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -304,7 +324,16 @@ export default function CertificateForm({
 
   useEffect(() => {
     const branchId = String(form.branch || "");
-    if (!branchId) {
+
+    /*
+     * The "activity" recipient flow no longer needs this branch-scoped
+     * member list at all -- selectedActivityMembers below is built
+     * directly from activityParticipants (which already carries each
+     * participant's own branch), so members from every invited branch
+     * are available, not just whichever single branch happens to be in
+     * form.branch.
+     */
+    if (recipientType !== "member" || !branchId) {
       setMembers([]);
       setLoadingMembers(false);
       return undefined;
@@ -349,7 +378,7 @@ export default function CertificateForm({
 
     loadMembers();
     return () => controller.abort();
-  }, [form.branch]);
+  }, [form.branch, recipientType]);
 
   /*
    * Multi-member IDs.
@@ -396,36 +425,155 @@ export default function CertificateForm({
     .filter((option) => option.label && option.value);
 
   /*
-   * Members participating in
-   * the selected activity.
+   * The host (organizer) branch of the selected activity -- own-branch
+   * members get individual certificates generated directly; every other
+   * branch only gets grouped and, if selected, notified (never
+   * generated certificates for their individual members here).
    */
-  const selectedActivityMembers =
+  const hostBranchId = String(
+    selectedActivity?.branchId ?? selectedActivity?.branch_id ?? "",
+  );
+
+  /*
+   * Every participant of the selected activity who actually attended --
+   * built straight from activityParticipants, which already carries
+   * each participant's own branch (branch_id / branch_name_km /
+   * branch_name_en), so this works across every invited branch, not
+   * just whichever single branch happens to be loaded into `members`.
+   */
+  const presentActivityParticipants =
     recipientType === "activity"
-      ? activityParticipants
-          .filter(
-            (participant) =>
-              Boolean(participant.checkedInAt || participant.checked_in_at) ||
-              String(participant.attendanceStatusCode || participant.attendance_status_code || "").toUpperCase() === "PRESENT",
-          )
-          .map(
-            (participant) =>
-              members.find(
-                (member) =>
-                  String(
-                    member.id,
-                  ) ===
-                  String(
-                    participant.memberId || participant.member_id,
-                  ),
-              ),
-          )
-          .filter(Boolean)
+      ? activityParticipants.filter(
+          (participant) =>
+            Boolean(participant.checkedInAt || participant.checked_in_at) ||
+            String(
+              participant.attendanceStatusCode ||
+                participant.attendance_status_code ||
+                "",
+            ).toUpperCase() === "PRESENT",
+        )
       : [];
+
+  function participantToMember(participant) {
+    const id = participant.memberId ?? participant.member_id;
+    return {
+      id,
+      name_kh:
+        participant.fullNameKm ||
+        participant.full_name_km ||
+        participant.fullNameEn ||
+        participant.full_name_en ||
+        "",
+      name_en: participant.fullNameEn || participant.full_name_en || "",
+      branchId: String(participant.branchId ?? participant.branch_id ?? ""),
+    };
+  }
+
+  /*
+   * Own-branch members -- listed individually, each one multi-selectable,
+   * and generate a personal certificate the same way the "member"
+   * recipient type already does.
+   */
+  const ownBranchMembers = presentActivityParticipants
+    .filter(
+      (participant) =>
+        Boolean(hostBranchId) &&
+        String(participant.branchId ?? participant.branch_id ?? "") ===
+          hostBranchId,
+    )
+    .map(participantToMember)
+    .filter((member) => member.id);
+
+  /*
+   * Every other invited branch that has attending participants --
+   * grouped by branch, listed as one selectable entry per branch (not
+   * per member). Selecting a branch never generates certificates for its
+   * individual members; it only queues that branch for the "certificates
+   * ready" notification sent to the branch's own leadership.
+   */
+  const otherBranchGroups = Array.from(
+    presentActivityParticipants
+      .filter(
+        (participant) =>
+          String(participant.branchId ?? participant.branch_id ?? "") &&
+          String(participant.branchId ?? participant.branch_id ?? "") !==
+            hostBranchId,
+      )
+      .reduce((groups, participant) => {
+        const branchId = String(
+          participant.branchId ?? participant.branch_id ?? "",
+        );
+        const label =
+          participant.branchNameKm ||
+          participant.branch_name_km ||
+          participant.branchNameEn ||
+          participant.branch_name_en ||
+          branchId;
+        const existing = groups.get(branchId);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          groups.set(branchId, { branchId, label, count: 1 });
+        }
+        return groups;
+      }, new Map())
+      .values(),
+  );
+
+  const selectedActivityMemberIds = (
+    Array.isArray(form.activityMemberIds)
+      ? form.activityMemberIds
+      : ownBranchMembers.map((member) => member.id)
+  ).map(String);
+
+  /*
+   * Members from the host branch that are both present and currently
+   * selected -- these are the ones certificates get generated for.
+   */
+  const selectedActivityMembers = ownBranchMembers.filter((member) =>
+    selectedActivityMemberIds.includes(String(member.id)),
+  );
+
+  const selectedNotifyBranchIds = (
+    Array.isArray(form.notifyBranchIds) ? form.notifyBranchIds : []
+  ).map(String);
+
+  const selectedNotifyBranches = otherBranchGroups.filter((branch) =>
+    selectedNotifyBranchIds.includes(String(branch.branchId)),
+  );
 
   const memberOptions = members.map((member) => ({
     label: member.name_kh,
     value: String(member.id),
   }));
+
+  const ownBranchMemberOptions = ownBranchMembers.map((member) => ({
+    label: member.name_kh,
+    value: String(member.id),
+  }));
+
+  const otherBranchOptions = otherBranchGroups.map((branch) => ({
+    label: `${branch.label} (${branch.count})`,
+    value: String(branch.branchId),
+  }));
+
+  const handleActivityMemberChange = (memberIds) => {
+    setForm((previous) => ({
+      ...previous,
+      activityMemberIds: Array.isArray(memberIds)
+        ? memberIds.map(String)
+        : [],
+    }));
+    setShowValidationError(false);
+  };
+
+  const handleNotifyBranchChange = (branchIds) => {
+    setForm((previous) => ({
+      ...previous,
+      notifyBranchIds: Array.isArray(branchIds) ? branchIds.map(String) : [],
+    }));
+    setShowValidationError(false);
+  };
 
   const handleBranchChange = (event) => {
     const branchId = event.target.value;
@@ -454,24 +602,25 @@ export default function CertificateForm({
   const hasRecipient =
     recipientType === "member"
       ? selectedMembers.length > 0
-      : Boolean(
-          form.activityId,
-        );
+      : selectedActivityMembers.length > 0 ||
+        selectedNotifyBranches.length > 0;
 
-  const hasValidActivityMembers =
-    recipientType !==
-      "activity" ||
-    selectedActivityMembers.length >
-      0;
+  /*
+   * A certificate template image is only required when something is
+   * actually going to be generated. Notifying other branches' leadership
+   * that certificates are ready doesn't generate anything here, so a
+   * request that selects ONLY other branches (no own-branch members)
+   * doesn't need a template.
+   */
+  const needsTemplate =
+    recipientType === "member" ||
+    selectedActivityMembers.length > 0;
 
   const isFormValid =
     hasTitle &&
     hasDocumentType &&
     hasRecipient &&
-    Boolean(
-      form.templatePreview,
-    ) &&
-    hasValidActivityMembers;
+    (!needsTemplate || Boolean(form.templatePreview));
 
   /*
    * Remove temporary template URL
@@ -898,6 +1047,15 @@ export default function CertificateForm({
            */
           selectedActivity,
           selectedActivityMembers,
+
+          /*
+           * Other invited branches to notify (leadership only) that
+           * certificates from this activity are ready for their own
+           * members -- no certificates are generated for them here.
+           */
+          notifyBranchIds: selectedNotifyBranches.map(
+            (branch) => branch.branchId,
+          ),
         });
       } catch (error) {
         console.error(
@@ -1076,21 +1234,52 @@ export default function CertificateForm({
               }
             />
           ) : (
-            <FormSelect
-              label="កម្មវិធី"
-              name="activityId"
-              value={
-                form.activityId ||
-                ""
-              }
-              onChange={
-                handleActivityChange
-              }
-              placeholder="ជ្រើសរើសកម្មវិធី"
-              options={
-                activityOptions
-              }
-            />
+            <div className="space-y-5">
+              <FormSelect
+                label="កម្មវិធី"
+                name="activityId"
+                value={
+                  form.activityId ||
+                  ""
+                }
+                onChange={
+                  handleActivityChange
+                }
+                placeholder="ជ្រើសរើសកម្មវិធី"
+                options={
+                  activityOptions
+                }
+              />
+
+              {form.activityId ? (
+                <>
+                  <MultiSelect
+                    label="សមាជិកសាខារបស់អ្នក (បង្កើតវិញ្ញាបនបត្រផ្ទាល់ខ្លួន)"
+                    value={selectedActivityMemberIds}
+                    onChange={handleActivityMemberChange}
+                    placeholder="ជ្រើសរើសសមាជិក"
+                    options={ownBranchMemberOptions}
+                    emptyLabel="មិនមានសមាជិកសាខារបស់អ្នកចូលរួមកម្មវិធីនេះទេ"
+                  />
+
+                  <MultiSelect
+                    label="សាខាដែលបានអញ្ជើញ (ជូនដំណឹងទៅអ្នកគ្រប់គ្រងសាខា)"
+                    value={selectedNotifyBranchIds}
+                    onChange={handleNotifyBranchChange}
+                    placeholder="ជ្រើសរើសសាខា"
+                    options={otherBranchOptions}
+                    emptyLabel="មិនមានសាខាផ្សេងទៀតចូលរួមកម្មវិធីនេះទេ"
+                  />
+
+                  {selectedNotifyBranches.length > 0 ? (
+                    <p className="text-xs text-text-mute">
+                      សាខាដែលបានជ្រើសរើសនឹងមិនទទួលបានឯកសារវិញ្ញាបនបត្រដោយផ្ទាល់ទេ
+                      — មានតែប្រធានសាខា និងលេខាធិការសាខានោះប៉ុណ្ណោះនឹងទទួលបានការជូនដំណឹងថាវិញ្ញាបនបត្រសម្រាប់សមាជិកសាខារបស់ពួកគេបានរួចរាល់។
+                    </p>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
           )}
 
           {dataError && branchOptions.length > 0 ? (
@@ -1475,14 +1664,39 @@ export default function CertificateForm({
                 title="មិនទាន់ជ្រើសរើសកម្មវិធី"
                 message="សូមជ្រើសរើសកម្មវិធី"
               />
-            ) : selectedActivityMembers.length ===
-              0 ? (
+            ) : selectedActivityMembers.length === 0 &&
+              selectedNotifyBranches.length === 0 ? (
               <EmptyPreview
-                title="មិនមានសមាជិក"
-                message="មិនមានសមាជិកចូលរួមក្នុងកម្មវិធីនេះទេ"
+                title="មិនមានអ្នកទទួល"
+                message="សូមជ្រើសរើសសមាជិកសាខារបស់អ្នក ឬសាខាដែលត្រូវជូនដំណឹង"
               />
             ) : (
               <div className="space-y-6">
+                {selectedNotifyBranches.length > 0 ? (
+                  <div
+                    className="
+                      rounded-2xl
+                      border
+                      border-gray-200
+                      bg-white
+                      p-5
+                      text-sm
+                    "
+                  >
+                    <p className="mb-2 font-semibold text-text-primary">
+                      សាខាដែលនឹងទទួលការជូនដំណឹង (គ្មានឯកសារបង្កើត)
+                    </p>
+
+                    <ul className="list-inside list-disc space-y-1 text-text-secondary">
+                      {selectedNotifyBranches.map((branch) => (
+                        <li key={`notify-branch-${branch.branchId}`}>
+                          {branch.label} — សមាជិក {branch.count} នាក់
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
                 {selectedActivityMembers.map(
                   (
                     member,

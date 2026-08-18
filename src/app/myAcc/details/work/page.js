@@ -9,6 +9,7 @@ import FormDate from "@/components/forms/FormDate.js";
 import FormSelect from "@/components/forms/FormSelect";
 import DeleteButton from "@/components/forms/DeleteButton";
 import { deleteMemberRecord, loadMemberRecords, saveMemberRecords } from "@/lib/myAccountRecords";
+import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 
 function createEmptyWork() {
   return {
@@ -28,6 +29,16 @@ export default function WorkPage() {
   const memberId = String(currentMember?.id ?? "self");
   const [member, setMember] = useState(null);
   const [works, setWorks] = useState([]);
+
+  /*
+   * True from the moment the user edits any work-history field, or
+   * adds a row, until the next successful Save — NOT derived from
+   * diffing `works`, since `works` is also rewritten by the initial
+   * load effect and by a successful save. Fed to
+   * useUnsavedFormGuard below so the account tab-nav bar knows to
+   * confirm before navigating away mid-edit.
+   */
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -51,14 +62,19 @@ export default function WorkPage() {
   }, [memberId]);
 
   function handleWorkChange(id, field, value) {
+    setHasUnsavedChanges(true);
     setWorks((previousWorks) => previousWorks.map((work) => work.id === id ? { ...work, [field]: value } : work));
   }
 
   function addWork() {
+    setHasUnsavedChanges(true);
     setWorks((previousWorks) => [...previousWorks, createEmptyWork()]);
   }
 
   async function removeWork(id) {
+    // This fires an immediate server DELETE (not a local-only draft
+    // change), so there's nothing "unsaved" left pending afterward —
+    // intentionally not flagged as a dirty change.
     await deleteMemberRecord(memberId, "work-history", id);
     setWorks((previousWorks) => {
       if (previousWorks.length === 1) return previousWorks;
@@ -66,21 +82,40 @@ export default function WorkPage() {
     });
   }
 
+  async function handleSave() {
+    try {
+      const current = works.filter((item) => String(item.company || "").trim());
+      const rows = await saveMemberRecords(memberId, "work-history", current, (item) => ({
+        organization_name: item.company.trim(),
+        position_title: String(item.position || item.appointment || "").trim(),
+        role_title: item.appointment || null,
+        address: item.address || null,
+        start_date: item.startDate || null,
+        end_date: item.endDate || null,
+      }));
+      setWorks(rows.map((row) => ({ id: row.id, company: row.organization_name || "", address: row.address || "", position: row.position_title || "", appointment: row.role_title || "", startDate: row.start_date || "", endDate: row.end_date || "" })));
+      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+      setHasUnsavedChanges(false);
+      return true;
+    } catch (error) {
+      console.error("Cannot save work history:", error);
+      alert(error.message || "មិនអាចរក្សាទុកព័ត៌មានបានទេ");
+      return false;
+    }
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
-
-    const current = works.filter((item) => String(item.company || "").trim());
-    const rows = await saveMemberRecords(memberId, "work-history", current, (item) => ({
-      organization_name: item.company.trim(),
-      position_title: String(item.position || item.appointment || "").trim(),
-      role_title: item.appointment || null,
-      address: item.address || null,
-      start_date: item.startDate || null,
-      end_date: item.endDate || null,
-    }));
-    setWorks(rows.map((row) => ({ id: row.id, company: row.organization_name || "", address: row.address || "", position: row.position_title || "", appointment: row.role_title || "", startDate: row.start_date || "", endDate: row.end_date || "" })));
-    alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+    await handleSave();
   }
+
+  /*
+   * Registers this page's dirty flag + save function with the
+   * shared unsaved-changes guard (see myAcc/layout.js), so the
+   * account tab-nav bar confirms before navigating away while
+   * hasUnsavedChanges is true.
+   */
+  useUnsavedFormGuard(hasUnsavedChanges, handleSave);
 
   if (!member) {
     return (

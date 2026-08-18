@@ -28,6 +28,7 @@ import MemberTabNav from "@/components/navigation/MemberTabNav";
 import StatCard from "@/components/dashboard/statCard";
 
 import useMemberPermissions from "@/hooks/useMemberPermissions";
+import { UnsavedChangesProvider } from "@/context/UnsavedChangesContext";
 
 async function fetchJson(
   path,
@@ -455,6 +456,7 @@ export default function MemberInfoLayout({
   }
 
   return (
+    <UnsavedChangesProvider>
     <div className="space-y-4">
       <HeaderMemberInfo
         title={
@@ -658,5 +660,6 @@ export default function MemberInfoLayout({
         {children}
       </div>
     </div>
+    </UnsavedChangesProvider>
   );
 }

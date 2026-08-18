@@ -28,15 +28,13 @@ export default function AddDonationFilters({
         disabled={branchScoped}
         includeAllOption={!branchScoped}
       />
-      <DonationFilterSelect
-        label="ខែ"
-        value={selectedMonth}
-        onChange={onMonthChange}
-        options={months}
-        allLabel="ជ្រើសរើសខែ"
-        className="w-[160px]"
-        required
-      />
+      {/*
+        Year before month — the month list depends on which year is
+        selected (capped at the current month for the current year, and
+        with already-recorded months excluded), so picking a year first
+        makes that dependency visible instead of showing all 12 months
+        up front and then narrowing them after the fact.
+      */}
       <DonationFilterSelect
         label="ឆ្នាំ"
         value={selectedYear}
@@ -45,6 +43,22 @@ export default function AddDonationFilters({
         allLabel="ជ្រើសរើសឆ្នាំ"
         className="w-[160px]"
         required
+      />
+      <DonationFilterSelect
+        label="ខែ"
+        value={selectedMonth}
+        onChange={onMonthChange}
+        options={months}
+        allLabel={
+          !selectedYear || selectedYear === "all"
+            ? "ជ្រើសរើសឆ្នាំសិន"
+            : months.length === 0
+              ? "គ្មានខែទំនេរ"
+              : "ជ្រើសរើសខែ"
+        }
+        className="w-[160px]"
+        required
+        disabled={!selectedYear || selectedYear === "all"}
       />
       <DonationSearchInput value={searchQuery} onChange={onSearchChange} showLabel={false} />
     </div>

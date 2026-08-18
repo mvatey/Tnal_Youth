@@ -2,13 +2,24 @@
 
 import { useRouter, usePathname } from "next/navigation";
 
+import { useAuth } from "@/context/AuthContext";
+import { normalizeRole } from "@/lib/navigation";
+
 export default function DocumentTabs() {
 
   const router = useRouter();
   const pathname = usePathname();
+  const { user } = useAuth();
 
+  const role = normalizeRole(user?.role);
 
-  const tabs = [
+  /*
+   * A MEMBER only ever sees documents dedicated to them (their own
+   * certificates/letters of appointment) — the organizational tab
+   * stays staff/admin/viewer-only, so it's dropped from the tab list
+   * entirely rather than shown-but-empty.
+   */
+  const allTabs = [
     {
       key: "company",
       label: "ឯកសារស្ថាប័ន",
@@ -21,6 +32,11 @@ export default function DocumentTabs() {
       path: "/document/member",
     },
   ];
+
+  const tabs =
+    role === "member"
+      ? allTabs.filter((tab) => tab.key === "member")
+      : allTabs;
 
 
 

@@ -91,7 +91,6 @@ export default function AddDonationTableRow({
   onRealAmountChange,
   onDollarAmountChange,
   onPaymentMethodChange,
-  onPaymentReferenceChange,
   onShowInfo,
   readOnly = false,
   // Whether the current viewer has NO edit rights at all (e.g. admin, or a
@@ -227,21 +226,11 @@ export default function AddDonationTableRow({
         </select>
       </td>
 
-      {/* លេខយោង (payment reference input, + the receipt icon right below it —
-          both describe the same "proof of this payment" concept, so they
-          live together in one column instead of the receipt icon sitting
-          off in the action column). */}
+      {/* វិក័យប័ត្រ (receipt icon only — the reference text input that used
+          to sit above it was dropped; the icon alone opens the receipt
+          upload/preview popup). */}
       <td className="px-3">
-        <div className="mx-auto flex w-[110px] flex-col items-center gap-1">
-          <input
-            type="text"
-            disabled={readOnly}
-            value={member.paymentReference ?? ""}
-            onChange={(e) => onPaymentReferenceChange(member.id, e.target.value)}
-            placeholder="-"
-            className="block h-7 w-full rounded-md border border-border bg-bg-page-white px-2 text-center text-[12px] text-text-secondary outline-none focus:border-secondary disabled:cursor-not-allowed disabled:bg-bg-page-gray"
-          />
-
+        <div className="mx-auto flex w-[110px] flex-col items-center">
           <button
             key={receipt?.previewUrl || "receipt-icon"}
             type="button"

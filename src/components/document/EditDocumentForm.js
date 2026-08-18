@@ -5,6 +5,7 @@ import { UploadCloud, X } from "lucide-react";
 
 import PopupCard from "@/components/popup/PopupCard";
 import BoxFill from "@/components/forms/boxFill";
+import FormSelect from "@/components/forms/FormSelect";
 import FormActionButtons from "@/components/forms/FormActionButton";
 
 const BRANCH_OPTIONS = [
@@ -18,24 +19,28 @@ const BRANCH_OPTIONS = [
   },
 ];
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
 export default function EditDocumentForm({
   form,
   setForm,
   onSave,
   onClose,
   branchOptions = BRANCH_OPTIONS,
+  documentTypeOptions = [],
 }) {
-  const [files, setFiles] = useState(
+  // The Document entity holds exactly one file_id — editing replaces
+  // that single file, it doesn't attach more of them. currentFile is
+  // the document's existing file (read-only, shown for context);
+  // replacementFile is the new upload, if any, that handleEditSave
+  // will upload and swap in for file_id.
+  const currentFile =
     Array.isArray(form.files) && form.files.length > 0
-      ? form.files
-      : [
-          {
-            name: "របាយការណ៍ឆ្នាំ2026.pdf",
-            size: "3.2 MB",
-            type: "PDF",
-          },
-        ],
-  );
+      ? form.files[0]
+      : null;
+
+  const [replacementFile, setReplacementFile] = useState(null);
+  const [fileError, setFileError] = useState("");
 
   const [saving, setSaving] = useState(false);
   const [showValidationError, setShowValidationError] =
@@ -53,39 +58,38 @@ export default function EditDocumentForm({
   };
 
   const handleUpload = (event) => {
-    const selectedFiles = Array.from(
-      event.target.files || [],
-    );
+    const selectedFile = event.target.files?.[0];
 
-    if (selectedFiles.length === 0) {
+    setFileError("");
+    setShowValidationError(false);
+
+    if (!selectedFile) {
       return;
     }
 
-    const newFiles = selectedFiles.map((file) => ({
-      name: file.name,
-      size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      setFileError("ទំហំឯកសារមិនអាចលើសពី 5MB បានទេ។");
+      event.target.value = "";
+      return;
+    }
+
+    setReplacementFile({
+      name: selectedFile.name,
+      size: `${(selectedFile.size / 1024 / 1024).toFixed(1)} MB`,
       type:
-        file.name
+        selectedFile.name
           .split(".")
           .pop()
           ?.toUpperCase() || "FILE",
-      file,
-    }));
-
-    setFiles((previousFiles) => [
-      ...previousFiles,
-      ...newFiles,
-    ]);
+      file: selectedFile,
+    });
 
     event.target.value = "";
   };
 
-  const removeFile = (indexToRemove) => {
-    setFiles((previousFiles) =>
-      previousFiles.filter(
-        (_, index) => index !== indexToRemove,
-      ),
-    );
+  const removeReplacementFile = () => {
+    setReplacementFile(null);
+    setFileError("");
   };
 
   const isFormValid =
@@ -93,7 +97,7 @@ export default function EditDocumentForm({
     Boolean(form.branch) &&
     Boolean(form.description?.trim()) &&
     Boolean(form.date) &&
-    files.length > 0;
+    (Boolean(currentFile) || Boolean(replacementFile));
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -110,11 +114,13 @@ export default function EditDocumentForm({
       ...form,
       title: form.title.trim(),
       description: form.description.trim(),
-      files,
+      // replacementFile carries the raw File object for the parent to
+      // upload before it builds the PUT body — file_id itself only
+      // changes once that upload succeeds.
+      replacementFile: replacementFile?.file || null,
     };
 
     try {
-      setForm(updatedForm);
       await onSave?.(updatedForm);
       onClose?.();
     } catch (error) {
@@ -181,6 +187,22 @@ export default function EditDocumentForm({
             />
           </div>
 
+          {/* Document type */}
+
+          <FormSelect
+            label="ប្រភេទឯកសារ"
+            name="typeId"
+            placeholder="ជ្រើសរើសប្រភេទឯកសារ"
+            value={form.typeId != null ? String(form.typeId) : ""}
+            onChange={(event) =>
+              setForm((previousForm) => ({
+                ...previousForm,
+                typeId: Number(event.target.value),
+              }))
+            }
+            options={documentTypeOptions}
+          />
+
           {/* Description */}
 
           <div>
@@ -219,7 +241,8 @@ export default function EditDocumentForm({
             onChange={updateField("date")}
           />
 
-          {/* Files */}
+          {/* File — a document has exactly one; uploading a new one
+              here replaces it rather than adding to a list. */}
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
@@ -227,9 +250,8 @@ export default function EditDocumentForm({
             </label>
 
             <div className="space-y-2">
-              {files.map((file, index) => (
+              {replacementFile ? (
                 <div
-                  key={`${file.name}-${index}`}
                   className="
                     flex
                     min-h-12
@@ -238,7 +260,8 @@ export default function EditDocumentForm({
                     gap-3
                     rounded-lg
                     border
-                    border-border
+                    border-primary/40
+                    bg-primary/5
                     px-3
                     py-2
                   "
@@ -253,31 +276,31 @@ export default function EditDocumentForm({
                         items-center
                         justify-center
                         rounded
-                        bg-error-bg
+                        bg-primary/10
                         px-1
                         text-[10px]
                         font-bold
-                        text-error
+                        text-primary
                       "
                     >
-                      {file.type}
+                      {replacementFile.type}
                     </div>
 
                     <div className="min-w-0">
                       <p className="truncate text-sm text-text-secondary">
-                        {file.name}
+                        {replacementFile.name}
                       </p>
 
                       <p className="text-xs text-text-mute">
-                        {file.type} - {file.size}
+                        ឯកសារថ្មី (នឹងជំនួសឯកសារចាស់) · {replacementFile.size}
                       </p>
                     </div>
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => removeFile(index)}
-                    aria-label="លុបឯកសារ"
+                    onClick={removeReplacementFile}
+                    aria-label="បោះបង់ឯកសារថ្មី"
                     className="
                       flex
                       h-8
@@ -295,11 +318,62 @@ export default function EditDocumentForm({
                     <X size={18} />
                   </button>
                 </div>
-              ))}
+              ) : currentFile ? (
+                <div
+                  className="
+                    flex
+                    min-h-12
+                    items-center
+                    gap-3
+                    rounded-lg
+                    border
+                    border-border
+                    px-3
+                    py-2
+                  "
+                >
+                  <div
+                    className="
+                      flex
+                      h-8
+                      min-w-8
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded
+                      bg-error-bg
+                      px-1
+                      text-[10px]
+                      font-bold
+                      text-error
+                    "
+                  >
+                    {currentFile.type}
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-text-secondary">
+                      {currentFile.name}
+                    </p>
+
+                    <p className="text-xs text-text-mute">
+                      ឯកសារបច្ចុប្បន្ន · {currentFile.size}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-text-mute">មិនទាន់មានឯកសារ</p>
+              )}
             </div>
+
+            {fileError && (
+              <p className="mt-2 text-xs font-medium text-error">
+                {fileError}
+              </p>
+            )}
           </div>
 
-          {/* Upload */}
+          {/* Replace file */}
 
           <label
             className="
@@ -325,7 +399,7 @@ export default function EditDocumentForm({
             />
 
             <p className="text-sm font-semibold text-primary">
-              បញ្ចូលឯកសារ
+              ជំនួសឯកសារ
             </p>
 
             <p className="text-[11px] text-text-mute">
@@ -334,7 +408,6 @@ export default function EditDocumentForm({
 
             <input
               type="file"
-              multiple
               hidden
               accept=".pdf,.xls,.xlsx,.jpg,.jpeg,.png"
               onChange={handleUpload}

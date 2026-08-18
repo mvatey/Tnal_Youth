@@ -1,15 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
+import { useEffect, useMemo, useState } from "react";
+import tableHeaders from "@/data/donation/tableHeaders.json";
 
-// Short polling instead of a push channel — this app has no WebSocket/SSE
-// infrastructure, so "real-time" here means the branches tab quietly
-// refetches on an interval while it's open. 8s keeps it feeling live
-// without hammering the backend; only this tab polls (see the unmount
-// cleanup below), so it stops the moment the staff member switches back
-// to "សមាជិក" or away from this activity.
-const POLL_INTERVAL_MS = 8000;
+const { eventBranchTotalHeaders: headers } = tableHeaders;
 
 async function fetchJson(url) {
   const response = await fetch(url, { cache: "no-store" });
@@ -20,157 +14,143 @@ async function fetchJson(url) {
   return body?.data ?? body;
 }
 
-function formatUsd(value) {
-  const amount = Number(value || 0);
-  return `$ ${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+function toBranchNameMap(values) {
+  const map = {};
+  (Array.isArray(values) ? values : []).forEach((branch) => {
+    const id = String(branch.value ?? branch.id ?? "");
+    if (!id) return;
+    map[id] =
+      branch.labelKm ??
+      branch.nameKm ??
+      branch.labelEn ??
+      branch.nameEn ??
+      branch.label ??
+      branch.name ??
+      branch.code ??
+      `#${id}`;
+  });
+  return map;
 }
 
-const ROLE_LABELS = {
-  ORGANIZER: "សាខារៀបចំ",
-  INVITED: "សាខាដែលបានអញ្ជើញ",
-};
-
-/*
- * Cross-branch donation totals for ONE activity — every branch eligible to
- * record a donation here (the organizer plus every branch with an
- * ACCEPTED co-hosting invitation), each with its running total. Backed by
- * GET /api/donations/activity/{activityId}/branch-totals, which is a plain
- * SUM(...)/GROUP BY over the existing donations table (no new table — see
- * DonationServiceImpl#activityBranchTotals on the backend). Deliberately
- * aggregate-only: it never lists another branch's individual donations
- * (donor, member, payment method, ...), only the summed total and count —
- * a branch's own itemised entries stay on the "សមាជិក" tab, visible only
- * to that branch's own staff.
- */
-export default function EventDonationBranchTotals({ activityId }) {
-  const [rows, setRows] = useState([]);
+// Totals are computed client-side from the SAME donation records already
+// used by the Members tab / summary cards (GET /donations?activityId=),
+// rather than a dedicated aggregate endpoint — a donation carries the
+// branchId it was recorded under (the organizer's own branch, or an
+// invited/co-hosting branch once that branch records its own members'
+// donations), so grouping by branchId here is exactly "each branch's
+// total for this activity." Eligible branches (the organizer branch plus
+// any branch with an ACCEPTED invitation) are always listed even when
+// their total is still zero, so an invited branch that hasn't recorded
+// anything yet doesn't just silently disappear from this view.
+export default function EventDonationBranchTotals({ activityId, organizerBranchId }) {
+  const [invitedBranches, setInvitedBranches] = useState([]);
+  const [branchNames, setBranchNames] = useState({});
+  const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
-  const pollTimerRef = useRef(null);
 
   useEffect(() => {
     if (!activityId) return undefined;
     let cancelled = false;
-
-    async function load(isBackgroundRefresh) {
-      if (!isBackgroundRefresh) setLoading(true);
-      try {
-        const data = await fetchJson(
-          `/api/backend/donations/activity/${encodeURIComponent(activityId)}/branch-totals`,
-        );
+    setLoading(true);
+    setError("");
+    Promise.all([
+      fetchJson(`/api/backend/activities/${encodeURIComponent(activityId)}/invited-branches`).catch(() => []),
+      fetchJson("/api/lookups/activity-invitable-branches").catch(() => []),
+      fetchJson(`/api/backend/donations?page=0&size=1000&activityId=${encodeURIComponent(activityId)}`),
+    ])
+      .then(([invitations, branchOptions, donationPage]) => {
         if (cancelled) return;
-        setRows(Array.isArray(data) ? data : []);
-        setError("");
-        setLastUpdatedAt(new Date());
-      } catch (loadError) {
+        setInvitedBranches(Array.isArray(invitations) ? invitations : []);
+        setBranchNames(toBranchNameMap(branchOptions));
+        const items = Array.isArray(donationPage?.items)
+          ? donationPage.items
+          : (Array.isArray(donationPage?.content) ? donationPage.content : []);
+        setDonations(items.filter((item) => String(item.activityId) === String(activityId)));
+      })
+      .catch((loadError) => {
         if (!cancelled) setError(loadError.message || "Unable to load branch totals.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    load(false);
-    pollTimerRef.current = window.setInterval(() => load(true), POLL_INTERVAL_MS);
-
-    return () => {
-      cancelled = true;
-      if (pollTimerRef.current) window.clearInterval(pollTimerRef.current);
-    };
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [activityId]);
 
-  // Riel/dollar sub-totals sum the RAW per-branch components (amountKhr /
-  // amountUsd); the combined "សរុបទាំងអស់ ($)" total instead sums each
-  // branch's totalAmountUsd, which the backend already normalised using
-  // each donation's OWN stored exchange rate — more accurate than
-  // re-deriving it here off a single flat rate.
-  const grandTotals = useMemo(
-    () =>
-      rows.reduce(
-        (acc, row) => ({
-          riel: acc.riel + Number(row.amountKhr || 0),
-          dollar: acc.dollar + Number(row.amountUsd || 0),
-          total: acc.total + Number(row.totalAmountUsd || 0),
-        }),
-        { riel: 0, dollar: 0, total: 0 },
-      ),
-    [rows],
-  );
+  const rows = useMemo(() => {
+    const eligible = new Map();
+    if (organizerBranchId != null) {
+      eligible.set(String(organizerBranchId), "organizer");
+    }
+    invitedBranches.forEach((invitation) => {
+      const branchId = invitation.branchId ?? invitation.branch_id;
+      const status = String(invitation.invitationStatus ?? invitation.invitation_status ?? "").toUpperCase();
+      if (branchId == null || status !== "ACCEPTED") return;
+      const key = String(branchId);
+      if (!eligible.has(key)) eligible.set(key, "invited");
+    });
+
+    const totalsByBranch = new Map();
+    donations.forEach((donation) => {
+      const branchId = donation.branchId;
+      if (branchId == null) return;
+      const key = String(branchId);
+      const current = totalsByBranch.get(key) || { count: 0, amountKhr: 0, amountUsd: 0 };
+      current.count += 1;
+      current.amountKhr += Number(donation.amountKhr || 0);
+      current.amountUsd += Number(donation.amountUsd || 0);
+      totalsByBranch.set(key, current);
+    });
+
+    return Array.from(eligible.entries()).map(([branchId, role]) => {
+      const totals = totalsByBranch.get(branchId) || { count: 0, amountKhr: 0, amountUsd: 0 };
+      return {
+        branchId,
+        label: branchNames[branchId] || `#${branchId}`,
+        role,
+        roleLabel: role === "organizer" ? "សាខាចម្បង" : "សាខាដែលបានអញ្ជើញ",
+        count: totals.count,
+        amountKhr: totals.amountKhr,
+        amountUsd: totals.amountUsd,
+      };
+    }).sort((a, b) => (a.role === b.role ? 0 : a.role === "organizer" ? -1 : 1));
+  }, [branchNames, donations, invitedBranches, organizerBranchId]);
+
+  if (loading) {
+    return <div className="py-10 text-center text-sm text-text-secondary">កំពុងទាញទិន្នន័យសាខា...</div>;
+  }
 
   return (
-    <div>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-text-secondary">
-          {lastUpdatedAt
-            ? `ធ្វើបច្ចុប្បន្នភាពចុងក្រោយ៖ ${lastUpdatedAt.toLocaleTimeString("km-KH")}`
-            : ""}
-        </p>
-      </div>
-
-      {error ? (
-        <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
-          {error}
-        </div>
-      ) : null}
-
-      {loading ? (
-        <div className="py-10 text-center text-sm text-text-secondary">
-          កំពុងទាញទិន្នន័យសាខា...
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] border-collapse border border-border">
-            <thead>
-              <tr className="h-12 border-b border-border bg-bg-page-gray text-center text-xs font-medium text-text-secondary">
-                <th className="px-4">ល.រ</th>
-                <th className="px-4">សាខា</th>
-                <th className="px-4">តួនាទី</th>
-                <th className="px-4">ចំនួនប្រតិបត្តិការ</th>
-                <th className="px-4">សរុប</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {rows.map((row, index) => (
-                <tr
-                  key={row.branchId ?? index}
-                  className="h-11 border-b border-border text-center text-sm text-text-secondary last:border-b-0"
-                >
-                  <td className="px-4 font-normal">{index + 1}</td>
-                  <td className="px-4 font-medium text-text-primary">
-                    {row.branchNameKm || row.branchNameEn || row.branchCode || `#${row.branchId}`}
-                  </td>
-                  <td className="px-4">{ROLE_LABELS[row.role] || row.role || "-"}</td>
-                  <td className="px-4">{row.donationCount ?? 0}</td>
-                  <td className="px-4 font-semibold text-text-primary">
-                    {formatUsd(row.totalAmountUsd)}
-                  </td>
-                </tr>
+    <section className="min-h-[300px] rounded-md border border-border bg-bg-page-white p-6">
+      {error ? <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] border-collapse border border-border">
+          <thead>
+            <tr className="h-12 border-b border-border bg-bg-page-gray text-center text-xs font-medium text-text-secondary">
+              {headers.map((header) => (
+                <th key={header} className="px-4">{header}</th>
               ))}
-
-              {rows.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-4 py-8 text-center text-xs font-medium text-text-secondary"
-                  >
-                    មិនមានទិន្នន័យ
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {!loading && rows.length > 0 ? (
-        <DonationTotalsCard
-          title="សរុបវិភាគទានទាំងអស់សាខា"
-          riel={grandTotals.riel}
-          dollar={grandTotals.dollar}
-          total={grandTotals.total}
-        />
-      ) : null}
-    </div>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr key={row.branchId} className="h-11 border-b border-border text-center text-sm text-text-secondary last:border-b-0">
+                <td className="px-4">{index + 1}</td>
+                <td className="px-4">{row.label}</td>
+                <td className="px-4">{row.roleLabel}</td>
+                <td className="px-4">{row.count}</td>
+                <td className="px-4">{row.amountKhr.toLocaleString()}</td>
+                <td className="px-4">{row.amountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={headers.length} className="px-4 py-8 text-center text-xs font-medium text-text-secondary">
+                  មិនមានទិន្នន័យ
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }

@@ -11,6 +11,7 @@ import MemberAttachmentField from "@/components/forms/MemberAttachmentField";
 
 import educationData from "@/data/education.json";
 import { deleteMemberRecord, loadMemberRecords, removeMemberRecordCertificate, saveMemberRecords, uploadMemberRecordCertificate } from "@/lib/myAccountRecords";
+import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 
 function createId(prefix) {
   if (
@@ -79,6 +80,19 @@ export default function SkillPage() {
   ]);
   const [proficiencyOptions, setProficiencyOptions] = useState([]);
 
+  /*
+   * True from the moment the user edits any language/computer skill
+   * row (field edit or an add-row click) until the next successful
+   * Save — NOT derived from diffing the skills arrays, since those
+   * are also rewritten by the initial load effect. Removing a row
+   * fires an immediate server DELETE (see removeLanguageSkill /
+   * removeComputerSkill below), so it does not set this flag — there
+   * is nothing "unsaved" pending after that request completes. Fed
+   * to useUnsavedFormGuard below so the account tab-nav bar knows to
+   * confirm before navigating away mid-edit.
+   */
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
   useEffect(() => {
     const controller = new AbortController();
     Promise.all([
@@ -113,6 +127,8 @@ export default function SkillPage() {
     field,
     value,
   ) => {
+    setHasUnsavedChanges(true);
+
     setLanguageSkills((previousSkills) =>
       previousSkills.map((item) =>
         item.id === id
@@ -126,6 +142,8 @@ export default function SkillPage() {
   };
 
   const addLanguageSkill = () => {
+    setHasUnsavedChanges(true);
+
     setLanguageSkills((previousSkills) => [
       ...previousSkills,
       createLanguageSkill(),
@@ -150,6 +168,8 @@ export default function SkillPage() {
     field,
     value,
   ) => {
+    setHasUnsavedChanges(true);
+
     setComputerSkills((previousSkills) =>
       previousSkills.map((item) =>
         item.id === id
@@ -163,6 +183,8 @@ export default function SkillPage() {
   };
 
   const addComputerSkill = () => {
+    setHasUnsavedChanges(true);
+
     setComputerSkills((previousSkills) => [
       ...previousSkills,
       createComputerSkill(),
@@ -207,7 +229,19 @@ export default function SkillPage() {
     setComputerSkills(completedSkills.map((row) => ({ id: row.id, skill: row.skill_name || "", level: row.proficiency_level_id || "", attachment: row.certificate_file || null })));
 
     alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+
+    setHasUnsavedChanges(false);
+
+    return true;
   };
+
+  /*
+   * Registers this page's dirty flag + save function with the
+   * shared unsaved-changes guard (see myAcc/layout.js), so the
+   * account tab-nav bar confirms before navigating away while
+   * hasUnsavedChanges is true.
+   */
+  useUnsavedFormGuard(hasUnsavedChanges, handleSave);
 
   return (
     <div className="space-y-4">

@@ -9,6 +9,7 @@ import HeaderMemberInfo from "@/components/navigation/headerMemberInfo";
 import MemberInfoCard from "@/components/card/memberInfoCard";
 import MyAccountProfileLayout from "@/components/navigation/MyAccountProfileLayout";
 import useCurrentMember from "@/hooks/useCurrentMember";
+import { UnsavedChangesProvider } from "@/context/UnsavedChangesContext";
 
 const ROLE_LABELS = {
   SECRETARY: "លេខាធិការ",
@@ -134,6 +135,7 @@ export default function MyAccountLayout({ children }) {
           )}
 
           {!loading && !error && member && (
+            <UnsavedChangesProvider>
             <div className="min-w-0 space-y-4">
               <HeaderMemberInfo
                 title={
@@ -172,6 +174,7 @@ export default function MyAccountLayout({ children }) {
                 <MyAccountProfileLayout>{children}</MyAccountProfileLayout>
               )}
             </div>
+            </UnsavedChangesProvider>
           )}
         </main>
       </div>

@@ -29,6 +29,9 @@ const EMPTY_FORM = {
   activityId: "",
   activity: "",
 
+  activityMemberIds: null,
+  notifyBranchIds: [],
+
   gender: "",
   email: "",
   phone: "",
@@ -270,6 +273,49 @@ export default function CreateDocumentPage() {
     writeSavedDocuments(allDocuments);
 
     return memberKey;
+  };
+
+  const notifyInvitedBranchesForCertificates = async (data) => {
+    const branchIds = normalizeArray(data.notifyBranchIds)
+      .map(Number)
+      .filter((id) => Number.isInteger(id) && id > 0);
+
+    if (branchIds.length === 0) {
+      return { notifiedBranchIds: [], skippedBranchIds: [] };
+    }
+
+    if (!data.activityId) {
+      throw new Error("សូមជ្រើសរើសកម្មវិធីជាមុនសិន");
+    }
+
+    const response = await fetch(
+      `/api/backend/activities/${encodeURIComponent(data.activityId)}/invited-branches/certificates/notify`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ branch_ids: branchIds }),
+      },
+    );
+    const body = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(
+        body?.message || "មិនអាចផ្ញើការជូនដំណឹងទៅសាខាបានទេ។",
+      );
+    }
+
+    return {
+      notifiedBranchIds: normalizeArray(
+        body?.data?.notified_branch_ids ??
+          body?.notified_branch_ids ??
+          body?.notifiedBranchIds,
+      ),
+      skippedBranchIds: normalizeArray(
+        body?.data?.skipped_branch_ids ??
+          body?.skipped_branch_ids ??
+          body?.skippedBranchIds,
+      ),
+    };
   };
 
   const saveMemberCertificatesToBackend = async (data) => {
@@ -553,13 +599,37 @@ export default function CreateDocumentPage() {
       }
 
       if (type === "certificate" && data.recipientType === "activity") {
-        const firstMemberId = await saveMemberCertificatesToBackend(data);
+        const notifyResult = await notifyInvitedBranchesForCertificates(data);
+        const generatedDocuments = normalizeArray(data.generatedDocuments);
 
-        alert("✅ បង្កើតវិញ្ញាបនបត្រដោយជោគជ័យ!");
+        if (generatedDocuments.length > 0) {
+          const firstMemberId = await saveMemberCertificatesToBackend(data);
 
-        openMemberDocuments(firstMemberId);
+          const notifiedNote =
+            notifyResult.notifiedBranchIds.length > 0
+              ? ` និងបានជូនដំណឹងទៅ ${notifyResult.notifiedBranchIds.length} សាខា`
+              : "";
 
-        return;
+          alert(`✅ បង្កើតវិញ្ញាបនបត្រដោយជោគជ័យ${notifiedNote}!`);
+
+          openMemberDocuments(firstMemberId);
+
+          return;
+        }
+
+        if (notifyResult.notifiedBranchIds.length > 0) {
+          alert(
+            `✅ បានផ្ញើការជូនដំណឹងទៅ ${notifyResult.notifiedBranchIds.length} សាខាដោយជោគជ័យ!`,
+          );
+
+          router.push("/document/member");
+
+          return;
+        }
+
+        throw new Error(
+          "សូមជ្រើសរើសសមាជិកសាខារបស់អ្នក ឬសាខាដែលត្រូវជូនដំណឹង",
+        );
       }
       if (type === "appointment_letter") {
         const memberId = await saveAppointmentLettersToBackend(data);

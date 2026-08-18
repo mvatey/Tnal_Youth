@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { CalendarDays, ChevronDown, ChevronUp, CloudUpload, FileText, X } from "lucide-react";
 import { HiSaveAs } from "react-icons/hi";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import SaveAlert from "@/components/forms/savealert";
 import sponsorOptions from "@/data/donation/sponsorOptions.json";
 
@@ -418,7 +418,7 @@ function ReceiptUpload({ value, onChange }) {
   );
 }
 
-function buildInitialForm(initialData = {}) {
+function buildInitialForm(initialData = {}, prefill = {}) {
   const data = initialData ?? {};
 
   return {
@@ -439,8 +439,8 @@ function buildInitialForm(initialData = {}) {
     amountRiel: data.rielAmount || "",
     amountDollar: data.dollarAmount || "",
     note: data.note || "",
-    branch: String(data.branchId ?? data.branch ?? ""),
-    status: String(data.activityId ?? data.status ?? ""),
+    branch: String(data.branchId ?? data.branch ?? prefill.branch ?? ""),
+    status: String(data.activityId ?? data.status ?? prefill.event ?? ""),
     receipt: data.receipt || null,
   };
 }
@@ -448,12 +448,20 @@ function buildInitialForm(initialData = {}) {
 export default function SponsorDonationForm({ initialData = null }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const listPath = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/sponsor"
     : "/donation/sponsor";
   const [showSaveAlert, setShowSaveAlert] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
-  const [form, setForm] = useState(() => buildInitialForm(initialData));
+  // `?branch=&event=` pre-fill only applies when creating a NEW sponsor
+  // donation (e.g. reached from the event-donation detail page's Sponsor
+  // tab "add" button) — editing an existing one always uses its own saved
+  // branch/activity via `initialData`, never the URL.
+  const [form, setForm] = useState(() => buildInitialForm(initialData, {
+    branch: searchParams.get("branch"),
+    event: searchParams.get("event"),
+  }));
   const [branchOptions, setBranchOptions] = useState([]);
   const [memberOptions, setMemberOptions] = useState([]);
   const [activityOptions, setActivityOptions] = useState([]);
@@ -462,7 +470,11 @@ export default function SponsorDonationForm({ initialData = null }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    setForm(buildInitialForm(initialData));
+    setForm(buildInitialForm(initialData, {
+      branch: searchParams.get("branch"),
+      event: searchParams.get("event"),
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialData]);
 
   useEffect(() => {

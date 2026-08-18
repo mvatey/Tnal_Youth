@@ -7,6 +7,8 @@ import { RiAddCircleLine } from "react-icons/ri";
 
 import DataTable from "@/components/table/DataTable";
 import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
+import { useAuth } from "@/context/AuthContext";
+import { normalizeRole } from "@/lib/navigation";
 
 const DOCUMENT_TYPE_BADGE_STYLES = {
   PDF: "bg-error-bg text-error",
@@ -28,6 +30,18 @@ const DEFAULT_DOCUMENT_TYPE_STYLE = "bg-bg-page-gray text-text-secondary";
 
 export default function MemberDocumentPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const role = normalizeRole(user?.role);
+
+  /*
+   * Only SECRETARY / BRANCH_LEADER may create certificates/letters of
+   * appointment (matches DocumentController's @PreAuthorize on
+   * POST /api/documents) — ADMIN, VIEWER, and MEMBER are view-only
+   * here, and MEMBER additionally only ever sees documents dedicated
+   * to them (enforced server-side in DocumentServiceImpl.getDocuments).
+   */
+  const canManageDocuments =
+    role === "secretary" || role === "branch_leader";
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -41,11 +55,27 @@ export default function MemberDocumentPage() {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/backend/documents", { cache: "no-store" });
-      const body = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(body?.message || "Unable to load documents.");
-      const rows = body?.data ?? body;
-      setDocuments((Array.isArray(rows) ? rows : []).filter((row) => row.member).map(mapMemberDocument));
+      // DataTable paginates client-side over whatever array it's given,
+      // so this needs every visible document, not just the backend's
+      // default first page of 10 — loop through every page the same
+      // way CertificateForm.js does for activities.
+      const rows = [];
+      let page = 0;
+      let totalPages = 1;
+      do {
+        const response = await fetch(
+          `/api/backend/documents?page=${page}&size=100`,
+          { cache: "no-store" },
+        );
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message || "Unable to load documents.");
+        const pageRows = body?.data?.content ?? body?.content ?? body?.data ?? body;
+        rows.push(...(Array.isArray(pageRows) ? pageRows : []));
+        totalPages = Math.max(1, Number(body?.data?.total_pages ?? body?.total_pages ?? body?.totalPages) || 1);
+        page += 1;
+      } while (page < totalPages);
+
+      setDocuments(rows.filter((row) => row.member).map(mapMemberDocument));
     } catch (loadError) {
       setError(loadError.message || "Unable to load documents.");
     } finally {
@@ -243,7 +273,7 @@ export default function MemberDocumentPage() {
         filters={filters}
         searchQuery={search}
         onSearchChange={setSearch}
-        actionButton={addButton}
+        actionButton={canManageDocuments ? addButton : null}
         pageSize={15}
         downloadFilename="member-documents.csv"
       />

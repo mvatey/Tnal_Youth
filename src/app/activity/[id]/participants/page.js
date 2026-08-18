@@ -1,1156 +1,470 @@
 "use client";
 
-import {
-  use,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
-import {
-  ChevronRight,
-  Eye,
-  Pencil,
-} from "lucide-react";
-
-import {
-  RiDownloadCloud2Line,
-} from "react-icons/ri";
-
+import { use, useEffect, useMemo, useState } from "react";
+import { ChevronRight, Eye, Pencil } from "lucide-react";
+import { RiDownloadCloud2Line } from "react-icons/ri";
 import Link from "next/link";
 
 import SearchBar from "@/components/table-items/SearchBar";
 import FilterBar from "@/components/table-items/FilterBar";
 import Button from "@/components/table-items/Button";
 import Table from "@/components/table-items/Table";
-
-import ParticipantStats, {
-  ParticipantStatusBadge as StatusBadge,
-} from "@/components/activity/ParticipantStats";
-
+import ParticipantStats, { ParticipantStatusBadge as StatusBadge } from "@/components/activity/ParticipantStats";
 import ParticipationEditModal from "@/components/activity/ParticipantEditModal";
-
+import MemberPreviewModal from "@/components/activity/MemberPreviewModal";
 import { useAuth } from "@/context/AuthContext";
 import { normalizeRole } from "@/lib/navigation";
 
-async function fetchApi(
-  path,
-  options = {},
-) {
-  const response = await fetch(
-    `/api/backend${path}`,
-    {
-      cache: "no-store",
-
-      headers: {
-        Accept: "application/json",
-        ...(options.headers || {}),
-      },
-
-      ...options,
-    },
-  );
-
-  const body = await response
-    .json()
-    .catch(() => null);
+async function fetchApi(path) {
+  const response = await fetch(`/api/backend${path}`, {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  const body = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(
-      body?.message ||
-        `Request failed (${response.status})`,
-    );
+    throw new Error(body?.message || `Request failed (${response.status})`);
   }
 
   return body;
 }
 
-function getValue(
-  record,
-  camelKey,
-  snakeKey,
-) {
-  return (
-    record?.[camelKey] ??
-    record?.[snakeKey]
-  );
+function getValue(record, camelKey, snakeKey) {
+  return record?.[camelKey] ?? record?.[snakeKey];
 }
 
 function getLabel(value) {
-  if (!value) {
-    return "";
-  }
-
-  if (typeof value === "string") {
-    return value;
-  }
-
-  return (
-    value.labelKm ??
-    value.label_km ??
-    value.labelEn ??
-    value.label_en ??
-    value.code ??
-    ""
-  );
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return value.labelKm ?? value.label_km ?? value.labelEn ?? value.label_en ?? value.code ?? "";
 }
 
 function formatDate(value) {
-  if (!value) {
-    return "";
-  }
-
+  if (!value) return "";
   const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
-  }
-
-  return new Intl.DateTimeFormat(
-    "en-CA",
-    {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    },
-  ).format(date);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
 }
 
-function asList(value) {
-  if (Array.isArray(value)) {
-    return value;
-  }
-
-  if (Array.isArray(value?.content)) {
-    return value.content;
-  }
-
-  if (Array.isArray(value?.items)) {
-    return value.items;
-  }
-
-  return [];
-}
-
-function normalizeExistingParticipant(
-  participant,
-) {
+function normalizeExistingParticipant(participant) {
   return {
     ...participant,
-
-    memberId: Number(
-      getValue(
-        participant,
-        "memberId",
-        "member_id",
-      ),
-    ),
-
-    branchId: Number(
-      getValue(
-        participant,
-        "branchId",
-        "branch_id",
-      ),
-    ),
-
+    memberId: Number(getValue(participant, "memberId", "member_id")),
+    branchId: Number(getValue(participant, "branchId", "branch_id")),
     attendanceStatus: String(
-      getValue(
-        participant,
-        "attendanceStatus",
-        "attendance_status",
-      ) || "",
+      getValue(participant, "attendanceStatus", "attendance_status") || "",
     ).toUpperCase(),
-
-    checkedInAt: getValue(
-      participant,
-      "checkedInAt",
-      "checked_in_at",
-    ),
-
+    checkedInAt: getValue(participant, "checkedInAt", "checked_in_at"),
     registrationSource: String(
-      getValue(
-        participant,
-        "registrationSource",
-        "registration_source",
-      ) || "",
+      getValue(participant, "registrationSource", "registration_source") || "",
     ).toUpperCase(),
   };
 }
 
-export default function ActivityParticipantsPage({
-  params,
-}) {
-  const { id } = use(params);
+function isCompletedActivity(activity) {
+  const status = String(
+    getValue(activity, "statusCode", "status_code") ??
+      activity?.status?.code ??
+      activity?.status ??
+      "",
+  ).trim().toLowerCase();
 
-  const { user } = useAuth();
-
-  const isMember =
-    normalizeRole(user?.role) ===
-    "member";
-
-  const [
-    activity,
-    setActivity,
-  ] = useState(null);
-
-  /*
-   * Table data.
-   *
-   * Host:
-   * → host branch members only.
-   *
-   * Invited:
-   * → invited branch members only.
-   */
-  const [
-    activityParticipants,
-    setActivityParticipants,
-  ] = useState([]);
-
-  /*
-   * Global summary is used ONLY
-   * for the host branch.
-   */
-  const [
-    globalSummary,
-    setGlobalSummary,
-  ] = useState({
-    total: 0,
-    attended: 0,
-    notAttended: 0,
-    invitedBranchParticipants: 0,
-  });
-
-  const [
-    searchQuery,
-    setSearchQuery,
-  ] = useState("");
-
-  const [
-    selectedRole,
-    setSelectedRole,
-  ] = useState("all");
-
-  const [
-    selectedBranch,
-    setSelectedBranch,
-  ] = useState("all");
-
-  const [
-    selectedDate,
-    setSelectedDate,
-  ] = useState(null);
-
-  const [
-    loading,
-    setLoading,
-  ] = useState(true);
-
-  const [
-    loadError,
-    setLoadError,
-  ] = useState("");
-
-  const [
-    saveError,
-    setSaveError,
-  ] = useState("");
-
-  const [
-    isEditOpen,
-    setIsEditOpen,
-  ] = useState(false);
-
-  async function refreshGlobalSummary() {
-    const summary = await fetchApi(
-      `/activities/${id}/participants/summary`,
-    );
-
-    setGlobalSummary({
-      total: Number(
-        getValue(
-          summary,
-          "total",
-          "total",
-        ) ?? 0,
-      ),
-
-      attended: Number(
-        getValue(
-          summary,
-          "attended",
-          "attended",
-        ) ?? 0,
-      ),
-
-      notAttended: Number(
-        getValue(
-          summary,
-          "notAttended",
-          "not_attended",
-        ) ?? 0,
-      ),
-
-      invitedBranchParticipants: Number(
-        getValue(
-          summary,
-          "invitedBranchParticipants",
-          "invited_branch_participants",
-        ) ?? 0,
-      ),
-    });
+  if (status === "cancelled" || status === "canceled") {
+    return false;
   }
+
+  const endsAt = getValue(activity, "endsAt", "ends_at");
+  const endTime = new Date(endsAt).getTime();
+
+  return (
+    status === "completed" ||
+    status === "បានបញ្ចប់" ||
+    (Number.isFinite(endTime) && Date.now() >= endTime)
+  );
+}
+
+export default function ActivityParticipantsPage({ params }) {
+  const { id } = use(params);
+  const { user } = useAuth();
+  // Members only get the activity's basic detail and its documents — the
+  // participant/attendance roster is management information, so this page
+  // is not for them even if they navigate here directly.
+  const isMember = normalizeRole(user?.role) === "member";
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRole, setSelectedRole] = useState("all");
+  const [selectedBranch, setSelectedBranch] = useState("all");
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [activityParticipants, setActivityParticipants] = useState([]);
+  const [activity, setActivity] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [previewMember, setPreviewMember] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function load() {
+    async function loadParticipants() {
       setLoading(true);
       setLoadError("");
 
       try {
-        /*
-         * First get Activity Detail.
-         */
-        const activityRecord =
-          await fetchApi(
-            `/activities/${id}`,
-          );
+        const activityRecord = await fetchApi(`/activities/${id}`);
+        const branchId = Number(getValue(activityRecord, "branchId", "branch_id"));
 
-        const canManage =
-          Boolean(
-            getValue(
-              activityRecord,
-              "canManage",
-              "can_manage",
-            ),
-          );
-
-        const canManageAsInvitedBranch =
-          Boolean(
-            getValue(
-              activityRecord,
-              "canManageAsInvitedBranch",
-              "can_manage_as_invited_branch",
-            ),
-          );
-
-        const hostBranchId =
-          Number(
-            getValue(
-              activityRecord,
-              "branchId",
-              "branch_id",
-            ),
-          );
-
-        const managedInvitedBranchId =
-          Number(
-            getValue(
-              activityRecord,
-              "managedInvitedBranchId",
-              "managed_invited_branch_id",
-            ),
-          );
-
-        /*
-         * Decide which branch roster
-         * this user should see.
-         */
-        let rosterBranchId =
-          hostBranchId;
-
-        if (
-          !canManage &&
-          canManageAsInvitedBranch &&
-          Number.isFinite(
-            managedInvitedBranchId,
-          ) &&
-          managedInvitedBranchId > 0
-        ) {
-          rosterBranchId =
-            managedInvitedBranchId;
+        if (!Number.isFinite(branchId) || branchId <= 0) {
+          throw new Error("This activity is not assigned to a branch.");
         }
 
-        if (
-          !Number.isFinite(
-            rosterBranchId,
-          ) ||
-          rosterBranchId <= 0
-        ) {
-          throw new Error(
-            "Unable to determine activity branch.",
-          );
-        }
-
-        const [
-          memberPage,
-          participantResponse,
-          summaryResponse,
-        ] = await Promise.all([
-          /*
-           * ALL members from current user's
-           * permitted branch.
-           */
-          fetchApi(
-            `/members?branchId=${rosterBranchId}&page=0&size=100`,
+        // A branch leader/secretary of a branch with an ACCEPTED invitation
+        // to co-host this activity can walk-in mark their OWN branch's
+        // members too (see ActivityAttendanceServiceImpl.createWalkInParticipant
+        // on the backend) — so their own roster needs to be fetched here as
+        // well, not just the host branch's.
+        const managedInvitedBranchId = Number(
+          getValue(
+            activityRecord,
+            "managedInvitedBranchId",
+            "managed_invited_branch_id",
           ),
+        );
+        const hasManagedInvitedBranch =
+          Boolean(getValue(activityRecord, "canManageAsInvitedBranch", "can_manage_as_invited_branch")) &&
+          Number.isFinite(managedInvitedBranchId) &&
+          managedInvitedBranchId !== branchId;
 
-          /*
-           * Backend returns only the participant
-           * records belonging to this user's
-           * permitted branch.
-           */
-          fetchApi(
-            `/activities/${id}/participants`,
-          ),
-
-          /*
-           * Global Activity totals.
-           */
-          fetchApi(
-            `/activities/${id}/participants/summary`,
-          ),
+        const [hostMemberPage, invitedMemberPage, existingResponse] = await Promise.all([
+          fetchApi(`/members?branchId=${branchId}&page=0&size=100`),
+          hasManagedInvitedBranch
+            ? fetchApi(`/members?branchId=${managedInvitedBranchId}&page=0&size=100`).catch(() => [])
+            : Promise.resolve([]),
+          fetchApi(`/activities/${id}/participants`),
         ]);
 
-        const members =
-          asList(memberPage);
+        const asList = (page) =>
+          Array.isArray(page) ? page : Array.isArray(page?.content) ? page.content : [];
 
-        const existingParticipants =
-          asList(
-            participantResponse,
-          ).map(
-            normalizeExistingParticipant,
-          );
+        const hostMembers = asList(hostMemberPage);
+        const invitedMembers = asList(invitedMemberPage);
+        // A member could theoretically appear in both lists (shouldn't happen
+        // in practice, since branch membership is exclusive) — de-dupe by id
+        // so the roster never lists the same person twice.
+        const seenRosterIds = new Set(hostMembers.map((member) => Number(member.id)));
+        const members = [
+          ...hostMembers,
+          ...invitedMembers.filter((member) => !seenRosterIds.has(Number(member.id))),
+        ];
 
-        const existingByMemberId =
-          new Map(
-            existingParticipants.map(
-              (participant) => [
-                participant.memberId,
-                participant,
-              ],
-            ),
-          );
+        const existingParticipants = asList(existingResponse).map(normalizeExistingParticipant);
+        const membersById = new Map(
+          members.map((member) => [Number(member.id), member]),
+        );
+        const existingByMemberId = new Map(
+          existingParticipants.map((existing) => [existing.memberId, existing]),
+        );
 
-        const membersById =
-          new Map(
-            members.map((member) => [
-              Number(member.id),
-              member,
-            ]),
-          );
+        function buildRow(memberId, member, existing) {
+          const joinedDateValue = getValue(member, "joinedOn", "joined_on") ||
+            getValue(existing, "registeredAt", "registered_at") || "";
+          const attendanceStatus = existing?.attendanceStatus || "";
 
-        function buildRow(
-          memberId,
-          member,
-          participant,
-        ) {
-          const joinedDateValue =
-            getValue(
-              member,
-              "joinedOn",
-              "joined_on",
-            ) ||
-            getValue(
-              participant,
-              "registeredAt",
-              "registered_at",
-            ) ||
-            "";
-
-          const attendanceStatus =
-            participant
-              ?.attendanceStatus || "";
-
-          const isInvited =
-            Boolean(participant) &&
-            participant
-              .registrationSource !==
-              "WALK_IN";
+          // No participant record at all → never invited or recorded. A
+          // record that exists only because staff walked them in
+          // (registrationSource WALK_IN) also counts as "not invited" —
+          // they attended without having been formally invited/divided
+          // beforehand. Everything else (HOST_BRANCH / INVITED_BRANCH /
+          // MANUAL / SELF_REGISTERED) counts as invited.
+          const isInvited = existing
+            ? existing.registrationSource !== "WALK_IN"
+            : false;
 
           return {
             id: memberId,
             memberId,
-
-            name:
-              getValue(
-                member,
-                "fullNameKm",
-                "full_name_km",
-              ) ||
-              getValue(
-                member,
-                "fullNameEn",
-                "full_name_en",
-              ) ||
-              getValue(
-                participant,
-                "fullNameKm",
-                "full_name_km",
-              ) ||
-              getValue(
-                participant,
-                "fullNameEn",
-                "full_name_en",
-              ) ||
-              "-",
-
-            email:
-              member?.email ||
-              participant?.email ||
-              "",
-
-            gender:
-              getLabel(
-                member?.gender,
-              ) || "-",
-
-            role:
-              getLabel(
-                member?.level,
-              ) || "-",
-
-            branch:
-              getLabel(
-                member?.branch,
-              ) ||
-              getValue(
-                participant,
-                "branchNameKm",
-                "branch_name_km",
-              ) ||
-              getValue(
-                participant,
-                "branchNameEn",
-                "branch_name_en",
-              ) ||
-              "-",
-
+            name: getValue(member, "fullNameKm", "full_name_km") ||
+              getValue(member, "fullNameEn", "full_name_en") ||
+              getValue(existing, "fullNameKm", "full_name_km") ||
+              getValue(existing, "fullNameEn", "full_name_en") || "-",
+            email: member.email || existing?.email || "",
+            gender: getLabel(member.gender) || "-",
+            /*
+             * "តួនាទី" here is the member's linked login account role
+             * (admin/secretary/branch leader/member) — it used to read
+             * member.level (a separate rank/tier lookup, unrelated to
+             * account role), which only looked right when a level's
+             * label happened to coincide with a role name and showed
+             * "-" for everyone else. "-" now legitimately means this
+             * member has no linked user account at all.
+             */
+            role: getLabel(member.account_role) || "-",
+            branch: getLabel(member.branch) ||
+              getValue(existing, "branchNameKm", "branch_name_km") ||
+              getValue(existing, "branchNameEn", "branch_name_en") || "-",
             branchId:
-              participant?.branchId ||
-              Number(
-                getValue(
-                  member,
-                  "branchId",
-                  "branch_id",
-                ),
-              ) ||
-              Number(
-                member?.branch?.id,
-              ) ||
-              rosterBranchId,
-
-            joinedDateValue:
-              joinedDateValue
-                ? String(
-                    joinedDateValue,
-                  ).slice(0, 10)
-                : "",
-
-            joinedDate:
-              formatDate(
-                joinedDateValue,
-              ),
-
+              existing?.branchId ||
+              Number(getValue(member, "branchId", "branch_id")) ||
+              branchId,
+            joinedDateValue: joinedDateValue ? String(joinedDateValue).slice(0, 10) : "",
+            joinedDate: formatDate(joinedDateValue),
             isInvited,
-
-            isParticipated:
-              attendanceStatus
-                ? attendanceStatus ===
-                  "PRESENT"
-                : Boolean(
-                    participant
-                      ?.checkedInAt,
-                  ),
+            isParticipated: attendanceStatus
+              ? attendanceStatus === "PRESENT"
+              : Boolean(existing?.checkedInAt),
           };
         }
 
+        // Union of every host-branch (and, when applicable, own-invited-
+        // branch) roster member — so staff can mark someone who was never
+        // formally invited/divided as having participated — with every
+        // existing participant record, which stays authoritative even for
+        // a member who has since moved branch or belongs to a branch whose
+        // roster wasn't fetched here.
+        const seenMemberIds = new Set();
         const rows = [];
 
-        const seenMemberIds =
-          new Set();
-
-        /*
-         * Show ALL branch members.
-         *
-         * This preserves the old walk-in /
-         * manual attendance flow.
-         */
         for (const member of members) {
-          const memberId =
-            Number(member.id);
+          const memberId = Number(member.id);
+          seenMemberIds.add(memberId);
+          rows.push(buildRow(memberId, member, existingByMemberId.get(memberId)));
+        }
 
-          if (
-            !Number.isFinite(
-              memberId,
-            )
-          ) {
-            continue;
-          }
-
-          seenMemberIds.add(
-            memberId,
-          );
-
+        for (const existing of existingParticipants) {
+          if (seenMemberIds.has(existing.memberId)) continue;
           rows.push(
             buildRow(
-              memberId,
-              member,
-              existingByMemberId.get(
-                memberId,
-              ),
+              existing.memberId,
+              membersById.get(existing.memberId) || {},
+              existing,
             ),
           );
         }
 
-        /*
-         * Keep participant history even if
-         * member no longer appears in normal
-         * branch list.
-         */
-        for (
-          const participant
-          of existingParticipants
-        ) {
-          if (
-            seenMemberIds.has(
-              participant.memberId,
-            )
-          ) {
-            continue;
-          }
-
-          rows.push(
-            buildRow(
-              participant.memberId,
-              membersById.get(
-                participant.memberId,
-              ) || {},
-              participant,
-            ),
-          );
+        if (!cancelled) {
+          setActivity({
+            ...activityRecord,
+            name: getValue(activityRecord, "titleKm", "title_km") ||
+              getValue(activityRecord, "titleEn", "title_en") || "-",
+          });
+          setActivityParticipants(rows);
         }
-
-        if (cancelled) {
-          return;
-        }
-
-        setActivity({
-          ...activityRecord,
-
-          name:
-            getValue(
-              activityRecord,
-              "titleKm",
-              "title_km",
-            ) ||
-            getValue(
-              activityRecord,
-              "titleEn",
-              "title_en",
-            ) ||
-            "-",
-        });
-
-        setActivityParticipants(
-          rows,
-        );
-
-        setGlobalSummary({
-          total: Number(
-            getValue(
-              summaryResponse,
-              "total",
-              "total",
-            ) ?? 0,
-          ),
-
-          attended: Number(
-            getValue(
-              summaryResponse,
-              "attended",
-              "attended",
-            ) ?? 0,
-          ),
-
-          notAttended: Number(
-            getValue(
-              summaryResponse,
-              "notAttended",
-              "not_attended",
-            ) ?? 0,
-          ),
-
-          invitedBranchParticipants:
-            Number(
-              getValue(
-                summaryResponse,
-                "invitedBranchParticipants",
-                "invited_branch_participants",
-              ) ?? 0,
-            ),
-        });
       } catch (error) {
         if (!cancelled) {
-          setLoadError(
-            error instanceof Error
-              ? error.message
-              : "Something went wrong",
-          );
-
-          setActivityParticipants(
-            [],
-          );
-
-          setGlobalSummary({
-            total: 0,
-            attended: 0,
-            notAttended: 0,
-            invitedBranchParticipants:
-              0,
-          });
+          setLoadError(error instanceof Error ? error.message : "Something went wrong");
+          setActivityParticipants([]);
         }
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
 
     if (isMember) {
       setLoading(false);
     } else {
-      load();
+      loadParticipants();
     }
-
     return () => {
       cancelled = true;
     };
+  }, [id, isMember]);
+
+  const roles = useMemo(
+    () => [...new Set(activityParticipants.map((item) => item.role).filter((value) => value && value !== "-"))],
+    [activityParticipants],
+  );
+  const branches = useMemo(
+    () => [...new Set(activityParticipants.map((item) => item.branch).filter((value) => value && value !== "-"))],
+    [activityParticipants],
+  );
+  const completed = isCompletedActivity(activity);
+
+  const filteredParticipants = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    return activityParticipants.filter((participant) => {
+      const name = participant.name?.toLowerCase() ?? "";
+      const email = participant.email?.toLowerCase() ?? "";
+
+      const matchesSearch =
+        !query ||
+        name.includes(query) ||
+        email.includes(query);
+
+      const matchesRole =
+        selectedRole === "all" ||
+        participant.role === selectedRole;
+
+      const matchesBranch =
+        selectedBranch === "all" ||
+        participant.branch === selectedBranch;
+
+      const matchesDate =
+        !selectedDate ||
+        participant.joinedDate === selectedDate ||
+        participant.joinedDateValue === selectedDate;
+
+      return matchesSearch && matchesRole && matchesBranch && matchesDate;
+    });
   }, [
-    id,
-    isMember,
+    activityParticipants,
+    searchQuery,
+    selectedRole,
+    selectedBranch,
+    selectedDate,
   ]);
 
-  const isHostBranch =
-    Boolean(
-      getValue(
-        activity,
-        "canManage",
-        "can_manage",
-      ),
-    );
+  const participantStats = useMemo(() => {
+    const attended = activityParticipants.filter((participant) => participant.isParticipated === true).length;
+    const absent = activityParticipants.filter((participant) => participant.isParticipated !== true).length;
 
-  const isInvitedBranch =
-    !isHostBranch &&
-    Boolean(
-      getValue(
-        activity,
-        "canManageAsInvitedBranch",
-        "can_manage_as_invited_branch",
-      ),
-    );
+    return {
+      total: activityParticipants.length,
+      attended,
+      absent,
+    };
+  }, [activityParticipants]);
 
-  /*
-   * Invited branch summary:
-   * only this branch's own table.
-   */
-  const localSummary =
-    useMemo(() => {
-      const attended =
-        activityParticipants.filter(
-          (participant) =>
-            participant
-              .isParticipated === true,
-        ).length;
-
-      return {
-        total:
-          activityParticipants.length,
-
-        attended,
-
-        notAttended:
-          Math.max(
-            0,
-            activityParticipants.length -
-              attended,
-          ),
-      };
-    }, [
-      activityParticipants,
-    ]);
-
-  /*
-   * Host gets global 4 cards.
-   *
-   * Invited branch gets local 3 cards.
-   */
-  const displayedSummary =
-    isInvitedBranch
-      ? localSummary
-      : {
-          total:
-            globalSummary.total,
-
-          attended:
-            globalSummary.attended,
-
-          notAttended:
-            globalSummary
-              .notAttended,
-        };
-
-  const roles =
-    useMemo(
-      () => [
-        ...new Set(
-          activityParticipants
-            .map(
-              (participant) =>
-                participant.role,
-            )
-            .filter(
-              (value) =>
-                value &&
-                value !== "-",
-            ),
+  const columns = useMemo(
+    () => [
+      {
+        key: "no",
+        label: "ល.រ",
+        width: "5%",
+        align: "center",
+        render: (_row, index) => index + 1,
+      },
+      {
+        key: "name",
+        label: "ឈ្មោះអ្នកចូលរួម",
+        width: "20%",
+        truncate: true,
+        cellClassName: "font-medium text-text-primary",
+        render: (row) => (
+          <div>
+            <p className="font-semibold text-text-primary">{row.name || "-"}</p>
+            <p className="text-xs text-text-secondary">{row.email || "-"}</p>
+          </div>
         ),
-      ],
-      [
-        activityParticipants,
-      ],
-    );
-
-  const branches =
-    useMemo(
-      () => [
-        ...new Set(
-          activityParticipants
-            .map(
-              (participant) =>
-                participant.branch,
-            )
-            .filter(
-              (value) =>
-                value &&
-                value !== "-",
-            ),
+      },
+      {
+        key: "gender",
+        label: "ភេទ",
+        width: "10%",
+        align: "center",
+        render: (row) => row.gender || "-",
+      },
+      {
+        key: "role",
+        label: "តួនាទី",
+        width: "10%",
+        align: "center",
+        render: (row) => row.role || "-",
+      },
+      {
+        key: "branch",
+        label: "សាខា",
+        width: "10%",
+        align: "center",
+        render: (row) => row.branch || "-",
+      },
+      {
+        key: "joinedDate",
+        label: "ថ្ងៃ/ខែ/ឆ្នាំ ចូលរួម",
+        width: "12%",
+        align: "center",
+        render: (row) => row.joinedDate || "-",
+      },
+      {
+        key: "isInvited",
+        label: "ស្ថានភាពអញ្ជើញ",
+        width: "12%",
+        align: "center",
+        render: (row) => (
+          <StatusBadge status={row.isInvited ? "បានអញ្ជើញ" : "មិនបានអញ្ជើញ"} />
         ),
-      ],
-      [
-        activityParticipants,
-      ],
-    );
-
-  const filteredParticipants =
-    useMemo(() => {
-      const query =
-        searchQuery
-          .trim()
-          .toLowerCase();
-
-      const selectedDateValue =
-        selectedDate instanceof Date
-          ? selectedDate
-              .toISOString()
-              .slice(0, 10)
-          : selectedDate || "";
-
-      return activityParticipants.filter(
-        (participant) => {
-          const name =
-            participant.name
-              ?.toLowerCase() || "";
-
-          const email =
-            participant.email
-              ?.toLowerCase() || "";
-
-          const matchesSearch =
-            !query ||
-            name.includes(query) ||
-            email.includes(query);
-
-          const matchesRole =
-            selectedRole === "all" ||
-            participant.role ===
-              selectedRole;
-
-          const matchesBranch =
-            selectedBranch === "all" ||
-            participant.branch ===
-              selectedBranch;
-
-          const matchesDate =
-            !selectedDateValue ||
-            participant
-              .joinedDateValue ===
-              selectedDateValue;
-
-          return (
-            matchesSearch &&
-            matchesRole &&
-            matchesBranch &&
-            matchesDate
-          );
-        },
-      );
-    }, [
-      activityParticipants,
-      searchQuery,
-      selectedRole,
-      selectedBranch,
-      selectedDate,
-    ]);
-
-  const columns =
-    useMemo(
-      () => [
-        {
-          key: "no",
-          label: "ល.រ",
-          width: "5%",
-          align: "center",
-
-          render:
-            (_row, index) =>
-              index + 1,
-        },
-
-        {
-          key: "name",
-          label:
-            "ឈ្មោះអ្នកចូលរួម",
-          width: "20%",
-
-          render: (row) => (
-            <div>
-              <p className="font-semibold text-text-primary">
-                {row.name || "-"}
-              </p>
-
-              <p className="text-xs text-text-secondary">
-                {row.email || "-"}
-              </p>
-            </div>
-          ),
-        },
-
-        {
-          key: "gender",
-          label: "ភេទ",
-          width: "10%",
-          align: "center",
-
-          render: (row) =>
-            row.gender || "-",
-        },
-
-        {
-          key: "role",
-          label: "តួនាទី",
-          width: "10%",
-          align: "center",
-
-          render: (row) =>
-            row.role || "-",
-        },
-
-        {
-          key: "branch",
-          label: "សាខា",
-          width: "10%",
-          align: "center",
-
-          render: (row) =>
-            row.branch || "-",
-        },
-
-        {
-          key: "joinedDate",
-          label:
-            "ថ្ងៃ/ខែ/ឆ្នាំ ចូលរួម",
-          width: "12%",
-          align: "center",
-
-          render: (row) =>
-            row.joinedDate || "-",
-        },
-
-        {
-          key: "isInvited",
-          label:
-            "ស្ថានភាពអញ្ជើញ",
-          width: "12%",
-          align: "center",
-
-          render: (row) => (
-            <StatusBadge
-              status={
-                row.isInvited
-                  ? "បានអញ្ជើញ"
-                  : "មិនបានអញ្ជើញ"
-              }
-            />
-          ),
-        },
-
-        {
-          key: "isParticipated",
-          label:
-            "ស្ថានភាពចូលរួម",
-          width: "14%",
-          align: "center",
-
-          render: (row) => (
-            <StatusBadge
-              status={
-                row.isParticipated
-                  ? "បានចូលរួម"
-                  : "មិនបានចូលរួម"
-              }
-            />
-          ),
-        },
-
-        {
-          key: "actions",
-          label: "សកម្មភាព",
-          width: "7%",
-          align: "center",
-
-          render: (row) => (
-            <Link
-              href={`/member/memberInfo/${row.memberId}/documents`}
-              className="mx-auto flex w-fit rounded-md p-1 text-primary transition hover:bg-primary-light"
-            >
-              <Eye size={17} />
-            </Link>
-          ),
-        },
-      ],
-      [],
-    );
-
-  const canEditParticipation =
-    Boolean(
-      getValue(
-        activity,
-        "canManage",
-        "can_manage",
-      ) ||
-        getValue(
-          activity,
-          "canManageAsInvitedBranch",
-          "can_manage_as_invited_branch",
+      },
+      {
+        key: "isParticipated",
+        label: "ស្ថានភាពចូលរួម",
+        width: "14%",
+        align: "center",
+        render: (row) => (
+          <StatusBadge status={row.isParticipated ? "បានចូលរួម" : "មិនបានចូលរួម"} />
         ),
-    );
+      },
+      {
+        key: "actions",
+        label: "សកម្មភាព",
+        width: "7%",
+        align: "center",
+        render: (row) => (
+          <button
+            type="button"
+            onClick={() => setPreviewMember(row)}
+            aria-label={`មើលព័ត៌មាន ${row.name || "សមាជិក"}`}
+            className="mx-auto flex w-fit rounded-md p-1 text-primary transition hover:bg-primary-light"
+          >
+            <Eye size={17} />
+          </button>
+        ),
+      },
+    ],
+    [],
+  );
 
-  async function handleSaveParticipation(
-    updatedParticipants,
-  ) {
+  const handleSaveParticipation = async (updatedParticipants) => {
     setSaveError("");
 
-    const currentByMemberId =
-      new Map(
-        activityParticipants.map(
-          (participant) => [
-            participant.memberId,
-            participant,
-          ],
-        ),
-      );
-
-    const changedParticipants =
-      updatedParticipants.filter(
-        (participant) => {
-          const current =
-            currentByMemberId.get(
-              participant.memberId,
-            );
-
-          return (
-            current &&
-            current.isParticipated !==
-              participant.isParticipated
-          );
-        },
-      );
+    const currentByMemberId = new Map(
+      activityParticipants.map((participant) => [
+        participant.memberId,
+        participant,
+      ]),
+    );
+    const changedParticipants = updatedParticipants.filter((participant) => {
+      const current = currentByMemberId.get(participant.memberId);
+      return current && current.isParticipated !== participant.isParticipated;
+    });
 
     try {
-      /*
-       * Do one by one so if one member
-       * fails we know immediately.
-       */
-      for (
-        const participant
-        of changedParticipants
-      ) {
-        const response = await fetch(
-          `/api/backend/activities/${encodeURIComponent(
-            id,
-          )}/attendance/status`,
-          {
-            method: "PATCH",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify({
-              member_id:
-                Number(
-                  participant.memberId,
-                ),
-
-              attendance_status:
-                participant
-                  .isParticipated
+      await Promise.all(
+        changedParticipants.map(async (participant) => {
+          const response = await fetch(
+            `/api/backend/activities/${encodeURIComponent(id)}/attendance/status`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                member_id: Number(participant.memberId),
+                attendance_status: participant.isParticipated
                   ? "PRESENT"
                   : "ABSENT",
-            }),
-          },
-        );
-
-        const body = await response
-          .json()
-          .catch(() => null);
-
-        if (!response.ok) {
-          throw new Error(
-            body?.message ||
-              `Request failed (${response.status})`,
+              }),
+            },
           );
-        }
-      }
+          const body = await response.json().catch(() => null);
 
-      setActivityParticipants(
-        updatedParticipants,
+          if (!response.ok) {
+            throw new Error(
+              body?.message || `Request failed (${response.status})`,
+            );
+          }
+        }),
       );
 
-      /*
-       * Host's global cards may change
-       * after attendance editing.
-       */
-      if (isHostBranch) {
-        await refreshGlobalSummary();
-      }
-
+      setActivityParticipants(updatedParticipants);
       setIsEditOpen(false);
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Something went wrong";
-
+      const message = error instanceof Error ? error.message : "Something went wrong";
       setSaveError(message);
-
       throw error;
     }
-  }
+  };
 
   if (isMember) {
     return (
@@ -1163,7 +477,7 @@ export default function ActivityParticipantsPage({
   if (loading) {
     return (
       <div className="rounded-xl border border-border bg-bg-page-white p-6 text-center text-text-secondary">
-        កំពុងផ្ទុក...
+        Loading activity members...
       </div>
     );
   }
@@ -1184,23 +498,31 @@ export default function ActivityParticipantsPage({
     );
   }
 
+  // Manual attendance editing is for a branch leader/secretary of this
+  // activity's own host branch (`canManage`), OR a branch leader/secretary
+  // whose own branch has an ACCEPTED invitation to co-host this activity
+  // (`canManageAsInvitedBranch` — see PendingInvitationBanner) — both
+  // computed server-side by GET /activities/{id}. The backend
+  // (ActivityAttendanceServiceImpl.validateManualAttendancePermission)
+  // enforces the same split: host staff may correct anyone, invited-branch
+  // staff only their own branch's members. Admin can view participation
+  // but never edit it here.
+  const canEditParticipation = Boolean(
+    getValue(activity, "canManage", "can_manage") ||
+      getValue(activity, "canManageAsInvitedBranch", "can_manage_as_invited_branch"),
+  );
+
   return (
     <div className="space-y-5">
-      <div>
+      <div className="mb-1">
         <div className="flex items-center gap-1 text-sm text-text-secondary">
-          <Link
-            href="/activity"
-            className="hover:text-primary"
-          >
+          <Link href="/activity" className="hover:text-primary">
             កម្មវិធី
           </Link>
 
           <ChevronRight size={14} />
 
-          <Link
-            href={`/activity/${activity.id}`}
-            className="hover:text-primary"
-          >
+          <Link href={`/activity/${activity.id}`} className="hover:text-primary">
             ព័ត៌មានលម្អិត
           </Link>
 
@@ -1212,33 +534,14 @@ export default function ActivityParticipantsPage({
         </div>
 
         <h1 className="mt-3 text-2xl font-bold text-secondary">
-          {activity.name}
+          {activity.name || activity.titleKm || activity.title || "-"}
         </h1>
       </div>
 
       <ParticipantStats
-        total={
-          displayedSummary.total
-        }
-        attended={
-          displayedSummary.attended
-        }
-        absent={
-          displayedSummary.notAttended
-        }
-
-        /*
-         * Only host branch gets the
-         * fourth card.
-         */
-        showInvitedBranch={
-          isHostBranch
-        }
-
-        invitedBranch={
-          globalSummary
-            .invitedBranchParticipants
-        }
+        total={participantStats.total}
+        attended={participantStats.attended}
+        absent={participantStats.absent}
       />
 
       {saveError && (
@@ -1251,9 +554,7 @@ export default function ActivityParticipantsPage({
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <SearchBar
             value={searchQuery}
-            onChange={
-              setSearchQuery
-            }
+            onChange={setSearchQuery}
             placeholder="ស្វែងរកសមាជិក..."
             width="w-[300px]"
           />
@@ -1262,47 +563,33 @@ export default function ActivityParticipantsPage({
             filters={[
               {
                 key: "role",
-                value:
-                  selectedRole,
-                onChange:
-                  setSelectedRole,
-                placeholder:
-                  "តួនាទី",
+                value: selectedRole,
+                onChange: setSelectedRole,
+                placeholder: "តួនាទី",
                 options: roles,
               },
-
               {
                 key: "branch",
-                value:
-                  selectedBranch,
-                onChange:
-                  setSelectedBranch,
-                placeholder:
-                  "សាខា",
-                options:
-                  branches,
+                value: selectedBranch,
+                onChange: setSelectedBranch,
+                placeholder: "សាខា",
+                options: branches,
               },
-
               {
                 key: "date",
-                value:
-                  selectedDate,
-                onChange:
-                  setSelectedDate,
-                placeholder:
-                  "ថ្ងៃ/ខែ/ឆ្នាំ",
+                value: selectedDate,
+                onChange: setSelectedDate,
+                placeholder: "ថ្ងៃ/ខែ/ឆ្នាំ",
                 type: "date",
               },
             ]}
           />
 
           <div className="ml-auto flex items-center gap-3">
-            {canEditParticipation && (
+            {completed && canEditParticipation && (
               <button
                 type="button"
-                onClick={() =>
-                  setIsEditOpen(true)
-                }
+                onClick={() => setIsEditOpen(true)}
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-success px-5 text-sm font-semibold text-white transition hover:bg-emerald-700"
               >
                 <Pencil size={16} />
@@ -1310,21 +597,21 @@ export default function ActivityParticipantsPage({
               </button>
             )}
 
-            <Button
-              icon={
-                RiDownloadCloud2Line
-              }
-            >
+            <Button icon={RiDownloadCloud2Line}>
               ទាញយករបាយការណ៍
             </Button>
           </div>
         </div>
 
+        {!completed && canEditParticipation && (
+          <div className="mb-4 rounded-lg border border-warning/30 bg-warning-bg px-4 py-3 text-sm text-warning">
+            អាចកែប្រែស្ថានភាពចូលរួមបាន បន្ទាប់ពីកម្មវិធីបានបញ្ចប់។
+          </div>
+        )}
+
         <Table
           columns={columns}
-          data={
-            filteredParticipants
-          }
+          data={filteredParticipants}
           rowsPerPage={10}
           emptyMessage="មិនមានសមាជិកចូលរួមទេ"
         />
@@ -1332,16 +619,18 @@ export default function ActivityParticipantsPage({
 
       <ParticipationEditModal
         open={isEditOpen}
-        participants={
-          activityParticipants
-        }
-        onClose={() =>
-          setIsEditOpen(false)
-        }
-        onSave={
-          handleSaveParticipation
-        }
+        participants={activityParticipants}
+        onClose={() => setIsEditOpen(false)}
+        onSave={handleSaveParticipation}
       />
+
+      {previewMember && (
+        <MemberPreviewModal
+          member={previewMember}
+          onClose={() => setPreviewMember(null)}
+        />
+      )}
+
     </div>
   );
 }

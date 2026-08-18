@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useUnsavedChanges } from "@/context/UnsavedChangesContext";
 
 export default function MyAccountProfileLayout({ children }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { isDirty, guardNavigate } = useUnsavedChanges();
 
 const tabs = [
     {
@@ -26,7 +29,7 @@ const tabs = [
       name: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
       href: "/myAcc/password",
     }
-    
+
   ];
 
   return (
@@ -40,10 +43,16 @@ const tabs = [
             <Link
               key={tab.href}
               href={tab.href}
+              onClick={(event) => {
+                if (isDirty) {
+                  event.preventDefault();
+                  guardNavigate(() => router.push(tab.href));
+                }
+              }}
               className={`
-                flex 
+                flex
                 h-10
-                items-center 
+                items-center
                 justify-center
                 border-t-2
                 px-3

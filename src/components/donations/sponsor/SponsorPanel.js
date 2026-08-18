@@ -70,6 +70,8 @@ export default function SponsorPanel({
   onBranchChange,
   showAddButton = true,
   typeOptions,
+  activityId,
+  addQuery = "",
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -155,10 +157,16 @@ export default function SponsorPanel({
       const matchesDate = !selectedDate || row.dateValue === selectedDate;
       const matchesBranch =
         selectedBranch === "all" || String(row.branchId) === String(selectedBranch);
+      // When scoped to a specific activity (e.g. the event-donation
+      // detail page's Sponsor tab), only that activity's sponsor
+      // donations belong here — everything else stays hidden, not just
+      // filtered out of the count.
+      const matchesActivity =
+        !activityId || String(row.activityId) === String(activityId);
 
-      return matchesSearch && matchesType && matchesDate && matchesBranch;
+      return matchesSearch && matchesType && matchesDate && matchesBranch && matchesActivity;
     });
-  }, [allRows, searchQuery, selectedBranch, selectedDate, selectedType]);
+  }, [activityId, allRows, searchQuery, selectedBranch, selectedDate, selectedType]);
 
   const sortedRows = useMemo(() => {
     if (!moneySort) return filteredRows;
@@ -259,7 +267,7 @@ export default function SponsorPanel({
           {showAddButton && canManage && (
             <button
               type="button"
-              onClick={() => router.push(`${routePrefix}/add`)}
+              onClick={() => router.push(`${routePrefix}/add${addQuery}`)}
               className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-green-600 px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
             >
               <PlusCircle size={17} />
@@ -375,6 +383,7 @@ function mapSponsorRow(row) {
     email: row.email || "-",
     branch: row.branchNameKm || "-",
     branchId: row.branchId,
+    activityId: row.activityId,
     date: row.paidAt ? new Date(row.paidAt).toLocaleDateString("en-GB") : "-",
     dateValue: row.paidAt ? row.paidAt.slice(0, 10) : "",
     rielAmount: Number(row.amountKhr || 0).toLocaleString(),
@@ -401,6 +410,7 @@ function mapMySponsorRow(row) {
     email: row.sponsor?.email || "-",
     branch: row.branch?.nameKm || row.branch?.nameEn || "-",
     branchId: row.branch?.id,
+    activityId: row.activity?.id ?? row.activityId,
     date: row.paidAt ? new Date(row.paidAt).toLocaleDateString("en-GB") : "-",
     dateValue: row.paidAt ? row.paidAt.slice(0, 10) : "",
     rielAmount: Number(row.amountKhr || 0).toLocaleString(),
