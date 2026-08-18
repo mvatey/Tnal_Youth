@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -19,6 +20,7 @@ import QuickActions from "@/components/dashboard/quickActions";
 import PerformanceSummary from "@/components/dashboard/performanceSummary";
 
 import { useBranch } from "@/context/BranchContext";
+import useCurrentMember from "@/hooks/useCurrentMember";
 
 function getCurrentMonth() {
   const today = new Date();
@@ -50,6 +52,33 @@ export default function DashboardPage() {
     selectedBranch,
   } = useBranch();
 
+  const { member: currentMember } = useCurrentMember();
+
+  // A secretary/branch_leader is always scoped to exactly one branch (see
+  // BranchContext) -- their Performance Summary card has no separate
+  // branch to pick, so it always mirrors the same single branch the rest
+  // of the dashboard is scoped to, with its own dropdown hidden. ADMIN
+  // (and anyone else) keeps the independent picker below, unaffected by
+  // the sidebar's global branch selection.
+  const isBranchScoped =
+    currentMember?.role === "secretary" ||
+    currentMember?.role === "branch_leader";
+
+  // The summary cards' branch card shows this branch's own name instead
+  // of an org-wide count/percentage for a branch-scoped role (see
+  // StatsGrid) -- looked up from the same accessible-branches list the
+  // sidebar's dropdown uses, matched against the one branch currently
+  // active.
+  const currentBranchName = useMemo(() => {
+    if (!isBranchScoped) return "";
+
+    const match = branches.find(
+      (branch) => String(branch.id) === String(selectedBranch)
+    );
+
+    return match?.nameKm || match?.nameEn || "";
+  }, [isBranchScoped, branches, selectedBranch]);
+
   /*
    * This branch is ONLY for the Performance Summary card.
    *
@@ -59,6 +88,10 @@ export default function DashboardPage() {
     performanceBranch,
     setPerformanceBranch,
   ] = useState("all");
+
+  const effectivePerformanceBranch = isBranchScoped
+    ? selectedBranch
+    : performanceBranch;
 
   const [
     selectedMonth,
@@ -139,13 +172,13 @@ export default function DashboardPage() {
         }
 
         if (
-          performanceBranch !== "all" &&
-          performanceBranch != null
+          effectivePerformanceBranch !== "all" &&
+          effectivePerformanceBranch != null
         ) {
           params.set(
             "performanceBranchId",
             String(
-              performanceBranch
+              effectivePerformanceBranch
             )
           );
         }
@@ -195,7 +228,7 @@ export default function DashboardPage() {
       selectedMonth,
       selectedYear,
       selectedBranch,
-      performanceBranch,
+      effectivePerformanceBranch,
     ]);
 
   useEffect(() => {
@@ -292,6 +325,12 @@ export default function DashboardPage() {
         loading={
           loading
         }
+        isBranchScoped={
+          isBranchScoped
+        }
+        branchName={
+          currentBranchName
+        }
       />
 
 
@@ -381,16 +420,19 @@ export default function DashboardPage() {
                 branches
               }
               selectedBranchId={
-                performanceBranch ===
+                effectivePerformanceBranch ===
                 "all"
                   ? null
-                  : performanceBranch
+                  : effectivePerformanceBranch
               }
               onBranchChange={
                 setPerformanceBranch
               }
               loading={
                 loading
+              }
+              showBranchDropdown={
+                !isBranchScoped
               }
             />
           </div>

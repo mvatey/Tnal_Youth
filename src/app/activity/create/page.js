@@ -27,6 +27,8 @@ import FormSelect from "@/components/forms/FormSelect";
 import DatePickerField from "@/components/forms/DatePickerField";
 import FormActionButton from "@/components/ui/actions/FormActionButton";
 import MemberSelectModal from "@/components/activity/MemberSelectModal";
+import { useBranch } from "@/context/BranchContext";
+import useCurrentMember from "@/hooks/useCurrentMember";
 
 const BRANCH_OPTIONS = [
   "ភ្នំពេញ",
@@ -60,7 +62,13 @@ const STATUS_OPTIONS = [
 ];
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-const MAX_DOCUMENT_SIZE = 5 * 1024 * 1024;
+// The backend's own hard ceiling for activity attachments (see
+// FileServiceImpl.MAX_ATTACHMENT_SIZE) is 20MB -- this used to cap at 5MB
+// client-side, well below what the backend actually allows, so a
+// perfectly valid 6-19MB document was rejected here before it ever got a
+// chance to upload. Matched to the backend's real limit instead of an
+// arbitrary stricter one.
+const MAX_DOCUMENT_SIZE = 20 * 1024 * 1024;
 
 function convertToDate(dateValue) {
   if (!dateValue) return null;
@@ -659,6 +667,56 @@ export default function CreateActivityPage() {
       String(getOptionCode(editingActivity?.status) || "").toUpperCase(),
     );
 
+  // Same single-branch scoping used across the rest of the app (sidebar,
+  // activity list, donations, dashboard, members) -- a secretary/
+  // branch_leader must not be able to pick a different "សាខារៀបចំកម្មវិធី"
+  // (organizing branch) than the one currently active in the sidebar's
+  // global dropdown (see BranchContext). ADMIN keeps the free pick.
+  const { member: currentMember } = useCurrentMember();
+  const {
+    branches: accessibleBranches = [],
+    selectedBranch: globalSelectedBranch = "all",
+  } = useBranch();
+
+  const isBranchScoped =
+    currentMember?.role === "secretary" ||
+    currentMember?.role === "branch_leader";
+
+  const effectiveBranchId = useMemo(() => {
+    if (!isBranchScoped) return null;
+
+    if (globalSelectedBranch && globalSelectedBranch !== "all") {
+      return String(globalSelectedBranch);
+    }
+
+    if (accessibleBranches.length > 0) {
+      return String(accessibleBranches[0].id);
+    }
+
+    return currentMember?.branchId
+      ? String(currentMember.branchId)
+      : null;
+  }, [
+    isBranchScoped,
+    globalSelectedBranch,
+    accessibleBranches,
+    currentMember?.branchId,
+  ]);
+
+  // The lookup list uses labels (Khmer names), not ids -- form.branch is
+  // stored/compared as a label everywhere else on this page, so resolve
+  // the scoped branch id to its matching label once the lookup loads.
+  const effectiveBranchLabel = useMemo(() => {
+    if (!isBranchScoped || !effectiveBranchId) return "";
+
+    const match = lookupData.branches.find(
+      (option) =>
+        String(getOptionValue(option)) === effectiveBranchId,
+    );
+
+    return getOptionLabel(match);
+  }, [isBranchScoped, effectiveBranchId, lookupData.branches]);
+
   const branchOptions = lookupData.branches.map(getOptionLabel).filter(Boolean);
   const allInvitableBranchOptions = lookupData.invitableBranches
     .map(getOptionLabel)
@@ -840,6 +898,33 @@ export default function CreateActivityPage() {
     }));
   };
 
+  // Creating a new activity as a secretary/branch_leader: auto-select the
+  // organizing branch to whatever is active in the sidebar (never leave it
+  // on the placeholder), and keep it following the sidebar if it changes
+  // while this page is open. Edit mode is intentionally excluded here --
+  // an existing activity's own branch is already the record's real branch
+  // (and the field is locked below), so it must never get silently
+  // overwritten just because the sidebar's selection differs.
+  useEffect(() => {
+    if (isEditMode) return;
+    if (!isBranchScoped) return;
+    if (!effectiveBranchLabel) return;
+
+    setForm((currentForm) => {
+      if (currentForm.branch === effectiveBranchLabel) {
+        return currentForm;
+      }
+
+      return {
+        ...currentForm,
+        branch: effectiveBranchLabel,
+        invitedBranches: currentForm.invitedBranches.filter(
+          (branch) => branch !== effectiveBranchLabel
+        ),
+      };
+    });
+  }, [isEditMode, isBranchScoped, effectiveBranchLabel]);
+
   const handleDeleteExistingImage = async (photo) => {
     if (!photo?.id || !editId) return;
     if (!window.confirm("តើអ្នកចង់លុបរូបភាពនេះមែនទេ?")) return;
@@ -979,8 +1064,18 @@ export default function CreateActivityPage() {
       return false;
     }
 
+    if (!form.sector) {
+      alert("សូមជ្រើសរើសវិស័យ");
+      return false;
+    }
+
     if (!form.startDate) {
       alert("សូមជ្រើសរើសកាលបរិច្ឆេទចាប់ផ្តើម");
+      return false;
+    }
+
+    if (!form.endDate) {
+      alert("សូមជ្រើសរើសកាលបរិច្ឆេទបញ្ចប់");
       return false;
     }
 
@@ -1027,13 +1122,24 @@ export default function CreateActivityPage() {
       const draftStatusId = getOptionValue(
         lookupData.statuses.find((option) => getOptionCode(option) === "DRAFT"),
       );
+      // "ស្ថានភាព" (status) has no specific alert in validateForm above --
+      // rather than force every create to explicitly pick a status, an
+      // unselected one (getOptionValue returns NaN, not null/undefined, for
+      // a not-found option -- so this can't just be a "?? draftStatusId")
+      // silently falls back to DRAFT, same as a brand new activity
+      // implicitly is until someone marks it otherwise.
+      const explicitStatusId = getOptionValue(selectedStatusOption);
+      const fallbackStatusId =
+        Number.isFinite(explicitStatusId) && explicitStatusId > 0
+          ? explicitStatusId
+          : draftStatusId;
       const saveStatusId = shouldComplete
         ? Number.isFinite(currentStatusId) &&
           currentStatusId > 0 &&
           getOptionCode(editingActivity?.status) !== "COMPLETED"
           ? currentStatusId
           : draftStatusId
-        : getOptionValue(selectedStatusOption);
+        : fallbackStatusId;
       const payload = {
         titleKm: form.name.trim(),
         titleEn: editingActivity?.titleEn || null,
@@ -1057,17 +1163,30 @@ export default function CreateActivityPage() {
         coverImageId: editingActivity?.coverImageId || null,
       };
 
-      const requiredValues = [
-        payload.typeId,
-        payload.sectorId,
-        payload.statusId,
-        payload.branchId,
-        payload.provinceId,
-        payload.startsAt,
-        payload.endsAt,
+      // Every one of these already has its own specific alert in
+      // validateForm() above (or, for statusId, a silent DRAFT fallback
+      // just above) -- so in normal use this should never actually catch
+      // anything. It stays as a last-resort net for the case a selected
+      // label no longer matches any loaded option (e.g. lookupData changed
+      // under a stale selection), and names exactly which field(s) that
+      // happened to instead of a single generic message that leaves the
+      // person guessing.
+      const requiredFieldLabels = [
+        ["ប្រភេទកម្មវិធី", payload.typeId],
+        ["វិស័យ", payload.sectorId],
+        ["ស្ថានភាព", payload.statusId],
+        ["សាខារៀបចំកម្មវិធី", payload.branchId],
+        ["ខេត្ត/រាជធានី", payload.provinceId],
+        ["កាលបរិច្ឆេទចាប់ផ្តើម", payload.startsAt],
+        ["កាលបរិច្ឆេទបញ្ចប់", payload.endsAt],
       ];
-      if (requiredValues.some((value) => value == null)) {
-        throw new Error("Please complete all required activity fields.");
+      const missingFieldLabels = requiredFieldLabels
+        .filter(([, value]) => value == null)
+        .map(([label]) => label);
+      if (missingFieldLabels.length > 0) {
+        throw new Error(
+          `សូមបំពេញព័ត៌មានដែលខ្វះខាតៈ ${missingFieldLabels.join(", ")}`,
+        );
       }
       if (!isEditMode) {
         delete payload.isPublic;
@@ -1247,7 +1366,14 @@ export default function CreateActivityPage() {
                 value={form.branch}
                 onChange={handleBranchChange}
                 placeholder="ជ្រើសរើសសាខា"
-                options={branchOptions}
+                options={
+                  isBranchScoped
+                    ? form.branch
+                      ? [form.branch]
+                      : []
+                    : branchOptions
+                }
+                disabled={isBranchScoped}
               />
 
               <FormSelect
@@ -1578,7 +1704,7 @@ export default function CreateActivityPage() {
                 onChange={setActivityDocuments}
                 accept=".pdf,.doc,.docx,.xls,.xlsx"
                 uploadText="បញ្ចូលឯកសារ"
-                helperText="PDF, DOC, DOCX, XLS, XLSX — អតិបរមា 5MB"
+                helperText="PDF, DOC, DOCX, XLS, XLSX — អតិបរមា 20MB"
                 maxSize={MAX_DOCUMENT_SIZE}
                 kind="file"
               />

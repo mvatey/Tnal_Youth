@@ -72,14 +72,27 @@ export default function SponsorPanel({
   typeOptions,
   activityId,
   addQuery = "",
+  // When true, the branch filter below is locked to whichever single
+  // branch the caller already scoped selectedBranch to (see
+  // donation/sponsor/page.js and donation/eventdonation/page.js) — a
+  // secretary/branch_leader has no "all branches" or manual-pick option
+  // here, same lock FilterBar applies on the monthly donation table.
+  branchScoped = false,
+  // Forces this panel into a plain "GET and display" view regardless of
+  // the viewer's role — no Add button, no per-row Edit pencil. Used by
+  // EventDonationDetailTabs' Sponsor tab, which is a joined read-only
+  // view of this same data scoped to one activity, not a place to manage
+  // sponsor donations (that stays in the main "ថវិកាឧបត្ថម្ភ" module).
+  readOnly = false,
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const { member: currentMember } = useCurrentMember();
   // Only entry staff (secretary / branch_leader) may add or edit sponsor
   // donations — admin/viewer are view-only, members see only their own
-  // (read-only) sponsor donations.
-  const canManage = ["secretary", "branch_leader"].includes(currentMember?.role);
+  // (read-only) sponsor donations. readOnly overrides this outright.
+  const canManage =
+    !readOnly && ["secretary", "branch_leader"].includes(currentMember?.role);
   const isMemberScoped = currentMember?.role === "member";
   const routePrefix = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/sponsor"
@@ -257,6 +270,8 @@ export default function SponsorPanel({
             allLabel="សាខាទាំងអស់"
             showLabel={false}
             className="w-[180px]"
+            disabled={branchScoped}
+            includeAllOption={!branchScoped}
           />
 
           <DateFilter

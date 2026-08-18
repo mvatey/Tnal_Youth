@@ -46,18 +46,38 @@ export default function DonationTable() {
   // server-scoped source ActivityPage's branch filter already relies on.
   // currentMember.branchId is kept only as a fallback for the brief window
   // before that context resolves.
-  const { branches: accessibleBranches = [] } = useBranch();
+  const {
+    branches: accessibleBranches = [],
+    selectedBranch: globalSelectedBranch = "all",
+  } = useBranch();
   const isBranchScoped = ["secretary", "branch_leader"].includes(
     currentMember?.role,
   );
   const isMemberScoped = currentMember?.role === "member";
-  const scopedBranchIds = useMemo(() => {
-    if (!isBranchScoped) return [];
-    if (accessibleBranches.length > 0) {
-      return accessibleBranches.map((branch) => String(branch.id));
+  // A secretary/branch_leader is always scoped to exactly ONE branch — the
+  // one currently active in the sidebar's global branch dropdown (see
+  // BranchContext, which never lets this role's selection settle on the
+  // combined "all" view) — never a merged multi-branch view. The
+  // accessibleBranches[0]/currentMember.branchId fallbacks only cover the
+  // brief window before BranchContext's own fetch resolves.
+  const effectiveBranchId = useMemo(() => {
+    if (!isBranchScoped) return null;
+
+    if (globalSelectedBranch && globalSelectedBranch !== "all") {
+      return String(globalSelectedBranch);
     }
-    return currentMember?.branchId ? [String(currentMember.branchId)] : [];
-  }, [isBranchScoped, accessibleBranches, currentMember?.branchId]);
+
+    if (accessibleBranches.length > 0) {
+      return String(accessibleBranches[0].id);
+    }
+
+    return currentMember?.branchId ? String(currentMember.branchId) : null;
+  }, [
+    isBranchScoped,
+    globalSelectedBranch,
+    accessibleBranches,
+    currentMember?.branchId,
+  ]);
   const rowsPerPage = 12;
   const headers = [
     "ល.រ",
@@ -92,31 +112,34 @@ export default function DonationTable() {
     [rows],
   );
   const branches = useMemo(() => {
-    if (isBranchScoped && accessibleBranches.length > 0) {
-      // Every branch this account can access — not just the ones that
-      // happen to already have a donation row loaded — so the dropdown
-      // lets a secretary managing multiple branches pick a branch with
-      // zero donations so far too.
-      return accessibleBranches.map((branch) => ({
-        value: String(branch.id),
-        label: branch.nameKm || branch.nameEn || `សាខា ${branch.id}`,
-      }));
+    if (isBranchScoped) {
+      // Only the ONE currently-active branch — the sidebar's global
+      // dropdown is now the sole place a secretary/branch_leader switches
+      // branches, so this (disabled — see branchScoped on FilterBar below)
+      // dropdown just displays which one is active, never a pick list.
+      const match = accessibleBranches.find(
+        (branch) => String(branch.id) === effectiveBranchId,
+      );
+
+      if (match) {
+        return [
+          {
+            value: String(match.id),
+            label: match.nameKm || match.nameEn || `សាខា ${match.id}`,
+          },
+        ];
+      }
+
+      // Fallback for the brief window before useBranch() resolves.
+      return effectiveBranchId
+        ? [{ value: effectiveBranchId, label: currentMember?.branch || "-" }]
+        : [];
     }
 
     const unique = new Map();
     rows.forEach((row) => unique.set(String(row.branchId), row.branch));
-    const options = [...unique].map(([value, label]) => ({ value, label }));
-
-    if (!isBranchScoped) return options;
-
-    // Fallback for the brief window before useBranch() resolves.
-    return options.length > 0
-      ? options
-      : scopedBranchIds.map((value) => ({
-          value,
-          label: currentMember?.branch || "-",
-        }));
-  }, [rows, isBranchScoped, accessibleBranches, scopedBranchIds, currentMember?.branch]);
+    return [...unique].map(([value, label]) => ({ value, label }));
+  }, [rows, isBranchScoped, accessibleBranches, effectiveBranchId, currentMember?.branch]);
   const handleDelete = () => setError("Open the monthly detail to delete an individual donation record.");
   const filteredRows = useMemo(
     () =>
@@ -150,6 +173,16 @@ export default function DonationTable() {
     setCurrentPage(1);
   };
 
+  // Keep the (disabled, for this role — see branchScoped below) branch
+  // filter's value in lockstep with whichever single branch is currently
+  // active, so filteredRows' matchesBranch check (and the FilterBar
+  // display) always reflect it instead of a stale earlier selection.
+  useEffect(() => {
+    if (isBranchScoped && effectiveBranchId) {
+      setSelectedBranch(effectiveBranchId);
+    }
+  }, [isBranchScoped, effectiveBranchId]);
+
   const handleDownload = () => {
     if (downloadCsv(sortedRows, "monthly-donations.csv")) {
       setShowDownloadAlert(true);
@@ -164,7 +197,7 @@ export default function DonationTable() {
       setLoading(true);
       setError("");
       try {
-        if (isBranchScoped && scopedBranchIds.length === 0) {
+        if (isBranchScoped && !effectiveBranchId) {
           throw new Error("គណនីនេះមិនទាន់បានកំណត់សាខា។");
         }
 
@@ -175,54 +208,27 @@ export default function DonationTable() {
         }
 
         if (isBranchScoped) {
-          // The backend's monthly-donations endpoint is scoped to a single
-          // branchId per call — a secretary/branch_leader assigned to more
-          // than one branch previously only ever got the first one, with
-          // no way to pick the other from the dropdown. Fetch each
-          // accessible branch separately and merge the results instead.
-          const responses = await Promise.all(
-            scopedBranchIds.map((branchId) =>
-              fetch(
-                `/api/backend/donations/monthly?${new URLSearchParams({
-                  page: "0",
-                  size: "100",
-                  branchId,
-                })}`,
-                { cache: "no-store", credentials: "include" },
-              ),
-            ),
+          // Scoped to exactly the one currently-active branch (see
+          // effectiveBranchId above) — switching branches happens only via
+          // the sidebar's global dropdown now, which re-runs this effect.
+          const response = await fetch(
+            `/api/backend/donations/monthly?${new URLSearchParams({
+              page: "0",
+              size: "100",
+              branchId: effectiveBranchId,
+            })}`,
+            { cache: "no-store", credentials: "include" },
           );
-          const bodies = await Promise.all(
-            responses.map((response) => response.json().catch(() => null)),
-          );
+          const body = await response.json().catch(() => null);
 
-          const failedIndex = responses.findIndex((response) => !response.ok);
-          if (failedIndex !== -1) {
-            throw new Error(
-              bodies[failedIndex]?.message || "Unable to load monthly donations.",
-            );
+          if (!response.ok) {
+            throw new Error(body?.message || "Unable to load monthly donations.");
           }
 
-          const merged = bodies.flatMap((body) => {
-            const page = body?.data ?? body;
-            return Array.isArray(page?.items) ? page.items : [];
-          });
-
-          // Dedupe by (branchId, period) before mapping to rows — if the
-          // same branch/period ever comes back from more than one of the
-          // per-branch calls above (e.g. scopedBranchIds briefly containing
-          // a repeat while useBranch() is still settling), TableRow's
-          // `key={row.id}` would otherwise collide, which React logs as a
-          // console error and can drop/duplicate rows on screen.
-          const seen = new Set();
-          const deduped = merged.filter((item) => {
-            const dedupeKey = `${item.branchId}-${item.donationPeriod}`;
-            if (seen.has(dedupeKey)) return false;
-            seen.add(dedupeKey);
-            return true;
-          });
-
-          if (!cancelled) setRows(deduped.map(mapMonthlyRow));
+          const page = body?.data ?? body;
+          if (!cancelled) {
+            setRows((Array.isArray(page?.items) ? page.items : []).map(mapMonthlyRow));
+          }
           return;
         }
 
@@ -245,7 +251,7 @@ export default function DonationTable() {
     }
     loadRows();
     return () => { cancelled = true; };
-  }, [currentMemberLoading, isBranchScoped, isMemberScoped, scopedBranchIds]);
+  }, [currentMemberLoading, isBranchScoped, isMemberScoped, effectiveBranchId]);
 
   useEffect(() => {
     if (!showDownloadAlert && !showSaveAlert) return undefined;
@@ -285,13 +291,13 @@ export default function DonationTable() {
         onBranchChange={updateFilter(setSelectedBranch)}
         /*
          * FilterBar locks the branch dropdown to a single value whenever
-         * branchScoped is true — correct for a secretary/branch_leader with
-         * exactly one branch (nothing to choose between), but it used to be
-         * passed isBranchScoped directly, which locked the dropdown for
-         * EVERY branch-scoped role even when scopedBranchIds held more than
-         * one branch. Only lock it when there's truly nothing to pick from.
+         * branchScoped is true. A secretary/branch_leader is now always
+         * scoped to exactly one branch (switched only via the sidebar's
+         * global dropdown — see effectiveBranchId above), so this lock
+         * applies unconditionally for that role, not just when they
+         * happen to be staff of only one branch.
          */
-        branchScoped={isBranchScoped && scopedBranchIds.length <= 1}
+        branchScoped={isBranchScoped}
       />
 
       <div className="mt-[17px] overflow-x-auto">

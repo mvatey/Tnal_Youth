@@ -9,20 +9,24 @@ import {
 
 const CARD_CONFIG = [
   {
+    key: "branches",
+    label: "សាខាសរុប",
+    // Shown instead of the label above when this card is scoped to a
+    // single branch (see isBranchScoped below) -- "Total branches" reads
+    // oddly once the value itself is one branch's name, not a count.
+    scopedLabel: "សាខា",
+    icon: FaBuilding,
+    accent: "bg-primary",
+    iconBg: "bg-primary-light",
+    iconColor: "text-primary",
+  },
+  {
     key: "members",
     label: "សមាជិកសរុប",
     icon: FaUsers,
     accent: "bg-secondary-hover",
     iconBg: "bg-secondary-light",
     iconColor: "text-secondary-hover",
-  },
-  {
-    key: "branches",
-    label: "សាខាសរុប",
-    icon: FaBuilding,
-    accent: "bg-primary",
-    iconBg: "bg-primary-light",
-    iconColor: "text-primary",
   },
   {
     key: "activities",
@@ -67,6 +71,10 @@ function SummaryCard({
   iconColor,
   value,
   changePercent,
+  // Hidden for the branch card once it's scoped to a single branch (see
+  // isBranchScoped in StatsGrid below) -- a growth percentage / "this
+  // month" comparison doesn't mean anything for a branch's own name.
+  showGrowth = true,
 }) {
   const normalizedChange =
     Number(changePercent) || 0;
@@ -94,32 +102,34 @@ function SummaryCard({
             {label}
           </div>
 
-          <div className="text-lg font-bold text-text-primary">
+          <div className="truncate text-lg font-bold text-text-primary">
             {value}
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          <div
-            className={`flex items-center gap-1 text-sm font-semibold ${
-              isUp
-                ? "text-success"
-                : "text-error"
-            }`}
-          >
-            <span>
-              {isUp ? "↑" : "↓"}
-            </span>
+        {showGrowth && (
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <div
+              className={`flex items-center gap-1 text-sm font-semibold ${
+                isUp
+                  ? "text-success"
+                  : "text-error"
+              }`}
+            >
+              <span>
+                {isUp ? "↑" : "↓"}
+              </span>
 
-            <span>
-              {Math.abs(normalizedChange)}%
+              <span>
+                {Math.abs(normalizedChange)}%
+              </span>
+            </div>
+
+            <span className="text-xs text-text-mute">
+              ក្នុងខែនេះ
             </span>
           </div>
-
-          <span className="text-xs text-text-mute">
-            ក្នុងខែនេះ
-          </span>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -155,6 +165,12 @@ function getChangePercent(key, stat) {
 export default function StatsGrid({
   data,
   loading = false,
+  // A secretary/branch_leader is always scoped to exactly one branch (see
+  // dashboard/page.js) -- for them the branch card shows that branch's
+  // own name instead of a count, with no growth/"this month" comparison.
+  // ADMIN (isBranchScoped false) keeps the org-wide branch count as-is.
+  isBranchScoped = false,
+  branchName = "",
 }) {
   const summary =
     data?.summary ?? {};
@@ -175,22 +191,34 @@ export default function StatsGrid({
         const stat =
           summary[config.key] ?? {};
 
+        const isScopedBranchCard =
+          config.key === "branches" && isBranchScoped;
+
         return (
           <SummaryCard
             key={config.key}
-            label={config.label}
+            label={
+              isScopedBranchCard
+                ? config.scopedLabel ?? config.label
+                : config.label
+            }
             icon={config.icon}
             accent={config.accent}
             iconBg={config.iconBg}
             iconColor={config.iconColor}
-            value={formatCardValue(
-              config.key,
-              stat
-            )}
+            value={
+              isScopedBranchCard
+                ? branchName || "-"
+                : formatCardValue(
+                    config.key,
+                    stat
+                  )
+            }
             changePercent={getChangePercent(
               config.key,
               stat
             )}
+            showGrowth={!isScopedBranchCard}
           />
         );
       })}

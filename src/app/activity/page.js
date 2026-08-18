@@ -214,14 +214,6 @@ export default function ActivityPage() {
   const [selectedScope, setSelectedScope] =
     useState("all");
 
-  // The branch dropdown's own selection — deliberately separate from the
-  // sidebar's global selectedBranch (useBranch()) so picking a branch here
-  // never changes what the sidebar/other pages are scoped to. Its option
-  // list depends on selectedScope (see branchOptionsForScope below), so a
-  // stale pick from a different scope is reset back to "all" on tab change.
-  const [selectedBranchOption, setSelectedBranchOption] =
-    useState("all");
-
   // Also used to refresh the list right after Accept/Decline (see
   // handleRespond below), not just on mount.
   //
@@ -300,10 +292,6 @@ export default function ActivityPage() {
   }, []);
 
   useEffect(() => {
-    setSelectedBranchOption("all");
-  }, [selectedScope]);
-
-  useEffect(() => {
     loadActivities();
   }, [loadActivities]);
 
@@ -356,14 +344,39 @@ export default function ActivityPage() {
     [activityRecords, branchOptions],
   );
 
+  // Every page-level summary — the stat cards, the own/invited tabs, the
+  // pending-invitation badge, and the type/sector filter option lists —
+  // is scoped to just the sidebar's globally-selected branch, same as the
+  // table rows below. activities itself can still carry more than this
+  // one branch's rows (the backend's SECRETARY/BRANCH_LEADER scope is the
+  // full combined set across every branch they're staff of — see
+  // ActivityServiceImpl#getActivities — filtered down here on the
+  // frontend instead of narrowing that backend query, since narrowing it
+  // would also affect the donation module's own use of this endpoint).
+  const branchScopedActivities = useMemo(
+    () =>
+      activities.filter(
+        (item) =>
+          selectedBranch === "all" ||
+          String(item.branchId) === String(selectedBranch) ||
+          item.branch === selectedBranch ||
+          contextBranches.some(
+            (branch) =>
+              String(branch) === String(selectedBranch) &&
+              branch === item.branch,
+          ),
+      ),
+    [activities, selectedBranch, contextBranches],
+  );
+
   const types = useMemo(
-    () => [...new Set(activities.map((item) => item.type).filter(Boolean))],
-    [activities],
+    () => [...new Set(branchScopedActivities.map((item) => item.type).filter(Boolean))],
+    [branchScopedActivities],
   );
 
   const sectors = useMemo(
-    () => [...new Set(activities.map((item) => item.sector).filter(Boolean))],
-    [activities],
+    () => [...new Set(branchScopedActivities.map((item) => item.sector).filter(Boolean))],
+    [branchScopedActivities],
   );
 
   // Whether the own-branch/invited split is meaningful to show at all —
@@ -371,57 +384,26 @@ export default function ActivityPage() {
   // so admin/branch-leader activity lists never show these tabs.
   const hasOwnBranchData = useMemo(
     () =>
-      activities.some(
+      branchScopedActivities.some(
         (item) => item.ownBranch === true || item.ownBranch === false,
       ),
-    [activities],
+    [branchScopedActivities],
   );
 
   // How many invited activities are still waiting on an Accept/Decline —
-  // drives the badge on the "invited" tab below. Counts across every
-  // invited activity regardless of which branch/type/search filters are
-  // currently applied, so the badge reflects the true outstanding total,
-  // not just what's visible in the current filtered view.
+  // drives the badge on the "invited" tab below. Counts across the active
+  // branch's invited activities regardless of which type/sector/search
+  // filters are currently applied, so the badge reflects that branch's
+  // true outstanding total, not just what's visible in the current
+  // filtered view.
   const pendingInvitationCount = useMemo(
     () =>
-      activities.filter(
+      branchScopedActivities.filter(
         (item) =>
           item.ownBranch === false && item.invitationStatus === "PENDING",
       ).length,
-    [activities],
+    [branchScopedActivities],
   );
-
-  // The branch dropdown's option list changes with the active scope tab:
-  // "all" offers every branch in the system (from the org-wide
-  // activity-invitable-branches lookup), "own" only the branches whose
-  // activities are the viewer's own, "invited" only the branches whose
-  // activities reached the viewer through an accepted co-hosting
-  // invitation.
-  const branchOptionsForScope = useMemo(() => {
-    if (selectedScope === "own") {
-      return [
-        ...new Set(
-          activities
-            .filter((item) => item.ownBranch === true)
-            .map((item) => item.branch),
-        ),
-      ].filter(Boolean);
-    }
-
-    if (selectedScope === "invited") {
-      return [
-        ...new Set(
-          activities
-            .filter((item) => item.ownBranch === false)
-            .map((item) => item.branch),
-        ),
-      ].filter(Boolean);
-    }
-
-    return [
-      ...new Set(branchOptions.map((option) => option.label)),
-    ].filter(Boolean);
-  }, [activities, selectedScope, branchOptions]);
 
   const filteredActivities = useMemo(() => {
     const query = searchQuery
@@ -432,7 +414,7 @@ export default function ActivityPage() {
       ? selectedDate.toISOString().split("T")[0]
       : "";
 
-    return activities.filter((item) => {
+    return branchScopedActivities.filter((item) => {
       const name = item.name?.toLowerCase() || "";
       const branch =
         item.branch?.toLowerCase() || "";
@@ -453,16 +435,6 @@ export default function ActivityPage() {
         selectedType === "all" ||
         item.type === selectedType;
 
-      const matchesBranch =
-        selectedBranch === "all" ||
-        String(item.branchId) === String(selectedBranch) ||
-        item.branch === selectedBranch ||
-        contextBranches.some(
-          (branch) =>
-            String(branch) === String(selectedBranch) &&
-            branch === item.branch,
-        );
-
       const matchesDate =
         !selectedDateValue ||
         item.dateValue === selectedDateValue;
@@ -472,30 +444,21 @@ export default function ActivityPage() {
         (selectedScope === "own" && item.ownBranch === true) ||
         (selectedScope === "invited" && item.ownBranch === false);
 
-      const matchesBranchOption =
-        selectedBranchOption === "all" ||
-        item.branch === selectedBranchOption;
-
       return (
         matchesSearch &&
         matchesSector &&
         matchesType &&
-        matchesBranch &&
         matchesDate &&
-        matchesScope &&
-        matchesBranchOption
+        matchesScope
       );
     });
   }, [
     searchQuery,
     selectedSector,
     selectedType,
-    selectedBranch,
     selectedDate,
     selectedScope,
-    selectedBranchOption,
-    activities,
-    contextBranches,
+    branchScopedActivities,
   ]);
 
   const columns = [
@@ -639,13 +602,6 @@ export default function ActivityPage() {
 
   const filters = [
     {
-      key: "branchOption",
-      value: selectedBranchOption,
-      onChange: setSelectedBranchOption,
-      placeholder: "សាខា",
-      options: branchOptionsForScope,
-    },
-    {
       key: "type",
       value: selectedType,
       onChange: setSelectedType,
@@ -675,8 +631,14 @@ export default function ActivityPage() {
   return (
     <div className="min-w-0 space-y-5 overflow-x-hidden">
       <ActivityStats
-        activities={activities}
-        invitedActivityCount={invitedActivityCount}
+        activities={branchScopedActivities}
+        // The backend's invitedActivityCount is a total across every
+        // branch the viewer is staff of, not just the one currently
+        // selected — only trust it while genuinely viewing the combined
+        // "all branches" scope; otherwise fall back to ActivityStats'
+        // own count computed from branchScopedActivities so the card
+        // matches whichever single branch is active.
+        invitedActivityCount={selectedBranch === "all" ? invitedActivityCount : null}
       />
 
       <TelegramConnectBanner />

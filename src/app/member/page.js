@@ -24,6 +24,8 @@ import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
 import DataTable from "@/components/table/DataTable.js";
 import StatCard from "@/components/dashboard/statCard";
 import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail";
+import useCurrentMember from "@/hooks/useCurrentMember";
+import { useBranch } from "@/context/BranchContext";
 
 const EMPTY_SUMMARY = {
   total_members: 0,
@@ -344,6 +346,55 @@ export default function MembersPage() {
     setBranchFilter,
   ] = useState("");
 
+  const { member: currentMember } =
+    useCurrentMember();
+
+  // Same single-branch scoping as the activity/donation pages -- a
+  // secretary/branch_leader is always scoped to exactly the one branch
+  // active in the sidebar's global dropdown (see BranchContext), never
+  // an independent pick from this page's own branch filter. ADMIN keeps
+  // the existing free-pick filter (including "all branches") untouched.
+  const {
+    branches: accessibleBranches = [],
+    selectedBranch: globalSelectedBranch = "all",
+  } = useBranch();
+
+  const isBranchScoped =
+    currentMember?.role === "secretary" ||
+    currentMember?.role === "branch_leader";
+
+  const effectiveBranchId = useMemo(() => {
+    if (!isBranchScoped) return null;
+
+    if (
+      globalSelectedBranch &&
+      globalSelectedBranch !== "all"
+    ) {
+      return String(globalSelectedBranch);
+    }
+
+    if (accessibleBranches.length > 0) {
+      return String(accessibleBranches[0].id);
+    }
+
+    return currentMember?.branchId
+      ? String(currentMember.branchId)
+      : null;
+  }, [
+    isBranchScoped,
+    globalSelectedBranch,
+    accessibleBranches,
+    currentMember?.branchId,
+  ]);
+
+  // What actually drives the fetches/UI below -- a branch-scoped role
+  // always uses effectiveBranchId (never "", which would mean "every
+  // branch" to loadMembers/loadSummary); everyone else keeps using their
+  // own filter pick.
+  const effectiveBranchFilter = isBranchScoped
+    ? effectiveBranchId ?? ""
+    : branchFilter;
+
   const [
     statusFilter,
     setStatusFilter,
@@ -392,9 +443,21 @@ export default function MembersPage() {
   const loadSummary =
     useCallback(
       async (signal) => {
+        // branchId is forwarded so a secretary/branch_leader's summary
+        // cards are scoped to their one active branch (see
+        // effectiveBranchFilter above) once the backend supports this
+        // param on /members/summary -- until then it's simply ignored
+        // server-side, same as any other unrecognized query param.
+        const summaryPath =
+          effectiveBranchFilter
+            ? `/members/summary?branchId=${encodeURIComponent(
+                effectiveBranchFilter,
+              )}`
+            : "/members/summary";
+
         const data =
           await fetchJson(
-            "/members/summary",
+            summaryPath,
             signal,
           );
 
@@ -425,7 +488,7 @@ export default function MembersPage() {
             ) || 0,
         });
       },
-      [],
+      [effectiveBranchFilter],
     );
 
   /*
@@ -565,11 +628,11 @@ export default function MembersPage() {
         }
 
         if (
-          branchFilter
+          effectiveBranchFilter
         ) {
           baseParams.set(
             "branchId",
-            branchFilter,
+            effectiveBranchFilter,
           );
         }
 
@@ -683,7 +746,7 @@ export default function MembersPage() {
         );
       },
       [
-        branchFilter,
+        effectiveBranchFilter,
         debouncedQuery,
         genderFilter,
         statusFilter,
@@ -814,6 +877,21 @@ export default function MembersPage() {
       ],
       [branchLookups],
     );
+
+  // The branch filter shown in the table toolbar is locked to whichever
+  // single branch is currently active for a secretary/branch_leader (see
+  // effectiveBranchFilter above) -- only that one branch is offered, and
+  // the select is disabled (see filterConfig below), same lock used on
+  // the activity/donation pages' branch dropdowns.
+  const branchFilterOptions = useMemo(() => {
+    if (!isBranchScoped) return branches;
+
+    const match = branches.find(
+      (option) => option.value === effectiveBranchFilter,
+    );
+
+    return match ? [match] : [];
+  }, [isBranchScoped, branches, effectiveBranchFilter]);
 
   /*
    * =========================================
@@ -1137,16 +1215,20 @@ export default function MembersPage() {
       name: "branch",
 
       value:
-        branchFilter,
+        effectiveBranchFilter,
 
-      onChange:
-        setBranchFilter,
+      onChange: isBranchScoped
+        ? () => {}
+        : setBranchFilter,
 
       options:
-        branches,
+        branchFilterOptions,
 
       placeholder:
         "សាខា",
+
+      disabled:
+        isBranchScoped,
     },
 
     {

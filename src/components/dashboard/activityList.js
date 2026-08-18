@@ -76,9 +76,20 @@ function formatDateTime(value) {
 }
 
 function ActivityThumbnail({ activity }) {
-  const imageUrl =
-    activity?.image ??
-    "/activity-placeholder.svg";
+  // The backend sends the cover image's FILE ID (coverImageId), not a
+  // ready-to-use URL -- files are only ever servable through
+  // /api/backend/files/{id}/content, same as the activity detail page
+  // (see app/activity/[id]/page.js). Used to read activity?.image, a
+  // field the backend never actually sent, so every card silently fell
+  // back to the placeholder regardless of whether the activity had a
+  // photo.
+  const coverImageId =
+    activity?.coverImageId ??
+    activity?.cover_image_id;
+
+  const imageUrl = coverImageId
+    ? `/api/backend/files/${coverImageId}/content`
+    : "/activity-placeholder.svg";
 
   return (
     <img

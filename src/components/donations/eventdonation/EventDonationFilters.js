@@ -42,6 +42,9 @@ export default function EventDonationFilters({
   endDate,
   onEndDateChange,
   branches = [],
+  // When true, locks the branch dropdown to its current single value (no
+  // "all" option, not editable) — see EventDonationPanel.
+  branchScoped = false,
 }) {
   const router = useRouter();
 
@@ -66,6 +69,8 @@ export default function EventDonationFilters({
         options={branches}
         allLabel="ជ្រើសរើសសាខា"
         showLabel={false}
+        disabled={branchScoped}
+        includeAllOption={!branchScoped}
       />
 
       <EventDateInput

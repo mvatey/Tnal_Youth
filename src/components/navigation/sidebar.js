@@ -467,13 +467,14 @@ export default function Sidebar() {
                       hover:bg-white/15
                     "
                   >
-                    <option
-                      value="all"
-                      className="text-black"
-                    >
-                      ជ្រើសរើសសាខា
-                    </option>
-
+                    {/*
+                      No "all" option here -- a secretary/branch leader
+                      responsible for more than one branch always has
+                      exactly one branch active at a time (see
+                      BranchContext's role-aware default selection);
+                      this dropdown only switches which single branch
+                      that is, never an aggregate "all branches" view.
+                    */}
                     {branches.map(
                       (branch) => {
                         const branchValue =

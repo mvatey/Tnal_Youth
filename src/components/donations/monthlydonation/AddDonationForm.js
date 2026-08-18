@@ -7,6 +7,7 @@ import Table from "../../tables/table";
 import MemberCard from "../eventdonation/membercard";
 import CashCard from "./cashcard";
 import BankCard from "./bankcard";
+import Button from "../../forms/button";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch } from "@/context/BranchContext";
 
@@ -71,17 +72,36 @@ export default function AddDonationForm() {
   // access" source the monthly-donation list page uses (see DonationTable.js).
   // currentMember.branchId is kept only as a fallback for the brief window
   // before that context resolves.
-  const { branches: accessibleBranches = [] } = useBranch();
+  const {
+    branches: accessibleBranches = [],
+    selectedBranch: globalSelectedBranch = "all",
+  } = useBranch();
   const isBranchScoped = ["secretary", "branch_leader"].includes(
     currentMember?.role,
   );
-  const scopedBranchIds = useMemo(() => {
-    if (!isBranchScoped) return [];
-    if (accessibleBranches.length > 0) {
-      return accessibleBranches.map((branch) => String(branch.id));
+  // A secretary/branch_leader is always scoped to exactly ONE branch — the
+  // one currently active in the sidebar's global branch dropdown (see
+  // BranchContext) — never a branch picked independently in this form.
+  // The accessibleBranches[0]/currentMember.branchId fallbacks only cover
+  // the brief window before BranchContext's own fetch resolves.
+  const effectiveBranchId = useMemo(() => {
+    if (!isBranchScoped) return null;
+
+    if (globalSelectedBranch && globalSelectedBranch !== "all") {
+      return String(globalSelectedBranch);
     }
-    return currentMember?.branchId ? [String(currentMember.branchId)] : [];
-  }, [isBranchScoped, accessibleBranches, currentMember?.branchId]);
+
+    if (accessibleBranches.length > 0) {
+      return String(accessibleBranches[0].id);
+    }
+
+    return currentMember?.branchId ? String(currentMember.branchId) : null;
+  }, [
+    isBranchScoped,
+    globalSelectedBranch,
+    accessibleBranches,
+    currentMember?.branchId,
+  ]);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -116,9 +136,13 @@ export default function AddDonationForm() {
 
   const branches = useMemo(() => {
     if (!isBranchScoped) return branchOptions;
-    const allowed = new Set(scopedBranchIds);
-    return branchOptions.filter((option) => allowed.has(String(option.value)));
-  }, [branchOptions, isBranchScoped, scopedBranchIds]);
+    // Only the ONE currently-active branch — see effectiveBranchId above;
+    // the (disabled — see branchScoped on AddDonationFilters below)
+    // dropdown just displays it, never a pick list, for this role.
+    return branchOptions.filter(
+      (option) => String(option.value) === effectiveBranchId,
+    );
+  }, [branchOptions, isBranchScoped, effectiveBranchId]);
 
   // Recomputed on every render (cheap) instead of memoized with an empty
   // dep array, so a tab left open across a month/year boundary picks up
@@ -250,15 +274,13 @@ const paymentSummary = useMemo(
         const normalizedBranches = normalizeOptions(branchItems);
         setBranchOptions(normalizedBranches);
         if (isBranchScoped) {
-          if (scopedBranchIds.length === 0) {
+          if (!effectiveBranchId) {
             throw new Error("គណនីនេះមិនទាន់បានកំណត់សាខា។");
           }
-          // Only auto-pick when there's truly nothing to choose between —
-          // a secretary with more than one branch gets the dropdown left
-          // on its placeholder so they actively pick which one.
-          if (scopedBranchIds.length === 1) {
-            setSelectedBranch(scopedBranchIds[0]);
-          }
+          // Always the one currently-active branch (see effectiveBranchId
+          // above) — switching branches happens only via the sidebar's
+          // global dropdown now, which the effect below also reacts to.
+          setSelectedBranch(effectiveBranchId);
         }
         setPaymentMethods((Array.isArray(methodItems) ? methodItems : []).map((method) => ({
           id: String(method.id),
@@ -270,7 +292,7 @@ const paymentSummary = useMemo(
         if (!cancelled) setError(loadError.message || "Unable to load donation options.");
       });
     return () => { cancelled = true; };
-  }, [currentMemberLoading, isBranchScoped, scopedBranchIds]);
+  }, [currentMemberLoading, isBranchScoped, effectiveBranchId]);
 
   // If the currently selected month falls out of the valid list — the
   // year changed, or that period just got recorded elsewhere — snap it
@@ -320,8 +342,13 @@ const paymentSummary = useMemo(
   }, [allFiltersSelected, branchOptions, searchQuery, selectedBranch, selectedMonth, selectedYear]);
 
   useEffect(() => {
-    if (isBranchScoped && scopedBranchIds.length === 1) {
-      setSelectedBranch(scopedBranchIds[0]);
+    if (isBranchScoped) {
+      // Always the one currently-active branch — ignore any ?branch= in
+      // the URL for this role; the sidebar's global dropdown is the only
+      // thing that switches branches now (see effectiveBranchId above).
+      if (effectiveBranchId) {
+        setSelectedBranch(effectiveBranchId);
+      }
     } else {
       setSelectedBranch((currentBranch) =>
         currentBranch === initialFilters.branch
@@ -335,7 +362,7 @@ const paymentSummary = useMemo(
     setSelectedYear((currentYearValue) =>
       currentYearValue === initialFilters.year ? currentYearValue : initialFilters.year,
     );
-  }, [initialFilters, isBranchScoped, scopedBranchIds]);
+  }, [initialFilters, isBranchScoped, effectiveBranchId]);
 
   const handleSave = async (rows) => {
     const completed = rows.filter(
@@ -454,18 +481,26 @@ const paymentSummary = useMemo(
             </p>
           )}
           {/*
-            Every row is edit-locked now (see rowEditMode on <Table>
-            below), so the bulk action bar that used to hold a "Cancel"
-            button never renders here anymore — this keeps a way back to
-            the list without relying on the sidebar/browser back button.
+            Every row is edit-locked (see rowEditMode on <Table> below), so
+            <Table>'s own bulk action bar (AddDonationActions) never
+            renders here — each row still saves individually via its own
+            pencil -> check icon. This is a proper, page-level pair of
+            buttons alongside that: "ត្រឡប់ក្រោយ" always works as a plain
+            way back to the list, and "រក្សាទុក" saves whatever amount is
+            currently entered (any row's amount field updates this page's
+            own editableRows state immediately as it's typed — see
+            onRowsChange={setEditableRows} below — so this button works
+            correctly even while a row is still mid-edit, without needing
+            to first click that row's own check icon).
           */}
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="text-sm font-medium text-text-secondary transition hover:text-secondary"
-          >
-            ត្រឡប់ក្រោយ
-          </button>
+          <div className="flex items-center gap-3">
+            <Button action="cancel" label="ត្រឡប់ក្រោយ" onClick={handleCancel} />
+            <Button
+              action="save"
+              onClick={() => handleSave(editableRows)}
+              disabled={saving || !allFiltersSelected || editableRows.length === 0}
+            />
+          </div>
         </div>
 
         <AddDonationFilters
@@ -480,11 +515,11 @@ const paymentSummary = useMemo(
           onMonthChange={setSelectedMonth}
           onYearChange={setSelectedYear}
           onSearchChange={setSearchQuery}
-          // Locks the branch dropdown only when there's truly nothing to
-          // pick between — a secretary/branch_leader assigned to more
-          // than one branch now gets to choose, same fix as the monthly
-          // donation list page.
-          branchScoped={isBranchScoped && scopedBranchIds.length <= 1}
+          // A secretary/branch_leader is now always scoped to exactly one
+          // branch (switched only via the sidebar's global dropdown — see
+          // effectiveBranchId above), so this lock applies unconditionally
+          // for that role, same as the monthly donation list page.
+          branchScoped={isBranchScoped}
         />
 
         {periodAlreadyExists && (

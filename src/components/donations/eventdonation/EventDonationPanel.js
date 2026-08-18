@@ -9,7 +9,15 @@ import { downloadCsv } from "@/utils/downloadCsv";
 const rowsPerPage = 12;
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
-export default function EventDonationPanel({ selectedBranch: controlledSelectedBranch, onBranchChange }) {
+export default function EventDonationPanel({
+  selectedBranch: controlledSelectedBranch,
+  onBranchChange,
+  // When true, the branch filter is locked to the single branch the
+  // caller already scoped selectedBranch to (see
+  // donation/eventdonation/page.js) — a secretary/branch_leader has no
+  // "all branches" or manual-pick option here.
+  branchScoped = false,
+}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [internalSelectedBranch, setInternalSelectedBranch] = useState("all");
   const [startDate, setStartDate] = useState("");
@@ -179,7 +187,7 @@ export default function EventDonationPanel({ selectedBranch: controlledSelectedB
       {error ? <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
       <div className="mb-4 flex flex-col gap-4">
         <h1 className="text-base font-semibold text-secondary">វិភាគទានក្នុងកម្មវិធី</h1>
-        <EventDonationFilters searchQuery={searchQuery} onSearchChange={updateFilter(setSearchQuery)} selectedBranch={selectedBranch} onBranchChange={updateFilter(setSelectedBranch)} startDate={startDate} onStartDateChange={updateFilter(setStartDate)} endDate={endDate} onEndDateChange={updateFilter(setEndDate)} branches={branches} />
+        <EventDonationFilters searchQuery={searchQuery} onSearchChange={updateFilter(setSearchQuery)} selectedBranch={selectedBranch} onBranchChange={updateFilter(setSelectedBranch)} startDate={startDate} onStartDateChange={updateFilter(setStartDate)} endDate={endDate} onEndDateChange={updateFilter(setEndDate)} branches={branches} branchScoped={branchScoped} />
       </div>
       {hasSelectedBranch ? (
         loading ? (

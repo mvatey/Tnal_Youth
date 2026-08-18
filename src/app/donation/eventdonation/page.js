@@ -11,6 +11,7 @@ import MemberCard from "@/components/donations/eventdonation/membercard";
 import NumberSponsorCard from "@/components/donations/eventdonation/sponsorcard";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
+import { useBranch } from "@/context/BranchContext";
 
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
@@ -70,9 +71,21 @@ export default function EventDonationPage() {
   // Only entry staff (secretary / branch_leader) may open the bulk "record
   // donations for members" flow — admin/viewer are view-only.
   const canManage = ["secretary", "branch_leader"].includes(currentMember?.role);
+  // Same role set is also who's always scoped to exactly one branch — the
+  // one active in the sidebar's global dropdown (see DonationTable.js) —
+  // rather than an independent "all branches" pick on this page.
+  const isBranchScoped = canManage;
+  const { branches: accessibleBranches = [], selectedBranch: globalSelectedBranch = "all" } = useBranch();
+  const effectiveBranchId = useMemo(() => {
+    if (!isBranchScoped) return null;
+    if (globalSelectedBranch && globalSelectedBranch !== "all") return String(globalSelectedBranch);
+    if (accessibleBranches.length > 0) return String(accessibleBranches[0].id);
+    return currentMember?.branchId ? String(currentMember.branchId) : null;
+  }, [isBranchScoped, globalSelectedBranch, accessibleBranches, currentMember?.branchId]);
 
   const [selectedPeopleCard, setSelectedPeopleCard] = useState(null);
-  const [selectedBranch, setSelectedBranch] = useState("all");
+  const [internalSelectedBranch, setInternalSelectedBranch] = useState("all");
+  const selectedBranch = isBranchScoped ? (effectiveBranchId ?? "all") : internalSelectedBranch;
   const [rows, setRows] = useState([]);
   const [myRows, setMyRows] = useState([]);
   const [error, setError] = useState("");
@@ -110,7 +123,11 @@ export default function EventDonationPage() {
   const myTotalDollar = myRows.reduce((total, row) => total + parseMoney(row.dollarAmount), 0);
 
   const handleBranchChange = (branch) => {
-    setSelectedBranch(branch);
+    // A secretary/branch_leader has no branch to pick here anymore — the
+    // sidebar's global dropdown is the only thing that changes it (see
+    // effectiveBranchId above); the panels below are rendered with their
+    // own branch filter locked (branchScoped) for this role.
+    if (!isBranchScoped) setInternalSelectedBranch(branch);
     setSelectedPeopleCard(null);
   };
 
@@ -160,9 +177,18 @@ export default function EventDonationPage() {
       {selectedPeopleCard === "members" && canManage ? (
         <EventDonationDetailForm initialQuery={{ branch: selectedBranch }} onCancel={() => setSelectedPeopleCard(null)} />
       ) : selectedPeopleCard === "sponsors" ? (
-        <SponsorPanel selectedBranch={selectedBranch} onBranchChange={handleBranchChange} showAddButton={false} />
+        <SponsorPanel
+          selectedBranch={selectedBranch}
+          onBranchChange={handleBranchChange}
+          showAddButton={false}
+          branchScoped={isBranchScoped}
+        />
       ) : (
-        <EventDonationPanel selectedBranch={selectedBranch} onBranchChange={handleBranchChange} />
+        <EventDonationPanel
+          selectedBranch={selectedBranch}
+          onBranchChange={handleBranchChange}
+          branchScoped={isBranchScoped}
+        />
       )}
     </div>
   );
