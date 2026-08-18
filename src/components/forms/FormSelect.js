@@ -38,7 +38,7 @@ function normalizeOption(option, index) {
     value: String(option ?? ""),
     label: String(option ?? ""),
     disabled: false,
-    key: `${String(option)}-${index}`,
+    key: `${String(option ?? "")}-${index}`,
   };
 }
 
@@ -71,10 +71,44 @@ export default function FormSelect({
   const isDisabled =
     disabled || loading;
 
+  const wrapperClassName = [
+    "min-w-0",
+    isDisabled
+      ? "[&_label]:text-text-mute"
+      : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const selectClasses = [
+    "box-border",
+    "h-[34px]",
+    "w-full",
+    "appearance-none",
+    "rounded-lg",
+    "border",
+    "bg-bg-page-white",
+    "pl-3",
+    "pr-10",
+    "text-sm",
+    "leading-none",
+    "text-text-secondary",
+    "outline-none",
+    "transition",
+    error
+      ? "border-error focus:border-error"
+      : "border-border focus:border-primary",
+    "disabled:cursor-not-allowed",
+    "disabled:bg-bg-page-gray",
+    "disabled:opacity-60",
+    selectClassName,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div
-      className={`min-w-0 ${isDisabled ? "[&_label]:text-text-mute" : ""} ${className}`}
-    >
+    <div className={wrapperClassName}>
       {label && (
         <label
           htmlFor={name}
@@ -105,31 +139,7 @@ export default function FormSelect({
               : undefined
           }
           {...selectProps}
-          className={`
-            box-border
-            h-[34px]
-            w-full
-            appearance-none
-            rounded-lg
-            border
-            bg-bg-page-white
-            pl-3
-            pr-10
-            text-sm
-            leading-none
-            text-text-secondary
-            outline-none
-            transition
-            ${
-              error
-                ? "border-error focus:border-error"
-                : "border-border focus:border-primary"
-            }
-            disabled:cursor-not-allowed
-            disabled:bg-bg-page-gray
-            disabled:opacity-60
-            ${selectClassName}
-          `}
+          className={selectClasses}
         >
           {placeholder &&
             !hasEmptyOption && (
@@ -171,14 +181,7 @@ export default function FormSelect({
         <ChevronDown
           size={15}
           aria-hidden="true"
-          className="
-            pointer-events-none
-            absolute
-            right-3
-            top-1/2
-            -translate-y-1/2
-            text-text-secondary
-          "
+          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary"
         />
       </div>
 

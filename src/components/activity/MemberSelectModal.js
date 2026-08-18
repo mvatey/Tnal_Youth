@@ -18,24 +18,17 @@ import {
 import FilterBar from "@/components/table-items/FilterBar";
 import MemberPreviewModal from "@/components/activity/MemberPreviewModal";
 
-function MemberAvatar({
-  member,
-}) {
+function MemberAvatar({ member }) {
   return (
     <img
       src={
         member.profileImage ||
         "/profiles/default-avatar.jpg"
       }
-      alt={
-        member.name ||
-        "Member"
-      }
+      alt={member.name || "Member"}
       className="h-9 w-9 shrink-0 rounded-full object-cover"
       onError={(event) => {
-        event.currentTarget.onerror =
-          null;
-
+        event.currentTarget.onerror = null;
         event.currentTarget.src =
           "/profiles/default-avatar.jpg";
       }}
@@ -45,40 +38,25 @@ function MemberAvatar({
 
 export default function MemberSelectModal({
   onClose,
-
-  /*
-   * ALL branch members.
-   */
   members = [],
-
-  /*
-   * Current selection.
-   */
   selectedIds = [],
-
-  /*
-   * Members already stored as
-   * participants.
-   *
-   * They stay visible and checked,
-   * but cannot be unchecked here.
-   */
   lockedIds = [],
-
   onSave,
   branchName = "",
   loading = false,
   error = "",
 }) {
-  const [
-    selected,
-    setSelected,
-  ] = useState([]);
+  /*
+   * TEMPORARY frontend selection.
+   *
+   * Changing this state does NOT
+   * save anything to backend.
+   */
+  const [selected, setSelected] =
+    useState([]);
 
-  const [
-    query,
-    setQuery,
-  ] = useState("");
+  const [query, setQuery] =
+    useState("");
 
   const [
     selectedRole,
@@ -95,55 +73,107 @@ export default function MemberSelectModal({
     setPreviewMember,
   ] = useState(null);
 
-  const [
-    saving,
-    setSaving,
-  ] = useState(false);
+  const [saving, setSaving] =
+    useState(false);
 
   /*
-   * Important:
-   * selectedIds arrives after API loading,
-   * so keep local state synchronized.
+   * selectedIds = participants that
+   * were already saved in backend
+   * when this modal opened.
    */
   useEffect(() => {
-    setSelected(
-      selectedIds.map(Number),
-    );
-  }, [
-    selectedIds,
-  ]);
+    const initialSelected =
+      Array.isArray(selectedIds)
+        ? selectedIds
+            .map(Number)
+            .filter(Number.isFinite)
+        : [];
 
-  const lockedSet =
+    setSelected(initialSelected);
+  }, [selectedIds]);
+
+  /*
+   * lockedIds = already persisted
+   * participant IDs.
+   *
+   * They stay selected and cannot
+   * be unchecked.
+   */
+  const lockedSet = useMemo(
+    () =>
+      new Set(
+        (
+          Array.isArray(lockedIds)
+            ? lockedIds
+            : []
+        )
+          .map(Number)
+          .filter(Number.isFinite),
+      ),
+    [lockedIds],
+  );
+
+  const memberIdSet = useMemo(
+    () =>
+      new Set(
+        members
+          .map((member) =>
+            Number(member.id),
+          )
+          .filter(Number.isFinite),
+      ),
+    [members],
+  );
+
+  /*
+   * Counter follows the CURRENT
+   * temporary checkbox state.
+   *
+   * Example:
+   *
+   * ☑ A
+   * ☑ B
+   *
+   * -> 2/2 នាក់
+   */
+  const selectedCount =
     useMemo(
       () =>
-        new Set(
-          lockedIds.map(Number),
-        ),
+        selected.filter((id) =>
+          memberIdSet.has(
+            Number(id),
+          ),
+        ).length,
       [
-        lockedIds,
+        selected,
+        memberIdSet,
       ],
     );
 
-  const roles =
-    useMemo(
-      () => [
-        ...new Set(
-          members
-            .map(
-              (member) =>
-                member.role,
-            )
-            .filter(Boolean),
-        ),
-      ],
-      [
-        members,
-      ],
-    );
+  const totalMemberCount =
+    members.length;
+
+  const roles = useMemo(
+    () => [
+      ...new Set(
+        members
+          .map(
+            (member) =>
+              member.role,
+          )
+          .filter(
+            (value) =>
+              value &&
+              value !== "-",
+          ),
+      ),
+    ],
+    [members],
+  );
 
   const filteredMembers =
     useMemo(() => {
-      const q =
+      const normalizedQuery =
         query
           .trim()
           .toLowerCase();
@@ -152,37 +182,38 @@ export default function MemberSelectModal({
         selectedDate instanceof Date
           ? selectedDate
               .toISOString()
-              .split("T")[0]
+              .slice(0, 10)
           : selectedDate || "";
 
-      /*
-       * Do NOT filter by invited status.
-       *
-       * We intentionally show:
-       * - already invited
-       * - not invited
-       */
       return members.filter(
         (member) => {
+          const name =
+            String(
+              member.name || "",
+            ).toLowerCase();
+
+          const email =
+            String(
+              member.email || "",
+            ).toLowerCase();
+
           const matchesSearch =
-            !q ||
-            member.name
-              ?.toLowerCase()
-              .includes(q) ||
-            member.email
-              ?.toLowerCase()
-              .includes(q);
+            !normalizedQuery ||
+            name.includes(
+              normalizedQuery,
+            ) ||
+            email.includes(
+              normalizedQuery,
+            );
 
           const matchesRole =
-            selectedRole ===
-              "all" ||
+            selectedRole === "all" ||
             member.role ===
               selectedRole;
 
           const matchesDate =
             !selectedDateValue ||
-            member
-              .joinedDateValue ===
+            member.joinedDateValue ===
               selectedDateValue;
 
           return (
@@ -199,12 +230,23 @@ export default function MemberSelectModal({
       selectedDate,
     ]);
 
+  /*
+   * Already saved participants
+   * cannot be toggled.
+   */
   const selectableFilteredMembers =
-    filteredMembers.filter(
-      (member) =>
-        !lockedSet.has(
-          Number(member.id),
+    useMemo(
+      () =>
+        filteredMembers.filter(
+          (member) =>
+            !lockedSet.has(
+              Number(member.id),
+            ),
         ),
+      [
+        filteredMembers,
+        lockedSet,
+      ],
     );
 
   const allFilteredSelected =
@@ -217,54 +259,74 @@ export default function MemberSelectModal({
         ),
     );
 
+  /*
+   * TEMPORARY UI ONLY.
+   *
+   * There is NO fetch/API call here.
+   */
   function toggle(id) {
-    const numericId =
+    const memberId =
       Number(id);
 
-    /*
-     * Already invited members stay
-     * locked / checked.
-     */
     if (
-      lockedSet.has(
-        numericId,
-      )
+      !Number.isFinite(memberId)
     ) {
       return;
     }
 
-    setSelected((current) =>
-      current.includes(
-        numericId,
-      )
-        ? current.filter(
-            (item) =>
-              item !==
-              numericId,
-          )
-        : [
-            ...current,
-            numericId,
-          ],
-    );
+    /*
+     * Already saved invitation:
+     * cannot remove here.
+     */
+    if (
+      lockedSet.has(memberId)
+    ) {
+      return;
+    }
+
+    setSelected((current) => {
+      if (
+        current.includes(
+          memberId,
+        )
+      ) {
+        return current.filter(
+          (item) =>
+            item !== memberId,
+        );
+      }
+
+      return [
+        ...current,
+        memberId,
+      ];
+    });
   }
 
+  /*
+   * Header select-all also only
+   * changes temporary UI state.
+   */
   function toggleAll() {
     if (
       allFilteredSelected
     ) {
+      const selectableIds =
+        new Set(
+          selectableFilteredMembers.map(
+            (member) =>
+              Number(member.id),
+          ),
+        );
+
       setSelected((current) =>
         current.filter(
           (id) =>
             lockedSet.has(
               Number(id),
             ) ||
-            !selectableFilteredMembers.some(
-              (member) =>
-                Number(
-                  member.id,
-                ) ===
-                Number(id),
+            !selectableIds.has(
+              Number(id),
             ),
         ),
       );
@@ -275,6 +337,7 @@ export default function MemberSelectModal({
     setSelected((current) => [
       ...new Set([
         ...current,
+
         ...selectableFilteredMembers.map(
           (member) =>
             Number(member.id),
@@ -283,24 +346,46 @@ export default function MemberSelectModal({
     ]);
   }
 
-  async function handleSave() {
-    try {
-      setSaving(true);
+  /*
+   * ONLY this function reaches
+   * the parent save handler.
+   *
+   * Parent then POSTs to backend.
+   */
+async function handleSave() {
+  try {
+    setSaving(true);
 
-      await onSave?.(
-        selected,
-      );
+    /*
+     * Save selected members to parent/backend.
+     */
+    await onSave?.(selected);
 
-      onClose?.();
-    } finally {
-      setSaving(false);
-    }
+    /*
+     * Only close popup AFTER save succeeds.
+     */
+    onClose?.();
+  } catch (error) {
+    /*
+     * If backend save fails,
+     * keep popup open so user can see/fix it.
+     */
+    console.error(
+      "Failed to save invited members:",
+      error,
+    );
+  } finally {
+    setSaving(false);
   }
+}
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-5">
       <div className="w-full max-w-5xl rounded-xl bg-bg-page-white p-5 shadow-xl">
+
+        {/* SEARCH + FILTERS */}
         <div className="mb-4 flex items-center gap-3">
+
           <div className="relative flex-1">
             <input
               value={query}
@@ -323,40 +408,54 @@ export default function MemberSelectModal({
             filters={[
               {
                 key: "role",
+
                 value:
                   selectedRole,
+
                 onChange:
                   setSelectedRole,
+
                 placeholder:
                   "តួនាទី",
-                options: roles,
+
+                options:
+                  roles,
               },
 
               {
                 key: "date",
+
                 value:
                   selectedDate,
+
                 onChange:
                   setSelectedDate,
+
                 placeholder:
                   "ថ្ងៃ/ខែ/ឆ្នាំ",
+
                 type: "date",
               },
             ]}
           />
 
+          {/*
+           * Current temporary
+           * selected / total.
+           */}
           <span className="ml-auto whitespace-nowrap text-sm font-semibold text-text-primary">
-            {
-              lockedSet.size
-            }
-            /{members.length} នាក់
+            {selectedCount}/
+            {totalMemberCount} នាក់
           </span>
         </div>
 
+        {/* TABLE */}
         <div className="max-h-[430px] overflow-y-auto rounded-lg border border-border">
           <table className="w-full table-fixed border-collapse text-[12px] text-text-secondary">
+
             <thead className="sticky top-0 z-10 bg-bg-page-white">
               <tr className="h-11 border-b border-border font-medium text-text-secondary">
+
                 <th className="w-[4%] text-center">
                   <input
                     type="checkbox"
@@ -407,32 +506,51 @@ export default function MemberSelectModal({
                       member.id,
                     );
 
-                  const alreadyInvited =
-                    lockedSet.has(
-                      memberId,
-                    );
-
+                  /*
+                   * Current temporary state.
+                   *
+                   * This controls:
+                   *
+                   * checkbox
+                   * status badge
+                   * counter
+                   */
                   const isSelected =
                     selected.includes(
                       memberId,
                     );
 
+                  /*
+                   * Backend-persisted
+                   * invitation.
+                   *
+                   * Only controls
+                   * whether checkbox
+                   * can be unchecked.
+                   */
+                  const alreadySaved =
+                    lockedSet.has(
+                      memberId,
+                    );
+
                   return (
                     <tr
-                      key={
-                        member.id
-                      }
+                      key={member.id}
                       className="h-12 border-b border-border text-text-secondary"
                     >
+
                       <td className="text-center">
                         <input
                           type="checkbox"
+
                           checked={
                             isSelected
                           }
+
                           disabled={
-                            alreadyInvited
+                            alreadySaved
                           }
+
                           onChange={() =>
                             toggle(
                               memberId,
@@ -443,6 +561,7 @@ export default function MemberSelectModal({
 
                       <td>
                         <div className="flex items-center gap-2.5">
+
                           <MemberAvatar
                             member={
                               member
@@ -468,38 +587,39 @@ export default function MemberSelectModal({
                       </td>
 
                       <td className="text-center">
-                        {
-                          member.gender
-                        }
+                        {member.gender ||
+                          "-"}
                       </td>
 
                       <td className="text-center">
-                        {
-                          member.role
-                        }
+                        {member.role ||
+                          "-"}
                       </td>
 
                       <td className="text-center">
-                        {
-                          member.branch
-                        }
+                        {member.branch ||
+                          "-"}
                       </td>
 
                       <td className="text-center">
-                        {
-                          member.joinedDate
-                        }
+                        {member.joinedDate ||
+                          "-"}
                       </td>
 
                       <td className="text-center">
+                        {/*
+                         * TEMPORARY selection
+                         * immediately changes
+                         * visible status.
+                         */}
                         <span
                           className={`rounded-full px-3 py-1 text-[11px] ${
-                            alreadyInvited
+                            isSelected
                               ? "bg-success-bg text-success"
                               : "bg-error-bg text-error"
                           }`}
                         >
-                          {alreadyInvited
+                          {isSelected
                             ? "បានអញ្ជើញ"
                             : "មិនបានអញ្ជើញ"}
                         </span>
@@ -508,11 +628,13 @@ export default function MemberSelectModal({
                       <td className="text-center">
                         <button
                           type="button"
+
                           onClick={() =>
                             setPreviewMember(
                               member,
                             )
                           }
+
                           className="mx-auto flex w-fit rounded-md p-1 text-primary transition hover:bg-primary-light"
                         >
                           <Eye
@@ -541,7 +663,7 @@ export default function MemberSelectModal({
                   <tr>
                     <td
                       colSpan={8}
-                      className="py-10 text-center text-sm text-danger"
+                      className="py-10 text-center text-sm text-error"
                     >
                       {error}
                     </td>
@@ -551,7 +673,8 @@ export default function MemberSelectModal({
               {!loading &&
                 !error &&
                 filteredMembers
-                  .length === 0 && (
+                  .length ===
+                  0 && (
                   <tr>
                     <td
                       colSpan={8}
@@ -567,26 +690,43 @@ export default function MemberSelectModal({
           </table>
         </div>
 
+        {/* FOOTER */}
         <div className="mt-5 flex items-center justify-between">
+
+          {/*
+           * Cancel:
+           *
+           * no onSave call
+           * -> no backend change.
+           */}
           <button
             type="button"
-            onClick={
-              onClose
-            }
-            className="h-[34px] w-[91px] rounded-lg border border-border bg-bg-page-white text-sm font-semibold text-text-secondary"
+            onClick={onClose}
+            disabled={saving}
+            className="h-[34px] w-[91px] rounded-lg border border-border bg-bg-page-white text-sm font-semibold text-text-secondary disabled:opacity-60"
           >
             បោះបង់
           </button>
 
+          {/*
+           * SAVE:
+           *
+           * this is the only action
+           * that sends selected IDs
+           * to parent/backend.
+           */}
           <button
             type="button"
+
             onClick={
               handleSave
             }
+
             disabled={
               saving
             }
-            className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+
+            className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white transition hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             <HiSaveAs
               size={16}
@@ -604,6 +744,7 @@ export default function MemberSelectModal({
           member={
             previewMember
           }
+
           onClose={() =>
             setPreviewMember(
               null,
