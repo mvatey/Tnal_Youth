@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import tableHeaders from "@/data/donation/tableHeaders.json";
+import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
 
 const { eventBranchTotalHeaders: headers } = tableHeaders;
+const KHR_PER_USD = 4000;
 
 async function fetchJson(url) {
   const response = await fetch(url, { cache: "no-store" });
@@ -114,6 +116,14 @@ export default function EventDonationBranchTotals({ activityId, organizerBranchI
     }).sort((a, b) => (a.role === b.role ? 0 : a.role === "organizer" ? -1 : 1));
   }, [branchNames, donations, invitedBranches, organizerBranchId]);
 
+  // Grand total across every branch row above — every donation for this
+  // activity, organizer and invited branches alike.
+  const totals = useMemo(() => {
+    const riel = rows.reduce((sum, row) => sum + (row.amountKhr || 0), 0);
+    const dollar = rows.reduce((sum, row) => sum + (row.amountUsd || 0), 0);
+    return { riel, dollar, total: dollar + riel / KHR_PER_USD };
+  }, [rows]);
+
   if (loading) {
     return <div className="py-10 text-center text-sm text-text-secondary">កំពុងទាញទិន្នន័យសាខា...</div>;
   }
@@ -151,6 +161,15 @@ export default function EventDonationBranchTotals({ activityId, organizerBranchI
           </tbody>
         </table>
       </div>
+
+      {rows.length > 0 && (
+        <DonationTotalsCard
+          title="សរុបវិភាគទាន"
+          riel={totals.riel}
+          dollar={totals.dollar}
+          total={totals.total}
+        />
+      )}
     </section>
   );
 }

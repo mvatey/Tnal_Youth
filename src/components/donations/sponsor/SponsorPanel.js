@@ -16,12 +16,14 @@ import { PiPencilSlash } from "react-icons/pi";
 import { VscEditSparkle } from "react-icons/vsc";
 import { downloadCsv } from "@/utils/downloadCsv";
 import DonationFilterSelect from "@/components/donations/monthlydonation/DonationFilterSelect";
+import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 
 const { sponsorHeaders: headers } = tableHeaders;
 const rowsPerPage = 12;
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
+const KHR_PER_USD = 4000;
 
 function SponsorReceiptPreview({ receipt }) {
   if (!receipt) {
@@ -189,6 +191,16 @@ export default function SponsorPanel({
     });
   }, [filteredRows, moneySort]);
 
+  // Totals across every currently-filtered row (same set the table below
+  // shows, not just the current page) — only rendered in readOnly mode
+  // (see below), matching the same totals card used on the Members/Branch
+  // tabs of the event-donation detail page.
+  const totals = useMemo(() => {
+    const riel = sortedRows.reduce((sum, row) => sum + parseMoney(row.rielAmount), 0);
+    const dollar = sortedRows.reduce((sum, row) => sum + parseMoney(row.dollarAmount), 0);
+    return { riel, dollar, total: dollar + riel / KHR_PER_USD };
+  }, [sortedRows]);
+
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
   const pagedRows = sortedRows.slice(
@@ -240,56 +252,58 @@ export default function SponsorPanel({
           {selectedBranch !== "all" && ` — ${selectedBranch}`}
         </h1>
 
-        <div className="flex w-full flex-nowrap items-center justify-end gap-[5px] overflow-x-auto pb-1">
-          <label className="block h-[34px] w-[260px] shrink-0">
-            <span className="flex h-full items-center rounded-lg border border-border bg-bg-page-white px-3 shadow-sm">
-              <input
-                className=" flex-1 bg-transparent pr-2 text-[12px] font-medium text-text-secondary outline-none placeholder:text-text-secondary focus:placeholder-transparent"
-                value={searchQuery}
-                onChange={(event) => updateFilter(setSearchQuery)(event.target.value)}
-                placeholder="ស្វែងរកតាមឈ្មោះអ្នកឧបត្ថម្ភ ..."
-              />
-              <Search size={16} className="text-text-secondary" />
-            </span>
-          </label>
+        {!readOnly && (
+          <div className="flex w-full flex-nowrap items-center justify-end gap-[5px] overflow-x-auto pb-1">
+            <label className="block h-[34px] w-[260px] shrink-0">
+              <span className="flex h-full items-center rounded-lg border border-border bg-bg-page-white px-3 shadow-sm">
+                <input
+                  className=" flex-1 bg-transparent pr-2 text-[12px] font-medium text-text-secondary outline-none placeholder:text-text-secondary focus:placeholder-transparent"
+                  value={searchQuery}
+                  onChange={(event) => updateFilter(setSearchQuery)(event.target.value)}
+                  placeholder="ស្វែងរកតាមឈ្មោះអ្នកឧបត្ថម្ភ ..."
+                />
+                <Search size={16} className="text-text-secondary" />
+              </span>
+            </label>
 
-          <SponsorTypeSelect
-            value={selectedType}
-            onChange={updateFilter(setSelectedType)}
-            options={typeOptions}
-            placeholder="ប្រភេទអ្នកឧបត្ថម្ភ"
-            className="w-[180px]"
-            size="compact"
-          />
+            <SponsorTypeSelect
+              value={selectedType}
+              onChange={updateFilter(setSelectedType)}
+              options={typeOptions}
+              placeholder="ប្រភេទអ្នកឧបត្ថម្ភ"
+              className="w-[180px]"
+              size="compact"
+            />
 
-          <DonationFilterSelect
-            label="សាខា"
-            value={selectedBranch}
-            onChange={updateFilter(setSelectedBranch)}
-            options={branchOptions}
-            allLabel="សាខាទាំងអស់"
-            showLabel={false}
-            className="w-[180px]"
-            disabled={branchScoped}
-            includeAllOption={!branchScoped}
-          />
+            <DonationFilterSelect
+              label="សាខា"
+              value={selectedBranch}
+              onChange={updateFilter(setSelectedBranch)}
+              options={branchOptions}
+              allLabel="សាខាទាំងអស់"
+              showLabel={false}
+              className="w-[180px]"
+              disabled={branchScoped}
+              includeAllOption={!branchScoped}
+            />
 
-          <DateFilter
-            value={selectedDate}
-            onChange={updateFilter(setSelectedDate)}
-          />
+            <DateFilter
+              value={selectedDate}
+              onChange={updateFilter(setSelectedDate)}
+            />
 
-          {showAddButton && canManage && (
-            <button
-              type="button"
-              onClick={() => router.push(`${routePrefix}/add${addQuery}`)}
-              className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-green-600 px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
-            >
-              <PlusCircle size={17} />
-              បន្ថែមការឧបត្ថម្ភ
-            </button>
-          )}
-        </div>
+            {showAddButton && canManage && (
+              <button
+                type="button"
+                onClick={() => router.push(`${routePrefix}/add${addQuery}`)}
+                className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-green-600 px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
+              >
+                <PlusCircle size={17} />
+                បន្ថែមការឧបត្ថម្ភ
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="mt-4 overflow-x-auto">
@@ -368,6 +382,15 @@ export default function SponsorPanel({
           </tbody>
         </table>
       </div>
+
+      {readOnly && sortedRows.length > 0 && (
+        <DonationTotalsCard
+          title="សរុបការឧបត្ថម្ភ"
+          riel={totals.riel}
+          dollar={totals.dollar}
+          total={totals.total}
+        />
+      )}
 
       <Pagination
         currentPage={safePage}

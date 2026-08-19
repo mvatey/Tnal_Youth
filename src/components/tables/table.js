@@ -21,6 +21,9 @@ export default function Table({
   onReceiptSave,
   readOnly = false,
   rowEditMode = false,
+  // See AddDonationTableHeader/AddDonationTableRow — hides the
+  // date-of-birth column for the event-donation "សមាជិក" tab.
+  hideDob = false,
 }) {
   // NOTE: `readOnly` here is this table's own "does this viewer have edit
   // rights at all" flag — it gets threaded down to AddDonationTableRow as
@@ -216,7 +219,7 @@ export default function Table({
     <div>
       <div className="overflow-x-auto rounded-sm border border-border bg-bg-page-white">
         <table className="w-full min-w-[980px] border-collapse">
-          <AddDonationTableHeader />
+          <AddDonationTableHeader hideDob={hideDob} />
           <tbody>
             {pagedRows.length > 0 ? (
               pagedRows.map((member, index) => (
@@ -239,11 +242,12 @@ export default function Table({
                   onSaveEdit={() => handleSaveRow(member)}
                   onShowInfo={setSelectedReceiptMember}
                   onRemoveReceipt={handleReceiptRemove}
+                  hideDob={hideDob}
                 />
               ))
             ) : (
               <tr>
-                <td colSpan={9} className="px-4 py-10 text-center text-sm text-text-mute">
+                <td colSpan={hideDob ? 8 : 9} className="px-4 py-10 text-center text-sm text-text-mute">
                   មិនមានទិន្នន័យសមាជិកសម្រាប់សាខានេះទេ
                 </td>
               </tr>

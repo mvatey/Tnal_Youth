@@ -1268,7 +1268,7 @@ export default function MembersPage() {
     <div className="flex min-h-full min-w-0 flex-col gap-4 overflow-hidden">
       {/* SUMMARY */}
 
-      <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+      <div className="grid shrink-0 grid-cols-5 gap-3">
         <StatCard
           icon={Users}
           label="សមាជិកសរុប"

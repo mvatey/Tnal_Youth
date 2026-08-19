@@ -7,8 +7,10 @@ import DonationSearchInput from "@/components/forms/searchBar";
 import Table from "@/components/tables/table";
 import EventDonationBranchTotals from "./EventDonationBranchTotals";
 import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
+import SponsorPanel from "@/components/donations/sponsor/SponsorPanel";
 import { Check, X } from "lucide-react";
 import useCurrentMember from "@/hooks/useCurrentMember";
+import { useBranch } from "@/context/BranchContext";
 
 // Matches the flat rate already used elsewhere in this form (see the
 // exchangeRateKhrPerUsd sent in handleSave's payload below) and on the
@@ -70,6 +72,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { member: currentMember } = useCurrentMember();
+  const { branches: accessibleBranches = [] } = useBranch();
   // Only entry staff (secretary / branch_leader) may record or edit event
   // donations here — admin/viewer are view-only, and members use their own
   // read-only "my donations" view instead of this staff-entry form.
@@ -100,6 +103,40 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   const [error, setError] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
   const [showSaveAlert, setShowSaveAlert] = useState(false);
+  // The selected activity's real host branch (authoritative — fetched from
+  // the activity itself, not just assumed equal to whatever selectedBranch
+  // is currently filtered to). Drives both isBranchOrganizer below and the
+  // "organizer" marker EventDonationBranchTotals shows in its own table.
+  const [organizerBranchId, setOrganizerBranchId] = useState(null);
+
+  useEffect(() => {
+    if (selectedEvent === "all") {
+      setOrganizerBranchId(null);
+      return undefined;
+    }
+    let cancelled = false;
+    fetchJson(`/api/backend/activities/${encodeURIComponent(selectedEvent)}`)
+      .then((activity) => {
+        if (!cancelled) setOrganizerBranchId(activity?.branchId ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setOrganizerBranchId(null);
+      });
+    return () => { cancelled = true; };
+  }, [selectedEvent]);
+
+  // "Branch organizer" = this account is a secretary/branch_leader with
+  // access to the branch that actually hosts the selected activity —
+  // mirrors the backend's own host-branch check (see
+  // ActivityMediaServiceImpl#validateManagePermission). Only they get the
+  // Sponsor tab below; a co-hosting/invited branch, admin, or a viewer
+  // does not.
+  const isBranchOrganizer =
+    ["secretary", "branch_leader"].includes(currentMember?.role) &&
+    organizerBranchId != null &&
+    accessibleBranches.some(
+      (branch) => String(branch.id) === String(organizerBranchId),
+    );
 
   useEffect(() => {
     let cancelled = false;
@@ -204,6 +241,16 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     const timer = window.setTimeout(() => setShowSaveAlert(false), 3000);
     return () => window.clearTimeout(timer);
   }, [showSaveAlert]);
+
+  // If "sponsor" was the active tab and the organizer check flips false
+  // (branch/activity changed, or organizerBranchId only just resolved),
+  // fall back to "members" rather than leaving the switcher on a
+  // now-hidden tab with nothing rendered under it.
+  useEffect(() => {
+    if (activeTab === "sponsor" && !isBranchOrganizer) {
+      setActiveTab("members");
+    }
+  }, [activeTab, isBranchOrganizer]);
 
   const handleSave = async (rows) => {
     if (!canEdit) { setError("អ្នកមិនមានសិទ្ធិកែប្រែវិភាគទាននេះទេ។"); return false; }
@@ -342,13 +389,16 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           that there is nothing to show either tab's table for. "សាខា"
           is read-only for every viewer (including this branch's own
           entry staff): it's a cross-branch summary, not something any
-          single branch edits.
+          single branch edits. "អ្នកឧបត្ថម្ភ" only appears for the branch
+          that actually organizes the selected activity (see
+          isBranchOrganizer above) — everyone else sees just these two.
         */}
         {hasBranchAndEvent && (
           <div className="mb-4 inline-flex w-fit shrink-0 rounded-lg border border-border bg-bg-page-gray p-1 text-xs font-medium">
             {[
               { key: "members", label: "សមាជិក" },
               { key: "branches", label: "សាខា" },
+              ...(isBranchOrganizer ? [{ key: "sponsor", label: "អ្នកឧបត្ថម្ភ" }] : []),
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -379,6 +429,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
             onCancel={onCancel || (() => router.push(listPath))}
             onSave={saving ? undefined : handleSave}
             onReceiptSave={(id, receipt) => setMembers((rows) => rows.map((row) => row.id === id ? { ...row, receipt } : row))}
+            hideDob
           />
         ) : null}
         {!loading && hasBranchAndEvent && activeTab === "members" && members.length > 0 ? (
@@ -390,7 +441,18 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           />
         ) : null}
         {hasBranchAndEvent && activeTab === "branches" ? (
-          <EventDonationBranchTotals activityId={selectedEvent} />
+          <EventDonationBranchTotals
+            activityId={selectedEvent}
+            organizerBranchId={organizerBranchId}
+          />
+        ) : null}
+        {hasBranchAndEvent && activeTab === "sponsor" && isBranchOrganizer ? (
+          <SponsorPanel
+            activityId={selectedEvent}
+            selectedBranch={selectedBranch}
+            branchScoped
+            readOnly
+          />
         ) : null}
       </section>
     </>

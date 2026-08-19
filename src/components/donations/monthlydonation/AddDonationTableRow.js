@@ -106,6 +106,9 @@ export default function AddDonationTableRow({
   onEdit,
   onCancelEdit,
   onSaveEdit,
+  // See AddDonationTableHeader — the event-donation "សមាជិក" tab hides
+  // date-of-birth; the monthly-donation table still shows it.
+  hideDob = false,
 }) {
   const [focusedAmountField, setFocusedAmountField] = useState(null);
   const receipt = member.receipt;
@@ -152,7 +155,7 @@ export default function AddDonationTableRow({
       <td className="px-3">{member.gender}</td>
 
       {/* ថ្ងៃខែឆ្នាំកំណើត */}
-      <td className="whitespace-nowrap px-3">{member.dob}</td>
+      {!hideDob && <td className="whitespace-nowrap px-3">{member.dob}</td>}
 
       {/* ចំនួនប្រាក់រៀល (editable) */}
       <td className="px-3">
