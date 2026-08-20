@@ -5,13 +5,21 @@ const ROUTE_ROLES = {
     "ADMIN",
     "SECRETARY",
     "BRANCH_LEADER",
+    "VIEWER",
   ],
 
-  "/branch": ["ADMIN"],
+  "/branch": [
+    "ADMIN",
+    "SECRETARY",
+    "BRANCH_LEADER",
+    "VIEWER",
+  ],
 
   "/member": [
     "ADMIN",
     "SECRETARY",
+    "BRANCH_LEADER",
+    "VIEWER",
   ],
 
   "/activity": [
@@ -19,13 +27,13 @@ const ROUTE_ROLES = {
     "SECRETARY",
     "BRANCH_LEADER",
     "MEMBER",
+    "VIEWER",
   ],
 
   "/donation": [
     "ADMIN",
     "SECRETARY",
     "BRANCH_LEADER",
-    "MEMBER",
   ],
 
   "/document": [
@@ -33,6 +41,7 @@ const ROUTE_ROLES = {
     "SECRETARY",
     "BRANCH_LEADER",
     "MEMBER",
+    "VIEWER",
   ],
 
   "/notification": [
@@ -40,6 +49,7 @@ const ROUTE_ROLES = {
     "SECRETARY",
     "BRANCH_LEADER",
     "MEMBER",
+    "VIEWER",
   ],
 
   "/myAcc": [

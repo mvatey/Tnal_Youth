@@ -2,9 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import {  ImportIcon, X } from "lucide-react";
-import branchData from "@/data/branchRecords.json";
-import variables from "@/data/variables.json";
+import { ImportIcon, X } from "lucide-react";
 import FormControl from "@/components/forms/FormControl";
 import FormSelect from "@/components/forms/FormSelect";
 
@@ -79,31 +77,6 @@ const EMPTY_FORM = {
   level: "",
 };
 
-function getVariableItems(typeId) {
-  return (
-    variables.types?.find(
-      (type) => type.id === typeId
-    )?.items ?? []
-  );
-}
-
-function buildStatusOptions() {
-  return getVariableItems("member-status")
-    .filter((item) => {
-      const recordStatus =
-        item.recordStatus ?? item.status;
-
-      return recordStatus === "ACTIVE";
-    })
-    .map((item) => ({
-      label: item.nameKm,
-      value:
-        item.code ??
-        item.nameEn?.toUpperCase() ??
-        String(item.id),
-    }));
-}
-
 function buildBranchOptions(branches) {
   return branches.map((branch) => {
     if (
@@ -139,24 +112,31 @@ export default function CreateMemberModal({
   onClose,
   onSave,
   branches: providedBranches,
+  statuses: providedStatuses,
 }) {
   const [mounted, setMounted] =
     useState(false);
 
   const [form, setForm] =
     useState(EMPTY_FORM);
+  const [submitError, setSubmitError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const statusOptions = useMemo(
-    buildStatusOptions,
-    []
+    () =>
+      (providedStatuses ?? [])
+        .filter((status) => status?.value !== "")
+        .map((status) => ({
+          label: status.label ?? status.nameKm ?? status.code,
+          value: String(status.value ?? status.id),
+        })),
+    [providedStatuses]
   );
 
   const branchOptions = useMemo(() => {
-    const source =
-      Array.isArray(providedBranches) &&
-      providedBranches.length > 0
-        ? providedBranches
-        : branchData;
+    const source = Array.isArray(providedBranches)
+      ? providedBranches.filter((branch) => branch?.value !== "")
+      : [];
 
     return buildBranchOptions(source);
   }, [providedBranches]);
@@ -168,6 +148,7 @@ export default function CreateMemberModal({
   useEffect(() => {
     if (open) {
       setForm(EMPTY_FORM);
+      setSubmitError("");
     }
   }, [open]);
 
@@ -220,30 +201,37 @@ export default function CreateMemberModal({
       }));
     };
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault();
 
     const normalizedMember = {
-      fullNameKm: form.nameKh.trim(),
-      fullNameEn:
+      full_name_km: form.nameKh.trim(),
+      full_name_en:
         form.nameEn.trim() || null,
       gender: form.gender,
-      status: form.status,
+      status_id: Number(form.status),
       phone: form.phone.trim(),
       email:
         form.email.trim() || null,
-      branchId:
-        form.branchId || null,
+      branch_id: Number(form.branchId),
       role: form.role,
-      dateOfBirth:
+      date_of_birth:
         form.dateOfBirth || null,
-      joinedAt:
+      joined_on:
         form.joinedAt || null,
-      level:
-        form.level || null,
+      level_id:
+        form.level ? Number(form.level) : null,
     };
 
-    onSave?.(normalizedMember);
+    setSubmitError("");
+    setSaving(true);
+    try {
+      await onSave?.(normalizedMember);
+    } catch (error) {
+      setSubmitError(error?.message || "មិនអាចបង្កើតសមាជិកបានទេ");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!open || !mounted) {
@@ -400,6 +388,11 @@ export default function CreateMemberModal({
           </form>
 
           <div className="flex shrink-0 items-center gap-3 border-t border-border bg-bg-page-white px-6 py-3">
+  {submitError ? (
+    <p className="mr-auto text-sm text-error" role="alert">
+      {submitError}
+    </p>
+  ) : null}
   <button
     type="button"
     onClick={onClose}
@@ -411,10 +404,11 @@ export default function CreateMemberModal({
   <button
     type="submit"
     form="create-member-form"
+    disabled={saving}
     className="flex h-[34px] flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#4B3391] text-[14px] font-semibold text-white shadow-md transition hover:bg-[#3f2b7d]"
   >
     <ImportIcon size={17} />
-    រក្សាទុក
+    {saving ? "កំពុងរក្សាទុក..." : "រក្សាទុក"}
   </button>
 </div>
         </div>

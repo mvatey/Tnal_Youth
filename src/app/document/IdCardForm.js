@@ -8,15 +8,6 @@ import FormSelect from "@/components/forms/FormSelect";
 import BoxFill from "@/components/forms/boxFill";
 import DocumentActionButton from "@/components/forms/documentActionbutton";
 
-import users from "@/data/members.json";
-
-const USER_OPTIONS = users
-  .filter((user) => user?.name_kh)
-  .map((user) => ({
-    label: user.name_kh,
-    value: String(user.id),
-  }));
-
 const MAX_TEMPLATE_SIZE = 5 * 1024 * 1024;
 
 const ALLOWED_TEMPLATE_TYPES = [
@@ -32,8 +23,63 @@ export default function IdCardForm({
   onClose,
   saving = false,
 }) {
+  const [users, setUsers] = useState([]);
+  const [membersError, setMembersError] = useState("");
   const [showValidationError, setShowValidationError] =
     useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadMembers() {
+      try {
+        const rows = [];
+        let page = 0;
+        let totalPages = 1;
+
+        do {
+          const response = await fetch(
+            `/api/members?page=${page}&size=100`,
+            { cache: "no-store", signal: controller.signal },
+          );
+          const body = await response.json().catch(() => null);
+          if (!response.ok) {
+            throw new Error(body?.message || "Unable to load members");
+          }
+
+          const pageRows = body?.content ?? body?.data?.content ?? body?.data ?? body;
+          rows.push(...(Array.isArray(pageRows) ? pageRows : []));
+          totalPages = Math.max(
+            1,
+            Number(body?.totalPages ?? body?.data?.totalPages) || 1,
+          );
+          page += 1;
+        } while (page < totalPages);
+
+        setUsers(rows.map((user) => ({
+          ...user,
+          name_kh: user.full_name_km || user.fullNameKm || user.name_kh || "",
+          name_en: user.full_name_en || user.fullNameEn || user.name_en || "",
+          phone: user.phone_number || user.phoneNumber || user.phone || "",
+          date_of_birth: user.date_of_birth || user.dateOfBirth || "",
+          profile_photo:
+            user.profile_image_url || user.profileImageUrl || user.profile_photo || "/profile.png",
+        })).filter((user) => user.id && user.name_kh));
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setMembersError(error.message || "Unable to load members");
+        }
+      }
+    }
+
+    loadMembers();
+    return () => controller.abort();
+  }, []);
+
+  const userOptions = users.map((user) => ({
+    label: user.name_kh,
+    value: String(user.id),
+  }));
 
   const selectedUser = users.find(
     (user) =>
@@ -328,8 +374,14 @@ export default function IdCardForm({
             value={form.userId || ""}
             onChange={handleUserChange}
             placeholder="ជ្រើសរើសសមាជិក"
-            options={USER_OPTIONS}
+            options={userOptions}
           />
+
+          {membersError && (
+            <p className="text-sm text-error" role="alert">
+              {membersError}
+            </p>
+          )}
 
           <BoxFill
             label="ភេទ"

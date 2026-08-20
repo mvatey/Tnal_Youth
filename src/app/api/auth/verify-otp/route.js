@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/apiErrorResponse";
 
 const BACKEND_URL =
   process.env.BACKEND_API_URL ||
@@ -113,15 +114,10 @@ export async function POST(request) {
       error,
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        message:
-          "មិនអាចផ្ទៀងផ្ទាត់លេខកូដ OTP បាន",
-      },
-      {
-        status: 500,
-      },
+    return apiErrorResponse(
+      "BACKEND_UNAVAILABLE",
+      "មិនអាចផ្ទៀងផ្ទាត់លេខកូដ OTP បាន",
+      502,
     );
   }
 }

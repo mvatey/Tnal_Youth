@@ -330,6 +330,22 @@ export default async function ActivityDetailPage({
         .canManageAsInvitedBranch,
     );
 
+  /*
+   * The income-entry branch is different for an accepted invited branch.
+   * Host staff record under the activity host branch; invited staff record
+   * under the accepted branch they manage.  Passing this branch explicitly
+   * prevents the donation screen from trying to load host-branch members.
+   */
+  const incomeBranchId =
+    canManageAsInvitedBranch
+      ? (record.managedInvitedBranchId ?? record.managed_invited_branch_id ?? null)
+      : record.branchId;
+
+  const activityIncomeHref =
+    incomeBranchId != null
+      ? `/donation/eventdonation/detail?event=${encodeURIComponent(record.id)}&branch=${encodeURIComponent(incomeBranchId)}`
+      : `/donation/eventdonation/detail?event=${encodeURIComponent(record.id)}`;
+
   const branches =
     Array.isArray(branchData)
       ? branchData
@@ -1045,18 +1061,7 @@ export default async function ActivityDetailPage({
 
             <div className="mt-5 grid grid-cols-2 gap-3">
               <Link
-                href={{
-                  pathname:
-                    "/donation/eventdonation/detail",
-
-                  query: {
-                    branch:
-                      activity.branchId,
-
-                    event:
-                      activity.id,
-                  },
-                }}
+                href={activityIncomeHref}
                 className={`flex h-10 items-center justify-center gap-2 rounded-lg bg-[#D3AF3C] text-sm font-semibold text-white transition-colors hover:bg-[#BF9C2D] ${
                   !canManage
                     ? "col-span-2"

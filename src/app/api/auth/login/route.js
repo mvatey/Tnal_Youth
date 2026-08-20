@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
+import { apiErrorResponse } from "@/lib/apiErrorResponse";
 
 const BACKEND_URL =
   process.env.BACKEND_API_URL ||
+  process.env.BACKEND_URL ||
   "http://localhost:8081/api";
 
 function parseJsonSafely(text) {
@@ -15,6 +17,24 @@ function parseJsonSafely(text) {
     return {
       message: text,
     };
+  }
+}
+
+async function revokeRefreshToken(refreshToken) {
+  if (!refreshToken) return;
+
+  try {
+    await fetch(`${BACKEND_URL}/auth/logout`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ refreshToken }),
+      cache: "no-store",
+    });
+  } catch (error) {
+    console.error("Cannot revoke incomplete login session:", error);
   }
 }
 
@@ -125,6 +145,7 @@ export async function POST(request) {
     const currentUser = parseJsonSafely(meText);
 
     if (!meResponse.ok) {
+      await revokeRefreshToken(refreshToken);
       return Response.json(
         {
           message:
@@ -148,9 +169,11 @@ export async function POST(request) {
       "SECRETARY",
       "BRANCH_LEADER",
       "MEMBER",
+      "VIEWER",
     ];
 
     if (!supportedRoles.includes(normalizedRole)) {
+      await revokeRefreshToken(refreshToken);
       return Response.json(
         {
           message:
@@ -206,8 +229,19 @@ export async function POST(request) {
         refreshToken,
         refreshCookieOptions
       );
+
+      if (rememberMe) {
+        cookieStore.set(
+          "rememberSession",
+          "1",
+          refreshCookieOptions
+        );
+      } else {
+        cookieStore.delete("rememberSession");
+      }
     } else {
       cookieStore.delete("refreshToken");
+      cookieStore.delete("rememberSession");
     }
 
     /*
@@ -228,14 +262,10 @@ export async function POST(request) {
   } catch (error) {
     console.error("Login proxy error:", error);
 
-    return Response.json(
-      {
-        message:
-          "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ",
-      },
-      {
-        status: 500,
-      }
+    return apiErrorResponse(
+      "BACKEND_UNAVAILABLE",
+      "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ",
+      502,
     );
   }
 }

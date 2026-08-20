@@ -1,20 +1,13 @@
-# Data structure
+# Static presentation data
 
-Pages import JSON datasets directly. Table-ready JSON files keep display fields
-consistent and contain the joined values required by each UI table.
+This directory contains only UI option/label data that does not represent
+application records:
 
-## Shared datasets
+- `calendar.json`: Khmer calendar labels.
+- `education.json`, `location.json`, and `political.json`: form options.
+- `donation/donationOptions.json`, `donation/sponsorOptions.json`, and
+  `donation/tableHeaders.json`: donation form/table presentation options.
 
-- `activityRecords.json`: normalized activity names, dates, branch names, and counts
-- `branchRecords.json`: normalized branch naming
-- `companyDocuments.json`: institution document table rows
-- `memberDocuments.json`: member document table rows
-- `donationRecords.json`: donation rows formatted for member donation tables
-- `branchMemberRecords.json`: branch table rows derived from canonical members
-- `participantRecords.json`: participant rows joined with activities and members
-- `participationRecords.json`: participation history joined with activities and members
-- `dashboardSummary.json`: dashboard totals calculated from canonical records
-
-`members.json` supplies member and mock authentication records.
-`donation/donationData.json` supplies donation table and summary presentation
-records. Keep IDs aligned when editing related datasets.
+Members, activities, branches, documents, donations, participants, dashboard
+figures, and authentication data must come from backend APIs. Do not add mock
+record or plaintext-password fixtures here.

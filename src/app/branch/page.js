@@ -24,6 +24,8 @@ import Table from "@/components/table-items/Table";
 
 import SaveFile from "@/components/forms/savefile";
 import Button from "@/components/ui/Button";
+import { useAuth } from "@/context/AuthContext";
+import { normalizeRole } from "@/lib/navigation";
 
 /*
  * =========================================================
@@ -273,6 +275,8 @@ function BranchStatusBadge({
 }
 
 export default function BranchPage() {
+  const { user } = useAuth();
+  const isViewer = normalizeRole(user?.role) === "viewer";
   /*
    * =======================================================
    * UI STATE
@@ -1659,7 +1663,7 @@ export default function BranchPage() {
               ទាញយក
             </Button>
 
-            <Button
+            {!isViewer && <Button
               type="button"
               variant="success"
               icon={
@@ -1672,7 +1676,7 @@ export default function BranchPage() {
               }
             >
               បង្កើតសាខាថ្មី
-            </Button>
+            </Button>}
           </div>
         </div>
 
@@ -1703,7 +1707,7 @@ export default function BranchPage() {
         />
       </section>
 
-      <CreateBranchModal
+      {!isViewer && <CreateBranchModal
         open={
           showCreateModal
         }
@@ -1715,7 +1719,7 @@ export default function BranchPage() {
         onSave={
           handleCreateBranch
         }
-      />
+      />}
     </div>
   );
 }

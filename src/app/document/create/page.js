@@ -7,9 +7,7 @@ import CertificateForm from "@/app/document/CertificateForm";
 import IdCardForm from "@/app/document/IdCardForm";
 import LetterOfAppointmentForm from "@/app/document/LetterOfAppointmentForm";
 
-import { createDocumentId, saveTemplateFile } from "@/lib/documentStorage";
-
-const STORAGE_KEY = "tnal-member-documents";
+const ID_CARD_DOCUMENT_MARKER = "[TNAL:ID_CARD]";
 
 const EMPTY_FORM = {
   title: "",
@@ -53,20 +51,6 @@ const EMPTY_FORM = {
   color: "#12224c",
   language: "km",
 };
-
-function readSavedDocuments() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-  } catch (error) {
-    console.error("Cannot read saved documents:", error);
-
-    return {};
-  }
-}
-
-function writeSavedDocuments(documents) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(documents));
-}
 
 function getBranchName(branch) {
   if (!branch) {
@@ -130,10 +114,10 @@ export default function CreateDocumentPage() {
     window.location.assign(targetUrl);
   };
 
-  const saveIdCard = async (data, allDocuments) => {
-    const memberId = data.userId || data.selectedUser?.id;
+  const saveIdCardToBackend = async (data) => {
+    const memberId = Number(data.userId || data.selectedUser?.id);
 
-    if (!memberId) {
+    if (!Number.isInteger(memberId) || memberId <= 0) {
       throw new Error("រកមិនឃើញលេខសម្គាល់សមាជិក");
     }
 
@@ -141,138 +125,63 @@ export default function CreateDocumentPage() {
       throw new Error("សូមបញ្ចូលរូបភាពគំរូប័ណ្ណសមាជិក");
     }
 
-    const memberKey = String(memberId);
-
-    const documentId = createDocumentId();
-
-    const templateStorageId = `id-card-${documentId}`;
-
-    await saveTemplateFile({
-      id: templateStorageId,
-      file: data.idCardTemplateFile,
+    const typeResponse = await fetch("/api/backend/document-types", {
+      cache: "no-store",
     });
+    const typeBody = await typeResponse.json().catch(() => null);
 
-    const existingMemberDocuments = allDocuments[memberKey] || {};
-
-    const existingIdCards = normalizeArray(existingMemberDocuments.idCards);
-
-    const newIdCard = {
-      id: documentId,
-
-      memberId: memberKey,
-
-      member: data.member || data.selectedUser?.name_kh || "",
-
-      memberNameEn: data.memberNameEn || data.selectedUser?.name_en || "",
-
-      gender: data.gender || data.selectedUser?.gender || "",
-
-      email: data.email || data.selectedUser?.email || "",
-
-      phone: data.phone || data.selectedUser?.phone || "",
-
-      dateOfBirth:
-        data.dateOfBirth ||
-        data.selectedUser?.date_of_birth ||
-        data.selectedUser?.dateOfBirth ||
-        "",
-
-      branch:
-        getBranchName(data.branch) || getBranchName(data.selectedUser?.branch),
-
-      role: data.role || data.selectedUser?.role || "member",
-
-      profilePhoto:
-        data.profilePhoto ||
-        data.selectedUser?.profile_photo ||
-        data.selectedUser?.profilePhoto ||
-        "/profile.png",
-
-      templateStorageId,
-
-      createdAt: new Date().toISOString(),
-    };
-
-    allDocuments[memberKey] = {
-      ...existingMemberDocuments,
-
-      idCards: [...existingIdCards, newIdCard],
-    };
-
-    writeSavedDocuments(allDocuments);
-
-    return memberKey;
-  };
-
-  const saveMemberCertificate = async (data, allDocuments) => {
-    const memberId = data.memberId || data.selectedMember?.id;
-
-    if (!memberId) {
-      throw new Error("រកមិនឃើញលេខសម្គាល់សមាជិក");
+    if (!typeResponse.ok) {
+      throw new Error(typeBody?.message || "Unable to load document types.");
     }
 
-    if (!data.templateFile) {
-      throw new Error("សូមបញ្ចូលរូបភាពគំរូវិញ្ញាបនបត្រ");
-    }
-
-    const memberKey = String(memberId);
-
-    const documentId = createDocumentId();
-
-    const templateStorageId = `certificate-${documentId}`;
-
-    await saveTemplateFile({
-      id: templateStorageId,
-      file: data.templateFile,
-    });
-
-    const existingMemberDocuments = allDocuments[memberKey] || {};
-
-    const existingCertificates = normalizeArray(
-      existingMemberDocuments.certificates,
+    const memberDocumentType = normalizeArray(typeBody?.data ?? typeBody).find(
+      (item) =>
+        String(item.code || "").trim().toUpperCase() === "MEMBER_DOCUMENT",
     );
 
-    const newCertificate = {
-      id: documentId,
+    if (!memberDocumentType?.id) {
+      throw new Error("The member document type is not configured.");
+    }
 
-      title: data.title || "វិញ្ញាបនបត្រ",
+    const upload = new FormData();
+    upload.append("file", data.idCardTemplateFile);
 
-      recipientType: "member",
+    const uploadResponse = await fetch("/api/backend/files/images", {
+      method: "POST",
+      body: upload,
+    });
+    const uploadedFile = await uploadResponse.json().catch(() => null);
 
-      memberId: memberKey,
+    if (!uploadResponse.ok || !uploadedFile?.id) {
+      throw new Error(
+        uploadedFile?.message ||
+          uploadedFile?.detail ||
+          "ID-card template upload failed.",
+      );
+    }
 
-      member: data.member || data.selectedMember?.name_kh || "",
+    const createResponse = await fetch("/api/backend/documents", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type_id: Number(memberDocumentType.id),
+        file_id: Number(uploadedFile.id),
+        title: "ប័ណ្ណសម្គាល់សមាជិក",
+        description: ID_CARD_DOCUMENT_MARKER,
+        member_id: memberId,
+      }),
+    });
+    const createdDocument = await createResponse.json().catch(() => null);
 
-      memberNameEn: data.memberNameEn || data.selectedMember?.name_en || "",
+    if (!createResponse.ok) {
+      throw new Error(
+        createdDocument?.message ||
+          createdDocument?.detail ||
+          "Unable to save the member ID card.",
+      );
+    }
 
-      branch:
-        getBranchName(data.branch) ||
-        getBranchName(data.selectedMember?.branch),
-
-      description: data.description || "",
-
-      language: data.language || "km",
-
-      color: data.color || "#12224c",
-
-      font: data.font || "Noto Sans",
-
-      fontSize: data.fontSize || "medium",
-
-      templateStorageId,
-
-      createdAt: new Date().toISOString(),
-    };
-
-    allDocuments[memberKey] = {
-      ...existingMemberDocuments,
-
-      certificates: [...existingCertificates, newCertificate],
-    };
-
-    writeSavedDocuments(allDocuments);
-
-    return memberKey;
+    return String(memberId);
   };
 
   const notifyInvitedBranchesForCertificates = async (data) => {
@@ -411,64 +320,6 @@ export default function CreateDocumentPage() {
     return String(generatedDocuments[0].member.id);
   };
 
-  const saveAppointmentLetter = async (data, allDocuments) => {
-    const memberId = data.memberId || data.selectedMember?.id || data.user?.id;
-
-    if (!memberId) {
-      throw new Error("រកមិនឃើញលេខសម្គាល់សមាជិក");
-    }
-
-    const memberKey = String(memberId);
-    const documentId = createDocumentId();
-
-    const existingMemberDocuments = allDocuments[memberKey] || {};
-
-    const existingAppointmentLetters = normalizeArray(
-      existingMemberDocuments.appointmentLetters,
-    );
-
-    const selectedMember = data.selectedMember || data.user || {};
-
-    const newAppointmentLetter = {
-      id: documentId,
-
-      title: data.title || "លិខិតតែងតាំង",
-
-      documentType: "appointment_letter",
-
-      memberId: memberKey,
-
-      member: data.member || selectedMember.name_kh || "",
-
-      memberNameEn: data.memberNameEn || selectedMember.name_en || "",
-
-      branch:
-        getBranchName(data.branch) || getBranchName(selectedMember.branch),
-
-      role: data.role || selectedMember.role || "member",
-
-      joinedAt:
-        data.joinedAt ||
-        selectedMember.joinedAt ||
-        selectedMember.joined_at ||
-        "",
-
-      description: data.description || "",
-
-      createdAt: new Date().toISOString(),
-    };
-
-    allDocuments[memberKey] = {
-      ...existingMemberDocuments,
-
-      appointmentLetters: [...existingAppointmentLetters, newAppointmentLetter],
-    };
-
-    writeSavedDocuments(allDocuments);
-
-    return memberKey;
-  };
-
   const saveAppointmentLettersToBackend = async (data) => {
     const selectedMembers = normalizeArray(data.selectedMembers);
     const memberIds = normalizeArray(data.memberIds).map(Number).filter(Number.isInteger);
@@ -576,10 +427,8 @@ export default function CreateDocumentPage() {
     setSaving(true);
 
     try {
-      const allDocuments = readSavedDocuments();
-
       if (type === "id_card") {
-        const memberId = await saveIdCard(data, allDocuments);
+        const memberId = await saveIdCardToBackend(data);
 
         alert("✅ បង្កើតប័ណ្ណសមាជិកដោយជោគជ័យ!");
 

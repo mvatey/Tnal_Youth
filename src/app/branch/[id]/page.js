@@ -33,6 +33,8 @@ import Table from "@/components/table-items/Table";
 import Button from "@/components/ui/Button";
 import CreateBranchModal from "@/components/branch/CreateBranchModal";
 import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
+import { useAuth } from "@/context/AuthContext";
+import { normalizeRole } from "@/lib/navigation";
 
 const BACKEND_ORIGIN =
   process.env.NEXT_PUBLIC_BACKEND_ORIGIN ||
@@ -360,14 +362,14 @@ function LeaderCard({
         សូមជ្រើសរើសសមាជិកម្នាក់ ដើម្បីកំណត់ជា{title}
       </p>
 
-      <button
+      {onAdd && <button
         type="button"
         onClick={onAdd}
         className="mt-4 inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-success px-4 text-sm font-semibold text-white transition hover:bg-emerald-700"
       >
         <PlusCircle size={15} />
         បន្ថែម{title}
-      </button>
+      </button>}
     </div>
   );
 }
@@ -524,6 +526,8 @@ function LeaderCard({
 }
 
 export default function BranchDetailPage() {
+  const { user } = useAuth();
+  const isViewer = normalizeRole(user?.role) === "viewer";
   const params = useParams();
 
   const branchId = String(
@@ -1330,7 +1334,7 @@ const loadBranchDetails =
             ព័ត៌មានសាខា
           </h2>
 
-          <button
+          {!isViewer && <button
             type="button"
             onClick={() =>
               setIsEditModalOpen(
@@ -1342,7 +1346,7 @@ const loadBranchDetails =
             <Pencil size={15} />
 
             កែប្រែ
-          </button>
+          </button>}
         </div>
 
         <div className="rounded-lg border border-secondary bg-primary-sidebar px-6 py-4 text-white">
@@ -1441,7 +1445,7 @@ const loadBranchDetails =
         <LeaderCard
           person={branchLeader}
           title="ប្រធានសាខា"
-          onAdd={() =>
+          onAdd={isViewer ? undefined : () =>
             setIsEditModalOpen(true)
           }
         />
@@ -1458,7 +1462,7 @@ const loadBranchDetails =
           <LeaderCard
             person={secretary}
             title="លេខាធិការ"
-            onAdd={() =>
+            onAdd={isViewer ? undefined : () =>
               setIsEditModalOpen(true)
             }
           />
@@ -1483,7 +1487,7 @@ const loadBranchDetails =
           />
 
           <div className="ml-auto">
-            <Button
+            {!isViewer && <Button
               type="button"
               variant="success"
               icon={
@@ -1496,7 +1500,7 @@ const loadBranchDetails =
               }
             >
               បន្ថែមសមាជិកថ្មី
-            </Button>
+            </Button>}
           </div>
         </div>
 
@@ -1509,7 +1513,7 @@ const loadBranchDetails =
         />
       </section>
 
-      <CreateBranchModal
+      {!isViewer && <CreateBranchModal
         open={isEditModalOpen}
         onClose={() =>
           setIsEditModalOpen(false)
@@ -1541,9 +1545,9 @@ const loadBranchDetails =
         }}
         leaderOptions={leaderOptions}
         onSave={handleBranchSaved}
-      />
+      />}
 
-      <CreateMemberModal
+      {!isViewer && <CreateMemberModal
         open={isCreateOpen}
         onClose={() =>
           setIsCreateOpen(false)
@@ -1561,7 +1565,7 @@ const loadBranchDetails =
         }
 
         lockBranch
-      />
+      />}
     </div>
   );
 }

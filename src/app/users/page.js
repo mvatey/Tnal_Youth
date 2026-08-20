@@ -8,6 +8,8 @@ import { RiAddCircleLine } from "react-icons/ri";
 import DataTable from "@/components/table/DataTable.js";
 import StatCard from "@/components/dashboard/statCard";
 import CreateUserModal from "@/components/popup/CreateUserModal.js";
+import { useAuth } from "@/context/AuthContext";
+import { normalizeRole } from "@/lib/navigation";
 
 const USERS_BASE = "/api/backend/admin/users";
 
@@ -18,13 +20,8 @@ const EMPTY_SUMMARY = {
 };
 
 /*
- * The list/summary this page reads from is already scoped
- * server-side to accounts with no member_id link (see
- * UserManagementServiceImpl) — MEMBER/BRANCH_LEADER/SECRETARY
- * accounts can never show up here, only ADMIN and VIEWER. Those
- * two extra entries are kept only as a defensive fallback so a
- * label still renders instead of the raw role code, in case that
- * scoping ever changes.
+ * Users means every login account. Accounts may be standalone
+ * (memberId == null) or linked to a Member (memberId != null).
  */
 const ROLE_LABELS_KM = {
   ADMIN: "អ្នកគ្រប់គ្រង",
@@ -37,6 +34,8 @@ const ROLE_LABELS_KM = {
 const STATUS_LABELS_KM = {
   ACTIVE: "សកម្ម",
   INACTIVE: "អសកម្ម",
+  SUSPENDED: "បានផ្អាក",
+  RESIGNED: "បានលាលែង",
   LOCKED: "ជាប់សោ",
   PENDING_ACTIVATION: "រង់ចាំដំណើរការ",
 };
@@ -44,28 +43,60 @@ const STATUS_LABELS_KM = {
 const STATUS_BADGE_STYLES = {
   ACTIVE: "bg-success-bg text-success",
   INACTIVE: "bg-error-bg text-error",
+  SUSPENDED: "bg-warning-bg text-warning",
+  RESIGNED: "bg-bg-page-gray text-text-secondary",
   LOCKED: "bg-warning-bg text-warning",
   PENDING_ACTIVATION: "bg-bg-page-gray text-text-secondary",
 };
 
-/*
- * Only ADMIN and VIEWER can ever appear in this list (see the
- * note on ROLE_LABELS_KM above), so those are the only two
- * filterable roles offered here.
- */
 const ROLE_OPTIONS = [
   { label: "គ្រប់តួនាទី", value: "" },
   { label: "អ្នកគ្រប់គ្រង", value: "ADMIN" },
+  { label: "ប្រធានសាខា", value: "BRANCH_LEADER" },
+  { label: "លេខាធិការ", value: "SECRETARY" },
+  { label: "សមាជិក", value: "MEMBER" },
   { label: "អ្នកមើល", value: "VIEWER" },
 ];
 
-const STATUS_OPTIONS = [
+const FALLBACK_STATUS_OPTIONS = [
   { label: "គ្រប់ស្ថានភាព", value: "" },
   { label: "សកម្ម", value: "ACTIVE" },
   { label: "អសកម្ម", value: "INACTIVE" },
-  { label: "ជាប់សោ", value: "LOCKED" },
-  { label: "រង់ចាំដំណើរការ", value: "PENDING_ACTIVATION" },
+  { label: "បានផ្អាក", value: "SUSPENDED" },
+  { label: "បានលាលែង", value: "RESIGNED" },
 ];
+
+
+async function fetchLookupOptions(path, signal) {
+  const response = await fetch(`/api/lookups/${path}`, {
+    method: "GET",
+    credentials: "include",
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+    signal,
+  });
+
+  const text = await response.text();
+  let body = null;
+
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = text;
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      (typeof body === "object" &&
+        (body?.message || body?.detail || body?.error)) ||
+        `Request failed with status ${response.status}`,
+    );
+  }
+
+  return Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
+}
 
 async function fetchJson(path, params, signal) {
   const query = params ? `?${new URLSearchParams(params).toString()}` : "";
@@ -134,16 +165,31 @@ function mapUser(user) {
       ROLE_LABELS_KM[String(user?.role || "").toUpperCase()] ||
       user?.role ||
       "-",
-    statusCode: String(user?.status || "").toUpperCase(),
+    accountType: user?.memberId == null ? "STANDALONE" : "MEMBER_LINKED",
+    memberId: user?.memberId ?? null,
+    branchId: user?.branchId ?? null,
+    statusCode: String(
+      user?.memberId != null && user?.memberStatusCode
+        ? user.memberStatusCode
+        : user?.status || "",
+    ).toUpperCase(),
     statusLabel:
-      STATUS_LABELS_KM[String(user?.status || "").toUpperCase()] ||
-      user?.status ||
-      "-",
+      user?.memberId != null
+        ? user?.memberStatusLabelKm ||
+          user?.memberStatusLabelEn ||
+          STATUS_LABELS_KM[String(user?.memberStatusCode || "").toUpperCase()] ||
+          user?.memberStatusCode ||
+          "-"
+        : STATUS_LABELS_KM[String(user?.status || "").toUpperCase()] ||
+          user?.status ||
+          "-",
     createdAt: formatDateTime(user?.createdAt),
   };
 }
 
 export default function UsersPage() {
+  const { user: currentUser } = useAuth();
+  const isViewer = normalizeRole(currentUser?.role) === "viewer";
   const [users, setUsers] = useState([]);
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
 
@@ -151,6 +197,7 @@ export default function UsersPage() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [statusOptions, setStatusOptions] = useState(FALLBACK_STATUS_OPTIONS);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -169,6 +216,42 @@ export default function UsersPage() {
       window.clearTimeout(timeoutId);
     };
   }, [query]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetchLookupOptions("member-statuses", controller.signal)
+      .then((rows) => {
+        const mapped = rows
+          .map((status) => {
+            const code = String(status?.code || status?.value || "").toUpperCase();
+            return {
+              value: code,
+              label:
+                status?.labelKm ||
+                status?.label_km ||
+                status?.labelEn ||
+                status?.label_en ||
+                STATUS_LABELS_KM[code] ||
+                code,
+            };
+          })
+          .filter((option) => option.value);
+
+        setStatusOptions([
+          { label: "គ្រប់ស្ថានភាព", value: "" },
+          ...mapped,
+        ]);
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") {
+          console.warn("Failed to load member statuses:", error.message);
+          setStatusOptions(FALLBACK_STATUS_OPTIONS);
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
 
   /*
    * =========================================
@@ -283,7 +366,7 @@ export default function UsersPage() {
       },
       {
         header: "ឈ្មោះ",
-        width: "w-[20%]",
+        width: "w-[17%]",
         align: "left",
         render: (user) => (
           <span className="block w-full truncate font-medium text-text-secondary">
@@ -301,7 +384,7 @@ export default function UsersPage() {
       },
       {
         header: "អ៊ីមែល",
-        width: "w-[18%]",
+        width: "w-[16%]",
         align: "left",
         render: (user) => (
           <span className="block w-full truncate">{user.email}</span>
@@ -312,6 +395,14 @@ export default function UsersPage() {
         width: "w-[14%]",
         align: "center",
         render: (user) => <span>{user.roleLabel}</span>,
+      },
+      {
+        header: "ប្រភេទគណនី",
+        width: "w-[14%]",
+        align: "center",
+        render: (user) => (
+          <span>{user.accountType === "MEMBER_LINKED" ? "ភ្ជាប់សមាជិក" : "គណនីឯករាជ្យ"}</span>
+        ),
       },
       {
         header: "ស្ថានភាព",
@@ -342,7 +433,7 @@ export default function UsersPage() {
       },
       {
         header: "ថ្ងៃបង្កើត",
-        width: "w-[14%]",
+        width: "w-[11%]",
         align: "left",
         render: (user) => (
           <span className="block w-full truncate">{user.createdAt}</span>
@@ -364,7 +455,7 @@ export default function UsersPage() {
       name: "status",
       value: statusFilter,
       onChange: setStatusFilter,
-      options: STATUS_OPTIONS,
+      options: statusOptions,
       placeholder: "ស្ថានភាព",
     },
   ];
@@ -411,7 +502,7 @@ export default function UsersPage() {
           onSearchChange={setQuery}
           searchPlaceholder="ស្វែងរកតាមរយៈឈ្មោះ ទូរស័ព្ទ ឬអ៊ីមែល..."
           pageSize={20}
-          actionButton={
+          actionButton={!isViewer ? (
             <button
               type="button"
               onClick={() => setIsCreateOpen(true)}
@@ -436,17 +527,19 @@ export default function UsersPage() {
               <RiAddCircleLine className="h-4 w-4 shrink-0" />
               <span>បង្កើតអ្នកប្រើប្រាស់ថ្មី</span>
             </button>
-          }
+          ) : null}
         />
       </div>
 
       {/* CREATE MODAL */}
 
-      <CreateUserModal
-        open={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        onSave={handleCreateUser}
-      />
+      {!isViewer && (
+        <CreateUserModal
+          open={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          onSave={handleCreateUser}
+        />
+      )}
     </div>
   );
 }

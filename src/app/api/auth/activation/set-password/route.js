@@ -99,14 +99,11 @@ export async function POST(request) {
       error
     );
 
-    return Response.json(
-      {
-        message:
-          "មិនអាចកំណត់លេខសម្ងាត់បានទេ",
-      },
-      {
-        status: 500,
-      }
+    return apiErrorResponse(
+      "BACKEND_UNAVAILABLE",
+      "មិនអាចកំណត់លេខសម្ងាត់បានទេ",
+      502,
     );
   }
 }
+import { apiErrorResponse } from "@/lib/apiErrorResponse";

@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -16,16 +17,54 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const refreshPromiseRef = useRef(null);
+
+  const refreshSession = useCallback(async () => {
+    if (refreshPromiseRef.current) {
+      return refreshPromiseRef.current;
+    }
+
+    refreshPromiseRef.current = (async () => {
+      const response = await fetch("/api/auth/refresh", {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store",
+      });
+
+      return {
+        ok: response.ok,
+        status: response.status,
+      };
+    })();
+
+    try {
+      return await refreshPromiseRef.current;
+    } finally {
+      refreshPromiseRef.current = null;
+    }
+  }, []);
 
   const refreshUser = useCallback(async () => {
     try {
       setAuthLoading(true);
 
-      const response = await fetch("/api/users/me", {
+      let response = await fetch("/api/users/me", {
         method: "GET",
         credentials: "include",
         cache: "no-store",
       });
+
+      if (response.status === 401) {
+        const sessionResult = await refreshSession();
+
+        if (sessionResult.ok) {
+          response = await fetch("/api/users/me", {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+          });
+        }
+      }
 
       if (!response.ok) {
         setUser(null);
@@ -49,7 +88,7 @@ export function AuthProvider({ children }) {
     } finally {
       setAuthLoading(false);
     }
-  }, []);
+  }, [refreshSession]);
 
   const logout = useCallback(async () => {
     // Captured before setUser(null) below clears it -- the Telegram
@@ -75,6 +114,26 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     refreshUser();
   }, [refreshUser]);
+
+  useEffect(() => {
+    if (!user) {
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(async () => {
+      try {
+        const sessionResult = await refreshSession();
+
+        if (sessionResult.status === 401 || sessionResult.status === 403) {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Automatic session refresh failed:", error);
+      }
+    }, 60_000);
+
+    return () => window.clearInterval(intervalId);
+  }, [refreshSession, user]);
 
   const value = useMemo(
     () => ({

@@ -1,39 +1,40 @@
-import { cookies } from "next/headers";
+import { apiErrorResponse } from "@/lib/apiErrorResponse";
+import { proxyBackend } from "@/lib/backendProxy";
 
-const BACKEND_URL = process.env.BACKEND_API_URL || "http://localhost:8081/api";
-
-async function proxy(request, context) {
-  const { segments = [] } = await context.params;
-  const token = (await cookies()).get("accessToken")?.value;
-  if (!token) return Response.json({ message: "Unauthorized" }, { status: 401 });
-
-  const incomingUrl = new URL(request.url);
-  const path = ["activities", ...segments].join("/");
-  const headers = {
-    Accept: "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-  let body;
-  if (request.method !== "GET" && request.method !== "HEAD") {
-    body = await request.arrayBuffer();
-    const contentType = request.headers.get("content-type");
-    if (contentType) headers["Content-Type"] = contentType;
-  }
-
-  const backendResponse = await fetch(
-    `${BACKEND_URL}/${path}${incomingUrl.search}`,
-    { method: request.method, headers, body, cache: "no-store" },
+function isSafeSegment(segment) {
+  return (
+    typeof segment === "string" &&
+    segment.length > 0 &&
+    segment !== "." &&
+    segment !== ".." &&
+    !segment.includes("/") &&
+    !segment.includes("\\")
   );
-  return new Response(await backendResponse.arrayBuffer(), {
-    status: backendResponse.status,
-    headers: {
-      "Content-Type": backendResponse.headers.get("content-type") || "application/json",
-    },
-  });
 }
 
-export const GET = proxy;
-export const POST = proxy;
-export const PUT = proxy;
-export const PATCH = proxy;
-export const DELETE = proxy;
+async function forward(request, context) {
+  const { segments = [] } = await context.params;
+
+  if (!Array.isArray(segments) || !segments.every(isSafeSegment)) {
+    return apiErrorResponse(
+      "INVALID_API_PATH",
+      "The activity API path is invalid.",
+      400,
+    );
+  }
+
+  const suffix = segments.length
+    ? `/${segments.map(encodeURIComponent).join("/")}`
+    : "";
+
+  return proxyBackend(
+    request,
+    `/activities${suffix}${request.nextUrl.search}`,
+  );
+}
+
+export const GET = forward;
+export const POST = forward;
+export const PUT = forward;
+export const PATCH = forward;
+export const DELETE = forward;

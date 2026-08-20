@@ -14,6 +14,8 @@ import {
 import { HiSaveAs } from "react-icons/hi";
 import Button from "@/components/ui/Button";
 import FormSelect from "@/components/forms/FormSelect";
+import { useAuth } from "@/context/AuthContext";
+import { normalizeRole } from "@/lib/navigation";
 
 const ALL_STATUS = "ALL";
 
@@ -126,6 +128,8 @@ async function requestJson(fullPath, options = {}) {
 }
 
 export default function VariablePage() {
+  const { user } = useAuth();
+  const isViewer = normalizeRole(user?.role) === "viewer";
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState("");
@@ -654,14 +658,14 @@ export default function VariablePage() {
                   />
                 </div>
 
-                <Button
+                {!isViewer && <Button
                   type="button"
                   variant="success"
                   icon={<PlusCircle size={16} />}
                   onClick={openRateModal}
                 >
                   កំណត់អត្រាថ្មី
-                </Button>
+                </Button>}
               </div>
             </div>
 
@@ -794,7 +798,7 @@ export default function VariablePage() {
                   />
                 </div>
 
-                <Button
+                {!isViewer && <Button
                   type="button"
                   variant="success"
                   icon={<PlusCircle size={16} />}
@@ -802,7 +806,7 @@ export default function VariablePage() {
                   disabled={!selectedPath}
                 >
                   បង្កើត{selectedCategory?.labelKm || "អថេរ"}ថ្មី
-                </Button>
+                </Button>}
               </div>
             </div>
 
@@ -901,6 +905,7 @@ export default function VariablePage() {
                         </td>
 
                         <td className="px-4 py-3 text-center">
+                          {!isViewer && (
                           <button
                             type="button"
                             onClick={() => openEditModal(item)}
@@ -909,6 +914,7 @@ export default function VariablePage() {
                           >
                             <SquarePen size={19} strokeWidth={1.8} />
                           </button>
+                          )}
                         </td>
                       </tr>
                     ))

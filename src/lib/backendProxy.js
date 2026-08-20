@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/apiErrorResponse";
 
 const BACKEND_URL =
   process.env.BACKEND_API_URL ||
@@ -12,9 +13,10 @@ export async function proxyBackend(request, path) {
     request.cookies.get("token")?.value;
 
   if (!accessToken) {
-    return NextResponse.json(
-      { message: "Your login session has expired. Please sign in again." },
-      { status: 401 },
+    return apiErrorResponse(
+      "UNAUTHENTICATED",
+      "Your login session has expired. Please sign in again.",
+      401,
     );
   }
 
@@ -56,9 +58,10 @@ export async function proxyBackend(request, path) {
     });
   } catch (error) {
     console.error(`Backend request failed for ${path}:`, error);
-    return NextResponse.json(
-      { message: "Unable to connect to the backend service." },
-      { status: 502 },
+    return apiErrorResponse(
+      "BACKEND_UNAVAILABLE",
+      "Unable to connect to the backend service.",
+      502,
     );
   }
 }

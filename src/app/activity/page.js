@@ -124,6 +124,7 @@ function normalizeActivity(item, branchOptions) {
      * those from the list entirely rather than showing them inert.
      */
     invitationId: item.invitationId ?? null,
+    invitedBranchId: item.invitedBranchId ?? null,
     invitationStatus: item.invitationStatus ?? null,
   };
 }
@@ -359,6 +360,7 @@ export default function ActivityPage() {
         (item) =>
           selectedBranch === "all" ||
           String(item.branchId) === String(selectedBranch) ||
+          String(item.invitedBranchId) === String(selectedBranch) ||
           item.branch === selectedBranch ||
           contextBranches.some(
             (branch) =>

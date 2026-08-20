@@ -904,7 +904,7 @@ export default function MembersPage() {
       () => [
         {
           label:
-            "ស្ថានភាព",
+            "គ្រប់ស្ថានភាព",
 
           value: "",
         },
@@ -1015,10 +1015,34 @@ export default function MembersPage() {
    */
 
   const handleCreateMember =
-    async () => {
-      setIsCreateOpen(
-        false,
-      );
+    async (member) => {
+      const response = await fetch("/api/members", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(member),
+      });
+
+      const text = await response.text();
+      let body = null;
+      try {
+        body = text ? JSON.parse(text) : null;
+      } catch {
+        body = text;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          (typeof body === "object" &&
+            (body?.message || body?.detail || body?.error)) ||
+            "មិនអាចបង្កើតសមាជិកបានទេ",
+        );
+      }
+
+      setIsCreateOpen(false);
 
       const controller =
         new AbortController();
@@ -1386,6 +1410,8 @@ export default function MembersPage() {
         onSave={
           handleCreateMember
         }
+        branches={branches}
+        statuses={memberStatuses}
       />
     </div>
   );

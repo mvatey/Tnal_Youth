@@ -65,14 +65,11 @@ export async function POST(request) {
       error
     );
 
-    return Response.json(
-      {
-        message:
-          "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ",
-      },
-      {
-        status: 500,
-      }
+    return apiErrorResponse(
+      "BACKEND_UNAVAILABLE",
+      "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ",
+      502,
     );
   }
 }
+import { apiErrorResponse } from "@/lib/apiErrorResponse";

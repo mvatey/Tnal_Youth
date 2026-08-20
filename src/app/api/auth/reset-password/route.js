@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/apiErrorResponse";
 
 const BACKEND_URL =
   process.env.BACKEND_API_URL ||
@@ -155,14 +156,10 @@ export async function POST(request) {
       error,
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        message: "មានបញ្ហាក្នុងការប្ដូរលេខសម្ងាត់",
-      },
-      {
-        status: 500,
-      },
+    return apiErrorResponse(
+      "BACKEND_UNAVAILABLE",
+      "មានបញ្ហាក្នុងការប្ដូរលេខសម្ងាត់",
+      502,
     );
   }
 }

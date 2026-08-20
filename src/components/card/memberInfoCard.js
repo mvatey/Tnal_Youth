@@ -21,7 +21,6 @@ import {
 
 import {
   notifyProfileImageChange,
-  saveProfileImage,
 } from "@/lib/member/profileImageStorage";
 
 const BACKEND_ORIGIN =
@@ -858,62 +857,6 @@ export default function MemberInfoCard({
         event.target.value = "";
       }
 
-      return;
-
-      const reader =
-        new FileReader();
-
-      reader.onload = () => {
-        const imageData =
-          String(
-            reader.result || "",
-          );
-
-        if (!imageData) {
-          setImageError(
-            "មិនអាចអានរូបភាពបានទេ។",
-          );
-
-          return;
-        }
-
-        const saved =
-          saveProfileImage(
-            memberId,
-            imageData,
-          );
-
-        if (!saved) {
-          setImageError(
-            "មិនអាចរក្សាទុករូបភាពបានទេ។ រូបភាពអាចមានទំហំធំពេក។",
-          );
-
-          return;
-        }
-
-        /*
-         * Update this card immediately.
-         */
-        setProfilePreview(
-          imageData,
-        );
-      };
-
-      reader.onerror = () => {
-        setImageError(
-          "មិនអាចអានឯកសាររូបភាពបានទេ។",
-        );
-      };
-
-      reader.readAsDataURL(
-        file,
-      );
-
-      /*
-       * Allows selecting the same
-       * file again.
-       */
-      event.target.value = "";
     };
 
   return (

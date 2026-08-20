@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, FileText } from "lucide-react";
+import { Eye, FileText, Trash2 } from "lucide-react";
 
 const IMAGE_TYPES = new Set([
   "JPG",
@@ -61,7 +61,7 @@ export function toPreviewDocument(document) {
   };
 }
 
-export default function BackendDocumentCard({ document, onView }) {
+export default function BackendDocumentCard({ document, onView, onDelete }) {
   const previewDocument = toPreviewDocument(document);
   const isImage = IMAGE_TYPES.has(previewDocument.type);
   const isPdf = previewDocument.type === "PDF";
@@ -69,7 +69,19 @@ export default function BackendDocumentCard({ document, onView }) {
   const openPreview = () => onView?.(previewDocument);
 
   return (
-    <article className="flex w-[380px] min-w-0 flex-col rounded-xl border border-border border-t-4 border-t-secondary bg-bg-page-white p-3 shadow-sm">
+    <article className="group relative flex w-[380px] min-w-0 flex-col rounded-xl border border-border border-t-4 border-t-secondary bg-bg-page-white p-3 shadow-sm">
+      {onDelete ? (
+        <button
+          type="button"
+          onClick={() => onDelete(document)}
+          aria-label="លុបឯកសារ"
+          title="លុប"
+          className="absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-red-500 text-white opacity-0 shadow-md transition hover:bg-red-600 group-hover:opacity-100 group-focus-within:opacity-100"
+        >
+          <Trash2 size={15} strokeWidth={2.5} />
+        </button>
+      ) : null}
+
       <h2 className="truncate text-base font-bold text-primary">
         {document?.title || "ឯកសារសមាជិក"}
       </h2>

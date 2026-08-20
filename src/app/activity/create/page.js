@@ -653,6 +653,17 @@ export default function CreateActivityPage() {
   const invitedBranchId = editingActivity?.managedInvitedBranchId ?? null;
   const isInvitedBranchOnly =
     isEditMode && !canManage && canManageAsInvitedBranch;
+
+  const incomeBranchId = isInvitedBranchOnly
+    ? invitedBranchId
+    : (editingActivity?.branchId ?? editingActivity?.branch_id ?? null);
+
+  const activityIncomeHref =
+    isEditMode && incomeBranchId != null
+      ? `/donation/eventdonation/detail?event=${encodeURIComponent(editId)}&branch=${encodeURIComponent(incomeBranchId)}`
+      : isEditMode
+        ? `/donation/eventdonation/detail?event=${encodeURIComponent(editId)}`
+        : null;
   const invitedBranchLabel = getOptionLabel(
     lookupData.branches.find(
       (option) => getOptionValue(option) === invitedBranchId,
@@ -1559,7 +1570,7 @@ export default function CreateActivityPage() {
             )}
 
             {isEditMode ? (
-              <Link href={`/activity/create/income?activityId=${editId}`} className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90">
+              <Link href={activityIncomeHref} className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90">
                 ចំណូល
               </Link>
             ) : (

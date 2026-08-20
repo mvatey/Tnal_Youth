@@ -81,14 +81,11 @@ export async function POST(request) {
       error
     );
 
-    return Response.json(
-      {
-        message:
-          "មិនអាចផ្ទៀងផ្ទាត់លេខកូដ OTP បានទេ",
-      },
-      {
-        status: 500,
-      }
+    return apiErrorResponse(
+      "BACKEND_UNAVAILABLE",
+      "មិនអាចផ្ទៀងផ្ទាត់លេខកូដ OTP បានទេ",
+      502,
     );
   }
 }
+import { apiErrorResponse } from "@/lib/apiErrorResponse";

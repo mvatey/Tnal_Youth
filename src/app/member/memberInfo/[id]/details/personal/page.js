@@ -45,6 +45,7 @@ const EMPTY_FORM = {
   current_address: "",
   permanent_address: "",
 
+  member_status_id: "",
   account_status: "",
 
   has_account: false,
@@ -77,14 +78,15 @@ const TSHIRT_SIZE_OPTIONS = [
 const BASE_ACCOUNT_STATUS_OPTIONS = [
   { label: "សកម្ម", value: "ACTIVE" },
   { label: "អសកម្ម", value: "INACTIVE" },
+  { label: "បានផ្អាក", value: "SUSPENDED" },
+  { label: "បានលាលែង", value: "RESIGNED" },
 ];
 
 const ACCOUNT_STATUS_LABELS = {
-  ACTIVE: "សកម្ម",
+ACTIVE: "សកម្ម",
   INACTIVE: "អសកម្ម",
-  PENDING: "កំពុងរង់ចាំសកម្មភាព",
   SUSPENDED: "បានផ្អាក",
-  LOCKED: "បានចាក់សោ",
+  RESIGNED: "បានលាលែង",
 };
 
 /*
@@ -458,15 +460,27 @@ export default function PersonalPage() {
   ] = useState("");
 
   /*
-   * Last-known-saved account status — used at Save time to detect
-   * whether the status dropdown was actually touched, same pattern
-   * as originalRole above. The dropdown itself only ever updates
-   * form.account_status locally now (see handleAccountStatusChange);
-   * the enable/disable request fires from handleSave.
+   * Internal login-account status is loaded for account lifecycle information only.
+   * It is NOT the visible Member status selector on this page.
    */
   const [
     originalAccountStatus,
     setOriginalAccountStatus,
+  ] = useState("");
+
+  const [
+    memberStatusOptions,
+    setMemberStatusOptions,
+  ] = useState([]);
+
+  const [
+    accountStatusLookups,
+    setAccountStatusLookups,
+  ] = useState([]);
+
+  const [
+    originalMemberStatusId,
+    setOriginalMemberStatusId,
   ] = useState("");
 
   const normalizedTargetRole = String(originalRole || form.account_role || "MEMBER")
@@ -598,25 +612,40 @@ export default function PersonalPage() {
   ] = useState(TSHIRT_SIZE_OPTIONS);
 
   const accountStatusOptions = useMemo(() => {
-    const current = form.account_status;
+    const source = accountStatusLookups.length
+      ? accountStatusLookups
+      : BASE_ACCOUNT_STATUS_OPTIONS;
 
-    if (
-      !current ||
-      BASE_ACCOUNT_STATUS_OPTIONS.some(
-        (option) => option.value === current,
-      )
-    ) {
-      return BASE_ACCOUNT_STATUS_OPTIONS;
+    const mapped = source.map((option) => {
+      const value = String(option?.value || option?.code || "").toUpperCase();
+      return {
+        value,
+        label:
+          option?.label ||
+          option?.labelKm ||
+          option?.label_km ||
+          option?.labelEn ||
+          option?.label_en ||
+          ACCOUNT_STATUS_LABELS[value] ||
+          value,
+        // PENDING_ACTIVATION and LOCKED are system/security states.
+        // This page may display them, but its existing backend API only
+        // supports the intentional ACTIVE <-> INACTIVE admin action.
+        disabled: value === "PENDING_ACTIVATION" || value === "LOCKED",
+      };
+    }).filter((option) => option.value);
+
+    const current = String(form.account_status || "").toUpperCase();
+    if (current && !mapped.some((option) => option.value === current)) {
+      mapped.push({
+        value: current,
+        label: ACCOUNT_STATUS_LABELS[current] || current,
+        disabled: current === "PENDING_ACTIVATION" || current === "LOCKED",
+      });
     }
 
-    return [
-      ...BASE_ACCOUNT_STATUS_OPTIONS,
-      {
-        label: ACCOUNT_STATUS_LABELS[current] || current,
-        value: current,
-      },
-    ];
-  }, [form.account_status]);
+    return mapped;
+  }, [accountStatusLookups, form.account_status]);
 
   /* =======================================================
    * LOAD PERSONAL INFO
@@ -720,6 +749,61 @@ export default function PersonalPage() {
     }
 
     loadPersonalInfo();
+
+    return () => {
+      active = false;
+    };
+  }, [memberId]);
+
+  /* =======================================================
+   * LOAD MEMBER STATUS
+   * ======================================================= */
+
+  useEffect(() => {
+    if (!memberId) return;
+
+    let active = true;
+
+    async function loadMemberStatus() {
+      try {
+        const [member, statuses] = await Promise.all([
+          requestJson(`/members/${memberId}`),
+          requestJson(`/lookups/member-statuses`),
+        ]);
+
+        if (!active) return;
+
+        // The shared lookup endpoint returns { value, label } options.
+        // Reuse the same normalizer as the other profile lookups so this
+        // selector stays consistent with the Member list status filter.
+        setMemberStatusOptions(
+          normalizeLookup(statuses),
+        );
+
+        const currentMemberStatusId =
+          member?.status?.id ??
+          member?.status_id ??
+          member?.statusId ??
+          "";
+
+        const normalizedId = currentMemberStatusId === ""
+          ? ""
+          : String(currentMemberStatusId);
+
+        setForm((previous) => ({
+          ...previous,
+          member_status_id: normalizedId,
+        }));
+        setOriginalMemberStatusId(normalizedId);
+      } catch (statusError) {
+        console.warn(
+          "Cannot load member status:",
+          statusError.message,
+        );
+      }
+    }
+
+    loadMemberStatus();
 
     return () => {
       active = false;
@@ -1127,7 +1211,7 @@ export default function PersonalPage() {
     (event) => {
       if (isReadOnly && !(
         canManageSensitiveFields &&
-        ["branch_id", "account_role"].includes(field)
+        ["branch_id", "account_role", "member_status_id"].includes(field)
       )) {
         return;
       }
@@ -1646,45 +1730,39 @@ export default function PersonalPage() {
         }
 
         /*
-         * 4. Account status
+         * 4. Member status
+         *
+         * This is the organizational Member status stored in
+         * members.status_id. It drives the Member list/filter and
+         * is intentionally separate from users.status below.
          */
-        let latestAccountStatus =
-          form.account_status;
+        if (form.member_status_id) {
+          const updatedMember = await requestJson(
+            `/members/${memberId}/status`,
+            {
+              method: "PATCH",
+              body: JSON.stringify({
+                status_id: Number(form.member_status_id),
+              }),
+            },
+          );
 
-        if (
-          form.has_account &&
-          form.account_status &&
-          form.account_status !==
-            originalAccountStatus
-        ) {
-          setChangingStatus(true);
+          const savedStatusId =
+            updatedMember?.status?.id ??
+            form.member_status_id;
 
-          try {
-            const action =
-              form.account_status ===
-              "ACTIVE"
-                ? "enable"
-                : "disable";
-
-            const statusResponse =
-              await requestJson(
-                `/members/${memberId}/personal-info/account/${action}`,
-                {
-                  method:
-                    "PATCH",
-                },
-              );
-
-            latestAccountStatus =
-              statusResponse?.status ||
-              form.account_status;
-          } finally {
-            setChangingStatus(false);
-          }
+          setOriginalMemberStatusId(String(savedStatusId));
         }
 
         /*
-         * 5. CV
+         * 5. Account lifecycle status is intentionally not edited here.
+         * Member Detail has one visible status only: members.status_id.
+         * users.status stays internal for activation / lock / login lifecycle.
+         */
+        const latestAccountStatus = form.account_status;
+
+        /*
+         * 6. CV
          */
         let cvResponse =
           null;
@@ -1723,7 +1801,7 @@ export default function PersonalPage() {
         }
 
         /*
-         * 6. Normalize response
+         * 7. Normalize response
          */
         const latest =
           cvResponse ||
@@ -2169,31 +2247,17 @@ export default function PersonalPage() {
               }
             />
 
-            {/* ACCOUNT STATUS */}
-
+            {/* ONE VISIBLE STATUS
+                Keep one status selector in Member Detail.
+                It is backed by members.status_id and is the same
+                status used by Member list and linked Users rows. */}
             <FormSelect
               label="ស្ថានភាព"
-              value={
-                form.account_status
-              }
-              onChange={
-                handleAccountStatusChange
-              }
-              placeholder={
-                changingStatus
-                  ? "កំពុងផ្លាស់ប្ដូរ..."
-                  : form.has_account
-                    ? "ជ្រើសរើសស្ថានភាព"
-                    : "មិនមានគណនី"
-              }
-              options={
-                accountStatusOptions
-              }
-              disabled={
-                !canManageSensitiveFields ||
-                !form.has_account ||
-                changingStatus
-              }
+              value={form.member_status_id}
+              onChange={handleChange("member_status_id")}
+              placeholder="ជ្រើសរើសស្ថានភាព"
+              options={memberStatusOptions}
+              disabled={!canManageMemberAccount}
               selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
               adminEditable={isAdmin}
             />

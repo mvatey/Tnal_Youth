@@ -9,6 +9,8 @@ import { RiDownloadCloud2Line } from "react-icons/ri";
 
 import Pagination from "@/components/navigation/Pagination";
 import { ReceiptIcon } from "@/components/donations/monthlydonation/AddDonationTableRow";
+import { useAuth } from "@/context/AuthContext";
+import { normalizeRole } from "@/lib/navigation";
 const ROWS_PER_PAGE = 10;
 const KHR_PER_USD = 4000;
 
@@ -151,6 +153,8 @@ function mergeSavedIncome(rows, savedItems = []) {
 }
 
 export default function IncomePage() {
+  const { user } = useAuth();
+  const isReadOnly = normalizeRole(user?.role) === "viewer";
   const router = useRouter();
   const searchParams = useSearchParams();
   const activityId =
@@ -485,6 +489,7 @@ export default function IncomePage() {
                             value={
                               row.amountRiel
                             }
+                            readOnly={isReadOnly}
                             onChange={(
                               event
                             ) => {
@@ -534,6 +539,7 @@ export default function IncomePage() {
                             value={
                               row.amountDollar
                             }
+                            readOnly={isReadOnly}
                             onChange={(
                               event
                             ) => {
@@ -576,6 +582,7 @@ export default function IncomePage() {
 
                       <td className="px-3">
                         <select
+                          disabled={isReadOnly}
                           value={
                             row.paymentMethod
                           }
@@ -603,13 +610,14 @@ export default function IncomePage() {
 
                       <td className="px-3 text-center">
                         <label
-                          className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-secondary hover:bg-secondary-light/10"
+                          className={`inline-flex h-7 w-7 items-center justify-center rounded-md text-secondary ${isReadOnly ? "cursor-default opacity-50" : "cursor-pointer hover:bg-secondary-light/10"}`}
                           aria-label="receipt"
                         >
                           <ReceiptIcon size={18} />
 
                           <input
                             type="file"
+                            disabled={isReadOnly}
                             accept="image/*,.pdf"
                             className="hidden"
                             onChange={(
@@ -707,16 +715,18 @@ export default function IncomePage() {
           បោះបង់
         </Link>
 
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={isSaving}
-          className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white transition hover:bg-secondary-hover"
-        >
-          <HiSaveAs size={16} />
+        {!isReadOnly && (
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white transition hover:bg-secondary-hover"
+          >
+            <HiSaveAs size={16} />
 
-          រក្សាទុក
-        </button>
+            រក្សាទុក
+          </button>
+        )}
       </div>
     </div>
   );

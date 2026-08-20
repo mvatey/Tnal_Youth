@@ -30,6 +30,9 @@ import {
 const STORAGE_KEY =
   "tnal-member-documents";
 
+const ID_CARD_DOCUMENT_MARKER =
+  "[TNAL:ID_CARD]";
+
 const EMPTY_DOCUMENTS = {
   idCards: [],
   certificates: [],
@@ -1191,6 +1194,35 @@ export default function DocumentsPage() {
       }
     };
 
+  const handleDeleteBackendDocument = async (document) => {
+    if (!document?.id) {
+      return;
+    }
+
+    if (!window.confirm("តើអ្នកពិតជាចង់លុបឯកសារនេះមែនទេ?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/backend/documents/${encodeURIComponent(document.id)}`,
+        { method: "DELETE" },
+      );
+      const body = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(body?.message || body?.detail || "មិនអាចលុបឯកសារបានទេ");
+      }
+
+      setBackendDocuments((documents) =>
+        documents.filter((item) => String(item.id) !== String(document.id)),
+      );
+    } catch (deleteError) {
+      console.error("Cannot delete backend document:", deleteError);
+      window.alert(deleteError?.message || "មិនអាចលុបឯកសារបានទេ");
+    }
+  };
+
   /*
    * =======================================================
    * NORMALIZED SAVED DOCUMENTS
@@ -1222,6 +1254,25 @@ export default function DocumentsPage() {
           .certificates,
       ],
     );
+
+  const backendIdCards = useMemo(
+    () =>
+      backendDocuments.filter((document) =>
+        String(document?.description || "").includes(ID_CARD_DOCUMENT_MARKER),
+      ),
+    [backendDocuments],
+  );
+
+  const otherBackendDocuments = useMemo(
+    () =>
+      backendDocuments.filter(
+        (document) =>
+          !String(document?.description || "").includes(
+            ID_CARD_DOCUMENT_MARKER,
+          ),
+      ),
+    [backendDocuments],
+  );
 
   /*
    * =======================================================
@@ -1447,6 +1498,34 @@ export default function DocumentsPage() {
           },
         )}
 
+        {backendIdCards.map((document) => (
+          <div
+            key={`backend-id-card-${document.id}`}
+            className="group relative min-w-0"
+          >
+            <DeleteDocumentButton
+              label="លុបប័ណ្ណសម្គាល់សមាជិក"
+              onClick={() => handleDeleteBackendDocument(document)}
+            />
+
+            <DocumentPreviewCard
+              title={document.title || "ប័ណ្ណសម្គាល់សមាជិក"}
+              actionType="print"
+              printText="បោះពុម្ព"
+              previewClass="scale-[0.55]"
+            >
+              <IdCard
+                user={member}
+                templatePreview={
+                  document?.file?.id
+                    ? `/api/files/${encodeURIComponent(document.file.id)}/content`
+                    : ""
+                }
+              />
+            </DocumentPreviewCard>
+          </div>
+        ))}
+
         {/* ===============================================
             CUSTOM GENERATED CERTIFICATES
         =============================================== */}
@@ -1607,7 +1686,7 @@ export default function DocumentsPage() {
             BACKEND DOCUMENTS
         =============================================== */}
 
-        {backendDocuments.map(
+        {otherBackendDocuments.map(
           (document) => (
             <BackendDocumentCard
               key={`backend-document-${document.id}`}
@@ -1616,6 +1695,11 @@ export default function DocumentsPage() {
               }
               onView={
                 setSelectedBackendDocument
+              }
+              onDelete={
+                Number.isInteger(Number(document.id))
+                  ? handleDeleteBackendDocument
+                  : undefined
               }
             />
           ),

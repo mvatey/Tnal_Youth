@@ -166,9 +166,18 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
 
   const eventOptions = useMemo(() => activities.filter((option) => {
     if (selectedBranch === "all") return true;
+
+    // A deep-linked activity may be hosted by another branch while the
+    // selected branch is an ACCEPTED invited/co-hosting branch.  Keep that
+    // exact activity visible in the disabled activity selector instead of
+    // filtering it out just because option.raw.branchId is the host branch.
+    if (selectedEvent !== "all" && String(option.value) === String(selectedEvent)) {
+      return true;
+    }
+
     const branchId = option.raw?.branchId ?? option.raw?.branch?.id;
     return branchId == null || String(branchId) === String(selectedBranch);
-  }), [activities, selectedBranch]);
+  }), [activities, selectedBranch, selectedEvent]);
 
   useEffect(() => {
     if (selectedBranch === "all" || selectedEvent === "all") {

@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
-
 import { proxyBackend } from "@/lib/backendProxy";
+import { apiErrorResponse } from "@/lib/apiErrorResponse";
 
 const ALLOWED_ROOTS = new Set([
   "activities",
@@ -38,9 +37,10 @@ async function forward(request, context) {
     !path.every(isSafeSegment) ||
     !ALLOWED_ROOTS.has(path[0])
   ) {
-    return NextResponse.json(
-      { message: "This backend API path is not allowed." },
-      { status: 404 },
+    return apiErrorResponse(
+      "API_PATH_NOT_ALLOWED",
+      "This backend API path is not allowed.",
+      404,
     );
   }
 

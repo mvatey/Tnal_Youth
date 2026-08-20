@@ -1,11 +1,24 @@
 import { cookies } from "next/headers";
+import { apiErrorResponse } from "@/lib/apiErrorResponse";
 
-const API_URL = process.env.BACKEND_API_URL || "http://localhost:8081/api";
+const API_URL =
+  process.env.BACKEND_API_URL ||
+  process.env.BACKEND_URL ||
+  "http://localhost:8081/api";
 
 export async function GET(request, { params }) {
   const { fileId } = await params;
+  if (!/^\d+$/.test(String(fileId))) {
+    return apiErrorResponse("INVALID_FILE_ID", "Invalid file ID.", 400);
+  }
   const token = (await cookies()).get("accessToken")?.value;
-  if (!token) return Response.json({ message: "Unauthorized" }, { status: 401 });
+  if (!token) {
+    return apiErrorResponse(
+      "UNAUTHENTICATED",
+      "Authentication is required.",
+      401,
+    );
+  }
 
   try {
     const fileResponse = await fetch(
@@ -39,11 +52,16 @@ export async function GET(request, { params }) {
         "Content-Disposition":
           fileResponse.headers.get("content-disposition") ||
           "inline",
-        "Cache-Control": "private, max-age=300",
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch (error) {
     console.error("File content proxy error:", error);
-    return Response.json({ message: "Could not open the file" }, { status: 502 });
+    return apiErrorResponse(
+      "BACKEND_UNAVAILABLE",
+      "Could not connect to the file service.",
+      502,
+    );
   }
 }

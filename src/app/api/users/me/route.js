@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
+import { apiErrorResponse } from "@/lib/apiErrorResponse";
 
 const BACKEND_URL =
   process.env.BACKEND_API_URL ||
+  process.env.BACKEND_URL ||
   "http://localhost:8081/api";
 
 function parseJsonSafely(text) {
@@ -26,13 +28,10 @@ export async function GET() {
       cookieStore.get("accessToken")?.value;
 
     if (!accessToken) {
-      return Response.json(
-        {
-          message: "Unauthenticated",
-        },
-        {
-          status: 401,
-        }
+      return apiErrorResponse(
+        "UNAUTHENTICATED",
+        "Authentication is required.",
+        401,
       );
     }
 
@@ -52,16 +51,7 @@ export async function GET() {
     const data = parseJsonSafely(text);
 
     if (!response.ok) {
-      return Response.json(
-        {
-          message:
-            data.message ||
-            "មិនអាចទាញយកព័ត៌មានអ្នកប្រើប្រាស់បានទេ",
-        },
-        {
-          status: response.status,
-        }
-      );
+      return Response.json(data, { status: response.status });
     }
 
     return Response.json(data, {
@@ -70,14 +60,10 @@ export async function GET() {
   } catch (error) {
     console.error("Current user proxy error:", error);
 
-    return Response.json(
-      {
-        message:
-          "មិនអាចទាញយកព័ត៌មានអ្នកប្រើប្រាស់បានទេ",
-      },
-      {
-        status: 500,
-      }
+    return apiErrorResponse(
+      "BACKEND_UNAVAILABLE",
+      "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ",
+      502,
     );
   }
 }
