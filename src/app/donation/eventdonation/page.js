@@ -12,13 +12,13 @@ import NumberSponsorCard from "@/components/donations/eventdonation/sponsorcard"
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 import { useBranch } from "@/context/BranchContext";
-import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
 function mapMyEventRow(row) {
   return {
     id: row.id,
+    activityId: row.activity?.id ?? null,
     eventName: row.activity?.titleKm || row.activity?.titleEn || "-",
     branch: row.branch?.nameKm || row.branch?.nameEn || "-",
     date: row.paidAt ? new Date(row.paidAt).toLocaleDateString("en-GB") : "-",
@@ -67,7 +67,6 @@ function MyEventDonationsTable({ rows }) {
 }
 
 export default function EventDonationPage() {
-  const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
   const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
   const isMemberScoped = currentMember?.role === "member";
   // Only entry staff (secretary / branch_leader) may open the bulk "record
@@ -98,7 +97,26 @@ export default function EventDonationPage() {
 
     if (isMemberScoped) {
       fetchMyAccountCollection("donations/events")
-        .then((items) => { if (!cancelled) setMyRows(items.map(mapMyEventRow)); })
+        .then((items) => {
+          if (cancelled) return;
+
+          // MEMBER view must show exactly ONE current row per activity.
+          // Old/test duplicate donation rows can exist in the database, so
+          // de-duplicate defensively in the UI by activity id. The API is
+          // ordered newest-first, therefore the first row wins.
+          const oneRowPerActivity = new Map();
+          for (const item of items) {
+            const mapped = mapMyEventRow(item);
+            const key = mapped.activityId != null
+              ? `activity:${mapped.activityId}`
+              : `fallback:${mapped.eventName}|${mapped.branch}`;
+            if (!oneRowPerActivity.has(key)) {
+              oneRowPerActivity.set(key, mapped);
+            }
+          }
+
+          setMyRows(Array.from(oneRowPerActivity.values()));
+        })
         .catch((loadError) => { if (!cancelled) setError(loadError.message); });
       return () => { cancelled = true; };
     }
@@ -121,7 +139,7 @@ export default function EventDonationPage() {
   ), [rows, selectedBranch]);
   const memberCount = new Set(branchRows.filter((row) => row.memberId).map((row) => row.memberId)).size;
   const sponsorCount = new Set(branchRows.filter((row) => !row.memberId).map((row) => `${row.sponsorId || row.donorName || row.id}`)).size;
-  const totalDollar = branchRows.reduce((total, row) => total + Number(row.amountUsd || 0) + Number(row.amountKhr || 0) / Number(row.exchangeRateKhrPerUsd || exchangeRateKhrPerUsd || 4000), 0);
+  const totalDollar = branchRows.reduce((total, row) => total + Number(row.amountUsd || 0) + Number(row.amountKhr || 0) / Number(row.exchangeRateKhrPerUsd || 4000), 0);
   const myTotalDollar = myRows.reduce((total, row) => total + parseMoney(row.dollarAmount), 0);
 
   const handleBranchChange = (branch) => {
@@ -145,7 +163,7 @@ export default function EventDonationPage() {
             growth=""
             note=""
           />
-          <DonorCard label="ចំនួនកំណត់ត្រា" value={`${myRows.length} នាក់`} growth="" note="" />
+          <DonorCard label="ចំនួនកំណត់ត្រា" value={`${myRows.length} លើក`} growth="" note="" />
         </div>
         <MyEventDonationsTable rows={myRows} />
       </div>

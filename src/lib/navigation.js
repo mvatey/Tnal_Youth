@@ -23,7 +23,7 @@ export const NAV_ITEMS = [
     label: "សមាជិក",
     href: "/member",
     icon: "users",
-    roles: ["admin", "secretary", "viewer"],
+    roles: ["admin","branch_leader", "secretary", "viewer"],
   },
   {
     id: "activities",
@@ -34,6 +34,7 @@ export const NAV_ITEMS = [
       "admin",
       "secretary",
       "branch_leader",
+      "member",
       "viewer",
     ],
   },

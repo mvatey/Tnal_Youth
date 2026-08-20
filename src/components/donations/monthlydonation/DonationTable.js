@@ -89,6 +89,7 @@ export default function DonationTable() {
     "ប្រាក់សរុប(ដុល្លារ)",
     "សកម្មភាព",
   ];
+  const visibleHeaders = isMemberScoped ? headers.slice(0, -1) : headers;
   const [selectedYear, setSelectedYear] = useState("all");
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedBranch, setSelectedBranch] = useState("all");
@@ -304,7 +305,7 @@ export default function DonationTable() {
         <table className="w-full min-w-[840px] border-collapse border border-border">
           <thead>
             <tr className="h-12 border-b border-border bg-bg-page-gray text-center text-xs font-medium text-text-secondary">
-              {headers.map((header, index) => (
+              {visibleHeaders.map((header, index) => (
                 <th key={header} className="px-4">
                   {index >= 4 && index <= 6 ? (
                     <button
@@ -346,11 +347,12 @@ export default function DonationTable() {
                 onDelete={handleDelete}
                 hasMoney={row.donorCount > 0}
                 canManage={isBranchScoped}
+                showAction={!isMemberScoped}
               />
             ))}
             {filteredRows.length === 0 && (
               <tr>
-                <td colSpan={headers.length} className="px-4 py-8 text-center text-xs font-medium text-text-secondary">
+                <td colSpan={visibleHeaders.length} className="px-4 py-8 text-center text-xs font-medium text-text-secondary">
                   មិនមានទិន្នន័យ
                 </td>
               </tr>

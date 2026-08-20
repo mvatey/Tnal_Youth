@@ -34,6 +34,8 @@ const ROUTE_ROLES = {
     "ADMIN",
     "SECRETARY",
     "BRANCH_LEADER",
+    "MEMBER",
+    "VIEWER",
   ],
 
   "/document": [

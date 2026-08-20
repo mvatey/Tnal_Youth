@@ -6,6 +6,19 @@ import DonorCard from "./DonorCard";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 
+const isCurrentMonthDonation = (row, now = new Date()) => {
+  const rawPeriod = row?.donationPeriod || row?.paidAt || row?.donatedAt;
+  if (!rawPeriod) return false;
+
+  const period = new Date(`${String(rawPeriod).slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(period.getTime())) return false;
+
+  return (
+    period.getFullYear() === now.getFullYear() &&
+    period.getMonth() === now.getMonth()
+  );
+};
+
 export default function DonationCards() {
   const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
   const isBranchScoped = ["secretary", "branch_leader"].includes(currentMember?.role);
@@ -27,9 +40,16 @@ export default function DonationCards() {
       fetchMyAccountCollection("donations/monthly")
         .then((rows) => {
           if (cancelled) return;
+          const currentMonthRows = rows.filter((row) =>
+            isCurrentMonthDonation(row),
+          );
           setSummary({
-            totalUsd: rows.reduce((total, row) => total + Number(row.totalAmountUsd || row.amountUsd || 0), 0),
-            donors: rows.length,
+            totalUsd: currentMonthRows.reduce(
+              (total, row) =>
+                total + Number(row.totalAmountUsd || row.amountUsd || 0),
+              0,
+            ),
+            donors: currentMonthRows.length,
           });
         })
         .catch(() => { if (!cancelled) setSummary({ totalUsd: 0, donors: 0 }); });
@@ -45,8 +65,11 @@ export default function DonationCards() {
         if (!response.ok || body?.success === false) throw new Error();
         const page = body?.data ?? body;
         const rows = Array.isArray(page?.items) ? page.items : [];
+        const currentMonthRows = rows.filter((row) =>
+          isCurrentMonthDonation(row),
+        );
         if (cancelled) return;
-        setSummary(rows.reduce((total, row) => ({
+        setSummary(currentMonthRows.reduce((total, row) => ({
           totalUsd: total.totalUsd + Number(row.overallTotalUsd || 0),
           donors: total.donors + Number(row.donorCount || 0),
         }), { totalUsd: 0, donors: 0 }));
@@ -63,7 +86,7 @@ export default function DonationCards() {
       <DonationCard label="ថវិកាប្រចាំខែ" value={`$${summary.totalUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="0%" note="ក្នុងខែនេះ" />
       <DonorCard
         label={isMemberScoped ? "ចំនួនកំណត់ត្រា" : "អ្នកបរិច្ចាគសរុប"}
-        value={`${summary.donors} នាក់`}
+        value={`${summary.donors} ${isMemberScoped ? "លើក" : "នាក់"}`}
         growth="0%"
         note="ក្នុងខែនេះ"
       />

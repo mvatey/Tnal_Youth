@@ -99,6 +99,7 @@ export default function SponsorPanel({
   const routePrefix = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/sponsor"
     : "/donation/sponsor";
+  const visibleHeaders = isMemberScoped ? headers.slice(0, -1) : headers;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
@@ -122,7 +123,7 @@ export default function SponsorPanel({
       try {
         if (isMemberScoped) {
           const myRows = await fetchMyAccountCollection("donations/sponsors");
-          if (!cancelled) setAllRows(myRows.map(mapMySponsorRow));
+          if (!cancelled) setAllRows(myRows.map((item) => mapMySponsorRow(item, currentMember)));
           return;
         }
 
@@ -142,7 +143,7 @@ export default function SponsorPanel({
     }
     loadRows();
     return () => { cancelled = true; };
-  }, [isMemberScoped]);
+  }, [isMemberScoped, currentMember]);
 
   useEffect(() => {
     let cancelled = false;
@@ -310,7 +311,7 @@ export default function SponsorPanel({
         <table className="w-full min-w-[980px] border-collapse border border-border">
           <thead>
             <tr className="h-12 border-b border-border bg-bg-page-gray text-center text-xs font-medium text-text-secondary">
-              {headers.map((header, index) => (
+              {visibleHeaders.map((header, index) => (
                 <th
                   key={header}
                   className={`px-4 ${header === "លេខទូរស័ព្ទ" ? "whitespace-nowrap" : ""}`}
@@ -362,21 +363,23 @@ export default function SponsorPanel({
                   {row.dollarAmount || "0"}
                 </td>
                 <td className="px-4">{row.method}</td>
-                <td className="px-4">
-                  <div className="inline-flex items-center justify-center gap-2">
-                    {canManage && (
-                      <button
-                        type="button"
-                        onClick={() => router.push(`${routePrefix}/edit?id=${row.id}`)}
-                        className="inline-flex h-[20px] w-[24px] items-center justify-center rounded-[8px] text-[#D4AF37] transition hover:text-[#b88f1f]"
-                        aria-label={`Edit sponsor ${row.id}`}
-                      >
-                        <BsPencilSquare size={16}  />
-                      </button>
-                    )}
-                    <SponsorReceiptPreview receipt={row.receipt} />
-                  </div>
-                </td>
+                {!isMemberScoped && (
+                  <td className="px-4">
+                    <div className="inline-flex items-center justify-center gap-2">
+                      {canManage && (
+                        <button
+                          type="button"
+                          onClick={() => router.push(`${routePrefix}/edit?id=${row.id}`)}
+                          className="inline-flex h-[20px] w-[24px] items-center justify-center rounded-[8px] text-[#D4AF37] transition hover:text-[#b88f1f]"
+                          aria-label={`Edit sponsor ${row.id}`}
+                        >
+                          <BsPencilSquare size={16}  />
+                        </button>
+                      )}
+                      <SponsorReceiptPreview receipt={row.receipt} />
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -438,16 +441,16 @@ function mapSponsorRow(row) {
 // Maps a single MyDonationResponse (member's own sponsor-type donation)
 // into the same row shape mapSponsorRow produces, so this table is reused
 // as-is for the member's read-only "my donations" view.
-function mapMySponsorRow(row) {
+function mapMySponsorRow(row, currentMember) {
   return {
     id: row.id,
-    name: row.sponsor?.name || row.donorName || "-",
+    name: currentMember?.name_kh || currentMember?.name_en || row.sponsor?.name || row.donorName || "-",
     type: "សមាជិក",
     donorKind: "MEMBER",
-    phone: row.sponsor?.phone || "-",
-    email: row.sponsor?.email || "-",
-    branch: row.branch?.nameKm || row.branch?.nameEn || "-",
-    branchId: row.branch?.id,
+    phone: currentMember?.phone || row.sponsor?.phone || "-",
+    email: currentMember?.email || row.sponsor?.email || "-",
+    branch: currentMember?.branch || row.branch?.nameKm || row.branch?.nameEn || "-",
+    branchId: currentMember?.branchId ?? row.branch?.id,
     activityId: row.activity?.id ?? row.activityId,
     date: row.paidAt ? new Date(row.paidAt).toLocaleDateString("en-GB") : "-",
     dateValue: row.paidAt ? row.paidAt.slice(0, 10) : "",

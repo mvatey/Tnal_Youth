@@ -245,7 +245,10 @@ export default function ActivityPage() {
         fetch("/api/backend/activities?page=0&size=1000", {
           cache: "no-store",
         }),
-        fetch("/api/lookups/activity-invitable-branches", {
+        // Use the general branch lookup here. MEMBER can view activities but
+        // cannot call the staff-only activity-invitable-branches lookup.
+        // The general lookup gives us the branch labels needed by the list.
+        fetch("/api/lookups/branches", {
           cache: "no-store",
         }),
       ]);
@@ -277,6 +280,8 @@ export default function ActivityPage() {
           label:
             branch.labelKm ||
             branch.labelEn ||
+            branch.nameKm ||
+            branch.nameEn ||
             branch.label ||
             branch.code ||
             `#${branch.value ?? branch.id}`,
