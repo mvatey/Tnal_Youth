@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DonationCard from "./DonationCard";
 import DonorCard from "./DonorCard";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
+import { useBranch } from "@/context/BranchContext";
 
 const isCurrentMonthDonation = (row, now = new Date()) => {
   const rawPeriod = row?.donationPeriod || row?.paidAt || row?.donatedAt;
@@ -23,7 +24,32 @@ export default function DonationCards() {
   const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
   const isBranchScoped = ["secretary", "branch_leader"].includes(currentMember?.role);
   const isMemberScoped = currentMember?.role === "member";
-  const scopedBranchId = isBranchScoped ? currentMember?.branchId : null;
+  const {
+    branches: accessibleBranches = [],
+    selectedBranch: globalSelectedBranch = "all",
+  } = useBranch();
+
+  // IMPORTANT: for SECRETARY/BRANCH_LEADER the sidebar selection is the
+  // single source of truth. currentMember.branchId is only the home branch
+  // and must never override a branch the secretary actively selected.
+  const scopedBranchId = useMemo(() => {
+    if (!isBranchScoped) return null;
+
+    if (globalSelectedBranch && globalSelectedBranch !== "all") {
+      return String(globalSelectedBranch);
+    }
+
+    if (accessibleBranches.length > 0) {
+      return String(accessibleBranches[0].id);
+    }
+
+    return currentMember?.branchId ? String(currentMember.branchId) : null;
+  }, [
+    isBranchScoped,
+    globalSelectedBranch,
+    accessibleBranches,
+    currentMember?.branchId,
+  ]);
 
   const [summary, setSummary] = useState({ totalUsd: 0, donors: 0 });
 

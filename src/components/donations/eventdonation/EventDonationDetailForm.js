@@ -13,11 +13,6 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch } from "@/context/BranchContext";
 import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 
-// Matches the flat rate already used elsewhere in this form (see the
-// exchangeRateKhrPerUsd sent in handleSave's payload below) and on the
-// income/expense pages' own totals cards.
-
-
 async function fetchJson(url, options) {
   const response = await fetch(url, { cache: "no-store", ...options });
   const body = await response.json().catch(() => null);
@@ -133,12 +128,24 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   // ActivityMediaServiceImpl#validateManagePermission). Only they get the
   // Sponsor tab below; a co-hosting/invited branch, admin, or a viewer
   // does not.
+  // This page is opened in the context of `selectedBranch`.  An account may
+  // manage more than one branch, so checking whether the actor has access to
+  // the organizer branch is not enough: while viewing an invited branch we
+  // must treat that branch as an invited branch even if the same actor also
+  // happens to manage the organizer.
+  const isSelectedBranchOrganizer =
+    organizerBranchId != null &&
+    selectedBranch !== "all" &&
+    String(selectedBranch) === String(organizerBranchId);
+
   const isBranchOrganizer =
     ["secretary", "branch_leader"].includes(currentMember?.role) &&
+    isSelectedBranchOrganizer;
+
+  const isInvitedBranch =
     organizerBranchId != null &&
-    accessibleBranches.some(
-      (branch) => String(branch.id) === String(organizerBranchId),
-    );
+    selectedBranch !== "all" &&
+    !isSelectedBranchOrganizer;
 
   useEffect(() => {
     let cancelled = false;
@@ -168,8 +175,20 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
 
   const eventOptions = useMemo(() => activities.filter((option) => {
     if (selectedBranch === "all") return true;
-    const branchId = option.raw?.branchId ?? option.raw?.branch?.id;
-    return branchId == null || String(branchId) === String(selectedBranch);
+
+    // For an accepted invited/co-hosting activity, activity.branchId is the
+    // ORGANIZER branch. The branch this Secretary is managing is returned
+    // separately as managedInvitedBranchId, so include either relationship.
+    const hostBranchId = option.raw?.branchId ?? option.raw?.branch?.id;
+    const managedInvitedBranchId =
+      option.raw?.managedInvitedBranchId ??
+      option.raw?.managed_invited_branch_id ??
+      null;
+
+    return (
+      String(hostBranchId ?? "") === String(selectedBranch) ||
+      String(managedInvitedBranchId ?? "") === String(selectedBranch)
+    );
   }), [activities, selectedBranch]);
 
   useEffect(() => {
@@ -178,12 +197,12 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
       return undefined;
     }
     let cancelled = false;
-    const branchLabel = branches.find((option) => option.value === selectedBranch)?.label || selectedBranch;
+    const branchLabel = branches.find((option) => option.value === selectedBranch)?.label || "-";
     setLoading(true);
     setError("");
     Promise.all([
       fetchJson(`/api/backend/members?branchId=${encodeURIComponent(selectedBranch)}&page=0&size=100`),
-      fetchJson(`/api/backend/donations?page=0&size=100&activityId=${encodeURIComponent(selectedEvent)}`),
+      fetchJson(`/api/backend/donations?page=0&size=100&activityId=${encodeURIComponent(selectedEvent)}&branchId=${encodeURIComponent(selectedBranch)}`),
     ])
       .then(([page, donationPage]) => {
         if (cancelled) return;
@@ -244,15 +263,20 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     return () => window.clearTimeout(timer);
   }, [showSaveAlert]);
 
-  // If "sponsor" was the active tab and the organizer check flips false
-  // (branch/activity changed, or organizerBranchId only just resolved),
-  // fall back to "members" rather than leaving the switcher on a
-  // now-hidden tab with nothing rendered under it.
+  // Invited branches work only with their own MEMBER income table.
+  // They must never be switched to the cross-branch totals tab.
+  // If branch/activity context changes, always fall back to members unless
+  // the selected branch is the organizer and Sponsor is legitimately visible.
   useEffect(() => {
+    if (isInvitedBranch && activeTab !== "members") {
+      setActiveTab("members");
+      return;
+    }
+
     if (activeTab === "sponsor" && !isBranchOrganizer) {
       setActiveTab("members");
     }
-  }, [activeTab, isBranchOrganizer]);
+  }, [activeTab, isBranchOrganizer, isInvitedBranch]);
 
   const handleSave = async (rows) => {
     if (!canEdit) { setError("អ្នកមិនមានសិទ្ធិកែប្រែវិភាគទាននេះទេ។"); return false; }
@@ -276,7 +300,10 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           donationPeriod: null,
           amountKhr: Number(row.realAmount || 0),
           amountUsd: Number(row.dollarAmount || 0),
-          exchangeRateKhrPerUsd: Number(row.realAmount || 0) > 0 ? (exchangeRateKhrPerUsd || null) : null,
+          exchangeRateKhrPerUsd:
+            Number(row.realAmount || 0) > 0
+              ? (exchangeRateKhrPerUsd || null)
+              : null,
           paymentMethodId: Number(method?.id),
           paidAt: row.paidAt || new Date().toISOString(),
           paymentReference: row.paymentReference || null,
@@ -340,8 +367,12 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   const memberTotals = useMemo(() => {
     const riel = members.reduce((sum, row) => sum + (Number(row.realAmount) || 0), 0);
     const dollar = members.reduce((sum, row) => sum + (Number(row.dollarAmount) || 0), 0);
-    return { riel, dollar, total: dollar + riel / (exchangeRateKhrPerUsd || 4000) };
-  }, [members]);
+    return {
+      riel,
+      dollar,
+      total: dollar + riel / (exchangeRateKhrPerUsd || 4000),
+    };
+  }, [exchangeRateKhrPerUsd, members]);
 
   return (
     <>
@@ -397,11 +428,14 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
         */}
         {hasBranchAndEvent && (
           <div className="mb-4 inline-flex w-fit shrink-0 rounded-lg border border-border bg-bg-page-gray p-1 text-xs font-medium">
-            {[
-              { key: "members", label: "សមាជិក" },
-              { key: "branches", label: "សាខា" },
-              ...(isBranchOrganizer ? [{ key: "sponsor", label: "អ្នកឧបត្ថម្ភ" }] : []),
-            ].map((tab) => (
+            {(isInvitedBranch
+              ? [{ key: "members", label: "សមាជិក" }]
+              : [
+                  { key: "members", label: "សមាជិក" },
+                  { key: "branches", label: "សាខា" },
+                  ...(isBranchOrganizer ? [{ key: "sponsor", label: "អ្នកឧបត្ថម្ភ" }] : []),
+                ]
+            ).map((tab) => (
               <button
                 key={tab.key}
                 type="button"
@@ -442,10 +476,11 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
             total={memberTotals.total}
           />
         ) : null}
-        {hasBranchAndEvent && activeTab === "branches" ? (
+        {hasBranchAndEvent && activeTab === "branches" && !isInvitedBranch ? (
           <EventDonationBranchTotals
             activityId={selectedEvent}
             organizerBranchId={organizerBranchId}
+            selectedBranchId={selectedBranch}
           />
         ) : null}
         {hasBranchAndEvent && activeTab === "sponsor" && isBranchOrganizer ? (

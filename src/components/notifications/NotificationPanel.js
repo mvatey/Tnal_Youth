@@ -3,13 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Pagination from "@/components/navigation/Pagination";
 import NotificationItem from "./NotificationItem";
-import NotificationTabs from "./NotificationTabs";
 import { getNotificationHeading } from "./notificationData";
 
 const rowsPerPage = 10;
 
-export default function NotificationPanel({ type = "system" }) {
-  const heading = getNotificationHeading(type);
+export default function NotificationPanel({ type = "all" }) {
+  const heading = type === "all" ? "សេចក្ដីជូនដំណឹង" : getNotificationHeading(type);
 
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +62,10 @@ export default function NotificationPanel({ type = "system" }) {
           row.typeCode || "SYSTEM",
         ).toUpperCase();
 
+        if (type === "all") {
+          return true;
+        }
+
         if (type === "event") {
           return code.startsWith("ACTIVITY_");
         }
@@ -96,7 +99,10 @@ export default function NotificationPanel({ type = "system" }) {
               row.typeLabelEn ||
               heading,
 
-            variant: type,
+            variant:
+              type === "all"
+                ? codeToVariant(row.typeCode)
+                : type,
 
             date: formatNotificationDate(
               row.createdAt,
@@ -178,8 +184,6 @@ export default function NotificationPanel({ type = "system" }) {
 
   return (
     <div className="space-y-4">
-      <NotificationTabs />
-
       <section className="overflow-hidden rounded-md border border-border bg-bg-page-white shadow-sm">
         <div className="min-h-[48px] overflow-visible px-8 pb-1 pt-[10px]">
           <h2 className="overflow-visible text-[16px] font-bold leading-[2] text-secondary">
@@ -252,4 +256,10 @@ function formatNotificationDate(value) {
     month: "short",
     day: "numeric",
   }).format(date);
+}
+function codeToVariant(value) {
+  const code = String(value || "SYSTEM").toUpperCase();
+  if (code.startsWith("ACTIVITY_")) return "event";
+  if (code.includes("REPORT")) return "report";
+  return "system";
 }

@@ -36,6 +36,10 @@ import {
 } from "@/context/AuthContext";
 
 import {
+  useBranch,
+} from "@/context/BranchContext";
+
+import {
   normalizeRole,
 } from "@/lib/navigation";
 
@@ -218,6 +222,10 @@ export default function ActivityParticipantsPage({
 
   const { user } =
     useAuth();
+
+  const {
+    selectedBranch: globalSelectedBranch = "all",
+  } = useBranch();
 
   const isMember =
     normalizeRole(
@@ -402,15 +410,17 @@ export default function ActivityParticipantsPage({
          * current roster =
          * accepted invited branch.
          */
+        const selectedScopedBranchId =
+          globalSelectedBranch !== "all"
+            ? Number(globalSelectedBranch)
+            : null;
+
         const rosterBranchId =
-          !canManage &&
-          canManageAsInvitedBranch &&
-          Number.isFinite(
-            managedInvitedBranchId,
-          ) &&
-          managedInvitedBranchId >
-            0
-            ? managedInvitedBranchId
+          !canManage && canManageAsInvitedBranch
+            ? (Number.isFinite(selectedScopedBranchId) &&
+                selectedScopedBranchId > 0
+                ? selectedScopedBranchId
+                : managedInvitedBranchId)
             : hostBranchId;
 
         if (
@@ -802,6 +812,7 @@ export default function ActivityParticipantsPage({
       cancelled = true;
     };
   }, [
+    globalSelectedBranch,
     id,
     isMember,
   ]);

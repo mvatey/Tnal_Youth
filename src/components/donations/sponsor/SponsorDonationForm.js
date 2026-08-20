@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, ChevronDown, ChevronUp, CloudUpload, FileText, X } from "lucide-react";
 import { HiSaveAs } from "react-icons/hi";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import SaveAlert from "@/components/forms/savealert";
 import sponsorOptions from "@/data/donation/sponsorOptions.json";
+import useCurrentMember from "@/hooks/useCurrentMember";
+import { useBranch } from "@/context/BranchContext";
 
 const {
   equipmentTypes,
@@ -140,6 +142,7 @@ function SelectField({
   options,
   placeholder,
   className = "",
+  disabled = false,
 }) {
   return (
     <label className={`block ${className}`}>
@@ -150,8 +153,9 @@ function SelectField({
       <span className="relative block">
         <select
           value={value}
+          disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
-          className="h-[34px] w-full appearance-none rounded-xl border border-border bg-bg-page-white px-4 pr-10 text-[13px] font-medium text-text-secondary outline-none transition focus:border-secondary"
+          className="h-[34px] w-full appearance-none rounded-xl border border-border bg-bg-page-white px-4 pr-10 text-[13px] font-medium text-text-secondary outline-none transition focus:border-secondary disabled:cursor-not-allowed disabled:bg-bg-page-gray disabled:opacity-60"
         >
           <option value="">{placeholder}</option>
           {options.map((option) => (
@@ -449,6 +453,26 @@ export default function SponsorDonationForm({ initialData = null }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { member: currentMember } = useCurrentMember();
+  const {
+    branches: accessibleBranches = [],
+    selectedBranch: globalSelectedBranch = "all",
+  } = useBranch();
+  const isBranchScoped = ["secretary", "branch_leader"].includes(currentMember?.role);
+  const scopedBranchId = useMemo(() => {
+    if (!isBranchScoped) return null;
+    if (globalSelectedBranch && globalSelectedBranch !== "all") {
+      return String(globalSelectedBranch);
+    }
+    if (accessibleBranches.length > 0) return String(accessibleBranches[0].id);
+    return currentMember?.branchId ? String(currentMember.branchId) : null;
+  }, [
+    accessibleBranches,
+    currentMember?.branchId,
+    globalSelectedBranch,
+    isBranchScoped,
+  ]);
+
   const listPath = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/sponsor"
     : "/donation/sponsor";
@@ -459,7 +483,7 @@ export default function SponsorDonationForm({ initialData = null }) {
   // tab "add" button) — editing an existing one always uses its own saved
   // branch/activity via `initialData`, never the URL.
   const [form, setForm] = useState(() => buildInitialForm(initialData, {
-    branch: searchParams.get("branch"),
+    branch: searchParams.get("branch") || scopedBranchId,
     event: searchParams.get("event"),
   }));
   const [branchOptions, setBranchOptions] = useState([]);
@@ -470,12 +494,17 @@ export default function SponsorDonationForm({ initialData = null }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!isBranchScoped || !scopedBranchId) return;
+    setForm((current) => ({ ...current, branch: scopedBranchId }));
+  }, [isBranchScoped, scopedBranchId]);
+
+  useEffect(() => {
     setForm(buildInitialForm(initialData, {
-      branch: searchParams.get("branch"),
+      branch: searchParams.get("branch") || scopedBranchId,
       event: searchParams.get("event"),
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialData]);
+  }, [initialData, scopedBranchId]);
 
   useEffect(() => {
     if (!showSaveAlert) return undefined;
@@ -487,21 +516,31 @@ export default function SponsorDonationForm({ initialData = null }) {
 
   useEffect(() => {
     let cancelled = false;
+    const activityParams = new URLSearchParams({ page: "0", size: "1000" });
+    if (isBranchScoped && scopedBranchId) {
+      activityParams.set("branchId", scopedBranchId);
+    }
+
     Promise.all([
       fetchJson("/api/lookups/branches"),
-      fetchJson("/api/backend/activities?page=0&size=1000"),
+      fetchJson(`/api/backend/activities?${activityParams.toString()}`),
       fetchJson("/api/lookups/payment-methods?activeOnly=true&includeMaterial=true"),
     ])
       .then(([branchItems, activityPage, methodItems]) => {
         if (cancelled) return;
         setBranchOptions((Array.isArray(branchItems) ? branchItems : []).map((branch) => ({
           value: String(branch.value ?? branch.id),
-          label: branch.labelKm || branch.labelEn || branch.label || branch.code || `#${branch.value ?? branch.id}`,
+          label: branch.labelKm || branch.labelEn || branch.nameKm || branch.nameEn || branch.label || branch.code || "-",
         })));
         setActivityOptions((Array.isArray(activityPage?.content) ? activityPage.content : []).map((activity) => ({
           value: String(activity.id),
           label: activity.titleKm || activity.titleEn || `#${activity.id}`,
           branchId: String(activity.branchId ?? ""),
+          managedInvitedBranchId: String(
+            activity.managedInvitedBranchId ??
+            activity.managed_invited_branch_id ??
+            "",
+          ),
         })));
         setBackendPaymentMethods((Array.isArray(methodItems) ? methodItems : []).map((method) => ({
           value: String(method.id),
@@ -513,7 +552,7 @@ export default function SponsorDonationForm({ initialData = null }) {
         if (!cancelled) setError(loadError.message || "Unable to load sponsor donation options.");
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [isBranchScoped, scopedBranchId]);
 
   useEffect(() => {
     if (form.sponsorType !== sponsorTypes[2] || !form.branch) {
@@ -919,13 +958,19 @@ export default function SponsorDonationForm({ initialData = null }) {
                 onChange={updateField("branch")}
                 options={branchOptions}
                 placeholder="ជ្រើសរើសសាខា"
+                disabled={isBranchScoped}
                 className="min-w-0 flex-1"
               />
               <SelectField
                 label="ឧបត្ថម្ភក្នុងកម្មវិធី(Optional)"
                 value={form.status}
                 onChange={updateField("status")}
-                options={activityOptions.filter((activity) => !form.branch || activity.branchId === String(form.branch))}
+                options={activityOptions.filter(
+                  (activity) =>
+                    !form.branch ||
+                    activity.branchId === String(form.branch) ||
+                    activity.managedInvitedBranchId === String(form.branch),
+                )}
                 placeholder="ជ្រើសរើសកម្មវិធី"
                 className="min-w-0 flex-1"
               />

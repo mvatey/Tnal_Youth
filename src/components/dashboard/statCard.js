@@ -44,32 +44,13 @@ export default function StatCard({
 
   return (
     <div
-      className="
-        app-card
-        relative
-        w-full
-        min-w-0
-        overflow-hidden
-        rounded-xl
-        border
-        border-border
-        bg-bg-page-white
-      "
+      className="app-card relative w-full min-w-0 overflow-hidden rounded-xl border border-border bg-bg-page-white"
     >
       <div className={`h-[3px] w-full ${accentClass}`} />
 
       <div className="flex items-center gap-3 p-4">
         <div
-          className={`
-            flex
-            h-12
-            w-12
-            shrink-0
-            items-center
-            justify-center
-            rounded-xl
-            ${iconBg}
-          `}
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBg}`}
         >
           <Icon className={`h-5 w-5 ${iconColor}`} />
         </div>
@@ -87,15 +68,7 @@ export default function StatCard({
         {hasGrowth && (
         <div className="flex shrink-0 flex-col items-end gap-1">
           <div
-            className={`
-              flex
-              items-center
-              gap-1
-              whitespace-nowrap
-              text-sm
-              font-semibold
-              ${isUp ? "text-success" : "text-error"}
-            `}
+            className={`flex items-center gap-1 whitespace-nowrap text-sm font-semibold ${isUp ? "text-success" : "text-error"}`}
           >
             <span>{isUp ? "↑" : "↓"}</span>
 

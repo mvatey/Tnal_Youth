@@ -23,6 +23,10 @@ import {
 } from "@/context/AuthContext";
 
 import {
+  useBranch,
+} from "@/context/BranchContext";
+
+import {
   normalizeRole,
 } from "@/lib/navigation";
 
@@ -239,6 +243,10 @@ export default function ActivityMembersPage({
   const { user } =
     useAuth();
 
+  const {
+    selectedBranch: globalSelectedBranch = "all",
+  } = useBranch();
+
   const isMember =
     normalizeRole(
       user?.role,
@@ -400,6 +408,11 @@ export default function ActivityMembersPage({
          * branchId =
          * managedInvitedBranchId.
          */
+        const selectedScopedBranchId =
+          globalSelectedBranch !== "all"
+            ? Number(globalSelectedBranch)
+            : null;
+
         const branchId =
           canManage
             ? Number(
@@ -409,13 +422,15 @@ export default function ActivityMembersPage({
                   "branch_id",
                 ),
               )
-            : Number(
-                getValue(
-                  activityRecord,
-                  "managedInvitedBranchId",
-                  "managed_invited_branch_id",
-                ),
-              );
+            : Number.isFinite(selectedScopedBranchId) && selectedScopedBranchId > 0
+              ? selectedScopedBranchId
+              : Number(
+                  getValue(
+                    activityRecord,
+                    "managedInvitedBranchId",
+                    "managed_invited_branch_id",
+                  ),
+                );
 
         if (
           !Number.isFinite(
@@ -689,6 +704,7 @@ export default function ActivityMembersPage({
         true;
     };
   }, [
+    globalSelectedBranch,
     id,
     isMember,
     router,

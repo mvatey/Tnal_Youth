@@ -35,7 +35,10 @@ function getValue(record, camelKey, snakeKey) {
 export default function PendingInvitationBanner({ activityId }) {
   const { member } = useCurrentMember();
   const { user } = useAuth();
-  const { branches: accessibleBranches = [] } = useBranch();
+  const {
+    branches: accessibleBranches = [],
+    selectedBranch: globalSelectedBranch = "all",
+  } = useBranch();
   const [invitation, setInvitation] = useState(null);
   const [responding, setResponding] = useState(false);
   const [error, setError] = useState("");
@@ -58,14 +61,28 @@ export default function PendingInvitationBanner({ activityId }) {
     }
 
     if (isBranchScopedStaff) {
-      accessibleBranches.forEach((branch) => {
-        const id = Number(branch?.id);
-        if (Number.isFinite(id)) ids.add(id);
-      });
+      // The global sidebar branch is the active working context. Do not
+      // surface/accept an invitation on behalf of a different assigned
+      // branch while the Secretary is currently working in this one.
+      if (globalSelectedBranch && globalSelectedBranch !== "all") {
+        const selectedId = Number(globalSelectedBranch);
+        return Number.isFinite(selectedId) ? new Set([selectedId]) : ids;
+      }
+
+      // Short startup fallback until BranchContext restores the selection.
+      if (accessibleBranches.length > 0) {
+        const firstId = Number(accessibleBranches[0]?.id);
+        if (Number.isFinite(firstId)) return new Set([firstId]);
+      }
     }
 
     return ids;
-  }, [homeBranchId, isBranchScopedStaff, accessibleBranches]);
+  }, [
+    accessibleBranches,
+    globalSelectedBranch,
+    homeBranchId,
+    isBranchScopedStaff,
+  ]);
 
   const loadInvitation = useCallback(async () => {
     if (ownBranchIds.size === 0 || !activityId) return;

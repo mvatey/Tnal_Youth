@@ -9,15 +9,116 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch } from "@/context/BranchContext";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 
+const EMPTY_SUMMARY = {
+  donorCount: 0,
+  overallTotalUsd: 0,
+  donationChangePercent: 0,
+  donorChangePercent: 0,
+};
+
+const toDate = (value) => {
+  if (!value) return null;
+  const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const isSameMonth = (value, target) => {
+  const date = toDate(value);
+  return !!date && date.getFullYear() === target.getFullYear() && date.getMonth() === target.getMonth();
+};
+
+const percentChange = (current, previous) => {
+  const now = Number(current || 0);
+  const before = Number(previous || 0);
+  if (before === 0) return now === 0 ? 0 : 100;
+  return Number((((now - before) / before) * 100).toFixed(2));
+};
+
+const sponsorKey = (row) => {
+  if (row?.memberId) return `member:${row.memberId}`;
+  if (row?.sponsorId) return `sponsor:${row.sponsorId}`;
+  if (row?.donorName) return `name:${String(row.donorName).trim().toLowerCase()}`;
+  if (row?.name) return `name:${String(row.name).trim().toLowerCase()}`;
+  return `donation:${row?.donationId ?? row?.id ?? Math.random()}`;
+};
+
+const amountUsd = (row) => {
+  const storedTotal = Number(row?.totalAmountUsd);
+  if (Number.isFinite(storedTotal) && storedTotal !== 0) return storedTotal;
+
+  const usd = Number(row?.amountUsd || 0);
+  const khr = Number(row?.amountKhr || 0);
+  const rate = Number(row?.exchangeRateKhrPerUsd || 4000) || 4000;
+  return usd + khr / rate;
+};
+
+const summarizeRows = (rows, memberMode = false) => {
+  const now = new Date();
+  const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const currentRows = rows.filter((row) => isSameMonth(row?.paidAt || row?.donatedAt, now));
+  const previousRows = rows.filter((row) => isSameMonth(row?.paidAt || row?.donatedAt, previousMonth));
+
+  const currentTotal = currentRows.reduce((sum, row) => sum + amountUsd(row), 0);
+  const previousTotal = previousRows.reduce((sum, row) => sum + amountUsd(row), 0);
+  const currentDonors = memberMode ? currentRows.length : new Set(currentRows.map(sponsorKey)).size;
+  const previousDonors = memberMode ? previousRows.length : new Set(previousRows.map(sponsorKey)).size;
+
+  return {
+    donorCount: currentDonors,
+    overallTotalUsd: currentTotal,
+    donationChangePercent: percentChange(currentTotal, previousTotal),
+    donorChangePercent: percentChange(currentDonors, previousDonors),
+  };
+};
+
+async function fetchAllSponsorRows(selectedBranch) {
+  const makeParams = (page) => {
+    const params = new URLSearchParams({ page: String(page), size: "100" });
+    if (selectedBranch && selectedBranch !== "all") params.set("branchId", String(selectedBranch));
+    return params;
+  };
+
+  const firstResponse = await fetch(`/api/backend/donations/sponsor?${makeParams(0)}`, {
+    cache: "no-store",
+    credentials: "include",
+  });
+  const firstBody = await firstResponse.json().catch(() => null);
+  if (!firstResponse.ok || firstBody?.success === false) {
+    throw new Error(firstBody?.message || "Unable to load sponsor summary.");
+  }
+
+  const firstPage = firstBody?.data ?? firstBody;
+  const firstItems = Array.isArray(firstPage?.items) ? firstPage.items : [];
+  const total = Number(firstPage?.totalElements ?? firstPage?.total ?? firstItems.length);
+  const totalPages = Math.max(1, Math.ceil(total / 100));
+  if (totalPages === 1) return firstItems;
+
+  const remaining = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) => index + 1).map(async (page) => {
+      const response = await fetch(`/api/backend/donations/sponsor?${makeParams(page)}`, {
+        cache: "no-store",
+        credentials: "include",
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || body?.success === false) return [];
+      const data = body?.data ?? body;
+      return Array.isArray(data?.items) ? data.items : [];
+    }),
+  );
+
+  return firstItems.concat(...remaining);
+}
+
 export default function SponsorPage() {
-  const [summary, setSummary] = useState({ donorCount: 0, overallTotalUsd: 0, donationChangePercent: 0, donorChangePercent: 0 });
-  const { member: currentMember } = useCurrentMember();
-  // Same single-branch scoping as the monthly donation pages (see
-  // DonationTable.js) — a secretary/branch_leader is always scoped to
-  // exactly the one branch active in the sidebar's global dropdown, never
-  // an independent "all branches" pick here.
+  const [summary, setSummary] = useState(EMPTY_SUMMARY);
+  const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
   const { branches: accessibleBranches = [], selectedBranch: globalSelectedBranch = "all" } = useBranch();
-  const isBranchScoped = ["secretary", "branch_leader"].includes(currentMember?.role);
+
+  const viewRole = currentMember?.effectiveRole || currentMember?.role;
+  const isActualViewer = currentMember?.role === "viewer";
+  const isBranchScoped = ["secretary", "branch_leader"].includes(viewRole);
+  const isPersonalMember = viewRole === "member" && !isActualViewer;
+
   const effectiveBranchId = useMemo(() => {
     if (!isBranchScoped) return null;
     if (globalSelectedBranch && globalSelectedBranch !== "all") return String(globalSelectedBranch);
@@ -30,49 +131,32 @@ export default function SponsorPage() {
   const setSelectedBranch = isBranchScoped ? () => {} : setInternalSelectedBranch;
 
   useEffect(() => {
+    if (currentMemberLoading) return undefined;
+    if (isBranchScoped && (!selectedBranch || selectedBranch === "all")) return undefined;
+
     let cancelled = false;
 
-    if (currentMember?.role === "member") {
-      fetchMyAccountCollection("donations/sponsors")
-        .then((rows) => {
-          if (cancelled) return;
-          const totalUsd = rows.reduce(
-            (total, row) =>
-              total +
-              Number(row.amountUsd || row.totalAmountUsd || 0) +
-              Number(row.amountKhr || 0) / Number(row.exchangeRateKhrPerUsd || 4000),
-            0,
-          );
-          setSummary({
-            donorCount: rows.length,
-            overallTotalUsd: totalUsd,
-            donationChangePercent: 0,
-            donorChangePercent: 0,
-          });
-        })
-        .catch(() => {
-          if (!cancelled) {
-            setSummary({ donorCount: 0, overallTotalUsd: 0, donationChangePercent: 0, donorChangePercent: 0 });
-          }
-        });
-      return () => { cancelled = true; };
+    async function loadSummary() {
+      try {
+        if (isPersonalMember) {
+          const rows = await fetchMyAccountCollection("donations/sponsors");
+          if (!cancelled) setSummary(summarizeRows(rows, true));
+          return;
+        }
+
+        // Use the exact same sponsor-donation records that power the table.
+        // This keeps the cards synchronized with real data instead of relying
+        // on a separate summary response that can become stale or fail silently.
+        const rows = await fetchAllSponsorRows(selectedBranch);
+        if (!cancelled) setSummary(summarizeRows(rows, false));
+      } catch {
+        if (!cancelled) setSummary(EMPTY_SUMMARY);
+      }
     }
 
-    const query = selectedBranch === "all" ? "" : `?branchId=${encodeURIComponent(selectedBranch)}`;
-    fetch(`/api/backend/donations/sponsor/summary${query}`, { cache: "no-store" })
-      .then(async (response) => {
-        const body = await response.json().catch(() => null);
-        if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load summary.");
-        if (!cancelled) setSummary(body?.data ?? body);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setSummary({ donorCount: 0, overallTotalUsd: 0, donationChangePercent: 0, donorChangePercent: 0 });
-        }
-      });
-
+    loadSummary();
     return () => { cancelled = true; };
-  }, [currentMember?.role, selectedBranch]);
+  }, [currentMemberLoading, isBranchScoped, isPersonalMember, selectedBranch]);
 
   return (
     <div className="space-y-4">
@@ -80,13 +164,13 @@ export default function SponsorPage() {
       <div className="flex gap-[50px] xl:grid-cols-2">
         <SponsorCard
           value={`$${Number(summary.overallTotalUsd || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
-          growth={currentMember?.role === "member" ? "" : `${Number(summary.donationChangePercent || 0)}%`}
+          growth={isPersonalMember ? "" : `${Number(summary.donationChangePercent || 0)}%`}
         />
         <DonorCard
-          label={currentMember?.role === "member" ? "ចំនួនកំណត់ត្រារបស់ខ្ញុំ" : "អ្នកឧបត្ថម្ភសរុប"}
-          value={`${summary.donorCount || 0} ${currentMember?.role === "member" ? "លើក" : "នាក់"}`}
-          growth={currentMember?.role === "member" ? "" : `${Number(summary.donorChangePercent || 0)}%`}
-          note={currentMember?.role === "member" ? "" : "ក្នុងខែនេះ"}
+          label={isPersonalMember ? "ចំនួនកំណត់ត្រារបស់ខ្ញុំ" : "អ្នកឧបត្ថម្ភសរុប"}
+          value={`${summary.donorCount || 0} ${isPersonalMember ? "លើក" : "នាក់"}`}
+          growth={isPersonalMember ? "" : `${Number(summary.donorChangePercent || 0)}%`}
+          note={isPersonalMember ? "" : "ក្នុងខែនេះ"}
         />
       </div>
       <SponsorPanel

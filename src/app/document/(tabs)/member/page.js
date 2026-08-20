@@ -34,14 +34,14 @@ export default function MemberDocumentPage() {
   const role = normalizeRole(user?.role);
 
   /*
-   * ADMIN, SECRETARY, and BRANCH_LEADER may create certificates/letters of
+   * SECRETARY and BRANCH_LEADER may create certificates/letters of
    * appointment (matches DocumentController's @PreAuthorize on
    * POST /api/documents). VIEWER and MEMBER are read-only here, and MEMBER
    * additionally only ever sees documents dedicated
    * to them (enforced server-side in DocumentServiceImpl.getDocuments).
    */
   const canManageDocuments =
-    role === "admin" || role === "secretary" || role === "branch_leader";
+    role === "secretary" || role === "branch_leader";
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");

@@ -360,8 +360,8 @@ export default function MembersPage() {
   } = useBranch();
 
   const isBranchScoped =
-    currentMember?.role === "secretary" ||
-    currentMember?.role === "branch_leader";
+    (currentMember?.effectiveRole || currentMember?.role) === "secretary" ||
+    (currentMember?.effectiveRole || currentMember?.role) === "branch_leader";
 
   const effectiveBranchId = useMemo(() => {
     if (!isBranchScoped) return null;

@@ -3,8 +3,13 @@ export const ROLE_HOME_PATHS = {
   SECRETARY: "/dashboard",
   BRANCH_LEADER: "/dashboard",
   MEMBER: "/activity",
-  VIEWER: "/dashboard",
 };
-export function getRoleHomePath(role) {
-  return ROLE_HOME_PATHS[role?.toUpperCase()] || "/login";
+
+export function getRoleHomePath(userOrRole) {
+  const actual = typeof userOrRole === "object" ? userOrRole?.role : userOrRole;
+  const scope = typeof userOrRole === "object" ? (userOrRole?.viewerScope || userOrRole?.viewer_scope) : null;
+  const role = String(actual || "").toUpperCase() === "VIEWER"
+    ? String(scope || "ADMIN").toUpperCase()
+    : String(actual || "").toUpperCase();
+  return ROLE_HOME_PATHS[role] || "/auth/login";
 }

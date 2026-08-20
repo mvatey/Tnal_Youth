@@ -16,10 +16,9 @@ export default function useMemberPermissions() {
     role,
     loading,
     isAdmin: role === "ADMIN",
-    // All roles that can manage the Member page can edit its detail tabs.
-    // Admin was previously omitted here even though the backend authorizes
-    // Admin and the Member list exposes the same management actions.
-    canEditMemberDetails: ["ADMIN", "SECRETARY", "BRANCH_LEADER"].includes(role),
+    // Admin is oversight/read-only on member detail fields. Branch staff
+    // perform the actual profile corrections.
+    canEditMemberDetails: ["SECRETARY", "BRANCH_LEADER"].includes(role),
     canManageMemberAccount: ["ADMIN", "SECRETARY", "BRANCH_LEADER"].includes(role),
   };
 }

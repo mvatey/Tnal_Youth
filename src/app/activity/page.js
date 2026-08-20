@@ -91,18 +91,19 @@ function normalizeActivity(item, branchOptions) {
     typeId: item.type?.id,
     sector: getLookupLabel(item.sector),
     sectorId: item.sector?.id,
-    branch: branch?.label || `#${item.branchId}`,
+    branch:
+      item.branchNameKm ||
+      item.branchNameEn ||
+      branch?.label ||
+      "-",
     branchId: item.branchId,
     location: item.locationName || item.address || "-",
     date: formatDate(item.startsAt),
     dateValue: item.startsAt?.slice(0, 10) || "",
     duration: formatDuration(item.startsAt, item.endsAt),
-    participants:
-      item.participantCount != null
-        ? `${item.participantCount}/${capacity || "-"}`
-        : capacity > 0
-          ? `-/${capacity}`
-          : "-",
+    // Activity attendance = member_joined / invited for every role.
+    // Capacity is a limit and must not be shown as the invitation count.
+    participants: `${Number(item.joinedCount ?? 0)}/${Number(item.invitedCount ?? 0)}`,
     status,
     /*
      * true  -> hosted by the viewer's own branch (or one of their
@@ -284,7 +285,7 @@ export default function ActivityPage() {
             branch.nameEn ||
             branch.label ||
             branch.code ||
-            `#${branch.value ?? branch.id}`,
+            "-",
         })),
       );
     } catch (error) {

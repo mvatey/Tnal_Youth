@@ -89,7 +89,8 @@ export default function DonationTable() {
     "ប្រាក់សរុប(ដុល្លារ)",
     "សកម្មភាព",
   ];
-  const visibleHeaders = isMemberScoped ? headers.slice(0, -1) : headers;
+  const showActionColumn = isBranchScoped;
+  const visibleHeaders = showActionColumn ? headers : headers.slice(0, -1);
   const [selectedYear, setSelectedYear] = useState("all");
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedBranch, setSelectedBranch] = useState("all");
@@ -347,7 +348,7 @@ export default function DonationTable() {
                 onDelete={handleDelete}
                 hasMoney={row.donorCount > 0}
                 canManage={isBranchScoped}
-                showAction={!isMemberScoped}
+                showAction={showActionColumn}
               />
             ))}
             {filteredRows.length === 0 && (

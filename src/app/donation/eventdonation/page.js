@@ -68,10 +68,11 @@ function MyEventDonationsTable({ rows }) {
 
 export default function EventDonationPage() {
   const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
-  const isMemberScoped = currentMember?.role === "member";
+  const viewRole = currentMember?.effectiveRole || currentMember?.role;
+  const isMemberScoped = viewRole === "member";
   // Only entry staff (secretary / branch_leader) may open the bulk "record
   // donations for members" flow — admin/viewer are view-only.
-  const canManage = ["secretary", "branch_leader"].includes(currentMember?.role);
+  const canManage = !currentMember?.isViewer && ["secretary", "branch_leader"].includes(currentMember?.role);
   // Same role set is also who's always scoped to exactly one branch — the
   // one active in the sidebar's global dropdown (see DonationTable.js) —
   // rather than an independent "all branches" pick on this page.
@@ -121,7 +122,19 @@ export default function EventDonationPage() {
       return () => { cancelled = true; };
     }
 
-    fetch("/api/backend/donations?page=0&size=100", { cache: "no-store" })
+    // A multi-branch secretary must never request the unscoped donation
+    // collection. The backend intentionally rejects that because it cannot
+    // guess which assigned branch is currently active. Always carry the
+    // sidebar-selected branch into this summary request.
+    if (isBranchScoped && !effectiveBranchId) return undefined;
+
+    const query = new URLSearchParams({ page: "0", size: "100" });
+    if (isBranchScoped) query.set("branchId", String(effectiveBranchId));
+
+    fetch(`/api/backend/donations?${query}`, {
+      cache: "no-store",
+      credentials: "include",
+    })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
         if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load donations.");
@@ -132,7 +145,12 @@ export default function EventDonationPage() {
       })
       .catch((loadError) => { if (!cancelled) setError(loadError.message); });
     return () => { cancelled = true; };
-  }, [currentMemberLoading, isMemberScoped]);
+  }, [
+    currentMemberLoading,
+    isMemberScoped,
+    isBranchScoped,
+    effectiveBranchId,
+  ]);
 
   const branchRows = useMemo(() => rows.filter((row) =>
     selectedBranch === "all" || String(row.branchId) === String(selectedBranch),
@@ -163,7 +181,7 @@ export default function EventDonationPage() {
             growth=""
             note=""
           />
-          <DonorCard label="ចំនួនកំណត់ត្រា" value={`${myRows.length} លើក`} growth="" note="" />
+          <DonorCard label="ចំនួនកំណត់ត្រា" value={`${myRows.length} នាក់`} growth="" note="" />
         </div>
         <MyEventDonationsTable rows={myRows} />
       </div>

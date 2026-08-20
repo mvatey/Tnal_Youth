@@ -4,10 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import EventDonationSummaryCard from "@/components/donations/EventDonationSummaryCard";
 import DonorCard from "@/components/donations/DonorCard";
-import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 
 export default function EventDonationDetailCards() {
-  const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
   const searchParams = useSearchParams();
   const branchId = searchParams.get("branch");
   const activityId = searchParams.get("event");
@@ -16,7 +14,13 @@ export default function EventDonationDetailCards() {
   useEffect(() => {
     if (!activityId) return undefined;
     let cancelled = false;
-    fetch(`/api/backend/donations?page=0&size=100&activityId=${encodeURIComponent(activityId)}`, { cache: "no-store" })
+    const params = new URLSearchParams({
+      page: "0",
+      size: "100",
+      activityId: String(activityId),
+    });
+    if (branchId) params.set("branchId", String(branchId));
+    fetch(`/api/backend/donations?${params.toString()}`, { cache: "no-store", credentials: "include" })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
         if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load donations.");
@@ -38,7 +42,7 @@ export default function EventDonationDetailCards() {
     totals.donors.add(`${row.memberId || row.sponsorId || row.donorName || row.id}`);
     return totals;
   }, { riel: 0, dollar: 0, donors: new Set() }), [rows]);
-  const dollarEquivalent = summary.dollar + summary.riel / (exchangeRateKhrPerUsd || 4000);
+  const dollarEquivalent = summary.dollar + summary.riel / 4000;
 
   return (
     <div className="flex gap-[50px] xl:grid-cols-2">

@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { normalizeRole } from "@/lib/navigation";
+import { getEffectiveRole } from "@/lib/navigation";
 
 const BranchContext = createContext(null);
 
@@ -19,7 +19,7 @@ export function BranchProvider({ children, branches = [] }) {
     normalizeBranches(branches),
   );
 
-  const role = normalizeRole(user?.role);
+  const role = getEffectiveRole(user);
 
   // SECRETARY and BRANCH_LEADER are always scoped to exactly one branch at
   // a time -- never the combined "all branches" aggregate -- even when

@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import tableHeaders from "@/data/donation/tableHeaders.json";
 import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
-import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 
 const { eventBranchTotalHeaders: headers } = tableHeaders;
 
-
 async function fetchJson(url) {
-  const response = await fetch(url, { cache: "no-store" });
+  const response = await fetch(url, {
+    cache: "no-store",
+    credentials: "include",
+  });
   const body = await response.json().catch(() => null);
   if (!response.ok || body?.success === false) {
     throw new Error(body?.message || `Request failed (${response.status})`);
@@ -17,161 +18,160 @@ async function fetchJson(url) {
   return body?.data ?? body;
 }
 
-function toBranchNameMap(values) {
-  const map = {};
-  (Array.isArray(values) ? values : []).forEach((branch) => {
-    const id = String(branch.value ?? branch.id ?? "");
-    if (!id) return;
-    map[id] =
-      branch.labelKm ??
-      branch.nameKm ??
-      branch.labelEn ??
-      branch.nameEn ??
-      branch.label ??
-      branch.name ??
-      branch.code ??
-      `#${id}`;
-  });
-  return map;
-}
-
-// Totals are computed client-side from the SAME donation records already
-// used by the Members tab / summary cards (GET /donations?activityId=),
-// rather than a dedicated aggregate endpoint — a donation carries the
-// branchId it was recorded under (the organizer's own branch, or an
-// invited/co-hosting branch once that branch records its own members'
-// donations), so grouping by branchId here is exactly "each branch's
-// total for this activity." Eligible branches (the organizer branch plus
-// any branch with an ACCEPTED invitation) are always listed even when
-// their total is still zero, so an invited branch that hasn't recorded
-// anything yet doesn't just silently disappear from this view.
-export default function EventDonationBranchTotals({ activityId, organizerBranchId }) {
-  const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
-  const [invitedBranches, setInvitedBranches] = useState([]);
-  const [branchNames, setBranchNames] = useState({});
-  const [donations, setDonations] = useState([]);
+/**
+ * Branch totals for one activity.
+ *
+ * IMPORTANT for a multi-branch SECRETARY:
+ * do NOT fetch the generic /donations collection without branchId. That
+ * request is intentionally rejected by the backend. Use the dedicated
+ * activity branch-totals endpoint instead, then narrow it to the branch
+ * selected in the global sidebar.
+ */
+export default function EventDonationBranchTotals({
+  activityId,
+  selectedBranchId = "all",
+}) {
+  const [allRows, setAllRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!activityId) return undefined;
+
     let cancelled = false;
     setLoading(true);
     setError("");
-    Promise.all([
-      fetchJson(`/api/backend/activities/${encodeURIComponent(activityId)}/invited-branches`).catch(() => []),
-      fetchJson("/api/lookups/activity-invitable-branches").catch(() => []),
-      fetchJson(`/api/backend/donations?page=0&size=1000&activityId=${encodeURIComponent(activityId)}`),
-    ])
-      .then(([invitations, branchOptions, donationPage]) => {
+
+    fetchJson(
+      `/api/backend/donations/activity/${encodeURIComponent(activityId)}/branch-totals`,
+    )
+      .then((rows) => {
         if (cancelled) return;
-        setInvitedBranches(Array.isArray(invitations) ? invitations : []);
-        setBranchNames(toBranchNameMap(branchOptions));
-        const items = Array.isArray(donationPage?.items)
-          ? donationPage.items
-          : (Array.isArray(donationPage?.content) ? donationPage.content : []);
-        setDonations(items.filter((item) => String(item.activityId) === String(activityId)));
+        setAllRows(Array.isArray(rows) ? rows : []);
       })
       .catch((loadError) => {
-        if (!cancelled) setError(loadError.message || "Unable to load branch totals.");
+        if (!cancelled) {
+          setAllRows([]);
+          setError(loadError.message || "Unable to load branch totals.");
+        }
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [activityId]);
 
   const rows = useMemo(() => {
-    const eligible = new Map();
-    if (organizerBranchId != null) {
-      eligible.set(String(organizerBranchId), "organizer");
-    }
-    invitedBranches.forEach((invitation) => {
-      const branchId = invitation.branchId ?? invitation.branch_id;
-      const status = String(invitation.invitationStatus ?? invitation.invitation_status ?? "").toUpperCase();
-      if (branchId == null || status !== "ACCEPTED") return;
-      const key = String(branchId);
-      if (!eligible.has(key)) eligible.set(key, "invited");
-    });
+    const scoped =
+      selectedBranchId && selectedBranchId !== "all"
+        ? allRows.filter(
+            (row) => String(row.branchId) === String(selectedBranchId),
+          )
+        : allRows;
 
-    const totalsByBranch = new Map();
-    donations.forEach((donation) => {
-      const branchId = donation.branchId;
-      if (branchId == null) return;
-      const key = String(branchId);
-      const current = totalsByBranch.get(key) || { count: 0, amountKhr: 0, amountUsd: 0 };
-      current.count += 1;
-      current.amountKhr += Number(donation.amountKhr || 0);
-      current.amountUsd += Number(donation.amountUsd || 0);
-      totalsByBranch.set(key, current);
-    });
-
-    return Array.from(eligible.entries()).map(([branchId, role]) => {
-      const totals = totalsByBranch.get(branchId) || { count: 0, amountKhr: 0, amountUsd: 0 };
+    return scoped.map((row) => {
+      const role = String(row.role || "").toUpperCase();
       return {
-        branchId,
-        label: branchNames[branchId] || `#${branchId}`,
-        role,
-        roleLabel: role === "organizer" ? "សាខាចម្បង" : "សាខាដែលបានអញ្ជើញ",
-        count: totals.count,
-        amountKhr: totals.amountKhr,
-        amountUsd: totals.amountUsd,
+        branchId: row.branchId,
+        label:
+          row.branchNameKm ||
+          row.branchNameEn ||
+          row.branchCode ||
+          "-",
+        roleLabel:
+          role === "ORGANIZER" ? "សាខាចម្បង" : "សាខាដែលបានអញ្ជើញ",
+        count: Number(row.donationCount || 0),
+        amountKhr: Number(row.amountKhr || 0),
+        amountUsd: Number(row.amountUsd || 0),
+        totalAmountUsd: Number(row.totalAmountUsd || 0),
       };
-    }).sort((a, b) => (a.role === b.role ? 0 : a.role === "organizer" ? -1 : 1));
-  }, [branchNames, donations, invitedBranches, organizerBranchId]);
+    });
+  }, [allRows, selectedBranchId]);
 
-  // Grand total across every branch row above — every donation for this
-  // activity, organizer and invited branches alike.
-  const totals = useMemo(() => {
-    const riel = rows.reduce((sum, row) => sum + (row.amountKhr || 0), 0);
-    const dollar = rows.reduce((sum, row) => sum + (row.amountUsd || 0), 0);
-    return { riel, dollar, total: dollar + riel / (exchangeRateKhrPerUsd || 4000) };
-  }, [rows]);
+  const totals = useMemo(
+    () =>
+      rows.reduce(
+        (sum, row) => ({
+          riel: sum.riel + row.amountKhr,
+          dollar: sum.dollar + row.amountUsd,
+          total: sum.total + row.totalAmountUsd,
+        }),
+        { riel: 0, dollar: 0, total: 0 },
+      ),
+    [rows],
+  );
 
   if (loading) {
-    return <div className="py-10 text-center text-sm text-text-secondary">កំពុងទាញទិន្នន័យសាខា...</div>;
+    return (
+      <div className="py-10 text-center text-sm text-text-secondary">
+        កំពុងទាញទិន្នន័យសាខា...
+      </div>
+    );
   }
 
   return (
     <section className="min-h-[300px] rounded-md border border-border bg-bg-page-white p-6">
-      {error ? <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
+      {error ? (
+        <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
+          {error}
+        </div>
+      ) : null}
+
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] border-collapse border border-border">
           <thead>
             <tr className="h-12 border-b border-border bg-bg-page-gray text-center text-xs font-medium text-text-secondary">
               {headers.map((header) => (
-                <th key={header} className="px-4">{header}</th>
+                <th key={header} className="px-4">
+                  {header}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map((row, index) => (
-              <tr key={row.branchId} className="h-11 border-b border-border text-center text-sm text-text-secondary last:border-b-0">
+              <tr
+                key={row.branchId}
+                className="h-11 border-b border-border text-center text-sm text-text-secondary last:border-b-0"
+              >
                 <td className="px-4">{index + 1}</td>
                 <td className="px-4">{row.label}</td>
                 <td className="px-4">{row.roleLabel}</td>
                 <td className="px-4">{row.count}</td>
                 <td className="px-4">{row.amountKhr.toLocaleString()}</td>
-                <td className="px-4">{row.amountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td className="px-4">
+                  {row.amountUsd.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </td>
               </tr>
             ))}
-            {rows.length === 0 && (
+            {rows.length === 0 ? (
               <tr>
-                <td colSpan={headers.length} className="px-4 py-8 text-center text-xs font-medium text-text-secondary">
+                <td
+                  colSpan={headers.length}
+                  className="px-4 py-8 text-center text-xs font-medium text-text-secondary"
+                >
                   មិនមានទិន្នន័យ
                 </td>
               </tr>
-            )}
+            ) : null}
           </tbody>
         </table>
       </div>
 
-      {rows.length > 0 && (
+      {rows.length > 0 ? (
         <DonationTotalsCard
           title="សរុបវិភាគទាន"
           riel={totals.riel}
           dollar={totals.dollar}
           total={totals.total}
         />
-      )}
+      ) : null}
     </section>
   );
 }

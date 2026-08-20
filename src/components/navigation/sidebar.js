@@ -35,6 +35,7 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 
 import {
   getNavigationForRole,
+  getEffectiveRole,
   normalizeRole,
 } from "@/lib/navigation";
 
@@ -209,20 +210,15 @@ export default function Sidebar() {
       currentMember,
     );
 
-  const role =
-    normalizeRole(
-      currentMember?.role ||
-        user?.role,
-    );
+  const role = getEffectiveRole(user);
+  const isViewer = normalizeRole(user?.role) === "viewer";
 
   const canSelectBranch =
     role === "secretary" ||
     role === "branch_leader";
 
   const visibleItems =
-    getNavigationForRole(
-      role,
-    );
+    getNavigationForRole(user);
 
   const userName =
     getDisplayName(
@@ -231,15 +227,9 @@ export default function Sidebar() {
     );
 
   const userTitle =
-    ROLE_LABELS[
-      currentMember?.role
-    ] ||
-    ROLE_LABELS[
-      user?.role
-    ] ||
-    ROLE_LABELS[role] ||
-    role ||
-    "";
+    isViewer
+      ? `អ្នកមើល · ${ROLE_LABELS[String(user?.viewerScope || "ADMIN").toUpperCase()] || user?.viewerScope || "Admin"}`
+      : ROLE_LABELS[currentMember?.role] || ROLE_LABELS[user?.role] || ROLE_LABELS[role] || role || "";
 
   const defaultUserAvatar =
     getDefaultAvatar(

@@ -1,5 +1,6 @@
 const AUTH_ROLE_TO_UI_ROLE = {
   ADMIN: "admin",
+  VIEWER: "viewer",
   SECRETARY: "secretary",
   BRANCH_LEADER: "branch_leader",
   MEMBER: "member",
@@ -50,6 +51,8 @@ export function combineAuthUserWithMember(authUser, memberDetail = null) {
     authUser.member_id ??
     null;
   const backendRole = normalizeRole(authUser.role);
+  const viewerScope = normalizeRole(authUser.viewerScope || authUser.viewer_scope);
+  const effectiveBackendRole = backendRole === "VIEWER" ? (viewerScope || "ADMIN") : backendRole;
 
   const detail = memberDetail || {};
   const profilePhoto = detail.profile_photo || detail.profilePhoto;
@@ -78,6 +81,10 @@ export function combineAuthUserWithMember(authUser, memberDetail = null) {
     role:
       AUTH_ROLE_TO_UI_ROLE[backendRole] ||
       backendRole.toLowerCase() ||
+      "member",
+    effectiveRole:
+      AUTH_ROLE_TO_UI_ROLE[effectiveBackendRole] ||
+      effectiveBackendRole.toLowerCase() ||
       "member",
     profile_photo: fileUrl(profilePhoto, authUser.profileImage || authUser.profile_image),
     profileImage: fileUrl(profilePhoto, authUser.profileImage || authUser.profile_image),
@@ -114,6 +121,9 @@ export function combineAuthUserWithMember(authUser, memberDetail = null) {
     level: lookupLabel(detail.level),
     levelId: detail.level?.id ?? null,
     shirtSize: detail.tshirtSize || detail.tshirt_size || "-",
+    actualRole: backendRole.toLowerCase(),
+    viewerScope: viewerScope || null,
+    isViewer: backendRole === "VIEWER",
     isLinkedMember: Boolean(memberId && memberDetail),
     family: authUser.family || null,
     workHistory: authUser.workHistory || [],

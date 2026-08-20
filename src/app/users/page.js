@@ -162,7 +162,9 @@ function mapUser(user) {
     email: user?.email || "-",
     roleCode: String(user?.role || "").toUpperCase(),
     roleLabel:
-      ROLE_LABELS_KM[String(user?.role || "").toUpperCase()] ||
+      (String(user?.role || "").toUpperCase() === "VIEWER" && user?.viewerScope
+        ? `${ROLE_LABELS_KM.VIEWER || "អ្នកមើល"} (${ROLE_LABELS_KM[String(user.viewerScope).toUpperCase()] || user.viewerScope})`
+        : ROLE_LABELS_KM[String(user?.role || "").toUpperCase()]) ||
       user?.role ||
       "-",
     accountType: user?.memberId == null ? "STANDALONE" : "MEMBER_LINKED",

@@ -19,11 +19,12 @@ import DonationFilterSelect from "@/components/donations/monthlydonation/Donatio
 import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
+import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 
 const { sponsorHeaders: headers } = tableHeaders;
 const rowsPerPage = 12;
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
-const KHR_PER_USD = 4000;
+
 
 function SponsorReceiptPreview({ receipt }) {
   if (!receipt) {
@@ -87,6 +88,7 @@ export default function SponsorPanel({
   // sponsor donations (that stays in the main "ថវិកាឧបត្ថម្ភ" module).
   readOnly = false,
 }) {
+  const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
   const router = useRouter();
   const pathname = usePathname();
   const { member: currentMember } = useCurrentMember();
@@ -99,7 +101,6 @@ export default function SponsorPanel({
   const routePrefix = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/sponsor"
     : "/donation/sponsor";
-  const visibleHeaders = isMemberScoped ? headers.slice(0, -1) : headers;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
@@ -114,6 +115,9 @@ export default function SponsorPanel({
   const [branchOptions, setBranchOptions] = useState([]);
   const selectedBranch = controlledSelectedBranch ?? internalSelectedBranch;
   const setSelectedBranch = onBranchChange ?? setInternalSelectedBranch;
+  const selectedBranchLabel =
+    branchOptions.find((option) => String(option.value) === String(selectedBranch))?.label ||
+    "-";
 
   useEffect(() => {
     let cancelled = false;
@@ -123,11 +127,30 @@ export default function SponsorPanel({
       try {
         if (isMemberScoped) {
           const myRows = await fetchMyAccountCollection("donations/sponsors");
-          if (!cancelled) setAllRows(myRows.map((item) => mapMySponsorRow(item, currentMember)));
+          if (!cancelled) {
+            setAllRows(myRows.map((row) => mapMySponsorRow(row, currentMember)));
+          }
           return;
         }
 
-        const response = await fetch("/api/backend/donations/sponsor?page=0&size=100", { cache: "no-store" });
+        // For SECRETARY / BRANCH_LEADER the selected global branch is
+        // mandatory. Never issue an unscoped request: the backend correctly
+        // rejects that for a multi-branch Secretary because it cannot guess
+        // which assigned branch is currently active.
+        if (branchScoped && (!selectedBranch || selectedBranch === "all")) {
+          if (!cancelled) setAllRows([]);
+          return;
+        }
+
+        const params = new URLSearchParams({ page: "0", size: "100" });
+        if (selectedBranch && selectedBranch !== "all") {
+          params.set("branchId", String(selectedBranch));
+        }
+
+        const response = await fetch(`/api/backend/donations/sponsor?${params.toString()}`, {
+          cache: "no-store",
+          credentials: "include",
+        });
         const body = await response.json().catch(() => null);
         if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load sponsor donations.");
         const page = body?.data ?? body;
@@ -143,7 +166,7 @@ export default function SponsorPanel({
     }
     loadRows();
     return () => { cancelled = true; };
-  }, [isMemberScoped, currentMember]);
+  }, [branchScoped, currentMember, isMemberScoped, selectedBranch]);
 
   useEffect(() => {
     let cancelled = false;
@@ -153,7 +176,7 @@ export default function SponsorPanel({
         if (!response.ok) throw new Error("Unable to load branches.");
         if (!cancelled) setBranchOptions((Array.isArray(body) ? body : []).map((branch) => ({
           value: String(branch.value ?? branch.id),
-          label: branch.labelKm || branch.labelEn || branch.label || branch.code || `#${branch.value ?? branch.id}`,
+          label: branch.labelKm || branch.labelEn || branch.nameKm || branch.nameEn || branch.label || branch.code || "-",
         })));
       })
       .catch((loadError) => { if (!cancelled) setError(loadError.message || "Unable to load branches."); });
@@ -199,8 +222,11 @@ export default function SponsorPanel({
   const totals = useMemo(() => {
     const riel = sortedRows.reduce((sum, row) => sum + parseMoney(row.rielAmount), 0);
     const dollar = sortedRows.reduce((sum, row) => sum + parseMoney(row.dollarAmount), 0);
-    return { riel, dollar, total: dollar + riel / KHR_PER_USD };
+    return { riel, dollar, total: dollar + riel / (exchangeRateKhrPerUsd || 4000) };
   }, [sortedRows]);
+
+  const showActionColumn = canManage || sortedRows.some((row) => Boolean(row.receipt));
+  const visibleHeaders = showActionColumn ? headers : headers.slice(0, -1);
 
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
@@ -250,7 +276,7 @@ export default function SponsorPanel({
       <div className="mb-4 flex flex-col gap-4">
         <h1 className="text-base font-semibold text-secondary">
           ថវិកាឧបត្ថម្ភ
-          {selectedBranch !== "all" && ` — ${selectedBranch}`}
+          {selectedBranch !== "all" && ` — ${selectedBranchLabel}`}
         </h1>
 
         {!readOnly && (
@@ -296,7 +322,14 @@ export default function SponsorPanel({
             {showAddButton && canManage && (
               <button
                 type="button"
-                onClick={() => router.push(`${routePrefix}/add${addQuery}`)}
+                onClick={() => {
+                  const scopedQuery =
+                    addQuery ||
+                    (selectedBranch && selectedBranch !== "all"
+                      ? `?branch=${encodeURIComponent(selectedBranch)}`
+                      : "");
+                  router.push(`${routePrefix}/add${scopedQuery}`);
+                }}
                 className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-green-600 px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
               >
                 <PlusCircle size={17} />
@@ -363,7 +396,7 @@ export default function SponsorPanel({
                   {row.dollarAmount || "0"}
                 </td>
                 <td className="px-4">{row.method}</td>
-                {!isMemberScoped && (
+                {showActionColumn && (
                   <td className="px-4">
                     <div className="inline-flex items-center justify-center gap-2">
                       {canManage && (
@@ -373,7 +406,7 @@ export default function SponsorPanel({
                           className="inline-flex h-[20px] w-[24px] items-center justify-center rounded-[8px] text-[#D4AF37] transition hover:text-[#b88f1f]"
                           aria-label={`Edit sponsor ${row.id}`}
                         >
-                          <BsPencilSquare size={16}  />
+                          <BsPencilSquare size={16} />
                         </button>
                       )}
                       <SponsorReceiptPreview receipt={row.receipt} />
@@ -442,15 +475,27 @@ function mapSponsorRow(row) {
 // into the same row shape mapSponsorRow produces, so this table is reused
 // as-is for the member's read-only "my donations" view.
 function mapMySponsorRow(row, currentMember) {
+  const memberName =
+    currentMember?.name_kh ||
+    currentMember?.name_en ||
+    currentMember?.full_name_km ||
+    currentMember?.fullNameKm ||
+    currentMember?.full_name_en ||
+    currentMember?.fullNameEn ||
+    "-";
+
   return {
     id: row.id,
-    name: currentMember?.name_kh || currentMember?.name_en || row.sponsor?.name || row.donorName || "-",
+    // A member sponsor donation is owned through donations.member_id.
+    // Older rows may have neither sponsor_id nor donor_name populated,
+    // so fall back to the logged-in member identity instead of showing '-'.
+    name: row.sponsor?.name || row.donorName || memberName,
     type: "សមាជិក",
     donorKind: "MEMBER",
-    phone: currentMember?.phone || row.sponsor?.phone || "-",
-    email: currentMember?.email || row.sponsor?.email || "-",
-    branch: currentMember?.branch || row.branch?.nameKm || row.branch?.nameEn || "-",
-    branchId: currentMember?.branchId ?? row.branch?.id,
+    phone: row.sponsor?.phone || "-",
+    email: row.sponsor?.email || "-",
+    branch: row.branch?.nameKm || row.branch?.nameEn || "-",
+    branchId: row.branch?.id,
     activityId: row.activity?.id ?? row.activityId,
     date: row.paidAt ? new Date(row.paidAt).toLocaleDateString("en-GB") : "-",
     dateValue: row.paidAt ? row.paidAt.slice(0, 10) : "",

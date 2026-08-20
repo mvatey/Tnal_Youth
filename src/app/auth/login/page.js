@@ -516,7 +516,7 @@ function LoginContent() {
 
       const destination =
         redirectPath ||
-        getRoleHomePath(role);
+        getRoleHomePath(authenticatedUser || role);
 
       router.replace(destination);
       router.refresh();

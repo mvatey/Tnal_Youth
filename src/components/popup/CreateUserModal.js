@@ -12,7 +12,19 @@ const USERS_BASE = "/api/backend/admin/users";
 
 const ROLE_OPTIONS = [
   { label: "អ្នកគ្រប់គ្រង (Admin)", value: "ADMIN" },
+  { label: "ប្រធានសាខា (Branch Leader)", value: "BRANCH_LEADER" },
+  { label: "លេខាធិការ (Secretary)", value: "SECRETARY" },
+  { label: "សមាជិក (Member)", value: "MEMBER" },
   { label: "អ្នកមើល (Viewer)", value: "VIEWER" },
+];
+
+const BRANCH_SCOPED_ROLES = new Set(["BRANCH_LEADER", "SECRETARY", "MEMBER"]);
+
+const VIEWER_SCOPE_OPTIONS = [
+  { label: "អ្នកគ្រប់គ្រង (Admin)", value: "ADMIN" },
+  { label: "ប្រធានសាខា (Branch Leader)", value: "BRANCH_LEADER" },
+  { label: "លេខាធិការ (Secretary)", value: "SECRETARY" },
+  { label: "សមាជិក (Member)", value: "MEMBER" },
 ];
 
 const EMPTY_FORM = {
@@ -21,6 +33,8 @@ const EMPTY_FORM = {
   phone: "",
   email: "",
   role: "VIEWER",
+  viewerScope: "ADMIN",
+  branchId: "",
 };
 
 /*
@@ -77,6 +91,7 @@ async function createUser(payload) {
 export default function CreateUserModal({ open, onClose, onSave }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [branches, setBranches] = useState([]);
   const [showValidationError, setShowValidationError] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
@@ -88,6 +103,45 @@ export default function CreateUserModal({ open, onClose, onSave }) {
     setForm(EMPTY_FORM);
     setShowValidationError(false);
     setSubmitError("");
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const controller = new AbortController();
+
+    fetch("/api/lookups/branches", {
+      credentials: "include",
+      cache: "no-store",
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message || "Unable to load branches");
+        const rows = Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
+        setBranches(
+          rows
+            .map((branch) => ({
+              value: String(branch?.id ?? branch?.value ?? ""),
+              label:
+                branch?.nameKm ||
+                branch?.name_km ||
+                branch?.labelKm ||
+                branch?.label_km ||
+                branch?.nameEn ||
+                branch?.name_en ||
+                branch?.label ||
+                String(branch?.id ?? ""),
+            }))
+            .filter((branch) => branch.value),
+        );
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") setBranches([]);
+      });
+
+    return () => controller.abort();
   }, [open]);
 
   if (!open) {
@@ -106,9 +160,16 @@ export default function CreateUserModal({ open, onClose, onSave }) {
     setSubmitError("");
   };
 
-  const isFormValid = REQUIRED_FIELDS.every(
-    (field) => String(form[field] ?? "").trim() !== "",
-  );
+  const isViewer = form.role === "VIEWER";
+  const requiresBranch =
+    BRANCH_SCOPED_ROLES.has(form.role) ||
+    (isViewer && form.viewerScope !== "ADMIN");
+  const isFormValid =
+    REQUIRED_FIELDS.every(
+      (field) => String(form[field] ?? "").trim() !== "",
+    ) &&
+    (!isViewer || String(form.viewerScope).trim() !== "") &&
+    (!requiresBranch || String(form.branchId).trim() !== "");
 
   const submit = async (event) => {
     event.preventDefault();
@@ -128,6 +189,8 @@ export default function CreateUserModal({ open, onClose, onSave }) {
       phone: form.phone.trim(),
       email: form.email.trim(),
       role: form.role,
+      viewerScope: isViewer ? form.viewerScope : null,
+      branchId: requiresBranch ? Number(form.branchId) : null,
     };
 
     try {
@@ -179,11 +242,7 @@ export default function CreateUserModal({ open, onClose, onSave }) {
 
       <form onSubmit={submit} className="flex flex-col gap-3">
         <p className="text-xs text-text-secondary">
-          គណនីនេះមិនចាំបាច់ភ្ជាប់ទៅសាខា ឬសមាជិកណាមួយឡើយ។
-          តួនាទី &quot;អ្នកមើល (Viewer)&quot; អាចមើលឃើញដូចអ្នកគ្រប់គ្រង
-          ប៉ុន្តែមិនអាចបន្ថែម កែប្រែ ឬលុបទិន្នន័យបានឡើយ។ អ្នកប្រើប្រាស់ថ្មីនឹងកំណត់
-          ពាក្យសម្ងាត់ដំបូងដោយខ្លួនឯង តាមរយៈលេខកូដផ្ញើទៅអ៊ីមែលខាងក្រោម
-          (ដំណើរការចូលប្រើគណនីលើកដំបូង)។
+          Viewer គឺជាគណនីសម្រាប់មើលតែប៉ុណ្ណោះ។ ជ្រើស “មើលជា” ដើម្បីកំណត់ថាវាមើល UI និងទិន្នន័យតាម Admin, Branch Leader, Secretary ឬ Member។
         </p>
 
         <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
@@ -228,6 +287,28 @@ export default function CreateUserModal({ open, onClose, onSave }) {
             onChange={update("role")}
             required
           />
+
+          {isViewer && (
+            <FormSelect
+              label="មើលជា (View as)"
+              name="viewerScope"
+              options={VIEWER_SCOPE_OPTIONS}
+              value={form.viewerScope}
+              onChange={update("viewerScope")}
+              required
+            />
+          )}
+
+          {requiresBranch && (
+            <FormSelect
+              label="សាខា"
+              name="branchId"
+              options={branches}
+              value={form.branchId}
+              onChange={update("branchId")}
+              required
+            />
+          )}
         </div>
 
         {showValidationError && !isFormValid && (

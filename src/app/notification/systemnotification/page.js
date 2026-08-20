@@ -1,5 +1,5 @@
-import NotificationPanel from "@/components/notifications/NotificationPanel";
+import { redirect } from "next/navigation";
 
-export default function SystemNotificationPage() {
-  return <NotificationPanel type="system" />;
+export default function LegacyNotificationPage() {
+  redirect("/notification");
 }

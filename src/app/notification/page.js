@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import NotificationPanel from "@/components/notifications/NotificationPanel";
 
 export default function NotificationPage() {
-  redirect("/notification/systemnotification");
+  return <NotificationPanel type="all" />;
 }

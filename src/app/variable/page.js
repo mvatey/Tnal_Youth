@@ -850,9 +850,11 @@ export default function VariablePage() {
                       ថ្ងៃកែប្រែ
                     </th>
 
-                    <th className="w-[7%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
-                      សកម្មភាព
-                    </th>
+                    {!isViewer && (
+                      <th className="w-[7%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
+                        សកម្មភាព
+                      </th>
+                    )}
                   </tr>
                 </thead>
 
@@ -860,7 +862,7 @@ export default function VariablePage() {
                   {itemsLoading ? (
                     <tr>
                       <td
-                        colSpan={isPaymentMethod ? 8 : 7}
+                        colSpan={(isPaymentMethod ? 7 : 6) + (isViewer ? 0 : 1)}
                         className="px-4 py-12 text-center text-sm text-text-secondary"
                       >
                         កំពុងទាញយកទិន្នន័យ...
@@ -904,24 +906,24 @@ export default function VariablePage() {
                           {formatDateTime(item.updatedAt)}
                         </td>
 
-                        <td className="px-4 py-3 text-center">
-                          {!isViewer && (
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(item)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-warning transition hover:bg-warning-bg"
-                            aria-label="កែប្រែ"
-                          >
-                            <SquarePen size={19} strokeWidth={1.8} />
-                          </button>
-                          )}
-                        </td>
+                        {!isViewer && (
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(item)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-warning transition hover:bg-warning-bg"
+                              aria-label="កែប្រែ"
+                            >
+                              <SquarePen size={19} strokeWidth={1.8} />
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))
                   ) : (
                     <tr>
                       <td
-                        colSpan={isPaymentMethod ? 8 : 7}
+                        colSpan={(isPaymentMethod ? 7 : 6) + (isViewer ? 0 : 1)}
                         className="px-4 py-12 text-center text-sm text-text-secondary"
                       >
                         មិនមានទិន្នន័យអថេរទេ

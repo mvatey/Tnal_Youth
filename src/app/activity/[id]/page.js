@@ -383,6 +383,41 @@ export default async function ActivityDetailPage({
       ? attachmentData
       : [];
 
+  // Use the same participant source everywhere on the detail page.
+  // This keeps the top card (joined/invited) in sync with the detail value below.
+  const attendedCount =
+    activityParticipants.filter(
+      (participant) => {
+        const code =
+          participantAttendanceCode(
+            participant,
+          );
+
+        return (
+          code === "present" ||
+          code === "attended" ||
+          Boolean(
+            participant
+              .checked_in_at ||
+              participant
+                .checkedInAt,
+          )
+        );
+      },
+    ).length;
+
+  const absentCount =
+    activityParticipants.filter(
+      (participant) =>
+        participantAttendanceCode(
+          participant,
+        ) ===
+        "absent",
+    ).length;
+
+  const totalParticipantCount =
+    activityParticipants.length;
+
   const activity = {
     id:
       record.id,
@@ -423,8 +458,10 @@ export default async function ActivityDetailPage({
     branch:
       branch?.labelKm ||
       branch?.labelEn ||
+      record.branchNameKm ||
+      record.branchNameEn ||
       branch?.code ||
-      `#${record.branchId}`,
+      "-",
 
     location:
       record.locationName ||
@@ -479,8 +516,10 @@ export default async function ActivityDetailPage({
         record.endsAt,
       ),
 
+    // Always show member_joined / invited from the same participant list
+    // used by the detail information below (for example 0/4).
     participants:
-      `${activityParticipants.length}/${record.capacity || "-"}`,
+      `${attendedCount}/${totalParticipantCount}`,
 
     visibility:
       record.publicActivity
@@ -548,39 +587,6 @@ export default async function ActivityDetailPage({
         }),
       ),
   };
-
-  const attendedCount =
-    activityParticipants.filter(
-      (participant) => {
-        const code =
-          participantAttendanceCode(
-            participant,
-          );
-
-        return (
-          code === "present" ||
-          code === "attended" ||
-          Boolean(
-            participant
-              .checked_in_at ||
-              participant
-                .checkedInAt,
-          )
-        );
-      },
-    ).length;
-
-  const absentCount =
-    activityParticipants.filter(
-      (participant) =>
-        participantAttendanceCode(
-          participant,
-        ) ===
-        "absent",
-    ).length;
-
-  const totalParticipantCount =
-    activityParticipants.length;
 
   const statusLabel =
     activity.status ===

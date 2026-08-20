@@ -61,8 +61,8 @@ export default function DashboardPage() {
   // (and anyone else) keeps the independent picker below, unaffected by
   // the sidebar's global branch selection.
   const isBranchScoped =
-    currentMember?.role === "secretary" ||
-    currentMember?.role === "branch_leader";
+    (currentMember?.effectiveRole || currentMember?.role) === "secretary" ||
+    (currentMember?.effectiveRole || currentMember?.role) === "branch_leader";
 
   // The summary cards' branch card shows this branch's own name instead
   // of an org-wide count/percentage for a branch-scoped role (see

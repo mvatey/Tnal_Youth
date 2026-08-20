@@ -110,8 +110,24 @@ export function normalizeRole(role) {
     .toLowerCase();
 }
 
+
+export function getEffectiveRole(userOrRole) {
+  if (userOrRole && typeof userOrRole === "object") {
+    const actualRole = normalizeRole(userOrRole.role);
+    if (actualRole === "viewer") {
+      return normalizeRole(userOrRole.viewerScope || userOrRole.viewer_scope || "admin");
+    }
+    return actualRole;
+  }
+  return normalizeRole(userOrRole);
+}
+
+export function isReadOnlyViewer(user) {
+  return normalizeRole(user?.role) === "viewer";
+}
+
 export function getNavigationForRole(role) {
-  const normalizedRole = normalizeRole(role);
+  const normalizedRole = getEffectiveRole(role);
 
   return NAV_ITEMS.filter(
     (item) =>
@@ -121,7 +137,7 @@ export function getNavigationForRole(role) {
 }
 
 export function getRoleHomePath(role) {
-  const normalizedRole = normalizeRole(role);
+  const normalizedRole = getEffectiveRole(role);
 
   const roleHomePaths = {
     admin: "/dashboard",

@@ -250,7 +250,10 @@ function buildActivityDonationRows(activities, donations, branchId, organizerBra
       ? Math.max(1, Math.round((end - start) / 86400000) + 1)
       : 1;
     const organizerBranchLabel =
-      organizerBranchNames[String(activity.branchId)] || `#${activity.branchId}`;
+      activity.branchNameKm ||
+      activity.branchNameEn ||
+      organizerBranchNames[String(activity.branchId)] ||
+      "-";
 
     return {
       id: activity.id,

@@ -39,13 +39,13 @@ export default function CompanyDocumentPage() {
   const role = normalizeRole(user?.role);
 
   /*
-   * ADMIN, SECRETARY, and BRANCH_LEADER may add, edit, or delete documents
+   * SECRETARY and BRANCH_LEADER may add, edit, or delete documents
    * (matches DocumentController's @PreAuthorize on POST/PUT/DELETE).
    * VIEWER and MEMBER remain read-only. Gating these controls here is a UX
    * courtesy on top of that real enforcement, not a substitute for it.
    */
   const canManageDocuments =
-    role === "admin" || role === "secretary" || role === "branch_leader";
+    role === "secretary" || role === "branch_leader";
 
   /*
    * A MEMBER never has anything to see on this tab (the organizational

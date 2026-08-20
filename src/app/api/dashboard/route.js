@@ -181,9 +181,12 @@ export async function GET(
      * SUMMARY
      * =========================================================
      */
+    // Summary cards are "up to the present" and must not move when the
+    // pie-chart month selector changes. Only the breakdown below uses the
+    // selected month.
     const summaryParams =
       new URLSearchParams({
-        month,
+        month: defaultMonth,
       });
 
     if (branchId) {
