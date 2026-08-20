@@ -11,11 +11,12 @@ import SponsorPanel from "@/components/donations/sponsor/SponsorPanel";
 import { Check, X } from "lucide-react";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch } from "@/context/BranchContext";
+import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 
 // Matches the flat rate already used elsewhere in this form (see the
 // exchangeRateKhrPerUsd sent in handleSave's payload below) and on the
 // income/expense pages' own totals cards.
-const KHR_PER_USD = 4000;
+
 
 async function fetchJson(url, options) {
   const response = await fetch(url, { cache: "no-store", ...options });
@@ -68,6 +69,7 @@ function mergeSavedDonations(memberItems, donations, selectedBranch) {
 }
 
 export default function EventDonationDetailForm({ initialQuery = {}, onCancel }) {
+  const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -166,18 +168,9 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
 
   const eventOptions = useMemo(() => activities.filter((option) => {
     if (selectedBranch === "all") return true;
-
-    // A deep-linked activity may be hosted by another branch while the
-    // selected branch is an ACCEPTED invited/co-hosting branch.  Keep that
-    // exact activity visible in the disabled activity selector instead of
-    // filtering it out just because option.raw.branchId is the host branch.
-    if (selectedEvent !== "all" && String(option.value) === String(selectedEvent)) {
-      return true;
-    }
-
     const branchId = option.raw?.branchId ?? option.raw?.branch?.id;
     return branchId == null || String(branchId) === String(selectedBranch);
-  }), [activities, selectedBranch, selectedEvent]);
+  }), [activities, selectedBranch]);
 
   useEffect(() => {
     if (selectedBranch === "all" || selectedEvent === "all") {
@@ -283,7 +276,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           donationPeriod: null,
           amountKhr: Number(row.realAmount || 0),
           amountUsd: Number(row.dollarAmount || 0),
-          exchangeRateKhrPerUsd: Number(row.realAmount || 0) > 0 ? 4000 : null,
+          exchangeRateKhrPerUsd: Number(row.realAmount || 0) > 0 ? (exchangeRateKhrPerUsd || null) : null,
           paymentMethodId: Number(method?.id),
           paidAt: row.paidAt || new Date().toISOString(),
           paymentReference: row.paymentReference || null,
@@ -347,7 +340,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   const memberTotals = useMemo(() => {
     const riel = members.reduce((sum, row) => sum + (Number(row.realAmount) || 0), 0);
     const dollar = members.reduce((sum, row) => sum + (Number(row.dollarAmount) || 0), 0);
-    return { riel, dollar, total: dollar + riel / KHR_PER_USD };
+    return { riel, dollar, total: dollar + riel / (exchangeRateKhrPerUsd || 4000) };
   }, [members]);
 
   return (

@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import tableHeaders from "@/data/donation/tableHeaders.json";
 import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
+import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 
 const { eventBranchTotalHeaders: headers } = tableHeaders;
-const KHR_PER_USD = 4000;
+
 
 async function fetchJson(url) {
   const response = await fetch(url, { cache: "no-store" });
@@ -45,6 +46,7 @@ function toBranchNameMap(values) {
 // their total is still zero, so an invited branch that hasn't recorded
 // anything yet doesn't just silently disappear from this view.
 export default function EventDonationBranchTotals({ activityId, organizerBranchId }) {
+  const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
   const [invitedBranches, setInvitedBranches] = useState([]);
   const [branchNames, setBranchNames] = useState({});
   const [donations, setDonations] = useState([]);
@@ -121,7 +123,7 @@ export default function EventDonationBranchTotals({ activityId, organizerBranchI
   const totals = useMemo(() => {
     const riel = rows.reduce((sum, row) => sum + (row.amountKhr || 0), 0);
     const dollar = rows.reduce((sum, row) => sum + (row.amountUsd || 0), 0);
-    return { riel, dollar, total: dollar + riel / KHR_PER_USD };
+    return { riel, dollar, total: dollar + riel / (exchangeRateKhrPerUsd || 4000) };
   }, [rows]);
 
   if (loading) {

@@ -7,6 +7,7 @@ import Table from "../../tables/table";
 import MemberCard from "../eventdonation/membercard";
 import CashCard from "./cashcard";
 import BankCard from "./bankcard";
+import Button from "../../forms/button";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch } from "@/context/BranchContext";
 import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
@@ -481,6 +482,27 @@ const paymentSummary = useMemo(
               {savedMessage}
             </p>
           )}
+          {/*
+            Every row is edit-locked (see rowEditMode on <Table> below), so
+            <Table>'s own bulk action bar (AddDonationActions) never
+            renders here — each row still saves individually via its own
+            pencil -> check icon. This is a proper, page-level pair of
+            buttons alongside that: "ត្រឡប់ក្រោយ" always works as a plain
+            way back to the list, and "រក្សាទុក" saves whatever amount is
+            currently entered (any row's amount field updates this page's
+            own editableRows state immediately as it's typed — see
+            onRowsChange={setEditableRows} below — so this button works
+            correctly even while a row is still mid-edit, without needing
+            to first click that row's own check icon).
+          */}
+          <div className="flex items-center gap-3">
+            <Button action="cancel" label="ត្រឡប់ក្រោយ" onClick={handleCancel} />
+            <Button
+              action="save"
+              onClick={() => handleSave(editableRows)}
+              disabled={saving || !allFiltersSelected || editableRows.length === 0}
+            />
+          </div>
         </div>
 
         <AddDonationFilters

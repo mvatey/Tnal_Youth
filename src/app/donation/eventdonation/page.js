@@ -12,6 +12,7 @@ import NumberSponsorCard from "@/components/donations/eventdonation/sponsorcard"
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 import { useBranch } from "@/context/BranchContext";
+import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
@@ -66,6 +67,7 @@ function MyEventDonationsTable({ rows }) {
 }
 
 export default function EventDonationPage() {
+  const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
   const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
   const isMemberScoped = currentMember?.role === "member";
   // Only entry staff (secretary / branch_leader) may open the bulk "record
@@ -119,7 +121,7 @@ export default function EventDonationPage() {
   ), [rows, selectedBranch]);
   const memberCount = new Set(branchRows.filter((row) => row.memberId).map((row) => row.memberId)).size;
   const sponsorCount = new Set(branchRows.filter((row) => !row.memberId).map((row) => `${row.sponsorId || row.donorName || row.id}`)).size;
-  const totalDollar = branchRows.reduce((total, row) => total + Number(row.amountUsd || 0) + Number(row.amountKhr || 0) / Number(row.exchangeRateKhrPerUsd || 4000), 0);
+  const totalDollar = branchRows.reduce((total, row) => total + Number(row.amountUsd || 0) + Number(row.amountKhr || 0) / Number(row.exchangeRateKhrPerUsd || exchangeRateKhrPerUsd || 4000), 0);
   const myTotalDollar = myRows.reduce((total, row) => total + parseMoney(row.dollarAmount), 0);
 
   const handleBranchChange = (branch) => {
