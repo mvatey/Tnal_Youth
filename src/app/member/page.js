@@ -1100,9 +1100,13 @@ export default function MembersPage() {
     }),
   );
 
+  const branchLabel = effectiveBranchFilter
+    ? branches.find((option) => option.value === effectiveBranchFilter)?.label
+    : null;
+
   downloadExcel({
     rows,
-    fileName: "members",
+    fileName: branchLabel ? `សមាជិក-${branchLabel}` : "សមាជិក",
     sheetName: "Members",
   });
 };

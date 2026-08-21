@@ -8,7 +8,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import SaveAlert from "@/components/forms/savealert";
 import sponsorOptions from "@/data/donation/sponsorOptions.json";
 import useCurrentMember from "@/hooks/useCurrentMember";
-import { useBranch } from "@/context/BranchContext";
+import { useBranch, useBranchChangeGuard } from "@/context/BranchContext";
 
 const {
   equipmentTypes,
@@ -492,11 +492,22 @@ export default function SponsorDonationForm({ initialData = null }) {
   const [backendPaymentMethods, setBackendPaymentMethods] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  // True as soon as the user has actually touched a field -- the automatic
+  // branch-sync effect just below does NOT set this, since that's the app
+  // following the sidebar, not the user entering data. Drives the
+  // branch-switch confirmation guard below.
+  const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
 
   useEffect(() => {
     if (!isBranchScoped || !scopedBranchId) return;
     setForm((current) => ({ ...current, branch: scopedBranchId }));
   }, [isBranchScoped, scopedBranchId]);
+
+  useBranchChangeGuard({
+    isDirty: () => hasUnsavedEdits,
+    onSave: () => handleSave(),
+    onReset: () => router.push(listPath),
+  });
 
   useEffect(() => {
     setForm(buildInitialForm(initialData, {
@@ -578,6 +589,7 @@ export default function SponsorDonationForm({ initialData = null }) {
   }, [form.branch, form.sponsorType]);
 
   const updateField = (field) => (value) => {
+    setHasUnsavedEdits(true);
     setForm((currentForm) => ({
       ...currentForm,
       [field]: value?.target ? value.target.value : value,
@@ -585,6 +597,7 @@ export default function SponsorDonationForm({ initialData = null }) {
   };
 
   const handleSponsorTypeChange = (event) => {
+    setHasUnsavedEdits(true);
     setForm((currentForm) => ({
       ...currentForm,
       sponsorType: event.target.value,
@@ -601,6 +614,7 @@ export default function SponsorDonationForm({ initialData = null }) {
       (member) => String(member.value) === String(memberId),
     );
 
+    setHasUnsavedEdits(true);
     setForm((currentForm) => ({
       ...currentForm,
       memberId,
@@ -612,6 +626,7 @@ export default function SponsorDonationForm({ initialData = null }) {
   };
 
   const handleMemberBranchChange = (branch) => {
+    setHasUnsavedEdits(true);
     setForm((currentForm) => ({
       ...currentForm,
       branch,
@@ -627,6 +642,7 @@ export default function SponsorDonationForm({ initialData = null }) {
   const handleEquipmentChange = (event) => {
     const isChecked = event.target.checked;
 
+    setHasUnsavedEdits(true);
     setForm((currentForm) => ({
       ...currentForm,
       equipment: isChecked ? "សម្ភារៈ" : "",
@@ -649,6 +665,7 @@ export default function SponsorDonationForm({ initialData = null }) {
       paymentMethod === "សម្ភារៈ" ||
       String(selectedMethod?.code || "").toUpperCase().includes("MATERIAL");
 
+    setHasUnsavedEdits(true);
     setForm((currentForm) => ({
       ...currentForm,
       paymentMethod,
@@ -681,15 +698,15 @@ export default function SponsorDonationForm({ initialData = null }) {
 
     if (!form.branch || !form.date || !method) {
       setError("សូមជ្រើសរើសសាខា កាលបរិច្ឆេទ និងវិធីសាស្ត្រទូទាត់");
-      return;
+      return false;
     }
     if (donorKind === "MEMBER" && !form.memberId) {
       setError("សូមជ្រើសរើសសមាជិកក្នុងសាខា");
-      return;
+      return false;
     }
     if (donorKind !== "MEMBER" && !form.sponsorName.trim()) {
       setError("សូមបញ្ចូលឈ្មោះអ្នកឧបត្ថម្ភ");
-      return;
+      return false;
     }
 
     const payload = {
@@ -728,9 +745,12 @@ export default function SponsorDonationForm({ initialData = null }) {
         },
       );
       setShowSaveAlert(true);
+      setHasUnsavedEdits(false);
       router.push(listPath);
+      return true;
     } catch (saveError) {
       setError(saveError.message || "Unable to save sponsor donation.");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -792,6 +812,7 @@ export default function SponsorDonationForm({ initialData = null }) {
                   onChange={handleMemberBranchChange}
                   options={branchOptions}
                   placeholder="ជ្រើសរើសសាខា"
+                  disabled={isBranchScoped}
                   className="min-w-0 flex-1"
                 />
                 <div className="min-w-0 flex-1">

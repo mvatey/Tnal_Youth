@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 
 import DataTable from "@/components/table/DataTable.js";
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
 
 export default function DonationPage() {
   const { id } = useParams();
@@ -244,6 +245,13 @@ export default function DonationPage() {
         onSearchChange={setQuery}
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
+        onDownload={() =>
+          downloadTableAsExcel({
+            data: filteredData,
+            columns,
+            fileName: `វិភាគទានប្រចាំខែ-សមាជិក-${id}`,
+          })
+        }
       />
     </div>
   );

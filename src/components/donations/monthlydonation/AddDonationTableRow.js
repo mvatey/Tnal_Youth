@@ -248,46 +248,50 @@ export default function AddDonationTableRow({
         </div>
       </td>
 
-      {/* សកម្មភាព (row edit lock only) */}
-      <td className="px-3 text-center">
-        <div className="relative inline-flex items-center gap-1">
-          {/*
-            BUGFIX: this used to key off `readOnly`, but `readOnly` is
-            ALSO true for every row that isn't currently being edited
-            (Table.js: readOnly={globalReadOnly || (rowEditMode &&
-            editingRowId !== member.id)}) — that's the intentional lock
-            protecting an already-saved donation from stray edits. Keying
-            the button that STARTS editing off that same flag meant it
-            could never render: a locked row (readOnly=true) hid the only
-            control that could unlock it. Only `globalReadOnly` (no edit
-            rights at all) should hide this button.
-          */}
-          {rowEditMode && !isEditing && !globalReadOnly ? (
-            <button
-              type="button"
-              onClick={onEdit}
-              disabled={editDisabled}
-              className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[#F2A900] transition hover:bg-[#F2A900]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2A900]/40 disabled:cursor-not-allowed disabled:opacity-40"
-              title="Edit this donation"
-              aria-label="Edit this donation"
-            >
-              <SquarePen size={16} strokeWidth={2.1} />
-            </button>
-          ) : null}
-
-          {rowEditMode && isEditing && !readOnly ? (
-            <>
-              <button type="button" onClick={onCancelEdit} className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-bg-page-white text-text-secondary hover:bg-bg-page-gray" title="Cancel">
-                <X size={14} />
+      {/* សកម្មភាព (row edit lock only) — nothing renders here outside
+          rowEditMode (the whole list is directly editable at once instead),
+          so the column itself is dropped rather than left empty; see
+          hideAction on AddDonationTableHeader. */}
+      {rowEditMode ? (
+        <td className="px-3 text-center">
+          <div className="relative inline-flex items-center gap-1">
+            {/*
+              BUGFIX: this used to key off `readOnly`, but `readOnly` is
+              ALSO true for every row that isn't currently being edited
+              (Table.js: readOnly={globalReadOnly || (rowEditMode &&
+              editingRowId !== member.id)}) — that's the intentional lock
+              protecting an already-saved donation from stray edits. Keying
+              the button that STARTS editing off that same flag meant it
+              could never render: a locked row (readOnly=true) hid the only
+              control that could unlock it. Only `globalReadOnly` (no edit
+              rights at all) should hide this button.
+            */}
+            {!isEditing && !globalReadOnly ? (
+              <button
+                type="button"
+                onClick={onEdit}
+                disabled={editDisabled}
+                className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[#F2A900] transition hover:bg-[#F2A900]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2A900]/40 disabled:cursor-not-allowed disabled:opacity-40"
+                title="Edit this donation"
+                aria-label="Edit this donation"
+              >
+                <SquarePen size={16} strokeWidth={2.1} />
               </button>
-              <button type="button" onClick={onSaveEdit} className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#4B2E91] text-white hover:bg-[#3f267a]" title="Save">
-                <Check size={14} />
-              </button>
-            </>
-          ) : null}
+            ) : null}
 
-        </div>
-      </td>
+            {isEditing && !readOnly ? (
+              <>
+                <button type="button" onClick={onCancelEdit} className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-bg-page-white text-text-secondary hover:bg-bg-page-gray" title="Cancel">
+                  <X size={14} />
+                </button>
+                <button type="button" onClick={onSaveEdit} className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#4B2E91] text-white hover:bg-[#3f267a]" title="Save">
+                  <Check size={14} />
+                </button>
+              </>
+            ) : null}
+          </div>
+        </td>
+      ) : null}
     </tr>
   );
 }

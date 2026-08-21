@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import EventDonationFilters from "./EventDonationFilters";
 import EventDonationTable from "./EventDonationTable";
 import AddAlert from "@/components/forms/addalert";
-import { downloadCsv } from "@/utils/downloadCsv";
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
 
 const rowsPerPage = 12;
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
@@ -172,7 +172,30 @@ export default function EventDonationPanel({
   }));
   const updateFilter = (setter) => (value) => { setter(value); setCurrentPage(1); };
   const handleDownload = () => {
-    if (downloadCsv(sortedRows, "event-donations.csv")) setShowDownloadAlert(true);
+    const rows = sortedRows.map((row, index) => ({
+      "ល.រ": index + 1,
+      "កម្មវិធី": row.eventName,
+      "សាខា": row.branch,
+      "កាលបរិច្ឆេទចាប់ផ្តើម": row.startDate,
+      "កាលបរិច្ឆេទបញ្ចប់": row.endDate,
+      "ចំនួនថ្ងៃ": row.days,
+      "ចំនួនទឹកប្រាក់(រៀល)": row.rielAmount,
+      "ចំនួនទឹកប្រាក់(ដុល្លារ)": row.dollarAmount,
+    }));
+
+    const branchLabel =
+      hasSelectedBranch
+        ? branches.find((option) => String(option.value) === String(selectedBranch))?.label
+        : null;
+
+    if (
+      downloadTableAsExcel({
+        data: rows,
+        fileName: branchLabel ? `វិភាគទានក្នុងកម្មវិធី-${branchLabel}` : "វិភាគទានក្នុងកម្មវិធី",
+      })
+    ) {
+      setShowDownloadAlert(true);
+    }
   };
 
   useEffect(() => {

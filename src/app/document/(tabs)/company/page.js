@@ -6,6 +6,7 @@ import { Eye, Pencil, Trash2 } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
 import DataTable from "@/components/table/DataTable";
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import AddDocumentForm from "@/components/document/AddDocumentForm";
 import EditDocumentForm from "@/components/document/EditDocumentForm";
 import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
@@ -204,6 +205,7 @@ export default function CompanyDocumentPage() {
     },
     {
   header: "ប្រភេទឯកសារ",
+  accessor: "type",
   width: "w-[10%]",
   align: "center",
   render: (item) => {
@@ -408,7 +410,13 @@ export default function CompanyDocumentPage() {
         onSearchChange={setSearch}
         actionButton={canManageDocuments ? addButton : null}
         pageSize={15}
-        downloadFilename="company-documents.csv"
+        onDownload={() =>
+          downloadTableAsExcel({
+            data: filteredDocuments,
+            columns,
+            fileName: `ឯកសារក្រុមហ៊ុន`,
+          })
+        }
       />
 
       {canManageDocuments && showAddForm && (

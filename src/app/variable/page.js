@@ -2,13 +2,14 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   SquarePlus,
   PlusCircle,
   Search,
   X,
   SquarePen,
+  Calendar,
 } from "lucide-react";
 
 import { HiSaveAs } from "react-icons/hi";
@@ -32,12 +33,24 @@ const PAYMENT_CATEGORY_OPTIONS = [
   { label: "ផ្សេងៗ (Other)", value: "OTHER" },
 ];
 
+const POSITION_PATH = "positions";
+
+// The role a member holding this position is auto-assigned when created —
+// see CreateMemberModal's position picker. Every position maps to one of
+// these three; positions like "Support" simply map to MEMBER.
+const POSITION_ROLE_OPTIONS = [
+  { label: "ប្រធានសាខា (Branch Leader)", value: "BRANCH_LEADER" },
+  { label: "លេខាធិការ (Secretary)", value: "SECRETARY" },
+  { label: "សមាជិក (Member)", value: "MEMBER" },
+];
+
 const EMPTY_FORM = {
   nameKm: "",
   nameEn: "",
   description: "",
   status: "ACTIVE",
   category: "OTHER",
+  mappedRole: "MEMBER",
 };
 
 // Fixed currency pair — this app tracks donations in USD/KHR, so the
@@ -156,12 +169,23 @@ export default function VariablePage() {
   const [rateError, setRateError] = useState("");
 
   const [showRateModal, setShowRateModal] = useState(false);
+  const rateDateInputRef = useRef(null);
   const [rateForm, setRateForm] = useState(EMPTY_RATE_FORM);
   const [rateSaving, setRateSaving] = useState(false);
   const [rateFormError, setRateFormError] = useState("");
 
+  // Collapsed by default: only the single most-recent rate shows (the
+  // history query is already sorted newest-first — see
+  // OrderByEffectiveFromDesc on the backend). Expanding reveals the full
+  // from/to history in the same table. A search implies wanting to browse
+  // history, so it forces the expanded view rather than hiding a match
+  // inside a collapsed single row.
+  const [showRateHistory, setShowRateHistory] = useState(false);
+
   const isExchangeSelected = selectedPath === EXCHANGE_RATE_KEY;
   const isPaymentMethod = selectedPath === PAYMENT_METHOD_PATH;
+  const isPosition = selectedPath === POSITION_PATH;
+  const hasExtraColumn = isPaymentMethod || isPosition;
 
   const selectedCategory = useMemo(
     () => categories.find((category) => category.path === selectedPath),
@@ -320,6 +344,12 @@ export default function VariablePage() {
       });
   }, [rateHistory, searchQuery, selectedStatus]);
 
+  const isRateHistoryExpanded = showRateHistory || Boolean(searchQuery.trim());
+
+  const visibleRateHistory = isRateHistoryExpanded
+    ? filteredRateHistory
+    : filteredRateHistory.slice(0, 1);
+
   /* =======================================================
    * REFRESH HELPERS
    * ======================================================= */
@@ -399,6 +429,7 @@ export default function VariablePage() {
       description: item.description || "",
       status: item.active ? "ACTIVE" : "INACTIVE",
       category: item.category || "OTHER",
+      mappedRole: item.mappedRole || "MEMBER",
     });
 
     setFormError("");
@@ -444,6 +475,7 @@ export default function VariablePage() {
             description: form.description.trim() || null,
             sortOrder: editingItem.sortOrder ?? null,
             ...(isPaymentMethod ? { category: form.category } : {}),
+            ...(isPosition ? { mappedRole: form.mappedRole } : {}),
           }),
         });
 
@@ -468,6 +500,7 @@ export default function VariablePage() {
             description: form.description.trim() || null,
             active: form.status === "ACTIVE",
             ...(isPaymentMethod ? { category: form.category } : {}),
+            ...(isPosition ? { mappedRole: form.mappedRole } : {}),
           }),
         });
       }
@@ -715,8 +748,8 @@ export default function VariablePage() {
                         កំពុងទាញយកទិន្នន័យ...
                       </td>
                     </tr>
-                  ) : filteredRateHistory.length > 0 ? (
-                    filteredRateHistory.map((rate, index) => (
+                  ) : visibleRateHistory.length > 0 ? (
+                    visibleRateHistory.map((rate, index) => (
                       <tr
                         key={rate.id ?? index}
                         className="border-b border-border last:border-b-0 hover:bg-bg-page-gray"
@@ -760,6 +793,20 @@ export default function VariablePage() {
                 </tbody>
               </table>
             </div>
+
+            {!searchQuery.trim() && filteredRateHistory.length > 1 && (
+              <div className="border-t border-border p-3 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowRateHistory((current) => !current)}
+                  className="text-sm font-semibold text-primary transition hover:opacity-80"
+                >
+                  {showRateHistory
+                    ? "លាក់ប្រវត្តិ"
+                    : `មើលប្រវត្តិទាំងអស់ (${filteredRateHistory.length - 1})`}
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="rounded-xl border border-border bg-bg-page-white">
@@ -838,6 +885,12 @@ export default function VariablePage() {
                       </th>
                     )}
 
+                    {isPosition && (
+                      <th className="w-[13%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
+                        តួនាទី
+                      </th>
+                    )}
+
                     <th className="w-[11%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
                       ស្ថានភាព
                     </th>
@@ -862,7 +915,7 @@ export default function VariablePage() {
                   {itemsLoading ? (
                     <tr>
                       <td
-                        colSpan={(isPaymentMethod ? 7 : 6) + (isViewer ? 0 : 1)}
+                        colSpan={(hasExtraColumn ? 7 : 6) + (isViewer ? 0 : 1)}
                         className="px-4 py-12 text-center text-sm text-text-secondary"
                       >
                         កំពុងទាញយកទិន្នន័យ...
@@ -891,6 +944,14 @@ export default function VariablePage() {
                             {PAYMENT_CATEGORY_OPTIONS.find(
                               (option) => option.value === item.category,
                             )?.label || item.category || "-"}
+                          </td>
+                        )}
+
+                        {isPosition && (
+                          <td className="px-4 py-3 text-center text-xs text-text-secondary">
+                            {POSITION_ROLE_OPTIONS.find(
+                              (option) => option.value === item.mappedRole,
+                            )?.label || item.mappedRole || "-"}
                           </td>
                         )}
 
@@ -923,7 +984,7 @@ export default function VariablePage() {
                   ) : (
                     <tr>
                       <td
-                        colSpan={(isPaymentMethod ? 7 : 6) + (isViewer ? 0 : 1)}
+                        colSpan={(hasExtraColumn ? 7 : 6) + (isViewer ? 0 : 1)}
                         className="px-4 py-12 text-center text-sm text-text-secondary"
                       >
                         មិនមានទិន្នន័យអថេរទេ
@@ -1007,6 +1068,17 @@ export default function VariablePage() {
                     onChange={updateField("category")}
                     placeholder=""
                     options={PAYMENT_CATEGORY_OPTIONS}
+                  />
+                )}
+
+                {isPosition && (
+                  <FormSelect
+                    label="តួនាទីដែលកំណត់ដោយស្វ័យប្រវត្តិ"
+                    name="variable-position-role"
+                    value={form.mappedRole}
+                    onChange={updateField("mappedRole")}
+                    placeholder=""
+                    options={POSITION_ROLE_OPTIONS}
                   />
                 )}
 
@@ -1128,12 +1200,32 @@ export default function VariablePage() {
                     ថ្ងៃចាប់ផ្ដើមប្រើប្រាស់
                   </label>
 
-                  <input
-                    type="date"
-                    value={rateForm.effectiveFrom}
-                    onChange={updateRateField("effectiveFrom")}
-                    className="h-11 w-full rounded-lg border border-border px-4 text-sm leading-6 outline-none transition focus:border-primary"
-                  />
+                  {/*
+                    globals.css hides the native calendar icon everywhere
+                    (`input[type="date"]::-webkit-calendar-picker-indicator`)
+                    and shrinks its real click target to an 18px box tucked
+                    in the corner — it's meant to sit invisibly under a
+                    field's own icon (see FormControl.js/KhmerDateField.js),
+                    not to be the only way in. Without a paired icon here,
+                    clicking the field did nothing. Same fix as those:
+                    a visible icon plus showPicker() on click, so the whole
+                    field opens the picker.
+                  */}
+                  <div className="relative">
+                    <input
+                      ref={rateDateInputRef}
+                      type="date"
+                      value={rateForm.effectiveFrom}
+                      onChange={updateRateField("effectiveFrom")}
+                      onClick={() => rateDateInputRef.current?.showPicker?.()}
+                      className="h-11 w-full rounded-lg border border-border px-4 pr-10 text-sm leading-6 outline-none transition focus:border-primary"
+                    />
+
+                    <Calendar
+                      size={18}
+                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-mute"
+                    />
+                  </div>
                 </div>
 
                 {rateFormError && (

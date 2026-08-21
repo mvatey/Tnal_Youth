@@ -4,11 +4,21 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Pagination from "@/components/navigation/Pagination";
 import NotificationItem from "./NotificationItem";
 import { getNotificationHeading } from "./notificationData";
+import { useBranch } from "@/context/BranchContext";
 
 const rowsPerPage = 10;
 
 export default function NotificationPanel({ type = "all" }) {
   const heading = type === "all" ? "សេចក្ដីជូនដំណឹង" : getNotificationHeading(type);
+
+  // A notification with no branch (personal — "your document was issued",
+  // account activation, etc.) always shows regardless of branch. One WITH a
+  // branch (e.g. an activity invite sent to a specific branch) only shows
+  // while that branch is the one active in the sidebar — see the backend's
+  // NotificationRepo.listForUser. "all branches" (or a role that never
+  // narrows to one branch) omits the filter entirely, same as before.
+  const { selectedBranch } = useBranch();
+  const branchId = selectedBranch && selectedBranch !== "all" ? selectedBranch : null;
 
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,8 +46,11 @@ export default function NotificationPanel({ type = "all" }) {
     setError("");
 
     try {
+      const query = new URLSearchParams({ page: "0", size: "100" });
+      if (branchId) query.set("branchId", String(branchId));
+
       const response = await fetch(
-        "/api/backend/notifications/me?page=0&size=100",
+        `/api/backend/notifications/me?${query}`,
         {
           cache: "no-store",
         },
@@ -133,7 +146,7 @@ export default function NotificationPanel({ type = "all" }) {
     } finally {
       setIsLoading(false);
     }
-  }, [heading, type]);
+  }, [heading, type, branchId]);
 
   useEffect(() => {
     setCurrentPage(1);

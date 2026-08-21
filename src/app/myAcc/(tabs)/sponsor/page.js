@@ -11,6 +11,7 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 import DataTable from "@/components/table/DataTable";
 
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
 
 export default function MyAccountSponsorPage() {
   const {
@@ -236,7 +237,13 @@ export default function MyAccountSponsorPage() {
         onSearchChange={setQuery}
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
-        downloadFilename={`sponsor-donation-${member.id}.pdf`}
+        onDownload={() =>
+          downloadTableAsExcel({
+            data: filteredData,
+            columns,
+            fileName: `វិភាគទានអ្នកឧបត្ថម្ភ-${member.name_kh}`,
+          })
+        }
       />
     </div>
   );

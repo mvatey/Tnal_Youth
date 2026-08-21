@@ -8,7 +8,7 @@ import SaveAlert from "../../forms/savealert";
 import SaveButton from "../../forms/save";
 import Pagination from "../../navigation/Pagination";
 import TableRow from "./TableRow";
-import { downloadCsv } from "@/utils/downloadCsv";
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch } from "@/context/BranchContext";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
@@ -186,7 +186,27 @@ export default function DonationTable() {
   }, [isBranchScoped, effectiveBranchId]);
 
   const handleDownload = () => {
-    if (downloadCsv(sortedRows, "monthly-donations.csv")) {
+    const rows = sortedRows.map((row, index) => ({
+      "ល.រ": index + 1,
+      "ខែ": row.monthLabel,
+      "ឆ្នាំ": row.year,
+      "សាខា": row.branch,
+      "ចំនួនប្រាក់រៀល": row.monthlyRiel,
+      "ចំនួនប្រាក់ដុល្លារ": row.monthlyUsd,
+      "ប្រាក់សរុប(ដុល្លារ)": row.total,
+    }));
+
+    const branchLabel =
+      selectedBranch !== "all"
+        ? branches.find((option) => String(option.value) === String(selectedBranch))?.label
+        : null;
+
+    if (
+      downloadTableAsExcel({
+        data: rows,
+        fileName: branchLabel ? `វិភាគទានប្រចាំខែ-${branchLabel}` : "វិភាគទានប្រចាំខែ",
+      })
+    ) {
       setShowDownloadAlert(true);
     }
   };

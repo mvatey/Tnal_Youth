@@ -25,6 +25,7 @@ const ALLOWED_LOOKUPS =
 
     "user-roles",
     "tshirt-sizes",
+    "positions",
 
     "activity-types",
     "activity-sectors",

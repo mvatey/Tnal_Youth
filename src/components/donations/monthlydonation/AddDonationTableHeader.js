@@ -2,15 +2,23 @@ import tableHeaders from "@/data/donation/tableHeaders.json";
 
 const { addDonationHeaders } = tableHeaders;
 const DOB_HEADER = "ថ្ងៃខែឆ្នាំកំណើត";
+const ACTION_HEADER = "សកម្មភាព";
 
 // hideDob: the event-donation "សមាជិក" tab doesn't need a member's date of
 // birth (see EventDonationDetailForm), but the monthly-donation table
 // (AddDonationForm) still does — both share this same header/row pair, so
 // this is a prop rather than removing the column outright.
-export default function AddDonationTableHeader({ hideDob = false }) {
-  const headers = hideDob
-    ? addDonationHeaders.filter((header) => header !== DOB_HEADER)
-    : addDonationHeaders;
+//
+// hideAction: the whole list is directly editable at once now (see
+// isRowLocked/rowEditMode on table.js) — the Action column only ever had
+// content in per-row rowEditMode (the pencil/check/cancel icons), so an
+// empty header with nothing under it is dropped whenever that mode is off.
+export default function AddDonationTableHeader({ hideDob = false, hideAction = false }) {
+  const headers = addDonationHeaders.filter((header) => {
+    if (hideDob && header === DOB_HEADER) return false;
+    if (hideAction && header === ACTION_HEADER) return false;
+    return true;
+  });
 
   return (
     <thead>

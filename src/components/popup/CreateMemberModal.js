@@ -12,6 +12,17 @@ import { X } from "lucide-react";
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
 import FormActionButton from "@/components/forms/FormActionButton";
+import { useAuth } from "@/context/AuthContext";
+
+// Mirrors the backend's MemberServiceImpl#validateAssignableRole hierarchy:
+// a SECRETARY may only create MEMBER accounts, a BRANCH_LEADER may create
+// MEMBER or SECRETARY, and ADMIN may create any of the three. Anyone else
+// (e.g. VIEWER) gets no assignable roles, since they can't create members.
+const ASSIGNABLE_ROLES_BY_ACTOR = {
+  SECRETARY: ["MEMBER"],
+  BRANCH_LEADER: ["MEMBER", "SECRETARY"],
+  ADMIN: ["MEMBER", "SECRETARY", "BRANCH_LEADER"],
+};
 
 const EMPTY_FORM = {
   fullNameKm: "",
@@ -23,6 +34,7 @@ const EMPTY_FORM = {
   email: "",
   branchId: "",
   levelId: "",
+  positionId: "",
   role: "",
   joinedOn: "",
   statusId: "",
@@ -179,6 +191,19 @@ export default function CreateMemberModal({
   fixedBranchName = "",
   lockBranch = false,
 }) {
+  const { user } = useAuth();
+
+  const allowedRoles =
+    useMemo(
+      () =>
+        ASSIGNABLE_ROLES_BY_ACTOR[
+          String(
+            user?.role || "",
+          ).toUpperCase()
+        ] || [],
+      [user?.role],
+    );
+
   const [
     mounted,
     setMounted,
@@ -219,6 +244,11 @@ export default function CreateMemberModal({
   const [
     roleLookups,
     setRoleLookups,
+  ] = useState([]);
+
+  const [
+    positionLookups,
+    setPositionLookups,
   ] = useState([]);
 
   const [
@@ -331,6 +361,11 @@ export default function CreateMemberModal({
     loadLookup(
       "/lookups/user-roles",
       setRoleLookups,
+    );
+
+    loadLookup(
+      "/lookups/positions",
+      setPositionLookups,
     );
 
     return () => {
@@ -583,10 +618,89 @@ export default function CreateMemberModal({
               option.value !==
                 "" &&
               option.label !==
-                "",
+                "" &&
+              allowedRoles.includes(
+                option.value,
+              ),
           ),
-      [roleLookups],
+      [
+        roleLookups,
+        allowedRoles,
+      ],
     );
+
+  const positionOptions =
+    useMemo(
+      () =>
+        positionLookups
+          .map(
+            (position) => ({
+              label:
+                position?.labelKm ||
+                position?.label_km ||
+                position?.labelEn ||
+                position?.label_en ||
+                position?.code ||
+                "",
+              value:
+                position?.id !=
+                null
+                  ? String(
+                      position.id,
+                    )
+                  : "",
+              mappedRole:
+                String(
+                  position?.mappedRole ||
+                    "MEMBER",
+                ).toUpperCase(),
+            }),
+          )
+          .filter(
+            (option) =>
+              option.value !==
+                "" &&
+              option.label !==
+                "" &&
+              allowedRoles.includes(
+                option.mappedRole,
+              ),
+          ),
+      [
+        positionLookups,
+        allowedRoles,
+      ],
+    );
+
+  const updatePosition =
+    (event) => {
+      const value =
+        event.target.value;
+
+      const selectedPosition =
+        positionLookups.find(
+          (position) =>
+            String(
+              position?.id,
+            ) === value,
+        );
+
+      setForm(
+        (previousForm) => ({
+          ...previousForm,
+          positionId: value,
+          role:
+            selectedPosition?.mappedRole ||
+            previousForm.role,
+        }),
+      );
+
+      setShowValidationError(
+        false,
+      );
+
+      setSubmitError("");
+    };
 
   const branchOptions =
   useMemo(() => {
@@ -785,6 +899,13 @@ export default function CreateMemberModal({
           Number(
             form.levelId,
           ),
+
+        position_id:
+          form.positionId
+            ? Number(
+                form.positionId,
+              )
+            : null,
 
         role:
           form.role,
@@ -1075,6 +1196,21 @@ export default function CreateMemberModal({
                   )}
                   disabled={
                     lockBranch
+                  }
+                />
+
+                <FormSelect
+                  label="តំណែង"
+                  name="positionId"
+                  placeholder="ជ្រើសរើសតំណែង"
+                  options={
+                    positionOptions
+                  }
+                  value={
+                    form.positionId
+                  }
+                  onChange={
+                    updatePosition
                   }
                 />
 

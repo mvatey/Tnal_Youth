@@ -14,7 +14,7 @@ import { HiPencilSquare } from "react-icons/hi2";
 import { BsPencilSquare } from "react-icons/bs";
 import { PiPencilSlash } from "react-icons/pi";
 import { VscEditSparkle } from "react-icons/vsc";
-import { downloadCsv } from "@/utils/downloadCsv";
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import DonationFilterSelect from "@/components/donations/monthlydonation/DonationFilterSelect";
 import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
 import useCurrentMember from "@/hooks/useCurrentMember";
@@ -241,7 +241,25 @@ export default function SponsorPanel({
   };
 
   const handleDownload = () => {
-    if (downloadCsv(sortedRows, "sponsor-donations.csv")) {
+    const rows = sortedRows.map((row, index) => ({
+      "ល.រ": index + 1,
+      "ឈ្មោះអ្នកឧបត្ថម្ភ": row.name,
+      "ប្រភេទឧបត្ថម្ភ": row.type,
+      "លេខទូរស័ព្ទ": row.phone,
+      "អ៊ីមែល": row.email,
+      "សាខា": row.branch,
+      "កាលបរិច្ឆេទ": row.date,
+      "ចំនួនទឹកប្រាក់(រៀល)": row.rielAmount,
+      "ចំនួនទឹកប្រាក់(ដុល្លារ)": row.dollarAmount,
+    }));
+
+    if (
+      downloadTableAsExcel({
+        data: rows,
+        fileName:
+          selectedBranch !== "all" ? `ថវិកាឧបត្ថម្ភ-${selectedBranchLabel}` : "ថវិកាឧបត្ថម្ភ",
+      })
+    ) {
       setShowDownloadAlert(true);
     }
   };

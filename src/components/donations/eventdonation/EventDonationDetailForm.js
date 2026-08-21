@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import DonationFilterSelect from "../monthlydonation/DonationFilterSelect";
 import DonationSearchInput from "@/components/forms/searchBar";
@@ -10,8 +10,10 @@ import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
 import SponsorPanel from "@/components/donations/sponsor/SponsorPanel";
 import { Check, X } from "lucide-react";
 import useCurrentMember from "@/hooks/useCurrentMember";
-import { useBranch } from "@/context/BranchContext";
+import { useBranch, useBranchChangeGuard } from "@/context/BranchContext";
 import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
+import { RiDownloadCloud2Line } from "react-icons/ri";
 
 async function fetchJson(url, options) {
   const response = await fetch(url, { cache: "no-store", ...options });
@@ -69,11 +71,27 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { member: currentMember } = useCurrentMember();
-  const { branches: accessibleBranches = [] } = useBranch();
+  const {
+    branches: accessibleBranches = [],
+    selectedBranch: globalSelectedBranch = "all",
+  } = useBranch();
   // Only entry staff (secretary / branch_leader) may record or edit event
   // donations here — admin/viewer are view-only, and members use their own
   // read-only "my donations" view instead of this staff-entry form.
   const canEdit = ["secretary", "branch_leader"].includes(currentMember?.role);
+  // Same role set is always scoped to exactly one branch — the sidebar's
+  // global dropdown — same as AddDonationForm.js (monthly/sponsor). This
+  // form used to only take its branch from initialQuery/URL once at mount,
+  // so a secretary who opened it and then switched branches in the sidebar
+  // kept editing the previous branch's members with no indication anything
+  // was stale.
+  const isBranchScoped = canEdit;
+  const effectiveBranchId = useMemo(() => {
+    if (!isBranchScoped) return null;
+    if (globalSelectedBranch && globalSelectedBranch !== "all") return String(globalSelectedBranch);
+    if (accessibleBranches.length > 0) return String(accessibleBranches[0].id);
+    return currentMember?.branchId ? String(currentMember.branchId) : null;
+  }, [isBranchScoped, globalSelectedBranch, accessibleBranches, currentMember?.branchId]);
   const listPath = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/eventdonation"
     : "/donation/eventdonation";
@@ -105,6 +123,56 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   // is currently filtered to). Drives both isBranchOrganizer below and the
   // "organizer" marker EventDonationBranchTotals shows in its own table.
   const [organizerBranchId, setOrganizerBranchId] = useState(null);
+  // True as soon as the user has typed an amount that hasn't been saved
+  // yet -- see the Table's onRowsChange below. Drives the branch-switch
+  // confirmation guard: switching branches mid-entry with nothing typed
+  // just follows the sidebar silently, same as before.
+  const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
+
+  // Clears the whole in-progress entry -- selected activity, tab, search,
+  // rows, dirty flag -- back to a fresh start. Called whenever the branch
+  // actually changes (a previously selected activity almost certainly
+  // doesn't belong to the new branch) and after a confirmed branch switch
+  // (discarded or saved-then-switched) via the guard below.
+  function resetProgressForBranchSwitch() {
+    setSelectedEvent("all");
+    setActiveTab("members");
+    setSearchQuery("");
+    setMembers([]);
+    setHasUnsavedEdits(false);
+  }
+
+  const previousEffectiveBranchIdRef = useRef(effectiveBranchId);
+
+  // Keep selectedBranch following the sidebar for a branch-scoped role —
+  // mirrors AddDonationForm.js's same fix. Only resets the in-progress
+  // activity/rows when the branch actually changes to a different one
+  // (not on first resolve, which would otherwise wipe out an initialEvent
+  // passed in from the URL before the user ever touched anything). A
+  // switch that had unsaved edits never reaches here silently -- see
+  // useBranchChangeGuard below, which intercepts it with a confirmation
+  // dialog before the sidebar's selection (and therefore effectiveBranchId)
+  // changes at all.
+  useEffect(() => {
+    const previous = previousEffectiveBranchIdRef.current;
+    previousEffectiveBranchIdRef.current = effectiveBranchId;
+
+    if (!isBranchScoped || !effectiveBranchId || previous === effectiveBranchId) {
+      return;
+    }
+
+    setSelectedBranch(effectiveBranchId);
+
+    if (previous != null) {
+      resetProgressForBranchSwitch();
+    }
+  }, [isBranchScoped, effectiveBranchId]);
+
+  useBranchChangeGuard({
+    isDirty: () => isBranchScoped && hasUnsavedEdits,
+    onSave: () => handleSave(members),
+    onReset: resetProgressForBranchSwitch,
+  });
 
   useEffect(() => {
     if (selectedEvent === "all") {
@@ -333,6 +401,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
       }));
       setSavedMessage(`បានរក្សាទុកវិភាគទាន ${completed.length} នាក់`);
       setShowSaveAlert(true);
+      setHasUnsavedEdits(false);
       if (!isDetailPage) window.setTimeout(() => router.push(listPath), 500);
       return true;
     } catch (saveError) {
@@ -348,6 +417,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     setSelectedEvent("all");
     setMembers([]);
     setActiveTab("members");
+    setHasUnsavedEdits(false);
   };
 
   const handleEventChange = (value) => {
@@ -373,6 +443,30 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
       total: dollar + riel / (exchangeRateKhrPerUsd || 4000),
     };
   }, [exchangeRateKhrPerUsd, members]);
+
+  const handleDownloadMembers = () => {
+    const rows = members.map((member, index) => ({
+      "ល.រ": index + 1,
+      "សមាជិក": member.name,
+      "ភេទ": member.gender,
+      "ចំនួនប្រាក់រៀល": member.realAmount,
+      "ចំនួនប្រាក់ដុល្លារ": member.dollarAmount,
+      "វិធីសាស្ត្រទូទាត់": member.paymentMethod,
+    }));
+
+    const activityLabel = eventOptions.find(
+      (option) => String(option.value) === String(selectedEvent),
+    )?.label;
+    const branchLabel = branches.find(
+      (option) => String(option.value) === String(selectedBranch),
+    )?.label;
+
+    const fileName = [activityLabel, branchLabel, "សមាជិក"]
+      .filter(Boolean)
+      .join("-");
+
+    downloadTableAsExcel({ data: rows, fileName: fileName || "សមាជិក" });
+  };
 
   return (
     <>
@@ -409,11 +503,22 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
         {error ? <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-wrap items-end gap-6">
-            <DonationFilterSelect label="សាខា" value={selectedBranch} onChange={handleBranchChange} options={branches} allLabel="ជ្រើសរើសសាខា" className="w-[158px]" required disabled={isDetailPage} />
+            <DonationFilterSelect label="សាខា" value={selectedBranch} onChange={handleBranchChange} options={branches} allLabel="ជ្រើសរើសសាខា" className="w-[158px]" required disabled={isDetailPage || isBranchScoped} />
             <DonationFilterSelect label="កម្មវិធី" value={selectedEvent} onChange={handleEventChange} options={eventOptions} allLabel="ជ្រើសរើសកម្មវិធី" className="w-[158px]" required disabled={isDetailPage} />
           </div>
           {activeTab === "members" ? (
-            <DonationSearchInput value={searchQuery} onChange={setSearchQuery} showLabel={false} />
+            <div className="flex items-center gap-3">
+              <DonationSearchInput value={searchQuery} onChange={setSearchQuery} showLabel={false} />
+              <button
+                type="button"
+                onClick={handleDownloadMembers}
+                disabled={members.length === 0}
+                className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-secondary px-4 text-xs font-bold text-white shadow-sm transition hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <RiDownloadCloud2Line size={15} />
+                ទាញយក
+              </button>
+            </div>
           ) : null}
         </div>
 
@@ -460,8 +565,14 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
             searchQuery={searchQuery}
             rowEditMode={isDetailPage}
             readOnly={!canEdit}
-            onRowsChange={setMembers}
-            onReset={() => setMembers((rows) => rows.map((row) => ({ ...row, realAmount: "0", dollarAmount: "0" })))}
+            onRowsChange={(rows) => {
+              setMembers(rows);
+              setHasUnsavedEdits(true);
+            }}
+            onReset={() => {
+              setMembers((rows) => rows.map((row) => ({ ...row, realAmount: "0", dollarAmount: "0" })));
+              setHasUnsavedEdits(false);
+            }}
             onCancel={onCancel || (() => router.push(listPath))}
             onSave={saving ? undefined : handleSave}
             onReceiptSave={(id, receipt) => setMembers((rows) => rows.map((row) => row.id === id ? { ...row, receipt } : row))}

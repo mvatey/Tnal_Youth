@@ -2,22 +2,35 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getEffectiveRole } from "@/lib/navigation";
+import BranchSwitchConfirmModal from "@/components/popup/BranchSwitchConfirmModal";
 
 const BranchContext = createContext(null);
 
 export function BranchProvider({ children, branches = [] }) {
   const { user, isLoggedIn, authLoading } = useAuth();
-  const [selectedBranch, setSelectedBranch] = useState("all");
+  const [selectedBranch, setSelectedBranchState] = useState("all");
   const [accessibleBranches, setAccessibleBranches] = useState(() =>
     normalizeBranches(branches),
   );
+
+  // The currently-mounted page/form registers itself here (see
+  // registerBranchChangeGuard below) to report whether it has unsaved
+  // progress. Only ever one guard active at a time -- whatever main-content
+  // page is currently on screen. A plain ref (not state) because
+  // registering must never itself trigger a re-render.
+  const branchChangeGuardRef = useRef(null);
+  const [pendingBranch, setPendingBranch] = useState(null);
+  const [branchSwitchBusy, setBranchSwitchBusy] = useState(false);
+  const [branchSwitchError, setBranchSwitchError] = useState("");
 
   const role = getEffectiveRole(user);
 
@@ -38,7 +51,7 @@ export function BranchProvider({ children, branches = [] }) {
 
     if (!isLoggedIn) {
       setAccessibleBranches(normalizeBranches(branches));
-      setSelectedBranch("all");
+      setSelectedBranchState("all");
       return undefined;
     }
 
@@ -57,7 +70,7 @@ export function BranchProvider({ children, branches = [] }) {
         if (cancelled) return;
 
         setAccessibleBranches(normalized);
-        setSelectedBranch((current) => {
+        setSelectedBranchState((current) => {
           if (isBranchScopedRole) {
             // "all" is never a valid selection for a branch-scoped
             // role -- not even as a previously-kept selection (e.g.
@@ -103,18 +116,92 @@ export function BranchProvider({ children, branches = [] }) {
     };
   }, [authLoading, isLoggedIn, isBranchScopedRole]);
 
+  // A page/form with in-progress, unsaved edits calls this (typically from
+  // a useEffect keyed on whatever "am I dirty" state it already tracks) to
+  // report itself as the thing that must be asked about before the sidebar
+  // switches branches out from under it. guard: { isDirty, onSave, onReset }.
+  // Registering again (e.g. the guard identity changes on re-render) simply
+  // replaces the previous one; unregistering only clears the ref if it's
+  // still the same guard, so an unmount race can't clobber whichever page
+  // mounted after it.
+  const registerBranchChangeGuard = useCallback((guard) => {
+    branchChangeGuardRef.current = guard;
+    return () => {
+      if (branchChangeGuardRef.current === guard) {
+        branchChangeGuardRef.current = null;
+      }
+    };
+  }, []);
+
+  const requestBranchChange = useCallback((next) => {
+    const guard = branchChangeGuardRef.current;
+    if (!guard?.isDirty?.()) {
+      setSelectedBranchState(next);
+      return;
+    }
+    setBranchSwitchError("");
+    setPendingBranch(next);
+  }, []);
+
+  const cancelPendingBranchChange = useCallback(() => {
+    setPendingBranch(null);
+    setBranchSwitchError("");
+  }, []);
+
+  const discardAndSwitchBranch = useCallback(() => {
+    branchChangeGuardRef.current?.onReset?.();
+    setSelectedBranchState(pendingBranch);
+    setPendingBranch(null);
+    setBranchSwitchError("");
+  }, [pendingBranch]);
+
+  const saveAndSwitchBranch = useCallback(async () => {
+    const guard = branchChangeGuardRef.current;
+    if (!guard?.onSave) {
+      discardAndSwitchBranch();
+      return;
+    }
+    setBranchSwitchBusy(true);
+    setBranchSwitchError("");
+    try {
+      const saved = await guard.onSave();
+      if (!saved) {
+        setBranchSwitchError(
+          "មិនអាចរក្សាទុកបានទេ។ សូមព្យាយាមម្តងទៀត ឬបោះបង់ការកែប្រែ។",
+        );
+        return;
+      }
+      guard.onReset?.();
+      setSelectedBranchState(pendingBranch);
+      setPendingBranch(null);
+    } catch (error) {
+      setBranchSwitchError(error?.message || "មិនអាចរក្សាទុកបានទេ។");
+    } finally {
+      setBranchSwitchBusy(false);
+    }
+  }, [pendingBranch, discardAndSwitchBranch]);
+
   const value = useMemo(
     () => ({
       branches: accessibleBranches,
       selectedBranch,
-      setSelectedBranch,
+      setSelectedBranch: requestBranchChange,
+      registerBranchChangeGuard,
     }),
-    [accessibleBranches, selectedBranch],
+    [accessibleBranches, selectedBranch, requestBranchChange, registerBranchChangeGuard],
   );
 
   return (
     <BranchContext.Provider value={value}>
       {children}
+      <BranchSwitchConfirmModal
+        open={pendingBranch != null}
+        busy={branchSwitchBusy}
+        error={branchSwitchError}
+        onCancel={cancelPendingBranchChange}
+        onDiscard={discardAndSwitchBranch}
+        onSave={saveAndSwitchBranch}
+      />
     </BranchContext.Provider>
   );
 }
@@ -165,8 +252,34 @@ export function useBranch() {
       branches: [],
       selectedBranch: "all",
       setSelectedBranch: () => {},
+      registerBranchChangeGuard: () => () => {},
     };
   }
 
   return context;
+}
+
+// Convenience wrapper around registerBranchChangeGuard for a page/form with
+// its own in-progress editing state. isDirty/onSave/onReset are read fresh
+// on every call (via a ref) so the caller can pass plain inline functions
+// without needing to memoize them themselves.
+//
+//   useBranchChangeGuard({
+//     isDirty: () => hasUnsavedEdits,
+//     onSave: async () => handleSave(members),   // must resolve truthy on success
+//     onReset: () => { /* clear the form back to its starting state */ },
+//   });
+export function useBranchChangeGuard({ isDirty, onSave, onReset }) {
+  const { registerBranchChangeGuard } = useBranch();
+  const latestRef = useRef({ isDirty, onSave, onReset });
+  latestRef.current = { isDirty, onSave, onReset };
+
+  useEffect(() => {
+    const guard = {
+      isDirty: () => latestRef.current.isDirty?.() ?? false,
+      onSave: (...args) => latestRef.current.onSave?.(...args),
+      onReset: (...args) => latestRef.current.onReset?.(...args),
+    };
+    return registerBranchChangeGuard(guard);
+  }, [registerBranchChangeGuard]);
 }

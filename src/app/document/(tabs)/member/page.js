@@ -6,6 +6,7 @@ import { Eye, FileText } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
 import DataTable from "@/components/table/DataTable";
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
 import { useAuth } from "@/context/AuthContext";
 import { normalizeRole } from "@/lib/navigation";
@@ -154,6 +155,7 @@ export default function MemberDocumentPage() {
     },
     {
       header: "ប្រភេទឯកសារ",
+      accessor: "type",
       width: "w-[10%]",
       align: "center",
       render: (item) => {
@@ -275,7 +277,13 @@ export default function MemberDocumentPage() {
         onSearchChange={setSearch}
         actionButton={canManageDocuments ? addButton : null}
         pageSize={15}
-        downloadFilename="member-documents.csv"
+        onDownload={() =>
+          downloadTableAsExcel({
+            data: filteredDocuments,
+            columns,
+            fileName: `ឯកសារសមាជិក`,
+          })
+        }
       />
 
       {selectedCertificate && (

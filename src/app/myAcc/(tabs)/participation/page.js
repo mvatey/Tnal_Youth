@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import useCurrentMember from "@/hooks/useCurrentMember";
 
 import DataTable from "@/components/table/DataTable.js";
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail.js";
 
 const TYPE_BADGE_STYLES = {
@@ -779,6 +780,13 @@ export default function ParticipationPage() {
         }
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
+        onDownload={() =>
+          downloadTableAsExcel({
+            data: participations,
+            columns,
+            fileName: `ការចូលរួមសកម្មភាព-${member?.name_kh || "ខ្ញុំ"}`,
+          })
+        }
       />
     </div>
   );

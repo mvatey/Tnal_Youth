@@ -8,12 +8,20 @@ import {
 
 import Link from "next/link";
 import { Bell } from "lucide-react";
+import { useBranch } from "@/context/BranchContext";
 
 const POLL_INTERVAL_MS = 45000;
 
 export default function NotificationBell({
   unreadCount: unreadCountProp,
 }) {
+  // Mirrors NotificationPanel.js: the badge switches to whichever branch is
+  // active in the sidebar, since a branch-scoped notification (e.g. an
+  // activity invite) only counts while its own branch is selected.
+  const { selectedBranch } = useBranch();
+  const branchId =
+    selectedBranch && selectedBranch !== "all" ? selectedBranch : null;
+
   const [fetchedCount, setFetchedCount] =
     useState(0);
 
@@ -31,8 +39,12 @@ export default function NotificationBell({
       }
 
       try {
+        const query = branchId
+          ? `?branchId=${encodeURIComponent(branchId)}`
+          : "";
+
         const response = await fetch(
-          "/api/backend/notifications/me/unread-count",
+          `/api/backend/notifications/me/unread-count${query}`,
           {
             cache: "no-store",
           },
@@ -63,7 +75,7 @@ export default function NotificationBell({
       } catch {
         // Keep previous count if request fails.
       }
-    }, [unreadCountProp]);
+    }, [unreadCountProp, branchId]);
 
   useEffect(() => {
     if (

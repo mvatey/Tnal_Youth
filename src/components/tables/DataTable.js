@@ -20,7 +20,12 @@ export default function DataTable({
   actionButton,
   emptyMessage = "មិនមានទិន្នន័យត្រូវនឹងលក្ខខណ្ឌស្វែងរកទេ",
   pageSize = 10,
-  downloadFilename = "table-data.csv",
+  downloadFilename = "table-data",
+  // Lets a page hand DataTable a ready-made export (its own row shaping,
+  // e.g. member/page.js's handleDownloadMembers) instead of the default
+  // below, which just maps each column's accessor under its on-screen
+  // Khmer header label.
+  onDownload,
 }) {
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -243,7 +248,12 @@ export default function DataTable({
           />
 
           <div className="mt-3 flex justify-stretch sm:justify-end [&>*]:w-full sm:[&>*]:w-auto">
-            <DownloadButton data={data} filename={downloadFilename} />
+            <DownloadButton
+              data={data}
+              columns={columns}
+              filename={downloadFilename}
+              onDownload={onDownload}
+            />
           </div>
         </div>
       )}

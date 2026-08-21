@@ -19,8 +19,15 @@ export default function Table({
   onCancel,
   onSave,
   onReceiptSave,
+  onEditingRowChange,
   readOnly = false,
   rowEditMode = false,
+  // Optional per-row lock independent of rowEditMode/readOnly — e.g. a
+  // monthly/sponsor donation member who already has a recorded entry for
+  // the selected period. The backend has no update endpoint for that case
+  // (only create), so re-submitting it would fail the whole batch; locking
+  // it here keeps it visible (with its existing amount) but un-editable.
+  isRowLocked,
   // See AddDonationTableHeader/AddDonationTableRow — hides the
   // date-of-birth column for the event-donation "សមាជិក" tab.
   hideDob = false,
@@ -104,6 +111,10 @@ export default function Table({
 
     setRows(nextRows);
     notifyRowsChange(nextRows);
+
+    if (id === editingRowId) {
+      onEditingRowChange?.(nextRows.find((member) => member.id === id) ?? null);
+    }
   };
 
   const handleReceiptSave = async (id, file) => {
@@ -173,8 +184,9 @@ export default function Table({
   };
 
   const handleReset = () => {
-    const resetIds = new Set(filteredRows.map((member) => member.id));
-    const resetRows = filteredRows.map((member) => ({
+    const resettableRows = filteredRows.filter((member) => !isRowLocked?.(member));
+    const resetIds = new Set(resettableRows.map((member) => member.id));
+    const resetRows = resettableRows.map((member) => ({
       ...member,
       realAmount: "0",
       dollarAmount: "0",
@@ -199,12 +211,14 @@ export default function Table({
   const handleStartRowEdit = (member) => {
     setEditingRowId(member.id);
     setEditingSnapshot({ ...member });
+    onEditingRowChange?.(member);
   };
 
   const handleCancelRowEdit = () => {
     if (editingSnapshot) updateRow(editingSnapshot.id, editingSnapshot);
     setEditingRowId(null);
     setEditingSnapshot(null);
+    onEditingRowChange?.(null);
   };
 
   const handleSaveRow = async (member) => {
@@ -212,6 +226,7 @@ export default function Table({
     if (saved === true) {
       setEditingRowId(null);
       setEditingSnapshot(null);
+      onEditingRowChange?.(null);
     }
   };
 
@@ -219,7 +234,7 @@ export default function Table({
     <div>
       <div className="overflow-x-auto rounded-sm border border-border bg-bg-page-white">
         <table className="w-full min-w-[980px] border-collapse">
-          <AddDonationTableHeader hideDob={hideDob} />
+          <AddDonationTableHeader hideDob={hideDob} hideAction={!rowEditMode} />
           <tbody>
             {pagedRows.length > 0 ? (
               pagedRows.map((member, index) => (
@@ -232,7 +247,7 @@ export default function Table({
                   onPaymentMethodChange={(id, paymentMethod) =>
                     updateRow(id, { paymentMethod })
                   }
-                  readOnly={readOnly || (rowEditMode && editingRowId !== member.id)}
+                  readOnly={readOnly || (rowEditMode && editingRowId !== member.id) || Boolean(isRowLocked?.(member))}
                   globalReadOnly={readOnly}
                   rowEditMode={rowEditMode}
                   isEditing={editingRowId === member.id}
@@ -247,7 +262,10 @@ export default function Table({
               ))
             ) : (
               <tr>
-                <td colSpan={hideDob ? 8 : 9} className="px-4 py-10 text-center text-sm text-text-mute">
+                <td
+                  colSpan={9 - (hideDob ? 1 : 0) - (rowEditMode ? 0 : 1)}
+                  className="px-4 py-10 text-center text-sm text-text-mute"
+                >
                   មិនមានទិន្នន័យសមាជិកសម្រាប់សាខានេះទេ
                 </td>
               </tr>

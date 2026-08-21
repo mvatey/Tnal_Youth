@@ -1,54 +1,43 @@
 "use client";
 
 import { RiDownloadCloud2Line } from "react-icons/ri";
+import { downloadExcel } from "@/utils/downloadExcel";
 
-function formatCsvValue(value) {
+function formatExportValue(value) {
   if (value === null || value === undefined) return "";
-
-  if (typeof value === "object") {
-    return JSON.stringify(value);
-  }
-
-  return String(value);
+  if (typeof value === "object") return JSON.stringify(value);
+  return value;
 }
 
-function downloadCsv(data, filename) {
-  if (!Array.isArray(data) || data.length === 0) return;
+// Exports under each column's on-screen Khmer header label (column.header),
+// reading column.accessor off each row \u2014 not the row's raw object keys,
+// which are internal field names (e.g. "fullNameKm") a downloaded file
+// shouldn't expose as-is.
+function buildExportRows(data, columns) {
+  if (!Array.isArray(columns) || columns.length === 0) {
+    return data.map((row) =>
+      Object.fromEntries(
+        Object.entries(row).map(([key, value]) => [key, formatExportValue(value)]),
+      ),
+    );
+  }
 
-  const headers = Object.keys(data[0]);
-
-  const rows = data.map((row) =>
-    headers.map((header) => formatCsvValue(row[header]))
+  return data.map((row) =>
+    Object.fromEntries(
+      columns.map((column) => [
+        column.header || column.accessor,
+        formatExportValue(
+          column.exportValue ? column.exportValue(row) : row[column.accessor],
+        ),
+      ]),
+    ),
   );
-
-  const csvContent = [headers, ...rows]
-    .map((row) =>
-      row
-        .map((cell) => `"${cell.replace(/"/g, '""')}"`)
-        .join(",")
-    )
-    .join("\n");
-
-  const blob = new Blob(["\uFEFF" + csvContent], {
-    type: "text/csv;charset=utf-8;",
-  });
-
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename || "export.csv";
-
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  URL.revokeObjectURL(url);
 }
 
 export default function DownloadButton({
   data = [],
-  filename = "export.csv",
+  columns = [],
+  filename = "export",
   onDownload,
 }) {
   const handleDownload = async () => {
@@ -57,7 +46,12 @@ export default function DownloadButton({
       return;
     }
 
-    downloadCsv(data, filename);
+    if (!Array.isArray(data) || data.length === 0) return;
+
+    downloadExcel({
+      rows: buildExportRows(data, columns),
+      fileName: filename.replace(/\.(csv|xlsx|pdf)$/i, ""),
+    });
   };
 
   return (

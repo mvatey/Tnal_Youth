@@ -6,6 +6,7 @@ import Link from "next/link";
 import { HandCoins } from "lucide-react";
 
 import DataTable from "@/components/table/DataTable";
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
 export default function SponsorDonationPage() {
   const { id } = useParams();
   const [sponsors, setSponsors] = useState([]);
@@ -252,7 +253,13 @@ export default function SponsorDonationPage() {
         onSearchChange={setQuery}
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
-        downloadFilename="sponsor-donation.csv"
+        onDownload={() =>
+          downloadTableAsExcel({
+            data: filteredData,
+            columns,
+            fileName: `វិភាគទានអ្នកឧបត្ថម្ភ-សមាជិក-${id}`,
+          })
+        }
       />
     </div>
   );

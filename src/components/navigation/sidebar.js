@@ -429,34 +429,31 @@ export default function Sidebar() {
 
               {branches.length > 1 ? (
                 <>
-                  <select
-                    value={
-                      selectedBranch
-                    }
-                    onChange={(
-                      event,
-                    ) =>
-                      setSelectedBranch(
-                        event.target
-                          .value,
-                      )
-                    }
-                    className="
-                      h-[38px]
-                      w-full
-                      appearance-none
-                      rounded-lg
-                      bg-white/10
-                      pl-11
-                      pr-8
-                      text-sm
-                      font-medium
-                      text-white
-                      outline-none
-                      transition
-                      hover:bg-white/15
-                    "
-                  >
+                                <select
+                value={selectedBranch}
+                onChange={(event) =>
+                  setSelectedBranch(event.target.value)
+                }
+                className="
+                  h-[40px]
+                  w-full
+                  appearance-none
+                  rounded-xl
+                  border
+                  border-white/10
+                  bg-white/10
+                  pl-11
+                  pr-8
+                  text-sm
+                  font-medium
+                  text-white
+                  outline-none
+                  transition-all
+                  hover:bg-white/20
+                  focus:border-white/30
+                  focus:bg-white/15
+                "
+              >
                     {/*
                       No "all" option here -- a secretary/branch leader
                       responsible for more than one branch always has
@@ -517,10 +514,12 @@ export default function Sidebar() {
                 <div
                   className="
                     flex
-                    h-[38px]
+                    h-[40px]
                     w-full
                     items-center
-                    rounded-lg
+                    rounded-xl
+                    border
+                    border-white/10
                     bg-white/10
                     pl-11
                     pr-4

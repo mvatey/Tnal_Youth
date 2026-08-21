@@ -8,7 +8,7 @@ import MemberCard from "../eventdonation/membercard";
 import CashCard from "./cashcard";
 import BankCard from "./bankcard";
 import useCurrentMember from "@/hooks/useCurrentMember";
-import { useBranch } from "@/context/BranchContext";
+import { useBranch, useBranchChangeGuard } from "@/context/BranchContext";
 import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 
 const BANK_PAYMENT_METHODS = new Set([
@@ -163,56 +163,8 @@ export default function AddDonationForm() {
     );
   }, [currentYear]);
 
-  // Which (branch, "YYYY-MM") periods already have a monthly donation
-  // recorded for the selected branch — refetched whenever the branch
-  // changes (not after every save, so a month doesn't disappear out from
-  // under an in-progress editing session the moment its first member gets
-  // saved). Drives the month dropdown below: an already-recorded month is
-  // excluded outright rather than just labeled, since this "add" flow has
-  // no way to revisit one — see handleSave, which always creates a fresh
-  // period.
-  const [existingPeriods, setExistingPeriods] = useState(new Set());
-
-  useEffect(() => {
-    if (!selectedBranch || selectedBranch === "all") {
-      setExistingPeriods(new Set());
-      return undefined;
-    }
-
-    let cancelled = false;
-    fetchJson(
-      `/api/backend/donations/monthly?${new URLSearchParams({
-        branchId: selectedBranch,
-        page: "0",
-        size: "100",
-      })}`,
-    )
-      .then((page) => {
-        if (cancelled) return;
-        const items = Array.isArray(page?.items) ? page.items : [];
-        setExistingPeriods(
-          new Set(
-            items
-              .map((item) => String(item.donationPeriod || "").slice(0, 7))
-              .filter(Boolean),
-          ),
-        );
-      })
-      .catch(() => {
-        if (!cancelled) setExistingPeriods(new Set());
-      });
-
-    return () => { cancelled = true; };
-  }, [selectedBranch]);
-
   // Nothing to pick until a year is chosen (see AddDonationFilters, which
-  // asks for branch -> year -> month in that order). Always all 12 months —
-  // this used to cap at the current month and hide any month that already
-  // had a recorded donation, which also meant the "លម្អិត" link from the
-  // list page (which pre-fills branch/year/month for an existing record)
-  // got its month silently reset back to "all" on load, since that exact
-  // month had just been filtered out. Existing periods are surfaced as a
-  // notice instead (periodAlreadyExists below), not hidden.
+  // asks for branch -> year -> month in that order). Always all 12 months.
   const months = useMemo(() => {
     if (!selectedYear || selectedYear === "all") return [];
 
@@ -221,17 +173,6 @@ export default function AddDonationForm() {
       label,
     }));
   }, [selectedYear]);
-
-  // True once branch + year + month are all chosen and that exact period
-  // already has a recorded donation for this branch — shown as a notice so
-  // picking an existing month/year (whether by hand or via the list page's
-  // "លម្អិត" link) is clearly understood as editing that existing record,
-  // and choosing it while trying to start a fresh one is caught early
-  // rather than silently overwriting/duplicating it.
-  const periodAlreadyExists = useMemo(() => {
-    if (!allFiltersSelected) return false;
-    return existingPeriods.has(`${selectedYear}-${selectedMonth}`);
-  }, [allFiltersSelected, existingPeriods, selectedYear, selectedMonth]);
 
 const summary = useMemo(() => {
   const riel = editableRows.reduce(
@@ -330,6 +271,7 @@ const paymentSummary = useMemo(
         setEditableRows((Array.isArray(page?.items) ? page.items : []).map((member) =>
           mapMonthlyMember(member, branchLabel, selectedMonth, selectedYear),
         ));
+        setHasUnsavedEdits(false);
       })
       .catch((loadError) => {
         if (!cancelled) {
@@ -365,13 +307,31 @@ const paymentSummary = useMemo(
     );
   }, [initialFilters, isBranchScoped, effectiveBranchId]);
 
+  // The whole list is editable at once now (see isRowLocked on <Table>
+  // below — only an already-recorded member's row stays locked) and saved
+  // together in one click, so "dirty" just means any row changed since it
+  // was loaded. Used below to ask before the sidebar switches branches out
+  // from under in-progress typing.
+  const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
+
+  useBranchChangeGuard({
+    isDirty: () => hasUnsavedEdits,
+    onSave: () => handleSave(editableRows),
+    onReset: () => setHasUnsavedEdits(false),
+  });
+
   const handleSave = async (rows) => {
+    // alreadyPaid rows are excluded even if their (pre-filled, historical)
+    // amount is nonzero -- the backend batch endpoint only creates new
+    // records and rejects the WHOLE batch if any one member already has a
+    // donation for this period, so resubmitting one would block every
+    // legitimate new entry alongside it.
     const completed = rows.filter(
-      (row) => Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0,
+      (row) => !row.alreadyPaid && (Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0),
     );
     if (completed.length === 0) {
       setSavedMessage("សូមបញ្ចូលចំនួនទឹកប្រាក់យ៉ាងហោចណាស់ម្នាក់");
-      return;
+      return false;
     }
 
     const fallbackMethod = paymentMethods[0];
@@ -393,7 +353,7 @@ const paymentSummary = useMemo(
 
     if (items.some((item) => !Number.isFinite(item.payment_method_id))) {
       setError("មិនអាចកំណត់វិធីសាស្ត្រទូទាត់បានទេ");
-      return;
+      return false;
     }
 
     setSaving(true);
@@ -416,13 +376,10 @@ const paymentSummary = useMemo(
       setSaving(false);
     }
 
-    // Every save now goes through the per-row edit button (see rowEditMode
-    // on the <Table> below), never a bulk "save everyone" click — so this
-    // always reads as editing one member's donation for this period, not
-    // creating a second, separate one. Stay on the page (the rest of this
-    // month's members are still right there) and tell table.js the save
-    // succeeded so it can close that row's edit state.
-    setSavedMessage(`បានកែប្រែវិភាគទាន ${completed.length} នាក់`);
+    // Stay on the page (the rest of this month's members are still right
+    // there) rather than navigating away after a bulk save.
+    setSavedMessage(`បានកត់ត្រាវិភាគទាន ${completed.length} នាក់`);
+    setHasUnsavedEdits(false);
     return true;
   };
 
@@ -502,12 +459,6 @@ const paymentSummary = useMemo(
           branchScoped={isBranchScoped}
         />
 
-        {periodAlreadyExists && (
-          <div className="mb-4 rounded-md border border-warning/30 bg-warning-bg px-4 py-3 text-sm text-warning">
-            ការកត់ត្រាវិភាគទានសម្រាប់ខែ/ឆ្នាំនេះនិងសាខានេះមានរួចហើយ — កំពុងកែប្រែកំណត់ត្រាដែលមានស្រាប់។
-          </div>
-        )}
-
         {loadingMembers ? (
           <div className="py-12 text-center text-sm text-text-secondary">កំពុងទាញយកសមាជិក...</div>
         ) : null}
@@ -520,19 +471,19 @@ const paymentSummary = useMemo(
               selectedMonth={selectedMonth}
               selectedYear={selectedYear}
               searchQuery={searchQuery}
-              onRowsChange={setEditableRows}
+              onRowsChange={(rows) => {
+                setEditableRows(rows);
+                setHasUnsavedEdits(true);
+              }}
               onReset={handleReset}
               onCancel={handleCancel}
               onSave={handleSave}
               onReceiptSave={handleReceiptSave}
               saving={saving}
-              // Always edit-lock every row, for every month — the money
-              // fields only become typeable after clicking that row's
-              // pencil icon, and saving always goes through the single-row
-              // path (handleSave above). This is what keeps every save
-              // reading as "editing this member's donation for this
-              // period" rather than risking a second, duplicate entry.
-              rowEditMode
+              // A member who already has a recorded donation for this
+              // period stays locked (see isRowLocked doc in table.js) —
+              // everyone else is editable at once, saved together below.
+              isRowLocked={(member) => member.alreadyPaid}
          />
 
     <div

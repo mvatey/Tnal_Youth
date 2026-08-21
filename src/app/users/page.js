@@ -6,6 +6,7 @@ import { UserCheck, UserX, Users as UsersIcon } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
 import DataTable from "@/components/table/DataTable.js";
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import StatCard from "@/components/dashboard/statCard";
 import CreateUserModal from "@/components/popup/CreateUserModal.js";
 import { useAuth } from "@/context/AuthContext";
@@ -504,6 +505,13 @@ export default function UsersPage() {
           onSearchChange={setQuery}
           searchPlaceholder="ស្វែងរកតាមរយៈឈ្មោះ ទូរស័ព្ទ ឬអ៊ីមែល..."
           pageSize={20}
+          onDownload={() =>
+            downloadTableAsExcel({
+              data: users,
+              columns: tableColumns,
+              fileName: "អ្នកប្រើប្រាស់",
+            })
+          }
           actionButton={!isViewer ? (
             <button
               type="button"

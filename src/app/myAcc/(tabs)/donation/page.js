@@ -7,6 +7,7 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 import DataTable from "@/components/table/DataTable.js";
 
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
 
 const KHMER_MONTHS = [
   "មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា",
@@ -179,7 +180,13 @@ export default function DonationPage() {
         onSearchChange={setQuery}
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
-        downloadFilename={`donations-${member.id}.csv`}
+        onDownload={() =>
+          downloadTableAsExcel({
+            data: filteredData,
+            columns,
+            fileName: `វិភាគទានប្រចាំខែ-${member.name_kh}`,
+          })
+        }
       />
 
     </div>

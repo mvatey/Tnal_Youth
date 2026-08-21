@@ -13,7 +13,7 @@ import Button from "@/components/ui/Button";
 import PrimaryActionButton from "@/components/ui/actions/PrimaryActionButton";
 
 import { useBranch } from "@/context/BranchContext";
-import { downloadCsv } from "@/utils/downloadCsv";
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import { useAuth } from "@/context/AuthContext";
 import { normalizeRole } from "@/lib/navigation";
 
@@ -633,7 +633,28 @@ export default function ActivityPage() {
   ];
 
   const handleDownload = () => {
-    downloadCsv(filteredActivities, "activities.csv");
+    const rows = filteredActivities.map((item, index) => ({
+      "ល.រ": index + 1,
+      "ឈ្មោះកម្មវិធី": item.name,
+      "ប្រភេទ": item.type,
+      "វិស័យ": item.sector,
+      "សាខា": item.branch,
+      "ទីតាំង": item.location,
+      "កាលបរិច្ឆេទ": item.date,
+      "រយៈពេល": item.duration,
+      "អ្នកចូលរួម": item.participants,
+      "ស្ថានភាព": item.status,
+    }));
+
+    const branchLabel =
+      selectedBranch !== "all"
+        ? branchOptions.find((option) => String(option.value) === String(selectedBranch))?.label
+        : null;
+
+    downloadTableAsExcel({
+      data: rows,
+      fileName: branchLabel ? `កម្មវិធី-${branchLabel}` : "កម្មវិធី",
+    });
   };
 
   return (
