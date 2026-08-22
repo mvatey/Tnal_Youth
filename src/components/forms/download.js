@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { RiDownloadCloud2Line } from "react-icons/ri";
+import FeedbackAlert from "@/components/ui/feedback/FeedbackAlert";
 
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
@@ -12,8 +13,8 @@ export default function DownloadButton({
   buttonText = "ទាញយក",
   disabled = false,
 }) {
-  const [downloading, setDownloading] =
-    useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [feedback, setFeedback] = useState("");
 
   const handleDownload = async () => {
     if (downloading || disabled) {
@@ -32,6 +33,7 @@ export default function DownloadButton({
     }
 
     setDownloading(true);
+    setFeedback("");
 
     try {
       await waitForImages(
@@ -267,21 +269,15 @@ export default function DownloadButton({
           pageHeight;
       }
 
-      pdf.save(
-        ensurePdfFilename(
-          filename,
-        ),
-      );
+      pdf.save(ensurePdfFilename(filename));
+      setFeedback("ការទាញយកបានជោគជ័យ");
     } catch (error) {
       console.error(
         "Cannot download table PDF:",
         error,
       );
 
-      alert(
-        error?.message ||
-          "មានបញ្ហាក្នុងការទាញយកតារាងជា PDF។",
-      );
+      setFeedback(error?.message || "មានបញ្ហាក្នុងការទាញយកតារាងជា PDF។");
     } finally {
       setDownloading(false);
     }
@@ -291,7 +287,12 @@ export default function DownloadButton({
     downloading || disabled;
 
   return (
-    <div className="flex justify-end">
+    <div className="relative flex justify-end">
+      {feedback ? (
+        <div className="fixed right-6 top-6 z-[100]">
+          <FeedbackAlert message={feedback} onClose={() => setFeedback("")} />
+        </div>
+      ) : null}
       <button
         type="button"
         onClick={

@@ -121,8 +121,6 @@ export default function SponsorPanel({
 
   useEffect(() => {
     let cancelled = false;
-    setAllRows([]);
-    setCurrentPage(1);
     async function loadRows() {
       setLoading(true);
       setError("");
@@ -280,13 +278,13 @@ export default function SponsorPanel({
   return (
     <section className="min-h-[650px] rounded-md border border-border bg-bg-page-white px-7 py-4 shadow-sm">
       {showDownloadAlert && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
+        <div className="fixed right-6 top-6 z-[100]">
           <AddAlert message="ការទាញយកថវិការឧបត្ថម្ភជោគជ័យ!" />
         </div>
       )}
 
       {showSaveAlert && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
+        <div className="fixed right-6 top-6 z-[100]">
           <SaveAlert message="អបអរសាទរ ! ថវិការឧបត្ថម្ភត្រូវបានរក្សាទុកដោយជោគជ័យ" />
         </div>
       )}

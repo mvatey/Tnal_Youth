@@ -9,6 +9,7 @@ export default function UploadBox({
   accept = "image/*",
   uploadText = "បញ្ចូលរូបភាព",
   helperText = "គាំទ្រ៖ JPG, PNG (អតិបរមា 5MB), ទំហំកាត់៖ 16:9",
+  maxSizeMb = 5,
 }) {
   const inputRef = useRef(null);
   const [preview, setPreview] = useState(null);
@@ -17,6 +18,14 @@ export default function UploadBox({
   const handleSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (file.size > maxSizeMb * 1024 * 1024) {
+      window.alert(`ឯកសារធំពេក។ សូមជ្រើសរើសឯកសារតូចជាង ${maxSizeMb}MB។`);
+      e.target.value = "";
+      return;
+    }
+
+    if (preview) URL.revokeObjectURL(preview);
 
     setSelectedFile(file);
     setPreview(file.type.startsWith("image/") ? URL.createObjectURL(file) : null);
@@ -92,6 +101,13 @@ export default function UploadBox({
           
         )}
         </button>
+
+        {selectedFile && (
+          <div className="pointer-events-none absolute bottom-3 left-3 right-12 z-10 rounded-lg bg-black/60 px-3 py-2 text-xs text-white">
+            <div className="truncate font-semibold">{selectedFile.name}</div>
+            <div>{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</div>
+          </div>
+        )}
 
         {selectedFile && (
           <button

@@ -2,6 +2,8 @@
 
 import { RiDownloadCloud2Line } from "react-icons/ri";
 import { downloadExcel } from "@/utils/downloadExcel";
+import FeedbackAlert from "@/components/ui/feedback/FeedbackAlert";
+import { useState } from "react";
 
 function formatExportValue(value) {
   if (value === null || value === undefined) return "";
@@ -40,9 +42,12 @@ export default function DownloadButton({
   filename = "export",
   onDownload,
 }) {
+  const [feedback, setFeedback] = useState("");
+
   const handleDownload = async () => {
     if (onDownload) {
       await onDownload();
+      setFeedback("ការទាញយកបានជោគជ័យ");
       return;
     }
 
@@ -52,18 +57,26 @@ export default function DownloadButton({
       rows: buildExportRows(data, columns),
       fileName: filename.replace(/\.(csv|xlsx|pdf)$/i, ""),
     });
+    setFeedback("ការទាញយកបានជោគជ័យ");
   };
 
   return (
-    <div className="flex justify-end">
-      <button
-        type="button"
-        onClick={handleDownload}
-        className="inline-flex h-[34px] items-center gap-2 rounded-lg bg-secondary px-4 text-xs font-bold text-white shadow-sm transition hover:bg-secondary-hover"
-      >
-        <RiDownloadCloud2Line size={15} />
-        ទាញយក
-      </button>
-    </div>
+    <>
+      {feedback ? (
+        <div className="fixed right-6 top-6 z-[100]">
+          <FeedbackAlert message={feedback} onClose={() => setFeedback("")} />
+        </div>
+      ) : null}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={handleDownload}
+          className="inline-flex h-[34px] items-center gap-2 rounded-lg bg-secondary px-4 text-xs font-bold text-white shadow-sm transition hover:bg-secondary-hover"
+        >
+          <RiDownloadCloud2Line size={15} />
+          ទាញយក
+        </button>
+      </div>
+    </>
   );
 }

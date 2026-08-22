@@ -17,6 +17,7 @@ import useMemberPermissions from "@/hooks/useMemberPermissions";
 import FormDate from "@/components/forms/FormDate.js";
 import MultiSelect from "@/components/forms/multiselect.js";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
+import { useBranch } from "@/context/BranchContext";
 
 /* =========================================================
  * EMPTY FORM
@@ -435,6 +436,7 @@ function computeBranchIds(source) {
 
 export default function PersonalPage() {
   const { role, isAdmin, canEditMemberDetails, canManageMemberAccount } = useMemberPermissions();
+  const { branches: accessibleBranches } = useBranch();
   const isReadOnly = !canEditMemberDetails;
   const params =
     useParams();
@@ -1099,15 +1101,24 @@ export default function PersonalPage() {
    * assigned branch instead of just one value.
    */
   const branchOptions = useMemo(() => {
+    // Assignment choices must follow the viewer's actual branch scope.
+    // Admin sees all accessible branches; branch-scoped staff only see
+    // branches they are allowed to operate in. Keep the member's current
+    // assignments injected below so an existing value never disappears.
+    const scopedBranches =
+      accessibleBranches.length > 0
+        ? accessibleBranches
+        : branches;
+
     const missing = branchMultiValue.filter(
       (value) =>
-        !branches.some(
+        !scopedBranches.some(
           (option) => option.value === value,
         ),
     );
 
     if (missing.length === 0) {
-      return branches;
+      return scopedBranches;
     }
 
     const labelsById = new Map(
@@ -1122,7 +1133,7 @@ export default function PersonalPage() {
     );
 
     return [
-      ...branches,
+      ...scopedBranches,
       ...missing.map((value) => ({
         label:
           (value === String(form.branch_id) &&
@@ -1134,6 +1145,7 @@ export default function PersonalPage() {
     ];
   }, [
     branches,
+    accessibleBranches,
     branchMultiValue,
     form.assigned_branches,
     form.branch_id,

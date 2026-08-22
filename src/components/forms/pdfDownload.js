@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { RiDownloadCloud2Line } from "react-icons/ri";
+import FeedbackAlert from "@/components/ui/feedback/FeedbackAlert";
 
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -14,10 +15,8 @@ export default function PdfDownloadButton({
   buttonText = "ទាញយក",
   disabled = false,
 }) {
-  const [
-    downloading,
-    setDownloading,
-  ] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [feedback, setFeedback] = useState("");
 
   const handleDownload =
     async () => {
@@ -47,6 +46,7 @@ export default function PdfDownloadButton({
       }
 
       setDownloading(true);
+      setFeedback("");
 
       try {
         await waitForImages(
@@ -113,62 +113,37 @@ export default function PdfDownloadButton({
           "FAST",
         );
 
-        pdf.save(
-          ensurePdfFilename(
-            filename,
-          ),
-        );
+        pdf.save(ensurePdfFilename(filename));
+        setFeedback("ការទាញយកបានជោគជ័យ");
       } catch (error) {
         console.error(
           "PDF download failed:",
           error,
         );
 
-        alert(
-          "មានបញ្ហាក្នុងការទាញយកឯកសារ PDF។",
-        );
+        setFeedback("មានបញ្ហាក្នុងការទាញយកឯកសារ PDF។");
       } finally {
         setDownloading(false);
       }
     };
 
   return (
-    <button
-      type="button"
-      onClick={
-        handleDownload
-      }
-      disabled={
-        disabled ||
-        downloading
-      }
-      className="
-        flex
-        h-[34px]
-        w-full
-        items-center
-        justify-center
-        gap-2
-        rounded-lg
-        bg-secondary
-        px-4
-        text-xs
-        font-semibold
-        text-white
-        transition
-        hover:bg-secondary-hover
-        disabled:cursor-not-allowed
-        disabled:opacity-60
-      "
-    >
-      <RiDownloadCloud2Line
-        size={15}
-      />
-
-      {downloading
-        ? "កំពុងបង្កើត PDF..."
-        : buttonText}
-    </button>
+    <>
+      {feedback ? (
+        <div className="fixed right-6 top-6 z-[100]">
+          <FeedbackAlert message={feedback} onClose={() => setFeedback("")} />
+        </div>
+      ) : null}
+      <button
+        type="button"
+        onClick={handleDownload}
+        disabled={disabled || downloading}
+        className="flex h-[34px] w-full items-center justify-center gap-2 rounded-lg bg-secondary px-4 text-xs font-semibold text-white transition hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <RiDownloadCloud2Line size={15} />
+        {downloading ? "កំពុងបង្កើត PDF..." : buttonText}
+      </button>
+    </>
   );
 }
 
@@ -246,5 +221,7 @@ async function waitForImages(
           },
         ),
     ),
+    );
+    </>
   );
 }
