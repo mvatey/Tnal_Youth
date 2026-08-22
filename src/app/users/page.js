@@ -168,7 +168,14 @@ function mapUser(user) {
         : ROLE_LABELS_KM[String(user?.role || "").toUpperCase()]) ||
       user?.role ||
       "-",
-    accountType: user?.memberId == null ? "STANDALONE" : "MEMBER_LINKED",
+    accountType:
+      user?.memberId != null
+        ? "MEMBER_LINKED"
+        : ["SECRETARY", "BRANCH_LEADER"].includes(
+              String(user?.role || "").toUpperCase(),
+          )
+          ? "BRANCH_STAFF"
+          : "STANDALONE",
     memberId: user?.memberId ?? null,
     branchId: user?.branchId ?? null,
     statusCode: String(
@@ -404,7 +411,11 @@ export default function UsersPage() {
         width: "w-[14%]",
         align: "center",
         render: (user) => (
-          <span>{user.accountType === "MEMBER_LINKED" ? "ភ្ជាប់សមាជិក" : "គណនីឯករាជ្យ"}</span>
+          <span>{user.accountType === "MEMBER_LINKED"
+            ? "ភ្ជាប់សមាជិក"
+            : user.accountType === "BRANCH_STAFF"
+              ? "គណនីបុគ្គលិកសាខា"
+              : "គណនីឯករាជ្យ"}</span>
         ),
       },
       {

@@ -312,7 +312,11 @@ export default function ActivityMembersPage({
         ] =
           await Promise.all([
             fetchApi(
-              `/activities/${id}`,
+              `/activities/${id}${
+              globalSelectedBranch !== "all"
+                ? `?branchId=${encodeURIComponent(globalSelectedBranch)}`
+                : ""
+            }`,
             ),
 
             /*
@@ -321,7 +325,11 @@ export default function ActivityMembersPage({
              * branch.
              */
             fetchApi(
-              `/activities/${id}/participants`,
+              `/activities/${id}/participants${
+              globalSelectedBranch !== "all"
+                ? `?branchId=${encodeURIComponent(globalSelectedBranch)}`
+                : ""
+            }`,
             ).catch(
               () => [],
             ),

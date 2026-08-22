@@ -248,8 +248,11 @@ async function backendGet(
 
 export default async function ActivityDetailPage({
   params,
+  searchParams,
 }) {
   const { id } = await params;
+  const query = await searchParams;
+  const branchId = query?.branchId ? String(query.branchId) : null;
 
   const cookieStore =
     await cookies();
@@ -269,7 +272,7 @@ export default async function ActivityDetailPage({
     backendGet(
       `/activities/${encodeURIComponent(
         id,
-      )}`,
+      )}${branchId ? `?branchId=${encodeURIComponent(branchId)}` : ""}`,
       accessToken,
     ),
 

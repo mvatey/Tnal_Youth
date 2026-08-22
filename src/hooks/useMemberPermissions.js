@@ -16,9 +16,9 @@ export default function useMemberPermissions() {
     role,
     loading,
     isAdmin: role === "ADMIN",
-    // Admin is oversight/read-only on member detail fields. Branch staff
-    // perform the actual profile corrections.
-    canEditMemberDetails: ["SECRETARY", "BRANCH_LEADER"].includes(role),
+    // Admin and branch staff can edit member detail fields.
+    // Backend branch authorization still controls which members are writable.
+    canEditMemberDetails: ["ADMIN", "SECRETARY", "BRANCH_LEADER"].includes(role),
     canManageMemberAccount: ["ADMIN", "SECRETARY", "BRANCH_LEADER"].includes(role),
   };
 }

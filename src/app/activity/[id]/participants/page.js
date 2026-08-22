@@ -310,7 +310,11 @@ export default function ActivityParticipantsPage({
   async function refreshSummary() {
     const summary =
       await fetchApi(
-        `/activities/${id}/participants/summary`,
+        `/activities/${id}/participants/summary${
+              globalSelectedBranch !== "all"
+                ? `?branchId=${encodeURIComponent(globalSelectedBranch)}`
+                : ""
+            }`,
       );
 
     setGlobalSummary({
@@ -363,7 +367,11 @@ export default function ActivityParticipantsPage({
       try {
         const activityRecord =
           await fetchApi(
-            `/activities/${id}`,
+            `/activities/${id}${
+              globalSelectedBranch !== "all"
+                ? `?branchId=${encodeURIComponent(globalSelectedBranch)}`
+                : ""
+            }`,
           );
 
         const canManage =
@@ -455,14 +463,22 @@ export default function ActivityParticipantsPage({
              * this to current staff branch.
              */
             fetchApi(
-              `/activities/${id}/participants`,
+              `/activities/${id}/participants${
+              globalSelectedBranch !== "all"
+                ? `?branchId=${encodeURIComponent(globalSelectedBranch)}`
+                : ""
+            }`,
             ),
 
             /*
              * Whole activity totals.
              */
             fetchApi(
-              `/activities/${id}/participants/summary`,
+              `/activities/${id}/participants/summary${
+              globalSelectedBranch !== "all"
+                ? `?branchId=${encodeURIComponent(globalSelectedBranch)}`
+                : ""
+            }`,
             ),
           ]);
 

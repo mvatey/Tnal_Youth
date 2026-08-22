@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { usePathname } from "next/navigation";
 import { getEffectiveRole } from "@/lib/navigation";
 import BranchSwitchConfirmModal from "@/components/popup/BranchSwitchConfirmModal";
 
@@ -33,6 +34,11 @@ export function BranchProvider({ children, branches = [] }) {
   const [branchSwitchError, setBranchSwitchError] = useState("");
 
   const role = getEffectiveRole(user);
+  const pathname = usePathname();
+
+  const branchStorageKey = user?.id
+    ? `tnal:selectedBranch:${user.id}`
+    : "tnal:selectedBranch";
 
   // SECRETARY and BRANCH_LEADER are always scoped to exactly one branch at
   // a time -- never the combined "all branches" aggregate -- even when
@@ -70,37 +76,53 @@ export function BranchProvider({ children, branches = [] }) {
         if (cancelled) return;
 
         setAccessibleBranches(normalized);
+
+        let savedBranch = null;
+        try {
+          savedBranch = window.localStorage.getItem(branchStorageKey);
+        } catch {
+          savedBranch = null;
+        }
+
         setSelectedBranchState((current) => {
+          const savedIsValid =
+            savedBranch != null &&
+            (savedBranch === "all" ||
+              normalized.some(
+                (branch) => String(branch.id) === String(savedBranch),
+              ));
+
+          const currentIsValid =
+            current === "all" ||
+            normalized.some(
+              (branch) => String(branch.id) === String(current),
+            );
+
           if (isBranchScopedRole) {
-            // "all" is never a valid selection for a branch-scoped
-            // role -- not even as a previously-kept selection (e.g.
-            // the initial "all" default before this fetch resolves).
-            // Keep the current branch if it's still one they can
-            // access, otherwise fall back to the first accessible one.
-            if (
-              current !== "all" &&
-              normalized.some((branch) => String(branch.id) === String(current))
-            ) {
+            // A secretary/branch leader must always have one concrete
+            // branch selected. Restore the last branch for this user
+            // when it is still accessible; otherwise use the first one.
+            if (savedIsValid && savedBranch !== "all") {
+              return String(savedBranch);
+            }
+
+            if (currentIsValid && current !== "all") {
               return String(current);
             }
 
             return normalized.length > 0 ? String(normalized[0].id) : "all";
           }
 
-          // Keep the current selection ("all" or a specific branch id)
-          // whenever it is still valid — reloading the branch list
-          // (e.g. after the sidebar filter was reset back to "all")
-          // must not silently jump back to a specific branch.
-          if (current === "all" || normalized.some((branch) => String(branch.id) === String(current))) {
+          // ADMIN/VIEWER can use the aggregate "all" selection. Restore
+          // their previous branch selection when it is still accessible.
+          if (savedIsValid) {
+            return String(savedBranch);
+          }
+
+          if (currentIsValid) {
             return String(current);
           }
 
-          // Someone with access to exactly one branch has no real
-          // "all branches" choice to make, so default straight to
-          // that branch. Anyone with access to more than one branch
-          // (e.g. an admin) should default to the aggregate "all
-          // branches" view instead of silently landing on whichever
-          // branch happens to be first.
           return normalized.length === 1 ? String(normalized[0].id) : "all";
         });
       } catch {
@@ -114,7 +136,7 @@ export function BranchProvider({ children, branches = [] }) {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isLoggedIn, isBranchScopedRole]);
+  }, [authLoading, isLoggedIn, isBranchScopedRole, branchStorageKey]);
 
   // A page/form with in-progress, unsaved edits calls this (typically from
   // a useEffect keyed on whatever "am I dirty" state it already tracks) to
@@ -133,15 +155,42 @@ export function BranchProvider({ children, branches = [] }) {
     };
   }, []);
 
+  const persistAndReloadForBranch = useCallback(
+    (nextBranch) => {
+      const next = String(nextBranch);
+
+      try {
+        window.localStorage.setItem(
+          branchStorageKey,
+          next,
+        );
+      } catch {
+        // localStorage may be unavailable in private/restricted browser modes.
+      }
+
+      setSelectedBranchState(next);
+
+      // A detail page represents one concrete record. Keeping its old URL
+      // after a branch switch is dangerous because the record may belong to
+      // the previous branch. Return to that feature's list, which will load
+      // using the newly selected branch. List pages can simply reload in place.
+      const targetPath = getBranchSwitchTarget(pathname);
+      const target = targetPath || pathname || "/dashboard";
+
+      window.location.assign(target);
+    },
+    [branchStorageKey, pathname],
+  );
+
   const requestBranchChange = useCallback((next) => {
     const guard = branchChangeGuardRef.current;
     if (!guard?.isDirty?.()) {
-      setSelectedBranchState(next);
+      persistAndReloadForBranch(next);
       return;
     }
     setBranchSwitchError("");
     setPendingBranch(next);
-  }, []);
+  }, [persistAndReloadForBranch]);
 
   const cancelPendingBranchChange = useCallback(() => {
     setPendingBranch(null);
@@ -150,10 +199,13 @@ export function BranchProvider({ children, branches = [] }) {
 
   const discardAndSwitchBranch = useCallback(() => {
     branchChangeGuardRef.current?.onReset?.();
-    setSelectedBranchState(pendingBranch);
+    const next = pendingBranch;
     setPendingBranch(null);
     setBranchSwitchError("");
-  }, [pendingBranch]);
+    if (next != null) {
+      persistAndReloadForBranch(next);
+    }
+  }, [pendingBranch, persistAndReloadForBranch]);
 
   const saveAndSwitchBranch = useCallback(async () => {
     const guard = branchChangeGuardRef.current;
@@ -172,14 +224,17 @@ export function BranchProvider({ children, branches = [] }) {
         return;
       }
       guard.onReset?.();
-      setSelectedBranchState(pendingBranch);
+      const next = pendingBranch;
       setPendingBranch(null);
+      if (next != null) {
+        persistAndReloadForBranch(next);
+      }
     } catch (error) {
       setBranchSwitchError(error?.message || "មិនអាចរក្សាទុកបានទេ។");
     } finally {
       setBranchSwitchBusy(false);
     }
-  }, [pendingBranch, discardAndSwitchBranch]);
+  }, [pendingBranch, discardAndSwitchBranch, persistAndReloadForBranch]);
 
   const value = useMemo(
     () => ({
@@ -204,6 +259,35 @@ export function BranchProvider({ children, branches = [] }) {
       />
     </BranchContext.Provider>
   );
+}
+
+function getBranchSwitchTarget(pathname) {
+  const path = pathname || "/dashboard";
+
+  // Entity/detail pages must not keep showing a record from the previous
+  // branch after the sidebar branch changes. Return to the feature list so
+  // the list reloads with the new branch selection.
+  if (path.startsWith("/member/memberInfo/")) {
+    return "/member";
+  }
+
+  if (path.startsWith("/activity/") && !path.startsWith("/activity/create")) {
+    return "/activity";
+  }
+
+  if (path.startsWith("/branch/") && path !== "/branch/") {
+    return "/branch";
+  }
+
+  if (path.startsWith("/donation/eventdonation/detail")) {
+    return "/donation/eventdonation";
+  }
+
+  if (path.startsWith("/donation/sponsor/edit")) {
+    return "/donation/sponsor";
+  }
+
+  return path;
 }
 
 function normalizeBranches(value) {

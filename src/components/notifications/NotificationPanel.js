@@ -126,10 +126,16 @@ export default function NotificationPanel({ type = "all" }) {
             // Keep navigation information from backend.
             // Activity notifications use this to open
             // the related activity detail page.
-            actionUrl: row.actionUrl || null,
+            actionUrl: withBranchContext(
+              row.actionUrl || null,
+              row.branchId,
+            ),
 
             activityId:
               row.activityId ?? null,
+
+            branchId:
+              row.branchId ?? null,
 
             typeCode:
               row.typeCode || null,
@@ -251,6 +257,17 @@ export default function NotificationPanel({ type = "all" }) {
       </section>
     </div>
   );
+}
+
+function withBranchContext(actionUrl, branchId) {
+  if (!actionUrl || branchId == null) return actionUrl || null;
+
+  if (!String(actionUrl).startsWith("/activity/")) {
+    return actionUrl;
+  }
+
+  const separator = String(actionUrl).includes("?") ? "&" : "?";
+  return `${actionUrl}${separator}branchId=${encodeURIComponent(branchId)}`;
 }
 
 function formatNotificationDate(value) {

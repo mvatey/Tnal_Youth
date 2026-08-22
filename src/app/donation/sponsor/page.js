@@ -135,6 +135,7 @@ export default function SponsorPage() {
     if (isBranchScoped && (!selectedBranch || selectedBranch === "all")) return undefined;
 
     let cancelled = false;
+    setSummary(EMPTY_SUMMARY);
 
     async function loadSummary() {
       try {

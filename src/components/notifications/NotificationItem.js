@@ -63,7 +63,11 @@ export default function NotificationItem({
           .startsWith("ACTIVITY_")
       ) {
         router.push(
-          `/activity/${notification.activityId}`,
+          `/activity/${notification.activityId}${
+            notification.branchId != null
+              ? `?branchId=${encodeURIComponent(notification.branchId)}`
+              : ""
+          }`,
         );
       }
     } finally {

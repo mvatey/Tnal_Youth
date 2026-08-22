@@ -105,6 +105,8 @@ export default function EventDonationPanel({
       return undefined;
     }
     let cancelled = false;
+    setRows([]);
+    setCurrentPage(1);
     setLoading(true);
     setError("");
     async function loadRows() {

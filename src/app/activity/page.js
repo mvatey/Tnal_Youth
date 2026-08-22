@@ -242,8 +242,17 @@ export default function ActivityPage() {
     setLoadError("");
 
     try {
+      const activityParams = new URLSearchParams({
+        page: "0",
+        size: "1000",
+      });
+
+      if (selectedBranch !== "all") {
+        activityParams.set("branchId", String(selectedBranch));
+      }
+
       const [activityResponse, branchResponse] = await Promise.all([
-        fetch("/api/backend/activities?page=0&size=1000", {
+        fetch(`/api/activities?${activityParams.toString()}`, {
           cache: "no-store",
         }),
         // Use the general branch lookup here. MEMBER can view activities but
@@ -296,9 +305,14 @@ export default function ActivityPage() {
     } finally {
       if (mountedRef.current) setLoading(false);
     }
-  }, []);
+  }, [selectedBranch]);
 
   useEffect(() => {
+    setSelectedScope("all");
+    setSelectedSector("all");
+    setSelectedType("all");
+    setSelectedDate(null);
+    setSearchQuery("");
     loadActivities();
   }, [loadActivities]);
 
@@ -597,7 +611,7 @@ export default function ActivityPage() {
 
         return (
           <Link
-            href={`/activity/${row.id}`}
+            href={`/activity/${row.id}${selectedBranch !== "all" ? `?branchId=${encodeURIComponent(selectedBranch)}` : ""}`}
             className="mx-auto flex h-[22px] w-fit items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] bg-primary px-3 text-[10px] font-Regular text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-sm active:translate-y-0"
           >
             <List size={14} />

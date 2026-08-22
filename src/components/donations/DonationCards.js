@@ -72,7 +72,7 @@ export default function DonationCards() {
           setSummary({
             totalUsd: currentMonthRows.reduce(
               (total, row) =>
-                total + Number(row.totalAmountUsd || row.amountUsd || 0),
+                total + Number(row.overallTotalUsd ?? row.totalAmountUsd ?? row.amountUsd ?? 0),
               0,
             ),
             donors: currentMonthRows.length,

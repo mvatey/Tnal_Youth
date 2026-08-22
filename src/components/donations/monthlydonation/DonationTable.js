@@ -212,6 +212,18 @@ export default function DonationTable() {
   };
 
   useEffect(() => {
+    // A branch switch must never leave the previous branch visible while the
+    // new request is in flight. Reset both data and branch-local filters.
+    if (isBranchScoped) {
+      setRows([]);
+      setCurrentPage(1);
+      setSelectedYear("all");
+      setSelectedMonth("all");
+      setSelectedBranch(effectiveBranchId || "all");
+    }
+  }, [isBranchScoped, effectiveBranchId]);
+
+  useEffect(() => {
     if (currentMemberLoading) return undefined;
 
     let cancelled = false;

@@ -121,6 +121,8 @@ export default function SponsorPanel({
 
   useEffect(() => {
     let cancelled = false;
+    setAllRows([]);
+    setCurrentPage(1);
     async function loadRows() {
       setLoading(true);
       setError("");
