@@ -53,21 +53,21 @@ const amountUsd = (row) => {
 };
 
 const summarizeRows = (rows, memberMode = false) => {
-  const now = new Date();
-  const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const currentRows = rows.filter((row) => isSameMonth(row?.paidAt || row?.donatedAt, now));
-  const previousRows = rows.filter((row) => isSameMonth(row?.paidAt || row?.donatedAt, previousMonth));
-
-  const currentTotal = currentRows.reduce((sum, row) => sum + amountUsd(row), 0);
-  const previousTotal = previousRows.reduce((sum, row) => sum + amountUsd(row), 0);
-  const currentDonors = memberMode ? currentRows.length : new Set(currentRows.map(sponsorKey)).size;
-  const previousDonors = memberMode ? previousRows.length : new Set(previousRows.map(sponsorKey)).size;
+  const safeRows = Array.isArray(rows) ? rows : [];
 
   return {
-    donorCount: currentDonors,
-    overallTotalUsd: currentTotal,
-    donationChangePercent: percentChange(currentTotal, previousTotal),
-    donorChangePercent: percentChange(currentDonors, previousDonors),
+    // For a normal staff view this is the number of unique sponsors/donors
+    // represented by the same rows that feed the table. In personal member
+    // mode each donation row is one of the member's own records.
+    donorCount: memberMode
+      ? safeRows.length
+      : new Set(safeRows.map(sponsorKey)).size,
+    overallTotalUsd: safeRows.reduce(
+      (sum, row) => sum + amountUsd(row),
+      0,
+    ),
+    donationChangePercent: 0,
+    donorChangePercent: 0,
   };
 };
 
@@ -165,13 +165,13 @@ export default function SponsorPage() {
       <div className="flex gap-[50px] xl:grid-cols-2">
         <SponsorCard
           value={`$${Number(summary.overallTotalUsd || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
-          growth={isPersonalMember ? "" : `${Number(summary.donationChangePercent || 0)}%`}
+          growth=""
         />
         <DonorCard
           label={isPersonalMember ? "ចំនួនកំណត់ត្រារបស់ខ្ញុំ" : "អ្នកឧបត្ថម្ភសរុប"}
           value={`${summary.donorCount || 0} ${isPersonalMember ? "លើក" : "នាក់"}`}
-          growth={isPersonalMember ? "" : `${Number(summary.donorChangePercent || 0)}%`}
-          note={isPersonalMember ? "" : "ក្នុងខែនេះ"}
+          growth=""
+          note=""
         />
       </div>
       <SponsorPanel

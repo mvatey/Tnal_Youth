@@ -27,6 +27,57 @@ function mapMyEventRow(row) {
   };
 }
 
+async function fetchAllActivityDonationRows(branchId) {
+  const makeParams = (page) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      size: "100",
+    });
+    if (branchId) params.set("branchId", String(branchId));
+    return params;
+  };
+
+  const loadPage = async (page) => {
+    const response = await fetch(
+      `/api/backend/donations?${makeParams(page)}`,
+      { cache: "no-store", credentials: "include" },
+    );
+    const body = await response.json().catch(() => null);
+    if (!response.ok || body?.success === false) {
+      throw new Error(body?.message || "Unable to load activity donations.");
+    }
+    return body?.data ?? body;
+  };
+
+  const firstPage = await loadPage(0);
+  const firstItems = Array.isArray(firstPage?.items) ? firstPage.items : [];
+  const totalElements = Number(firstPage?.total ?? firstPage?.totalElements ?? firstItems.length);
+  const totalPages = Math.max(1, Math.ceil(totalElements / 100));
+
+  const remainingPages = totalPages > 1
+    ? await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) =>
+          loadPage(index + 1),
+        ),
+      )
+    : [];
+
+  return firstItems
+    .concat(
+      ...remainingPages.map((page) =>
+        Array.isArray(page?.items) ? page.items : [],
+      ),
+    )
+    .filter(
+      (row) =>
+        String(row?.typeCode || "").toUpperCase() ===
+          "ACTIVITY_DONATION" ||
+        // Compatibility fallback for older rows/API versions where typeCode
+        // was not exposed yet. Activity donations always carry activityId.
+        (!row?.typeCode && row?.activityId),
+    );
+}
+
 function MyEventDonationsTable({ rows }) {
   if (!rows.length) {
     return (
@@ -129,22 +180,15 @@ export default function EventDonationPage() {
     if (isBranchScoped && !effectiveBranchId) return undefined;
 
     setRows([]);
-    const query = new URLSearchParams({ page: "0", size: "100" });
-    if (isBranchScoped) query.set("branchId", String(effectiveBranchId));
-
-    fetch(`/api/backend/donations?${query}`, {
-      cache: "no-store",
-      credentials: "include",
-    })
-      .then(async (response) => {
-        const body = await response.json().catch(() => null);
-        if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load donations.");
-        return body?.data ?? body;
+    fetchAllActivityDonationRows(
+      isBranchScoped ? effectiveBranchId : null,
+    )
+      .then((items) => {
+        if (!cancelled) setRows(items);
       })
-      .then((page) => {
-        if (!cancelled) setRows((Array.isArray(page?.items) ? page.items : []).filter((row) => row.activityId));
-      })
-      .catch((loadError) => { if (!cancelled) setError(loadError.message); });
+      .catch((loadError) => {
+        if (!cancelled) setError(loadError.message);
+      });
     return () => { cancelled = true; };
   }, [
     currentMemberLoading,

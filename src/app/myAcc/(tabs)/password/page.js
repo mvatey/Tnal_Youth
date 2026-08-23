@@ -18,11 +18,9 @@ function validatePassword(password) {
 }
 
 export default function PasswordPage() {
-  const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -41,11 +39,6 @@ export default function PasswordPage() {
     setError("");
     setSuccess("");
 
-    if (!oldPassword) {
-      setError("សូមបញ្ចូលពាក្យសម្ងាត់បច្ចុប្បន្ន។");
-      return;
-    }
-
     if (!newPassword) {
       setError("សូមបញ្ចូលពាក្យសម្ងាត់ថ្មី។");
       return;
@@ -56,13 +49,13 @@ export default function PasswordPage() {
       return;
     }
 
-    if (!passwordsMatch) {
-      setError("ពាក្យសម្ងាត់ថ្មី និងការបញ្ជាក់ពាក្យសម្ងាត់មិនត្រូវគ្នា។");
+    if (!confirmPassword) {
+      setError("សូមបញ្ជាក់ពាក្យសម្ងាត់ថ្មី។");
       return;
     }
 
-    if (oldPassword === newPassword) {
-      setError("ពាក្យសម្ងាត់ថ្មីត្រូវខុសពីពាក្យសម្ងាត់បច្ចុប្បន្ន។");
+    if (!passwordsMatch) {
+      setError("ពាក្យសម្ងាត់ថ្មី និងការបញ្ជាក់ពាក្យសម្ងាត់មិនត្រូវគ្នា។");
       return;
     }
 
@@ -78,7 +71,6 @@ export default function PasswordPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            old_password: oldPassword,
             new_password: newPassword,
             confirm_password: confirmPassword,
           }),
@@ -110,15 +102,14 @@ export default function PasswordPage() {
         );
       }
 
-      setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setSuccess("បានផ្លាស់ប្ដូរពាក្យសម្ងាត់ដោយជោគជ័យ។");
+      setSuccess("បានកំណត់ពាក្យសម្ងាត់ថ្មីដោយជោគជ័យ។");
     } catch (submitError) {
-      console.error("Cannot change my password:", submitError);
+      console.error("Cannot reset my password:", submitError);
       setError(
         submitError.message ||
-          "មិនអាចផ្លាស់ប្ដូរពាក្យសម្ងាត់បានទេ",
+          "មិនអាចកំណត់ពាក្យសម្ងាត់ថ្មីបានទេ",
       );
     } finally {
       setSubmitting(false);
@@ -129,11 +120,11 @@ export default function PasswordPage() {
     <div className="min-w-0 space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-text-primary">
-          ផ្លាស់ប្ដូរពាក្យសម្ងាត់
+          កំណត់ពាក្យសម្ងាត់ថ្មី
         </h2>
 
         <p className="mt-2 text-sm text-text-secondary">
-          សូមបញ្ចូលពាក្យសម្ងាត់បច្ចុប្បន្ន និងពាក្យសម្ងាត់ថ្មីរបស់អ្នក។
+          សូមបញ្ចូលពាក្យសម្ងាត់ថ្មី និងបញ្ជាក់ពាក្យសម្ងាត់ថ្មីរបស់អ្នក។
         </p>
       </div>
 
@@ -147,15 +138,6 @@ export default function PasswordPage() {
         "
       >
         <div className="space-y-5">
-          <BoxFill
-            label="ពាក្យសម្ងាត់បច្ចុប្បន្ន"
-            value={oldPassword}
-            onChange={setOldPassword}
-            show={showOld}
-            setShow={setShowOld}
-            autoComplete="current-password"
-          />
-
           <BoxFill
             label="ពាក្យសម្ងាត់ថ្មី"
             value={newPassword}
@@ -261,6 +243,7 @@ function BoxFill({
             pl-11
             pr-11
             text-sm
+            text-text-primary
             outline-none
             transition
             focus:border-primary
@@ -269,8 +252,9 @@ function BoxFill({
 
         <button
           type="button"
-          onClick={() => setShow(!show)}
+          onClick={() => setShow((previous) => !previous)}
           className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary"
+          aria-label={show ? "Hide password" : "Show password"}
         >
           {show ? (
             <EyeOff size={18} />

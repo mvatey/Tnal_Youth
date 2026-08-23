@@ -7,18 +7,27 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 import { useBranch } from "@/context/BranchContext";
 
-const isCurrentMonthDonation = (row, now = new Date()) => {
-  const rawPeriod = row?.donationPeriod || row?.paidAt || row?.donatedAt;
-  if (!rawPeriod) return false;
-
-  const period = new Date(`${String(rawPeriod).slice(0, 10)}T00:00:00`);
-  if (Number.isNaN(period.getTime())) return false;
-
-  return (
-    period.getFullYear() === now.getFullYear() &&
-    period.getMonth() === now.getMonth()
-  );
+const toNumber = (value) => {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
 };
+
+const summarizeMonthlyGroups = (rows) =>
+  rows.reduce(
+    (summary, row) => ({
+      totalUsd:
+        summary.totalUsd +
+        toNumber(
+          row?.overallTotalUsd ??
+            row?.totalAmountUsd ??
+            row?.amountUsd,
+        ),
+      donors:
+        summary.donors +
+        toNumber(row?.donorCount ?? 1),
+    }),
+    { totalUsd: 0, donors: 0 },
+  );
 
 export default function DonationCards() {
   const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
@@ -66,17 +75,25 @@ export default function DonationCards() {
       fetchMyAccountCollection("donations/monthly")
         .then((rows) => {
           if (cancelled) return;
-          const currentMonthRows = rows.filter((row) =>
-            isCurrentMonthDonation(row),
-          );
-          setSummary({
-            totalUsd: currentMonthRows.reduce(
-              (total, row) =>
-                total + Number(row.overallTotalUsd ?? row.totalAmountUsd ?? row.amountUsd ?? 0),
-              0,
+          // The summary cards represent everything shown by this donation
+          // section, not only the current calendar month. A member's self-
+          // service endpoint returns one donation row per record, so each row
+          // contributes one record to the count.
+          setSummary(
+            rows.reduce(
+              (summary, row) => ({
+                totalUsd:
+                  summary.totalUsd +
+                  toNumber(
+                    row?.totalAmountUsd ??
+                      row?.overallTotalUsd ??
+                      row?.amountUsd,
+                  ),
+                donors: summary.donors + 1,
+              }),
+              { totalUsd: 0, donors: 0 },
             ),
-            donors: currentMonthRows.length,
-          });
+          );
         })
         .catch(() => { if (!cancelled) setSummary({ totalUsd: 0, donors: 0 }); });
       return () => { cancelled = true; };
@@ -91,14 +108,12 @@ export default function DonationCards() {
         if (!response.ok || body?.success === false) throw new Error();
         const page = body?.data ?? body;
         const rows = Array.isArray(page?.items) ? page.items : [];
-        const currentMonthRows = rows.filter((row) =>
-          isCurrentMonthDonation(row),
-        );
         if (cancelled) return;
-        setSummary(currentMonthRows.reduce((total, row) => ({
-          totalUsd: total.totalUsd + Number(row.overallTotalUsd || 0),
-          donors: total.donors + Number(row.donorCount || 0),
-        }), { totalUsd: 0, donors: 0 }));
+
+        // MonthlyDonationController groups rows by branch + donation period.
+        // Sum every returned group so an older donation (for example June or
+        // July while the current month is August) still appears in the cards.
+        setSummary(summarizeMonthlyGroups(rows));
       })
       .catch(() => {
         if (!cancelled) setSummary({ totalUsd: 0, donors: 0 });
@@ -109,12 +124,12 @@ export default function DonationCards() {
 
   return (
     <div className="flex gap-[50px] xl:grid-cols-2">
-      <DonationCard label="ថវិកាប្រចាំខែ" value={`$${summary.totalUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="0%" note="ក្នុងខែនេះ" />
+      <DonationCard label="ថវិកាប្រចាំខែ" value={`$${summary.totalUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="" note="" />
       <DonorCard
         label={isMemberScoped ? "ចំនួនកំណត់ត្រា" : "អ្នកបរិច្ចាគសរុប"}
         value={`${summary.donors} ${isMemberScoped ? "លើក" : "នាក់"}`}
-        growth="0%"
-        note="ក្នុងខែនេះ"
+        growth=""
+        note=""
       />
     </div>
   );

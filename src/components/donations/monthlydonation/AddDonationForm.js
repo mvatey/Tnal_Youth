@@ -56,7 +56,7 @@ function mapMonthlyMember(member, branchLabel, month, year) {
     realAmount: member.amountKhr ?? "0",
     dollarAmount: member.amountUsd ?? "0",
     paymentMethodId: member.paymentMethodId ?? "",
-    paymentMethod: member.paymentMethodCode || "",
+    paymentMethod: member.paymentMethodCode || "CASH",
     receiptFileId: member.receiptFileId ?? null,
     alreadyPaid: Boolean(member.alreadyPaid),
   };
@@ -192,15 +192,45 @@ const summary = useMemo(() => {
   };
 }, [editableRows]);
 
-const paymentSummary = useMemo(
-  () => ({
-    cash: editableRows.filter((row) => row.paymentMethod === "Cash").length,
-    bank: editableRows.filter((row) =>
-      BANK_PAYMENT_METHODS.has(row.paymentMethod),
-    ).length,
-  }),
-  [editableRows],
-);
+const paymentSummary = useMemo(() => {
+  // Count only rows that actually contain a donation amount.
+  // The select visually defaults to Cash even when the backend returns
+  // an empty paymentMethodCode, so resolve the real method from either
+  // paymentMethodId, paymentMethod/code, or finally CASH.
+  const paidRows = editableRows.filter(
+    (row) =>
+      (Number(row.realAmount) || 0) > 0 ||
+      (Number(row.dollarAmount) || 0) > 0,
+  );
+
+  const methodCodeFor = (row) => {
+    const matchedMethod = paymentMethods.find(
+      (option) =>
+        String(option.id) === String(row.paymentMethodId) ||
+        String(option.code || "").toUpperCase() ===
+          String(row.paymentMethod || "").toUpperCase(),
+    );
+
+    return String(
+      matchedMethod?.code || row.paymentMethod || "CASH",
+    )
+      .trim()
+      .toUpperCase()
+      .replace(/[\s-]+/g, "_");
+  };
+
+  const cash = paidRows.filter((row) =>
+    ["CASH", "CASH_PAYMENT", "DIRECT", "DIRECT_PAYMENT"].includes(
+      methodCodeFor(row),
+    ),
+  ).length;
+
+  // The lookup request uses includeMaterial=false, so every paid method
+  // that is not cash/direct is a bank/electronic payment for this page.
+  const bank = paidRows.length - cash;
+
+  return { cash, bank };
+}, [editableRows, paymentMethods]);
 
 
   useEffect(() => {

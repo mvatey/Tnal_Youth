@@ -1,9 +1,7 @@
 "use client";
 
-import {
-  useState,
-} from "react";
-
+import { useState } from "react";
+import { useParams } from "next/navigation";
 import {
   Lock,
   Eye,
@@ -12,31 +10,17 @@ import {
   Info,
 } from "lucide-react";
 
-import {
-  useParams,
-} from "next/navigation";
-
-import SaveButton from "@/components/forms/SaveButton";
-
-async function requestJson(
-  path,
-  options = {},
-) {
-  const response = await fetch(
-    `/api${path}`,
-    {
-      ...options,
-
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        ...(options.headers || {}),
-      },
+async function requestJson(path, options = {}) {
+  const response = await fetch(`/api${path}`, {
+    ...options,
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
     },
-  );
+  });
 
-  const text =
-    await response.text();
+  const text = await response.text();
 
   let body = null;
 
@@ -65,37 +49,23 @@ async function requestJson(
   return body;
 }
 
-function validatePassword(
-  password,
-) {
-  return {
-    minimumLength: password.length >= 6,
-  };
-}
-
 export default function PasswordPage() {
-  const params =
-    useParams();
+  const params = useParams();
 
-  const memberId =
-    Array.isArray(params?.id)
-      ? params.id[0]
-      : params?.id;
+  const memberId = Array.isArray(params?.id)
+    ? params.id[0]
+    : params?.id;
 
-  const [
-    newPassword,
-    setNewPassword,
-  ] = useState("");
+  const [newPassword, setNewPassword] =
+    useState("");
 
   const [
     confirmPassword,
     setConfirmPassword,
   ] = useState("");
 
-  const [
-    showNew,
-    setShowNew,
-  ] = useState(false);
+  const [showNew, setShowNew] =
+    useState(false);
 
   const [
     showConfirm,
@@ -107,113 +77,96 @@ export default function PasswordPage() {
     setSubmitting,
   ] = useState(false);
 
-  const [
-    error,
-    setError,
-  ] = useState("");
+  const [error, setError] =
+    useState("");
 
-  const [
-    success,
-    setSuccess,
-  ] = useState("");
+  const [success, setSuccess] =
+    useState("");
 
-  const rules =
-    validatePassword(
-      newPassword,
-    );
-
-  const passwordValid =
-    rules.minimumLength;
+  const minimumLength =
+    newPassword.length >= 6;
 
   const passwordsMatch =
     newPassword !== "" &&
-    newPassword ===
-      confirmPassword;
+    newPassword === confirmPassword;
 
-  const handleSubmit =
-    async (event) => {
-      event.preventDefault();
+  async function handleSubmit(event) {
+    event.preventDefault();
 
-      setError("");
-      setSuccess("");
+    setError("");
+    setSuccess("");
 
-      if (!newPassword) {
-        setError(
-          "សូមបញ្ចូលពាក្យសម្ងាត់ថ្មី។",
-        );
+    if (!newPassword) {
+      setError(
+        "សូមបញ្ចូលពាក្យសម្ងាត់ថ្មី។",
+      );
+      return;
+    }
 
-        return;
-      }
+    if (!minimumLength) {
+      setError(
+        "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ។",
+      );
+      return;
+    }
 
-      if (newPassword.length < 6) {
-        setError(
-          "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ។",
-        );
+    if (!confirmPassword) {
+      setError(
+        "សូមបញ្ជាក់ពាក្យសម្ងាត់ថ្មី។",
+      );
+      return;
+    }
 
-        return;
-      }
+    if (!passwordsMatch) {
+      setError(
+        "ពាក្យសម្ងាត់ថ្មី និងការបញ្ជាក់ពាក្យសម្ងាត់មិនត្រូវគ្នា។",
+      );
+      return;
+    }
 
-      if (!passwordsMatch) {
-        setError(
-          "ពាក្យសម្ងាត់ថ្មី និងការបញ្ជាក់ពាក្យសម្ងាត់មិនត្រូវគ្នា។",
-        );
+    if (!memberId) {
+      setError(
+        "រកមិនឃើញលេខសម្គាល់សមាជិក។",
+      );
+      return;
+    }
 
-        return;
-      }
+    try {
+      setSubmitting(true);
 
-      if (!memberId) {
-        setError(
-          "រកមិនឃើញលេខសម្គាល់សមាជិក។",
-        );
+      await requestJson(
+        `/members/${memberId}/account/password`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            new_password:
+              newPassword,
+            confirm_password:
+              confirmPassword,
+          }),
+        },
+      );
 
-        return;
-      }
+      setSuccess(
+        "បានកំណត់ពាក្យសម្ងាត់ថ្មីដោយជោគជ័យ។",
+      );
 
-      try {
-        setSubmitting(true);
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (submitError) {
+      console.error(
+        "Reset password error:",
+        submitError,
+      );
 
-        const data =
-          await requestJson(
-            `/members/${memberId}/account/password`,
-            {
-              method: "PATCH",
-
-              body:
-                JSON.stringify({
-                  new_password:
-                    newPassword,
-
-                  confirm_password:
-                    confirmPassword,
-                }),
-            },
-          );
-
-        console.log(
-          "Password reset response:",
-          data,
-        );
-
-        setSuccess(
-          "បានផ្លាស់ប្ដូរពាក្យសម្ងាត់ដោយជោគជ័យ។",
-        );
-
-        setNewPassword("");
-        setConfirmPassword("");
-      } catch (submitError) {
-        console.error(
-          "Cannot reset member password:",
-          submitError,
-        );
-
-        setError(
-          submitError.message ||
-            "មិនអាចផ្លាស់ប្ដូរពាក្យសម្ងាត់បានទេ។",
-        );
-      } finally {
-        setSubmitting(false);
-      }
-    };
+      setError(
+        submitError?.message ||
+          "មិនអាចកំណត់ពាក្យសម្ងាត់ថ្មីបានទេ។",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -223,14 +176,14 @@ export default function PasswordPage() {
         </h2>
 
         <p className="mt-2 text-sm text-text-secondary">
-          សូមបញ្ចូលពាក្យសម្ងាត់ថ្មី ដើម្បីកំណត់ពាក្យសម្ងាត់ថ្មីសម្រាប់សមាជិក។
+          បញ្ចូលពាក្យសម្ងាត់ថ្មី
+          និងបញ្ជាក់ពាក្យសម្ងាត់ថ្មី
+          ដើម្បីកំណត់ពាក្យសម្ងាត់សម្រាប់សមាជិក។
         </p>
       </div>
 
       <form
-        onSubmit={
-          handleSubmit
-        }
+        onSubmit={handleSubmit}
         className="
           grid
           grid-cols-1
@@ -239,23 +192,22 @@ export default function PasswordPage() {
         "
       >
         <div className="space-y-5">
-          <BoxFill
+          <PasswordInput
             label="ពាក្យសម្ងាត់ថ្មី"
-            value={
-              newPassword
-            }
+            value={newPassword}
             onChange={
               setNewPassword
             }
-            show={
-              showNew
-            }
-            setShow={
-              setShowNew
+            show={showNew}
+            onToggle={() =>
+              setShowNew(
+                (previous) =>
+                  !previous,
+              )
             }
           />
 
-          <BoxFill
+          <PasswordInput
             label="បញ្ជាក់ពាក្យសម្ងាត់ថ្មី"
             value={
               confirmPassword
@@ -263,46 +215,102 @@ export default function PasswordPage() {
             onChange={
               setConfirmPassword
             }
-            show={
-              showConfirm
-            }
-            setShow={
-              setShowConfirm
+            show={showConfirm}
+            onToggle={() =>
+              setShowConfirm(
+                (previous) =>
+                  !previous,
+              )
             }
           />
 
           {error && (
-            <p className="text-sm font-medium text-error">
+            <div
+              className="
+                rounded-lg
+                border
+                border-red-200
+                bg-red-50
+                px-4
+                py-3
+                text-sm
+                text-red-600
+              "
+            >
               {error}
-            </p>
+            </div>
           )}
 
           {success && (
-            <p className="text-sm font-medium text-success">
+            <div
+              className="
+                rounded-lg
+                border
+                border-green-200
+                bg-green-50
+                px-4
+                py-3
+                text-sm
+                text-green-600
+              "
+            >
               {success}
-            </p>
+            </div>
           )}
 
           <div className="flex justify-end pt-3">
-            <SaveButton
+            <button
               type="submit"
               disabled={
                 submitting
               }
+              className="
+                min-w-[120px]
+                rounded-lg
+                bg-[#5533a5]
+                px-6
+                py-2.5
+                text-sm
+                font-medium
+                text-white
+                transition
+                hover:opacity-90
+                disabled:cursor-not-allowed
+                disabled:opacity-60
+              "
             >
               {submitting
                 ? "កំពុងរក្សាទុក..."
                 : "រក្សាទុក"}
-            </SaveButton>
+            </button>
           </div>
         </div>
 
-        <div className="h-fit rounded-xl border border-warning bg-bg-page-white p-5">
+        <div
+          className="
+            h-fit
+            rounded-xl
+            border
+            border-orange-400
+            bg-white
+            p-5
+          "
+        >
           <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-warning-bg">
+            <div
+              className="
+                flex
+                h-12
+                w-12
+                items-center
+                justify-center
+                rounded-xl
+                bg-orange-100
+              "
+            >
               <Info
-                className="text-warning"
                 size={22}
+                className="text-orange-500"
               />
             </div>
 
@@ -312,10 +320,18 @@ export default function PasswordPage() {
           </div>
 
           <div className="space-y-4">
-            <Rule
+            <PasswordRule
               valid={
-                rules.minimumLength
+                minimumLength
               }
+              text="ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ"
+            />
+
+            <PasswordRule
+              valid={
+                passwordsMatch
+              }
+              text="ការបញ្ជាក់ពាក្យសម្ងាត់ត្រូវតែដូចពាក្យសម្ងាត់ថ្មី"
             />
           </div>
         </div>
@@ -324,23 +340,37 @@ export default function PasswordPage() {
   );
 }
 
-function BoxFill({
+function PasswordInput({
   label,
   value,
   onChange,
   show,
-  setShow,
+  onToggle,
 }) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-text-primary">
+      <label
+        className="
+          mb-2
+          block
+          text-sm
+          font-medium
+          text-text-primary
+        "
+      >
         {label}
       </label>
 
       <div className="relative">
         <Lock
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
           size={18}
+          className="
+            absolute
+            left-4
+            top-1/2
+            -translate-y-1/2
+            text-text-secondary
+          "
         />
 
         <input
@@ -351,12 +381,14 @@ function BoxFill({
           }
           value={value}
           onChange={(event) =>
-            onChange(event.target.value)
+            onChange(
+              event.target.value,
+            )
           }
           placeholder="បញ្ចូលពាក្យសម្ងាត់"
           autoComplete="new-password"
           className="
-            h-[34px]
+            h-10
             w-full
             rounded-lg
             border
@@ -365,27 +397,28 @@ function BoxFill({
             pl-11
             pr-11
             text-sm
+            text-text-primary
             outline-none
             transition
-            focus:border-primary
+            focus:border-secondary
           "
         />
 
         <button
           type="button"
-          onClick={() =>
-            setShow(!show)
-          }
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary"
+          onClick={onToggle}
+          className="
+            absolute
+            right-4
+            top-1/2
+            -translate-y-1/2
+            text-text-secondary
+          "
         >
           {show ? (
-            <EyeOff
-              size={18}
-            />
+            <EyeOff size={18} />
           ) : (
-            <Eye
-              size={18}
-            />
+            <Eye size={18} />
           )}
         </button>
       </div>
@@ -393,7 +426,10 @@ function BoxFill({
   );
 }
 
-function Rule({ valid }) {
+function PasswordRule({
+  valid,
+  text,
+}) {
   return (
     <div className="flex items-center gap-3">
       <div
@@ -407,8 +443,8 @@ function Rule({ valid }) {
           border
           ${
             valid
-              ? "border-success bg-success-bg"
-              : "border-warning"
+              ? "border-green-500 bg-green-50"
+              : "border-orange-400"
           }
         `}
       >
@@ -416,14 +452,14 @@ function Rule({ valid }) {
           size={14}
           className={
             valid
-              ? "text-success"
-              : "text-warning"
+              ? "text-green-500"
+              : "text-orange-500"
           }
         />
       </div>
 
       <p className="text-sm font-medium text-text-primary">
-        ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ
+        {text}
       </p>
     </div>
   );
