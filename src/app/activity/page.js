@@ -237,7 +237,22 @@ export default function ActivityPage() {
     };
   }, []);
 
+  // Guards against a stale response overwriting a fresher one. On mount (or
+  // right after a full-page branch switch), BranchContext's selectedBranch
+  // starts at "all" for one tick before its own effect resolves the real
+  // persisted branch — so this effect fires once for "all" (unscoped, every
+  // branch this secretary/branch-leader covers) and again right after for
+  // the actual branch. If the unscoped request happens to resolve LATER
+  // than the scoped one (nothing here cancels it), its broader result used
+  // to clobber the correctly-scoped one — showing activities from every
+  // branch the account covers, including one just added, instead of only
+  // the branch currently selected. Only ever applying the response from
+  // the most recently *fired* request fixes that.
+  const requestIdRef = useRef(0);
+
   const loadActivities = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+
     setLoading(true);
     setLoadError("");
 
@@ -272,7 +287,7 @@ export default function ActivityPage() {
         ? await branchResponse.json()
         : [];
 
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
 
       setActivityRecords(
         Array.isArray(activityBody?.content)
@@ -298,12 +313,14 @@ export default function ActivityPage() {
         })),
       );
     } catch (error) {
-      if (mountedRef.current) {
+      if (mountedRef.current && requestId === requestIdRef.current) {
         setActivityRecords([]);
         setLoadError(error.message || "Cannot load activities");
       }
     } finally {
-      if (mountedRef.current) setLoading(false);
+      if (mountedRef.current && requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [selectedBranch]);
 
@@ -512,7 +529,7 @@ export default function ActivityPage() {
     {
       key: "sector",
       label: "វិស័យ",
-      width: "7%",
+      width: "6%",
       align: "center",
     },
     {
@@ -525,7 +542,7 @@ export default function ActivityPage() {
     {
       key: "location",
       label: "ទីតាំង",
-      width: "10%",
+      width: "8%",
       align: "center",
       truncate: true,
       render: (row) => {
@@ -543,13 +560,13 @@ export default function ActivityPage() {
     {
       key: "date",
       label: "ថ្ងៃចាប់ផ្តើម",
-      width: "12%",
+      width: "10%",
       align: "center",
     },
     {
       key: "duration",
       label: "រយៈពេល",
-      width: "7%",
+      width: "6%",
       align: "center",
     },
     {
@@ -570,7 +587,7 @@ export default function ActivityPage() {
     {
       key: "actions",
       label: "សកម្មភាព",
-      width: "12%",
+      width: "14%",
       align: "center",
       render: (row) => {
         // Only an invited-and-not-yet-responded row gets Accept/Decline —
@@ -582,14 +599,14 @@ export default function ActivityPage() {
           const isResponding = respondingActivityId === row.id;
 
           return (
-            <div className="mx-auto flex w-fit items-center justify-center gap-1.5">
+            <div className="mx-auto flex w-fit items-center justify-center gap-1">
               <button
                 type="button"
                 disabled={isResponding}
                 onClick={() =>
                   handleRespond(row.id, row.invitationId, "ACCEPTED")
                 }
-                className="inline-flex h-[22px] items-center justify-center gap-1 whitespace-nowrap rounded-[8px] bg-success px-2.5 text-[10px] font-Regular text-white transition hover:bg-emerald-700 disabled:opacity-60"
+                className="inline-flex h-[22px] items-center justify-center gap-1 whitespace-nowrap rounded-[8px] bg-success px-2 text-[10px] font-Regular text-white transition hover:bg-emerald-700 disabled:opacity-60"
               >
                 <CheckCircle2 size={12} />
                 ទទួល
@@ -600,12 +617,25 @@ export default function ActivityPage() {
                 onClick={() =>
                   handleRespond(row.id, row.invitationId, "DECLINED")
                 }
-                className="inline-flex h-[22px] items-center justify-center gap-1 whitespace-nowrap rounded-[8px] border border-border px-2.5 text-[10px] font-Regular text-text-secondary transition hover:bg-bg-page-gray disabled:opacity-60"
+                className="inline-flex h-[22px] items-center justify-center gap-1 whitespace-nowrap rounded-[8px] border border-border px-2 text-[10px] font-Regular text-text-secondary transition hover:bg-bg-page-gray disabled:opacity-60"
               >
                 <XCircle size={12} />
                 បដិសេធ
               </button>
             </div>
+          );
+        }
+
+        // A declined invitation stays in the table as a historical row
+        // (see ActivityServiceImpl#getActivities — DECLINED is included in
+        // the query on purpose) instead of vanishing, so mark it in red
+        // here rather than offering an action there's nothing left to take.
+        if (row.ownBranch === false && row.invitationStatus === "DECLINED") {
+          return (
+            <span className="mx-auto inline-flex h-[22px] w-fit items-center justify-center gap-1 whitespace-nowrap rounded-[8px] bg-error-bg px-2.5 text-[10px] font-Regular text-error">
+              <XCircle size={12} />
+              បានបដិសេធ
+            </span>
           );
         }
 

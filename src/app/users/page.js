@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
-import { UserCheck, UserX, Users as UsersIcon } from "lucide-react";
+import { ExternalLink, SquarePen, UserCheck, UserX, Users as UsersIcon } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
 import DataTable from "@/components/table/DataTable.js";
@@ -161,6 +162,14 @@ function mapUser(user) {
     nameKh: user?.fullNameKm || user?.fullNameEn || "-",
     phone: user?.phone || "-",
     email: user?.email || "-",
+    // Raw fields (unformatted) kept alongside the display-formatted ones
+    // above so the Edit modal can pre-fill its form directly from a row
+    // instead of needing a separate GET-by-id call.
+    fullNameKmRaw: user?.fullNameKm || "",
+    fullNameEnRaw: user?.fullNameEn || "",
+    phoneRaw: user?.phone || "",
+    emailRaw: user?.email || "",
+    viewerScopeRaw: user?.viewerScope || "",
     roleCode: String(user?.role || "").toUpperCase(),
     roleLabel:
       (String(user?.role || "").toUpperCase() === "VIEWER" && user?.viewerScope
@@ -210,6 +219,7 @@ export default function UsersPage() {
   const [statusOptions, setStatusOptions] = useState(FALLBACK_STATUS_OPTIONS);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
 
   /*
    * =========================================
@@ -360,6 +370,21 @@ export default function UsersPage() {
     }
   };
 
+  const handleUpdateUser = async () => {
+    const controller = new AbortController();
+
+    try {
+      await Promise.all([
+        loadSummary(controller.signal),
+        loadUsers(controller.signal),
+      ]);
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        console.warn("Failed to refresh users:", error.message);
+      }
+    }
+  };
+
   /*
    * =========================================
    * TABLE
@@ -376,7 +401,7 @@ export default function UsersPage() {
       },
       {
         header: "ឈ្មោះ",
-        width: "w-[17%]",
+        width: "w-[18%]",
         align: "left",
         render: (user) => (
           <span className="block w-full truncate font-medium text-text-secondary">
@@ -385,16 +410,8 @@ export default function UsersPage() {
         ),
       },
       {
-        header: "លេខទូរស័ព្ទ",
-        width: "w-[14%]",
-        align: "left",
-        render: (user) => (
-          <span className="block w-full truncate">{user.phone}</span>
-        ),
-      },
-      {
         header: "អ៊ីមែល",
-        width: "w-[16%]",
+        width: "w-[19%]",
         align: "left",
         render: (user) => (
           <span className="block w-full truncate">{user.email}</span>
@@ -402,7 +419,7 @@ export default function UsersPage() {
       },
       {
         header: "តួនាទី",
-        width: "w-[14%]",
+        width: "w-[13%]",
         align: "center",
         render: (user) => <span>{user.roleLabel}</span>,
       },
@@ -420,7 +437,7 @@ export default function UsersPage() {
       },
       {
         header: "ស្ថានភាព",
-        width: "w-[14%]",
+        width: "w-[12%]",
         align: "center",
         render: (user) => (
           <span
@@ -447,14 +464,44 @@ export default function UsersPage() {
       },
       {
         header: "ថ្ងៃបង្កើត",
-        width: "w-[11%]",
+        width: "w-[12%]",
         align: "left",
         render: (user) => (
-          <span className="block w-full truncate">{user.createdAt}</span>
+          <span className="block w-full whitespace-nowrap">{user.createdAt}</span>
         ),
       },
+      {
+        header: "សកម្មភាព",
+        width: "w-[6%]",
+        align: "center",
+        // A member-linked account is edited through that member's own
+        // personal-info page instead of here — see CreateUserModal's
+        // editingUser note and UserManagementServiceImpl#updateUser,
+        // which rejects one anyway. Link straight there instead of
+        // leaving the row with no action at all.
+        render: (user) =>
+          isViewer ? null : user.memberId == null ? (
+            <button
+              type="button"
+              onClick={() => setEditingUser(user)}
+              aria-label="កែប្រែ"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-warning transition hover:bg-warning-bg"
+            >
+              <SquarePen size={16} strokeWidth={1.8} />
+            </button>
+          ) : (
+            <Link
+              href={`/member/memberInfo/${user.memberId}/details/personal`}
+              aria-label="កែប្រែតាមទំព័រសមាជិក"
+              title="កែប្រែតាមទំព័រសមាជិក"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-primary transition hover:bg-primary-light"
+            >
+              <ExternalLink size={16} strokeWidth={1.8} />
+            </Link>
+          ),
+      },
     ],
-    [],
+    [isViewer],
   );
 
   const filterConfig = [
@@ -559,6 +606,17 @@ export default function UsersPage() {
           open={isCreateOpen}
           onClose={() => setIsCreateOpen(false)}
           onSave={handleCreateUser}
+        />
+      )}
+
+      {/* EDIT MODAL */}
+
+      {!isViewer && (
+        <CreateUserModal
+          open={Boolean(editingUser)}
+          editingUser={editingUser}
+          onClose={() => setEditingUser(null)}
+          onSave={handleUpdateUser}
         />
       )}
     </div>

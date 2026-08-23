@@ -1227,6 +1227,9 @@ export default function CreateMemberModal({
                   onChange={update(
                     "role",
                   )}
+                  disabled={Boolean(
+                    form.positionId,
+                  )}
                 />
 
                 <BoxFill

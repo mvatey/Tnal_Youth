@@ -9,6 +9,7 @@ import DataTable from "@/components/table/DataTable";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
 import { useAuth } from "@/context/AuthContext";
+import { useBranch } from "@/context/BranchContext";
 import { normalizeRole } from "@/lib/navigation";
 
 const DOCUMENT_TYPE_BADGE_STYLES = {
@@ -33,6 +34,7 @@ export default function MemberDocumentPage() {
   const router = useRouter();
   const { user } = useAuth();
   const role = normalizeRole(user?.role);
+  const { selectedBranch } = useBranch();
 
   /*
    * SECRETARY and BRANCH_LEADER may create certificates/letters of
@@ -97,7 +99,15 @@ export default function MemberDocumentPage() {
 
     const matchDate = !dateFilter || item.date === dateFilter;
 
-    return matchSearch && matchType && matchDate;
+    // A document with no branch on record stays visible no matter which
+    // branch is selected, rather than disappearing under every branch
+    // filter — see the company-tab page for the same rule.
+    const matchBranch =
+      selectedBranch === "all" ||
+      item.branchId == null ||
+      String(item.branchId) === String(selectedBranch);
+
+    return matchSearch && matchType && matchDate && matchBranch;
   });
 
   const columns = [
@@ -311,6 +321,7 @@ function mapMemberDocument(row) {
     memberName: row.member?.fullNameKm || row.member?.full_name_km || row.member?.fullNameEn || row.member?.full_name_en || "-",
     gender: row.member?.genderLabelKm || row.member?.gender_label_km || genderLabels[genderCode] || row.member?.genderLabelEn || row.member?.gender_label_en || "-",
     branch: row.branch?.nameKm || row.branch?.name_km || row.branch?.nameEn || row.branch?.name_en || "-",
+    branchId: row.branch?.id ?? row.branch?.branchId ?? row.branch?.branch_id ?? null,
     date: row.created_at ? row.created_at.slice(0, 10) : "-",
     size: formatSize(row.file?.sizeBytes),
     type: normalizedType,

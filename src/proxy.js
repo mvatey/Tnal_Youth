@@ -55,6 +55,7 @@ const ROUTE_ROLES = {
   ],
 
   "/myAcc": [
+    "ADMIN",
     "SECRETARY",
     "BRANCH_LEADER",
     "MEMBER",

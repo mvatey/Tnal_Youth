@@ -12,6 +12,7 @@ import EditDocumentForm from "@/components/document/EditDocumentForm";
 import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
 import DeleteConfirmModal from "@/components/popup/Confirmdeletemodal";
 import { useAuth } from "@/context/AuthContext";
+import { useBranch } from "@/context/BranchContext";
 import { normalizeRole } from "@/lib/navigation";
 
 const EMPTY_FORM = {
@@ -38,6 +39,7 @@ export default function CompanyDocumentPage() {
   const router = useRouter();
   const { user } = useAuth();
   const role = normalizeRole(user?.role);
+  const { selectedBranch } = useBranch();
 
   /*
    * SECRETARY and BRANCH_LEADER may add, edit, or delete documents
@@ -161,8 +163,15 @@ export default function CompanyDocumentPage() {
     const matchSearch = item.title?.toLowerCase().includes(searchValue);
     const matchType = !typeFilter || item.type === typeFilter;
     const matchDate = !dateFilter || item.date === dateFilter;
+    // A document with no branch (an org-wide document, not tied to any one
+    // branch) stays visible no matter which branch is selected, rather than
+    // disappearing under every branch filter.
+    const matchBranch =
+      selectedBranch === "all" ||
+      item.branchId == null ||
+      String(item.branchId) === String(selectedBranch);
 
-    return matchSearch && matchType && matchDate;
+    return matchSearch && matchType && matchDate && matchBranch;
   });
 
   const columns = [

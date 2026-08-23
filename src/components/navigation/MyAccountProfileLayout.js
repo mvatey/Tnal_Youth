@@ -4,38 +4,53 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useUnsavedChanges } from "@/context/UnsavedChangesContext";
 
-export default function MyAccountProfileLayout({ children }) {
+// isLinkedMember=false (ADMIN, or a standalone secretary/branch-leader/
+// member account with no member record) has nothing for the member-data
+// tabs to show — only password and email are plain account columns that
+// work regardless, so those are the only two tabs offered.
+export default function MyAccountProfileLayout({ children, isLinkedMember = true }) {
   const pathname = usePathname();
   const router = useRouter();
   const { isDirty, guardNavigate } = useUnsavedChanges();
 
-const tabs = [
-    {
-      name: "ប័ណ្ណសម្គាល់ខ្លួននិងលិខិត",
-      href: "/myAcc/documents",
-    },
-    {
-      name: "សកម្មភាព",
-      href: "/myAcc/participation",
-    },
-    {
-      name: "ការធ្វើវិភាគទាន",
-      href: "/myAcc/donation",
-    },{
-      name: "ការបរិច្ចាក",
-      href: "/myAcc/sponsor",
-    },
-    {
-      name: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
-      href: "/myAcc/password",
-    }
-
-  ];
+  const tabs = isLinkedMember
+    ? [
+        {
+          name: "ប័ណ្ណសម្គាល់ខ្លួននិងលិខិត",
+          href: "/myAcc/documents",
+        },
+        {
+          name: "សកម្មភាព",
+          href: "/myAcc/participation",
+        },
+        {
+          name: "ការធ្វើវិភាគទាន",
+          href: "/myAcc/donation",
+        },
+        {
+          name: "ការបរិច្ចាក",
+          href: "/myAcc/sponsor",
+        },
+        {
+          name: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
+          href: "/myAcc/password",
+        },
+      ]
+    : [
+        {
+          name: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
+          href: "/myAcc/password",
+        },
+        {
+          name: "ផ្លាស់ប្ដូរអ៊ីមែល",
+          href: "/myAcc/email",
+        },
+      ];
 
   return (
     <div className="space-y-4">
       <div className="bg-bg-page-white rounded-lg shadow-sm overflow-hidden">
-      <div className="grid grid-cols-5">
+      <div className={isLinkedMember ? "grid grid-cols-5" : "grid grid-cols-2"}>
         {tabs.map((tab) => {
           const active = pathname === tab.href;
 

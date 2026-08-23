@@ -1105,10 +1105,32 @@ export default function PersonalPage() {
     // Admin sees all accessible branches; branch-scoped staff only see
     // branches they are allowed to operate in. Keep the member's current
     // assignments injected below so an existing value never disappears.
-    const scopedBranches =
+    const rawScopedBranches =
       accessibleBranches.length > 0
         ? accessibleBranches
         : branches;
+
+    // rawScopedBranches can come from either accessibleBranches
+    // (BranchContext — shape { id, nameKm, nameEn }) or the page's own
+    // branches state (shape { value, label }). The local FormSelect below
+    // (this file's own, not the shared component) reads option.value /
+    // option.label directly with no fallback, so every accessibleBranches
+    // entry rendered as a blank option — its name lives on .nameKm, not
+    // .label. Normalizing to one shape up front fixes both that and the
+    // duplicate-checkbox bug (comparing only option.value treated every
+    // accessibleBranches entry as absent, since its id lives on .id).
+    const scopedBranches = rawScopedBranches.map(
+      (option) => ({
+        value: String(
+          option.value ?? option.id ?? "",
+        ),
+        label:
+          option.label ||
+          option.nameKm ||
+          option.nameEn ||
+          String(option.value ?? option.id ?? ""),
+      }),
+    );
 
     const missing = branchMultiValue.filter(
       (value) =>
@@ -1409,9 +1431,18 @@ export default function PersonalPage() {
         return false;
       }
 
-      if (!form.branch_id) {
+      const selectedSecretaryBranches =
+        form.account_role === "SECRETARY"
+          ? branchSelectionIds
+          : [];
+
+      if (
+        form.account_role === "SECRETARY"
+          ? selectedSecretaryBranches.length === 0
+          : !form.branch_id
+      ) {
         setError(
-          "សូមជ្រើសរើសសាខា។",
+          "សូមជ្រើសរើសសាខាយ៉ាងហោចណាស់មួយ។",
         );
 
         return false;
@@ -1474,9 +1505,13 @@ export default function PersonalPage() {
               : null,
 
           branch_id:
-            Number(
-              form.branch_id,
-            ),
+            form.account_role === "SECRETARY"
+              ? (form.branch_id
+                  ? Number(form.branch_id)
+                  : selectedSecretaryBranches[0]
+                    ? Number(selectedSecretaryBranches[0])
+                    : null)
+              : Number(form.branch_id),
 
           tshirt_size:
             form.tshirt_size ||
@@ -1558,187 +1593,53 @@ export default function PersonalPage() {
           );
         }
 
+        let latestBranchId = form.branch_id;
+        let latestBranchNameKm = form.branch_name_km;
+        let latestAssignedBranches = form.assigned_branches;
+        let latestBranchSelection = originalBranchIds;
+
         /*
          * 3. Branch coverage (SECRETARY only)
          *
-         * Diffs the pending multiselect selection against the
-         * last-known-saved set and replays exactly the add/remove
-         * calls the old immediate-fire handler used to make one at a
-         * time — just deferred until now. Each call's response is
-         * authoritative for branch_id / branch_name_km /
-         * assigned_branches, so later calls' results simply overwrite
-         * earlier ones.
-         *
-         * achievedBranchIds tracks which ids have actually landed on
-         * the server so far in this loop. If a later call in the
-         * same save fails partway through (e.g. removing a branch
-         * that turns out to be the member's only one left), the
-         * catch block below still commits whatever DID succeed to
-         * `form` instead of silently discarding it — otherwise a
-         * branch that was genuinely added on the server could be
-         * missing from the UI until the page is reloaded, which is
-         * exactly the "doesn't bring that branch scope to the
-         * secretary" symptom this was built to fix.
+         * Send the complete selected branch set in ONE backend transaction.
+         * This prevents partial saves such as add A -> success, add B ->
+         * success, remove C -> failure. The backend validates every branch
+         * against the current actor's scope and then synchronizes branch_staff
+         * plus members.branch_id atomically.
          */
-        let latestBranchId =
-          form.branch_id;
-        let latestBranchNameKm =
-          form.branch_name_km;
-        let latestAssignedBranches =
-          form.assigned_branches;
-        let latestBranchSelection =
-          originalBranchIds;
+        if (updatedRole === "SECRETARY") {
+          const selectedBranchIds = branchSelectionIds.map((id) => Number(id));
 
-        if (
-          updatedRole === "SECRETARY"
-        ) {
-          const addedBranchIds =
-            branchSelectionIds.filter(
-              (id) =>
-                !originalBranchIds.includes(
-                  id,
-                ),
-            );
-
-          const removedBranchIds =
-            originalBranchIds.filter(
-              (id) =>
-                !branchSelectionIds.includes(
-                  id,
-                ),
-            );
-
-          const achievedBranchIds =
-            new Set(originalBranchIds);
-
-          try {
-            for (const branchIdToAdd of addedBranchIds) {
-              const branchData =
-                await requestJson(
-                  `/members/${memberId}/personal-info/branches`,
-                  {
-                    method:
-                      "POST",
-
-                    body:
-                      JSON.stringify({
-                        branch_id:
-                          Number(
-                            branchIdToAdd,
-                          ),
-                      }),
-                  },
-                );
-
-              achievedBranchIds.add(
-                branchIdToAdd,
-              );
-
-              if (
-                branchData?.branch_id !=
-                null
-              ) {
-                latestBranchId =
-                  String(
-                    branchData.branch_id,
-                  );
-              }
-
-              if (
-                branchData?.branch_name_km
-              ) {
-                latestBranchNameKm =
-                  branchData.branch_name_km;
-              }
-
-              if (
-                Array.isArray(
-                  branchData?.assigned_branches,
-                )
-              ) {
-                latestAssignedBranches =
-                  branchData.assigned_branches;
-              }
-            }
-
-            for (const branchIdToRemove of removedBranchIds) {
-              const branchData =
-                await requestJson(
-                  `/members/${memberId}/personal-info/branches/${branchIdToRemove}`,
-                  {
-                    method:
-                      "DELETE",
-                  },
-                );
-
-              achievedBranchIds.delete(
-                branchIdToRemove,
-              );
-
-              if (
-                branchData?.branch_id !=
-                null
-              ) {
-                latestBranchId =
-                  String(
-                    branchData.branch_id,
-                  );
-              }
-
-              if (
-                branchData?.branch_name_km
-              ) {
-                latestBranchNameKm =
-                  branchData.branch_name_km;
-              }
-
-              if (
-                Array.isArray(
-                  branchData?.assigned_branches,
-                )
-              ) {
-                latestAssignedBranches =
-                  branchData.assigned_branches;
-              }
-            }
-
-            latestBranchSelection =
-              branchSelectionIds;
-          } catch (branchSyncError) {
-            latestBranchSelection =
-              Array.from(
-                achievedBranchIds,
-              );
-
-            setForm(
-              (previous) => ({
-                ...previous,
-                branch_id:
-                  latestBranchId ||
-                  previous.branch_id,
-                branch_name_km:
-                  latestBranchNameKm ||
-                  previous.branch_name_km,
-                assigned_branches:
-                  latestAssignedBranches ||
-                  previous.assigned_branches,
+          const branchData = await requestJson(
+            `/members/${memberId}/personal-info/branches`,
+            {
+              method: "PUT",
+              body: JSON.stringify({
+                branch_ids: selectedBranchIds,
               }),
-            );
+            },
+          );
 
-            setOriginalBranchIds(
-              latestBranchSelection,
-            );
-            setBranchSelectionIds(
-              latestBranchSelection,
-            );
+          latestBranchId =
+            branchData?.branch_id != null
+              ? String(branchData.branch_id)
+              : selectedBranchIds[0]
+                ? String(selectedBranchIds[0])
+                : latestBranchId;
 
-            setError(
-              branchSyncError.message ||
-                "មិនអាចកែប្រែសាខាទទួលបន្ទុកបានទេ។",
-            );
+          latestBranchNameKm =
+            branchData?.branch_name_km ||
+            latestBranchNameKm;
 
-            return false;
-          }
+          latestAssignedBranches =
+            Array.isArray(branchData?.assigned_branches)
+              ? branchData.assigned_branches
+              : latestAssignedBranches;
+
+          latestBranchSelection = selectedBranchIds.map(String);
+
+          setBranchSelectionIds(latestBranchSelection);
+          setOriginalBranchIds(latestBranchSelection);
         }
 
         /*

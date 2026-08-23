@@ -35,14 +35,18 @@ const EMPTY_FORM = {
   role: "VIEWER",
   viewerScope: "ADMIN",
   branchId: "",
+  password: "",
 };
 
 /*
- * No password field — the account is created PENDING_ACTIVATION
- * and the new user sets their own first password through the
- * existing OTP activation flow (send-otp -> verify-otp ->
- * set-password), which is why email is required: it's the OTP
- * delivery channel.
+ * Password is optional. Leave it blank and the account is created
+ * PENDING_ACTIVATION with the new user setting their own first
+ * password through the existing OTP activation flow (send-otp ->
+ * verify-otp -> set-password). Set one here instead, and that becomes
+ * the account's real password right away — the account still requires
+ * that same OTP activation before it can log in, the person just
+ * already knows what to type. Email is required either way: it's the
+ * OTP delivery channel.
  */
 const REQUIRED_FIELDS = [
   "fullNameKm",
@@ -51,17 +55,20 @@ const REQUIRED_FIELDS = [
   "role",
 ];
 
-async function createUser(payload) {
-  const response = await fetch(USERS_BASE, {
-    method: "POST",
-    credentials: "include",
-    cache: "no-store",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
+async function submitUser(payload, userId) {
+  const response = await fetch(
+    userId ? `${USERS_BASE}/${userId}` : USERS_BASE,
+    {
+      method: userId ? "PUT" : "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     },
-    body: JSON.stringify(payload),
-  });
+  );
 
   const text = await response.text();
   let body = null;
@@ -88,7 +95,13 @@ async function createUser(payload) {
   return body;
 }
 
-export default function CreateUserModal({ open, onClose, onSave }) {
+// editingUser: pass a row from /users (see mapUser's *Raw fields) to edit
+// that standalone account instead of creating a new one. Only a standalone
+// account (memberId == null) can be edited here — a member-linked account
+// is edited through that member's own personal-info page instead.
+export default function CreateUserModal({ open, onClose, onSave, editingUser = null }) {
+  const isEditing = Boolean(editingUser);
+
   const [form, setForm] = useState(EMPTY_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [branches, setBranches] = useState([]);
@@ -100,10 +113,24 @@ export default function CreateUserModal({ open, onClose, onSave }) {
       return;
     }
 
-    setForm(EMPTY_FORM);
+    setForm(
+      editingUser
+        ? {
+            fullNameKm: editingUser.fullNameKmRaw || "",
+            fullNameEn: editingUser.fullNameEnRaw || "",
+            phone: editingUser.phoneRaw || "",
+            email: editingUser.emailRaw || "",
+            role: editingUser.roleCode || "VIEWER",
+            viewerScope: editingUser.viewerScopeRaw || "ADMIN",
+            branchId: editingUser.branchId != null ? String(editingUser.branchId) : "",
+            password: "",
+          }
+        : EMPTY_FORM,
+    );
     setShowValidationError(false);
     setSubmitError("");
-  }, [open]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editingUser?.id]);
 
   useEffect(() => {
     if (!open) return;
@@ -169,7 +196,8 @@ export default function CreateUserModal({ open, onClose, onSave }) {
       (field) => String(form[field] ?? "").trim() !== "",
     ) &&
     (!isViewer || String(form.viewerScope).trim() !== "") &&
-    (!requiresBranch || String(form.branchId).trim() !== "");
+    (!requiresBranch || String(form.branchId).trim() !== "") &&
+    (form.password.trim() === "" || form.password.trim().length >= 6);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -191,20 +219,30 @@ export default function CreateUserModal({ open, onClose, onSave }) {
       role: form.role,
       viewerScope: isViewer ? form.viewerScope : null,
       branchId: requiresBranch ? Number(form.branchId) : null,
+      password: form.password.trim() || null,
     };
 
     try {
-      const createdUser = await createUser(payload);
+      const savedUser = await submitUser(
+        payload,
+        isEditing ? editingUser.id : null,
+      );
 
-      await onSave?.(createdUser);
+      await onSave?.(savedUser);
 
       setForm(EMPTY_FORM);
       onClose?.();
     } catch (error) {
-      console.error("Cannot create user:", error);
+      console.error(
+        isEditing ? "Cannot update user:" : "Cannot create user:",
+        error,
+      );
 
       setSubmitError(
-        error.message || "មិនអាចបង្កើតគណនីអ្នកប្រើប្រាស់បានទេ។",
+        error.message ||
+          (isEditing
+            ? "មិនអាចកែប្រែគណនីអ្នកប្រើប្រាស់បានទេ។"
+            : "មិនអាចបង្កើតគណនីអ្នកប្រើប្រាស់បានទេ។"),
       );
     } finally {
       setIsSubmitting(false);
@@ -215,7 +253,7 @@ export default function CreateUserModal({ open, onClose, onSave }) {
     <PopupCard size="md" onClose={onClose}>
       <div className="mb-5 flex items-center justify-between">
         <h2 className="text-lg font-bold text-primary">
-          បង្កើតគណនីអ្នកប្រើប្រាស់ថ្មី
+          {isEditing ? "កែប្រែគណនីអ្នកប្រើប្រាស់" : "បង្កើតគណនីអ្នកប្រើប្រាស់ថ្មី"}
         </h2>
 
         <button
@@ -309,7 +347,26 @@ export default function CreateUserModal({ open, onClose, onSave }) {
               required
             />
           )}
+
+          <BoxFill
+            label="ពាក្យសម្ងាត់ (ស្រេចចិត្ត)"
+            name="password"
+            type="password"
+            placeholder={
+              isEditing
+                ? "ទុកចន្លោះទទេ ដើម្បីរក្សាពាក្យសម្ងាត់ដដែល"
+                : "ទុកចន្លោះទទេ ដើម្បីឱ្យអ្នកប្រើកំណត់ខ្លួនឯង"
+            }
+            value={form.password}
+            onChange={update("password")}
+          />
         </div>
+
+        <p className="text-xs text-text-secondary">
+          {isEditing
+            ? "ប្រសិនបើកំណត់ពាក្យសម្ងាត់ថ្មីនៅទីនេះ វានឹងជំនួសពាក្យសម្ងាត់ចាស់ភ្លាមៗ។"
+            : "ប្រសិនបើកំណត់ពាក្យសម្ងាត់នៅទីនេះ អ្នកប្រើនៅតែត្រូវធ្វើសកម្មភាព (activate) គណនីតាម OTP ជាមុនសិន រួចបញ្ចូលពាក្យសម្ងាត់នេះនៅពេលបញ្ចប់សកម្មភាព។"}
+        </p>
 
         {showValidationError && !isFormValid && (
           <p className="mt-1 text-xs font-medium text-error">
@@ -327,7 +384,7 @@ export default function CreateUserModal({ open, onClose, onSave }) {
           onCancel={onClose}
           isValid={isFormValid && !isSubmitting}
           saving={isSubmitting}
-          saveText="រក្សាទុក"
+          saveText={isEditing ? "កែប្រែ" : "រក្សាទុក"}
           cancelText="បោះបង់"
         />
       </form>

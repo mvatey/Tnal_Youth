@@ -79,6 +79,14 @@ export default function MyAccountLayout({ children }) {
 
   const isDetailsPage = pathname.startsWith("/myAcc/details");
 
+  // An unlinked account (ADMIN, or a standalone secretary/branch-leader/
+  // member account with no member record) has nothing for the
+  // member-data tabs to show, but password/email are plain account
+  // columns that work regardless — let those two through even when
+  // !member.isLinkedMember instead of blocking the whole section.
+  const isSelfServiceOnlyPage =
+    pathname === "/myAcc/password" || pathname === "/myAcc/email";
+
   const displayName =
     member?.name_kh ||
     member?.fullNameKm ||
@@ -164,10 +172,23 @@ export default function MyAccountLayout({ children }) {
                 profileUploadEndpoint="/api/backend/my-account/profile-photo"
               />
 
-              {!member.isLinkedMember ? (
-                <div className="rounded-xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
-                  គណនីនេះមិនទាន់បានភ្ជាប់ជាមួយប្រវត្តិរូបសមាជិកទេ។ សូមទាក់ទងអ្នកគ្រប់គ្រងដើម្បីភ្ជាប់គណនីជាមួយសមាជិកត្រឹមត្រូវ។
+              {!member.isLinkedMember && !isSelfServiceOnlyPage ? (
+                <div className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
+                  <p>
+                    គណនីនេះមិនទាន់បានភ្ជាប់ជាមួយប្រវត្តិរូបសមាជិកទេ។ សូមទាក់ទងអ្នកគ្រប់គ្រងដើម្បីភ្ជាប់គណនីជាមួយសមាជិកត្រឹមត្រូវ។
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/myAcc/password")}
+                    className="text-sm font-semibold text-primary underline"
+                  >
+                    ផ្លាស់ប្ដូរពាក្យសម្ងាត់ ឬអ៊ីមែលរបស់អ្នក
+                  </button>
                 </div>
+              ) : !member.isLinkedMember ? (
+                <MyAccountProfileLayout isLinkedMember={false}>
+                  {children}
+                </MyAccountProfileLayout>
               ) : isDetailsPage ? (
                 children
               ) : (
