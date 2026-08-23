@@ -30,7 +30,7 @@ export default function PoliticalPage() {
 
   const [member, setMember] = useState(null);
   const [politicals, setPoliticals] = useState([]);
-  const parties = politicalData.organizationTypes || [];
+  const [parties, setParties] = useState([]);
   const [error, setError] = useState("");
 
   /*
@@ -69,6 +69,42 @@ export default function PoliticalPage() {
       });
     return () => controller.abort();
   }, [memberId]);
+
+  // The "party" options are admin-managed lookups (see the variable
+  // page's "គណបក្សនយោបាយ" category) rather than a hardcoded list, same
+  // source myAcc's own political-affiliation tab already uses.
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch("/api/lookups/political-parties", {
+      cache: "no-store",
+      credentials: "include",
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : []))
+      .then((items) => {
+        const rows = Array.isArray(items) ? items : [];
+        setParties(rows.map((item) => ({
+          value: String(item.value ?? item.id ?? ""),
+          label:
+            item.labelKm ||
+            item.label_km ||
+            item.nameKm ||
+            item.name_km ||
+            item.labelEn ||
+            item.label_en ||
+            item.nameEn ||
+            item.name_en ||
+            item.code ||
+            String(item.value ?? item.id ?? ""),
+        })));
+      })
+      .catch((lookupError) => {
+        if (lookupError.name !== "AbortError") setParties([]);
+      });
+
+    return () => controller.abort();
+  }, []);
 
   function handlePoliticalChange(id, field, value) {
     setHasUnsavedChanges(true);

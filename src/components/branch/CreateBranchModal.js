@@ -452,7 +452,7 @@ export default function CreateBranchModal({
       setProvinceOptions([]);
 
       setError(
-        `ខេត្ត: ${provinceError.message}`,
+        "មិនអាចទាញយកបញ្ជីរាជធានី/ខេត្តបានទេ",
       );
     }
   }
@@ -512,7 +512,7 @@ export default function CreateBranchModal({
 
       setError((previous) => {
         const statusMessage =
-          `ស្ថានភាព: ${statusError.message}`;
+          "មិនអាចទាញយកបញ្ជីស្ថានភាពសាខាបានទេ";
 
         return previous
           ? `${previous} | ${statusMessage}`
@@ -609,8 +609,7 @@ export default function CreateBranchModal({
           setDistrictOptions([]);
 
           setError(
-            districtError.message ||
-              "មិនអាចទាញយកក្រុង/ស្រុក/ខណ្ឌបានទេ",
+            "មិនអាចទាញយកក្រុង/ស្រុក/ខណ្ឌបានទេ",
           );
         }
       } finally {
@@ -683,8 +682,7 @@ export default function CreateBranchModal({
           setCommuneOptions([]);
 
           setError(
-            communeError.message ||
-              "មិនអាចទាញយកឃុំ/សង្កាត់បានទេ",
+            "មិនអាចទាញយកឃុំ/សង្កាត់បានទេ",
           );
         }
       } finally {
@@ -924,8 +922,7 @@ try {
       );
 
       setError(
-        submitError.message ||
-          "មិនអាចរក្សាទុកព័ត៌មានសាខាបានទេ",
+        "មិនអាចរក្សាទុកព័ត៌មានសាខាបានទេ",
       );
     } finally {
       setIsSubmitting(false);

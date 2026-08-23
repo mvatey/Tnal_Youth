@@ -1,9 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { Camera, Eye, EyeOff, Info, Lock, Mail } from "lucide-react";
 
 import SaveButton from "@/components/forms/SaveButton";
+import { useAuth } from "@/context/AuthContext";
+
+const DEFAULT_PROFILE_IMAGE = "/profiles/default-avatar.jpg";
+const MAX_PROFILE_IMAGE_SIZE = 5 * 1024 * 1024;
+
+const ROLE_LABELS = {
+  ADMIN: "អ្នកគ្រប់គ្រង",
+  SECRETARY: "លេខាធិការ",
+  BRANCH_LEADER: "ប្រធានសាខា",
+  MEMBER: "សមាជិក",
+  VIEWER: "អ្នកមើល",
+};
+
+function roleDisplayLabel(role, viewerScope) {
+  const roleCode = String(role || "").toUpperCase();
+  const base = ROLE_LABELS[roleCode] || role || "";
+
+  if (roleCode !== "VIEWER" || !viewerScope) {
+    return base;
+  }
+
+  const scopeCode = String(viewerScope).toUpperCase();
+  return `${base} (${ROLE_LABELS[scopeCode] || viewerScope})`;
+}
 
 async function submitJson(path, body) {
   const response = await fetch(path, {
@@ -39,22 +65,238 @@ async function submitJson(path, body) {
 }
 
 /*
- * The entire self-service page for an account with no linked member
- * record (ADMIN, or a standalone secretary/branch-leader/member account) —
- * there's no member profile to show a card or a details page for, so this
- * is just the two account columns that actually apply: password and
- * email, both on one page, no tabs.
+ * The entire self-service page for an account with no member profile to
+ * show a card or a details page for — either it has no linked member
+ * record at all (ADMIN, or a standalone secretary/branch-leader/member
+ * account), or it's a VIEWER, who only ever gets this same restricted
+ * view regardless of whether their account happens to be linked to a
+ * member. A small profile card (name/role/photo — the same few fields
+ * captured when the account was created) sits above the account
+ * settings; password and email live in one merged card on the left of
+ * that, with the password's own rules on the right.
  */
-export default function StandaloneAccountSettings({ currentEmail, onEmailChanged }) {
+export default function StandaloneAccountSettings({
+  currentEmail,
+  onEmailChanged,
+  profile,
+  onProfileChanged,
+}) {
   return (
-    <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">
-      <PasswordCard />
-      <EmailCard currentEmail={currentEmail} onEmailChanged={onEmailChanged} />
+    <div className="min-w-0 space-y-4">
+      <ProfileCard
+        nameKm={profile?.nameKm}
+        nameEn={profile?.nameEn}
+        phone={profile?.phone}
+        role={profile?.role}
+        viewerScope={profile?.viewerScope}
+        profileImage={profile?.profileImage}
+        onProfileImageChanged={onProfileChanged}
+      />
+
+      <div className="grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-2">
+        <div className="min-w-0 divide-y divide-border rounded-xl border border-border bg-bg-page-white">
+          <PasswordSection />
+          <EmailSection currentEmail={currentEmail} onEmailChanged={onEmailChanged} />
+        </div>
+
+        <PasswordRulesCard />
+      </div>
     </div>
   );
 }
 
-function PasswordCard() {
+function ProfileCard({
+  nameKm,
+  nameEn,
+  phone,
+  role,
+  viewerScope,
+  profileImage,
+  onProfileImageChanged,
+}) {
+  const fileInputRef = useRef(null);
+  const [preview, setPreview] = useState(profileImage || DEFAULT_PROFILE_IMAGE);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setPreview(profileImage || DEFAULT_PROFILE_IMAGE);
+  }, [profileImage]);
+
+  const handleChooseImage = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = async (event) => {
+    const file = event.target.files?.[0];
+
+    setError("");
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setError("សូមជ្រើសរើសឯកសាររូបភាពប៉ុណ្ណោះ។");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_PROFILE_IMAGE_SIZE) {
+      setError("ទំហំរូបភាពមិនត្រូវលើស 5MB។");
+      event.target.value = "";
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setUploading(true);
+
+    try {
+      const response = await fetch("/api/backend/my-account/profile-image", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      const body = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(body?.message || body?.error || "Unable to upload profile image");
+      }
+
+      setPreview(body?.profileImage || body?.profile_image || DEFAULT_PROFILE_IMAGE);
+      await onProfileImageChanged?.();
+    } catch (uploadError) {
+      console.error("Cannot upload my profile image:", uploadError);
+      setError(uploadError.message || "មិនអាចប្ដូររូបភាពប្រវត្តិរូបបានទេ");
+    } finally {
+      setUploading(false);
+      event.target.value = "";
+    }
+  };
+
+  const displayName = nameKm && nameKm !== "-" ? nameKm : "អ្នកប្រើប្រាស់";
+  const displayNameEn = nameEn && nameEn !== "-" ? nameEn : "";
+  const displayPhone = phone && phone !== "-" ? phone : "";
+  const roleLabel = role ? roleDisplayLabel(role, viewerScope) : "";
+
+  return (
+    <div className="min-w-0 rounded-xl border border-border bg-bg-page-white p-5">
+      <div className="flex min-w-0 items-center gap-4">
+        <div className="group relative h-20 w-20 shrink-0">
+          <div className="relative h-full w-full overflow-hidden rounded-2xl border border-border bg-bg-page-gray">
+            <Image
+              src={preview}
+              alt={displayName}
+              fill
+              sizes="80px"
+              className="object-cover"
+              unoptimized
+              onError={() => setPreview(DEFAULT_PROFILE_IMAGE)}
+            />
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleImageChange}
+          />
+
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={handleChooseImage}
+            aria-label="ប្ដូររូបភាពប្រវត្តិរូប"
+            title="ប្ដូររូបភាពប្រវត្តិរូប"
+            className="
+              absolute
+              -bottom-1
+              -right-1
+              z-10
+              flex
+              h-7
+              w-7
+              items-center
+              justify-center
+              rounded-full
+              border-2
+              border-secondary
+              bg-secondary
+              text-white
+              shadow-md
+              transition
+              hover:scale-105
+              hover:bg-secondary-hover
+              focus:outline-none
+              focus:ring-2
+              focus:ring-white/70
+            "
+          >
+            <Camera size={14} />
+          </button>
+        </div>
+
+        <div className="min-w-0 space-y-1">
+          <p className="truncate text-base font-semibold text-text-primary">
+            {displayName}
+          </p>
+
+          {displayNameEn && (
+            <p className="truncate text-sm text-text-secondary">{displayNameEn}</p>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            {roleLabel && (
+              <span className="rounded-full bg-primary-light px-2.5 py-0.5 text-xs font-medium text-primary">
+                {roleLabel}
+              </span>
+            )}
+
+            {displayPhone && (
+              <span className="text-xs text-text-secondary">{displayPhone}</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {error && <p className="mt-3 text-sm font-medium text-error">{error}</p>}
+    </div>
+  );
+}
+
+function PasswordRulesCard() {
+  const rules = [
+    "ពាក្យសម្ងាត់ថ្មីត្រូវមានយ៉ាងហោចណាស់ 6 តួអក្សរ",
+    "ពាក្យសម្ងាត់ថ្មីត្រូវខុសពីពាក្យសម្ងាត់បច្ចុប្បន្នរបស់អ្នក",
+    "ពាក្យសម្ងាត់ថ្មី និងការបញ្ជាក់ពាក្យសម្ងាត់ត្រូវតែដូចគ្នា",
+  ];
+
+  return (
+    <div className="min-w-0 space-y-3 rounded-xl border border-warning/30 bg-bg-page-white p-5">
+      <div className="flex items-center gap-2">
+        <Info size={18} className="text-warning" />
+        <h2 className="text-base font-semibold text-warning">
+          លក្ខខណ្ឌពាក្យសម្ងាត់
+        </h2>
+      </div>
+
+      <ul className="space-y-2 text-sm text-warning">
+        {rules.map((rule) => (
+          <li key={rule} className="flex gap-2">
+            <span aria-hidden="true">•</span>
+            <span>{rule}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function PasswordSection() {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -115,7 +357,7 @@ function PasswordCard() {
   };
 
   return (
-    <div className="min-w-0 space-y-5 rounded-xl border border-border bg-bg-page-white p-5">
+    <div className="min-w-0 space-y-5 p-5">
       <div>
         <h2 className="text-base font-semibold text-text-primary">
           ផ្លាស់ប្ដូរពាក្យសម្ងាត់
@@ -167,7 +409,9 @@ function PasswordCard() {
   );
 }
 
-function EmailCard({ currentEmail, onEmailChanged }) {
+function EmailSection({ currentEmail, onEmailChanged }) {
+  const router = useRouter();
+  const { logout } = useAuth();
   const [newEmail, setNewEmail] = useState(currentEmail || "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -206,18 +450,40 @@ function EmailCard({ currentEmail, onEmailChanged }) {
         new_email: trimmed,
       });
 
-      setSuccess("បានផ្លាស់ប្ដូរអ៊ីមែលដោយជោគជ័យ។");
-      await onEmailChanged?.();
+      /*
+       * The login session's token is bound to the email used to sign in
+       * (see CustomUserDetailsService#loadUserByUsername) -- once the
+       * email actually changes in the database, that token stops
+       * resolving to any account, and every request after this one would
+       * silently start failing with 403, including a plain page reload.
+       * Sending the account through a clean logout + redirect to login
+       * turns that into an explicit "sign in with your new email" step
+       * instead of a confusing dead session.
+       */
+      setSuccess("បានផ្លាស់ប្ដូរអ៊ីមែលដោយជោគជ័យ។ សូមចូលប្រើប្រាស់ម្តងទៀតដោយប្រើអ៊ីមែលថ្មី។");
+
+      // The account's own session is about to be logged out below, so a
+      // refetch failing here (its token is already stale) isn't a real
+      // error -- only a genuinely failed PATCH above should show one.
+      try {
+        await onEmailChanged?.();
+      } catch {
+        // ignore
+      }
+
+      window.setTimeout(async () => {
+        await logout();
+        router.push("/auth/login");
+      }, 1500);
     } catch (submitError) {
       console.error("Cannot change my email:", submitError);
       setError(submitError.message || "មិនអាចផ្លាស់ប្ដូរអ៊ីមែលបានទេ");
-    } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-w-0 space-y-5 rounded-xl border border-border bg-bg-page-white p-5">
+    <div className="min-w-0 space-y-5 p-5">
       <div>
         <h2 className="text-base font-semibold text-text-primary">
           ផ្លាស់ប្ដូរអ៊ីមែល

@@ -208,8 +208,8 @@ export default function ActivityPage() {
   const [selectedType, setSelectedType] =
     useState("all");
 
-  const [selectedDate, setSelectedDate] =
-    useState(null);
+  const [selectedDateRange, setSelectedDateRange] =
+    useState([null, null]);
 
   // "all" | "own" | "invited" — only meaningful once at least one loaded
   // activity actually carries a non-null ownBranch (see normalizeActivity).
@@ -328,7 +328,7 @@ export default function ActivityPage() {
     setSelectedScope("all");
     setSelectedSector("all");
     setSelectedType("all");
-    setSelectedDate(null);
+    setSelectedDateRange([null, null]);
     setSearchQuery("");
     loadActivities();
   }, [loadActivities]);
@@ -449,8 +449,14 @@ export default function ActivityPage() {
       .trim()
       .toLowerCase();
 
-    const selectedDateValue = selectedDate
-      ? selectedDate.toISOString().split("T")[0]
+    const [rangeStart, rangeEnd] = selectedDateRange;
+
+    const rangeStartValue = rangeStart
+      ? rangeStart.toISOString().split("T")[0]
+      : "";
+
+    const rangeEndValue = rangeEnd
+      ? rangeEnd.toISOString().split("T")[0]
       : "";
 
     return branchScopedActivities.filter((item) => {
@@ -475,8 +481,8 @@ export default function ActivityPage() {
         item.type === selectedType;
 
       const matchesDate =
-        !selectedDateValue ||
-        item.dateValue === selectedDateValue;
+        (!rangeStartValue || item.dateValue >= rangeStartValue) &&
+        (!rangeEndValue || item.dateValue <= rangeEndValue);
 
       const matchesScope =
         selectedScope === "all" ||
@@ -495,7 +501,7 @@ export default function ActivityPage() {
     searchQuery,
     selectedSector,
     selectedType,
-    selectedDate,
+    selectedDateRange,
     selectedScope,
     branchScopedActivities,
   ]);
@@ -669,10 +675,10 @@ export default function ActivityPage() {
     },
     {
       key: "date",
-      value: selectedDate,
-      onChange: setSelectedDate,
+      value: selectedDateRange,
+      onChange: setSelectedDateRange,
       placeholder: "ថ្ងៃ/ខែ/ឆ្នាំ",
-      type: "date",
+      type: "daterange",
     },
   ];
 

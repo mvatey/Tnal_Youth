@@ -237,6 +237,7 @@ export default function MyAccountSponsorPage() {
         onSearchChange={setQuery}
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
+        minTableWidth={560}
         onDownload={() =>
           downloadTableAsExcel({
             data: filteredData,

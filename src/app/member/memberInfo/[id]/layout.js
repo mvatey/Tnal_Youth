@@ -109,13 +109,18 @@ export default function MemberInfoLayout({
   const { id } = use(params);
 
   /*
-   * This is the logged-in VIEWER's own role (not the role of the
+   * This is the logged-in account's own role (not the role of the
    * member being viewed) — an admin managing a member's page should
    * not be able to change that member's photo, but a secretary or
-   * branch leader managing a member on their behalf still can.
+   * branch leader managing a member on their behalf still can. A
+   * VIEWER-role account (any viewerScope) must never be able to,
+   * regardless of what it's scoped to view.
    */
-  const { isAdmin: viewerIsAdmin } =
+  const { role: loggedInRole } =
     useMemberPermissions();
+
+  const canChangeProfilePhoto =
+    ["SECRETARY", "BRANCH_LEADER"].includes(loggedInRole);
 
   const [
     member,
@@ -643,10 +648,11 @@ export default function MemberInfoLayout({
         /*
          * An admin should not upload a photo on a member's
          * behalf from here, but a secretary or branch leader
-         * managing that member still can.
+         * managing that member still can. A VIEWER account can
+         * never upload, regardless of its viewerScope.
          */
         allowProfileChange={
-          !viewerIsAdmin
+          canChangeProfilePhoto
         }
       />
 

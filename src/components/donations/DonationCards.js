@@ -125,7 +125,7 @@ export default function DonationCards() {
 
   return (
     <div className="flex gap-[50px] xl:grid-cols-2">
-      <DonationCard label="ថវិកាប្រចាំខែ" value={`$${summary.totalUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="" note="" />
+      <DonationCard label="ថវិកាសរុប" value={`$${summary.totalUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="" note="" />
       <DonorCard
         label={isMemberScoped ? "ចំនួនកំណត់ត្រា" : "អ្នកបរិច្ចាគសរុប"}
         value={`${summary.donors} ${isMemberScoped ? "លើក" : "នាក់"}`}

@@ -779,6 +779,7 @@ export default function ParticipationPage() {
         }
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
+        minTableWidth={620}
         onDownload={() =>
           downloadTableAsExcel({
             data: participations,

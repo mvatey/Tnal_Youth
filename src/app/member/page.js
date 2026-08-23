@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { downloadExcel } from "@/utils/downloadExcel";
+import { isWithinDateRange } from "@/utils/dateRangeFilter";
 import { AiOutlineWoman } from "react-icons/ai";
 import { FaDharmachakra } from "react-icons/fa";
 import { RiAddCircleLine } from "react-icons/ri";
@@ -297,6 +298,9 @@ function mapMember(
       formatJoinedDate(
         member?.joined_on,
       ),
+
+    joinedAtRaw:
+      member?.joined_on || "",
   };
 }
 
@@ -406,6 +410,11 @@ export default function MembersPage() {
     genderFilter,
     setGenderFilter,
   ] = useState("");
+
+  const [
+    joinedRangeFilter,
+    setJoinedRangeFilter,
+  ] = useState({ from: "", to: "" });
 
   const [
     isCreateOpen,
@@ -1080,13 +1089,13 @@ export default function MembersPage() {
 
   const handleDownloadMembers = () => {
   if (
-    !Array.isArray(members) ||
-    members.length === 0
+    !Array.isArray(displayedMembers) ||
+    displayedMembers.length === 0
   ) {
     return;
   }
 
-  const rows = members.map(
+  const rows = displayedMembers.map(
     (member, index) => ({
       "ល.រ": index + 1,
       "ឈ្មោះសមាជិក":
@@ -1240,6 +1249,16 @@ export default function MembersPage() {
    * =========================================
    */
 
+  // Branch/status/gender go into the server query (see loadMembers
+  // above); joined-date narrows the already-fetched page client-side.
+  const displayedMembers = useMemo(
+    () =>
+      members.filter((member) =>
+        isWithinDateRange(member.joinedAtRaw, joinedRangeFilter),
+      ),
+    [members, joinedRangeFilter],
+  );
+
   const filterConfig = [
     {
       name: "branch",
@@ -1291,6 +1310,20 @@ export default function MembersPage() {
 
       placeholder:
         "ភេទ",
+    },
+
+    {
+      name:
+        "joinedRange",
+
+      value:
+        joinedRangeFilter,
+
+      onChange:
+        setJoinedRangeFilter,
+
+      type:
+        "daterange",
     },
   ];
 
@@ -1360,7 +1393,7 @@ export default function MembersPage() {
       <div className="min-w-0 w-full">
         <DataTable
           title="បញ្ជីសមាជិក"
-          data={members}
+          data={displayedMembers}
           columns={tableColumns}
           filters={filterConfig}
           searchQuery={query}

@@ -135,20 +135,30 @@ export default function MyAccountLayout({ children }) {
             </div>
           )}
 
-          {!loading && !error && member && !member.isLinkedMember && (
+          {!loading && !error && member && (!member.isLinkedMember || member.isViewer) && (
             // No member record to show a profile card or a details page
-            // for — this account (ADMIN, or a standalone secretary/
-            // branch-leader/member account) only ever gets its password
-            // and email, both right here, no tabs.
+            // for (ADMIN, or a standalone secretary/branch-leader/member
+            // account) — or the account is a VIEWER, who stays read-only
+            // everywhere else and gets the same password/email-only
+            // treatment here even if it happens to be member-linked.
             <UnsavedChangesProvider>
               <StandaloneAccountSettings
                 currentEmail={member.email !== "-" ? member.email : ""}
                 onEmailChanged={refetch}
+                profile={{
+                  nameKm: member.name_kh,
+                  nameEn: member.name_en,
+                  phone: member.phone,
+                  role: member.role,
+                  viewerScope: member.viewerScope,
+                  profileImage: member.profile_photo || member.profileImage,
+                }}
+                onProfileChanged={refetch}
               />
             </UnsavedChangesProvider>
           )}
 
-          {!loading && !error && member && member.isLinkedMember && (
+          {!loading && !error && member && member.isLinkedMember && !member.isViewer && (
             <UnsavedChangesProvider>
             <div className="min-w-0 space-y-4">
               <HeaderMemberInfo

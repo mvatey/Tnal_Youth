@@ -721,8 +721,7 @@ const loadBranchDetails =
           );
 
           setLoadError(
-            error.message ||
-              "Failed to load branch details",
+            "មិនអាចទាញយកព័ត៌មានសាខាបានទេ",
           );
         }
       } finally {
@@ -930,13 +929,13 @@ const loadBranchDetails =
     [mappedLeaders],
   );
 
-  const secretary = useMemo(
+  const secretaries = useMemo(
     () =>
-      mappedLeaders.find(
+      mappedLeaders.filter(
         (person) =>
           person.role ===
           "SECRETARY",
-      ) || null,
+      ),
     [mappedLeaders],
   );
 
@@ -1451,23 +1450,36 @@ const loadBranchDetails =
         />
       </section>
 
-      {secretary && (
-        <section>
-          <div className="mb-2">
-            <h2 className="text-lg font-semibold text-primary">
-              លេខាធិការ
-            </h2>
-          </div>
+      <section>
+        <div className="mb-2">
+          <h2 className="text-lg font-semibold text-primary">
+            លេខាធិការ
+          </h2>
+        </div>
 
+        {secretaries.length > 0 ? (
+          <div className="space-y-3">
+            {secretaries.map((person) => (
+              <LeaderCard
+                key={person.id}
+                person={person}
+                title="លេខាធិការ"
+                onAdd={isViewer ? undefined : () =>
+                  setIsEditModalOpen(true)
+                }
+              />
+            ))}
+          </div>
+        ) : (
           <LeaderCard
-            person={secretary}
+            person={null}
             title="លេខាធិការ"
             onAdd={isViewer ? undefined : () =>
               setIsEditModalOpen(true)
             }
           />
-        </section>
-      )}
+        )}
+      </section>
 
       <section className="rounded-xl border border-border bg-bg-page-white p-4 shadow-sm">
         <div className="mb-4 flex flex-wrap items-center gap-3">

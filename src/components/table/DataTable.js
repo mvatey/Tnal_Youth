@@ -9,6 +9,7 @@ import { Search } from "lucide-react";
 
 import FormSelect from "@/components/forms/FormSelect.js";
 import FormDate from "@/components/forms/FormDate.js";
+import DateRangePicker from "@/components/forms/DateRangePicker.js";
 import Pagination from "@/components/navigation/Pagination";
 import DownloadButton from "@/components/ui/actions/DownloadButton";
 
@@ -24,6 +25,13 @@ export default function DataTable({
   onDownload,
   emptyMessage = "មិនមានទិន្នន័យត្រូវនឹងលក្ខខណ្ឌស្វែងរកទេ",
   pageSize = 10,
+  // Every table shares this 900px floor by default, but a table with
+  // fewer/narrower columns (e.g. participation history) doesn't need
+  // that much room -- forcing it anyway pushes the last column off the
+  // visible card on common laptop widths, forcing a horizontal scroll
+  // just to reach it. Lower this per-table instead of changing the
+  // shared default, which other tables' columns do actually need.
+  minTableWidth = 900,
 }) {
   const [currentPage, setCurrentPage] =
     useState(1);
@@ -120,7 +128,7 @@ export default function DataTable({
                 flex-col
                 gap-3
                 md:flex-row
-                md:flex-wrap
+                md:flex-nowrap
                 md:items-center
               "
             >
@@ -131,7 +139,8 @@ export default function DataTable({
                     relative
                     w-full
                     min-w-0
-                    md:min-w-[220px]
+                    md:min-w-[140px]
+                    md:max-w-[220px]
                     md:flex-1
                   "
                 >
@@ -188,12 +197,14 @@ export default function DataTable({
                     min-w-0
                     grid-cols-1
                     gap-3
+                    overflow-x-visible
                     sm:grid-cols-2
                     lg:grid-cols-3
                     xl:flex
                     xl:w-auto
-                    xl:flex-wrap
+                    xl:flex-nowrap
                     xl:items-center
+                    xl:overflow-x-auto
                   "
                 >
                   {filters.map(
@@ -202,20 +213,27 @@ export default function DataTable({
                         filter.name ||
                         `filter-${index}`;
 
+                      const widthClass =
+                        filter.type === "daterange"
+                          ? "w-full xl:w-[240px]"
+                          : filter.type === "date"
+                            ? "w-full xl:w-[280px]"
+                            : "w-full xl:w-[210px]";
+
                       return (
                         <div
                           key={filterName}
-                          className={`
-                            min-w-0
-                            ${
-                              filter.type ===
-                              "date"
-                                ? "w-full xl:w-[280px]"
-                                : "w-full xl:w-[210px]"
-                            }
-                          `}
+                          className={`min-w-0 ${widthClass}`}
                         >
-                          {filter.type ===
+                          {filter.type === "daterange" ? (
+                            <DateRangePicker
+                              name={filterName}
+                              value={filter.value}
+                              onChange={filter.onChange}
+                              placeholder={filter.placeholder}
+                              disabled={filter.disabled || false}
+                            />
+                          ) : filter.type ===
                           "date" ? (
                             <FormDate
                               name={
@@ -328,11 +346,11 @@ export default function DataTable({
           <table
             className="
               w-full
-              min-w-[900px]
               table-fixed
               border-collapse
               text-sm
             "
+            style={{ minWidth: `${minTableWidth}px` }}
           >
             <colgroup>
               {columns.map(

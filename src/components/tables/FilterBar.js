@@ -34,6 +34,32 @@ function FilterInput({
     );
   }
 
+  // Picking just a start date and clicking away leaves endDate null,
+  // which reads as an open-ended (one-sided) range -- so this same
+  // control also covers what the single "date" type above is for.
+  if (type === "daterange") {
+    const [startDate, endDate] = value || [null, null];
+
+    return (
+      <div className="relative w-full sm:w-[190px]">
+        <DatePicker
+          selectsRange
+          startDate={startDate}
+          endDate={endDate}
+          onChange={(dates) => onChange?.(dates)}
+          placeholderText="ថ្ងៃ/ខែ/ឆ្នាំ"
+          dateFormat="dd/MM/yyyy"
+          isClearable
+          className="h-[34px] w-full rounded-lg border border-border bg-bg-page-white px-3 pr-14 text-[12px] text-text-primary outline-none"
+          wrapperClassName="w-full"
+          popperClassName="small-calendar"
+        />
+
+        <CalendarDays size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+      </div>
+    );
+  }
+
 
   return (
     <div className="relative w-full sm:w-auto">

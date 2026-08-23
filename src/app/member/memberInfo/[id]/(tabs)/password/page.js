@@ -8,6 +8,7 @@ import {
   EyeOff,
   CircleCheck,
   Info,
+  Save,
 } from "lucide-react";
 
 async function requestJson(path, options = {}) {
@@ -265,7 +266,11 @@ export default function PasswordPage() {
                 submitting
               }
               className="
+                inline-flex
                 min-w-[120px]
+                items-center
+                justify-center
+                gap-2
                 rounded-lg
                 bg-[#5533a5]
                 px-6
@@ -279,6 +284,7 @@ export default function PasswordPage() {
                 disabled:opacity-60
               "
             >
+              <Save size={16} />
               {submitting
                 ? "កំពុងរក្សាទុក..."
                 : "រក្សាទុក"}

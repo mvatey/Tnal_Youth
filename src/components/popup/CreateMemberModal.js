@@ -982,8 +982,7 @@ export default function CreateMemberModal({
         );
 
         setSubmitError(
-          error.message ||
-            "មិនអាចបង្កើតសមាជិកបានទេ។",
+          "មិនអាចបង្កើតសមាជិកបានទេ។",
         );
       } finally {
         setIsSubmitting(

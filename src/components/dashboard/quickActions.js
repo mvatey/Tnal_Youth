@@ -35,14 +35,18 @@ const DEFAULT_ACTIONS = [
   {
     id: "member",
     label: "បង្កើតសមាជិក",
-    href: "/member/create",
+    href: "/member",
     icon: CirclePlus,
     color: "text-primary",
     bg: "bg-bg-page-gray",
   },
 ];
 
-const ADMIN_ACTIONS = [
+// Read-only equivalent of DEFAULT_ACTIONS, shown to VIEWER accounts instead
+// of the create-action set — same four destinations, but every action is a
+// plain "view" link (Eye icon) rather than something implying a write the
+// backend's ViewerWriteBlockFilter would reject anyway.
+const VIEWER_ACTIONS = [
   {
     id: "view-program",
     label: "មើលកម្មវិធី",
@@ -68,10 +72,10 @@ const ADMIN_ACTIONS = [
     bg: "bg-bg-page-gray",
   },
   {
-    id: "member",
-    label: "បង្កើតសមាជិក",
-    href: "/member/create",
-    icon: CirclePlus,
+    id: "view-member",
+    label: "មើលសមាជិក",
+    href: "/member",
+    icon: Eye,
     color: "text-primary",
     bg: "bg-bg-page-gray",
   },
@@ -87,6 +91,7 @@ const HOVER_STYLES = {
   "view-branch": "hover:bg-primary-light hover:text-primary",
   "view-activity": "hover:bg-secondary-light hover:text-secondary",
   "view-program": "hover:bg-success-bg hover:text-success",
+  "view-member": "hover:bg-warning-bg hover:text-warning",
 };
 
 export default function QuickActions() {
@@ -94,7 +99,7 @@ export default function QuickActions() {
 
   const role = normalizeRole(user?.role);
 
-  const actions = role === "admin" ? ADMIN_ACTIONS : DEFAULT_ACTIONS;
+  const actions = role === "viewer" ? VIEWER_ACTIONS : DEFAULT_ACTIONS;
 
   if (authLoading) {
     return (

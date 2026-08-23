@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import CertificateForm from "@/app/document/CertificateForm";
 import IdCardForm from "@/app/document/IdCardForm";
 import LetterOfAppointmentForm from "@/app/document/LetterOfAppointmentForm";
+import Link from "next/link";
+import useMemberPermissions from "@/hooks/useMemberPermissions";
 
 const ID_CARD_DOCUMENT_MARKER = "[TNAL:ID_CARD]";
 
@@ -75,6 +77,28 @@ export default function CreateDocumentPage() {
   const [form, setForm] = useState(EMPTY_FORM);
 
   const [saving, setSaving] = useState(false);
+
+  const { role: loggedInRole, loading: permissionsLoading } = useMemberPermissions();
+  const canCreateDocuments = ["ADMIN", "SECRETARY", "BRANCH_LEADER"].includes(loggedInRole);
+
+  if (!permissionsLoading && !canCreateDocuments) {
+    return (
+      <div className="rounded-xl border border-error/30 bg-error-bg p-6 text-center text-error">
+        <p className="text-sm font-semibold">អ្នកមិនមានសិទ្ធិបង្កើតឯកសារទេ</p>
+
+        <p className="mt-1 text-xs">
+          មានតែអ្នកដឹកនាំសាខា ឬលេខាធិការប៉ុណ្ណោះ ដែលអាចបង្កើតឯកសារថ្មីបាន។
+        </p>
+
+        <Link
+          href="/document"
+          className="mt-4 inline-flex h-9 items-center justify-center rounded-lg bg-secondary px-4 text-sm font-medium text-white hover:bg-secondary-hover"
+        >
+          ត្រឡប់ទៅឯកសារទាំងអស់
+        </Link>
+      </div>
+    );
+  }
 
   const selectDocumentType = (selectedType) => {
     setType(selectedType);

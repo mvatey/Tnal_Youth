@@ -8,6 +8,7 @@ import { RiAddCircleLine } from "react-icons/ri";
 
 import DataTable from "@/components/table/DataTable.js";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
+import { isWithinDateRange } from "@/utils/dateRangeFilter";
 import StatCard from "@/components/dashboard/statCard";
 import CreateUserModal from "@/components/popup/CreateUserModal.js";
 import { useAuth } from "@/context/AuthContext";
@@ -203,6 +204,7 @@ function mapUser(user) {
           user?.status ||
           "-",
     createdAt: formatDateTime(user?.createdAt),
+    createdAtRaw: user?.createdAt || "",
   };
 }
 
@@ -216,6 +218,7 @@ export default function UsersPage() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [createdRangeFilter, setCreatedRangeFilter] = useState({ from: "", to: "" });
   const [statusOptions, setStatusOptions] = useState(FALLBACK_STATUS_OPTIONS);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -504,6 +507,17 @@ export default function UsersPage() {
     [isViewer],
   );
 
+  // Role/status are server-filtered (loadUsers above); the created-date
+  // range narrows the already-fetched list client-side instead, same as
+  // branch/activity do for their own date filters.
+  const displayedUsers = useMemo(
+    () =>
+      users.filter((user) =>
+        isWithinDateRange(user.createdAtRaw, createdRangeFilter),
+      ),
+    [users, createdRangeFilter],
+  );
+
   const filterConfig = [
     {
       name: "role",
@@ -518,6 +532,12 @@ export default function UsersPage() {
       onChange: setStatusFilter,
       options: statusOptions,
       placeholder: "ស្ថានភាព",
+    },
+    {
+      name: "createdRange",
+      value: createdRangeFilter,
+      onChange: setCreatedRangeFilter,
+      type: "daterange",
     },
   ];
 
@@ -556,7 +576,7 @@ export default function UsersPage() {
       <div className="min-w-0 w-full">
         <DataTable
           title="បញ្ជីអ្នកប្រើប្រាស់"
-          data={users}
+          data={displayedUsers}
           columns={tableColumns}
           filters={filterConfig}
           searchQuery={query}

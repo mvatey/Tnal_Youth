@@ -74,6 +74,7 @@ export const NAV_ITEMS = [
       "secretary",
       "branch_leader",
       "member",
+      "viewer",
     ],
   },
   {

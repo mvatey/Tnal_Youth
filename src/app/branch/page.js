@@ -15,6 +15,7 @@ import {
 
 import { RiDownloadCloud2Line } from "react-icons/ri";
 import { downloadExcel } from "@/utils/downloadExcel";
+import { isWithinDateRange } from "@/utils/dateRangeFilter";
 import CreateBranchModal from "@/components/branch/CreateBranchModal";
 import BranchStats from "@/components/branch/branchStats";
 
@@ -339,6 +340,11 @@ export default function BranchPage() {
     selectedStatus,
     setSelectedStatus,
   ] = useState("");
+
+  const [
+    selectedCreatedRange,
+    setSelectedCreatedRange,
+  ] = useState([null, null]);
 
   const [
     showSaveFile,
@@ -670,8 +676,7 @@ export default function BranchPage() {
             );
 
             setLoadError(
-              error.message ||
-                "Failed to load branch data",
+              "មិនអាចទាញយកទិន្នន័យសាខាបានទេ",
             );
           }
         } finally {
@@ -1159,6 +1164,11 @@ export default function BranchPage() {
                   branch?.created_at ||
                     branch?.createdAt,
                 ),
+
+              createdAtRaw:
+                branch?.created_at ||
+                  branch?.createdAt ||
+                  "",
             };
           },
         ),
@@ -1299,11 +1309,30 @@ export default function BranchPage() {
               branch.statusLabel ===
                 selectedStatus;
 
+            /*
+             * Created date range
+             */
+            const [createdRangeStart, createdRangeEnd] =
+              selectedCreatedRange;
+
+            const matchesCreatedRange = isWithinDateRange(
+              branch.createdAtRaw,
+              {
+                from: createdRangeStart
+                  ? createdRangeStart.toISOString().split("T")[0]
+                  : "",
+                to: createdRangeEnd
+                  ? createdRangeEnd.toISOString().split("T")[0]
+                  : "",
+              },
+            );
+
             return (
               matchesSearch &&
               matchesLevel &&
               matchesProvince &&
-              matchesStatus
+              matchesStatus &&
+              matchesCreatedRange
             );
           },
         );
@@ -1314,6 +1343,7 @@ export default function BranchPage() {
         selectedLevel,
         selectedProvince,
         selectedStatus,
+        selectedCreatedRange,
       ],
     );
 
@@ -1553,6 +1583,20 @@ export default function BranchPage() {
 
       options:
         branchStatusOptions,
+    },
+
+    {
+      key:
+        "createdRange",
+
+      value:
+        selectedCreatedRange,
+
+      onChange:
+        setSelectedCreatedRange,
+
+      type:
+        "daterange",
     },
   ];
 

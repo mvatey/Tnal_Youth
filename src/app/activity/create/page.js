@@ -29,6 +29,7 @@ import FormActionButton from "@/components/ui/actions/FormActionButton";
 import MemberSelectModal from "@/components/activity/MemberSelectModal";
 import { useBranch } from "@/context/BranchContext";
 import useCurrentMember from "@/hooks/useCurrentMember";
+import useMemberPermissions from "@/hooks/useMemberPermissions";
 
 const BRANCH_OPTIONS = [
   "ភ្នំពេញ",
@@ -684,6 +685,12 @@ export default function CreateActivityPage() {
   // (organizing branch) than the one currently active in the sidebar's
   // global dropdown (see BranchContext). ADMIN keeps the free pick.
   const { member: currentMember } = useCurrentMember();
+  const { role: loggedInRole, loading: permissionsLoading } = useMemberPermissions();
+  // Only branch staff can create an activity at all -- unlike edit mode
+  // (guarded below by the server-computed canManage/canManageAsInvitedBranch
+  // flags), a brand-new activity has no branch yet to check against, so this
+  // is a plain role check.
+  const canCreateActivity = ["ADMIN", "SECRETARY", "BRANCH_LEADER"].includes(loggedInRole);
   const {
     branches: accessibleBranches = [],
     selectedBranch: globalSelectedBranch = "all",
@@ -1282,29 +1289,36 @@ export default function CreateActivityPage() {
   // `canManage` (host) or `canManageAsInvitedBranch` (an accepted co-hosting
   // branch) are both computed server-side. Block the edit form entirely for
   // anyone with neither — the backend would reject every action anyway, but
-  // this avoids a confusing failed submit.
-  if (
+  // this avoids a confusing failed submit. In create mode there's no
+  // per-activity flag to check yet, so it falls back to a plain role check
+  // (VIEWER / MEMBER accounts can never create an activity).
+  const isBlockedFromEditing =
     isEditMode &&
     editingActivity != null &&
     !canManage &&
-    !canManageAsInvitedBranch
-  ) {
+    !canManageAsInvitedBranch;
+  const isBlockedFromCreating = !isEditMode && !permissionsLoading && !canCreateActivity;
+
+  if (isBlockedFromEditing || isBlockedFromCreating) {
     return (
       <div className="rounded-xl border border-error/30 bg-error-bg p-6 text-center text-error">
         <p className="text-sm font-semibold">
-          អ្នកមិនមានសិទ្ធិកែប្រែកម្មវិធីនេះទេ
+          {isBlockedFromEditing
+            ? "អ្នកមិនមានសិទ្ធិកែប្រែកម្មវិធីនេះទេ"
+            : "អ្នកមិនមានសិទ្ធិបង្កើតកម្មវិធីទេ"}
         </p>
 
         <p className="mt-1 text-xs">
-          មានតែអ្នកដឹកនាំសាខា ឬលេខាធិការនៃសាខារៀបចំកម្មវិធីនេះ ឬសាខាដែលបានទទួល
-          ការអញ្ជើញចូលរួមរៀបចំកម្មវិធីនេះប៉ុណ្ណោះ ដែលអាចចូលមើលទំព័រនេះបាន។
+          {isBlockedFromEditing
+            ? "មានតែអ្នកដឹកនាំសាខា ឬលេខាធិការនៃសាខារៀបចំកម្មវិធីនេះ ឬសាខាដែលបានទទួល ការអញ្ជើញចូលរួមរៀបចំកម្មវិធីនេះប៉ុណ្ណោះ ដែលអាចចូលមើលទំព័រនេះបាន។"
+            : "មានតែអ្នកដឹកនាំសាខា ឬលេខាធិការប៉ុណ្ណោះ ដែលអាចបង្កើតកម្មវិធីថ្មីបាន។"}
         </p>
 
         <Link
-          href={`/activity/${editId}`}
+          href={isBlockedFromEditing ? `/activity/${editId}` : "/activity"}
           className="mt-4 inline-flex h-9 items-center justify-center rounded-lg bg-secondary px-4 text-sm font-medium text-white hover:bg-secondary-hover"
         >
-          ត្រឡប់ទៅព័ត៌មានកម្មវិធី
+          {isBlockedFromEditing ? "ត្រឡប់ទៅព័ត៌មានកម្មវិធី" : "ត្រឡប់ទៅកម្មវិធីទាំងអស់"}
         </Link>
       </div>
     );
