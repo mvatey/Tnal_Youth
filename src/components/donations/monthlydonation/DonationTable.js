@@ -50,10 +50,12 @@ export default function DonationTable() {
     branches: accessibleBranches = [],
     selectedBranch: globalSelectedBranch = "all",
   } = useBranch();
+  const effectiveRole = currentMember?.effectiveRole || currentMember?.role;
   const isBranchScoped = ["secretary", "branch_leader"].includes(
-    currentMember?.role,
+    effectiveRole,
   );
-  const isMemberScoped = currentMember?.role === "member";
+  const isMemberScoped = effectiveRole === "member";
+  const isReadOnlyViewer = Boolean(currentMember?.isViewer);
   // A secretary/branch_leader is always scoped to exactly ONE branch — the
   // one currently active in the sidebar's global branch dropdown (see
   // BranchContext, which never lets this role's selection settle on the
@@ -89,7 +91,10 @@ export default function DonationTable() {
     "ប្រាក់សរុប(ដុល្លារ)",
     "សកម្មភាព",
   ];
+  // Viewer Secretary / Viewer Branch Leader sees the same action column as
+  // the scoped role, but the controls are disabled below.
   const showActionColumn = isBranchScoped;
+  const canManage = isBranchScoped && !isReadOnlyViewer;
   const visibleHeaders = showActionColumn ? headers : headers.slice(0, -1);
   const [selectedYear, setSelectedYear] = useState("all");
   const [selectedMonth, setSelectedMonth] = useState("all");
@@ -379,7 +384,8 @@ export default function DonationTable() {
                 rowNumber={(safePage - 1) * rowsPerPage + index + 1}
                 onDelete={handleDelete}
                 hasMoney={row.donorCount > 0}
-                canManage={isBranchScoped}
+                canManage={canManage}
+                readOnlyViewer={isReadOnlyViewer}
                 showAction={showActionColumn}
               />
             ))}

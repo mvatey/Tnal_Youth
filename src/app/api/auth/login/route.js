@@ -223,6 +223,22 @@ export async function POST(request) {
       accessCookieOptions
     );
 
+    const normalizedViewerScope = String(
+      currentUser.viewerScope || currentUser.viewer_scope || ""
+    )
+      .trim()
+      .toUpperCase();
+
+    if (normalizedRole === "VIEWER" && normalizedViewerScope) {
+      cookieStore.set(
+        "viewerScope",
+        normalizedViewerScope,
+        accessCookieOptions
+      );
+    } else {
+      cookieStore.delete("viewerScope");
+    }
+
     if (refreshToken) {
       cookieStore.set(
         "refreshToken",

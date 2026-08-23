@@ -570,10 +570,12 @@ export default function UsersPage() {
               fileName: "អ្នកប្រើប្រាស់",
             })
           }
-          actionButton={!isViewer ? (
+          actionButton={(
             <button
               type="button"
-              onClick={() => setIsCreateOpen(true)}
+              disabled={isViewer}
+              title={isViewer ? "Viewer accounts are read-only" : undefined}
+              onClick={() => !isViewer && setIsCreateOpen(true)}
               className="
                 inline-flex
                 h-[34px]
@@ -590,12 +592,14 @@ export default function UsersPage() {
                 text-white
                 transition
                 hover:opacity-90
+                disabled:cursor-not-allowed
+                disabled:opacity-50
               "
             >
               <RiAddCircleLine className="h-4 w-4 shrink-0" />
               <span>បង្កើតអ្នកប្រើប្រាស់ថ្មី</span>
             </button>
-          ) : null}
+          )}
         />
       </div>
 

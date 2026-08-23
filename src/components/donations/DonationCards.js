@@ -31,8 +31,9 @@ const summarizeMonthlyGroups = (rows) =>
 
 export default function DonationCards() {
   const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
-  const isBranchScoped = ["secretary", "branch_leader"].includes(currentMember?.role);
-  const isMemberScoped = currentMember?.role === "member";
+  const effectiveRole = currentMember?.effectiveRole || currentMember?.role;
+  const isBranchScoped = ["secretary", "branch_leader"].includes(effectiveRole);
+  const isMemberScoped = effectiveRole === "member";
   const {
     branches: accessibleBranches = [],
     selectedBranch: globalSelectedBranch = "all",

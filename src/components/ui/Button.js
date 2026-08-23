@@ -50,7 +50,7 @@ export default function Button({
         hover:shadow-sm
         active:translate-y-0
         disabled:opacity-50
-        disabled:pointer-events-none
+        disabled:cursor-not-allowed
         ${variants[variant]}
         ${className}
       `}

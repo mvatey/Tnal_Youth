@@ -87,6 +87,17 @@ export function proxy(request) {
       ?.value?.trim()
       .toUpperCase();
 
+  const viewerScope =
+    request.cookies
+      .get("viewerScope")
+      ?.value?.trim()
+      .toUpperCase();
+
+  const effectiveRole =
+    userRole === "VIEWER"
+      ? viewerScope || "ADMIN"
+      : userRole;
+
   const matchedRoute =
     findMatchedRoute(pathname);
 
@@ -143,7 +154,7 @@ export function proxy(request) {
   /*
     Logged in, but wrong role
   */
-  if (!allowedRoles.includes(userRole)) {
+  if (!allowedRoles.includes(effectiveRole)) {
     const unauthorizedUrl = new URL(
       "/unauthorized",
       request.url

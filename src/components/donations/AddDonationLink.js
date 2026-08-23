@@ -8,11 +8,13 @@ export default function AddDonationLink() {
   const router = useRouter();
   const pathname = usePathname();
   const { member, loading } = useCurrentMember();
-  const canAddDonation = ["secretary", "branch_leader"].includes(
-    member?.role,
+  const effectiveRole = member?.effectiveRole || member?.role;
+  const canSeeAddDonation = ["secretary", "branch_leader"].includes(
+    effectiveRole,
   );
+  const isReadOnlyViewer = Boolean(member?.isViewer);
 
-  if (loading || !canAddDonation) return null;
+  if (loading || !canSeeAddDonation) return null;
 
   const addPath = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/add"
@@ -21,8 +23,16 @@ export default function AddDonationLink() {
   return (
     <button
       type="button"
-      onClick={() => router.push(addPath)}
-      className="inline-flex h-[34px] items-center gap-2 rounded-lg bg-success px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
+      onClick={() => {
+        if (!isReadOnlyViewer) router.push(addPath);
+      }}
+      disabled={isReadOnlyViewer}
+      title={isReadOnlyViewer ? "Viewer accounts are read-only" : undefined}
+      className={`inline-flex h-[34px] items-center gap-2 rounded-lg bg-success px-4 text-xs font-medium text-white shadow-sm transition ${
+        isReadOnlyViewer
+          ? "cursor-not-allowed opacity-50"
+          : "hover:bg-emerald-700"
+      }`}
     >
       <PlusCircle size={17} />
       បន្ថែមវិភាគទាន

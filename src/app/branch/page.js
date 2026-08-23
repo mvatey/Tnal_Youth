@@ -1664,20 +1664,22 @@ export default function BranchPage() {
               ទាញយក
             </Button>
 
-            {!isViewer && <Button
+            <Button
               type="button"
               variant="success"
+              disabled={isViewer}
+              title={isViewer ? "Viewer accounts are read-only" : undefined}
               icon={
                 <PlusCircle
                   size={16}
                 />
               }
               onClick={() =>
-                setShowCreateModal(true)
+                !isViewer && setShowCreateModal(true)
               }
             >
               បង្កើតសាខាថ្មី
-            </Button>}
+            </Button>
           </div>
         </div>
 

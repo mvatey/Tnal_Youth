@@ -245,7 +245,9 @@ export default function Table({
                   onRealAmountChange={(id, value) => updateRow(id, { realAmount: value })}
                   onDollarAmountChange={(id, value) => updateRow(id, { dollarAmount: value })}
                   onPaymentMethodChange={(id, paymentMethod) =>
-                    updateRow(id, { paymentMethod })
+                    // Clear the old method id when the dropdown changes.
+                    // It will be resolved again from the selected method on save.
+                    updateRow(id, { paymentMethod, paymentMethodId: "" })
                   }
                   readOnly={readOnly || (rowEditMode && editingRowId !== member.id) || Boolean(isRowLocked?.(member))}
                   globalReadOnly={readOnly}

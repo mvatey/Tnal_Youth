@@ -349,6 +349,8 @@ export default function MembersPage() {
   const { member: currentMember } =
     useCurrentMember();
 
+  const isViewer = currentMember?.isViewer === true;
+
   // Same single-branch scoping as the activity/donation pages -- a
   // secretary/branch_leader is always scoped to exactly the one branch
   // active in the sidebar's global dropdown (see BranchContext), never
@@ -1370,8 +1372,10 @@ export default function MembersPage() {
             <button
               type="button"
               onClick={() =>
-                setIsCreateOpen(true)
+                !isViewer && setIsCreateOpen(true)
               }
+              disabled={isViewer}
+              title={isViewer ? "Viewer accounts are read-only" : undefined}
               className="
                 inline-flex
                 h-[34px]
@@ -1388,6 +1392,8 @@ export default function MembersPage() {
                 text-white
                 transition
                 hover:opacity-90
+                disabled:cursor-not-allowed
+                disabled:opacity-50
               "
             >
               <RiAddCircleLine className="h-4 w-4 shrink-0" />
@@ -1404,7 +1410,7 @@ export default function MembersPage() {
 
       <CreateMemberModal
         open={
-          isCreateOpen
+          !isViewer && isCreateOpen
         }
         onClose={() =>
           setIsCreateOpen(

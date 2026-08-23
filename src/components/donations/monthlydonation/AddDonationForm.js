@@ -18,6 +18,26 @@ const BANK_PAYMENT_METHODS = new Set([
   "ACLEDA",
 ]);
 
+const PAYMENT_METHOD_LABELS = {
+  CASH: "Cash",
+  ABA: "ABA",
+  WING: "Wing",
+  BANK_TRANSFER: "Bank Transfer",
+  ACLEDA: "ACLEDA",
+};
+
+function normalizePaymentMethodCode(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+}
+
+function paymentMethodLabelFromCode(code) {
+  const normalized = normalizePaymentMethodCode(code);
+  return PAYMENT_METHOD_LABELS[normalized] || code || "Cash";
+}
+
 
 
 const KHMER_MONTHS = [
@@ -56,8 +76,9 @@ function mapMonthlyMember(member, branchLabel, month, year) {
     realAmount: member.amountKhr ?? "0",
     dollarAmount: member.amountUsd ?? "0",
     paymentMethodId: member.paymentMethodId ?? "",
-    paymentMethod: member.paymentMethodCode || "CASH",
+    paymentMethod: paymentMethodLabelFromCode(member.paymentMethodCode),
     receiptFileId: member.receiptFileId ?? null,
+    donationId: member.existingDonationId ?? null,
     alreadyPaid: Boolean(member.alreadyPaid),
   };
 }
@@ -77,9 +98,15 @@ export default function AddDonationForm() {
     branches: accessibleBranches = [],
     selectedBranch: globalSelectedBranch = "all",
   } = useBranch();
-  const isBranchScoped = ["secretary", "branch_leader"].includes(
-    currentMember?.role,
-  );
+  const effectiveRole = String(
+    currentMember?.effectiveRole || currentMember?.role || "",
+  ).toLowerCase();
+  const isViewer =
+    Boolean(currentMember?.isViewer) ||
+    String(currentMember?.role || "").toLowerCase() === "viewer";
+  const isBranchScoped = ["secretary", "branch_leader"].includes(effectiveRole);
+  const canManageMonthlyDonation =
+    !isViewer && ["admin", "secretary", "branch_leader"].includes(effectiveRole);
   // A secretary/branch_leader is always scoped to exactly ONE branch — the
   // one currently active in the sidebar's global branch dropdown (see
   // BranchContext) — never a branch picked independently in this form.
@@ -193,10 +220,6 @@ const summary = useMemo(() => {
 }, [editableRows]);
 
 const paymentSummary = useMemo(() => {
-  // Count only rows that actually contain a donation amount.
-  // The select visually defaults to Cash even when the backend returns
-  // an empty paymentMethodCode, so resolve the real method from either
-  // paymentMethodId, paymentMethod/code, or finally CASH.
   const paidRows = editableRows.filter(
     (row) =>
       (Number(row.realAmount) || 0) > 0 ||
@@ -207,13 +230,11 @@ const paymentSummary = useMemo(() => {
     const matchedMethod = paymentMethods.find(
       (option) =>
         String(option.id) === String(row.paymentMethodId) ||
-        String(option.code || "").toUpperCase() ===
-          String(row.paymentMethod || "").toUpperCase(),
+        normalizePaymentMethodCode(option.code) ===
+          normalizePaymentMethodCode(row.paymentMethod),
     );
 
-    return String(
-      matchedMethod?.code || row.paymentMethod || "CASH",
-    )
+    return String(matchedMethod?.code || row.paymentMethod || "CASH")
       .trim()
       .toUpperCase()
       .replace(/[\s-]+/g, "_");
@@ -225,11 +246,10 @@ const paymentSummary = useMemo(() => {
     ),
   ).length;
 
-  // The lookup request uses includeMaterial=false, so every paid method
-  // that is not cash/direct is a bank/electronic payment for this page.
-  const bank = paidRows.length - cash;
-
-  return { cash, bank };
+  return {
+    cash,
+    bank: paidRows.length - cash,
+  };
 }, [editableRows, paymentMethods]);
 
 
@@ -351,66 +371,127 @@ const paymentSummary = useMemo(() => {
   });
 
   const handleSave = async (rows) => {
-    // alreadyPaid rows are excluded even if their (pre-filled, historical)
-    // amount is nonzero -- the backend batch endpoint only creates new
-    // records and rejects the WHOLE batch if any one member already has a
-    // donation for this period, so resubmitting one would block every
-    // legitimate new entry alongside it.
     const completed = rows.filter(
-      (row) => !row.alreadyPaid && (Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0),
+      (row) => Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0,
     );
+
     if (completed.length === 0) {
       setSavedMessage("សូមបញ្ចូលចំនួនទឹកប្រាក់យ៉ាងហោចណាស់ម្នាក់");
       return false;
     }
 
-    const fallbackMethod = paymentMethods[0];
-    const items = completed.map((row) => {
-      const method = paymentMethods.find(
-        (option) =>
-          String(option.id) === String(row.paymentMethodId) ||
-          option.code === row.paymentMethod,
-      ) || fallbackMethod;
-
-      return {
-        member_id: Number(row.memberId),
-        amount_khr: Number(row.realAmount || 0),
-        amount_usd: Number(row.dollarAmount || 0),
-        payment_method_id: Number(method?.id),
-        receipt_file_id: row.receiptFileId || null,
-      };
-    });
-
-    if (items.some((item) => !Number.isFinite(item.payment_method_id))) {
-      setError("មិនអាចកំណត់វិធីសាស្ត្រទូទាត់បានទេ");
+    if (!canManageMonthlyDonation) {
+      setError("គណនីមើលទិន្នន័យមិនអាចបន្ថែម ឬកែប្រែវិភាគទានបានទេ");
       return false;
     }
 
+    const fallbackMethod = paymentMethods[0];
+    const resolveMethod = (row) => {
+      const selectedCode = normalizePaymentMethodCode(row.paymentMethod);
+
+      // Prefer the CURRENT dropdown choice. Only fall back to the loaded id
+      // when the select value does not resolve. This allows Cash -> ABA/Wing/Bank.
+      return (
+        paymentMethods.find(
+          (option) =>
+            normalizePaymentMethodCode(option.code) === selectedCode,
+        ) ||
+        paymentMethods.find(
+          (option) => String(option.id) === String(row.paymentMethodId),
+        ) ||
+        fallbackMethod
+      );
+    };
+
+    const newRows = completed.filter((row) => !row.donationId);
+    const existingRows = completed.filter((row) => row.donationId);
+
     setSaving(true);
     setError("");
+
     try {
-      await fetchJson("/api/backend/donations/monthly/batch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          branch_id: Number(selectedBranch),
-          donation_period: `${selectedYear}-${selectedMonth}-01`,
-          paid_at: new Date().toISOString(),
-          items,
+      if (newRows.length > 0) {
+        const items = newRows.map((row) => {
+          const method = resolveMethod(row);
+          return {
+            member_id: Number(row.memberId),
+            amount_khr: Number(row.realAmount || 0),
+            amount_usd: Number(row.dollarAmount || 0),
+            payment_method_id: Number(method?.id),
+            receipt_file_id: row.receiptFileId || null,
+          };
+        });
+
+        if (items.some((item) => !Number.isFinite(item.payment_method_id))) {
+          throw new Error("មិនអាចកំណត់វិធីសាស្ត្រទូទាត់បានទេ");
+        }
+
+        await fetchJson("/api/backend/donations/monthly/batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            branch_id: Number(selectedBranch),
+            donation_period: `${selectedYear}-${selectedMonth}-01`,
+            paid_at: new Date().toISOString(),
+            items,
+          }),
+        });
+      }
+
+      await Promise.all(
+        existingRows.map((row) => {
+          const method = resolveMethod(row);
+          if (!Number.isFinite(Number(method?.id))) {
+            throw new Error("មិនអាចកំណត់វិធីសាស្ត្រទូទាត់បានទេ");
+          }
+
+          return fetchJson(
+            `/api/backend/donations/monthly/${encodeURIComponent(row.donationId)}`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                amount_khr: Number(row.realAmount || 0),
+                amount_usd: Number(row.dollarAmount || 0),
+                payment_method_id: Number(method.id),
+                receipt_file_id: row.receiptFileId || null,
+              }),
+            },
+          );
         }),
+      );
+
+      // Reload from backend so newly-created rows receive donationId and
+      // edited rows reflect the canonical server values. They remain editable.
+      const params = new URLSearchParams({
+        branchId: selectedBranch,
+        month: String(Number(selectedMonth)),
+        year: selectedYear,
+        page: "0",
+        size: "100",
       });
+      if (searchQuery.trim()) params.set("search", searchQuery.trim());
+
+      const page = await fetchJson(`/api/backend/donations/monthly/members?${params}`);
+      const branchLabel =
+        branchOptions.find((option) => option.value === selectedBranch)?.label ||
+        selectedBranch;
+
+      setEditableRows(
+        (Array.isArray(page?.items) ? page.items : []).map((member) =>
+          mapMonthlyMember(member, branchLabel, selectedMonth, selectedYear),
+        ),
+      );
+
+      setSavedMessage(`បានរក្សាទុកវិភាគទាន ${completed.length} នាក់`);
+      setHasUnsavedEdits(false);
+      return true;
     } catch (saveError) {
       setError(saveError.message || "Unable to save monthly donations.");
       return false;
     } finally {
       setSaving(false);
     }
-
-    // Stay on the page (the rest of this month's members are still right
-    // there) rather than navigating away after a bulk save.
-    setSavedMessage(`បានកត់ត្រាវិភាគទាន ${completed.length} នាក់`);
-    setHasUnsavedEdits(false);
-    return true;
   };
 
   const handleReset = (rows) => {
@@ -510,10 +591,9 @@ const paymentSummary = useMemo(() => {
               onSave={handleSave}
               onReceiptSave={handleReceiptSave}
               saving={saving}
-              // A member who already has a recorded donation for this
-              // period stays locked (see isRowLocked doc in table.js) —
-              // everyone else is editable at once, saved together below.
-              isRowLocked={(member) => member.alreadyPaid}
+              readOnly={!canManageMonthlyDonation}
+              // Saved monthly donations remain editable for ADMIN/SECRETARY/
+              // BRANCH_LEADER. VIEWER accounts can see the rows but cannot edit.
          />
 
     <div
