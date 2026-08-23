@@ -8,6 +8,7 @@ import Topbar from "@/components/navigation/topbar";
 import HeaderMemberInfo from "@/components/navigation/headerMemberInfo";
 import MemberInfoCard from "@/components/card/memberInfoCard";
 import MyAccountProfileLayout from "@/components/navigation/MyAccountProfileLayout";
+import StandaloneAccountSettings from "@/components/account/StandaloneAccountSettings";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { UnsavedChangesProvider } from "@/context/UnsavedChangesContext";
 
@@ -23,7 +24,7 @@ const ROLE_LABELS = {
 export default function MyAccountLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { member, loading, error } = useCurrentMember();
+  const { member, loading, error, refetch } = useCurrentMember();
 
   /*
    * Staff (mainly secretaries) can be assigned to more than one
@@ -78,14 +79,6 @@ export default function MyAccountLayout({ children }) {
   }, [memberId]);
 
   const isDetailsPage = pathname.startsWith("/myAcc/details");
-
-  // An unlinked account (ADMIN, or a standalone secretary/branch-leader/
-  // member account with no member record) has nothing for the
-  // member-data tabs to show, but password/email are plain account
-  // columns that work regardless — let those two through even when
-  // !member.isLinkedMember instead of blocking the whole section.
-  const isSelfServiceOnlyPage =
-    pathname === "/myAcc/password" || pathname === "/myAcc/email";
 
   const displayName =
     member?.name_kh ||
@@ -142,7 +135,20 @@ export default function MyAccountLayout({ children }) {
             </div>
           )}
 
-          {!loading && !error && member && (
+          {!loading && !error && member && !member.isLinkedMember && (
+            // No member record to show a profile card or a details page
+            // for — this account (ADMIN, or a standalone secretary/
+            // branch-leader/member account) only ever gets its password
+            // and email, both right here, no tabs.
+            <UnsavedChangesProvider>
+              <StandaloneAccountSettings
+                currentEmail={member.email !== "-" ? member.email : ""}
+                onEmailChanged={refetch}
+              />
+            </UnsavedChangesProvider>
+          )}
+
+          {!loading && !error && member && member.isLinkedMember && (
             <UnsavedChangesProvider>
             <div className="min-w-0 space-y-4">
               <HeaderMemberInfo
@@ -172,26 +178,7 @@ export default function MyAccountLayout({ children }) {
                 profileUploadEndpoint="/api/backend/my-account/profile-photo"
               />
 
-              {!member.isLinkedMember && !isSelfServiceOnlyPage ? (
-                <div className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-6 text-amber-900">
-                  <p>
-                    គណនីនេះមិនទាន់បានភ្ជាប់ជាមួយប្រវត្តិរូបសមាជិកទេ។ សូមទាក់ទងអ្នកគ្រប់គ្រងដើម្បីភ្ជាប់គណនីជាមួយសមាជិកត្រឹមត្រូវ។
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => router.push("/myAcc/password")}
-                    className="text-sm font-semibold text-primary underline"
-                  >
-                    ផ្លាស់ប្ដូរពាក្យសម្ងាត់ ឬអ៊ីមែលរបស់អ្នក
-                  </button>
-                </div>
-              ) : !member.isLinkedMember ? (
-                <MyAccountProfileLayout isLinkedMember={false}>
-                  {children}
-                </MyAccountProfileLayout>
-              ) : isDetailsPage ? (
-                children
-              ) : (
+              {isDetailsPage ? children : (
                 <MyAccountProfileLayout>{children}</MyAccountProfileLayout>
               )}
             </div>

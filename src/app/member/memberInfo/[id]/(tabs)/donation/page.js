@@ -171,7 +171,7 @@ export default function DonationPage() {
       header: "ល.រ",
       width: "w-[7%]",
       align: "center",
-      render: (_, index) => index + 1,
+      render: (_, index) => index,
     },
     {
       header: "ប្រចាំខែ",

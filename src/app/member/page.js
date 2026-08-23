@@ -1120,7 +1120,7 @@ export default function MembersPage() {
       render: (
         _,
         index,
-      ) => index + 1,
+      ) => index,
     },
 
     {

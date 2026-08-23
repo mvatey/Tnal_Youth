@@ -11,6 +11,7 @@ import { X } from "lucide-react";
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
+import MultiSelect from "@/components/forms/multiselect";
 import FormActionButton from "@/components/forms/FormActionButton";
 import { useAuth } from "@/context/AuthContext";
 
@@ -33,6 +34,7 @@ const EMPTY_FORM = {
   phone: "",
   email: "",
   branchId: "",
+  branchIds: [],
   levelId: "",
   positionId: "",
   role: "",
@@ -702,6 +704,29 @@ export default function CreateMemberModal({
       setSubmitError("");
     };
 
+  // A secretary can cover more than one branch; every other role (and a
+  // page locked to a single fixed branch) stays single-branch.
+  const isSecretaryRole =
+    form.role === "SECRETARY" &&
+    !lockBranch;
+
+  const updateBranchIds = (
+    nextValues,
+  ) => {
+    setForm(
+      (previousForm) => ({
+        ...previousForm,
+        branchIds: nextValues,
+      }),
+    );
+
+    setShowValidationError(
+      false,
+    );
+
+    setSubmitError("");
+  };
+
   const branchOptions =
   useMemo(() => {
     /*
@@ -823,7 +848,6 @@ export default function CreateMemberModal({
     "nationalityId",
     "dateOfBirth",
     "phone",
-    "branchId",
     "levelId",
     "role",
     "joinedOn",
@@ -838,7 +862,12 @@ export default function CreateMemberModal({
             "",
         ).trim() !==
         "",
-    );
+    ) &&
+    (isSecretaryRole
+      ? form.branchIds.length > 0
+      : String(
+          form.branchId ?? "",
+        ).trim() !== "");
 
   const submit =
     async (event) => {
@@ -891,9 +920,21 @@ export default function CreateMemberModal({
           null,
 
         branch_id:
-          Number(
-            form.branchId,
-          ),
+          isSecretaryRole
+            ? Number(
+                form.branchIds[0],
+              )
+            : Number(
+                form.branchId,
+              ),
+
+        branch_ids:
+          isSecretaryRole &&
+          form.branchIds.length > 1
+            ? form.branchIds.map(
+                Number,
+              )
+            : null,
 
         level_id:
           Number(
@@ -1182,24 +1223,6 @@ export default function CreateMemberModal({
                 />
 
                 <FormSelect
-                  label="សាខា"
-                  name="branchId"
-                  placeholder="ជ្រើសរើសសាខា"
-                  options={
-                    branchOptions
-                  }
-                  value={
-                    form.branchId
-                  }
-                  onChange={update(
-                    "branchId",
-                  )}
-                  disabled={
-                    lockBranch
-                  }
-                />
-
-                <FormSelect
                   label="តំណែង"
                   name="positionId"
                   placeholder="ជ្រើសរើសតំណែង"
@@ -1231,6 +1254,44 @@ export default function CreateMemberModal({
                     form.positionId,
                   )}
                 />
+
+                {isSecretaryRole ? (
+                  <MultiSelect
+                    label="សាខា"
+                    name="branchIds"
+                    placeholder="ជ្រើសរើសសាខា"
+                    options={
+                      branchOptions
+                    }
+                    value={
+                      form.branchIds
+                    }
+                    onChange={
+                      updateBranchIds
+                    }
+                    disabled={
+                      lockBranch
+                    }
+                  />
+                ) : (
+                  <FormSelect
+                    label="សាខា"
+                    name="branchId"
+                    placeholder="ជ្រើសរើសសាខា"
+                    options={
+                      branchOptions
+                    }
+                    value={
+                      form.branchId
+                    }
+                    onChange={update(
+                      "branchId",
+                    )}
+                    disabled={
+                      lockBranch
+                    }
+                  />
+                )}
 
                 <BoxFill
                   label="ថ្ងៃខែឆ្នាំកំណើត"

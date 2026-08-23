@@ -1659,6 +1659,7 @@ export default function BranchPage() {
                 />
               }
               onClick={handleDownload}
+              disabled={filteredBranches.length === 0}
             >
               ទាញយក
             </Button>

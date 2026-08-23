@@ -926,7 +926,7 @@ const loadBranchDetails =
         (person) =>
           person.role ===
           "BRANCH_LEADER",
-      ) || mappedLeaders[0] || null,
+      ) || null,
     [mappedLeaders],
   );
 

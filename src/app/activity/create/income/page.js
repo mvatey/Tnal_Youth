@@ -11,8 +11,19 @@ import Pagination from "@/components/navigation/Pagination";
 import { ReceiptIcon } from "@/components/donations/monthlydonation/AddDonationTableRow";
 import { useAuth } from "@/context/AuthContext";
 import { normalizeRole } from "@/lib/navigation";
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
 const ROWS_PER_PAGE = 10;
 const KHR_PER_USD = 4000;
+
+const INCOME_EXPORT_COLUMNS = [
+  { header: "ល.រ", accessor: "no" },
+  { header: "សមាជិក", accessor: "name" },
+  { header: "ភេទ", accessor: "gender" },
+  { header: "ថ្ងៃខែឆ្នាំចូលរួម", accessor: "joinedDate" },
+  { header: "ចំនួនវិភាគទាន (រៀល)", accessor: "amountRiel" },
+  { header: "ចំនួនវិភាគទាន ($)", accessor: "amountDollar" },
+  { header: "វិធីសាស្ត្រទូទាត់ប្រាក់", accessor: "paymentMethodLabel" },
+];
 
 function createInitialRows(members = []) {
   const getMemberIdentity = (member) =>
@@ -293,6 +304,27 @@ export default function IncomePage() {
     );
   }, [rows]);
 
+  const handleDownloadReport = () => {
+    const activeRows = rows
+      .filter((row) => parseAmount(row.amountRiel) > 0 || parseAmount(row.amountDollar) > 0)
+      .map((row, index) => {
+        const method = paymentMethods.find((item) => item.code === row.paymentMethod);
+
+        return {
+          ...row,
+          no: index + 1,
+          paymentMethodLabel:
+            method?.nameKm || method?.name_km || method?.nameEn || method?.name_en || row.paymentMethod,
+        };
+      });
+
+    downloadTableAsExcel({
+      data: activeRows,
+      columns: INCOME_EXPORT_COLUMNS,
+      fileName: `income-${activity?.name || activityId || "report"}`,
+    });
+  };
+
   const handleSave = async () => {
     const activeRows = rows.filter(
       (row) => parseAmount(row.amountRiel) > 0 || parseAmount(row.amountDollar) > 0,
@@ -401,6 +433,7 @@ export default function IncomePage() {
         <div className="mb-4 flex justify-end">
           <button
             type="button"
+            onClick={handleDownloadReport}
             className="flex h-[34px] items-center gap-2 rounded-lg bg-secondary px-5 text-sm font-semibold text-white transition hover:bg-secondary-hover"
           >
             <RiDownloadCloud2Line

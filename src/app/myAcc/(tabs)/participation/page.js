@@ -579,7 +579,7 @@ export default function ParticipationPage() {
       align: "center",
 
       render: (_, index) =>
-        index + 1,
+        index,
     },
 
     {

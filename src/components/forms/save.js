@@ -30,6 +30,10 @@ export default function SaveButton({
         hover:bg-primary-hover
         hover:shadow-sm
         active:translate-y-0
+        disabled:pointer-events-none
+        disabled:opacity-50
+        disabled:hover:translate-y-0
+        disabled:hover:shadow-none
         ${className}
       `}
     >

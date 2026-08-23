@@ -161,7 +161,7 @@ export default function SponsorDonationPage() {
       header: "ល.រ",
       width: "w-[8%]",
       align: "center",
-      render: (_, index) => index + 1,
+      render: (_, index) => index,
     },
     {
       header: "ប្រចាំខែ",

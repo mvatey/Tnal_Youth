@@ -166,8 +166,20 @@ input::-webkit-credentials-auto-fill-button {
 }
 
 .no-scrollbar {
-  -ms-overflow-style: none; 
+  -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/*
+ * Hides the scrollbar inside a native <select>'s open dropdown popup —
+ * Chromium/Edge apply ::-webkit-scrollbar to a select's popup, so this
+ * reaches it even though the popup itself isn't page DOM we can target
+ * with a className. Firefox ignores ::-webkit-scrollbar and keeps its
+ * own scrollbar there regardless (scrollbar-width has no effect on a
+ * select popup in any browser), so this is a Chromium/Edge-only fix.
+ */
+select::-webkit-scrollbar {
+  display: none;
 }
 
 

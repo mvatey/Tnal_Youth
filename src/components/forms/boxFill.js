@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, Eye, EyeOff } from "lucide-react";
 
 import SelectArrow from "@/components/forms/SelectArrow";
 
@@ -22,6 +22,9 @@ export default function BoxFill({
   className = "",
 }) {
   const [focused, setFocused] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+
+  const isPassword = type === "password";
 
   const isControlled = value !== undefined;
 
@@ -178,7 +181,7 @@ export default function BoxFill({
 
           <input
             id={name}
-            type={type}
+            type={isPassword && passwordVisible ? "text" : type}
             name={name}
             list={list}
             {...sharedValueProps}
@@ -189,13 +192,30 @@ export default function BoxFill({
             onBlur={() => setFocused(false)}
             className={`
               ${baseFieldClass}
-              ${
-                leadingIcon
-                  ? "pl-10 pr-3"
-                  : "px-3"
-              }
+              ${leadingIcon ? "pl-10" : "pl-3"}
+              ${isPassword ? "pr-10" : "pr-3"}
             `}
           />
+
+          {isPassword && (
+            <button
+              type="button"
+              onClick={() => setPasswordVisible((previous) => !previous)}
+              tabIndex={-1}
+              aria-label={passwordVisible ? "លាក់ពាក្យសម្ងាត់" : "បង្ហាញពាក្យសម្ងាត់"}
+              className="
+                absolute
+                right-3
+                top-1/2
+                -translate-y-1/2
+                text-text-secondary
+                transition
+                hover:text-text-primary
+              "
+            >
+              {passwordVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          )}
 
           {list && suggestions.length > 0 && (
             <datalist id={list}>

@@ -108,7 +108,7 @@ export default function EventDonationTable({
       />
 
       <div className="mt-10 flex justify-end">
-        <SaveButton onClick={onDownload} />
+        <SaveButton onClick={onDownload} disabled={!rows || rows.length === 0} />
       </div>
     </>
   );

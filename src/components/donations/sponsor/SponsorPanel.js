@@ -453,7 +453,7 @@ export default function SponsorPanel({
       />
 
       <div className="mt-10 flex justify-end">
-        <SaveButton onClick={handleDownload} />
+        <SaveButton onClick={handleDownload} disabled={sortedRows.length === 0} />
       </div>
     </section>
   );

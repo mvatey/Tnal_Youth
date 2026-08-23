@@ -27,15 +27,24 @@ const VIEWER_SCOPE_OPTIONS = [
   { label: "សមាជិក (Member)", value: "MEMBER" },
 ];
 
+// Admin can only toggle between these two — PENDING_ACTIVATION and LOCKED
+// are system-managed states with their own flows, not something to
+// hand-set here.
+const STATUS_OPTIONS = [
+  { label: "សកម្ម (Active)", value: "ACTIVE" },
+  { label: "អសកម្ម (Inactive)", value: "INACTIVE" },
+];
+
 const EMPTY_FORM = {
   fullNameKm: "",
   fullNameEn: "",
   phone: "",
   email: "",
-  role: "VIEWER",
-  viewerScope: "ADMIN",
+  role: "",
+  viewerScope: "",
   branchId: "",
   password: "",
+  status: "",
 };
 
 /*
@@ -124,6 +133,9 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             viewerScope: editingUser.viewerScopeRaw || "ADMIN",
             branchId: editingUser.branchId != null ? String(editingUser.branchId) : "",
             password: "",
+            status: ["ACTIVE", "INACTIVE"].includes(editingUser.statusCode)
+              ? editingUser.statusCode
+              : "",
           }
         : EMPTY_FORM,
     );
@@ -220,6 +232,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       viewerScope: isViewer ? form.viewerScope : null,
       branchId: requiresBranch ? Number(form.branchId) : null,
       password: form.password.trim() || null,
+      status: isEditing && form.status ? form.status : null,
     };
 
     try {
@@ -250,7 +263,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
   };
 
   return (
-    <PopupCard size="md" onClose={onClose}>
+    <PopupCard size="lg" onClose={onClose}>
       <div className="mb-5 flex items-center justify-between">
         <h2 className="text-lg font-bold text-primary">
           {isEditing ? "កែប្រែគណនីអ្នកប្រើប្រាស់" : "បង្កើតគណនីអ្នកប្រើប្រាស់ថ្មី"}
@@ -278,12 +291,8 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
         </button>
       </div>
 
-      <form onSubmit={submit} className="flex flex-col gap-3">
-        <p className="text-xs text-text-secondary">
-          Viewer គឺជាគណនីសម្រាប់មើលតែប៉ុណ្ណោះ។ ជ្រើស “មើលជា” ដើម្បីកំណត់ថាវាមើល UI និងទិន្នន័យតាម Admin, Branch Leader, Secretary ឬ Member។
-        </p>
-
-        <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+      <form onSubmit={submit} className="flex flex-col gap-5">
+        <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
           <BoxFill
             label="ឈ្មោះជាភាសាខ្មែរ"
             name="fullNameKm"
@@ -295,11 +304,13 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
           <BoxFill
             label="ឈ្មោះជាអក្សរឡាតាំង"
             name="fullNameEn"
-            placeholder="បញ្ចូលឈ្មោះ (ស្រេចចិត្ត)"
+            placeholder="បញ្ចូលឈ្មោះ"
             value={form.fullNameEn}
             onChange={update("fullNameEn")}
           />
+        </div>
 
+        <div className="space-y-4">
           <BoxFill
             label="លេខទូរស័ព្ទ"
             name="phone"
@@ -317,9 +328,37 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             onChange={update("email")}
           />
 
+          <BoxFill
+            label="ពាក្យសម្ងាត់"
+            name="password"
+            type="password"
+            placeholder="បញ្ចូលពាក្យសម្ងាត់ថ្មី​ (យ៉ាងតិច ៦ តួអក្សរ)"
+            value={form.password}
+            onChange={update("password")}
+          />
+
+          {isEditing && (
+            <FormSelect
+              label="ស្ថានភាពគណនី"
+              name="status"
+              placeholder="រក្សាទុកដដែល"
+              options={STATUS_OPTIONS}
+              value={form.status}
+              onChange={update("status")}
+            />
+          )}
+        </div>
+
+        {/*
+          Role starts unselected — its dependent fields (viewer-scope,
+          branch) only appear once a role is actually chosen, stacked
+          below it.
+        */}
+        <div className="space-y-4 rounded-xl border border-border bg-bg-page-gray/40 p-4">
           <FormSelect
             label="តួនាទី"
             name="role"
+            placeholder="ជ្រើសរើសតួនាទី"
             options={ROLE_OPTIONS}
             value={form.role}
             onChange={update("role")}
@@ -330,6 +369,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             <FormSelect
               label="មើលជា (View as)"
               name="viewerScope"
+              placeholder="ជ្រើសរើសមើលជា"
               options={VIEWER_SCOPE_OPTIONS}
               value={form.viewerScope}
               onChange={update("viewerScope")}
@@ -341,32 +381,14 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             <FormSelect
               label="សាខា"
               name="branchId"
+              placeholder="ជ្រើសរើសសាខា"
               options={branches}
               value={form.branchId}
               onChange={update("branchId")}
               required
             />
           )}
-
-          <BoxFill
-            label="ពាក្យសម្ងាត់ (ស្រេចចិត្ត)"
-            name="password"
-            type="password"
-            placeholder={
-              isEditing
-                ? "ទុកចន្លោះទទេ ដើម្បីរក្សាពាក្យសម្ងាត់ដដែល"
-                : "ទុកចន្លោះទទេ ដើម្បីឱ្យអ្នកប្រើកំណត់ខ្លួនឯង"
-            }
-            value={form.password}
-            onChange={update("password")}
-          />
         </div>
-
-        <p className="text-xs text-text-secondary">
-          {isEditing
-            ? "ប្រសិនបើកំណត់ពាក្យសម្ងាត់ថ្មីនៅទីនេះ វានឹងជំនួសពាក្យសម្ងាត់ចាស់ភ្លាមៗ។"
-            : "ប្រសិនបើកំណត់ពាក្យសម្ងាត់នៅទីនេះ អ្នកប្រើនៅតែត្រូវធ្វើសកម្មភាព (activate) គណនីតាម OTP ជាមុនសិន រួចបញ្ចូលពាក្យសម្ងាត់នេះនៅពេលបញ្ចប់សកម្មភាព។"}
-        </p>
 
         {showValidationError && !isFormValid && (
           <p className="mt-1 text-xs font-medium text-error">

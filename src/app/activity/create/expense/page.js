@@ -18,8 +18,19 @@ import { RiDownloadCloud2Line } from "react-icons/ri";
 import { HiSaveAs } from "react-icons/hi";
 
 import QuantityInput from "@/components/forms/QuantityInput";
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
 
 const KHR_PER_USD = 4000;
+
+const EXPENSE_EXPORT_COLUMNS = [
+  { header: "ល.រ", accessor: "no" },
+  { header: "ឈ្មោះ", accessor: "name" },
+  { header: "ការពិពណ៌នា", accessor: "category" },
+  { header: "ចំនួន", accessor: "quantity" },
+  { header: "តម្លៃ/ឯកតា (រៀល)", accessor: "unitPriceRiel" },
+  { header: "តម្លៃ/ឯកតា ($)", accessor: "unitPriceDollar" },
+  { header: "តម្លៃសរុប ($)", exportValue: (row) => formatDollar(row.totalDollar) },
+];
 
 function createEmptyRow(id) {
   return {
@@ -283,6 +294,18 @@ export default function ExpensePage() {
     };
   }, [rows]);
 
+  const handleDownloadReport = () => {
+    const activeRows = rows
+      .filter((row) => row.name.trim())
+      .map((row, index) => ({ ...row, no: index + 1 }));
+
+    downloadTableAsExcel({
+      data: activeRows,
+      columns: EXPENSE_EXPORT_COLUMNS,
+      fileName: `expense-${activity?.name || id || "report"}`,
+    });
+  };
+
   const handleSave = async () => {
     const activeRows = rows.filter((row) => row.name.trim());
     if (!id || activeRows.length === 0) {
@@ -365,6 +388,7 @@ export default function ExpensePage() {
         <div className="mb-4 flex justify-end">
           <button
             type="button"
+            onClick={handleDownloadReport}
             className="flex h-[34px] items-center gap-2 rounded-lg bg-secondary px-5 text-sm font-semibold text-white transition hover:bg-secondary-hover"
           >
             <RiDownloadCloud2Line

@@ -43,6 +43,26 @@ import {
   normalizeRole,
 } from "@/lib/navigation";
 
+import { downloadTableAsExcel } from "@/utils/downloadExcel";
+
+const PARTICIPANTS_EXPORT_COLUMNS = [
+  { header: "ល.រ", accessor: "no" },
+  { header: "ឈ្មោះអ្នកចូលរួម", accessor: "name" },
+  { header: "អ៊ីមែល", accessor: "email" },
+  { header: "ភេទ", accessor: "gender" },
+  { header: "តួនាទី", accessor: "role" },
+  { header: "សាខា", accessor: "branch" },
+  { header: "ថ្ងៃ/ខែ/ឆ្នាំ ចូលរួម", accessor: "joinedDate" },
+  {
+    header: "ស្ថានភាពអញ្ជើញ",
+    exportValue: (row) => (row.isInvited ? "បានអញ្ជើញ" : "មិនបានអញ្ជើញ"),
+  },
+  {
+    header: "ស្ថានភាពចូលរួម",
+    exportValue: (row) => (row.isParticipated ? "បានចូលរួម" : "មិនបានចូលរួម"),
+  },
+];
+
 async function fetchApi(
   path,
   options = {},
@@ -1026,6 +1046,21 @@ export default function ActivityParticipantsPage({
       selectedDate,
     ]);
 
+  const handleDownloadReport = () => {
+    const exportRows = filteredParticipants.map(
+      (participant, index) => ({
+        ...participant,
+        no: index + 1,
+      }),
+    );
+
+    downloadTableAsExcel({
+      data: exportRows,
+      columns: PARTICIPANTS_EXPORT_COLUMNS,
+      fileName: `participants-${activity?.name || activity?.id || id || "report"}`,
+    });
+  };
+
   const columns =
     useMemo(
       () => [
@@ -1562,6 +1597,9 @@ export default function ActivityParticipantsPage({
             <Button
               icon={
                 RiDownloadCloud2Line
+              }
+              onClick={
+                handleDownloadReport
               }
             >
               ទាញយករបាយការណ៍
