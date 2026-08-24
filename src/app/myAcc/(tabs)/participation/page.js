@@ -586,24 +586,12 @@ export default function ParticipationPage() {
       header:
         "ឈ្មោះកម្មវិធី",
 
-      width: "w-[21%]",
+      width: "w-[32%]",
       align: "left",
 
       render: (item) => (
         <span className="block w-full truncate font-medium text-text-secondary">
           {item.activity}
-        </span>
-      ),
-    },
-
-    {
-      header: "វិស័យ",
-      width: "w-[11%]",
-      align: "left",
-
-      render: (item) => (
-        <span className="block w-full truncate">
-          {item.sector}
         </span>
       ),
     },
@@ -780,7 +768,7 @@ export default function ParticipationPage() {
         }
         searchPlaceholder="ស្វែងរក..."
         pageSize={10}
-        minTableWidth={620}
+        minTableWidth={560}
         onDownload={() =>
           downloadTableAsExcel({
             data: participations,

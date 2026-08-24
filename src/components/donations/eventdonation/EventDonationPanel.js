@@ -76,7 +76,7 @@ export default function EventDonationPanel({
           organizerResponse.json().catch(() => null),
         ]);
         if (!branchResponse.ok || branchBody?.success === false) {
-          throw new Error(branchBody?.message || "Unable to load branches.");
+          throw new Error("មិនអាចទាញយកបញ្ជីសាខាបានទេ។");
         }
         if (cancelled) return;
         setBranches(toBranchOptions(branchBody?.data ?? branchBody));
@@ -86,8 +86,8 @@ export default function EventDonationPanel({
             organizerOptions.map((branch) => [branch.value, branch.label]),
           ));
         }
-      } catch (loadError) {
-        if (!cancelled) setError(loadError.message || "Unable to load branches.");
+      } catch {
+        if (!cancelled) setError("មិនអាចទាញយកបញ្ជីសាខាបានទេ។");
       }
     }
     loadBranches();

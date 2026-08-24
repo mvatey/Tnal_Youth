@@ -173,13 +173,13 @@ export default function SponsorPanel({
     fetch("/api/lookups/branches", { cache: "no-store" })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error("Unable to load branches.");
+        if (!response.ok) throw new Error("មិនអាចទាញយកបញ្ជីសាខាបានទេ។");
         if (!cancelled) setBranchOptions((Array.isArray(body) ? body : []).map((branch) => ({
           value: String(branch.value ?? branch.id),
           label: branch.labelKm || branch.labelEn || branch.nameKm || branch.nameEn || branch.label || branch.code || "-",
         })));
       })
-      .catch((loadError) => { if (!cancelled) setError(loadError.message || "Unable to load branches."); });
+      .catch(() => { if (!cancelled) setError("មិនអាចទាញយកបញ្ជីសាខាបានទេ។"); });
     return () => { cancelled = true; };
   }, []);
 

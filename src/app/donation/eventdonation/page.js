@@ -230,7 +230,7 @@ export default function EventDonationPage() {
             growth=""
             note=""
           />
-          <DonorCard label="ចំនួនកំណត់ត្រា" value={`${myRows.length} នាក់`} growth="" note="" />
+          <DonorCard label="ចំនួនកំណត់ត្រា" value={`${myRows.length} លើក`} growth="" note="" />
         </div>
         <MyEventDonationsTable rows={myRows} />
       </div>

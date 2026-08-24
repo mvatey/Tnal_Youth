@@ -5,6 +5,7 @@ import DonationTabs from "@/components/donations/DonationTabs";
 import SponsorCard from "@/components/donations/SponsorCard";
 import DonorCard from "@/components/donations/DonorCard";
 import SponsorPanel from "@/components/donations/sponsor/SponsorPanel";
+import MyAccountSponsorPage from "@/app/myAcc/(tabs)/sponsor/page";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch } from "@/context/BranchContext";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
@@ -174,11 +175,20 @@ export default function SponsorPage() {
           note=""
         />
       </div>
-      <SponsorPanel
-        selectedBranch={selectedBranch}
-        onBranchChange={setSelectedBranch}
-        branchScoped={isBranchScoped}
-      />
+      {isPersonalMember ? (
+        // A plain member has no branch to manage -- the staff panel below
+        // needs branch-management access it doesn't have (see
+        // BranchServiceImpl#getAccessibleBranchOptions, ADMIN/SECRETARY/
+        // BRANCH_LEADER only), so it shows their own sponsor records
+        // instead, same view as their My Account sponsor tab.
+        <MyAccountSponsorPage />
+      ) : (
+        <SponsorPanel
+          selectedBranch={selectedBranch}
+          onBranchChange={setSelectedBranch}
+          branchScoped={isBranchScoped}
+        />
+      )}
     </div>
   );
 }
