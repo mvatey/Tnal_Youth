@@ -266,8 +266,11 @@ export default async function ActivityDetailPage({
     record,
     currentUser,
     participantData,
+    participantSummaryData,
     branchData,
     attachmentData,
+    donationBranchTotalsData,
+    expenseSummaryData,
   ] = await Promise.all([
     backendGet(
       `/activities/${encodeURIComponent(
@@ -284,7 +287,17 @@ export default async function ActivityDetailPage({
     backendGet(
       `/activities/${encodeURIComponent(
         id,
-      )}/participants`,
+      )}/participants${branchId ? `?branchId=${encodeURIComponent(branchId)}` : ""}`,
+      accessToken,
+    ),
+
+    // Global participant totals for the whole activity. The list above stays
+    // branch-scoped for editing/viewing individual members, while this
+    // summary intentionally includes organizer + accepted invited branches.
+    backendGet(
+      `/activities/${encodeURIComponent(
+        id,
+      )}/participants/summary`,
       accessToken,
     ),
 
@@ -297,6 +310,23 @@ export default async function ActivityDetailPage({
       `/activities/${encodeURIComponent(
         id,
       )}/attachments`,
+      accessToken,
+    ),
+
+    // Cross-branch activity donation aggregate. This lets donations entered
+    // by an accepted invited branch immediately appear on the organizer's
+    // main activity card too.
+    backendGet(
+      `/donations/activity/${encodeURIComponent(
+        id,
+      )}/branch-totals`,
+      accessToken,
+    ),
+
+    backendGet(
+      `/activities/${encodeURIComponent(
+        id,
+      )}/expenses/summary`,
       accessToken,
     ),
   ]);
@@ -388,7 +418,7 @@ export default async function ActivityDetailPage({
 
   // Use the same participant source everywhere on the detail page.
   // This keeps the top card (joined/invited) in sync with the detail value below.
-  const attendedCount =
+  const scopedAttendedCount =
     activityParticipants.filter(
       (participant) => {
         const code =
@@ -409,7 +439,7 @@ export default async function ActivityDetailPage({
       },
     ).length;
 
-  const absentCount =
+  const scopedAbsentCount =
     activityParticipants.filter(
       (participant) =>
         participantAttendanceCode(
@@ -418,8 +448,51 @@ export default async function ActivityDetailPage({
         "absent",
     ).length;
 
-  const totalParticipantCount =
+  const scopedParticipantCount =
     activityParticipants.length;
+
+  // Prefer the backend's global activity summary so organizer cards include
+  // participant updates made by every accepted invited branch. Fall back to
+  // the scoped list only if the summary endpoint is unavailable.
+  const totalParticipantCount =
+    Number(participantSummaryData?.total ?? scopedParticipantCount);
+
+  const attendedCount =
+    Number(participantSummaryData?.attended ?? scopedAttendedCount);
+
+  const absentCount =
+    Number(
+      participantSummaryData?.not_attended ??
+      participantSummaryData?.notAttended ??
+      scopedAbsentCount,
+    );
+
+  /*
+   * DonationController returns ApiResponse<List<...>>:
+   * { success, data, ... }. Activity endpoints mostly return raw objects,
+   * so this one response must be unwrapped before calculating the card.
+   * Keep raw-array compatibility in case the API shape changes later.
+   */
+  const donationBranchTotals =
+    Array.isArray(donationBranchTotalsData)
+      ? donationBranchTotalsData
+      : Array.isArray(donationBranchTotalsData?.data)
+        ? donationBranchTotalsData.data
+        : [];
+
+  const activityDonationTotalUsd =
+    donationBranchTotals.reduce(
+      (sum, item) =>
+        sum + Number(item?.totalAmountUsd ?? item?.total_amount_usd ?? 0),
+      0,
+    );
+
+  const activityExpenseTotalUsd =
+    Number(
+      expenseSummaryData?.overall_total_usd ??
+      expenseSummaryData?.overallTotalUsd ??
+      0,
+    );
 
   const activity = {
     id:
@@ -544,10 +617,16 @@ export default async function ActivityDetailPage({
       "-",
 
     donation:
-      "$ 0",
+      `$ ${activityDonationTotalUsd.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      })}`,
 
     budget:
-      "$ 0",
+      `$ ${activityExpenseTotalUsd.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      })}`,
 
     documents:
       attachments.map(

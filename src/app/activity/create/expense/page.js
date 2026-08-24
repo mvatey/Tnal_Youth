@@ -35,6 +35,8 @@ const EXPENSE_EXPORT_COLUMNS = [
 function createEmptyRow(id) {
   return {
     id,
+    expenseId: null,
+    spentOn: null,
     name: "",
     category: "",
 
@@ -128,6 +130,34 @@ function todayIsoDate() {
   return `${year}-${month}-${day}`;
 }
 
+function expenseToRow(expense) {
+  const quantity = Math.max(parseNumber(expense?.quantity), 1);
+  const totalRiel = parseNumber(expense?.amount_khr ?? expense?.amountKhr);
+  const directDollarTotal = parseNumber(expense?.amount_usd ?? expense?.amountUsd);
+  const unitPriceRiel = totalRiel / quantity;
+  const unitPriceDollar = directDollarTotal / quantity;
+  const totalDollar = parseNumber(
+    expense?.total_amount_usd ?? expense?.totalAmountUsd ??
+      directDollarTotal + totalRiel / KHR_PER_USD,
+  );
+
+  return {
+    id: `saved-${expense.id}`,
+    expenseId: Number(expense.id),
+    spentOn: expense?.spent_on ?? expense?.spentOn ?? null,
+    name: expense?.name || "",
+    category: expense?.description || "",
+    quantity,
+    unitPriceRiel: Number.isInteger(unitPriceRiel)
+      ? String(unitPriceRiel)
+      : String(Number(unitPriceRiel.toFixed(2))),
+    unitPriceDollar: Number(unitPriceDollar).toFixed(2),
+    totalRiel,
+    directDollarTotal,
+    totalDollar,
+  };
+}
+
 export default function ExpensePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -140,16 +170,45 @@ export default function ExpensePage() {
   const [rows, setRows] =
     useState(initialRows);
 
+  const [deletedExpenseIds, setDeletedExpenseIds] =
+    useState([]);
+
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
-    fetchJson(`/api/backend/activities/${encodeURIComponent(id)}`)
-      .then((record) => {
-        if (!cancelled) setActivity({ ...record, name: record.titleKm || record.titleEn || "" });
+
+    Promise.all([
+      fetchJson(`/api/backend/activities/${encodeURIComponent(id)}`),
+      fetchJson(`/api/backend/activities/${encodeURIComponent(id)}/expenses`),
+    ])
+      .then(([record, expenseItems]) => {
+        if (cancelled) return;
+
+        setActivity({
+          ...record,
+          name: record.titleKm || record.titleEn || "",
+        });
+
+        const savedRows = (Array.isArray(expenseItems) ? expenseItems : [])
+          .map(expenseToRow);
+
+        // Keep the existing records editable and always leave enough blank
+        // rows for adding more expenses without navigating away.
+        const blankCount = Math.max(1, 3 - savedRows.length);
+        const blankRows = Array.from(
+          { length: blankCount },
+          (_, index) => createEmptyRow(`new-${Date.now()}-${index}`),
+        );
+
+        setRows([...savedRows, ...blankRows]);
+        setDeletedExpenseIds([]);
       })
       .catch((loadError) => {
-        if (!cancelled) setError(loadError.message || "Unable to load activity.");
+        if (!cancelled) {
+          setError(loadError.message || "Unable to load activity expenses.");
+        }
       });
+
     return () => {
       cancelled = true;
     };
@@ -253,12 +312,18 @@ export default function ExpensePage() {
 
   const deleteRow = (rowId) => {
     setRows((currentRows) => {
-      const filteredRows =
-        currentRows.filter(
-          (row) => row.id !== rowId
-        );
+      const target = currentRows.find((row) => row.id === rowId);
 
-      // Keep at least one row
+      if (target?.expenseId) {
+        setDeletedExpenseIds((ids) =>
+          ids.includes(target.expenseId)
+            ? ids
+            : [...ids, target.expenseId],
+        );
+      }
+
+      const filteredRows = currentRows.filter((row) => row.id !== rowId);
+
       return filteredRows.length > 0
         ? filteredRows
         : [createEmptyRow(Date.now())];
@@ -316,10 +381,27 @@ export default function ExpensePage() {
     setIsSaving(true);
     setError("");
     try {
+      // Delete saved rows the user removed from the editor.
       await Promise.all(
-        activeRows.map((row) =>
-          fetchJson(`/api/backend/activities/${encodeURIComponent(id)}/expenses`, {
-            method: "POST",
+        deletedExpenseIds.map((expenseId) =>
+          fetchJson(
+            `/api/backend/activities/${encodeURIComponent(id)}/expenses/${encodeURIComponent(expenseId)}`,
+            { method: "DELETE" },
+          ),
+        ),
+      );
+
+      // Existing rows are updated in place; only rows without an expenseId
+      // create a new database record. This prevents duplicate expenses every
+      // time the user re-opens the page and presses Save.
+      await Promise.all(
+        activeRows.map((row) => {
+          const endpoint = row.expenseId
+            ? `/api/backend/activities/${encodeURIComponent(id)}/expenses/${encodeURIComponent(row.expenseId)}`
+            : `/api/backend/activities/${encodeURIComponent(id)}/expenses`;
+
+          return fetchJson(endpoint, {
+            method: row.expenseId ? "PUT" : "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               name: row.name.trim(),
@@ -327,12 +409,13 @@ export default function ExpensePage() {
               quantity: parseNumber(row.quantity),
               amount_khr: parseNumber(row.totalRiel),
               amount_usd: parseNumber(row.directDollarTotal),
-              spent_on: todayIsoDate(),
+              spent_on: row.spentOn || todayIsoDate(),
               receipt_file_id: null,
             }),
-          }),
-        ),
+          });
+        }),
       );
+
       router.push(`/activity/${id}`);
     } catch (saveError) {
       setError(saveError.message || "Unable to save activity expenses.");

@@ -5,49 +5,89 @@ import { useSearchParams } from "next/navigation";
 import EventDonationSummaryCard from "@/components/donations/EventDonationSummaryCard";
 import DonorCard from "@/components/donations/DonorCard";
 
+/**
+ * Activity-level donation cards.
+ *
+ * These cards intentionally use the cross-branch aggregate endpoint rather
+ * than the currently selected branch's itemised donation list. That keeps the
+ * activity total shared between the organizer and every accepted invited
+ * branch: when an invited branch records money, the organizer's cards update
+ * too without exposing that branch's individual donor rows.
+ */
 export default function EventDonationDetailCards() {
   const searchParams = useSearchParams();
-  const branchId = searchParams.get("branch");
   const activityId = searchParams.get("event");
-  const [rows, setRows] = useState([]);
+  const [branchTotals, setBranchTotals] = useState([]);
 
   useEffect(() => {
-    if (!activityId) return undefined;
+    if (!activityId) {
+      setBranchTotals([]);
+      return undefined;
+    }
+
     let cancelled = false;
-    const params = new URLSearchParams({
-      page: "0",
-      size: "100",
-      activityId: String(activityId),
-    });
-    if (branchId) params.set("branchId", String(branchId));
-    fetch(`/api/backend/donations?${params.toString()}`, { cache: "no-store", credentials: "include" })
+
+    fetch(
+      `/api/backend/donations/activity/${encodeURIComponent(activityId)}/branch-totals`,
+      {
+        cache: "no-store",
+        credentials: "include",
+      },
+    )
       .then(async (response) => {
         const body = await response.json().catch(() => null);
-        if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load donations.");
+        if (!response.ok || body?.success === false) {
+          throw new Error(body?.message || "Unable to load activity donation totals.");
+        }
         return body?.data ?? body;
       })
-      .then((page) => {
-        if (cancelled) return;
-        setRows((Array.isArray(page?.items) ? page.items : []).filter((row) =>
-          String(row.activityId) === String(activityId) && (!branchId || String(row.branchId) === String(branchId)),
-        ));
+      .then((rows) => {
+        if (!cancelled) {
+          setBranchTotals(Array.isArray(rows) ? rows : []);
+        }
       })
-      .catch(() => { if (!cancelled) setRows([]); });
-    return () => { cancelled = true; };
-  }, [activityId, branchId]);
+      .catch(() => {
+        if (!cancelled) setBranchTotals([]);
+      });
 
-  const summary = useMemo(() => rows.reduce((totals, row) => {
-    totals.riel += Number(row.amountKhr || 0);
-    totals.dollar += Number(row.amountUsd || 0);
-    totals.donors.add(`${row.memberId || row.sponsorId || row.donorName || row.id}`);
-    return totals;
-  }, { riel: 0, dollar: 0, donors: new Set() }), [rows]);
-  const dollarEquivalent = summary.dollar + summary.riel / 4000;
+    return () => {
+      cancelled = true;
+    };
+  }, [activityId]);
+
+  const summary = useMemo(
+    () =>
+      branchTotals.reduce(
+        (totals, row) => ({
+          riel: totals.riel + Number(row?.amountKhr ?? row?.amount_khr ?? 0),
+          dollar: totals.dollar + Number(row?.amountUsd ?? row?.amount_usd ?? 0),
+          overall:
+            totals.overall +
+            Number(row?.totalAmountUsd ?? row?.total_amount_usd ?? 0),
+          donorCount:
+            totals.donorCount +
+            Number(row?.donationCount ?? row?.donation_count ?? 0),
+        }),
+        { riel: 0, dollar: 0, overall: 0, donorCount: 0 },
+      ),
+    [branchTotals],
+  );
 
   return (
     <div className="flex gap-[50px] xl:grid-cols-2">
-      <EventDonationSummaryCard value={`$${dollarEquivalent.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="" note={`៛ ${summary.riel.toLocaleString()}`} />
-      <DonorCard label="អ្នកវិភាគទាន" value={`${summary.donors.size} នាក់`} growth="" note="" />
+      <EventDonationSummaryCard
+        value={`$${summary.overall.toLocaleString(undefined, {
+          maximumFractionDigits: 2,
+        })}`}
+        growth=""
+        note={`៛ ${summary.riel.toLocaleString()}`}
+      />
+      <DonorCard
+        label="អ្នកវិភាគទាន"
+        value={`${summary.donorCount} នាក់`}
+        growth=""
+        note=""
+      />
     </div>
   );
 }

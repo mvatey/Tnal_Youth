@@ -2,126 +2,115 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import useCurrentMember from "@/hooks/useCurrentMember";
-
-import DataTable from "@/components/table/DataTable.js";
-
-import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
+import DataTable from "@/components/table/DataTable";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
+import {
+  fetchAllDonationRecords,
+  filterOwnDonationType,
+  mapDonationRecord,
+} from "@/lib/memberDonationRecords";
 
-const KHMER_MONTHS = [
-  "មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា",
-  "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ",
-];
-
-export default function DonationPage() {
-  const { member, loading, error } = useCurrentMember();
-
-  const [donations, setDonations] = useState([]);
-  const [dataError, setDataError] = useState("");
+export default function DonationRecordsPage() {
+  const [rows, setRows] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [paymentMethods, setPaymentMethods] = useState([]);
   const [query, setQuery] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
 
   useEffect(() => {
-    if (!member) return;
-    fetchMyAccountCollection("donations/monthly")
-      .then((rows) => setDonations(rows.map((row) => {
-        const paidAt = row.paidAt || "";
-        const period = row.donationPeriod || "";
-        return {
-          id: row.id,
-          month: period ? KHMER_MONTHS[Number(period.slice(5, 7)) - 1] || "-" : "-",
-          year: period ? period.slice(0, 4) : "-",
-          amount: Number(row.amountKhr || 0) > 0
-            ? `${Number(row.amountKhr).toLocaleString()} ៛`
-            : `$${Number(row.amountUsd || row.totalAmountUsd || 0).toFixed(2)}`,
-          date: paidAt ? new Date(paidAt).toLocaleDateString() : "-",
-          recordedBy: row.recordedBy?.fullNameKm || row.recordedBy?.fullNameEn || "-",
-          paymentMethod: row.paymentMethod?.labelKm || row.paymentMethod?.labelEn || row.paymentMethod?.code || "-",
-        };
-      })))
-      .catch((requestError) => setDataError(requestError.message));
-  }, [member]);
+    const controller = new AbortController();
 
-  const memberDonations = useMemo(() => donations, [donations]);
+    async function loadDonations() {
+      try {
+        setIsLoading(true);
+        setError("");
 
-  const paymentMethods = useMemo(() => {
-    return [
-      ...new Set(
-        memberDonations
-          .map((item) => item.paymentMethod)
-          .filter(Boolean),
-      ),
-    ];
-  }, [memberDonations]);
+        const allItems = await fetchAllDonationRecords(
+          "/api/backend/my-account/donations/records",
+          controller.signal,
+        );
+
+        /*
+         * IMPORTANT: the list is always first restricted by member_id on
+         * the backend, then by the exact donation type here. We never pull
+         * the whole branch/activity donor list into a member profile.
+         */
+        setRows(
+          filterOwnDonationType(allItems, "MONTHLY_DONATION")
+            .map(mapDonationRecord),
+        );
+      } catch (loadError) {
+        if (loadError.name !== "AbortError") {
+          setRows([]);
+          setError(loadError.message || "មិនអាចទាញយកទិន្នន័យវិភាគទានបានទេ។");
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
+      }
+    }
+
+    loadDonations();
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/lookups/payment-methods?activeOnly=true&includeMaterial=true", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message || "Unable to load payment methods.");
+        const methods = Array.isArray(body) ? body : (body?.data || []);
+        setPaymentMethods(
+          methods
+            .map((method) => ({
+              label: method.label_km || method.labelKm || method.label_en || method.labelEn || method.code,
+              value: method.label_km || method.labelKm || method.label_en || method.labelEn || method.code,
+            }))
+            .filter((method) => method.value),
+        );
+      })
+      .catch((lookupError) => {
+        if (lookupError.name !== "AbortError") console.error("Cannot load payment methods:", lookupError);
+      });
+
+    return () => controller.abort();
+  }, []);
 
   const filteredData = useMemo(() => {
     const search = query.trim().toLowerCase();
 
-    return memberDonations.filter((item) => {
-      const month = String(item.month ?? "").toLowerCase();
-      const amount = String(item.amount ?? "").toLowerCase();
-      const recordedBy = String(item.recordedBy ?? "").toLowerCase();
+    return rows.filter((item) => {
+      const haystack = [
+        item.month,
+        item.year,
+        item.amount,
+        item.date,
+        item.recordedBy,
+        item.paymentMethod,
+      ].map((value) => String(value ?? "").toLowerCase());
 
-      const matchesQuery =
-        !search ||
-        month.includes(search) ||
-        amount.includes(search) ||
-        recordedBy.includes(search);
-
-      const matchesMethod =
-        !methodFilter ||
-        item.paymentMethod === methodFilter;
-
+      const matchesQuery = !search || haystack.some((value) => value.includes(search));
+      const matchesMethod = !methodFilter || item.paymentMethod === methodFilter;
       return matchesQuery && matchesMethod;
     });
-  }, [
-    memberDonations,
-    query,
-    methodFilter,
-  ]);
+  }, [rows, query, methodFilter]);
 
   const columns = [
-    {
-      header: "ល.រ",
-      width: "w-[6%]",
-      align: "center",
-      render: (_, index) => index,
-    },
+    { header: "ល.រ", width: "w-[7%]", align: "center", render: (_, index) => index },
     {
       header: "ប្រចាំខែ",
-      width: "w-[16%]",
-      align: "left",
-      render: (item) => (
-        <span>
-          {item.month}, {item.year}
-        </span>
-      ),
-    },
-    {
-      header: "ចំនួន",
-      width: "w-[14%]",
-      align: "left",
-      accessor: "amount",
-    },
-    {
-      header: "ថ្ងៃបរិច្ឆេទ",
       width: "w-[18%]",
       align: "left",
-      accessor: "date",
+      render: (item) => <span>{item.month}, {item.year}</span>,
     },
-    {
-      header: "កត់ត្រាដោយ",
-      width: "w-[18%]",
-      align: "left",
-      accessor: "recordedBy",
-    },
-    {
-      header: "វិធីសាស្រ្តទូទាត់",
-      width: "w-[18%]",
-      align: "left",
-      accessor: "paymentMethod",
-    },
+    { header: "ចំនួន", width: "w-[16%]", align: "left", accessor: "amount" },
+    { header: "ថ្ងៃបរិច្ឆេទ", width: "w-[19%]", align: "left", accessor: "date" },
+    { header: "កត់ត្រាដោយ", width: "w-[20%]", align: "left", accessor: "recordedBy" },
+    { header: "វិធីសាស្រ្តទូទាត់", width: "w-[20%]", align: "left", accessor: "paymentMethod" },
   ];
 
   const filters = [
@@ -134,43 +123,21 @@ export default function DonationPage() {
     },
   ];
 
-  if (loading) {
-    return (
-      <div className="rounded-xl border border-border bg-bg-page-white p-6">
-        កំពុងទាញយកព័ត៌មានសមាជិក...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
-        <p className="text-sm text-error">
-          {error}
-        </p>
-      </div>
-    );
-  }
-
-  if (dataError) {
-    return <div className="rounded-xl border border-error/30 bg-bg-page-white p-6 text-sm text-error">{dataError}</div>;
-  }
-
-  if (!member) {
-    return (
-      <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
-        <p className="text-sm text-error">
-          រកមិនឃើញព័ត៌មានសមាជិក
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold text-text-primary">
-        បញ្ជីការធ្វើវិភាគទាន
-      </h2>
+      <h2 className="text-lg font-semibold text-text-primary">បញ្ជីការធ្វើវិភាគទាន</h2>
+
+      {error && (
+        <div className="rounded-lg border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
+          {error}
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="rounded-lg border border-border bg-bg-page-white px-4 py-3 text-sm text-text-secondary">
+          កំពុងទាញយកទិន្នន័យ...
+        </div>
+      )}
 
       <DataTable
         data={filteredData}
@@ -185,11 +152,10 @@ export default function DonationPage() {
           downloadTableAsExcel({
             data: filteredData,
             columns,
-            fileName: `វិភាគទានប្រចាំខែ-${member.name_kh}`,
+            fileName: "វិភាគទានប្រចាំខែ",
           })
         }
       />
-
     </div>
   );
 }

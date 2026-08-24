@@ -29,6 +29,7 @@ import StatCard from "@/components/dashboard/statCard";
 
 import useMemberPermissions from "@/hooks/useMemberPermissions";
 import { UnsavedChangesProvider } from "@/context/UnsavedChangesContext";
+import { fetchAllDonationRecords, summarizeDonationRecords } from "@/lib/memberDonationRecords";
 
 async function fetchJson(
   path,
@@ -358,25 +359,17 @@ export default function MemberInfoLayout({
 
     const controller = new AbortController();
 
-    fetchJson(
-      `/backend/members/${id}/monthly-donations/summary`,
+    fetchAllDonationRecords(
+      `/api/backend/donations?memberId=${encodeURIComponent(id)}`,
       controller.signal,
     )
-      .then((data) => {
-        setMonthlyDonationSummary({
-          donationCount: Number(data?.donationCount) || 0,
-          totalDonationKhr: Number(data?.totalDonationKhr) || 0,
-          totalDonationUsd: Number(data?.totalDonationUsd) || 0,
-          cashPaymentCount: Number(data?.cashPaymentCount) || 0,
-          bankPaymentCount: Number(data?.bankPaymentCount) || 0,
-        });
+      .then((items) => {
+        const summary = summarizeDonationRecords(items, "MONTHLY_DONATION");
+        setMonthlyDonationSummary(summary);
       })
       .catch((summaryError) => {
         if (summaryError.name !== "AbortError") {
-          console.error(
-            "Cannot load monthly donation summary:",
-            summaryError,
-          );
+          console.error("Cannot load monthly donation summary:", summaryError);
         }
       });
 
@@ -388,26 +381,17 @@ export default function MemberInfoLayout({
 
     const controller = new AbortController();
 
-    fetchJson(
-      `/backend/members/${id}/activity-donations/summary`,
+    fetchAllDonationRecords(
+      `/api/backend/donations?memberId=${encodeURIComponent(id)}`,
       controller.signal,
     )
-      .then((data) => {
-        setActivityDonationSummary({
-          donationCount: Number(data?.donationCount) || 0,
-          totalDonationKhr: Number(data?.totalDonationKhr) || 0,
-          totalDonationUsd: Number(data?.totalDonationUsd) || 0,
-          materialDonationCount:
-            Number(data?.materialDonationCount) || 0,
-          bankPaymentCount: Number(data?.bankPaymentCount) || 0,
-        });
+      .then((items) => {
+        const summary = summarizeDonationRecords(items, "ACTIVITY_DONATION");
+        setActivityDonationSummary(summary);
       })
       .catch((summaryError) => {
         if (summaryError.name !== "AbortError") {
-          console.error(
-            "Cannot load activity donation summary:",
-            summaryError,
-          );
+          console.error("Cannot load activity donation summary:", summaryError);
         }
       });
 

@@ -24,6 +24,27 @@ async function fetchJson(url, options) {
   return body?.data ?? body;
 }
 
+
+const PAYMENT_METHOD_LABELS = {
+  CASH: "Cash",
+  ABA: "ABA",
+  WING: "Wing",
+  BANK_TRANSFER: "Bank Transfer",
+  ACLEDA: "ACLEDA",
+};
+
+function normalizePaymentMethodCode(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+}
+
+function paymentMethodLabelFromCode(value) {
+  const code = normalizePaymentMethodCode(value);
+  return PAYMENT_METHOD_LABELS[code] || value || "Cash";
+}
+
 function toOptions(items, labelKeys) {
   return (Array.isArray(items) ? items : []).map((item) => ({
     value: String(item.id ?? item.value),
@@ -55,7 +76,9 @@ function mergeSavedDonations(memberItems, donations, selectedBranch) {
       realAmount: String(Number(saved.amountKhr || 0)),
       dollarAmount: Number(saved.amountUsd || 0).toFixed(2),
       paymentMethodId: saved.paymentMethodId ?? member.paymentMethodId,
-      paymentMethod: saved.paymentMethodCode || member.paymentMethod,
+      paymentMethod: paymentMethodLabelFromCode(
+        saved.paymentMethodCode || member.paymentMethod,
+      ),
       paidAt: saved.paidAt,
       receiptFileId: saved.receiptFileId,
       paymentReference: saved.paymentReference,
@@ -75,17 +98,30 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     branches: accessibleBranches = [],
     selectedBranch: globalSelectedBranch = "all",
   } = useBranch();
-  // Only entry staff (secretary / branch_leader) may record or edit event
-  // donations here — admin/viewer are view-only, and members use their own
-  // read-only "my donations" view instead of this staff-entry form.
-  const canEdit = ["secretary", "branch_leader"].includes(currentMember?.role);
+  // Keep event-donation permissions aligned with the monthly-donation flow:
+  // - real SECRETARY / BRANCH_LEADER accounts may add and edit money;
+  // - every VIEWER account is read-only even when viewerScope resolves to
+  //   SECRETARY / BRANCH_LEADER;
+  // - Viewer Secretary / Viewer Branch Leader still keep the SAME branch
+  //   scope as the role they are viewing as.
+  const effectiveRole = String(
+    currentMember?.effectiveRole || currentMember?.role || "",
+  ).toLowerCase();
+  const isViewer =
+    Boolean(currentMember?.isViewer) ||
+    String(currentMember?.role || "").toLowerCase() === "viewer";
+  const canEdit =
+    !isViewer && ["secretary", "branch_leader"].includes(effectiveRole);
+  // Branch scope is based on the EFFECTIVE read role, not canEdit. This is
+  // important for VIEWER + SECRETARY / BRANCH_LEADER: they must remain
+  // locked to their branch even though the inputs and Save action are disabled.
+  const isBranchScoped = ["secretary", "branch_leader"].includes(effectiveRole);
   // Same role set is always scoped to exactly one branch — the sidebar's
   // global dropdown — same as AddDonationForm.js (monthly/sponsor). This
   // form used to only take its branch from initialQuery/URL once at mount,
   // so a secretary who opened it and then switched branches in the sidebar
   // kept editing the previous branch's members with no indication anything
   // was stale.
-  const isBranchScoped = canEdit;
   const effectiveBranchId = useMemo(() => {
     if (!isBranchScoped) return null;
     if (globalSelectedBranch && globalSelectedBranch !== "all") return String(globalSelectedBranch);
@@ -305,7 +341,9 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           dob: member.date_of_birth || member.dateOfBirth || "-",
           realAmount: "0",
           dollarAmount: "0.00",
-          paymentMethod: paymentMethods[0]?.code || "Cash",
+          paymentMethod: paymentMethodLabelFromCode(
+            paymentMethods[0]?.code || "Cash",
+          ),
           paymentMethodId: paymentMethods[0]?.id,
           paymentReference: "",
         }));
@@ -357,9 +395,19 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     setError("");
     try {
       const savedRows = await Promise.all(completed.map((row) => {
-        const method = paymentMethods.find((item) =>
-          String(item.id) === String(row.paymentMethodId) || item.code === row.paymentMethod,
-        ) || paymentMethods[0];
+        // Resolve the CURRENT dropdown selection first, then fall back to
+        // the loaded id. Table.js clears paymentMethodId whenever the user
+        // changes Cash -> ABA/Wing/Bank Transfer, so an old Cash id can never
+        // overwrite the new selection on Save.
+        const selectedCode = normalizePaymentMethodCode(row.paymentMethod);
+        const method =
+          paymentMethods.find(
+            (item) => normalizePaymentMethodCode(item.code) === selectedCode,
+          ) ||
+          paymentMethods.find(
+            (item) => String(item.id) === String(row.paymentMethodId),
+          ) ||
+          paymentMethods[0];
         const payload = {
           donationTypeId: Number(donationTypeId),
           memberId: Number(row.memberId),
@@ -563,7 +611,13 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
             members={members}
             selectedBranch={selectedBranch}
             searchQuery={searchQuery}
-            rowEditMode={isDetailPage}
+            // Match Monthly Donation: every member row is editable at the same
+            // time and the whole table is saved with ONE bottom Save action.
+            // Do not use rowEditMode here — that mode creates a pencil/save
+            // action per row and makes event donations feel different from
+            // monthly donations. VIEWER accounts still see the exact table,
+            // but readOnly disables every amount/payment/receipt control.
+            rowEditMode={false}
             readOnly={!canEdit}
             onRowsChange={(rows) => {
               setMembers(rows);

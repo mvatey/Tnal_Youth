@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CircleDollarSign, CreditCard, HandCoins } from "lucide-react";
+import { FaHandHoldingDollar } from "react-icons/fa6";
+import { HiCash } from "react-icons/hi";
 import { usePathname, useRouter } from "next/navigation";
 
 import Sidebar from "@/components/navigation/sidebar";
@@ -11,6 +14,8 @@ import MyAccountProfileLayout from "@/components/navigation/MyAccountProfileLayo
 import StandaloneAccountSettings from "@/components/account/StandaloneAccountSettings";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { UnsavedChangesProvider } from "@/context/UnsavedChangesContext";
+import StatCard from "@/components/dashboard/statCard";
+import { fetchAllDonationRecords, summarizeDonationRecords } from "@/lib/memberDonationRecords";
 
 const ROLE_LABELS = {
   SECRETARY: "លេខាធិការ",
@@ -20,6 +25,13 @@ const ROLE_LABELS = {
   branch_leader: "ប្រធានសាខា",
   member: "សមាជិក",
 };
+
+function formatDonationTotal(amountKhr, amountUsd) {
+  const parts = [];
+  if (Number(amountKhr) > 0) parts.push(`${Number(amountKhr).toLocaleString()} ៛`);
+  if (Number(amountUsd) > 0) parts.push(`$${Number(amountUsd).toLocaleString()}`);
+  return parts.length ? parts.join(" / ") : "0";
+}
 
 export default function MyAccountLayout({ children }) {
   const pathname = usePathname();
@@ -35,6 +47,14 @@ export default function MyAccountLayout({ children }) {
    * back to showing the primary branch only.
    */
   const [assignedBranches, setAssignedBranches] = useState([]);
+  const [monthlyDonationSummary, setMonthlyDonationSummary] = useState({
+    donationCount: 0, totalDonationKhr: 0, totalDonationUsd: 0,
+    cashPaymentCount: 0, bankPaymentCount: 0, materialDonationCount: 0,
+  });
+  const [activityDonationSummary, setActivityDonationSummary] = useState({
+    donationCount: 0, totalDonationKhr: 0, totalDonationUsd: 0,
+    cashPaymentCount: 0, bankPaymentCount: 0, materialDonationCount: 0,
+  });
 
   const memberId = member?.memberId ?? member?.id ?? null;
 
@@ -79,6 +99,38 @@ export default function MyAccountLayout({ children }) {
   }, [memberId]);
 
   const isDetailsPage = pathname.startsWith("/myAcc/details");
+
+  const isDonation = pathname === "/myAcc/donation";
+  const isSponsor = pathname === "/myAcc/sponsor";
+
+  useEffect(() => {
+    if (!memberId || (!isDonation && !isSponsor)) return undefined;
+
+    const controller = new AbortController();
+    fetchAllDonationRecords(
+      "/api/backend/my-account/donations/records",
+      controller.signal,
+    )
+      .then((items) => {
+        if (isDonation) {
+          setMonthlyDonationSummary(
+            summarizeDonationRecords(items, "MONTHLY_DONATION"),
+          );
+        }
+        if (isSponsor) {
+          setActivityDonationSummary(
+            summarizeDonationRecords(items, "ACTIVITY_DONATION"),
+          );
+        }
+      })
+      .catch((summaryError) => {
+        if (summaryError.name !== "AbortError") {
+          console.error("Cannot load My Account donation summary:", summaryError);
+        }
+      });
+
+    return () => controller.abort();
+  }, [memberId, isDonation, isSponsor]);
 
   const displayName =
     member?.name_kh ||
@@ -181,6 +233,24 @@ export default function MyAccountLayout({ children }) {
                     : () => router.push("/myAcc/details/personal")
                 }
               />
+
+              {isDonation && (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <StatCard icon={FaHandHoldingDollar} label="ចំនួនវិភាគទាន" value={monthlyDonationSummary.donationCount} iconColor="text-primary" iconBg="bg-secondary-light" />
+                  <StatCard icon={CircleDollarSign} label="ទឹកប្រាក់សរុប" value={formatDonationTotal(monthlyDonationSummary.totalDonationKhr, monthlyDonationSummary.totalDonationUsd)} iconColor="text-error" iconBg="bg-error-bg" />
+                  <StatCard icon={HiCash} label="ការទូទាត់តាម Cash" value={monthlyDonationSummary.cashPaymentCount} iconColor="text-warning" iconBg="bg-warning-bg" />
+                  <StatCard icon={CreditCard} label="ការទូទាត់តាមធនាគារ" value={monthlyDonationSummary.bankPaymentCount} iconColor="text-secondary" iconBg="bg-secondary-light" />
+                </div>
+              )}
+
+              {isSponsor && (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <StatCard icon={FaHandHoldingDollar} label="ចំនួនការបរិច្ចាក" value={activityDonationSummary.donationCount} iconColor="text-primary" iconBg="bg-secondary-light" />
+                  <StatCard icon={CircleDollarSign} label="ទឹកប្រាក់សរុប" value={formatDonationTotal(activityDonationSummary.totalDonationKhr, activityDonationSummary.totalDonationUsd)} iconColor="text-success" iconBg="bg-success-bg" />
+                  <StatCard icon={HandCoins} label="ចំនួនសម្ភារៈ" value={activityDonationSummary.materialDonationCount} iconColor="text-warning" iconBg="bg-warning-bg" />
+                  <StatCard icon={CreditCard} label="ការទូទាត់តាមធនាគារ" value={activityDonationSummary.bankPaymentCount} iconColor="text-secondary" iconBg="bg-secondary-light" />
+                </div>
+              )}
 
               <MemberInfoCard
                 member={member}
