@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-import { ExternalLink, SquarePen, UserCheck, UserX, Users as UsersIcon } from "lucide-react";
+import { SquarePen, UserCheck, UserX, Users as UsersIcon } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
 import DataTable from "@/components/table/DataTable.js";
@@ -497,9 +497,9 @@ export default function UsersPage() {
               href={`/member/memberInfo/${user.memberId}/details/personal`}
               aria-label="កែប្រែតាមទំព័រសមាជិក"
               title="កែប្រែតាមទំព័រសមាជិក"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-primary transition hover:bg-primary-light"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-warning transition hover:bg-warning-bg"
             >
-              <ExternalLink size={16} strokeWidth={1.8} />
+              <SquarePen size={16} strokeWidth={1.8} />
             </Link>
           ),
       },

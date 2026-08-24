@@ -97,7 +97,12 @@ function normalizeActivity(item, branchOptions) {
       branch?.label ||
       "-",
     branchId: item.branchId,
-    location: item.locationName || item.address || "-",
+    location:
+      item.provinceNameKm ||
+      item.provinceNameEn ||
+      item.locationName ||
+      item.address ||
+      "-",
     date: formatDate(item.startsAt),
     dateValue: item.startsAt?.slice(0, 10) || "",
     duration: formatDuration(item.startsAt, item.endsAt),

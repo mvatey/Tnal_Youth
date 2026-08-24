@@ -24,7 +24,6 @@ const VIEWER_SCOPE_OPTIONS = [
   { label: "អ្នកគ្រប់គ្រង (Admin)", value: "ADMIN" },
   { label: "ប្រធានសាខា (Branch Leader)", value: "BRANCH_LEADER" },
   { label: "លេខាធិការ (Secretary)", value: "SECRETARY" },
-  { label: "សមាជិក (Member)", value: "MEMBER" },
 ];
 
 // Admin can only toggle between these two — PENDING_ACTIVATION and LOCKED
@@ -263,7 +262,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
   };
 
   return (
-    <PopupCard size="lg" onClose={onClose}>
+    <PopupCard size="lg" onClose={onClose} className="no-scrollbar">
       <div className="mb-5 flex items-center justify-between">
         <h2 className="text-lg font-bold text-primary">
           {isEditing ? "កែប្រែគណនីអ្នកប្រើប្រាស់" : "បង្កើតគណនីអ្នកប្រើប្រាស់ថ្មី"}

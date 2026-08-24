@@ -91,9 +91,11 @@ export default function DonationTable() {
     "ប្រាក់សរុប(ដុល្លារ)",
     "សកម្មភាព",
   ];
+  const isAdmin = effectiveRole === "admin";
   // Viewer Secretary / Viewer Branch Leader sees the same action column as
-  // the scoped role, but the controls are disabled below.
-  const showActionColumn = isBranchScoped;
+  // the scoped role, but the controls are disabled below. Admin gets the
+  // same column too, but detail-only (no delete) — see showDetailOnly below.
+  const showActionColumn = isBranchScoped || isAdmin;
   const canManage = isBranchScoped && !isReadOnlyViewer;
   const visibleHeaders = showActionColumn ? headers : headers.slice(0, -1);
   const [selectedYear, setSelectedYear] = useState("all");
@@ -387,6 +389,7 @@ export default function DonationTable() {
                 canManage={canManage}
                 readOnlyViewer={isReadOnlyViewer}
                 showAction={showActionColumn}
+                showDetailOnly={isAdmin && !isReadOnlyViewer}
               />
             ))}
             {filteredRows.length === 0 && (
