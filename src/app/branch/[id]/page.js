@@ -391,6 +391,7 @@ function LeaderCard({
               fill
               sizes="64px"
               className="object-cover"
+              unoptimized={Boolean(person.profileImage)}
             />
           </div>
 
@@ -1179,6 +1180,7 @@ const loadBranchDetails =
               fill
               sizes="32px"
               className="object-cover"
+              unoptimized={Boolean(row.profileImage)}
             />
           </div>
 
