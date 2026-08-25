@@ -252,17 +252,11 @@ export default function EventDonationPage() {
           value={`${memberCount} នាក់`}
           growth=""
           note=""
-          selected={selectedPeopleCard === "members"}
-          disabled={selectedBranch === "all" || !canManage}
-          onClick={() => setSelectedPeopleCard("members")}
         />
         <NumberSponsorCard
           value={`${sponsorCount} នាក់`}
           growth=""
           note=""
-          selected={selectedPeopleCard === "sponsors"}
-          disabled={selectedBranch === "all"}
-          onClick={() => setSelectedPeopleCard("sponsors")}
         />
       </div>
       {selectedPeopleCard === "members" && canManage ? (

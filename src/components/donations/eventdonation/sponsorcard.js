@@ -6,25 +6,13 @@ export default function NumberSponsorCard({
   value = "50 នាក់",
   growth = "+15%",
   note = "ក្នុងខែនេះ",
-  selected = false,
-  disabled = false,
-  onClick,
 }) {
   const [mainValue, ...unitParts] = String(value).split(" ");
   const unit = unitParts.join(" ");
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-pressed={selected}
-      title={disabled ? "សូមជ្រើសរើសសាខាជាមុន" : undefined}
-      className={`h-[65px] w-[200px] rounded-2xl border-2 px-3 py-2 text-left shadow-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-55 enabled:hover:-translate-y-0.5 enabled:hover:border-secondary/60 enabled:hover:shadow-md ${
-        selected
-          ? "border-secondary bg-secondary-light text-secondary ring-2 ring-secondary/15"
-          : "border-border bg-bg-page-white"
-      }`}
+    <article
+      className="min-h-[65px] w-full rounded-2xl border-2 border-border bg-bg-page-white px-3 py-2 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-secondary/40 hover:shadow-md"
     >
       <div className="flex h-full items-center gap-2">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E0FBE6] text-[#15803D]">
@@ -62,6 +50,6 @@ export default function NumberSponsorCard({
           </div>
         </div>
       </div>
-    </button>
+    </article>
   );
 }
