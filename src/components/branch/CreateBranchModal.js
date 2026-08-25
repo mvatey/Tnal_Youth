@@ -21,6 +21,7 @@ import { HiSaveAs } from "react-icons/hi";
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
+import { useLanguage } from "@/context/LanguageContext";
 
 const EMPTY_FORM = {
   nameKm: "",
@@ -122,7 +123,11 @@ async function requestJson(
   return responseBody;
 }
 
-function getLocationLabel(item) {
+function getLocationLabel(item, label) {
+  if (label) {
+    return label(item, "-");
+  }
+
   return (
     item?.name_km ||
     item?.nameKm ||
@@ -138,7 +143,11 @@ function getLocationLabel(item) {
   );
 }
 
-function getStatusLabel(item) {
+function getStatusLabel(item, label) {
+  if (label) {
+    return label(item, "-");
+  }
+
   return (
     item?.name_km ||
     item?.nameKm ||
@@ -153,24 +162,24 @@ function getStatusLabel(item) {
   );
 }
 
-function toLocationOptions(items) {
+function toLocationOptions(items, label) {
   if (!Array.isArray(items)) {
     return [];
   }
 
   return items.map((item) => ({
-    label: getLocationLabel(item),
+    label: getLocationLabel(item, label),
     value: String(item?.id ?? ""),
   }));
 }
 
-function toStatusOptions(items) {
+function toStatusOptions(items, label) {
   if (!Array.isArray(items)) {
     return [];
   }
 
   return items.map((item) => ({
-    label: getStatusLabel(item),
+    label: getStatusLabel(item, label),
     value: String(item?.id ?? ""),
   }));
 }
@@ -268,6 +277,9 @@ export default function CreateBranchModal({
   initialData = null,
   leaderOptions = [],
 }) {
+  const { t, label } =
+    useLanguage();
+
   const isEditMode =
     Boolean(initialData?.id);
 
@@ -334,12 +346,27 @@ export default function CreateBranchModal({
   const showCommune =
     form.branchLevelId === "3";
 
+  const levelOptions =
+    useMemo(
+      () =>
+        LEVEL_OPTIONS.map((option) => ({
+          ...option,
+          label:
+            option.value === "1"
+              ? t("branchPage.province")
+              : option.value === "2"
+                ? t("branchPage.district")
+                : t("branchPage.commune"),
+        })),
+      [t],
+    );
+
   const branchLeaderOptions =
     useMemo(() => {
       const options = [
         {
           label:
-            "មិនទាន់កំណត់ប្រធានសាខា",
+            t("branchPage.unsetBranchLeader"),
           value: "",
         },
       ];
@@ -354,7 +381,7 @@ export default function CreateBranchModal({
           currentLeader?.fullNameKm ||
           currentLeader?.full_name_en ||
           currentLeader?.fullNameEn ||
-          "ប្រធានសាខាបច្ចុប្បន្ន";
+          t("branchPage.currentBranchLeader");
 
         options.push({
           label: currentLeaderName,
@@ -390,6 +417,7 @@ export default function CreateBranchModal({
     }, [
       currentLeader,
       leaderOptions,
+      t,
     ]);
 
   useEffect(() => {
@@ -437,7 +465,7 @@ export default function CreateBranchModal({
     );
 
     setProvinceOptions(
-      toLocationOptions(provinces),
+      toLocationOptions(provinces, label),
     );
   } catch (provinceError) {
     if (
@@ -452,7 +480,7 @@ export default function CreateBranchModal({
       setProvinceOptions([]);
 
       setError(
-        "មិនអាចទាញយកបញ្ជីរាជធានី/ខេត្តបានទេ",
+        t("branchPage.loadProvincesFailed"),
       );
     }
   }
@@ -473,7 +501,7 @@ export default function CreateBranchModal({
     );
 
     setStatusOptions(
-      toStatusOptions(statuses),
+      toStatusOptions(statuses, label),
     );
 
     if (
@@ -512,7 +540,7 @@ export default function CreateBranchModal({
 
       setError((previous) => {
         const statusMessage =
-          "មិនអាចទាញយកបញ្ជីស្ថានភាពសាខាបានទេ";
+          t("branchPage.loadStatusesFailed");
 
         return previous
           ? `${previous} | ${statusMessage}`
@@ -557,6 +585,8 @@ export default function CreateBranchModal({
     initialData,
     isEditMode,
     onClose,
+    label,
+    t,
   ]);
 
   /*
@@ -594,6 +624,7 @@ export default function CreateBranchModal({
         setDistrictOptions(
           toLocationOptions(
             districts,
+            label,
           ),
         );
       } catch (districtError) {
@@ -609,7 +640,7 @@ export default function CreateBranchModal({
           setDistrictOptions([]);
 
           setError(
-            "មិនអាចទាញយកក្រុង/ស្រុក/ខណ្ឌបានទេ",
+            t("branchPage.loadDistrictsFailed"),
           );
         }
       } finally {
@@ -630,6 +661,8 @@ export default function CreateBranchModal({
     open,
     form.provinceId,
     showDistrict,
+    label,
+    t,
   ]);
 
   /*
@@ -667,6 +700,7 @@ export default function CreateBranchModal({
         setCommuneOptions(
           toLocationOptions(
             communes,
+            label,
           ),
         );
       } catch (communeError) {
@@ -682,7 +716,7 @@ export default function CreateBranchModal({
           setCommuneOptions([]);
 
           setError(
-            "មិនអាចទាញយកឃុំ/សង្កាត់បានទេ",
+            t("branchPage.loadCommunesFailed"),
           );
         }
       } finally {
@@ -703,6 +737,8 @@ export default function CreateBranchModal({
     open,
     form.districtId,
     showCommune,
+    label,
+    t,
   ]);
 
   const updateField =
@@ -757,7 +793,7 @@ export default function CreateBranchModal({
 
       if (!form.nameKm.trim()) {
         setError(
-          "សូមបញ្ចូលឈ្មោះសាខា",
+          t("branchPage.requiredName"),
         );
 
         return;
@@ -765,7 +801,7 @@ export default function CreateBranchModal({
 
       if (!form.branchLevelId) {
         setError(
-          "សូមជ្រើសរើសកម្រិតសាខា",
+          t("branchPage.requiredLevel"),
         );
 
         return;
@@ -773,7 +809,7 @@ export default function CreateBranchModal({
 
       if (!form.provinceId) {
         setError(
-          "សូមជ្រើសរើសរាជធានី/ខេត្ត",
+          t("branchPage.requiredProvince"),
         );
 
         return;
@@ -784,7 +820,7 @@ export default function CreateBranchModal({
         !form.districtId
       ) {
         setError(
-          "សូមជ្រើសរើសក្រុង/ស្រុក/ខណ្ឌ",
+          t("branchPage.requiredDistrict"),
         );
 
         return;
@@ -795,7 +831,7 @@ export default function CreateBranchModal({
         !form.communeId
       ) {
         setError(
-          "សូមជ្រើសរើសឃុំ/សង្កាត់",
+          t("branchPage.requiredCommune"),
         );
 
         return;
@@ -803,7 +839,7 @@ export default function CreateBranchModal({
 
       if (!form.statusId) {
         setError(
-          "សូមជ្រើសរើសស្ថានភាព",
+          t("branchPage.requiredStatus"),
         );
 
         return;
@@ -922,7 +958,7 @@ try {
       );
 
       setError(
-        "មិនអាចរក្សាទុកព័ត៌មានសាខាបានទេ",
+        t("branchPage.saveFailed"),
       );
     } finally {
       setIsSubmitting(false);
@@ -962,8 +998,8 @@ try {
               className="text-xl font-bold text-secondary"
             >
               {isEditMode
-                ? "កែប្រែព័ត៌មានសាខា"
-                : "បង្កើតសាខា"}
+                ? t("branchPage.editBranch")
+                : t("branchPage.createBranchShort")}
             </h2>
 
             <button
@@ -971,7 +1007,7 @@ try {
               onClick={onClose}
               disabled={isSubmitting}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-secondary transition hover:bg-bg-page-gray hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="បិទ"
+              aria-label={t("branchPage.close")}
             >
               <X size={18} />
             </button>
@@ -980,32 +1016,32 @@ try {
           <div className="space-y-5 px-7 pb-7">
             {isLoadingLookups && (
               <p className="text-sm text-text-secondary">
-                កំពុងទាញយកទិន្នន័យ...
+                {t("branchPage.loadingData")}
               </p>
             )}
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <BoxFill
-                label="ឈ្មោះសាខា"
+                label={t("branchPage.nameKm")}
                 name="nameKm"
                 value={form.nameKm}
                 onChange={updateField(
                   "nameKm",
                 )}
-                placeholder="បញ្ចូលឈ្មោះសាខា"
+                placeholder={t("branchPage.enterBranchName")}
                 leadingIcon={
                   <Building2 size={16} />
                 }
               />
 
               <BoxFill
-                label="ឈ្មោះជាអក្សរឡាតាំង"
+                label={t("branchPage.nameEn")}
                 name="nameEn"
                 value={form.nameEn}
                 onChange={updateField(
                   "nameEn",
                 )}
-                placeholder="បញ្ចូលឈ្មោះសាខា"
+                placeholder={t("branchPage.enterBranchName")}
                 leadingIcon={
                   <Building2 size={16} />
                 }
@@ -1014,7 +1050,7 @@ try {
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormSelect
-                label="កម្រិតសាខា"
+                label={t("branchPage.level")}
                 name="branchLevelId"
                 value={
                   form.branchLevelId
@@ -1022,12 +1058,12 @@ try {
                 onChange={updateField(
                   "branchLevelId",
                 )}
-                placeholder="ជ្រើសរើសកម្រិត"
-                options={LEVEL_OPTIONS}
+                placeholder={t("branchPage.selectLevel")}
+                options={levelOptions}
               />
 
               <FormSelect
-                label="រាជធានី/ខេត្ត"
+                label={t("branchPage.province")}
                 name="provinceId"
                 value={
                   form.provinceId
@@ -1035,7 +1071,7 @@ try {
                 onChange={updateField(
                   "provinceId",
                 )}
-                placeholder="ជ្រើសរើសរាជធានី/ខេត្ត"
+                placeholder={t("branchPage.selectProvince")}
                 options={
                   provinceOptions
                 }
@@ -1046,7 +1082,7 @@ try {
 
               {showDistrict && (
                 <FormSelect
-                  label="ក្រុង/ស្រុក/ខណ្ឌ"
+                  label={t("branchPage.district")}
                   name="districtId"
                   value={
                     form.districtId
@@ -1056,8 +1092,8 @@ try {
                   )}
                   placeholder={
                     isLoadingDistricts
-                      ? "កំពុងទាញយក..."
-                      : "ជ្រើសរើសក្រុង/ស្រុក/ខណ្ឌ"
+                      ? t("branchPage.loadingShort")
+                      : t("branchPage.selectDistrict")
                   }
                   options={
                     districtOptions
@@ -1071,7 +1107,7 @@ try {
 
               {showCommune && (
                 <FormSelect
-                  label="ឃុំ/សង្កាត់"
+                  label={t("branchPage.commune")}
                   name="communeId"
                   value={
                     form.communeId
@@ -1081,8 +1117,8 @@ try {
                   )}
                   placeholder={
                     isLoadingCommunes
-                      ? "កំពុងទាញយក..."
-                      : "ជ្រើសរើសឃុំ/សង្កាត់"
+                      ? t("branchPage.loadingShort")
+                      : t("branchPage.selectCommune")
                   }
                   options={
                     communeOptions
@@ -1096,13 +1132,13 @@ try {
             </div>
 
             <BoxFill
-              label="អាសយដ្ឋានលម្អិត"
+              label={t("branchPage.addressDetail")}
               name="address"
               value={form.address}
               onChange={updateField(
                 "address",
               )}
-              placeholder="ឧ. អគារលេខ ផ្លូវ ភូមិ..."
+              placeholder={t("branchPage.addressPlaceholder")}
               leadingIcon={
                 <MapPin size={16} />
               }
@@ -1111,7 +1147,7 @@ try {
             <div className="flex items-end gap-3">
               <div className="min-w-0 flex-1">
                 <BoxFill
-                  label="តំណភ្ជាប់ទីតាំង"
+                  label={t("branchPage.mapLink")}
                   name="googleMapUrl"
                   value={
                     form.googleMapUrl
@@ -1119,7 +1155,7 @@ try {
                   onChange={updateField(
                     "googleMapUrl",
                   )}
-                  placeholder="បញ្ចូលតំណ Google Maps"
+                  placeholder={t("branchPage.mapPlaceholder")}
                   leadingIcon={
                     <Navigation
                       size={16}
@@ -1135,8 +1171,8 @@ try {
                     form.googleMapUrl.trim();
 
                   if (!url) {
-                    setError(
-                      "សូមបញ្ចូលតំណ Google Maps",
+                      setError(
+                      t("branchPage.requiredMap"),
                     );
 
                     return;
@@ -1152,46 +1188,46 @@ try {
               >
                 <Navigation size={15} />
 
-                ទីតាំង
+                {t("branchPage.location")}
               </button>
             </div>
 
             <BoxFill
-              label="លេខទូរស័ព្ទ"
+              label={t("branchPage.phone")}
               type="tel"
               name="phone"
               value={form.phone}
               onChange={updateField(
                 "phone",
               )}
-              placeholder="បញ្ចូលលេខទូរស័ព្ទ"
+              placeholder={t("branchPage.phonePlaceholder")}
               leadingIcon={
                 <Phone size={16} />
               }
             />
 
             <BoxFill
-              label="អ៊ីម៉ែល"
+              label={t("branchPage.email")}
               type="email"
               name="email"
               value={form.email}
               onChange={updateField(
                 "email",
               )}
-              placeholder="បញ្ចូលអ៊ីម៉ែល"
+              placeholder={t("branchPage.emailPlaceholder")}
               leadingIcon={
                 <Mail size={16} />
               }
             />
 
             <FormSelect
-              label="ស្ថានភាព"
+              label={t("branchPage.status")}
               name="statusId"
               value={form.statusId}
               onChange={updateField(
                 "statusId",
               )}
-              placeholder="ជ្រើសរើសស្ថានភាព"
+              placeholder={t("branchPage.selectStatus")}
               options={statusOptions}
               disabled={isLoadingLookups}
             />
@@ -1199,7 +1235,7 @@ try {
             {isEditMode && (
               <div className="space-y-2 rounded-xl border border-border bg-bg-page-gray p-4">
                 <FormSelect
-                  label="ប្រធានសាខា"
+                  label={t("branchPage.branchLeader")}
                   name="branchLeaderId"
                   value={
                     form.branchLeaderId
@@ -1207,20 +1243,20 @@ try {
                   onChange={updateField(
                     "branchLeaderId",
                   )}
-                  placeholder="ជ្រើសរើសប្រធានសាខា"
+                  placeholder={t("branchPage.selectBranchLeader")}
                   options={
                     branchLeaderOptions
                   }
                 />
 
                 <p className="text-xs text-text-secondary">
-                  អាចជ្រើសរើសបានតែសមាជិកដែលស្ថិតនៅក្នុងសាខានេះ។
+                  {t("branchPage.leaderHint")}
                 </p>
 
                 {leaderOptions.length ===
                   0 && (
                   <p className="text-xs font-medium text-warning">
-                    មិនទាន់មានសមាជិកដែលអាចជ្រើសរើសជាប្រធានសាខាបានទេ។
+                    {t("branchPage.noLeaderCandidates")}
                   </p>
                 )}
               </div>
@@ -1239,7 +1275,7 @@ try {
                 disabled={isSubmitting}
                 className="flex h-10 w-[110px] shrink-0 items-center justify-center rounded-lg border border-border bg-bg-page-white px-5 text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray disabled:cursor-not-allowed disabled:opacity-50"
               >
-                បោះបង់
+                {t("branchPage.cancel")}
               </button>
 
               <button
@@ -1253,10 +1289,10 @@ try {
                 <HiSaveAs size={18} />
 
                 {isSubmitting
-                  ? "កំពុងរក្សាទុក..."
+                  ? t("branchPage.saving")
                   : isEditMode
-                    ? "រក្សាទុកការកែប្រែ"
-                    : "រក្សាទុក"}
+                    ? t("branchPage.saveChanges")
+                    : t("branchPage.save")}
               </button>
             </div>
           </div>

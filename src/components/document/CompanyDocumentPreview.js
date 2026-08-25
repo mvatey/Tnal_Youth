@@ -8,6 +8,7 @@ import {
   LoaderCircle,
   X,
 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 const IMAGE_TYPES = new Set(["JPG", "JPEG", "PNG", "GIF", "WEBP", "BMP", "SVG"]);
 const TEXT_TYPES = new Set(["TXT", "CSV", "JSON", "XML", "MD"]);
@@ -61,6 +62,7 @@ function documentHtml(body) {
 }
 
 export default function CompanyDocumentPreview({ document, onClose }) {
+  const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
   const [previewHtml, setPreviewHtml] = useState("");
   const [previewState, setPreviewState] = useState("idle");
@@ -89,7 +91,7 @@ export default function CompanyDocumentPreview({ document, onClose }) {
 
       try {
         const response = await fetch(fileUrl, { signal: controller.signal });
-        if (!response.ok) throw new Error("មិនអាចទាញយកឯកសារបានទេ។");
+        if (!response.ok) throw new Error(t("documentPage.loadDocumentsFailed"));
 
         if (isDocx) {
           const mammothModule = await import("mammoth/mammoth.browser");
@@ -97,7 +99,7 @@ export default function CompanyDocumentPreview({ document, onClose }) {
           const result = await mammoth.convertToHtml({
             arrayBuffer: await response.arrayBuffer(),
           });
-          setPreviewHtml(documentHtml(result.value || "<p>Empty document</p>"));
+          setPreviewHtml(documentHtml(result.value || `<p>${t("documentPage.emptyMessage")}</p>`));
         } else {
           const text = await response.text();
           const escaped = text
@@ -149,7 +151,7 @@ export default function CompanyDocumentPreview({ document, onClose }) {
   };
 
   const preview = (expanded = false) => {
-    if (!fileUrl) return <EmptyPreview message="មិនមានឯកសារសម្រាប់មើល" />;
+    if (!fileUrl) return <EmptyPreview message={t("documentPage.noPreviewFile")} />;
 
     if (isPdf) {
       return (
@@ -176,7 +178,7 @@ export default function CompanyDocumentPreview({ document, onClose }) {
         return (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-text-mute">
             <LoaderCircle className="animate-spin" size={34} />
-            <span className="text-sm">កំពុងបើកឯកសារ...</span>
+            <span className="text-sm">{t("documentPage.openingDocument")}</span>
           </div>
         );
       }
@@ -193,7 +195,7 @@ export default function CompanyDocumentPreview({ document, onClose }) {
       }
 
       if (previewState === "error") {
-        return <EmptyPreview message="មិនអាចបង្ហាញឯកសារនេះបាន" />;
+        return <EmptyPreview message={t("documentPage.cannotPreview")} />;
       }
     }
 
@@ -201,8 +203,8 @@ export default function CompanyDocumentPreview({ document, onClose }) {
       <EmptyPreview
         message={
           expanded
-            ? "ប្រភេទឯកសារនេះត្រូវទាញយកដើម្បីបើកមើល"
-            : "ចុចទាញយកដើម្បីបើកឯកសារនេះ"
+            ? t("documentPage.downloadToOpenExpanded")
+            : t("documentPage.downloadToOpen")
         }
       />
     );
@@ -211,7 +213,7 @@ export default function CompanyDocumentPreview({ document, onClose }) {
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose}>
-        <div className="fixed bottom-0 left-64 right-0 top-16 flex items-center justify-center p-4">
+        <div className="fixed inset-x-0 bottom-0 top-16 flex items-center justify-center p-3 md:left-64 md:right-0 md:p-4">
           <div
             onClick={(event) => event.stopPropagation()}
             className="relative w-[560px] max-w-full rounded-2xl bg-bg-page-white p-5 shadow-xl"
@@ -219,20 +221,20 @@ export default function CompanyDocumentPreview({ document, onClose }) {
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close document preview"
+              aria-label={t("documentPage.closePreview")}
               className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full hover:bg-bg-page-gray"
             >
               <X size={17} />
             </button>
 
-            <h2 className="mb-4 text-lg font-bold text-primary">ឯកសារ</h2>
+            <h2 className="mb-4 text-lg font-bold text-primary">{t("documentPage.document")}</h2>
 
-            <div className="mb-4 grid grid-cols-2 gap-x-5 gap-y-3 rounded-xl bg-bg-page-gray p-4">
-              <Info label="ឈ្មោះឯកសារ" value={document.title} />
-              <Info label="សាខា" value={document.branch} />
-              <Info label="កាលបរិច្ឆេទ" value={document.date} />
-              <Info label="ទំហំ" value={document.size} />
-              <Info label="ប្រភេទឯកសារ" value={type} />
+            <div className="mb-4 grid grid-cols-1 gap-x-5 gap-y-3 rounded-xl bg-bg-page-gray p-4 sm:grid-cols-2">
+              <Info label={t("documentPage.documentName")} value={document.title} />
+              <Info label={t("documentPage.branch")} value={document.branch} />
+              <Info label={t("documentPage.date")} value={document.date} />
+              <Info label={t("documentPage.size")} value={document.size} />
+              <Info label={t("documentPage.documentType")} value={type} />
             </div>
 
             <div
@@ -248,13 +250,13 @@ export default function CompanyDocumentPreview({ document, onClose }) {
               className={`group relative flex h-[280px] w-full items-center justify-center overflow-hidden rounded-xl border border-border bg-bg-page-gray ${
                 hasInlinePreview ? "cursor-pointer" : "cursor-default"
               }`}
-              title={hasInlinePreview ? "ចុចដើម្បីមើលពេញអេក្រង់" : undefined}
+              title={hasInlinePreview ? t("documentPage.fullScreenHint") : undefined}
             >
               <div className="h-full w-full pointer-events-none">{preview()}</div>
               {hasInlinePreview && (
                 <span className="absolute right-3 top-3 flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white opacity-90 shadow transition group-hover:opacity-100">
                   <Expand size={15} />
-                  មើលទំហំពេញ
+                  {t("documentPage.fullScreen")}
                 </span>
               )}
             </div>
@@ -265,7 +267,7 @@ export default function CompanyDocumentPreview({ document, onClose }) {
               className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-medium text-white hover:opacity-90"
             >
               <DownloadCloud size={16} />
-              ទាញយក
+              {t("documentPage.download")}
             </button>
           </div>
         </div>
@@ -285,12 +287,12 @@ export default function CompanyDocumentPreview({ document, onClose }) {
                 className="flex h-10 items-center gap-2 rounded-lg bg-white/15 px-4 text-sm hover:bg-white/25"
               >
                 <DownloadCloud size={17} />
-                ទាញយក
+                {t("documentPage.download")}
               </button>
               <button
                 type="button"
                 onClick={() => setIsExpanded(false)}
-                aria-label="Close full document view"
+                aria-label={t("documentPage.closeFullView")}
                 className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15 hover:bg-white/25"
               >
                 <X size={20} />

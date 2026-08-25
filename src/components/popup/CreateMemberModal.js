@@ -14,6 +14,7 @@ import FormSelect from "@/components/forms/FormSelect";
 import MultiSelect from "@/components/forms/multiselect";
 import FormActionButton from "@/components/forms/FormActionButton";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Mirrors the backend's MemberServiceImpl#validateAssignableRole hierarchy:
 // a SECRETARY may only create MEMBER accounts, a BRANCH_LEADER may create
@@ -194,6 +195,8 @@ export default function CreateMemberModal({
   lockBranch = false,
 }) {
   const { user } = useAuth();
+  const { t, label } =
+    useLanguage();
 
   const allowedRoles =
     useMemo(
@@ -462,16 +465,14 @@ export default function CreateMemberModal({
                     "",
                 ).toUpperCase();
 
-              const label =
-                gender?.labelKm ||
-                gender?.label_km ||
-                gender?.labelEn ||
-                gender?.label_en ||
-                gender?.code ||
-                "";
+              const genderLabel =
+                label(
+                  gender,
+                  gender?.code || "",
+                );
 
               return {
-                label,
+                label: genderLabel,
                 value:
                   code,
               };
@@ -486,6 +487,7 @@ export default function CreateMemberModal({
           ),
       [
         genderLookups,
+        label,
       ],
     );
 
@@ -502,20 +504,14 @@ export default function CreateMemberModal({
                 nationality?.value ??
                 "";
 
-              const label =
-                nationality?.labelKm ||
-                nationality?.label_km ||
-                nationality?.labelEn ||
-                nationality?.label_en ||
-                nationality?.nameKm ||
-                nationality?.name_km ||
-                nationality?.nameEn ||
-                nationality?.name_en ||
-                nationality?.code ||
-                "";
+              const nationalityLabel =
+                label(
+                  nationality,
+                  nationality?.code || "",
+                );
 
               return {
-                label,
+                label: nationalityLabel,
 
                 value:
                   id !==
@@ -538,6 +534,7 @@ export default function CreateMemberModal({
           ),
       [
         nationalityLookups,
+        label,
       ],
     );
 
@@ -552,18 +549,14 @@ export default function CreateMemberModal({
                 level?.value ??
                 "";
 
-              const label =
-                level?.labelKm ||
-                level?.label_km ||
-                level?.labelEn ||
-                level?.label_en ||
-                level?.nameKm ||
-                level?.name_km ||
-                level?.code ||
-                "";
+              const levelLabel =
+                label(
+                  level,
+                  level?.code || "",
+                );
 
               return {
-                label,
+                label: levelLabel,
 
                 value:
                   id !==
@@ -584,7 +577,7 @@ export default function CreateMemberModal({
               option.label !==
                 "",
           ),
-      [levelLookups],
+      [levelLookups, label],
     );
 
   const roleOptions =
@@ -600,16 +593,19 @@ export default function CreateMemberModal({
                     "",
                 ).toUpperCase();
 
-              const label =
-                role?.labelKm ||
-                role?.label_km ||
-                role?.labelEn ||
-                role?.label_en ||
-                role?.code ||
-                "";
+              const roleLabel =
+                String(role?.code || role?.value || "").toUpperCase() === "ADMIN"
+                  ? t("memberPage.roleAdmin")
+                  : String(role?.code || role?.value || "").toUpperCase() === "SECRETARY"
+                    ? t("memberPage.roleSecretary")
+                    : String(role?.code || role?.value || "").toUpperCase() === "BRANCH_LEADER"
+                      ? t("memberPage.roleBranchLeader")
+                      : String(role?.code || role?.value || "").toUpperCase() === "MEMBER"
+                        ? t("memberPage.roleMember")
+                        : label(role, role?.code || "");
 
               return {
-                label,
+                label: roleLabel,
                 value:
                   code,
               };
@@ -628,6 +624,8 @@ export default function CreateMemberModal({
       [
         roleLookups,
         allowedRoles,
+        label,
+        t,
       ],
     );
 
@@ -638,12 +636,7 @@ export default function CreateMemberModal({
           .map(
             (position) => ({
               label:
-                position?.labelKm ||
-                position?.label_km ||
-                position?.labelEn ||
-                position?.label_en ||
-                position?.code ||
-                "",
+                label(position, position?.code || ""),
               value:
                 position?.id !=
                 null
@@ -671,6 +664,7 @@ export default function CreateMemberModal({
       [
         positionLookups,
         allowedRoles,
+        label,
       ],
     );
 
@@ -741,7 +735,7 @@ export default function CreateMemberModal({
         {
           label:
             fixedBranchName ||
-            `Branch ${fixedBranchId}`,
+            `${t("memberPage.branch")} ${fixedBranchId}`,
 
           value:
             String(
@@ -763,19 +757,16 @@ export default function CreateMemberModal({
             branch?.value ??
             "";
 
-          const label =
-            branch?.label_km ||
-            branch?.labelKm ||
-            branch?.name_km ||
-            branch?.nameKm ||
-            branch?.name_en ||
-            branch?.nameEn ||
-            branch?.branch_code ||
-            branch?.branchCode ||
-            "";
+          const branchLabel =
+            label(
+              branch,
+              branch?.branch_code ||
+                branch?.branchCode ||
+                "",
+            );
 
           return {
-            label,
+            label: branchLabel,
 
             value:
               id !== null &&
@@ -795,6 +786,8 @@ export default function CreateMemberModal({
     fixedBranchId,
     fixedBranchName,
     lockBranch,
+    label,
+    t,
   ]);
 
   const statusOptions =
@@ -808,16 +801,14 @@ export default function CreateMemberModal({
                 status?.value ??
                 "";
 
-              const label =
-                status?.labelKm ||
-                status?.label_km ||
-                status?.labelEn ||
-                status?.label_en ||
-                status?.code ||
-                "";
+              const statusLabel =
+                label(
+                  status,
+                  status?.code || "",
+                );
 
               return {
-                label,
+                label: statusLabel,
 
                 value:
                   id !==
@@ -838,7 +829,7 @@ export default function CreateMemberModal({
               option.label !==
                 "",
           ),
-      [statusLookups],
+      [statusLookups, label],
     );
 
   const requiredFields = [
@@ -982,7 +973,7 @@ export default function CreateMemberModal({
         );
 
         setSubmitError(
-          "មិនអាចបង្កើតសមាជិកបានទេ។",
+          t("memberPage.createFailed"),
         );
       } finally {
         setIsSubmitting(
@@ -1077,7 +1068,7 @@ export default function CreateMemberModal({
             "
           >
             <h2 className="text-lg font-bold text-primary">
-              បង្កើតសមាជិកថ្មី
+              {t("memberPage.createMemberTitle")}
             </h2>
 
             <button
@@ -1085,7 +1076,7 @@ export default function CreateMemberModal({
               onClick={
                 onClose
               }
-              aria-label="បិទ"
+              aria-label={t("memberPage.close")}
               className="
                 flex
                 h-8
@@ -1142,9 +1133,9 @@ export default function CreateMemberModal({
                 "
               >
                 <BoxFill
-                  label="ឈ្មោះជាភាសាខ្មែរ"
+                  label={t("memberPage.nameKm")}
                   name="fullNameKm"
-                  placeholder="បញ្ចូលឈ្មោះ"
+                  placeholder={t("memberPage.enterName")}
                   value={
                     form.fullNameKm
                   }
@@ -1154,9 +1145,9 @@ export default function CreateMemberModal({
                 />
 
                 <BoxFill
-                  label="ឈ្មោះជាអក្សរឡាតាំង"
+                  label={t("memberPage.nameEn")}
                   name="fullNameEn"
-                  placeholder="បញ្ចូលឈ្មោះ"
+                  placeholder={t("memberPage.enterName")}
                   value={
                     form.fullNameEn
                   }
@@ -1166,9 +1157,9 @@ export default function CreateMemberModal({
                 />
 
                 <FormSelect
-                  label="ភេទ"
+                  label={t("memberPage.gender")}
                   name="gender"
-                  placeholder="ជ្រើសរើសភេទ"
+                  placeholder={t("memberPage.selectGender")}
                   options={
                     genderOptions
                   }
@@ -1181,9 +1172,9 @@ export default function CreateMemberModal({
                 />
 
                 <FormSelect
-                  label="ស្ថានភាព"
+                  label={t("memberPage.status")}
                   name="statusId"
-                  placeholder="ជ្រើសរើសស្ថានភាព"
+                  placeholder={t("memberPage.selectStatus")}
                   options={
                     statusOptions
                   }
@@ -1196,10 +1187,10 @@ export default function CreateMemberModal({
                 />
 
                 <BoxFill
-                  label="លេខទូរស័ព្ទ"
+                  label={t("memberPage.phone")}
                   name="phone"
                   type="tel"
-                  placeholder="បញ្ចូលលេខទូរស័ព្ទ"
+                  placeholder={t("memberPage.phonePlaceholder")}
                   value={
                     form.phone
                   }
@@ -1209,10 +1200,10 @@ export default function CreateMemberModal({
                 />
 
                 <BoxFill
-                  label="អ៊ីមែល"
+                  label={t("memberPage.email")}
                   name="email"
                   type="email"
-                  placeholder="បញ្ចូលអ៊ីមែល"
+                  placeholder={t("memberPage.emailPlaceholder")}
                   value={
                     form.email
                   }
@@ -1222,9 +1213,9 @@ export default function CreateMemberModal({
                 />
 
                 <FormSelect
-                  label="តំណែង"
+                  label={t("memberPage.position")}
                   name="positionId"
-                  placeholder="ជ្រើសរើសតំណែង"
+                  placeholder={t("memberPage.selectPosition")}
                   options={
                     positionOptions
                   }
@@ -1237,9 +1228,9 @@ export default function CreateMemberModal({
                 />
 
                 <FormSelect
-                  label="តួនាទី"
+                  label={t("memberPage.role")}
                   name="role"
-                  placeholder="ជ្រើសរើសតួនាទី"
+                  placeholder={t("memberPage.selectRole")}
                   options={
                     roleOptions
                   }
@@ -1256,9 +1247,9 @@ export default function CreateMemberModal({
 
                 {isSecretaryRole ? (
                   <MultiSelect
-                    label="សាខា"
+                    label={t("memberPage.branch")}
                     name="branchIds"
-                    placeholder="ជ្រើសរើសសាខា"
+                    placeholder={t("memberPage.selectBranch")}
                     options={
                       branchOptions
                     }
@@ -1274,9 +1265,9 @@ export default function CreateMemberModal({
                   />
                 ) : (
                   <FormSelect
-                    label="សាខា"
+                    label={t("memberPage.branch")}
                     name="branchId"
-                    placeholder="ជ្រើសរើសសាខា"
+                    placeholder={t("memberPage.selectBranch")}
                     options={
                       branchOptions
                     }
@@ -1293,7 +1284,7 @@ export default function CreateMemberModal({
                 )}
 
                 <BoxFill
-                  label="ថ្ងៃខែឆ្នាំកំណើត"
+                  label={t("memberPage.dateOfBirth")}
                   name="dateOfBirth"
                   type="date"
                   value={
@@ -1305,7 +1296,7 @@ export default function CreateMemberModal({
                 />
 
                 <BoxFill
-                  label="ថ្ងៃខែឆ្នាំចូលរួម"
+                  label={t("memberPage.joinedDate")}
                   name="joinedOn"
                   type="date"
                   value={
@@ -1317,9 +1308,9 @@ export default function CreateMemberModal({
                 />
 
                 <FormSelect
-                  label="កម្រិតសមាជិក (កាំ)"
+                  label={t("memberPage.memberLevel")}
                   name="levelId"
-                  placeholder="ជ្រើសរើសកម្រិតសមាជិក"
+                  placeholder={t("memberPage.selectMemberLevel")}
                   options={
                     levelOptions
                   }
@@ -1332,9 +1323,9 @@ export default function CreateMemberModal({
                 />
 
                 <FormSelect
-                  label="សញ្ជាតិ"
+                  label={t("memberPage.nationality")}
                   name="nationalityId"
-                  placeholder="ជ្រើសរើសសញ្ជាតិ"
+                  placeholder={t("memberPage.selectNationality")}
                   options={
                     nationalityOptions
                   }
@@ -1357,7 +1348,7 @@ export default function CreateMemberModal({
                       text-error
                     "
                   >
-                    សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
+                    {t("memberPage.requiredFields")}
                   </p>
                 )}
 
@@ -1403,8 +1394,8 @@ export default function CreateMemberModal({
                 saving={
                   isSubmitting
                 }
-                saveText="រក្សាទុក"
-                cancelText="បោះបង់"
+                saveText={t("memberPage.save")}
+                cancelText={t("memberPage.cancel")}
               />
             </div>
           </form>

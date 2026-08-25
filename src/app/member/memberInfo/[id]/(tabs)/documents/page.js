@@ -15,6 +15,7 @@ import DocumentPreviewCard from "@/components/card/DocumentPreviewCard";
 
 import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
 import BackendDocumentCard from "@/components/document/BackendDocumentCard";
+import { useLanguage } from "@/context/LanguageContext";
 
 import {
   deleteTemplateFile,
@@ -605,14 +606,15 @@ function mapMemberFromApi(
 
 function DeleteDocumentButton({
   onClick,
-  label = "លុបឯកសារ",
+  label = "",
+  title = label,
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={label}
-      title="លុប"
+      title={title}
       className="
         absolute
         right-2
@@ -651,6 +653,7 @@ function DeleteDocumentButton({
  */
 
 export default function DocumentsPage() {
+  const { t } = useLanguage();
   const params =
     useParams();
 
@@ -753,7 +756,7 @@ export default function DocumentsPage() {
 
           setError(
             fetchError.message ||
-              "មិនអាចទាញយកព័ត៌មានសមាជិកបានទេ",
+              t("memberPage.loadMemberFailed"),
           );
         }
       } finally {
@@ -774,6 +777,7 @@ export default function DocumentsPage() {
     };
   }, [
     memberId,
+    t,
   ]);
 
   /*
@@ -1199,7 +1203,7 @@ export default function DocumentsPage() {
       return;
     }
 
-    if (!window.confirm("តើអ្នកពិតជាចង់លុបឯកសារនេះមែនទេ?")) {
+    if (!window.confirm(t("memberPage.confirmDeleteDocument"))) {
       return;
     }
 
@@ -1211,7 +1215,7 @@ export default function DocumentsPage() {
       const body = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(body?.message || body?.detail || "មិនអាចលុបឯកសារបានទេ");
+        throw new Error(body?.message || body?.detail || t("memberPage.deleteDocumentFailed"));
       }
 
       setBackendDocuments((documents) =>
@@ -1219,7 +1223,7 @@ export default function DocumentsPage() {
       );
     } catch (deleteError) {
       console.error("Cannot delete backend document:", deleteError);
-      window.alert(deleteError?.message || "មិនអាចលុបឯកសារបានទេ");
+      window.alert(deleteError?.message || t("memberPage.deleteDocumentFailed"));
     }
   };
 
@@ -1284,7 +1288,7 @@ export default function DocumentsPage() {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
         <p className="text-sm text-text-secondary">
-          កំពុងទាញយកព័ត៌មានសមាជិក...
+          {t("memberPage.loadingMember")}
         </p>
       </div>
     );
@@ -1315,7 +1319,7 @@ export default function DocumentsPage() {
   if (!member) {
     return (
       <div className="rounded-xl border border-border bg-bg-page-white p-6 text-center text-sm text-text-secondary">
-        រកមិនឃើញព័ត៌មានសមាជិក
+        {t("memberPage.memberNotFound")}
       </div>
     );
   }
@@ -1346,9 +1350,9 @@ export default function DocumentsPage() {
         =============================================== */}
 
         <DocumentPreviewCard
-          title="ប័ណ្ណសម្គាល់សមាជិក"
+          title={t("memberPage.memberIdCard")}
           actionType="print"
-          printText="បោះពុម្ព"
+          printText={t("memberPage.print")}
           previewClass="scale-[0.55]"
         >
           <IdCard
@@ -1454,7 +1458,8 @@ export default function DocumentsPage() {
                 className="group relative min-w-0"
               >
                 <DeleteDocumentButton
-                  label="លុបប័ណ្ណសម្គាល់សមាជិក"
+                  label={t("memberPage.deleteMemberIdCard")}
+                  title={t("memberPage.delete")}
                   onClick={() =>
                     handleDeleteDocument(
                       {
@@ -1476,9 +1481,9 @@ export default function DocumentsPage() {
                 />
 
                 <DocumentPreviewCard
-                  title="ប័ណ្ណសម្គាល់សមាជិក"
+                  title={t("memberPage.memberIdCard")}
                   actionType="print"
-                  printText="បោះពុម្ព"
+                  printText={t("memberPage.print")}
                   previewClass="scale-[0.55]"
                 >
                   <IdCard
@@ -1504,14 +1509,15 @@ export default function DocumentsPage() {
             className="group relative min-w-0"
           >
             <DeleteDocumentButton
-              label="លុបប័ណ្ណសម្គាល់សមាជិក"
+              label={t("memberPage.deleteMemberIdCard")}
+              title={t("memberPage.delete")}
               onClick={() => handleDeleteBackendDocument(document)}
             />
 
             <DocumentPreviewCard
-              title={document.title || "ប័ណ្ណសម្គាល់សមាជិក"}
+              title={document.title || t("memberPage.memberIdCard")}
               actionType="print"
-              printText="បោះពុម្ព"
+              printText={t("memberPage.print")}
               previewClass="scale-[0.55]"
             >
               <IdCard
@@ -1593,7 +1599,8 @@ export default function DocumentsPage() {
                 className="group relative min-w-0"
               >
                 <DeleteDocumentButton
-                  label="លុបវិញ្ញាបនបត្រ"
+                  label={t("memberPage.deleteCertificate")}
+                  title={t("memberPage.delete")}
                   onClick={() =>
                     handleDeleteDocument(
                       {
@@ -1618,10 +1625,10 @@ export default function DocumentsPage() {
                   title={
                     customCertificate
                       ?.title ||
-                    "វិញ្ញាបនបត្រ"
+                    t("memberPage.certificate")
                   }
                   actionType="download"
-                  downloadText="ទាញយក"
+                  downloadText={t("memberPage.download")}
                   filename={getMemberDocumentFilename(
                     certificateMember,
                     "certificate",

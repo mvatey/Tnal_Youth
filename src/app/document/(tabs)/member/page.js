@@ -10,6 +10,7 @@ import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
 import { useAuth } from "@/context/AuthContext";
 import { useBranch } from "@/context/BranchContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
 
 const DOCUMENT_TYPE_BADGE_STYLES = {
@@ -33,6 +34,7 @@ const DEFAULT_DOCUMENT_TYPE_STYLE = "bg-bg-page-gray text-text-secondary";
 export default function MemberDocumentPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t, isEnglish } = useLanguage();
   const role = normalizeRole(user?.role);
   const { selectedBranch } = useBranch();
 
@@ -71,20 +73,20 @@ export default function MemberDocumentPage() {
           { cache: "no-store" },
         );
         const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកឯកសារបានទេ។");
+        if (!response.ok) throw new Error(body?.message || t("documentPage.loadDocumentsFailed"));
         const pageRows = body?.data?.content ?? body?.content ?? body?.data ?? body;
         rows.push(...(Array.isArray(pageRows) ? pageRows : []));
         totalPages = Math.max(1, Number(body?.data?.total_pages ?? body?.total_pages ?? body?.totalPages) || 1);
         page += 1;
       } while (page < totalPages);
 
-      setDocuments(rows.filter((row) => row.member).map(mapMemberDocument));
+      setDocuments(rows.filter((row) => row.member).map((row) => mapMemberDocument(row, t, isEnglish)));
     } catch (loadError) {
-      setError(loadError.message || "មិនអាចទាញយកឯកសារបានទេ។");
+      setError(loadError.message || t("documentPage.loadDocumentsFailed"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isEnglish, t]);
 
   useEffect(() => { loadDocuments(); }, [loadDocuments]);
 
@@ -112,19 +114,19 @@ export default function MemberDocumentPage() {
 
   const columns = [
     {
-      header: "ល.រ",
+      header: t("documentPage.no"),
       width: "w-[6%]",
       align: "center",
       render: (_, index) => index,
     },
     {
-      header: "ឯកសារ",
+      header: t("documentPage.document"),
       width: "w-[8%]",
       render: (item) =>
         item.isImage ? (
           <img
             src={item.image || "/document.jpg"}
-            alt={item.title || "document"}
+            alt={item.title || t("documentPage.document")}
             className="h-8 w-6 rounded border border-border object-cover"
           />
         ) : (
@@ -134,37 +136,37 @@ export default function MemberDocumentPage() {
         ),
     },
     {
-      header: "ឈ្មោះឯកសារ",
+      header: t("documentPage.documentName"),
       accessor: "title",
       width: "w-[19%]",
     },
     {
-      header: "សមាជិក",
+      header: t("documentPage.member"),
       accessor: "memberName",
       width: "w-[15%]",
     },
     {
-      header: "ភេទ",
+      header: t("documentPage.gender"),
       accessor: "gender",
       width: "w-[8%]",
     },
     {
-      header: "សាខា",
+      header: t("documentPage.branch"),
       accessor: "branch",
       width: "w-[14%]",
     },
     {
-      header: "កាលបរិច្ឆេទ",
+      header: t("documentPage.date"),
       accessor: "date",
       width: "w-[12%]",
     },
     {
-      header: "ទំហំ",
+      header: t("documentPage.size"),
       accessor: "size",
       width: "w-[8%]",
     },
     {
-      header: "ប្រភេទឯកសារ",
+      header: t("documentPage.documentType"),
       accessor: "type",
       width: "w-[10%]",
       align: "center",
@@ -196,7 +198,7 @@ export default function MemberDocumentPage() {
       },
     },
     {
-      header: "សកម្មភាព",
+      header: t("documentPage.actions"),
       width: "w-[8%]",
       align: "center",
       render: (item) => (
@@ -214,7 +216,7 @@ export default function MemberDocumentPage() {
               transition
               hover:bg-blue-50
             "
-            aria-label="មើលឯកសារ"
+            aria-label={t("documentPage.viewDocument")}
           >
             <Eye size={18} className="text-blue-500" />
           </button>
@@ -226,7 +228,7 @@ export default function MemberDocumentPage() {
   const filters = [
     {
       name: "type",
-      placeholder: "ប្រភេទឯកសារ",
+      placeholder: t("documentPage.documentType"),
       value: typeFilter,
       options: [
         ...new Set(documents.map((item) => item.type).filter(Boolean)),
@@ -239,7 +241,7 @@ export default function MemberDocumentPage() {
     {
       name: "date",
       type: "date",
-      placeholder: "ថ្ងៃ/ខែ/ឆ្នាំ",
+      placeholder: t("documentPage.datePlaceholder"),
       value: dateFilter,
       onChange: setDateFilter,
     },
@@ -267,7 +269,7 @@ export default function MemberDocumentPage() {
     >
       <RiAddCircleLine className="h-4 w-4 shrink-0" />
 
-      <span>បង្កើតឯកសារ</span>
+      <span>{t("documentPage.createDocument")}</span>
     </button>
   );
 
@@ -276,7 +278,7 @@ export default function MemberDocumentPage() {
       {error ? (
         <div className="mb-3 flex items-center justify-between rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
           <span>{error}</span>
-          <button type="button" className="font-semibold underline" onClick={loadDocuments}>Retry</button>
+          <button type="button" className="font-semibold underline" onClick={loadDocuments}>{t("documentPage.retry")}</button>
         </div>
       ) : null}
       <DataTable
@@ -291,9 +293,11 @@ export default function MemberDocumentPage() {
           downloadTableAsExcel({
             data: filteredDocuments,
             columns,
-            fileName: `ឯកសារសមាជិក`,
+            fileName: t("documentPage.memberFileName"),
           })
         }
+        searchPlaceholder={t("documentPage.searchPlaceholder")}
+        emptyMessage={t("documentPage.emptyMessage")}
       />
 
       {selectedCertificate && (
@@ -306,20 +310,22 @@ export default function MemberDocumentPage() {
   );
 }
 
-function mapMemberDocument(row) {
+function mapMemberDocument(row, t, isEnglish) {
   const extension = row.file?.originalName?.split(".").pop()?.toUpperCase();
   const genderCode = row.member?.gender;
   const genderLabels = {
-    MALE: "ប្រុស",
-    FEMALE: "ស្រី",
-    MONK: "ព្រះសង្ឃ",
+    MALE: t("documentPage.male"),
+    FEMALE: t("documentPage.female"),
+    MONK: t("documentPage.monk"),
   };
   const normalizedType = extension || row.type?.code || "FILE";
   return {
     id: row.id,
     title: row.title,
     memberName: row.member?.fullNameKm || row.member?.full_name_km || row.member?.fullNameEn || row.member?.full_name_en || "-",
-    gender: row.member?.genderLabelKm || row.member?.gender_label_km || genderLabels[genderCode] || row.member?.genderLabelEn || row.member?.gender_label_en || "-",
+    gender: isEnglish
+      ? row.member?.genderLabelEn || row.member?.gender_label_en || genderLabels[genderCode] || row.member?.genderLabelKm || row.member?.gender_label_km || "-"
+      : row.member?.genderLabelKm || row.member?.gender_label_km || genderLabels[genderCode] || row.member?.genderLabelEn || row.member?.gender_label_en || "-",
     branch: row.branch?.nameKm || row.branch?.name_km || row.branch?.nameEn || row.branch?.name_en || "-",
     branchId: row.branch?.id ?? row.branch?.branchId ?? row.branch?.branch_id ?? null,
     date: row.created_at ? row.created_at.slice(0, 10) : "-",

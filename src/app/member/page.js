@@ -26,6 +26,7 @@ import StatCard from "@/components/dashboard/statCard";
 import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch } from "@/context/BranchContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 const EMPTY_SUMMARY = {
   total_members: 0,
@@ -63,7 +64,7 @@ const STATUS_BADGE_STYLES = {
     "bg-bg-page-gray text-text-secondary",
 };
 
-const KHMER_MONTHS = [
+const MONTHS_KM = [
   "មករា",
   "កុម្ភៈ",
   "មីនា",
@@ -76,6 +77,21 @@ const KHMER_MONTHS = [
   "តុលា",
   "វិច្ឆិកា",
   "ធ្នូ",
+];
+
+const MONTHS_EN = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 async function fetchJson(
@@ -155,6 +171,7 @@ function normalizeArray(data) {
 
 function formatJoinedDate(
   value,
+  locale = "km",
 ) {
   if (!value) {
     return "-";
@@ -177,7 +194,9 @@ function formatJoinedDate(
   ] = match;
 
   const monthName =
-    KHMER_MONTHS[
+    (locale === "en"
+      ? MONTHS_EN
+      : MONTHS_KM)[
       Number(month) - 1
     ];
 
@@ -192,7 +211,13 @@ function formatJoinedDate(
 
 function getGenderLabel(
   gender,
+  label,
+  t,
 ) {
+  if (label && gender && typeof gender === "object") {
+    return label(gender, "-");
+  }
+
   const code =
     String(
       gender?.code || "",
@@ -203,16 +228,30 @@ function getGenderLabel(
     gender?.labelKm ||
     gender?.label_en ||
     gender?.labelEn ||
-    GENDER_LABELS_KM[
-      code
-    ] ||
+    (code === "MALE"
+      ? t?.("memberPage.male")
+      : code === "FEMALE"
+        ? t?.("memberPage.femaleGender")
+        : code === "MONK"
+          ? t?.("memberPage.monkGender")
+          : code === "OTHER"
+            ? t?.("memberPage.otherGender")
+            : GENDER_LABELS_KM[
+                code
+              ]) ||
     "-"
   );
 }
 
 function getStatusLabel(
   status,
+  label,
+  t,
 ) {
+  if (label && status && typeof status === "object") {
+    return label(status, "-");
+  }
+
   const code =
     String(
       status?.code || "",
@@ -223,16 +262,29 @@ function getStatusLabel(
     status?.labelKm ||
     status?.label_en ||
     status?.labelEn ||
-    STATUS_LABELS_KM[
-      code
-    ] ||
+    (code === "ACTIVE"
+      ? t?.("memberPage.active")
+      : code === "INACTIVE"
+        ? t?.("memberPage.inactive")
+        : code === "SUSPENDED"
+          ? t?.("memberPage.suspended")
+          : code === "RESIGNED"
+            ? t?.("memberPage.resigned")
+            : STATUS_LABELS_KM[
+                code
+              ]) ||
     "-"
   );
 }
 
 function getBranchLabel(
   branch,
+  label,
 ) {
+  if (label) {
+    return label(branch, "-");
+  }
+
   return (
     branch?.label_km ||
     branch?.labelKm ||
@@ -246,19 +298,24 @@ function getBranchLabel(
 
 function mapMember(
   member,
+  {
+    label,
+    locale,
+    t,
+  },
 ) {
   return {
     id:
       member?.id,
 
     nameKh:
-      member?.full_name_km ||
-      member?.full_name_en ||
-      "-",
+      label(member, "-"),
 
     genderLabel:
       getGenderLabel(
         member?.gender,
+        label,
+        t,
       ),
 
     genderCode:
@@ -270,6 +327,7 @@ function mapMember(
     branchLabel:
       getBranchLabel(
         member?.branch,
+        label,
       ),
 
     branchId:
@@ -280,6 +338,8 @@ function mapMember(
     statusLabel:
       getStatusLabel(
         member?.status,
+        label,
+        t,
       ),
 
     statusCode:
@@ -296,11 +356,15 @@ function mapMember(
     joinedAt:
       formatJoinedDate(
         member?.joined_on,
+        locale,
       ),
   };
 }
 
 export default function MembersPage() {
+  const { t, label, locale } =
+    useLanguage();
+
   const router =
     useRouter();
 
@@ -685,7 +749,12 @@ export default function MembersPage() {
         ) {
           setMembers(
             firstContent.map(
-              mapMember,
+              (member) =>
+                mapMember(member, {
+                  label,
+                  locale,
+                  t,
+                }),
             ),
           );
 
@@ -743,7 +812,12 @@ export default function MembersPage() {
 
         setMembers(
           allMembers.map(
-            mapMember,
+            (member) =>
+              mapMember(member, {
+                label,
+                locale,
+                t,
+              }),
           ),
         );
       },
@@ -751,7 +825,10 @@ export default function MembersPage() {
         effectiveBranchFilter,
         debouncedQuery,
         genderFilter,
+        label,
+        locale,
         statusFilter,
+        t,
       ],
     );
 
@@ -832,7 +909,7 @@ export default function MembersPage() {
     useMemo(
       () => [
         {
-          label: "សាខា",
+          label: t("memberPage.branch"),
           value: "",
         },
 
@@ -844,19 +921,16 @@ export default function MembersPage() {
                 branch?.value ??
                 "";
 
-              const label =
-                branch?.label_km ||
-                branch?.labelKm ||
-                branch?.name_km ||
-                branch?.nameKm ||
-                branch?.name_en ||
-                branch?.nameEn ||
-                branch?.branch_code ||
-                branch?.branchCode ||
-                "";
+              const branchLabel =
+                label(
+                  branch,
+                  branch?.branch_code ||
+                    branch?.branchCode ||
+                    "",
+                );
 
               return {
-                label,
+                label: branchLabel,
 
                 value:
                   id !== null &&
@@ -877,7 +951,7 @@ export default function MembersPage() {
                 "",
           ),
       ],
-      [branchLookups],
+      [branchLookups, label, t],
     );
 
   // The branch filter shown in the table toolbar is locked to whichever
@@ -906,7 +980,7 @@ export default function MembersPage() {
       () => [
         {
           label:
-            "គ្រប់ស្ថានភាព",
+            t("memberPage.allStatuses"),
 
           value: "",
         },
@@ -927,19 +1001,15 @@ export default function MembersPage() {
                     "",
                 ).toUpperCase();
 
-              const label =
-                status?.label_km ||
-                status?.labelKm ||
-                status?.label_en ||
-                status?.labelEn ||
-                STATUS_LABELS_KM[
-                  code
-                ] ||
-                status?.code ||
-                "-";
+              const statusLabel =
+                getStatusLabel(
+                  status,
+                  label,
+                  t,
+                );
 
               return {
-                label,
+                label: statusLabel,
 
                 value:
                   id !== null &&
@@ -958,7 +1028,7 @@ export default function MembersPage() {
               "",
           ),
       ],
-      [statusLookups],
+      [statusLookups, label, t],
     );
 
   /*
@@ -971,7 +1041,7 @@ export default function MembersPage() {
     useMemo(
       () => [
         {
-          label: "ភេទ",
+          label: t("memberPage.gender"),
           value: "",
         },
 
@@ -985,18 +1055,15 @@ export default function MembersPage() {
                     "",
                 ).toUpperCase();
 
-              const label =
-                gender?.label_km ||
-                gender?.labelKm ||
-                gender?.label_en ||
-                gender?.labelEn ||
-                GENDER_LABELS_KM[
-                  code
-                ] ||
-                code;
+              const genderLabel =
+                getGenderLabel(
+                  gender,
+                  label,
+                  t,
+                ) || code;
 
               return {
-                label,
+                label: genderLabel,
                 value: code,
               };
             },
@@ -1007,7 +1074,7 @@ export default function MembersPage() {
               "",
           ),
       ],
-      [genderLookups],
+      [genderLookups, label, t],
     );
 
   /*
@@ -1040,7 +1107,7 @@ export default function MembersPage() {
         throw new Error(
           (typeof body === "object" &&
             (body?.message || body?.detail || body?.error)) ||
-            "មិនអាចបង្កើតសមាជិកបានទេ",
+            t("memberPage.createFailed"),
         );
       }
 
@@ -1088,16 +1155,16 @@ export default function MembersPage() {
 
   const rows = members.map(
     (member, index) => ({
-      "ល.រ": index + 1,
-      "ឈ្មោះសមាជិក":
+      [t("memberPage.no")]: index + 1,
+      [t("memberPage.member")]:
         member.nameKh || "-",
-      "ភេទ":
+      [t("memberPage.gender")]:
         member.genderLabel || "-",
-      "សាខា":
+      [t("memberPage.branch")]:
         member.branchLabel || "-",
-      "ស្ថានភាព":
+      [t("memberPage.status")]:
         member.statusLabel || "-",
-      "ថ្ងៃចូលរួម":
+      [t("memberPage.joinedAt")]:
         member.joinedAt || "-",
     }),
   );
@@ -1108,14 +1175,14 @@ export default function MembersPage() {
 
   downloadExcel({
     rows,
-    fileName: branchLabel ? `សមាជិក-${branchLabel}` : "សមាជិក",
+    fileName: branchLabel ? `${t("memberPage.membersFileName")}-${branchLabel}` : t("memberPage.membersFileName"),
     sheetName: "Members",
   });
 };
 
   const tableColumns = [
     {
-      header: "ល.រ",
+      header: t("memberPage.no"),
       width: "w-[6%]",
       align: "center",
 
@@ -1126,7 +1193,7 @@ export default function MembersPage() {
     },
 
     {
-      header: "សមាជិក",
+      header: t("memberPage.member"),
       width: "w-[20%]",
       align: "left",
 
@@ -1138,7 +1205,7 @@ export default function MembersPage() {
     },
 
     {
-      header: "ភេទ",
+      header: t("memberPage.gender"),
       width: "w-[10%]",
       align: "center",
 
@@ -1152,7 +1219,7 @@ export default function MembersPage() {
     },
 
     {
-      header: "សាខា",
+      header: t("memberPage.branch"),
       width: "w-[18%]",
       align: "left",
 
@@ -1166,7 +1233,7 @@ export default function MembersPage() {
     },
 
     {
-      header: "ស្ថានភាព",
+      header: t("memberPage.status"),
       width: "w-[14%]",
       align: "center",
 
@@ -1201,7 +1268,7 @@ export default function MembersPage() {
 
     {
       header:
-        "ថ្ងៃចូលរួម",
+        t("memberPage.joinedAt"),
 
       width: "w-[16%]",
       align: "left",
@@ -1216,7 +1283,7 @@ export default function MembersPage() {
     },
 
     {
-      header: "សកម្មភាព",
+      header: t("memberPage.actions"),
       width: "w-[16%]",
       align: "center",
 
@@ -1255,7 +1322,7 @@ export default function MembersPage() {
         branchFilterOptions,
 
       placeholder:
-        "សាខា",
+        t("memberPage.branch"),
 
       disabled:
         isBranchScoped,
@@ -1274,7 +1341,7 @@ export default function MembersPage() {
         memberStatuses,
 
       placeholder:
-        "ស្ថានភាព",
+        t("memberPage.status"),
     },
 
     {
@@ -1290,7 +1357,7 @@ export default function MembersPage() {
         genders,
 
       placeholder:
-        "ភេទ",
+        t("memberPage.gender"),
     },
   ];
 
@@ -1301,7 +1368,7 @@ export default function MembersPage() {
       <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
         <StatCard
           icon={Users}
-          label="សមាជិកសរុប"
+          label={t("memberPage.totalMembers")}
           value={String(
             summary.total_members,
           )}
@@ -1312,7 +1379,7 @@ export default function MembersPage() {
 
         <StatCard
           icon={AiOutlineWoman}
-          label="ភេទស្រី"
+          label={t("memberPage.female")}
           value={String(
             summary.female_members,
           )}
@@ -1323,7 +1390,7 @@ export default function MembersPage() {
 
         <StatCard
           icon={Landmark}
-          label="ចំនួនព្រះសង្ឃ"
+          label={t("memberPage.monks")}
           value={String(
             summary.monk_members,
           )}
@@ -1334,7 +1401,7 @@ export default function MembersPage() {
 
         <StatCard
           icon={FaDharmachakra}
-          label="ព្រះពុទ្ធ"
+          label={t("memberPage.buddhist")}
           value={String(
             summary.buddhist_members,
           )}
@@ -1345,7 +1412,7 @@ export default function MembersPage() {
 
         <StatCard
           icon={Moon}
-          label="អ៊ីស្លាម"
+          label={t("memberPage.islam")}
           value={String(
             summary.islam_members,
           )}
@@ -1359,13 +1426,13 @@ export default function MembersPage() {
 
       <div className="min-w-0 w-full">
         <DataTable
-          title="បញ្ជីសមាជិក"
+          title={t("memberPage.listTitle")}
           data={members}
           columns={tableColumns}
           filters={filterConfig}
           searchQuery={query}
           onSearchChange={setQuery}
-          searchPlaceholder="ស្វែងរកតាមរយៈឈ្មោះ..."
+          searchPlaceholder={t("memberPage.searchByName")}
           pageSize={20}
           onDownload={handleDownloadMembers}
           actionButton={
@@ -1375,7 +1442,7 @@ export default function MembersPage() {
                 !isViewer && setIsCreateOpen(true)
               }
               disabled={isViewer}
-              title={isViewer ? "Viewer accounts are read-only" : undefined}
+              title={isViewer ? t("memberPage.viewerReadOnly") : undefined}
               className="
                 inline-flex
                 h-[34px]
@@ -1399,7 +1466,7 @@ export default function MembersPage() {
               <RiAddCircleLine className="h-4 w-4 shrink-0" />
 
               <span>
-                បន្ថែមសមាជិកថ្មី
+                {t("memberPage.addMember")}
               </span>
             </button>
           }

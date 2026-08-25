@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, SquarePen, X } from "lucide-react";
 import donationOptions from "@/data/donation/donationOptions.json";
+import { useLanguage } from "@/context/LanguageContext";
 
 const RECEIPT_ICON_COLOR = "#4B2E91";
 const DEFAULT_PROFILE_IMAGE = "/profiles/default-avatar.jpg";
@@ -110,6 +111,7 @@ export default function AddDonationTableRow({
   // date-of-birth; the monthly-donation table still shows it.
   hideDob = false,
 }) {
+  const { t } = useLanguage();
   const [focusedAmountField, setFocusedAmountField] = useState(null);
   const receipt = member.receipt;
   const avatarUrl = normalizeAvatarUrl(member.avatar);
@@ -240,8 +242,8 @@ export default function AddDonationTableRow({
             disabled={readOnly}
             onClick={() => onShowInfo(member)}
             className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-md text-secondary transition hover:bg-secondary-light/10 disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label="receipt"
-            title={receipt?.name || "receipt"}
+            aria-label={t("donationPage.receipt")}
+            title={receipt?.name || t("donationPage.receipt")}
           >
             <ReceiptIcon size={16} />
           </button>
@@ -272,8 +274,8 @@ export default function AddDonationTableRow({
                 onClick={onEdit}
                 disabled={editDisabled}
                 className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[#F2A900] transition hover:bg-[#F2A900]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F2A900]/40 disabled:cursor-not-allowed disabled:opacity-40"
-                title="Edit this donation"
-                aria-label="Edit this donation"
+                title={t("donationPage.editDonation")}
+                aria-label={t("donationPage.editDonation")}
               >
                 <SquarePen size={16} strokeWidth={2.1} />
               </button>
@@ -281,10 +283,10 @@ export default function AddDonationTableRow({
 
             {isEditing && !readOnly ? (
               <>
-                <button type="button" onClick={onCancelEdit} className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-bg-page-white text-text-secondary hover:bg-bg-page-gray" title="Cancel">
+                <button type="button" onClick={onCancelEdit} className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-bg-page-white text-text-secondary hover:bg-bg-page-gray" title={t("donationPage.cancel")}>
                   <X size={14} />
                 </button>
-                <button type="button" onClick={onSaveEdit} className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#4B2E91] text-white hover:bg-[#3f267a]" title="Save">
+                <button type="button" onClick={onSaveEdit} className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#4B2E91] text-white hover:bg-[#3f267a]" title={t("donationPage.save")}>
                   <Check size={14} />
                 </button>
               </>

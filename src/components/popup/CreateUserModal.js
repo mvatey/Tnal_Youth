@@ -7,32 +7,11 @@ import PopupCard from "@/components/popup/PopupCard";
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
 import FormActionButton from "@/components/forms/FormActionButton";
+import { useLanguage } from "@/context/LanguageContext";
 
 const USERS_BASE = "/api/backend/admin/users";
 
-const ROLE_OPTIONS = [
-  { label: "អ្នកគ្រប់គ្រង (Admin)", value: "ADMIN" },
-  { label: "ប្រធានសាខា (Branch Leader)", value: "BRANCH_LEADER" },
-  { label: "លេខាធិការ (Secretary)", value: "SECRETARY" },
-  { label: "សមាជិក (Member)", value: "MEMBER" },
-  { label: "អ្នកមើល (Viewer)", value: "VIEWER" },
-];
-
 const BRANCH_SCOPED_ROLES = new Set(["BRANCH_LEADER", "SECRETARY", "MEMBER"]);
-
-const VIEWER_SCOPE_OPTIONS = [
-  { label: "អ្នកគ្រប់គ្រង (Admin)", value: "ADMIN" },
-  { label: "ប្រធានសាខា (Branch Leader)", value: "BRANCH_LEADER" },
-  { label: "លេខាធិការ (Secretary)", value: "SECRETARY" },
-];
-
-// Admin can only toggle between these two — PENDING_ACTIVATION and LOCKED
-// are system-managed states with their own flows, not something to
-// hand-set here.
-const STATUS_OPTIONS = [
-  { label: "សកម្ម (Active)", value: "ACTIVE" },
-  { label: "អសកម្ម (Inactive)", value: "INACTIVE" },
-];
 
 const EMPTY_FORM = {
   fullNameKm: "",
@@ -108,7 +87,24 @@ async function submitUser(payload, userId) {
 // account (memberId == null) can be edited here — a member-linked account
 // is edited through that member's own personal-info page instead.
 export default function CreateUserModal({ open, onClose, onSave, editingUser = null }) {
+  const { t, locale } = useLanguage();
   const isEditing = Boolean(editingUser);
+  const roleOptions = [
+    { label: t("usersPage.admin"), value: "ADMIN" },
+    { label: t("usersPage.branchLeader"), value: "BRANCH_LEADER" },
+    { label: t("usersPage.secretary"), value: "SECRETARY" },
+    { label: t("usersPage.member"), value: "MEMBER" },
+    { label: t("usersPage.viewer"), value: "VIEWER" },
+  ];
+  const viewerScopeOptions = [
+    { label: t("usersPage.admin"), value: "ADMIN" },
+    { label: t("usersPage.branchLeader"), value: "BRANCH_LEADER" },
+    { label: t("usersPage.secretary"), value: "SECRETARY" },
+  ];
+  const statusOptions = [
+    { label: t("usersPage.active"), value: "ACTIVE" },
+    { label: t("usersPage.inactive"), value: "INACTIVE" },
+  ];
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -156,19 +152,16 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកសាខាបានទេ។");
+        if (!response.ok) throw new Error(body?.message || t("usersPage.loadBranchesFailed"));
         const rows = Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
         setBranches(
           rows
             .map((branch) => ({
               value: String(branch?.id ?? branch?.value ?? ""),
               label:
-                branch?.nameKm ||
-                branch?.name_km ||
-                branch?.labelKm ||
-                branch?.label_km ||
-                branch?.nameEn ||
-                branch?.name_en ||
+                (locale === "en"
+                  ? branch?.nameEn || branch?.name_en || branch?.labelEn || branch?.label_en || branch?.nameKm || branch?.name_km || branch?.labelKm || branch?.label_km
+                  : branch?.nameKm || branch?.name_km || branch?.labelKm || branch?.label_km || branch?.nameEn || branch?.name_en || branch?.labelEn || branch?.label_en) ||
                 branch?.label ||
                 String(branch?.id ?? ""),
             }))
@@ -180,7 +173,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       });
 
     return () => controller.abort();
-  }, [open]);
+  }, [locale, open, t]);
 
   if (!open) {
     return null;
@@ -246,15 +239,15 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       onClose?.();
     } catch (error) {
       console.error(
-        isEditing ? "Cannot update user:" : "Cannot create user:",
+        isEditing ? t("usersPage.updateFailed") : t("usersPage.createFailed"),
         error,
       );
 
       setSubmitError(
         error.message ||
           (isEditing
-            ? "មិនអាចកែប្រែគណនីអ្នកប្រើប្រាស់បានទេ។"
-            : "មិនអាចបង្កើតគណនីអ្នកប្រើប្រាស់បានទេ។"),
+            ? t("usersPage.updateFailed")
+            : t("usersPage.createFailed")),
       );
     } finally {
       setIsSubmitting(false);
@@ -265,13 +258,13 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     <PopupCard size="lg" onClose={onClose} className="no-scrollbar">
       <div className="mb-5 flex items-center justify-between">
         <h2 className="text-lg font-bold text-primary">
-          {isEditing ? "កែប្រែគណនីអ្នកប្រើប្រាស់" : "បង្កើតគណនីអ្នកប្រើប្រាស់ថ្មី"}
+          {isEditing ? t("usersPage.editUserAccount") : t("usersPage.createUserAccount")}
         </h2>
 
         <button
           type="button"
           onClick={onClose}
-          aria-label="បិទ"
+          aria-label={t("usersPage.close")}
           className="
             flex
             h-8
@@ -293,17 +286,17 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       <form onSubmit={submit} className="flex flex-col gap-5">
         <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
           <BoxFill
-            label="ឈ្មោះជាភាសាខ្មែរ"
+            label={t("usersPage.nameKm")}
             name="fullNameKm"
-            placeholder="បញ្ចូលឈ្មោះ"
+            placeholder={t("usersPage.enterName")}
             value={form.fullNameKm}
             onChange={update("fullNameKm")}
           />
 
           <BoxFill
-            label="ឈ្មោះជាអក្សរឡាតាំង"
+            label={t("usersPage.nameEn")}
             name="fullNameEn"
-            placeholder="បញ្ចូលឈ្មោះ"
+            placeholder={t("usersPage.enterName")}
             value={form.fullNameEn}
             onChange={update("fullNameEn")}
           />
@@ -311,7 +304,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
 
         <div className="space-y-4">
           <BoxFill
-            label="លេខទូរស័ព្ទ"
+            label={t("usersPage.phone")}
             name="phone"
             placeholder="0XXXXXXXX"
             value={form.phone}
@@ -319,7 +312,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
           />
 
           <BoxFill
-            label="អ៊ីមែល"
+            label={t("usersPage.email")}
             name="email"
             type="email"
             placeholder="example@email.com"
@@ -328,20 +321,20 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
           />
 
           <BoxFill
-            label="ពាក្យសម្ងាត់"
+            label={t("usersPage.password")}
             name="password"
             type="password"
-            placeholder="បញ្ចូលពាក្យសម្ងាត់ថ្មី​ (យ៉ាងតិច ៦ តួអក្សរ)"
+            placeholder={t("usersPage.passwordPlaceholder")}
             value={form.password}
             onChange={update("password")}
           />
 
           {isEditing && (
             <FormSelect
-              label="ស្ថានភាពគណនី"
+              label={t("usersPage.accountStatus")}
               name="status"
-              placeholder="រក្សាទុកដដែល"
-              options={STATUS_OPTIONS}
+              placeholder={t("usersPage.keepExisting")}
+              options={statusOptions}
               value={form.status}
               onChange={update("status")}
             />
@@ -355,10 +348,10 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
         */}
         <div className="space-y-4 rounded-xl border border-border bg-bg-page-gray/40 p-4">
           <FormSelect
-            label="តួនាទី"
+            label={t("usersPage.role")}
             name="role"
-            placeholder="ជ្រើសរើសតួនាទី"
-            options={ROLE_OPTIONS}
+            placeholder={t("usersPage.selectRole")}
+            options={roleOptions}
             value={form.role}
             onChange={update("role")}
             required
@@ -366,10 +359,10 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
 
           {isViewer && (
             <FormSelect
-              label="មើលជា (View as)"
+              label={t("usersPage.viewAs")}
               name="viewerScope"
-              placeholder="ជ្រើសរើសមើលជា"
-              options={VIEWER_SCOPE_OPTIONS}
+              placeholder={t("usersPage.selectViewAs")}
+              options={viewerScopeOptions}
               value={form.viewerScope}
               onChange={update("viewerScope")}
               required
@@ -378,9 +371,9 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
 
           {requiresBranch && (
             <FormSelect
-              label="សាខា"
+              label={t("usersPage.branch")}
               name="branchId"
-              placeholder="ជ្រើសរើសសាខា"
+              placeholder={t("usersPage.selectBranch")}
               options={branches}
               value={form.branchId}
               onChange={update("branchId")}
@@ -391,7 +384,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
 
         {showValidationError && !isFormValid && (
           <p className="mt-1 text-xs font-medium text-error">
-            សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
+            {t("usersPage.requiredFields")}
           </p>
         )}
 
@@ -405,8 +398,8 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
           onCancel={onClose}
           isValid={isFormValid && !isSubmitting}
           saving={isSubmitting}
-          saveText={isEditing ? "កែប្រែ" : "រក្សាទុក"}
-          cancelText="បោះបង់"
+          saveText={isEditing ? t("usersPage.update") : t("usersPage.save")}
+          cancelText={t("usersPage.cancel")}
         />
       </form>
     </PopupCard>

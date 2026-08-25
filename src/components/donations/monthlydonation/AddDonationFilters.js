@@ -1,5 +1,6 @@
 import DonationFilterSelect from "./DonationFilterSelect";
 import DonationSearchInput from "../../forms/searchBar";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function AddDonationFilters({
   branches,
@@ -15,14 +16,16 @@ export default function AddDonationFilters({
   onSearchChange,
   branchScoped = false,
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="mb-6 flex flex-wrap items-end gap-4">
       <DonationFilterSelect
-        label="សាខា"
+        label={t("donationPage.branch")}
         value={selectedBranch}
         onChange={onBranchChange}
         options={branches}
-        allLabel="ជ្រើសរើសសាខា"
+        allLabel={t("donationPage.selectBranch")}
         className="w-[158px]"
         required
         disabled={branchScoped}
@@ -36,25 +39,25 @@ export default function AddDonationFilters({
         up front and then narrowing them after the fact.
       */}
       <DonationFilterSelect
-        label="ឆ្នាំ"
+        label={t("donationPage.year")}
         value={selectedYear}
         onChange={onYearChange}
         options={years}
-        allLabel="ជ្រើសរើសឆ្នាំ"
+        allLabel={t("donationPage.selectYear")}
         className="w-[160px]"
         required
       />
       <DonationFilterSelect
-        label="ខែ"
+        label={t("donationPage.month")}
         value={selectedMonth}
         onChange={onMonthChange}
         options={months}
         allLabel={
           !selectedYear || selectedYear === "all"
-            ? "ជ្រើសរើសឆ្នាំសិន"
+            ? t("donationPage.selectYearFirst")
             : months.length === 0
-              ? "គ្មានខែទំនេរ"
-              : "ជ្រើសរើសខែ"
+              ? t("donationPage.noAvailableMonth")
+              : t("donationPage.selectMonth")
         }
         className="w-[160px]"
         required

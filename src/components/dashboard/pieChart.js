@@ -8,6 +8,8 @@ import {
 } from "recharts";
 import { ChevronDown } from "lucide-react";
 
+import { useLanguage } from "@/context/LanguageContext";
+
 const MONTHS_KM = [
   { value: "01", label: "ខែមករា" },
   { value: "02", label: "ខែកុម្ភៈ" },
@@ -21,6 +23,21 @@ const MONTHS_KM = [
   { value: "10", label: "ខែតុលា" },
   { value: "11", label: "ខែវិច្ឆិកា" },
   { value: "12", label: "ខែធ្នូ" },
+];
+
+const MONTHS_EN = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
 ];
 
 const COLORS = {
@@ -62,7 +79,7 @@ const DONUT_OUTER_RADIUS = 90;
  * No future months.
  * No previous years.
  */
-function getAvailableMonths() {
+function getAvailableMonths(locale = "km") {
   const today = new Date();
 
   const currentYear =
@@ -71,7 +88,12 @@ function getAvailableMonths() {
   const currentMonthIndex =
     today.getMonth();
 
-  return MONTHS_KM
+  const months =
+    locale === "en"
+      ? MONTHS_EN
+      : MONTHS_KM;
+
+  return months
     .slice(
       0,
       currentMonthIndex + 1
@@ -90,8 +112,11 @@ function MonthDropdown({
   onChange,
   disabled = false,
 }) {
+  const { locale } =
+    useLanguage();
+
   const monthOptions =
-    getAvailableMonths();
+    getAvailableMonths(locale);
 
   return (
     <div className="relative">
@@ -154,6 +179,9 @@ function LegendRow({
   count,
   loading,
 }) {
+  const { t } =
+    useLanguage();
+
   return (
     <div
       className={`
@@ -183,7 +211,7 @@ function LegendRow({
       </span>
 
       <span className="font-semibold text-text-primary">
-        ចំនួន{" "}
+        {t("dashboard.count")}{" "}
         {Number(
           count || 0
         ).toLocaleString()}
@@ -211,6 +239,9 @@ export default function ActivitySummaryChart({
   onMonthChange,
   loading = false,
 }) {
+  const { t } =
+    useLanguage();
+
   const internalCount =
     Number(
       data?.internal
@@ -239,7 +270,7 @@ export default function ActivitySummaryChart({
       ? [
           {
             name:
-              "កម្មវិធីខាងក្នុង",
+              t("dashboard.internalActivity"),
             value:
               internalCount,
             key:
@@ -247,7 +278,7 @@ export default function ActivitySummaryChart({
           },
           {
             name:
-              "កម្មវិធីខាងក្រៅ",
+              t("dashboard.externalActivity"),
             value:
               externalCount,
             key:
@@ -257,14 +288,14 @@ export default function ActivitySummaryChart({
       : [
           {
             name:
-              "កម្មវិធីខាងក្នុង",
+              t("dashboard.internalActivity"),
             value: 1,
             key:
               "internal",
           },
           {
             name:
-              "កម្មវិធីខាងក្រៅ",
+              t("dashboard.externalActivity"),
             value: 1,
             key:
               "external",
@@ -288,7 +319,7 @@ export default function ActivitySummaryChart({
     >
       <div className="mb-3 flex items-center justify-between gap-3">
         <h3 className="m-0 text-[15px] font-semibold text-text-primary">
-          សង្ខេបកម្មវិធី
+          {t("dashboard.activitySummary")}
         </h3>
 
         <MonthDropdown
@@ -440,7 +471,7 @@ export default function ActivitySummaryChart({
                     text-text-mute
                   "
                 >
-                  មិនទាន់មានទិន្នន័យ
+                  {t("dashboard.noData")}
                 </div>
               )}
           </div>
@@ -450,7 +481,7 @@ export default function ActivitySummaryChart({
               color={
                 COLORS.internal
               }
-              label="កម្មវិធីខាងក្នុង"
+              label={t("dashboard.internalActivity")}
               count={
                 internalCount
               }
@@ -463,7 +494,7 @@ export default function ActivitySummaryChart({
               color={
                 COLORS.external
               }
-              label="កម្មវិធីខាងក្រៅ"
+              label={t("dashboard.externalActivity")}
               count={
                 externalCount
               }

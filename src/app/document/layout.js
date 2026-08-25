@@ -2,8 +2,11 @@
 
 import Sidebar from "@/components/navigation/sidebar";
 import Topbar from "@/components/navigation/topbar";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function DocumentLayout({ children }) {
+  const { t } = useLanguage();
+
   return (
     <div className="flex h-screen overflow-hidden bg-bg-page-gray">
       <Sidebar
@@ -14,7 +17,7 @@ export default function DocumentLayout({ children }) {
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <Topbar title="ឯកសារ" />
+        <Topbar title={t("documentPage.title")} />
 
         <main className="no-scrollbar flex-1 overflow-y-auto p-5">
           {children}

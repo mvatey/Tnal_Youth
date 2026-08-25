@@ -13,10 +13,12 @@ import { ShieldCheck } from "lucide-react";
 
 import OtpInput from "@/components/ui/otpInput";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
+import { useLanguage } from "@/context/LanguageContext";
 
 function VerifyActivationOtpContent() {
   const router = useRouter();
   const params = useSearchParams();
+  const { t } = useLanguage();
 
   const identifierFromUrl =
     params.get("identifier") ||
@@ -81,14 +83,14 @@ function VerifyActivationOtpContent() {
 
     if (!normalizedIdentifier) {
       setError(
-        "រកមិនឃើញលេខទូរស័ព្ទ ឬអ៊ីមែល"
+        t("auth.identifierMissing", "រកមិនឃើញលេខទូរស័ព្ទ ឬអ៊ីមែល")
       );
       return;
     }
 
     if (!/^\d{6}$/.test(code)) {
       setError(
-        "សូមបញ្ចូលលេខកូដឲ្យគ្រប់ ៦ ខ្ទង់"
+        t("auth.otpRequired", "សូមបញ្ចូលលេខកូដឲ្យគ្រប់ ៦ ខ្ទង់")
       );
       return;
     }
@@ -126,7 +128,7 @@ function VerifyActivationOtpContent() {
 
       if (!response.ok) {
         setError(
-          khmerErrorMessage(data?.message, "លេខកូដ OTP មិនត្រឹមត្រូវ ឬផុតកំណត់")
+          khmerErrorMessage(data?.message, t("auth.otpInvalidOrExpired", "លេខកូដ OTP មិនត្រឹមត្រូវ ឬផុតកំណត់"))
         );
         return;
       }
@@ -153,7 +155,7 @@ function VerifyActivationOtpContent() {
       );
 
       setError(
-        "មិនអាចផ្ទៀងផ្ទាត់លេខកូដ OTP បានទេ"
+        t("auth.otpVerifyFailed", "មិនអាចផ្ទៀងផ្ទាត់លេខកូដ OTP បានទេ")
       );
     } finally {
       setLoading(false);
@@ -170,7 +172,7 @@ function VerifyActivationOtpContent() {
 
     if (!normalizedIdentifier) {
       setError(
-        "រកមិនឃើញលេខទូរស័ព្ទ ឬអ៊ីមែល"
+        t("auth.identifierMissing", "រកមិនឃើញលេខទូរស័ព្ទ ឬអ៊ីមែល")
       );
       return;
     }
@@ -200,7 +202,7 @@ function VerifyActivationOtpContent() {
 
       if (!response.ok) {
         setError(
-          khmerErrorMessage(data?.message, "មិនអាចផ្ញើលេខកូដ OTP ម្តងទៀតបានទេ")
+          khmerErrorMessage(data?.message, t("auth.otpResendFailed", "មិនអាចផ្ញើលេខកូដ OTP ម្តងទៀតបានទេ"))
         );
         return;
       }
@@ -213,7 +215,7 @@ function VerifyActivationOtpContent() {
       );
 
       setError(
-        "មិនអាចផ្ញើលេខកូដ OTP ម្តងទៀតបានទេ"
+        t("auth.otpResendFailed", "មិនអាចផ្ញើលេខកូដ OTP ម្តងទៀតបានទេ")
       );
     } finally {
       setLoading(false);
@@ -223,12 +225,11 @@ function VerifyActivationOtpContent() {
   return (
     <div>
       <h2 className="mb-2 text-center text-xl font-bold text-text-primary">
-        ផ្ទៀងផ្ទាត់គណនី
+        {t("auth.verifyAccountTitle", "ផ្ទៀងផ្ទាត់គណនី")}
       </h2>
 
       <p className="mb-8 text-center text-sm leading-6 text-text-mute">
-        យើងបានផ្ញើលេខកូដ OTP ៦ ខ្ទង់
-        ទៅកាន់អ៊ីមែល ឬលេខទូរស័ព្ទរបស់អ្នក
+        {t("auth.otpDescriptionActivation", "យើងបានផ្ញើលេខកូដ OTP ៦ ខ្ទង់ ទៅកាន់អ៊ីមែល ឬលេខទូរស័ព្ទរបស់អ្នក")}
         <br />
 
         {phoneOrEmail && (
@@ -259,12 +260,12 @@ function VerifyActivationOtpContent() {
           <ShieldCheck size={18} />
 
           {loading
-            ? "កំពុងផ្ទៀងផ្ទាត់..."
-            : "ផ្ទៀងផ្ទាត់"}
+            ? t("auth.verifying", "កំពុងផ្ទៀងផ្ទាត់...")
+            : t("auth.verify", "ផ្ទៀងផ្ទាត់")}
         </button>
 
         <p className="pt-2 text-center text-sm text-text-mute">
-          មិនទាន់ទទួលបានលេខកូដ?{" "}
+          {t("auth.noOtp", "មិនទាន់ទទួលបានលេខកូដ?")}{" "}
 
           <button
             type="button"
@@ -272,18 +273,18 @@ function VerifyActivationOtpContent() {
             disabled={loading}
             className="text-blue-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
           >
-            ផ្ញើម្តងទៀត
+            {t("auth.resend", "ផ្ញើម្តងទៀត")}
           </button>
 
           <br />
 
-          ត្រឡប់ទៅ{" "}
+          {t("auth.backTo", "ត្រឡប់ទៅ")}{" "}
 
           <a
             href="/auth/login"
             className="text-blue-700 hover:underline"
           >
-            ចូលប្រើប្រាស់
+            {t("auth.loginLink", "ចូលប្រើប្រាស់")}
           </a>
         </p>
       </div>

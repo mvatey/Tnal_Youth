@@ -1,5 +1,7 @@
 "use client";
 
+import { useLanguage } from "@/context/LanguageContext";
+
 export function StatCardGrid({
   children,
   minCardWidth = 210,
@@ -28,6 +30,9 @@ export default function StatCard({
   iconBg = "bg-secondary-light",
   accent,
 }) {
+  const { t } =
+    useLanguage();
+
   const hasGrowth =
     growth !== undefined &&
     growth !== null &&
@@ -76,7 +81,7 @@ export default function StatCard({
           </div>
 
           <span className="whitespace-nowrap text-xs text-text-mute">
-            ក្នុងខែនេះ
+            {t("dashboard.thisMonth")}
           </span>
         </div>
         )}

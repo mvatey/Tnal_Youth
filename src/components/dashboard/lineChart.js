@@ -11,6 +11,8 @@ import {
 } from "recharts";
 import { ChevronDown } from "lucide-react";
 
+import { useLanguage } from "@/context/LanguageContext";
+
 const CURRENT_YEAR =
   new Date().getFullYear();
 
@@ -34,6 +36,21 @@ const MONTH_LABELS_KM = {
   10: "តុលា",
   11: "វិច្ឆិកា",
   12: "ធ្នូ",
+};
+
+const MONTH_LABELS_EN = {
+  1: "Jan",
+  2: "Feb",
+  3: "Mar",
+  4: "Apr",
+  5: "May",
+  6: "Jun",
+  7: "Jul",
+  8: "Aug",
+  9: "Sep",
+  10: "Oct",
+  11: "Nov",
+  12: "Dec",
 };
 
 const LINE_COLOR = "#7B6EF6";
@@ -69,8 +86,14 @@ function getMonthNumber(item) {
 
 function normalizeParticipationMonths(
   months,
-  year
+  year,
+  locale = "km"
 ) {
+  const monthLabels =
+    locale === "en"
+      ? MONTH_LABELS_EN
+      : MONTH_LABELS_KM;
+
   const monthMap = new Map();
 
   if (Array.isArray(months)) {
@@ -85,7 +108,7 @@ function normalizeParticipationMonths(
       monthMap.set(monthNumber, {
         monthNumber,
         month:
-          MONTH_LABELS_KM[
+          monthLabels[
             monthNumber
           ],
         period:
@@ -118,7 +141,7 @@ function normalizeParticipationMonths(
         monthMap.get(monthNumber) ?? {
           monthNumber,
           month:
-            MONTH_LABELS_KM[
+            monthLabels[
               monthNumber
             ],
           period: `${year}-${String(
@@ -135,6 +158,9 @@ function ChartTooltip({
   active,
   payload,
 }) {
+  const { t } =
+    useLanguage();
+
   if (
     !active ||
     !payload ||
@@ -167,7 +193,7 @@ function ChartTooltip({
         {Number(
           item?.participantCount || 0
         ).toLocaleString()}{" "}
-        នាក់
+        {t("dashboard.peopleUnit")}
       </div>
     </div>
   );
@@ -178,6 +204,9 @@ function YearDropdown({
   onChange,
   disabled = false,
 }) {
+  const { t, locale } =
+    useLanguage();
+
   const normalizedValue =
     Number(value) || CURRENT_YEAR;
 
@@ -292,7 +321,8 @@ export default function ParticipationChart({
   const chartData =
     normalizeParticipationMonths(
       data?.months,
-      selectedYear
+      selectedYear,
+      locale
     );
 
   const hasAnyData =
@@ -318,7 +348,7 @@ export default function ParticipationChart({
     >
       <div className="mb-3 flex items-center justify-between gap-3">
         <h3 className="m-0 text-[15px] font-semibold text-text-primary">
-          ការចូលរួមប្រចាំខែ
+          {t("dashboard.monthlyParticipation")}
         </h3>
 
         <YearDropdown
@@ -426,7 +456,7 @@ export default function ParticipationChart({
                 text-text-mute
               "
             >
-              មិនទាន់មានទិន្នន័យសម្រាប់ឆ្នាំនេះ
+              {t("dashboard.noDataForYear")}
             </div>
           )}
         </div>

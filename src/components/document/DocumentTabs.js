@@ -3,6 +3,7 @@
 import { useRouter, usePathname } from "next/navigation";
 
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
 
 export default function DocumentTabs() {
@@ -10,6 +11,7 @@ export default function DocumentTabs() {
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const role = normalizeRole(user?.role);
 
@@ -22,13 +24,13 @@ export default function DocumentTabs() {
   const allTabs = [
     {
       key: "company",
-      label: "ឯកសារស្ថាប័ន",
+      label: t("documentPage.organizationDocuments"),
       path: "/document/company",
     },
 
     {
       key: "member",
-      label: "ឯកសារផ្ទាល់ខ្លួនរបស់សមាជិក",
+      label: t("documentPage.memberDocuments"),
       path: "/document/member",
     },
   ];
@@ -41,7 +43,7 @@ export default function DocumentTabs() {
 
 
   return (
-    <div className="flex shrink-0 gap-5">
+    <div className="flex shrink-0 gap-3 overflow-x-auto pb-1 sm:gap-5">
 
       {tabs.map((tab) => (
 
@@ -51,7 +53,8 @@ export default function DocumentTabs() {
 
           className={`
             h-[50px]
-            w-[260px]
+            min-w-[220px]
+            sm:w-[260px]
             rounded-md
             text-sm
             font-medium

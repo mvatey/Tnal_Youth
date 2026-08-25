@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import tableHeaders from "@/data/donation/tableHeaders.json";
 import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
-
-const { eventBranchTotalHeaders: headers } = tableHeaders;
+import { useLanguage } from "@/context/LanguageContext";
 
 async function fetchJson(url) {
   const response = await fetch(url, {
@@ -31,6 +29,7 @@ export default function EventDonationBranchTotals({
   activityId,
   selectedBranchId = "all",
 }) {
+  const { t } = useLanguage();
   const [allRows, setAllRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -52,7 +51,7 @@ export default function EventDonationBranchTotals({
       .catch((loadError) => {
         if (!cancelled) {
           setAllRows([]);
-          setError(loadError.message || "មិនអាចទាញយកសរុបតាមសាខាបានទេ។");
+          setError(loadError.message || t("donationPage.branchTotalsLoadFailed"));
         }
       })
       .finally(() => {
@@ -82,14 +81,23 @@ export default function EventDonationBranchTotals({
           row.branchCode ||
           "-",
         roleLabel:
-          role === "ORGANIZER" ? "សាខាចម្បង" : "សាខាដែលបានអញ្ជើញ",
+          role === "ORGANIZER" ? t("donationPage.organizerBranch") : t("donationPage.invitedBranch"),
         count: Number(row.donationCount || 0),
         amountKhr: Number(row.amountKhr || 0),
         amountUsd: Number(row.amountUsd || 0),
         totalAmountUsd: Number(row.totalAmountUsd || 0),
       };
     });
-  }, [allRows, selectedBranchId]);
+  }, [allRows, selectedBranchId, t]);
+
+  const headers = [
+    t("donationPage.no"),
+    t("donationPage.branch"),
+    t("memberPage.role"),
+    t("donationPage.donor"),
+    t("donationPage.amountKhrPlain"),
+    t("donationPage.amountUsdPlain"),
+  ];
 
   const totals = useMemo(
     () =>
@@ -107,7 +115,7 @@ export default function EventDonationBranchTotals({
   if (loading) {
     return (
       <div className="py-10 text-center text-sm text-text-secondary">
-        កំពុងទាញទិន្នន័យសាខា...
+        {t("donationPage.loadingBranches")}
       </div>
     );
   }
@@ -156,7 +164,7 @@ export default function EventDonationBranchTotals({
                   colSpan={headers.length}
                   className="px-4 py-8 text-center text-xs font-medium text-text-secondary"
                 >
-                  មិនមានទិន្នន័យ
+                  {t("donationPage.noData")}
                 </td>
               </tr>
             ) : null}
@@ -166,7 +174,7 @@ export default function EventDonationBranchTotals({
 
       {rows.length > 0 ? (
         <DonationTotalsCard
-          title="សរុបវិភាគទាន"
+          title={t("donationPage.contributionTotal")}
           riel={totals.riel}
           dollar={totals.dollar}
           total={totals.total}

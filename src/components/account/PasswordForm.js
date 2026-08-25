@@ -8,11 +8,13 @@ import {
   CircleCheck,
   Info,
 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function PasswordForm({
   onSubmit,
   submitting = false,
 }) {
+  const { t } = useLanguage();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -38,28 +40,28 @@ export default function PasswordForm({
 
     if (!newPassword) {
       setError(
-        "សូមបញ្ចូលពាក្យសម្ងាត់ថ្មី។",
+        t("memberPage.passwordRequired"),
       );
       return;
     }
 
     if (!minimumLength) {
       setError(
-        "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ។",
+        t("memberPage.passwordMinLength"),
       );
       return;
     }
 
     if (!confirmPassword) {
       setError(
-        "សូមបញ្ជាក់ពាក្យសម្ងាត់ថ្មី។",
+        t("memberPage.confirmPasswordRequired"),
       );
       return;
     }
 
     if (!passwordsMatch) {
       setError(
-        "ពាក្យសម្ងាត់ថ្មី និងការបញ្ជាក់ពាក្យសម្ងាត់មិនត្រូវគ្នា។",
+        t("memberPage.passwordMismatch"),
       );
       return;
     }
@@ -75,7 +77,7 @@ export default function PasswordForm({
     } catch (submitError) {
       setError(
         submitError?.message ||
-          "មិនអាចកំណត់ពាក្យសម្ងាត់ថ្មីបានទេ។",
+          t("memberPage.passwordSaveFailed"),
       );
     }
   };
@@ -92,7 +94,7 @@ export default function PasswordForm({
     >
       <div className="space-y-5">
         <PasswordInput
-          label="ពាក្យសម្ងាត់ថ្មី"
+          label={t("memberPage.newPassword")}
           value={newPassword}
           onChange={setNewPassword}
           show={showNewPassword}
@@ -104,7 +106,7 @@ export default function PasswordForm({
         />
 
         <PasswordInput
-          label="បញ្ជាក់ពាក្យសម្ងាត់ថ្មី"
+          label={t("memberPage.confirmNewPassword")}
           value={confirmPassword}
           onChange={setConfirmPassword}
           show={showConfirmPassword}
@@ -141,8 +143,8 @@ export default function PasswordForm({
             "
           >
             {submitting
-              ? "កំពុងរក្សាទុក..."
-              : "រក្សាទុក"}
+              ? t("common.saving")
+              : t("common.save")}
           </button>
         </div>
       </div>
@@ -176,19 +178,19 @@ export default function PasswordForm({
           </div>
 
           <h3 className="text-base font-semibold text-slate-900">
-            គន្លឹះសុវត្ថិភាព
+            {t("memberPage.safetyTips")}
           </h3>
         </div>
 
         <div className="space-y-4">
           <PasswordRule
             valid={minimumLength}
-            text="ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ"
+            text={t("memberPage.passwordRuleLength")}
           />
 
           <PasswordRule
             valid={passwordsMatch}
-            text="ការបញ្ជាក់ពាក្យសម្ងាត់ត្រូវតែដូចពាក្យសម្ងាត់ថ្មី"
+            text={t("memberPage.passwordRuleMatch")}
           />
         </div>
       </div>
@@ -203,6 +205,7 @@ function PasswordInput({
   show,
   onToggle,
 }) {
+  const { t } = useLanguage();
   return (
     <div>
       <label className="mb-2 block text-sm font-medium text-slate-900">
@@ -227,7 +230,7 @@ function PasswordInput({
           onChange={(event) =>
             onChange(event.target.value)
           }
-          placeholder="បញ្ចូលពាក្យសម្ងាត់"
+          placeholder={t("memberPage.passwordPlaceholder")}
           autoComplete="new-password"
           className="
             h-10

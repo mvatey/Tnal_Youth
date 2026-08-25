@@ -4,13 +4,15 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export function ParticipantStatusBadge({
   status,
 }) {
+  const { t } = useLanguage();
   const style =
-    status === "បានចូលរួម" ||
-    status === "បានអញ្ជើញ"
+    status === t("activityPage.participated") ||
+    status === t("activityPage.invited")
       ? "bg-success-bg text-success"
       : "bg-warning-bg text-warning";
 
@@ -31,6 +33,7 @@ function StatCard({
   iconBg,
   iconColor,
 }) {
+  const { t } = useLanguage();
   return (
     <div className="relative overflow-hidden rounded-xl border border-border bg-bg-page-white">
       <div
@@ -49,7 +52,7 @@ function StatCard({
 
         <div>
           <p className="text-lg font-bold text-text-primary">
-            {Number(value || 0)} នាក់
+            {Number(value || 0)} {t("activityPage.memberUnit")}
           </p>
 
           <p className="text-sm text-text-secondary">
@@ -70,6 +73,7 @@ export default function ParticipantStats({
   showInvitedBranch = false,
   invitedBranch = 0,
 }) {
+  const { t } = useLanguage();
   return (
     <div
       className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${
@@ -80,7 +84,7 @@ export default function ParticipantStats({
     >
       <StatCard
         icon={Users}
-        label="ចំនួនសមាជិកសរុប"
+        label={t("activityPage.totalMembers")}
         value={total}
         accent="bg-secondary-hover"
         iconBg="bg-secondary-light"
@@ -89,7 +93,7 @@ export default function ParticipantStats({
 
       <StatCard
         icon={UserCheck}
-        label="ចំនួនអ្នកបានចូលរួម"
+        label={t("activityPage.attendedMembers")}
         value={attended}
         accent="bg-primary"
         iconBg="bg-primary-light"
@@ -98,7 +102,7 @@ export default function ParticipantStats({
 
       <StatCard
         icon={UserPlus}
-        label="ចំនួនអ្នកមិនបានចូលរួម"
+        label={t("activityPage.absentMembers")}
         value={absent}
         accent="bg-warning"
         iconBg="bg-warning-bg"
@@ -108,7 +112,7 @@ export default function ParticipantStats({
       {showInvitedBranch && (
         <StatCard
           icon={Building2}
-          label="សមាជិកសាខាអញ្ជើញ"
+          label={t("activityPage.invitedBranchMembers")}
           value={invitedBranch}
           accent="bg-secondary"
           iconBg="bg-secondary-light"

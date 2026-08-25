@@ -7,6 +7,7 @@ import PopupCard from "@/components/popup/PopupCard";
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
 import FormActionButtons from "@/components/forms/FormActionButton";
+import { useLanguage } from "@/context/LanguageContext";
 
 const BRANCH_OPTIONS = [
   {
@@ -29,6 +30,7 @@ export default function EditDocumentForm({
   branchOptions = BRANCH_OPTIONS,
   documentTypeOptions = [],
 }) {
+  const { t } = useLanguage();
   // The Document entity holds exactly one file_id — editing replaces
   // that single file, it doesn't attach more of them. currentFile is
   // the document's existing file (read-only, shown for context);
@@ -68,7 +70,7 @@ export default function EditDocumentForm({
     }
 
     if (selectedFile.size > MAX_FILE_SIZE) {
-      setFileError("ទំហំឯកសារមិនអាចលើសពី 5MB បានទេ។");
+      setFileError(t("documentPage.singleFileTooLarge"));
       event.target.value = "";
       return;
     }
@@ -124,7 +126,7 @@ export default function EditDocumentForm({
       await onSave?.(updatedForm);
       onClose?.();
     } catch (error) {
-      console.error("Cannot update document:", error);
+      console.error(t("documentPage.updateFailed"), error);
     } finally {
       setSaving(false);
     }
@@ -139,7 +141,7 @@ export default function EditDocumentForm({
       <button
   type="button"
   onClick={onClose}
-  aria-label="បិទ"
+  aria-label={t("documentPage.close")}
   className="
     absolute
     right-4
@@ -162,25 +164,25 @@ export default function EditDocumentForm({
       <form onSubmit={handleSubmit}>
         <div className="space-y-4">
           <h2 className="mb-4 text-lg font-bold text-primary">
-            កែប្រែឯកសារ
+            {t("documentPage.editDocument")}
           </h2>
 
           {/* Title + Branch */}
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <BoxFill
-              label="ឈ្មោះឯកសារ"
+              label={t("documentPage.documentName")}
               name="title"
-              placeholder="បញ្ចូលឈ្មោះឯកសារ"
+              placeholder={t("documentPage.enterDocumentName")}
               value={form.title || ""}
               onChange={updateField("title")}
             />
 
             <BoxFill
-              label="សាខា"
+              label={t("documentPage.branch")}
               type="select"
               name="branch"
-              placeholder="ជ្រើសរើសសាខា"
+              placeholder={t("documentPage.selectBranch")}
               value={form.branch || ""}
               onChange={updateField("branch")}
               options={branchOptions}
@@ -190,9 +192,9 @@ export default function EditDocumentForm({
           {/* Document type */}
 
           <FormSelect
-            label="ប្រភេទឯកសារ"
+            label={t("documentPage.documentType")}
             name="typeId"
-            placeholder="ជ្រើសរើសប្រភេទឯកសារ"
+            placeholder={t("documentPage.selectDocumentType")}
             value={form.typeId != null ? String(form.typeId) : ""}
             onChange={(event) =>
               setForm((previousForm) => ({
@@ -207,14 +209,14 @@ export default function EditDocumentForm({
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
-              លេខសម្គាល់
+              {t("documentPage.identifier")}
             </label>
 
             <textarea
               rows={3}
               value={form.description || ""}
               onChange={updateField("description")}
-              placeholder="បញ្ចូលលេខសម្គាល់"
+              placeholder={t("documentPage.enterIdentifier")}
               className="
                 w-full
                 resize-none
@@ -234,7 +236,7 @@ export default function EditDocumentForm({
           {/* Date */}
 
           <BoxFill
-            label="កាលបរិច្ឆេទ"
+            label={t("documentPage.date")}
             type="date"
             name="date"
             value={form.date || ""}
@@ -246,7 +248,7 @@ export default function EditDocumentForm({
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
-              ឯកសារ
+              {t("documentPage.document")}
             </label>
 
             <div className="space-y-2">
@@ -292,7 +294,7 @@ export default function EditDocumentForm({
                       </p>
 
                       <p className="text-xs text-text-mute">
-                        ឯកសារថ្មី (នឹងជំនួសឯកសារចាស់) · {replacementFile.size}
+                        {t("documentPage.newDocumentWillReplace")} · {replacementFile.size}
                       </p>
                     </div>
                   </div>
@@ -300,7 +302,7 @@ export default function EditDocumentForm({
                   <button
                     type="button"
                     onClick={removeReplacementFile}
-                    aria-label="បោះបង់ឯកសារថ្មី"
+                    aria-label={t("documentPage.removeNewDocument")}
                     className="
                       flex
                       h-8
@@ -357,12 +359,12 @@ export default function EditDocumentForm({
                     </p>
 
                     <p className="text-xs text-text-mute">
-                      ឯកសារបច្ចុប្បន្ន · {currentFile.size}
+                      {t("documentPage.currentDocument")} · {currentFile.size}
                     </p>
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-text-mute">មិនទាន់មានឯកសារ</p>
+                <p className="text-xs text-text-mute">{t("documentPage.noDocumentYet")}</p>
               )}
             </div>
 
@@ -399,11 +401,11 @@ export default function EditDocumentForm({
             />
 
             <p className="text-sm font-semibold text-primary">
-              ជំនួសឯកសារ
+              {t("documentPage.replaceDocument")}
             </p>
 
             <p className="text-[11px] text-text-mute">
-              PDF, Excel, JPG, PNG (Max 5MB)
+              {t("documentPage.replaceFileHint")}
             </p>
 
             <input
@@ -417,7 +419,7 @@ export default function EditDocumentForm({
 
         {showValidationError && !isFormValid && (
           <p className="mt-4 text-xs font-medium text-error">
-            សូមបំពេញព័ត៌មានទាំងអស់ និងមានឯកសារយ៉ាងតិចមួយ។
+            {t("documentPage.allFieldsAndFileRequired")}
           </p>
         )}
 
@@ -425,8 +427,8 @@ export default function EditDocumentForm({
           onCancel={onClose}
           isValid={isFormValid}
           saving={saving}
-          saveText="រក្សាទុក"
-          cancelText="បោះបង់"
+          saveText={t("documentPage.save")}
+          cancelText={t("documentPage.cancel")}
           showSaveIcon
         />
       </form>

@@ -11,6 +11,7 @@ import PopupCard from "@/components/popup/PopupCard";
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
 import FormActionButtons from "@/components/forms/FormActionButton";
+import { useLanguage } from "@/context/LanguageContext";
 
 const FALLBACK_BRANCH_OPTIONS = [
   {
@@ -58,6 +59,7 @@ export default function AddDocumentForm({
   documentTypeOptions = FALLBACK_DOCUMENT_TYPE_OPTIONS,
   saving = false,
 }) {
+  const { t } = useLanguage();
   const fileInputRef = useRef(null);
 
   const [
@@ -115,7 +117,7 @@ export default function AddDocumentForm({
       oversizedFiles.length > 0
     ) {
       setFileError(
-        "ឯកសារនីមួយៗមិនអាចមានទំហំលើសពី 5MB បានទេ។",
+        t("documentPage.fileTooLarge"),
       );
 
       event.target.value = "";
@@ -266,11 +268,6 @@ export default function AddDocumentForm({
       "/document.jpg",
   };
 
-  console.log(
-    "Document being saved:",
-    newDocument,
-  );
-
   onSave?.(newDocument);
 };
 
@@ -282,7 +279,7 @@ export default function AddDocumentForm({
       <button
         type="button"
         onClick={onClose}
-        aria-label="បិទ"
+        aria-label={t("documentPage.close")}
         className="
           absolute
           right-4
@@ -312,7 +309,7 @@ export default function AddDocumentForm({
           text-primary
         "
       >
-        បញ្ចូលឯកសារ
+        {t("documentPage.addDocument")}
       </h2>
 
       <form
@@ -328,16 +325,16 @@ export default function AddDocumentForm({
             "
           >
             <BoxFill
-  label="ឈ្មោះឯកសារ"
+  label={t("documentPage.documentName")}
   name="title"
-  placeholder="បញ្ចូលឈ្មោះឯកសារ"
+  placeholder={t("documentPage.enterDocumentName")}
   value={form.title || ""}
   onChange={updateField("title")}
 />
 
             <FormSelect
-              label="សាខា"
-              placeholder="ជ្រើសរើសសាខា"
+              label={t("documentPage.branch")}
+              placeholder={t("documentPage.selectBranch")}
               value={
                 form.branch ||
                 ""
@@ -362,8 +359,8 @@ export default function AddDocumentForm({
             "
           >
             <FormSelect
-              label="ប្រភេទឯកសារ"
-              placeholder="ជ្រើសរើសប្រភេទឯកសារ"
+              label={t("documentPage.documentType")}
+              placeholder={t("documentPage.selectDocumentType")}
               value={
                 form.type || ""
               }
@@ -387,7 +384,7 @@ export default function AddDocumentForm({
                 font-semibold
               "
             >
-              លេខសម្គាល់
+              {t("documentPage.identifier")}
             </label>
 
             <textarea
@@ -401,7 +398,7 @@ export default function AddDocumentForm({
                   "description",
                 )
               }
-              placeholder="បញ្ចូលលេខសម្គាល់"
+              placeholder={t("documentPage.enterIdentifier")}
               className="
                 w-full
                 resize-none
@@ -468,7 +465,7 @@ export default function AddDocumentForm({
                   text-primary
                 "
               >
-                បញ្ចូលឯកសារ
+                {t("documentPage.uploadDocument")}
               </p>
 
               <p
@@ -477,9 +474,7 @@ export default function AddDocumentForm({
                   text-text-mute
                 "
               >
-                PDF, Word, Excel,
-                JPG, PNG (Max 5MB
-                ក្នុងមួយឯកសារ)
+                {t("documentPage.fileHint")}
               </p>
             </button>
 
@@ -538,7 +533,7 @@ export default function AddDocumentForm({
                           </p>
 
                           <p className="text-xs text-text-mute">
-  {form.type || "មិនទាន់ជ្រើសរើសប្រភេទ"} · {item.size}
+  {form.type || t("documentPage.noTypeSelected")} · {item.size}
 </p>
                         </div>
                       </div>
@@ -550,7 +545,7 @@ export default function AddDocumentForm({
                             item.id,
                           )
                         }
-                        aria-label="លុបឯកសារ"
+                        aria-label={t("documentPage.removeDocument")}
                         className="
                           ml-3
                           flex
@@ -601,8 +596,7 @@ export default function AddDocumentForm({
                 text-error
               "
             >
-              សូមបំពេញព័ត៌មានទាំងអស់
-              និងបញ្ចូលឯកសារយ៉ាងតិចមួយ។
+              {t("documentPage.allFieldsRequired")}
             </p>
           )}
 
@@ -611,8 +605,8 @@ export default function AddDocumentForm({
           isValid={
             isFormValid
           }
-          saveText="រក្សាទុក"
-          cancelText="បោះបង់"
+          saveText={t("documentPage.save")}
+          cancelText={t("documentPage.cancel")}
         />
       </form>
     </PopupCard>

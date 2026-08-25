@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { useLanguage } from "@/context/LanguageContext";
+
 const TYPE_BADGE = {
   INTERNAL: {
     label: "កម្មវិធីខាងក្នុង",
@@ -23,6 +25,9 @@ function normalizeType(type) {
 }
 
 function TypeBadge({ type }) {
+  const { t } =
+    useLanguage();
+
   const normalizedType =
     normalizeType(type);
 
@@ -32,6 +37,13 @@ function TypeBadge({ type }) {
       color: "var(--color-text-secondary, #6B7280)",
       tint: "var(--color-bg-page-gray, #F1F2F5)",
     };
+
+  const displayLabel =
+    normalizedType === "INTERNAL"
+      ? t("dashboard.internalActivity")
+      : normalizedType === "EXTERNAL"
+        ? t("dashboard.externalActivity")
+        : config.label;
 
   return (
     <span
@@ -46,12 +58,12 @@ function TypeBadge({ type }) {
         whiteSpace: "nowrap",
       }}
     >
-      {config.label}
+      {displayLabel}
     </span>
   );
 }
 
-function formatDateTime(value) {
+function formatDateTime(value, locale = "km") {
   if (!value) {
     return "-";
   }
@@ -64,7 +76,7 @@ function formatDateTime(value) {
   }
 
   return new Intl.DateTimeFormat(
-    "km-KH",
+    locale === "en" ? "en-US" : "km-KH",
     {
       year: "numeric",
       month: "short",
@@ -119,6 +131,9 @@ function ActivityThumbnail({ activity }) {
 function ViewMoreLink({
   onClick,
 }) {
+  const { t } =
+    useLanguage();
+
   const [
     isHovered,
     setIsHovered,
@@ -147,7 +162,7 @@ function ViewMoreLink({
         cursor: "pointer",
       }}
     >
-      មើលទាំងអស់
+      {t("dashboard.viewAll")}
     </button>
   );
 }
@@ -157,11 +172,11 @@ function ActivityRow({
   variant,
   onClick,
 }) {
+  const { t, label, locale } =
+    useLanguage();
+
   const title =
-    activity?.titleKm ??
-    activity?.title_km ??
-    activity?.title ??
-    "-";
+    label(activity, "-");
 
   const type =
     activity?.type?.code ??
@@ -256,7 +271,7 @@ function ActivityRow({
               whiteSpace: "nowrap",
             }}
           >
-            {formatDateTime(dateValue)}
+            {formatDateTime(dateValue, locale)}
           </span>
 
           {isCompleted && (
@@ -267,9 +282,10 @@ function ActivityRow({
                 fontSize: 10,
               }}
             >
-              អ្នកចូលរួមសរុប{" "}
+              {t("dashboard.totalParticipants")}{" "}
               {participantCount.toLocaleString()}
-              នាក់
+              {" "}
+              {t("dashboard.peopleUnit")}
             </span>
           )}
         </div>
@@ -346,6 +362,9 @@ export function ActivityListCard({
   variant,
   onViewAll,
 }) {
+  const { t } =
+    useLanguage();
+
   const router =
     useRouter();
 
@@ -419,7 +438,7 @@ export function ActivityListCard({
             textAlign: "center",
           }}
         >
-          មិនទាន់មានកម្មវិធីទេ
+          {t("dashboard.noActivities")}
         </div>
       ) : (
         activities
@@ -443,9 +462,12 @@ export function RecentActivities({
   activities = [],
   loading = false,
 }) {
+  const { t } =
+    useLanguage();
+
   return (
     <ActivityListCard
-      title="កម្មវិធីថ្មីៗ"
+      title={t("dashboard.recentActivities")}
       activities={activities}
       loading={loading}
       variant="completed"
@@ -457,9 +479,12 @@ export function UpcomingActivities({
   activities = [],
   loading = false,
 }) {
+  const { t } =
+    useLanguage();
+
   return (
     <ActivityListCard
-      title="កម្មវិធីបន្ទាប់"
+      title={t("dashboard.upcomingActivities")}
       activities={activities}
       loading={loading}
       variant="upcoming"
@@ -472,6 +497,9 @@ export default function ActivityList({
   upcoming = [],
   loading = false,
 }) {
+  const { t } =
+    useLanguage();
+
   return (
     <div
       style={{
@@ -481,7 +509,7 @@ export default function ActivityList({
       }}
     >
       <ActivityListCard
-        title="កម្មវិធីថ្មីៗ"
+        title={t("dashboard.recentActivities")}
         activities={
           recentCompleted
         }
@@ -490,7 +518,7 @@ export default function ActivityList({
       />
 
       <ActivityListCard
-        title="កម្មវិធីបន្ទាប់"
+        title={t("dashboard.upcomingActivities")}
         activities={upcoming}
         loading={loading}
         variant="upcoming"

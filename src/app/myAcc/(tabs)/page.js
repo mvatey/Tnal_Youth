@@ -1,14 +1,16 @@
 "use client";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function MyAccountPage() {
   const { member, loading, error } = useCurrentMember();
+  const { t } = useLanguage();
 
   if (loading) {
     return (
       <div className="rounded-xl border border-border bg-bg-page-white p-6">
-        កំពុងទាញយកព័ត៌មានសមាជិក...
+        {t("memberPage.loadingMember")}
       </div>
     );
   }
@@ -24,7 +26,7 @@ export default function MyAccountPage() {
   if (!member) {
     return (
       <div className="rounded-xl border border-border bg-bg-page-white p-6">
-        រកមិនឃើញព័ត៌មានសមាជិក
+        {t("memberPage.memberNotFound")}
       </div>
     );
   }
@@ -32,61 +34,61 @@ export default function MyAccountPage() {
   return (
     <div className="rounded-xl border border-border bg-bg-page-white p-6">
       <h2 className="mb-4 text-lg font-semibold text-primary">
-        ព័ត៌មានផ្ទាល់ខ្លួន
+        {t("memberPage.detailPersonal")}
       </h2>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <p className="text-xs text-text-secondary">ឈ្មោះខ្មែរ</p>
+          <p className="text-xs text-text-secondary">{t("memberPage.nameKm")}</p>
           <p className="font-medium text-text-primary">
             {member.name_kh || "-"}
           </p>
         </div>
 
         <div>
-          <p className="text-xs text-text-secondary">ឈ្មោះអង់គ្លេស</p>
+          <p className="text-xs text-text-secondary">{t("memberPage.nameEn")}</p>
           <p className="font-medium text-text-primary">
             {member.name_en || "-"}
           </p>
         </div>
 
         <div>
-          <p className="text-xs text-text-secondary">លេខទូរស័ព្ទ</p>
+          <p className="text-xs text-text-secondary">{t("memberPage.phone")}</p>
           <p className="font-medium text-text-primary">
             {member.phone || "-"}
           </p>
         </div>
 
         <div>
-          <p className="text-xs text-text-secondary">អ៊ីមែល</p>
+          <p className="text-xs text-text-secondary">{t("memberPage.email")}</p>
           <p className="font-medium text-text-primary">
             {member.email || "-"}
           </p>
         </div>
 
         <div>
-          <p className="text-xs text-text-secondary">សាខា</p>
+          <p className="text-xs text-text-secondary">{t("memberPage.branch")}</p>
           <p className="font-medium text-text-primary">
             {member.branch || "-"}
           </p>
         </div>
 
         <div>
-          <p className="text-xs text-text-secondary">ភេទ</p>
+          <p className="text-xs text-text-secondary">{t("memberPage.gender")}</p>
           <p className="font-medium text-text-primary">
             {member.gender || "-"}
           </p>
         </div>
 
         <div>
-          <p className="text-xs text-text-secondary">សញ្ជាតិ</p>
+          <p className="text-xs text-text-secondary">{t("memberPage.nationality")}</p>
           <p className="font-medium text-text-primary">
             {member.nationality || "-"}
           </p>
         </div>
 
         <div>
-          <p className="text-xs text-text-secondary">ជនជាតិ</p>
+          <p className="text-xs text-text-secondary">{t("memberPage.ethnicity")}</p>
           <p className="font-medium text-text-primary">
             {member.ethnicity || "-"}
           </p>

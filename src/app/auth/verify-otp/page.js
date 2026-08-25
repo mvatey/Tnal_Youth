@@ -8,10 +8,12 @@ import {
 import { ShieldCheck } from "lucide-react";
 
 import OtpInput from "@/components/ui/otpInput";
+import { useLanguage } from "@/context/LanguageContext";
 
 function VerifyOtpContent() {
   const router = useRouter();
   const params = useSearchParams();
+  const { t } = useLanguage();
 
   const phoneOrEmail =
     params.get("phoneOrEmail") ||
@@ -32,14 +34,14 @@ function VerifyOtpContent() {
 
     if (!phoneOrEmail) {
       setError(
-        "រកមិនឃើញលេខទូរស័ព្ទ ឬអ៊ីមែល",
+        t("auth.identifierMissing", "រកមិនឃើញលេខទូរស័ព្ទ ឬអ៊ីមែល"),
       );
       return;
     }
 
     if (!/^\d{6}$/.test(code)) {
       setError(
-        "សូមបញ្ចូលលេខកូដឲ្យគ្រប់ ៦ ខ្ទង់",
+        t("auth.otpRequired", "សូមបញ្ចូលលេខកូដឲ្យគ្រប់ ៦ ខ្ទង់"),
       );
       return;
     }
@@ -58,14 +60,13 @@ function VerifyOtpContent() {
   return (
     <div>
       <h2 className="mb-2 text-center text-xl font-bold text-text-primary">
-        ផ្ទៀងផ្ទាត់លេខកូដ
+        {t("auth.verifyOtpTitle", "ផ្ទៀងផ្ទាត់លេខកូដ")}
       </h2>
 
       <p className="mb-8 text-center text-sm text-text-mute">
-        យើងបានផ្ញើលេខកូដ ៦ ខ្ទង់ទៅកាន់អ៊ីមែល
-        ឬលេខទូរស័ព្ទរបស់អ្នក
+        {t("auth.otpDescription", "យើងបានផ្ញើលេខកូដ ៦ ខ្ទង់ទៅកាន់អ៊ីមែល ឬលេខទូរស័ព្ទរបស់អ្នក")}
         <br />
-        សូមពិនិត្យមើលសារនោះ
+        {t("auth.checkMessage", "សូមពិនិត្យមើលសារនោះ")}
       </p>
 
       <div className="space-y-5">
@@ -86,26 +87,26 @@ function VerifyOtpContent() {
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
           <ShieldCheck size={18} />
-          ផ្ទៀងផ្ទាត់
+          {t("auth.verify", "ផ្ទៀងផ្ទាត់")}
         </button>
 
         <p className="pt-2 text-center text-sm text-text-mute">
-          មិនទាន់ទទួលបានលេខកូដ?{" "}
+          {t("auth.noOtp", "មិនទាន់ទទួលបានលេខកូដ?")}{" "}
           <button
             type="button"
             className="text-blue-700 hover:underline"
           >
-            ផ្ញើម្តងទៀត
+            {t("auth.resend", "ផ្ញើម្តងទៀត")}
           </button>
 
           <br />
 
-          ត្រឡប់ទៅ{" "}
+          {t("auth.backTo", "ត្រឡប់ទៅ")}{" "}
           <a
             href="/auth/login"
             className="text-blue-700 hover:underline"
           >
-            ចូលប្រើប្រាស់
+            {t("auth.loginLink", "ចូលប្រើប្រាស់")}
           </a>
         </p>
       </div>

@@ -38,6 +38,7 @@ import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
+import useOrganizationProfile from "@/hooks/useOrganizationProfile";
 
 import {
   getNavigationForRole,
@@ -194,6 +195,7 @@ export default function Sidebar() {
     t,
     label: localizedLabel,
   } = useLanguage();
+  const { localized: organization } = useOrganizationProfile();
 
   const [
     profileOpen,
@@ -450,21 +452,22 @@ export default function Sidebar() {
             "
           >
             <Image
-              src="/logo.png"
-              alt="Logo"
+              src={organization.logoUrl || "/logo.png"}
+              alt={organization.name || "Logo"}
               width={56}
               height={56}
               className="object-cover"
               priority
+              unoptimized
             />
           </div>
 
           <h3 className="text-sm font-bold leading-snug">
-            សមាគមថ្នាលយុវជនកម្ពុជា
+            {organization.name || "សមាគមថ្នាលយុវជនកម្ពុជា"}
           </h3>
 
           <p className="mt-1 text-xs text-white/60">
-            {t("sidebar.subtitle", "ការគ្រប់គ្រងប្រព័ន្ធយុវជន")}
+            {organization.tagline || t("sidebar.subtitle", "ការគ្រប់គ្រងប្រព័ន្ធយុវជន")}
           </p>
         </div>
 

@@ -5,12 +5,14 @@ import Link from "next/link";
 import { CirclePlus, Eye } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
 
 const DEFAULT_ACTIONS = [
   {
     id: "program",
     label: "បង្កើតកម្មវិធី",
+    labelKey: "dashboard.createActivity",
     href: "/activity/create",
     icon: CirclePlus,
     color: "text-primary",
@@ -19,6 +21,7 @@ const DEFAULT_ACTIONS = [
   {
     id: "branch",
     label: "បង្កើតឯកសារ",
+    labelKey: "dashboard.createDocument",
     href: "/document/create",
     icon: CirclePlus,
     color: "text-primary",
@@ -27,6 +30,7 @@ const DEFAULT_ACTIONS = [
   {
     id: "activity",
     label: "បង្កើតវិភាគទាន",
+    labelKey: "dashboard.createDonation",
     href: "/donation/add",
     icon: CirclePlus,
     color: "text-primary",
@@ -35,6 +39,7 @@ const DEFAULT_ACTIONS = [
   {
     id: "member",
     label: "បង្កើតសមាជិក",
+    labelKey: "dashboard.createMember",
     href: "/member",
     icon: CirclePlus,
     color: "text-primary",
@@ -50,6 +55,7 @@ const VIEWER_ACTIONS = [
   {
     id: "view-program",
     label: "មើលកម្មវិធី",
+    labelKey: "dashboard.viewActivity",
     href: "/activity",
     icon: Eye,
     color: "text-primary",
@@ -58,6 +64,7 @@ const VIEWER_ACTIONS = [
   {
     id: "view-branch",
     label: "មើលឯកសារ",
+    labelKey: "dashboard.viewDocument",
     href: "/document",
     icon: Eye,
     color: "text-primary",
@@ -66,6 +73,7 @@ const VIEWER_ACTIONS = [
   {
     id: "view-activity",
     label: "មើលវិភាគទាន",
+    labelKey: "dashboard.viewDonation",
     href: "/donation",
     icon: Eye,
     color: "text-primary",
@@ -74,6 +82,7 @@ const VIEWER_ACTIONS = [
   {
     id: "view-member",
     label: "មើលសមាជិក",
+    labelKey: "dashboard.viewMember",
     href: "/member",
     icon: Eye,
     color: "text-primary",
@@ -96,6 +105,8 @@ const HOVER_STYLES = {
 
 export default function QuickActions() {
   const { user, authLoading } = useAuth();
+  const { t } =
+    useLanguage();
 
   const role = normalizeRole(user?.role);
 
@@ -104,7 +115,9 @@ export default function QuickActions() {
   if (authLoading) {
     return (
       <div className="app-card flex h-full items-center justify-center rounded-xl border border-border bg-bg-page-white p-4">
-        <p className="text-sm text-text-secondary">កំពុងផ្ទុក...</p>
+        <p className="text-sm text-text-secondary">
+          {t("dashboard.loadingShort")}
+        </p>
       </div>
     );
   }
@@ -112,7 +125,7 @@ export default function QuickActions() {
   return (
     <div className="app-card flex h-full flex-col rounded-xl border border-border bg-bg-page-white p-4">
       <h3 className="mb-4 text-sm font-semibold text-text-primary">
-        មុខងារផ្សេងៗ
+        {t("dashboard.quickActions")}
       </h3>
 
       <div className={`grid flex-1 content-center gap-3 ${actions.length === 2 ? "grid-cols-1" : "grid-cols-2"}`}>
@@ -126,7 +139,7 @@ export default function QuickActions() {
               className={`flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-xs font-medium transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm ${action.bg} ${action.color} ${HOVER_STYLES[action.id]}`}
             >
               <Icon size={16} strokeWidth={2} />
-              {action.label}
+              {t(action.labelKey, action.label)}
             </Link>
           );
         })}

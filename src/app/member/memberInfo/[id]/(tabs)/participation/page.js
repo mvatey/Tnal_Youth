@@ -14,6 +14,7 @@ import {
 import DataTable from "@/components/table/DataTable.js";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail.js";
+import { useLanguage } from "@/context/LanguageContext";
 
 const TYPE_BADGE_STYLES = {
   INTERNAL:
@@ -273,6 +274,8 @@ function mapParticipation(item) {
 }
 
 export default function ParticipationPage() {
+  const { t, label } = useLanguage();
+
   const params =
     useParams();
 
@@ -482,7 +485,7 @@ export default function ParticipationPage() {
 
           setError(
             fetchError.message ||
-              "មិនអាចទាញយកប្រវត្តិការចូលរួមបានទេ",
+              t("memberPage.loadParticipationFailed"),
           );
 
           setParticipations(
@@ -509,6 +512,7 @@ export default function ParticipationPage() {
     memberId,
     debouncedQuery,
     typeFilter,
+    t,
   ]);
 
   /*
@@ -527,20 +531,11 @@ export default function ParticipationPage() {
               type?.value ??
               "";
 
-            const label =
-              type?.label_km ||
-              type?.labelKm ||
-              type?.name_km ||
-              type?.nameKm ||
-              type?.label_en ||
-              type?.labelEn ||
-              type?.name_en ||
-              type?.nameEn ||
-              type?.code ||
-              "";
+            const typeLabel =
+              label(type, type?.code || "");
 
             return {
-              label,
+              label: typeLabel,
               value:
                 id !== ""
                   ? String(id)
@@ -552,7 +547,7 @@ export default function ParticipationPage() {
               type.value !== "" &&
               type.label !== "",
           ),
-      [activityTypes],
+      [activityTypes, label],
     );
 
   const handleViewDetail =
@@ -573,7 +568,7 @@ export default function ParticipationPage() {
 
   const columns = [
     {
-      header: "ល.រ",
+      header: t("memberPage.no"),
       width: "w-[5%]",
       align: "center",
 
@@ -583,7 +578,7 @@ export default function ParticipationPage() {
 
     {
       header:
-        "ឈ្មោះកម្មវិធី",
+        t("memberPage.activityName"),
 
       width: "w-[32%]",
       align: "left",
@@ -596,7 +591,7 @@ export default function ParticipationPage() {
     },
 
     {
-      header: "ប្រភេទ",
+      header: t("memberPage.type"),
       width: "w-[14%]",
       align: "center",
 
@@ -630,7 +625,7 @@ export default function ParticipationPage() {
     },
 
     {
-      header: "ការចូលរួម",
+      header: t("memberPage.attendance"),
       width: "w-[13%]",
       align: "center",
 
@@ -664,7 +659,7 @@ export default function ParticipationPage() {
     },
 
     {
-      header: "ទីតាំង",
+      header: t("memberPage.location"),
       width: "w-[14%]",
       align: "left",
 
@@ -676,7 +671,7 @@ export default function ParticipationPage() {
     },
 
     {
-      header: "ថ្ងៃចូលរួម",
+      header: t("memberPage.joinedAt"),
       width: "w-[14%]",
       align: "left",
 
@@ -688,7 +683,7 @@ export default function ParticipationPage() {
     },
 
     {
-      header: "សកម្មភាព",
+      header: t("memberPage.actions"),
       width: "w-[8%]",
       align: "center",
 
@@ -719,7 +714,7 @@ export default function ParticipationPage() {
         typeOptions,
 
       placeholder:
-        "ប្រភេទ",
+        t("memberPage.type"),
     },
   ];
 
@@ -727,7 +722,7 @@ export default function ParticipationPage() {
     return (
       <div className="flex min-h-[250px] items-center justify-center">
         <p className="text-sm text-text-secondary">
-          កំពុងទាញយកប្រវត្តិការចូលរួម...
+          {t("memberPage.loadingParticipation")}
         </p>
       </div>
     );
@@ -746,7 +741,7 @@ export default function ParticipationPage() {
   return (
     <div className="min-w-0">
       <h2 className="mb-4 text-lg font-bold text-primary">
-        ប្រវត្តិការចូលរួមសកម្មភាព
+        {t("memberPage.participationHistory")}
       </h2>
 
       <DataTable
@@ -765,14 +760,14 @@ export default function ParticipationPage() {
         onSearchChange={
           setQuery
         }
-        searchPlaceholder="ស្វែងរក..."
+        searchPlaceholder={t("memberPage.search")}
         pageSize={10}
         minTableWidth={560}
         onDownload={() =>
           downloadTableAsExcel({
             data: participations,
             columns,
-            fileName: `ការចូលរួមសកម្មភាព-សមាជិក-${params.id}`,
+            fileName: t("memberPage.participationFile").replace("{id}", params.id),
           })
         }
       />

@@ -1,4 +1,5 @@
 import { Search, Plus, ChevronDown } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function DocumentFilters({
   activeTab,
@@ -11,6 +12,7 @@ export default function DocumentFilters({
   resetPage,
   onAdd,
 }) {
+  const { t } = useLanguage();
   const isMember = activeTab === "member";
 
   return (
@@ -23,7 +25,7 @@ export default function DocumentFilters({
               setQuery(e.target.value);
               resetPage();
             }}
-            placeholder="ស្វែងរក .."
+            placeholder={t("documentPage.searchPlaceholder")}
             className="h-[38px] w-full rounded-md border border-border px-4 pr-10 text-sm outline-none focus:border-[#5b2cc9]"
           />
           <Search className="absolute right-3 top-2.5 h-4 w-4 text-text-mute" />
@@ -38,7 +40,7 @@ export default function DocumentFilters({
             }}
             className="h-[38px] w-full appearance-none rounded-md border border-border px-4 pr-10 text-sm outline-none focus:border-[#5b2cc9]"
           >
-            <option value="">សាខា</option>
+            <option value="">{t("documentPage.branch")}</option>
             <option value="សាខាភ្នំពេញ">សាខាភ្នំពេញ</option>
             <option value="សាខាសៀមរាប">សាខាសៀមរាប</option>
           </select>
@@ -63,7 +65,7 @@ export default function DocumentFilters({
           className="flex h-[38px] w-full items-center justify-center gap-2 rounded-md bg-[#118447] px-4 text-sm font-medium text-white hover:bg-[#0d6f3b] sm:w-auto lg:ml-auto"
         >
           <Plus className="h-5 w-5" />
-          {isMember ? "បង្កើតឯកសារ" : "បញ្ចូលឯកសារ"}
+          {isMember ? t("documentPage.createDocument") : t("documentPage.addDocument")}
         </button>
       </div>
     </div>

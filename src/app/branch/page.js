@@ -25,6 +25,7 @@ import Table from "@/components/table-items/Table";
 import SaveFile from "@/components/forms/savefile";
 import Button from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
 
 /*
@@ -154,6 +155,7 @@ async function fetchJson(
 
 function formatCreatedDate(
   value,
+  locale = "km",
 ) {
   if (!value) {
     return "-";
@@ -173,7 +175,7 @@ function formatCreatedDate(
   }
 
   return new Intl.DateTimeFormat(
-    "km-KH",
+    locale === "en" ? "en-US" : "km-KH",
     {
       day: "numeric",
       month: "short",
@@ -190,7 +192,12 @@ function formatCreatedDate(
 
 function getProvinceLabel(
   province,
+  label,
 ) {
+  if (label) {
+    return label(province, "");
+  }
+
   return (
     province?.labelKm ||
     province?.label_km ||
@@ -206,7 +213,12 @@ function getProvinceLabel(
 
 function getStatusLabel(
   status,
+  label,
 ) {
+  if (label) {
+    return label(status, "");
+  }
+
   const statusCode =
     String(
       status?.code || "",
@@ -276,6 +288,9 @@ function BranchStatusBadge({
 
 export default function BranchPage() {
   const { user } = useAuth();
+  const { t, label, locale } =
+    useLanguage();
+
   const isViewer = normalizeRole(user?.role) === "viewer";
   /*
    * =======================================================
@@ -670,7 +685,7 @@ export default function BranchPage() {
             );
 
             setLoadError(
-              "មិនអាចទាញយកទិន្នន័យសាខាបានទេ",
+              t("branchPage.loadListFailed"),
             );
           }
         } finally {
@@ -686,6 +701,7 @@ export default function BranchPage() {
       [
         loadBranches,
         loadLookups,
+        t,
       ],
     );
 
@@ -1055,6 +1071,7 @@ export default function BranchPage() {
                 ?.labelKm ||
               getStatusLabel(
                 statusLookup,
+                label,
               ) ||
               STATUS_LABELS_KM[
                 statusCode
@@ -1074,6 +1091,7 @@ export default function BranchPage() {
                 ?.nameEn ||
               getProvinceLabel(
                 provinceLookup,
+                label,
               ) ||
               "-";
 
@@ -1082,11 +1100,7 @@ export default function BranchPage() {
                 branch?.id,
 
               name:
-                branch?.name_km ||
-                branch?.nameKm ||
-                branch?.name_en ||
-                branch?.nameEn ||
-                "-",
+                label(branch, "-"),
 
               code:
                 branch?.branch_code ||
@@ -1103,9 +1117,15 @@ export default function BranchPage() {
                   ?.name_km ||
                 branch?.branchLevel
                   ?.nameKm ||
-                BRANCH_LEVEL_LABELS[
-                  branchLevelId
-                ] ||
+                (String(branchLevelId) === "1"
+                  ? t("branchPage.province")
+                  : String(branchLevelId) === "2"
+                    ? t("branchPage.district")
+                    : String(branchLevelId) === "3"
+                      ? t("branchPage.commune")
+                      : BRANCH_LEVEL_LABELS[
+                          branchLevelId
+                        ]) ||
                 "-",
 
               provinceId,
@@ -1157,6 +1177,7 @@ export default function BranchPage() {
                 formatCreatedDate(
                   branch?.created_at ||
                     branch?.createdAt,
+                  locale,
                 ),
             };
           },
@@ -1167,6 +1188,9 @@ export default function BranchPage() {
         statusById,
         districtById,
         communeById,
+        label,
+        locale,
+        t,
       ],
     );
 
@@ -1181,21 +1205,27 @@ export default function BranchPage() {
   const branchLevelOptions =
     useMemo(
       () => [
-        ALL_LEVELS_LABEL,
+        t("branchPage.allLevels"),
 
-        ...BRANCH_LEVEL_OPTIONS,
+        t("branchPage.province"),
+        t("branchPage.district"),
+        t("branchPage.commune"),
       ],
-      [],
+      [t],
     );
 
   const provinceOptions =
     useMemo(
       () => [
-        ALL_PROVINCES_LABEL,
+        t("branchPage.allProvinces"),
 
         ...provinceLookups
           .map(
-            getProvinceLabel,
+            (province) =>
+              getProvinceLabel(
+                province,
+                label,
+              ),
           )
           .filter(
             Boolean,
@@ -1203,17 +1233,23 @@ export default function BranchPage() {
       ],
       [
         provinceLookups,
+        label,
+        t,
       ],
     );
 
   const branchStatusOptions =
     useMemo(
       () => [
-        ALL_STATUSES_LABEL,
+        t("branchPage.allStatuses"),
 
         ...statusLookups
           .map(
-            getStatusLabel,
+            (status) =>
+              getStatusLabel(
+                status,
+                label,
+              ),
           )
           .filter(
             Boolean,
@@ -1221,6 +1257,8 @@ export default function BranchPage() {
       ],
       [
         statusLookups,
+        label,
+        t,
       ],
     );
 
@@ -1275,6 +1313,8 @@ export default function BranchPage() {
               !selectedLevel ||
               selectedLevel ===
                 ALL_LEVELS_LABEL ||
+              selectedLevel ===
+                t("branchPage.allLevels") ||
               branch.level ===
                 selectedLevel;
 
@@ -1285,6 +1325,8 @@ export default function BranchPage() {
               !selectedProvince ||
               selectedProvince ===
                 ALL_PROVINCES_LABEL ||
+              selectedProvince ===
+                t("branchPage.allProvinces") ||
               branch.province ===
                 selectedProvince;
 
@@ -1295,6 +1337,8 @@ export default function BranchPage() {
               !selectedStatus ||
               selectedStatus ===
                 ALL_STATUSES_LABEL ||
+              selectedStatus ===
+                t("branchPage.allStatuses") ||
               branch.statusLabel ===
                 selectedStatus;
 
@@ -1313,6 +1357,7 @@ export default function BranchPage() {
         selectedLevel,
         selectedProvince,
         selectedStatus,
+        t,
       ],
     );
 
@@ -1346,7 +1391,7 @@ export default function BranchPage() {
   const columns = [
     {
       key: "no",
-      label: "ល.រ",
+      label: t("branchPage.no"),
       width: "5%",
       align: "center",
 
@@ -1360,7 +1405,7 @@ export default function BranchPage() {
 
     {
       key: "name",
-      label: "ឈ្មោះសាខា",
+      label: t("branchPage.branchName"),
       width: "20%",
       align: "left",
       truncate: true,
@@ -1381,7 +1426,7 @@ export default function BranchPage() {
 
     {
       key: "level",
-      label: "កម្រិតសាខា",
+      label: t("branchPage.level"),
       width: "15%",
       align: "left",
 
@@ -1392,7 +1437,7 @@ export default function BranchPage() {
 
     {
       key: "province",
-      label: "រាជធានី/ខេត្ត",
+      label: t("branchPage.province"),
       width: "13%",
       align: "left",
 
@@ -1403,7 +1448,7 @@ export default function BranchPage() {
 
     {
       key: "district",
-      label: "ក្រុង/ស្រុក/ខណ្ឌ",
+      label: t("branchPage.district"),
       width: "12%",
       align: "center",
 
@@ -1414,7 +1459,7 @@ export default function BranchPage() {
 
     {
       key: "memberCount",
-      label: "សមាជិក",
+      label: t("branchPage.members"),
       width: "10%",
       align: "center",
 
@@ -1425,7 +1470,7 @@ export default function BranchPage() {
 
     {
       key: "status",
-      label: "ស្ថានភាព",
+      label: t("branchPage.status"),
       width: "11%",
       align: "center",
 
@@ -1444,7 +1489,7 @@ export default function BranchPage() {
 
     {
       key: "createdAt",
-      label: "ថ្ងៃបង្កើត",
+      label: t("branchPage.createdAt"),
       width: "13%",
       align: "center",
 
@@ -1455,7 +1500,7 @@ export default function BranchPage() {
 
     {
       key: "actions",
-      label: "សកម្មភាព",
+      label: t("branchPage.actions"),
       width: "13%",
       align: "center",
 
@@ -1489,7 +1534,7 @@ export default function BranchPage() {
                 size={14}
               />
 
-              ព័ត៌មានលម្អិត
+              {t("branchPage.detail")}
             </Link>
           </div>
         ),
@@ -1514,7 +1559,7 @@ export default function BranchPage() {
         setSelectedLevel,
 
       placeholder:
-        "កម្រិតសាខា",
+        t("branchPage.level"),
 
       options:
         branchLevelOptions,
@@ -1531,7 +1576,7 @@ export default function BranchPage() {
         setSelectedProvince,
 
       placeholder:
-        "រាជធានី/ខេត្ត",
+        t("branchPage.province"),
 
       options:
         provinceOptions,
@@ -1548,7 +1593,7 @@ export default function BranchPage() {
         setSelectedStatus,
 
       placeholder:
-        "ស្ថានភាព",
+        t("branchPage.status"),
 
       options:
         branchStatusOptions,
@@ -1604,11 +1649,11 @@ export default function BranchPage() {
     <div className="min-w-0 space-y-5 overflow-x-auto">
       <div>
         <h1 className="text-xl font-bold text-primary">
-          បញ្ជីសាខា
+          {t("branchPage.listTitle")}
         </h1>
 
         <p className="mt-1 text-xs text-text-secondary">
-          គ្រប់គ្រងព័ត៌មាន និងទិន្នន័យសាខា
+          {t("branchPage.listSubtitle")}
         </p>
       </div>
 
@@ -1632,7 +1677,7 @@ export default function BranchPage() {
               onChange={
                 setSearchQuery
               }
-              placeholder="ស្វែងរកសាខា..."
+              placeholder={t("branchPage.searchBranch")}
               width="w-full"
             />
           </div>
@@ -1660,14 +1705,14 @@ export default function BranchPage() {
               onClick={handleDownload}
               disabled={filteredBranches.length === 0}
             >
-              ទាញយក
+              {t("branchPage.download")}
             </Button>
 
             <Button
               type="button"
               variant="success"
               disabled={isViewer}
-              title={isViewer ? "គណនីមើលទិន្នន័យមិនអាចកែប្រែបានទេ" : undefined}
+              title={isViewer ? t("branchPage.viewerReadOnly") : undefined}
               icon={
                 <PlusCircle
                   size={16}
@@ -1677,7 +1722,7 @@ export default function BranchPage() {
                 !isViewer && setShowCreateModal(true)
               }
             >
-              បង្កើតសាខាថ្មី
+              {t("branchPage.createBranch")}
             </Button>
           </div>
         </div>
@@ -1703,8 +1748,8 @@ export default function BranchPage() {
           }
           emptyMessage={
             isLoading
-              ? "កំពុងទាញយកទិន្នន័យ..."
-              : "មិនមានទិន្នន័យសាខាទេ"
+              ? t("branchPage.loadingData")
+              : t("branchPage.noBranches")
           }
         />
       </section>

@@ -29,6 +29,7 @@ import {
 import {
   normalizeRole,
 } from "@/lib/navigation";
+import { useLanguage } from "@/context/LanguageContext";
 
 async function fetchApi(
   path,
@@ -234,6 +235,7 @@ function isCompletedActivity(
 export default function ActivityMembersPage({
   params,
 }) {
+  const { t } = useLanguage();
   const { id } =
     use(params);
 
@@ -447,7 +449,7 @@ export default function ActivityMembersPage({
           branchId <= 0
         ) {
           throw new Error(
-            "មិនអាចកំណត់សាខារបស់អ្នកបានទេ",
+            t("activityPage.cannotResolveBranch"),
           );
         }
 
@@ -681,8 +683,8 @@ export default function ActivityMembersPage({
 
             setMemberLoadError(
               error instanceof Error
-                ? error.message
-                : "មិនអាចទាញយកបញ្ជីសមាជិកបានទេ។",
+              ? error.message
+                : t("activityPage.loadMemberListFailed"),
             );
           }
         } finally {
@@ -697,7 +699,7 @@ export default function ActivityMembersPage({
           setLoadError(
             error instanceof Error
               ? error.message
-              : "មានបញ្ហាកើតឡើង",
+              : t("activityPage.genericError"),
           );
 
           setLoading(false);
@@ -716,6 +718,7 @@ export default function ActivityMembersPage({
     id,
     isMember,
     router,
+    t,
   ]);
 
   function handleClose() {
@@ -792,7 +795,7 @@ export default function ActivityMembersPage({
       alert(
         error instanceof Error
           ? error.message
-          : "មិនអាចអញ្ជើញសមាជិកបានទេ",
+          : t("activityPage.inviteMembersFailed"),
       );
 
       throw error;
@@ -805,7 +808,7 @@ export default function ActivityMembersPage({
         href="/activity"
         className="hover:text-primary"
       >
-        កម្មវិធី
+        {t("activityPage.activity")}
       </Link>
 
       <ChevronRight
@@ -816,7 +819,7 @@ export default function ActivityMembersPage({
         href={`/activity/${id}`}
         className="hover:text-primary"
       >
-        ព័ត៌មានលម្អិត
+        {t("activityPage.detail")}
       </Link>
 
       <ChevronRight
@@ -824,7 +827,7 @@ export default function ActivityMembersPage({
       />
 
       <span className="font-semibold text-primary">
-        អញ្ជើញសមាជិក
+        {t("activityPage.inviteMembers")}
       </span>
     </div>
   );
@@ -842,7 +845,7 @@ export default function ActivityMembersPage({
         {breadcrumb}
 
         <div className="rounded-xl border border-border bg-bg-page-white p-6 text-center text-text-secondary">
-          កំពុងផ្ទុក...
+          {t("activityPage.loading")}
         </div>
       </div>
     );

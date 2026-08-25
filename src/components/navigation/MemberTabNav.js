@@ -3,30 +3,32 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useUnsavedChanges } from "@/context/UnsavedChangesContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function MemberTabNav({ memberId }) {
   const pathname = usePathname();
   const router = useRouter();
   const { isDirty, guardNavigate } = useUnsavedChanges();
+  const { t } = useLanguage();
 
 const tabs = [
     {
-      name: "ប័ណ្ណសម្គាល់ខ្លួននិងលិខិត",
+      name: t("memberPage.tabDocuments"),
       href: `/member/memberInfo/${memberId}/documents`,
     },
     {
-      name: "សកម្មភាព",
+      name: t("memberPage.tabParticipation"),
       href: `/member/memberInfo/${memberId}/participation`,
     },
     {
-      name: "ការធ្វើវិភាគទាន",
+      name: t("memberPage.tabDonation"),
       href: `/member/memberInfo/${memberId}/donation`,
     },{
-      name: "ការបរិច្ចាក",
+      name: t("memberPage.tabSponsor"),
       href: `/member/memberInfo/${memberId}/sponsor`,
     },
     {
-      name: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
+      name: t("memberPage.tabPassword"),
       href: `/member/memberInfo/${memberId}/password`,
     }
 

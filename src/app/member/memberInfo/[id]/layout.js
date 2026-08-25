@@ -29,6 +29,7 @@ import StatCard from "@/components/dashboard/statCard";
 
 import useMemberPermissions from "@/hooks/useMemberPermissions";
 import { UnsavedChangesProvider } from "@/context/UnsavedChangesContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { fetchAllDonationRecords, summarizeDonationRecords } from "@/lib/memberDonationRecords";
 
 async function fetchJson(
@@ -104,6 +105,9 @@ export default function MemberInfoLayout({
   children,
   params,
 }) {
+  const { t } =
+    useLanguage();
+
   const router = useRouter();
   const pathname = usePathname();
 
@@ -271,7 +275,7 @@ export default function MemberInfoLayout({
 
           setError(
             fetchError.message ||
-              "មិនអាចទាញយកព័ត៌មានសមាជិកបានទេ",
+              t("memberPage.loadMemberFailed"),
           );
         }
       } finally {
@@ -288,7 +292,7 @@ export default function MemberInfoLayout({
     return () => {
       controller.abort();
     };
-  }, [id]);
+  }, [id, t]);
 
   useEffect(() => {
     if (
@@ -420,7 +424,7 @@ export default function MemberInfoLayout({
     return (
       <div className="flex min-h-[300px] items-center justify-center">
         <p className="text-sm text-gray-500">
-          កំពុងទាញយកព័ត៌មានសមាជិក...
+          {t("memberPage.loadingMember")}
         </p>
       </div>
     );
@@ -439,7 +443,7 @@ export default function MemberInfoLayout({
   if (!member) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-500">
-        រកមិនឃើញព័ត៌មានសមាជិក
+        {t("memberPage.memberNotFound")}
       </div>
     );
   }
@@ -450,23 +454,23 @@ export default function MemberInfoLayout({
       <HeaderMemberInfo
         title={
           isDetailPage
-            ? "ប្រវត្តិរូបលម្អិតសមាជិក"
-            : "ប្រវត្តិរូបសមាជិក"
+            ? t("memberPage.detailProfileTitle")
+            : t("memberPage.profileTitle")
         }
         breadcrumb={{
           parent: isDetailPage
-            ? "ប្រវត្តិរូបសមាជិក"
-            : "បញ្ជីសមាជិក",
+            ? t("memberPage.profileTitle")
+            : t("memberPage.listTitle"),
 
           current: isDetailPage
-            ? "ប្រវត្តិរូបលម្អិតសមាជិក"
-            : "ប្រវត្តិរូបសមាជិក",
+            ? t("memberPage.detailProfileTitle")
+            : t("memberPage.profileTitle"),
         }}
         onBack={handleBack}
         buttonText={
           isDetailPage
             ? undefined
-            : "ព័ត៌មានលម្អិត"
+            : t("memberPage.detail")
         }
         onButtonClick={
           isDetailPage
@@ -490,7 +494,7 @@ export default function MemberInfoLayout({
           >
             <StatCard
               icon={Users}
-              label="ចំនួនសកម្មភាពចូលរួម"
+              label={t("memberPage.joinedActivities")}
               value={
                 activitySummary
                   .joinedActivityCount
@@ -501,7 +505,7 @@ export default function MemberInfoLayout({
 
             <StatCard
               icon={InfoIcon}
-              label="ចំនួនមិនបានចូលរួម"
+              label={t("memberPage.missedActivities")}
               value={
                 activitySummary
                   .notJoinedActivityCount
@@ -512,7 +516,7 @@ export default function MemberInfoLayout({
 
             <StatCard
               icon={FaHandHoldingDollar}
-              label="ទឹកប្រាក់វិភាគទានសរុប"
+              label={t("memberPage.totalDonationAmount")}
               value={formatDonationTotal(
                 activitySummary
                   .totalDonationKhr,
@@ -538,7 +542,7 @@ export default function MemberInfoLayout({
           >
             <StatCard
               icon={FaHandHoldingDollar}
-              label="ចំនួនវិភាគទាន"
+              label={t("memberPage.donationCount")}
               value={monthlyDonationSummary.donationCount}
               iconColor="text-primary"
               iconBg="bg-secondary-light"
@@ -546,7 +550,7 @@ export default function MemberInfoLayout({
 
             <StatCard
               icon={CircleDollarSign}
-              label="ទឹកប្រាក់សរុប"
+              label={t("memberPage.totalAmount")}
               value={formatDonationTotal(
                 monthlyDonationSummary.totalDonationKhr,
                 monthlyDonationSummary.totalDonationUsd,
@@ -557,7 +561,7 @@ export default function MemberInfoLayout({
 
             <StatCard
               icon={HiCash}
-              label="ការទូទាត់តាម Cash"
+              label={t("memberPage.cashPayment")}
               value={monthlyDonationSummary.cashPaymentCount}
               iconColor="text-warning"
               iconBg="bg-warning-bg"
@@ -565,7 +569,7 @@ export default function MemberInfoLayout({
 
             <StatCard
               icon={CreditCard}
-              label="ការទូទាត់តាមធនាគារ"
+              label={t("memberPage.bankPayment")}
               value={monthlyDonationSummary.bankPaymentCount}
               iconColor="text-secondary"
               iconBg="bg-secondary-light"
@@ -586,7 +590,7 @@ export default function MemberInfoLayout({
           >
             <StatCard
               icon={Users}
-              label="ចំនួនការបរិច្ចាក"
+              label={t("memberPage.contributionCount")}
               value={activityDonationSummary.donationCount}
               iconColor="text-primary"
               iconBg="bg-secondary-light"
@@ -594,7 +598,7 @@ export default function MemberInfoLayout({
 
             <StatCard
               icon={CircleDollarSign}
-              label="ទឹកប្រាក់សរុប"
+              label={t("memberPage.totalAmount")}
               value={formatDonationTotal(
                 activityDonationSummary.totalDonationKhr,
                 activityDonationSummary.totalDonationUsd,
@@ -605,7 +609,7 @@ export default function MemberInfoLayout({
 
             <StatCard
               icon={HandCoins}
-              label="ចំនួនសម្ភារៈ"
+              label={t("memberPage.materialCount")}
               value={activityDonationSummary.materialDonationCount}
               iconColor="text-warning"
               iconBg="bg-warning-bg"
@@ -613,7 +617,7 @@ export default function MemberInfoLayout({
 
             <StatCard
               icon={CreditCard}
-              label="ការទូទាត់តាម ធនាគារ"
+              label={t("memberPage.bankPayment")}
               value={activityDonationSummary.bankPaymentCount}
               iconColor="text-secondary"
               iconBg="bg-secondary-light"

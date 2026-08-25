@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import AddDonationFilters from "./AddDonationFilters";
+import AddDonationFilters from "@/components/donations/monthlydonation/AddDonationFilters";
 import Table from "../../tables/table";
 import MemberCard from "../eventdonation/membercard";
 import CashCard from "./cashcard";
@@ -10,6 +10,7 @@ import BankCard from "./bankcard";
 import Button from "../../forms/button";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch, useBranchChangeGuard } from "@/context/BranchContext";
+import { useLanguage } from "@/context/LanguageContext";
 import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 
 const BANK_PAYMENT_METHODS = new Set([
@@ -63,6 +64,7 @@ function mapMonthlyMember(member, branchLabel, month, year) {
   };
 }
 export default function AddDonationForm() {
+  const { t } = useLanguage();
   const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
   const {
     member: currentMember,
@@ -218,7 +220,7 @@ const paymentSummary = useMemo(
         setBranchOptions(normalizedBranches);
         if (isBranchScoped) {
           if (!effectiveBranchId) {
-            throw new Error("គណនីនេះមិនទាន់បានកំណត់សាខា។");
+            throw new Error(t("donationPage.accountBranchNotSet"));
           }
           // Always the one currently-active branch (see effectiveBranchId
           // above) — switching branches happens only via the sidebar's
@@ -232,7 +234,7 @@ const paymentSummary = useMemo(
         })));
       })
       .catch((loadError) => {
-        if (!cancelled) setError(loadError.message || "មិនអាចទាញយកជម្រើសការបរិច្ចាកបានទេ។");
+        if (!cancelled) setError(loadError.message || t("donationPage.loadDonationOptionsFailed"));
       });
     return () => { cancelled = true; };
   }, [currentMemberLoading, isBranchScoped, effectiveBranchId]);
@@ -277,7 +279,7 @@ const paymentSummary = useMemo(
       .catch((loadError) => {
         if (!cancelled) {
           setEditableRows([]);
-          setError(loadError.message || "មិនអាចទាញយកសមាជិកសាខាបានទេ។");
+          setError(loadError.message || t("donationPage.loadBranchMembersFailed"));
         }
       })
       .finally(() => { if (!cancelled) setLoadingMembers(false); });
@@ -331,7 +333,7 @@ const paymentSummary = useMemo(
       (row) => !row.alreadyPaid && (Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0),
     );
     if (completed.length === 0) {
-      setSavedMessage("សូមបញ្ចូលចំនួនទឹកប្រាក់យ៉ាងហោចណាស់ម្នាក់");
+      setSavedMessage(t("donationPage.memberAmountRequired"));
       return false;
     }
 
@@ -353,7 +355,7 @@ const paymentSummary = useMemo(
     });
 
     if (items.some((item) => !Number.isFinite(item.payment_method_id))) {
-      setError("មិនអាចកំណត់វិធីសាស្ត្រទូទាត់បានទេ");
+      setError(t("donationPage.paymentMethodResolveFailed"));
       return false;
     }
 
@@ -371,7 +373,7 @@ const paymentSummary = useMemo(
         }),
       });
     } catch (saveError) {
-      setError(saveError.message || "មិនអាចរក្សាទុកការបរិច្ចាកបានទេ។");
+      setError(saveError.message || t("donationPage.eventDonationSaveFailed"));
       return false;
     } finally {
       setSaving(false);
@@ -379,7 +381,7 @@ const paymentSummary = useMemo(
 
     // Stay on the page (the rest of this month's sponsors are still right
     // there) rather than navigating away after a bulk save.
-    setSavedMessage(`បានកត់ត្រាវិភាគទាន ${completed.length} នាក់`);
+    setSavedMessage(t("donationPage.savedMemberCount", { count: completed.length }));
     setHasUnsavedEdits(false);
     return true;
   };
@@ -396,7 +398,7 @@ const paymentSummary = useMemo(
       row.id === id ? { ...row, receipt } : row,
     ));
 
-    setSavedMessage("បានរក្សាទុកវិក្ក័យបត្រដោយជោគជ័យ");
+    setSavedMessage(t("donationPage.receiptSaved"));
   };
 
   const handleCancel = () => {
@@ -407,20 +409,20 @@ const paymentSummary = useMemo(
     <>
       <div className="mb-4 flex flex-wrap gap-6 lg:gap-[50px]">
         <MemberCard
-          label="សមាជិក"
-          value={`${editableRows.length} នាក់`}
+          label={t("donationPage.member")}
+          value={`${editableRows.length} ${t("donationPage.personUnit")}`}
           growth="+15%"
           note="ក្នុងខែនេះ"
         />
         <CashCard
-          label="ទូទាត់ដោយផ្ទាល់"
-          value={`${paymentSummary.cash} នាក់`}
+          label={t("donationPage.cashPayment")}
+          value={`${paymentSummary.cash} ${t("donationPage.personUnit")}`}
           growth="+15%"
           note="ក្នុងខែនេះ"
         />
         <BankCard
-          label="ទូតាត់តាមធនាគារ"
-          value={`${paymentSummary.bank} នាក់`}
+          label={t("donationPage.bankPayment")}
+          value={`${paymentSummary.bank} ${t("donationPage.personUnit")}`}
           growth="+15%"
           note="ក្នុងខែនេះ"
         />
@@ -433,7 +435,7 @@ const paymentSummary = useMemo(
           </div>
         ) : null}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-base font-semibold text-secondary">ការកត់ត្រាវិភាគទានប្រចាំខែ</h1>
+          <h1 className="text-base font-semibold text-secondary">{t("donationPage.sponsorDonationRecordTitle")}</h1>
           {savedMessage && (
             <p className="text-sm font-medium text-success" role="status">
               {savedMessage}
@@ -449,7 +451,7 @@ const paymentSummary = useMemo(
             down to the table's own Save button.
           */}
           <div className="flex items-center gap-3">
-            <Button action="cancel" label="ត្រឡប់ក្រោយ" onClick={handleCancel} />
+            <Button action="cancel" label={t("donationPage.back")} onClick={handleCancel} />
             <Button
               action="save"
               onClick={() => handleSave(editableRows)}
@@ -478,7 +480,7 @@ const paymentSummary = useMemo(
         />
 
         {loadingMembers ? (
-          <div className="py-12 text-center text-sm text-text-secondary">កំពុងទាញយកសមាជិក...</div>
+          <div className="py-12 text-center text-sm text-text-secondary">{t("donationPage.loadingMembers")}</div>
         ) : null}
 
         {allFiltersSelected && !loadingMembers && editableRows.length > 0 && (
@@ -509,11 +511,11 @@ const paymentSummary = useMemo(
       aria-live="polite"
     >
       <h3 className="mb-3 font-bold text-secondary">
-        សរុបវិភាគទាន
+        {t("donationPage.contributionTotal")}
       </h3>
 
       <div className="flex justify-between gap-5 text-sm text-text-secondary">
-        <span>សរុបវិភាគទាន (រៀល)</span>
+        <span>{t("donationPage.totalDonationKhr")}</span>
 
         <span className="font-semibold text-text-primary">
           {summary.riel.toLocaleString()} ៛
@@ -521,7 +523,7 @@ const paymentSummary = useMemo(
       </div>
 
       <div className="mt-2 flex justify-between gap-5 text-sm text-text-secondary">
-        <span>សរុបវិភាគទាន ($)</span>
+        <span>{t("donationPage.totalDonationUsd")}</span>
 
         <span className="font-semibold text-text-primary">
           {summary.dollar.toFixed(2)} $
@@ -529,7 +531,7 @@ const paymentSummary = useMemo(
       </div>
 
       <div className="mt-3 flex justify-between gap-5 border-t border-border pt-3 font-bold text-secondary">
-        <span>សរុបទាំងអស់ ($)</span>
+        <span>{t("donationPage.totalAllUsd")}</span>
 
         <span>
           {summary.totalDollar.toFixed(2)} $

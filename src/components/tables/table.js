@@ -6,6 +6,7 @@ import AddDonationActions from "../donations/monthlydonation/AddDonationActions"
 import AddDonationTableHeader from "../donations/monthlydonation/AddDonationTableHeader";
 import AddDonationTableRow from "../donations/monthlydonation/AddDonationTableRow";
 import UploadPopup from "../forms/popup";
+import { useLanguage } from "@/context/LanguageContext";
 
 const ROWS_PER_PAGE = 11;
 const DONATION_ROWS_CHANGE_EVENT = "tnal-youth:donation-rows-change";
@@ -32,6 +33,7 @@ export default function Table({
   // date-of-birth column for the event-donation "សមាជិក" tab.
   hideDob = false,
 }) {
+  const { t } = useLanguage();
   // NOTE: `readOnly` here is this table's own "does this viewer have edit
   // rights at all" flag — it gets threaded down to AddDonationTableRow as
   // `globalReadOnly` (distinct from the per-row `readOnly` computed below,
@@ -268,7 +270,7 @@ export default function Table({
                   colSpan={9 - (hideDob ? 1 : 0) - (rowEditMode ? 0 : 1)}
                   className="px-4 py-10 text-center text-sm text-text-mute"
                 >
-                  មិនមានទិន្នន័យសមាជិកសម្រាប់សាខានេះទេ
+                  {t("donationPage.noBranchMemberData")}
                 </td>
               </tr>
             )}

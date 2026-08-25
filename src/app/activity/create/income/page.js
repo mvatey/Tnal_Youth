@@ -10,20 +10,11 @@ import { RiDownloadCloud2Line } from "react-icons/ri";
 import Pagination from "@/components/navigation/Pagination";
 import { ReceiptIcon } from "@/components/donations/monthlydonation/AddDonationTableRow";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
 const ROWS_PER_PAGE = 10;
 const KHR_PER_USD = 4000;
-
-const INCOME_EXPORT_COLUMNS = [
-  { header: "ល.រ", accessor: "no" },
-  { header: "សមាជិក", accessor: "name" },
-  { header: "ភេទ", accessor: "gender" },
-  { header: "ថ្ងៃខែឆ្នាំចូលរួម", accessor: "joinedDate" },
-  { header: "ចំនួនវិភាគទាន (រៀល)", accessor: "amountRiel" },
-  { header: "ចំនួនវិភាគទាន ($)", accessor: "amountDollar" },
-  { header: "វិធីសាស្ត្រទូទាត់ប្រាក់", accessor: "paymentMethodLabel" },
-];
 
 function createInitialRows(members = []) {
   const getMemberIdentity = (member) =>
@@ -165,6 +156,7 @@ function mergeSavedIncome(rows, savedItems = []) {
 
 export default function IncomePage() {
   const { user } = useAuth();
+  const { t, label } = useLanguage();
   const isReadOnly = normalizeRole(user?.role) === "viewer";
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -208,7 +200,7 @@ export default function IncomePage() {
           setPaymentMethods(methodList);
         }
       } catch (loadError) {
-        if (!cancelled) setError(loadError.message || "មិនអាចទាញយកទិន្នន័យចំណូលបានទេ។");
+        if (!cancelled) setError(loadError.message || t("donationPage.loadIncomeFailed"));
       }
     }
 
@@ -305,6 +297,15 @@ export default function IncomePage() {
   }, [rows]);
 
   const handleDownloadReport = () => {
+    const exportColumns = [
+      { header: t("donationPage.no"), accessor: "no" },
+      { header: t("donationPage.member"), accessor: "name" },
+      { header: t("donationPage.gender"), accessor: "gender" },
+      { header: t("donationPage.joinedDate"), accessor: "joinedDate" },
+      { header: t("donationPage.amountKhr"), accessor: "amountRiel" },
+      { header: t("donationPage.amountUsd"), accessor: "amountDollar" },
+      { header: t("donationPage.paymentMethod"), accessor: "paymentMethodLabel" },
+    ];
     const activeRows = rows
       .filter((row) => parseAmount(row.amountRiel) > 0 || parseAmount(row.amountDollar) > 0)
       .map((row, index) => {
@@ -314,13 +315,13 @@ export default function IncomePage() {
           ...row,
           no: index + 1,
           paymentMethodLabel:
-            method?.nameKm || method?.name_km || method?.nameEn || method?.name_en || row.paymentMethod,
+            label(method, row.paymentMethod),
         };
       });
 
     downloadTableAsExcel({
       data: activeRows,
-      columns: INCOME_EXPORT_COLUMNS,
+      columns: exportColumns,
       fileName: `income-${activity?.name || activityId || "report"}`,
     });
   };
@@ -330,7 +331,7 @@ export default function IncomePage() {
       (row) => parseAmount(row.amountRiel) > 0 || parseAmount(row.amountDollar) > 0,
     );
     if (!activityId || activeRows.length === 0) {
-      setError("សូមបញ្ចូលចំនួនទឹកប្រាក់ចំណូលយ៉ាងហោចណាស់មួយ។");
+      setError(t("donationPage.incomeAmountRequired"));
       return;
     }
 
@@ -360,7 +361,7 @@ export default function IncomePage() {
         }),
       );
       if (items.some((item) => !Number.isFinite(item.payment_method_id))) {
-        throw new Error("សូមជ្រើសរើសវិធីសាស្ត្រទូទាត់។");
+        throw new Error(t("donationPage.paymentMethodRequired"));
       }
       await fetchJson(`/api/backend/activities/${encodeURIComponent(activityId)}/incomes/batch`, {
         method: "POST",
@@ -369,7 +370,7 @@ export default function IncomePage() {
       });
       router.push(`/activity/${activityId}`);
     } catch (saveError) {
-      setError(saveError.message || "មិនអាចរក្សាទុកចំណូលកម្មវិធីបានទេ។");
+      setError(saveError.message || t("donationPage.saveIncomeFailed"));
     } finally {
       setIsSaving(false);
     }
@@ -388,7 +389,7 @@ export default function IncomePage() {
             href="/activity"
             className="hover:text-primary"
           >
-            កម្មវិធី
+            {t("donationPage.activity")}
           </Link>
 
           <ChevronRight size={14} />
@@ -399,7 +400,7 @@ export default function IncomePage() {
                 href={`/activity/${activityId}`}
                 className="hover:text-primary"
               >
-                ព័ត៌មានលម្អិត
+                {t("donationPage.detailInfo")}
               </Link>
 
               <ChevronRight size={14} />
@@ -407,12 +408,12 @@ export default function IncomePage() {
           )}
 
           <span className="font-semibold text-primary">
-            ចំណូល
+            {t("donationPage.income")}
           </span>
         </div>
 
         <h1 className="mt-3 text-2xl font-bold text-secondary">
-          ចំណូល
+          {t("donationPage.income")}
         </h1>
 
         {activity?.name && (
@@ -440,7 +441,7 @@ export default function IncomePage() {
               size={18}
             />
 
-            ទាញយករបាយការណ៍
+            {t("donationPage.downloadReport")}
           </button>
         </div>
 
@@ -449,35 +450,35 @@ export default function IncomePage() {
             <thead>
               <tr className="h-11 border-b border-border bg-bg-page-gray font-medium text-text-secondary">
                 <th className="w-[5%] text-center">
-                  ល.រ
+                  {t("donationPage.no")}
                 </th>
 
                 <th className="w-[15%] text-center">
-                  សមាជិក
+                  {t("donationPage.member")}
                 </th>
 
                 <th className="w-[8%] text-center">
-                  ភេទ
+                  {t("donationPage.gender")}
                 </th>
 
                 <th className="w-[12%] text-center">
-                  ថ្ងៃខែឆ្នាំចូលរួម
+                  {t("donationPage.joinedDate")}
                 </th>
 
                 <th className="w-[17%] text-center">
-                  ចំនួនវិភាគទាន (រៀល)
+                  {t("donationPage.amountKhr")}
                 </th>
 
                 <th className="w-[17%] text-center">
-                  ចំនួនវិភាគទាន ($)
+                  {t("donationPage.amountUsd")}
                 </th>
 
                 <th className="w-[18%] text-center">
-                  វិធីសាស្ត្រទូទាត់ប្រាក់
+                  {t("donationPage.paymentMethod")}
                 </th>
 
                 <th className="w-[8%] text-center">
-                  វិក្កយបត្រ
+                  {t("donationPage.receipt")}
                 </th>
               </tr>
             </thead>
@@ -634,7 +635,7 @@ export default function IncomePage() {
                         >
                           {paymentMethods.map((method) => (
                             <option key={method.id} value={method.code}>
-                              {method.nameKm || method.name_km || method.nameEn || method.name_en || method.code}
+                              {label(method, method.code)}
                             </option>
                           ))}
                           
@@ -676,7 +677,7 @@ export default function IncomePage() {
                     colSpan={8}
                     className="py-10 text-center text-sm text-text-secondary"
                   >
-                    មិនមានទិន្នន័យសមាជិកទេ
+                    {t("donationPage.noMemberData")}
                   </td>
                 </tr>
               )}
@@ -701,12 +702,12 @@ export default function IncomePage() {
           aria-live="polite"
         >
           <h3 className="mb-3 font-bold text-secondary">
-            សរុបចំណូល
+            {t("donationPage.totalIncome")}
           </h3>
 
           <div className="flex justify-between gap-5 text-sm text-text-secondary">
             <span>
-              សរុបចំណូល (រៀល)
+              {t("donationPage.totalIncomeKhr")}
             </span>
 
             <span className="font-semibold text-text-primary">
@@ -717,7 +718,7 @@ export default function IncomePage() {
 
           <div className="mt-2 flex justify-between gap-5 text-sm text-text-secondary">
             <span>
-              សរុបចំណូល ($)
+              {t("donationPage.totalIncomeUsd")}
             </span>
 
             <span className="font-semibold text-text-primary">
@@ -728,7 +729,7 @@ export default function IncomePage() {
 
           <div className="mt-3 flex justify-between gap-5 border-t border-border pt-3 font-bold text-secondary">
             <span>
-              សរុបទាំងអស់ ($)
+              {t("donationPage.totalAllUsd")}
             </span>
 
             <span>
@@ -745,7 +746,7 @@ export default function IncomePage() {
           href={cancelHref}
           className="flex h-[34px] w-full items-center justify-center rounded-lg border border-border bg-bg-page-white text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray sm:w-[91px]"
         >
-          បោះបង់
+          {t("donationPage.cancel")}
         </Link>
 
         {!isReadOnly && (
@@ -757,7 +758,7 @@ export default function IncomePage() {
           >
             <HiSaveAs size={16} />
 
-            រក្សាទុក
+            {t("donationPage.save")}
           </button>
         )}
       </div>

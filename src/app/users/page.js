@@ -12,6 +12,7 @@ import { isWithinDateRange } from "@/utils/dateRangeFilter";
 import StatCard from "@/components/dashboard/statCard";
 import CreateUserModal from "@/components/popup/CreateUserModal.js";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
 
 const USERS_BASE = "/api/backend/admin/users";
@@ -26,23 +27,6 @@ const EMPTY_SUMMARY = {
  * Users means every login account. Accounts may be standalone
  * (memberId == null) or linked to a Member (memberId != null).
  */
-const ROLE_LABELS_KM = {
-  ADMIN: "អ្នកគ្រប់គ្រង",
-  VIEWER: "អ្នកមើល",
-  BRANCH_LEADER: "ប្រធានសាខា",
-  SECRETARY: "លេខាធិការ",
-  MEMBER: "សមាជិក",
-};
-
-const STATUS_LABELS_KM = {
-  ACTIVE: "សកម្ម",
-  INACTIVE: "អសកម្ម",
-  SUSPENDED: "បានផ្អាក",
-  RESIGNED: "បានលាលែង",
-  LOCKED: "ជាប់សោ",
-  PENDING_ACTIVATION: "រង់ចាំដំណើរការ",
-};
-
 const STATUS_BADGE_STYLES = {
   ACTIVE: "bg-success-bg text-success",
   INACTIVE: "bg-error-bg text-error",
@@ -51,24 +35,6 @@ const STATUS_BADGE_STYLES = {
   LOCKED: "bg-warning-bg text-warning",
   PENDING_ACTIVATION: "bg-bg-page-gray text-text-secondary",
 };
-
-const ROLE_OPTIONS = [
-  { label: "គ្រប់តួនាទី", value: "" },
-  { label: "អ្នកគ្រប់គ្រង", value: "ADMIN" },
-  { label: "ប្រធានសាខា", value: "BRANCH_LEADER" },
-  { label: "លេខាធិការ", value: "SECRETARY" },
-  { label: "សមាជិក", value: "MEMBER" },
-  { label: "អ្នកមើល", value: "VIEWER" },
-];
-
-const FALLBACK_STATUS_OPTIONS = [
-  { label: "គ្រប់ស្ថានភាព", value: "" },
-  { label: "សកម្ម", value: "ACTIVE" },
-  { label: "អសកម្ម", value: "INACTIVE" },
-  { label: "បានផ្អាក", value: "SUSPENDED" },
-  { label: "បានលាលែង", value: "RESIGNED" },
-];
-
 
 async function fetchLookupOptions(path, signal) {
   const response = await fetch(`/api/lookups/${path}`, {
@@ -139,7 +105,7 @@ async function fetchJson(path, params, signal) {
   return body;
 }
 
-function formatDateTime(value) {
+function formatDateTime(value, locale = "km") {
   if (!value) {
     return "-";
   }
@@ -150,14 +116,22 @@ function formatDateTime(value) {
     return "-";
   }
 
-  return new Intl.DateTimeFormat("km-KH", {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "km-KH", {
     day: "numeric",
     month: "long",
     year: "numeric",
   }).format(date);
 }
 
-function mapUser(user) {
+function mapUser(user, labels, locale) {
+  const roleCode = String(user?.role || "").toUpperCase();
+  const viewerScope = String(user?.viewerScope || "").toUpperCase();
+  const statusCode = String(
+    user?.memberId != null && user?.memberStatusCode
+      ? user.memberStatusCode
+      : user?.status || "",
+  ).toUpperCase();
+
   return {
     id: user?.id,
     nameKh: user?.fullNameKm || user?.fullNameEn || "-",
@@ -171,11 +145,11 @@ function mapUser(user) {
     phoneRaw: user?.phone || "",
     emailRaw: user?.email || "",
     viewerScopeRaw: user?.viewerScope || "",
-    roleCode: String(user?.role || "").toUpperCase(),
+    roleCode,
     roleLabel:
-      (String(user?.role || "").toUpperCase() === "VIEWER" && user?.viewerScope
-        ? `${ROLE_LABELS_KM.VIEWER || "អ្នកមើល"} (${ROLE_LABELS_KM[String(user.viewerScope).toUpperCase()] || user.viewerScope})`
-        : ROLE_LABELS_KM[String(user?.role || "").toUpperCase()]) ||
+      (roleCode === "VIEWER" && user?.viewerScope
+        ? `${labels.roles.VIEWER || "Viewer"} (${labels.roles[viewerScope] || user.viewerScope})`
+        : labels.roles[roleCode]) ||
       user?.role ||
       "-",
     accountType:
@@ -188,28 +162,26 @@ function mapUser(user) {
           : "STANDALONE",
     memberId: user?.memberId ?? null,
     branchId: user?.branchId ?? null,
-    statusCode: String(
-      user?.memberId != null && user?.memberStatusCode
-        ? user.memberStatusCode
-        : user?.status || "",
-    ).toUpperCase(),
+    statusCode,
     statusLabel:
       user?.memberId != null
-        ? user?.memberStatusLabelKm ||
-          user?.memberStatusLabelEn ||
-          STATUS_LABELS_KM[String(user?.memberStatusCode || "").toUpperCase()] ||
+        ? (locale === "en"
+            ? user?.memberStatusLabelEn || user?.memberStatusLabelKm
+            : user?.memberStatusLabelKm || user?.memberStatusLabelEn) ||
+          labels.statuses[statusCode] ||
           user?.memberStatusCode ||
           "-"
-        : STATUS_LABELS_KM[String(user?.status || "").toUpperCase()] ||
+        : labels.statuses[statusCode] ||
           user?.status ||
           "-",
-    createdAt: formatDateTime(user?.createdAt),
+    createdAt: formatDateTime(user?.createdAt, locale),
     createdAtRaw: user?.createdAt || "",
   };
 }
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
+  const { t, locale } = useLanguage();
   const isViewer = normalizeRole(currentUser?.role) === "viewer";
   const [users, setUsers] = useState([]);
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
@@ -219,7 +191,41 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [createdRangeFilter, setCreatedRangeFilter] = useState({ from: "", to: "" });
-  const [statusOptions, setStatusOptions] = useState(FALLBACK_STATUS_OPTIONS);
+  const roleLabels = useMemo(() => ({
+    ADMIN: t("usersPage.admin"),
+    VIEWER: t("usersPage.viewer"),
+    BRANCH_LEADER: t("usersPage.branchLeader"),
+    SECRETARY: t("usersPage.secretary"),
+    MEMBER: t("usersPage.member"),
+  }), [t]);
+
+  const statusLabels = useMemo(() => ({
+    ACTIVE: t("usersPage.active"),
+    INACTIVE: t("usersPage.inactive"),
+    SUSPENDED: t("usersPage.suspended"),
+    RESIGNED: t("usersPage.resigned"),
+    LOCKED: t("usersPage.locked"),
+    PENDING_ACTIVATION: t("usersPage.pendingActivation"),
+  }), [t]);
+
+  const fallbackStatusOptions = useMemo(() => [
+    { label: t("usersPage.allStatuses"), value: "" },
+    { label: t("usersPage.active"), value: "ACTIVE" },
+    { label: t("usersPage.inactive"), value: "INACTIVE" },
+    { label: t("usersPage.suspended"), value: "SUSPENDED" },
+    { label: t("usersPage.resigned"), value: "RESIGNED" },
+  ], [t]);
+
+  const roleOptions = useMemo(() => [
+    { label: t("usersPage.allRoles"), value: "" },
+    { label: t("usersPage.admin"), value: "ADMIN" },
+    { label: t("usersPage.branchLeader"), value: "BRANCH_LEADER" },
+    { label: t("usersPage.secretary"), value: "SECRETARY" },
+    { label: t("usersPage.member"), value: "MEMBER" },
+    { label: t("usersPage.viewer"), value: "VIEWER" },
+  ], [t]);
+
+  const [statusOptions, setStatusOptions] = useState([]);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -251,30 +257,29 @@ export default function UsersPage() {
             return {
               value: code,
               label:
-                status?.labelKm ||
-                status?.label_km ||
-                status?.labelEn ||
-                status?.label_en ||
-                STATUS_LABELS_KM[code] ||
+                (locale === "en"
+                  ? status?.labelEn || status?.label_en || status?.labelKm || status?.label_km
+                  : status?.labelKm || status?.label_km || status?.labelEn || status?.label_en) ||
+                statusLabels[code] ||
                 code,
             };
           })
           .filter((option) => option.value);
 
         setStatusOptions([
-          { label: "គ្រប់ស្ថានភាព", value: "" },
+          { label: t("usersPage.allStatuses"), value: "" },
           ...mapped,
         ]);
       })
       .catch((error) => {
         if (error.name !== "AbortError") {
-          console.warn("Failed to load member statuses:", error.message);
-          setStatusOptions(FALLBACK_STATUS_OPTIONS);
+          console.warn(t("usersPage.loadBranchesFailed"), error.message);
+          setStatusOptions(fallbackStatusOptions);
         }
       });
 
     return () => controller.abort();
-  }, []);
+  }, [fallbackStatusOptions, locale, statusLabels, t]);
 
   /*
    * =========================================
@@ -318,9 +323,9 @@ export default function UsersPage() {
 
       const list = Array.isArray(data) ? data : [];
 
-      setUsers(list.map(mapUser));
+      setUsers(list.map((user) => mapUser(user, { roles: roleLabels, statuses: statusLabels }, locale)));
     },
-    [debouncedQuery, roleFilter, statusFilter],
+    [debouncedQuery, locale, roleFilter, roleLabels, statusFilter, statusLabels],
   );
 
   useEffect(() => {
@@ -397,13 +402,13 @@ export default function UsersPage() {
   const tableColumns = useMemo(
     () => [
       {
-        header: "ល.រ",
+        header: t("usersPage.no"),
         width: "w-[6%]",
         align: "center",
         render: (_, index) => index,
       },
       {
-        header: "ឈ្មោះ",
+        header: t("usersPage.name"),
         width: "w-[18%]",
         align: "left",
         render: (user) => (
@@ -413,7 +418,7 @@ export default function UsersPage() {
         ),
       },
       {
-        header: "អ៊ីមែល",
+        header: t("usersPage.email"),
         width: "w-[19%]",
         align: "left",
         render: (user) => (
@@ -421,25 +426,25 @@ export default function UsersPage() {
         ),
       },
       {
-        header: "តួនាទី",
+        header: t("usersPage.role"),
         width: "w-[13%]",
         align: "center",
         render: (user) => <span>{user.roleLabel}</span>,
       },
       {
-        header: "ប្រភេទគណនី",
+        header: t("usersPage.accountType"),
         width: "w-[14%]",
         align: "center",
         render: (user) => (
           <span>{user.accountType === "MEMBER_LINKED"
-            ? "ភ្ជាប់សមាជិក"
+            ? t("usersPage.memberLinked")
             : user.accountType === "BRANCH_STAFF"
-              ? "គណនីបុគ្គលិកសាខា"
-              : "គណនីឯករាជ្យ"}</span>
+              ? t("usersPage.branchStaff")
+              : t("usersPage.standalone")}</span>
         ),
       },
       {
-        header: "ស្ថានភាព",
+        header: t("usersPage.status"),
         width: "w-[12%]",
         align: "center",
         render: (user) => (
@@ -466,7 +471,7 @@ export default function UsersPage() {
         ),
       },
       {
-        header: "ថ្ងៃបង្កើត",
+        header: t("usersPage.createdAt"),
         width: "w-[12%]",
         align: "left",
         render: (user) => (
@@ -474,7 +479,7 @@ export default function UsersPage() {
         ),
       },
       {
-        header: "សកម្មភាព",
+        header: t("usersPage.actions"),
         width: "w-[6%]",
         align: "center",
         // A member-linked account is edited through that member's own
@@ -487,7 +492,7 @@ export default function UsersPage() {
             <button
               type="button"
               onClick={() => setEditingUser(user)}
-              aria-label="កែប្រែ"
+              aria-label={t("usersPage.edit")}
               className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-warning transition hover:bg-warning-bg"
             >
               <SquarePen size={16} strokeWidth={1.8} />
@@ -495,8 +500,8 @@ export default function UsersPage() {
           ) : (
             <Link
               href={`/member/memberInfo/${user.memberId}/details/personal`}
-              aria-label="កែប្រែតាមទំព័រសមាជិក"
-              title="កែប្រែតាមទំព័រសមាជិក"
+              aria-label={t("usersPage.editViaMemberPage")}
+              title={t("usersPage.editViaMemberPage")}
               className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-warning transition hover:bg-warning-bg"
             >
               <SquarePen size={16} strokeWidth={1.8} />
@@ -504,7 +509,7 @@ export default function UsersPage() {
           ),
       },
     ],
-    [isViewer],
+    [isViewer, t],
   );
 
   // Role/status are server-filtered (loadUsers above); the created-date
@@ -523,15 +528,15 @@ export default function UsersPage() {
       name: "role",
       value: roleFilter,
       onChange: setRoleFilter,
-      options: ROLE_OPTIONS,
-      placeholder: "តួនាទី",
+      options: roleOptions,
+      placeholder: t("usersPage.role"),
     },
     {
       name: "status",
       value: statusFilter,
       onChange: setStatusFilter,
       options: statusOptions,
-      placeholder: "ស្ថានភាព",
+      placeholder: t("usersPage.status"),
     },
     {
       name: "createdRange",
@@ -548,7 +553,7 @@ export default function UsersPage() {
       <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard
           icon={UsersIcon}
-          label="អ្នកប្រើប្រាស់សរុប"
+          label={t("usersPage.totalUsers")}
           value={String(summary.totalUsers)}
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
@@ -556,7 +561,7 @@ export default function UsersPage() {
 
         <StatCard
           icon={UserCheck}
-          label="សកម្ម"
+          label={t("usersPage.active")}
           value={String(summary.activeUsers)}
           iconColor="text-success"
           iconBg="bg-success-bg"
@@ -564,7 +569,7 @@ export default function UsersPage() {
 
         <StatCard
           icon={UserX}
-          label="អសកម្ម"
+          label={t("usersPage.inactive")}
           value={String(summary.inactiveUsers)}
           iconColor="text-error"
           iconBg="bg-error-bg"
@@ -575,26 +580,26 @@ export default function UsersPage() {
 
       <div className="min-w-0 w-full">
         <DataTable
-          title="បញ្ជីអ្នកប្រើប្រាស់"
+          title={t("usersPage.listTitle")}
           data={displayedUsers}
           columns={tableColumns}
           filters={filterConfig}
           searchQuery={query}
           onSearchChange={setQuery}
-          searchPlaceholder="ស្វែងរកតាមរយៈឈ្មោះ ទូរស័ព្ទ ឬអ៊ីមែល..."
+          searchPlaceholder={t("usersPage.searchPlaceholder")}
           pageSize={20}
           onDownload={() =>
             downloadTableAsExcel({
               data: users,
               columns: tableColumns,
-              fileName: "អ្នកប្រើប្រាស់",
+              fileName: t("usersPage.usersFileName"),
             })
           }
           actionButton={(
             <button
               type="button"
               disabled={isViewer}
-              title={isViewer ? "Viewer accounts are read-only" : undefined}
+              title={isViewer ? t("usersPage.viewerReadOnly") : undefined}
               onClick={() => !isViewer && setIsCreateOpen(true)}
               className="
                 inline-flex
@@ -617,7 +622,7 @@ export default function UsersPage() {
               "
             >
               <RiAddCircleLine className="h-4 w-4 shrink-0" />
-              <span>បង្កើតអ្នកប្រើប្រាស់ថ្មី</span>
+              <span>{t("usersPage.createUser")}</span>
             </button>
           )}
         />

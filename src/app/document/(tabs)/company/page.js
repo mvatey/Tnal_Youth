@@ -13,6 +13,7 @@ import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview
 import DeleteConfirmModal from "@/components/popup/Confirmdeletemodal";
 import { useAuth } from "@/context/AuthContext";
 import { useBranch } from "@/context/BranchContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
 
 const EMPTY_FORM = {
@@ -38,6 +39,7 @@ const DEFAULT_DOCUMENT_TYPE_STYLE =
 export default function CompanyDocumentPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const role = normalizeRole(user?.role);
   const { selectedBranch } = useBranch();
 
@@ -96,7 +98,7 @@ export default function CompanyDocumentPage() {
           { cache: "no-store" },
         );
         const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកឯកសារបានទេ។");
+        if (!response.ok) throw new Error(body?.message || t("documentPage.loadDocumentsFailed"));
         const rows = body?.data?.content ?? body?.content ?? body?.data ?? body;
         documentRows.push(...(Array.isArray(rows) ? rows : []));
         totalPages = Math.max(1, Number(body?.data?.total_pages ?? body?.total_pages ?? body?.totalPages) || 1);
@@ -107,7 +109,7 @@ export default function CompanyDocumentPage() {
         fetch("/api/lookups/branches", { cache: "no-store" }),
         fetch("/api/backend/document-types", { cache: "no-store" }),
       ]);
-      if (!branchResponse.ok || !typeResponse.ok) throw new Error("មិនអាចទាញយកឯកសារបានទេ។");
+      if (!branchResponse.ok || !typeResponse.ok) throw new Error(t("documentPage.loadDocumentsFailed"));
       const [branchBody, typeBody] = await Promise.all([branchResponse.json(), typeResponse.json()]);
 
       setDocuments(
@@ -118,11 +120,11 @@ export default function CompanyDocumentPage() {
       setBranches(Array.isArray(branchBody) ? branchBody : (branchBody?.data ?? []));
       setDocumentTypes(Array.isArray(typeBody) ? typeBody : (typeBody?.data ?? []));
     } catch (loadError) {
-      setError(loadError.message || "មិនអាចទាញយកឯកសារបានទេ។");
+      setError(loadError.message || t("documentPage.loadDocumentsFailed"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { loadPage(); }, [loadPage]);
 
@@ -176,44 +178,44 @@ export default function CompanyDocumentPage() {
 
   const columns = [
     {
-      header: "ល.រ",
+      header: t("documentPage.no"),
       width: "w-[6%]",
       align: "center",
       render: (_, index) => index ,
     },
     {
-      header: "ឯកសារ",
+      header: t("documentPage.document"),
       width: "w-[8%]",
       render: (item) => (
         <img
           src={item.image || "/document.jpg"}
-          alt={item.title || "document"}
+          alt={item.title || t("documentPage.document")}
           className="h-8 w-6 rounded border border-border object-cover"
         />
       ),
     },
     {
-      header: "ឈ្មោះឯកសារ",
+      header: t("documentPage.documentName"),
       accessor: "title",
       width: "w-[25%]",
     },
     {
-      header: "សាខា",
+      header: t("documentPage.branch"),
       accessor: "branchName",
       width: "w-[15%]",
     },
     {
-      header: "កាលបរិច្ឆេទ",
+      header: t("documentPage.date"),
       accessor: "date",
       width: "w-[15%]",
     },
     {
-      header: "ទំហំ",
+      header: t("documentPage.size"),
       accessor: "size",
       width: "w-[10%]",
     },
     {
-  header: "ប្រភេទឯកសារ",
+  header: t("documentPage.documentType"),
   accessor: "type",
   width: "w-[10%]",
   align: "center",
@@ -244,7 +246,7 @@ export default function CompanyDocumentPage() {
   },
 },
     {
-      header: "សកម្មភាព",
+      header: t("documentPage.actions"),
       width: "w-[11%]",
       align: "center",
       render: (item) => (
@@ -253,7 +255,7 @@ export default function CompanyDocumentPage() {
             type="button"
             onClick={() => setSelectedDocument({ ...item, branch: item.branchName })}
             className="inline-flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-blue-50"
-            aria-label="មើលឯកសារ"
+            aria-label={t("documentPage.viewDocument")}
           >
             <Eye size={18} className="text-blue-500" />
           </button>
@@ -264,7 +266,7 @@ export default function CompanyDocumentPage() {
                 type="button"
                 onClick={() => setEditDocument({ ...item })}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-yellow-50"
-                aria-label="កែប្រែឯកសារ"
+                aria-label={t("documentPage.editDocument")}
               >
                 <Pencil size={18} className="text-yellow-500" />
               </button>
@@ -273,7 +275,7 @@ export default function CompanyDocumentPage() {
                 type="button"
                 onClick={() => setDeleteDocument(item)}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-error-bg"
-                aria-label="លុបឯកសារ"
+                aria-label={t("documentPage.deleteDocument")}
               >
                 <Trash2 size={18} className="text-red-500" />
               </button>
@@ -287,7 +289,7 @@ export default function CompanyDocumentPage() {
   const filters = [
     {
       name: "type",
-      placeholder: "ប្រភេទឯកសារ",
+      placeholder: t("documentPage.documentType"),
       value: typeFilter,
       options: [...new Set(documents.map((item) => item.type))].map(
         (type) => ({
@@ -300,7 +302,7 @@ export default function CompanyDocumentPage() {
     {
       name: "date",
       type: "date",
-      placeholder: "ថ្ងៃ/ខែ/ឆ្នាំ",
+      placeholder: t("documentPage.datePlaceholder"),
       value: dateFilter,
       onChange: setDateFilter,
     },
@@ -328,7 +330,7 @@ export default function CompanyDocumentPage() {
   >
     <RiAddCircleLine className="h-4 w-4 shrink-0" />
 
-    <span>បញ្ចូលឯកសារ</span>
+    <span>{t("documentPage.addDocument")}</span>
   </button>
 );
 
@@ -341,7 +343,7 @@ export default function CompanyDocumentPage() {
         upload.append("file", item.file);
         const uploadResponse = await fetch("/api/backend/files/attachments", { method: "POST", body: upload });
         const uploadedFile = await uploadResponse.json().catch(() => null);
-        if (!uploadResponse.ok) throw new Error(uploadedFile?.message || "បញ្ចូលឯកសារមិនបានសម្រេច។");
+        if (!uploadResponse.ok) throw new Error(uploadedFile?.message || t("documentPage.uploadFailed"));
         const createResponse = await fetch("/api/backend/documents", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -354,13 +356,13 @@ export default function CompanyDocumentPage() {
           }),
         });
         const created = await createResponse.json().catch(() => null);
-        if (!createResponse.ok) throw new Error(created?.message || "មិនអាចរក្សាទុកឯកសារបានទេ។");
+        if (!createResponse.ok) throw new Error(created?.message || t("documentPage.saveFailed"));
       }
       setForm(EMPTY_FORM);
       setShowAddForm(false);
       await loadPage();
     } catch (saveError) {
-      setError(saveError.message || "មិនអាចរក្សាទុកឯកសារបានទេ។");
+      setError(saveError.message || t("documentPage.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -375,7 +377,7 @@ export default function CompanyDocumentPage() {
       const uploadResponse = await fetch("/api/backend/files/attachments", { method: "POST", body: upload });
       const uploadedFile = await uploadResponse.json().catch(() => null);
       if (!uploadResponse.ok || !uploadedFile?.id) {
-        throw new Error(uploadedFile?.message || "បញ្ចូលឯកសារមិនបានសម្រេច។");
+        throw new Error(uploadedFile?.message || t("documentPage.uploadFailed"));
       }
       fileId = uploadedFile.id;
     }
@@ -392,7 +394,7 @@ export default function CompanyDocumentPage() {
       }),
     });
     const body = await response.json().catch(() => null);
-    if (!response.ok) throw new Error(body?.message || "មិនអាចកែប្រែឯកសារបានទេ។");
+    if (!response.ok) throw new Error(body?.message || t("documentPage.updateFailed"));
     setEditDocument(null);
     await loadPage();
   };
@@ -401,7 +403,7 @@ export default function CompanyDocumentPage() {
     const response = await fetch(`/api/backend/documents/${deleteDocument.id}`, { method: "DELETE" });
     if (!response.ok) {
       const body = await response.json().catch(() => null);
-      setError(body?.message || "មិនអាចលុបឯកសារបានទេ។");
+      setError(body?.message || t("documentPage.deleteFailed"));
       return;
     }
     setDeleteDocument(null);
@@ -423,9 +425,11 @@ export default function CompanyDocumentPage() {
           downloadTableAsExcel({
             data: filteredDocuments,
             columns,
-            fileName: `ឯកសារក្រុមហ៊ុន`,
+            fileName: t("documentPage.companyFileName"),
           })
         }
+        searchPlaceholder={t("documentPage.searchPlaceholder")}
+        emptyMessage={t("documentPage.emptyMessage")}
       />
 
       {canManageDocuments && showAddForm && (
@@ -463,8 +467,8 @@ export default function CompanyDocumentPage() {
           open
           onClose={() => setDeleteDocument(null)}
           onConfirm={handleDeleteConfirm}
-          title="លុបឯកសារ"
-          message={`តើអ្នកប្រាកដថាចង់លុប "${deleteDocument.title}" មែនទេ?`}
+          title={t("documentPage.deleteDocument")}
+          message={`${t("documentPage.confirmDeletePrefix")}${deleteDocument.title}${t("documentPage.confirmDeleteSuffix")}`}
         />
       )}
     </>

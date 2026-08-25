@@ -5,6 +5,7 @@ import { Search, X } from "lucide-react";
 import { HiSaveAs } from "react-icons/hi";
 
 import FilterBar from "@/components/tables/FilterBar";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ParticipationEditModal({
   open,
@@ -12,6 +13,7 @@ export default function ParticipationEditModal({
   onClose,
   onSave,
 }) {
+  const { t } = useLanguage();
   const [selectedIds, setSelectedIds] = useState([]);
   const [query, setQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
@@ -123,7 +125,7 @@ export default function ParticipationEditModal({
       await onSave(updatedParticipants);
     } catch (error) {
       setSaveError(
-        error instanceof Error ? error.message : "មានបញ្ហាកើតឡើង",
+        error instanceof Error ? error.message : t("activityPage.genericError"),
       );
     } finally {
       setIsSaving(false);
@@ -140,11 +142,11 @@ export default function ParticipationEditModal({
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-secondary">
-              កែប្រែការចូលរួម
+              {t("activityPage.editParticipation")}
             </h2>
 
             <p className="mt-1 text-sm text-text-secondary">
-              ជ្រើសរើសសមាជិកដែលបានចូលរួមកម្មវិធីជាក់ស្តែង
+              {t("activityPage.selectActualParticipants")}
             </p>
           </div>
 
@@ -164,7 +166,7 @@ export default function ParticipationEditModal({
               onChange={(event) =>
                 setQuery(event.target.value)
               }
-              placeholder="ស្វែងរកសមាជិក..."
+              placeholder={t("activityPage.memberSearchPlaceholder")}
               className="h-10 w-full rounded-lg border border-border bg-bg-page-white pl-4 pr-10 text-sm outline-none focus:border-primary"
             />
 
@@ -180,21 +182,21 @@ export default function ParticipationEditModal({
                 key: "role",
                 value: selectedRole,
                 onChange: setSelectedRole,
-                placeholder: "តួនាទី",
+                placeholder: t("memberPage.role"),
                 options: roles,
               },
               {
                 key: "branch",
                 value: selectedBranch,
                 onChange: setSelectedBranch,
-                placeholder: "សាខា",
+                placeholder: t("memberPage.branch"),
                 options: branches,
               },
             ]}
           />
 
           <span className="whitespace-nowrap text-sm font-semibold text-text-primary lg:ml-auto">
-            {selectedIds.length}/{participants.length} នាក់
+            {selectedIds.length}/{participants.length} {t("activityPage.memberUnit")}
           </span>
         </div>
 
@@ -211,23 +213,23 @@ export default function ParticipationEditModal({
                 </th>
 
                 <th className="w-[28%] text-left">
-                  ឈ្មោះអ្នកចូលរួម
+                  {t("activityPage.participantName")}
                 </th>
 
                 <th className="w-[10%] text-center">
-                  ភេទ
+                  {t("memberPage.gender")}
                 </th>
 
                 <th className="w-[15%] text-center">
-                  តួនាទី
+                  {t("memberPage.role")}
                 </th>
 
                 <th className="w-[17%] text-center">
-                  សាខា
+                  {t("memberPage.branch")}
                 </th>
 
                 <th className="w-[25%] text-center">
-                  ស្ថានភាពចូលរួម
+                  {t("activityPage.participationStatus")}
                 </th>
               </tr>
             </thead>
@@ -288,8 +290,8 @@ export default function ParticipationEditModal({
                           }`}
                         >
                           {isParticipated
-                            ? "បានចូលរួម"
-                            : "មិនបានចូលរួម"}
+                            ? t("activityPage.participated")
+                            : t("activityPage.notParticipated")}
                         </span>
                       </td>
                     </tr>
@@ -303,7 +305,7 @@ export default function ParticipationEditModal({
                     colSpan={6}
                     className="py-10 text-center text-sm text-text-secondary"
                   >
-                    មិនមានទិន្នន័យសមាជិកទេ
+                    {t("activityPage.noMemberData")}
                   </td>
                 </tr>
               )}
@@ -323,7 +325,7 @@ export default function ParticipationEditModal({
             onClick={onClose}
             className="flex h-10 w-full items-center justify-center rounded-lg border border-border bg-bg-page-white px-5 text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray sm:min-w-[110px] sm:w-auto"
           >
-            បោះបង់
+            {t("common.cancel")}
           </button>
 
           <button
@@ -333,7 +335,7 @@ export default function ParticipationEditModal({
             className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-secondary px-5 text-sm font-semibold text-white transition hover:opacity-90 sm:min-w-[190px] sm:w-auto"
           >
             <HiSaveAs size={17} />
-            {isSaving ? "កំពុងរក្សាទុក..." : "រក្សាទុកការចូលរួម"}
+            {isSaving ? t("common.saving") : t("activityPage.saveParticipation")}
           </button>
         </div>
       </div>

@@ -1,11 +1,10 @@
-"use client";
-
 import km from "@/locales/km";
 import en from "@/locales/en";
 
 export const DEFAULT_LOCALE = "km";
 export const SUPPORTED_LOCALES = ["km", "en"];
 export const LOCALE_STORAGE_KEY = "tnal-youth-locale";
+export const LOCALE_COOKIE_NAME = "tnal-youth-locale";
 
 export const dictionaries = {
   km,

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useUnsavedChanges } from "@/context/UnsavedChangesContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 
 export default function MemberDetailNav(){
@@ -12,37 +13,38 @@ export default function MemberDetailNav(){
   const params = useParams();
   const memberId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const { isDirty, guardNavigate } = useUnsavedChanges();
+  const { t } = useLanguage();
 
 
   const tabs = [
 
     {
-      name:"ព័ត៌មានផ្ទាល់ខ្លួន",
+      name:t("memberPage.detailPersonal"),
       href:"personal"
     },
 
     {
-      name:"ព័ត៌មានគ្រួសារ",
+      name:t("memberPage.detailFamily"),
       href:"family"
     },
 
     {
-      name:"ប្រវត្តិការងារ",
+      name:t("memberPage.detailWork"),
       href:"work"
     },
 
     {
-      name:"ការអប់រំ/បណ្តុះបណ្តាល",
+      name:t("memberPage.detailEducation"),
       href:"education"
     },
 
     {
-      name:"ជំនាញបច្ចេកទេស",
+      name:t("memberPage.detailSkill"),
       href:"skill"
     },
 
     {
-      name:"កិច្ចការនយោបាយ",
+      name:t("memberPage.detailPolitical"),
       href:"political"
     }
 

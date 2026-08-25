@@ -14,6 +14,11 @@ import { FaUsers } from "react-icons/fa";
 import { notFound } from "next/navigation";
 
 import PendingInvitationBanner from "@/components/activity/PendingInvitationBanner";
+import {
+  LOCALE_COOKIE_NAME,
+  normalizeLocale,
+  translate,
+} from "@/lib/i18n";
 
 import {
   Banknote,
@@ -261,6 +266,10 @@ export default async function ActivityDetailPage({
     cookieStore.get(
       "accessToken",
     )?.value;
+  const locale = normalizeLocale(
+    cookieStore.get(LOCALE_COOKIE_NAME)?.value,
+  );
+  const t = (key, fallback) => translate(locale, key, fallback);
 
   const [
     record,
@@ -599,8 +608,8 @@ export default async function ActivityDetailPage({
 
     visibility:
       record.publicActivity
-        ? "សាធារណៈ"
-        : "ផ្ទៃក្នុង",
+        ? t("activityPage.publicVisibility")
+        : t("activityPage.internalVisibility"),
 
     leader:
       record.organizerName ||
@@ -637,7 +646,7 @@ export default async function ActivityDetailPage({
             attachment
               .originalName ||
             attachment.title ||
-            "ឯកសារ",
+            t("activityPage.documents"),
 
           size:
             formatFileSize(
@@ -673,14 +682,14 @@ export default async function ActivityDetailPage({
   const statusLabel =
     activity.status ===
     "completed"
-      ? "បានបញ្ចប់"
+      ? t("activityPage.completed")
       : activity.status ===
           "ongoing"
-        ? "កំពុងដំណើរការ"
+        ? t("activityPage.ongoing")
         : activity.status ===
             "cancelled"
-          ? "បានលុបចោល"
-          : "នាពេលខាងមុខ";
+          ? t("activityPage.cancelled")
+          : t("activityPage.future");
 
   const statusStyle =
     activity.status ===
@@ -696,7 +705,7 @@ export default async function ActivityDetailPage({
 
   const visibilityLabel =
     activity.visibility ||
-    "សាធារណៈ";
+    t("activityPage.publicVisibility");
 
   /*
    * Both host staff and accepted
@@ -726,8 +735,8 @@ export default async function ActivityDetailPage({
     canInviteMembers &&
     activity.status !==
       "completed"
-      ? "អញ្ជើញសមាជិក"
-      : "សមាសភាពចូលរួម";
+      ? t("activityPage.inviteMembers")
+      : t("activityPage.participantComposition");
 
   return (
     <div className="space-y-5">
@@ -740,7 +749,7 @@ export default async function ActivityDetailPage({
                 href="/activity"
                 className="text-text-secondary transition hover:text-primary"
               >
-                កម្មវិធី
+                {t("activityPage.activity")}
               </Link>
 
               <ChevronRight
@@ -749,13 +758,13 @@ export default async function ActivityDetailPage({
               />
 
               <span className="font-semibold text-primary">
-                ព័ត៌មានលម្អិត
+                {t("activityPage.detailInfo")}
               </span>
             </div>
           </div>
 
           <h1 className="text-xl font-bold text-secondary">
-            ព័ត៌មានកម្មវិធី
+            {t("activityPage.activityInfo")}
           </h1>
         </div>
 
@@ -772,7 +781,7 @@ export default async function ActivityDetailPage({
           >
             <Pencil size={15} />
 
-            កែព័ត៌មាន
+            {t("activityPage.editInfo")}
           </Link>
         )}
       </div>
@@ -873,13 +882,13 @@ export default async function ActivityDetailPage({
                   label={
                     activity.participants
                   }
-                  sub="បានចូលរួម"
+                  sub={t("activityPage.attended")}
                 />
 
                 <InfoIcon
                   icon={Sprout}
-                  label="បរិស្ថាន"
-                  sub="ប្រភេទវិស័យ"
+                  label={t("activityPage.environment")}
+                  sub={t("activityPage.sectorType")}
                 />
               </div>
             </div>
@@ -888,14 +897,14 @@ export default async function ActivityDetailPage({
 
         <div className="rounded-xl border border-border bg-bg-page-white p-5">
           <h3 className="mb-5 text-base font-bold text-secondary">
-            សង្ខេបស្ថានភាព
+            {t("activityPage.statusSummary")}
           </h3>
 
           <StatusRow
             icon={
               CheckCircle2
             }
-            label="ស្ថានភាព"
+            label={t("activityPage.statusLabel")}
           >
             <span
               className={`rounded-full px-3 py-1 text-[11px] ${statusStyle}`}
@@ -906,7 +915,7 @@ export default async function ActivityDetailPage({
 
           <StatusRow
             icon={Eye}
-            label="ការមើលឃើញ"
+            label={t("activityPage.visibilityLabel")}
           >
             <span className="text-sm font-semibold text-text-primary">
               {
@@ -919,7 +928,7 @@ export default async function ActivityDetailPage({
             icon={
               CalendarDays
             }
-            label="ថ្ងៃចាប់ផ្តើម"
+            label={t("activityPage.startDate")}
           >
             <span className="text-sm font-semibold text-text-primary">
               {
@@ -931,7 +940,7 @@ export default async function ActivityDetailPage({
 
           <StatusRow
             icon={History}
-            label="ថ្ងៃបញ្ចប់"
+            label={t("activityPage.endDate")}
             last
           >
             <span className="text-sm font-semibold text-text-primary">
@@ -948,7 +957,7 @@ export default async function ActivityDetailPage({
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         <div className="flex flex-col xl:col-span-2">
           <h3 className="mb-2 text-base font-bold text-secondary">
-            ទិដ្ឋភាពទូទៅ
+            {t("activityPage.overview")}
           </h3>
 
           <div className="flex-1 rounded-xl border border-border bg-bg-page-white p-5">
@@ -962,7 +971,7 @@ export default async function ActivityDetailPage({
             <div className="grid grid-cols-1 gap-x-8 gap-y-4 border-t border-border pt-5 text-sm sm:grid-cols-2">
               <InfoItem
                 icon={FileText}
-                label="ឈ្មោះកម្មវិធី"
+                label={t("activityPage.activityName")}
                 value={
                   activity.name
                 }
@@ -972,7 +981,7 @@ export default async function ActivityDetailPage({
                 icon={
                   CalendarDays
                 }
-                label="ថ្ងៃចាប់ផ្តើម"
+                label={t("activityPage.startDate")}
                 value={
                   activity.startDate ||
                   activity.date
@@ -981,7 +990,7 @@ export default async function ActivityDetailPage({
 
               <InfoItem
                 icon={Tag}
-                label="ប្រភេទកម្មវិធី"
+                label={t("activityPage.activityType")}
                 value={
                   activity.type
                 }
@@ -989,7 +998,7 @@ export default async function ActivityDetailPage({
 
               <InfoItem
                 icon={Clock}
-                label="រយៈពេលចូលរួម"
+                label={t("activityPage.participationDuration")}
                 value={
                   activity.duration
                 }
@@ -997,7 +1006,7 @@ export default async function ActivityDetailPage({
 
               <InfoItem
                 icon={MapPin}
-                label="វិស័យ"
+                label={t("activityPage.sector")}
                 value={
                   activity.sector
                 }
@@ -1005,7 +1014,7 @@ export default async function ActivityDetailPage({
 
               <InfoItem
                 icon={Users}
-                label="អ្នកគ្រប់គ្រង"
+                label={t("activityPage.manager")}
                 value={
                   activity.leader
                 }
@@ -1013,13 +1022,13 @@ export default async function ActivityDetailPage({
 
               <InfoItem
                 icon={Users}
-                label="ចំនួនអ្នកចូលរួម"
-                value={`${attendedCount}/${totalParticipantCount} នាក់`}
+                label={t("activityPage.participantCount")}
+                value={`${attendedCount}/${totalParticipantCount} ${t("activityPage.memberUnit")}`}
               />
 
               <InfoItem
                 icon={Phone}
-                label="លេខទំនាក់ទំនង"
+                label={t("activityPage.contactPhone")}
                 value={
                   activity.phone
                 }
@@ -1030,7 +1039,7 @@ export default async function ActivityDetailPage({
 
         <div className="flex flex-col">
           <h3 className="mb-2 text-base font-bold text-secondary">
-            ទីតាំង
+            {t("activityPage.location")}
           </h3>
 
           <div className="flex-1 rounded-xl border border-border bg-bg-page-white p-5">
@@ -1073,7 +1082,7 @@ export default async function ActivityDetailPage({
         {!isMember && (
           <div className="rounded-xl border border-border bg-bg-page-white p-5">
             <h3 className="mb-4 text-base font-bold text-secondary">
-              សមាសភាព
+              {t("activityPage.composition")}
             </h3>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1082,21 +1091,21 @@ export default async function ActivityDetailPage({
                   UserCheck
                 }
                 iconClass="bg-success-bg text-success"
-                label="បានចូលរួម"
+                label={t("activityPage.attended")}
                 value={
                   attendedCount
                 }
-                unit="នាក់"
+                unit={t("activityPage.memberUnit")}
               />
 
               <SummaryCard
                 icon={UserX}
                 iconClass="bg-error-bg text-error"
-                label="មិនបានចូលរួម"
+                label={t("activityPage.notParticipated")}
                 value={
                   absentCount
                 }
-                unit="នាក់"
+                unit={t("activityPage.memberUnit")}
               />
             </div>
 
@@ -1120,7 +1129,7 @@ export default async function ActivityDetailPage({
         {!isMember && (
           <div className="rounded-xl border border-border bg-bg-page-white p-5">
             <h3 className="mb-4 text-base font-bold text-secondary">
-              ថវិកា
+              {t("activityPage.budget")}
             </h3>
 
             <div className="grid grid-cols-2 gap-4">
@@ -1129,7 +1138,7 @@ export default async function ActivityDetailPage({
                   CircleDollarSign
                 }
                 iconClass="bg-warning-bg text-warning"
-                label="ចំណូល"
+                label={t("activityPage.income")}
                 value={
                   activity.donation ||
                   "$ 0"
@@ -1139,7 +1148,7 @@ export default async function ActivityDetailPage({
               <SummaryCard
                 icon={Banknote}
                 iconClass="bg-error-bg text-error"
-                label="ចំណាយ"
+                label={t("activityPage.expense")}
                 value={
                   activity.budget ||
                   "$ 0"
@@ -1160,7 +1169,7 @@ export default async function ActivityDetailPage({
                   size={16}
                 />
 
-                ចំណូល
+                {t("activityPage.income")}
               </Link>
 
               {/*
@@ -1175,7 +1184,7 @@ export default async function ActivityDetailPage({
                     size={16}
                   />
 
-                  ចំណាយ
+                  {t("activityPage.expense")}
                 </Link>
               )}
             </div>
@@ -1184,7 +1193,7 @@ export default async function ActivityDetailPage({
 
         <div className="rounded-xl border border-border bg-bg-page-white p-5">
           <h3 className="mb-4 text-base font-bold text-secondary">
-            ឯកសារ
+            {t("activityPage.documents")}
           </h3>
 
           <div className="space-y-3">
@@ -1236,7 +1245,7 @@ export default async function ActivityDetailPage({
                         }
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label={`មើល ${doc.name}`}
+                        aria-label={`${t("activityPage.viewDocument")} ${doc.name}`}
                       >
                         <Eye
                           size={17}
@@ -1257,7 +1266,7 @@ export default async function ActivityDetailPage({
               []).length ===
               0 && (
               <p className="py-6 text-center text-sm text-text-secondary">
-                មិនទាន់មានឯកសារនៅឡើយទេ
+                {t("activityPage.noDocuments")}
               </p>
             )}
           </div>

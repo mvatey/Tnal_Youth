@@ -15,6 +15,7 @@ import FormSelect from "@/components/forms/FormSelect";
 import FormDate from "@/components/forms/FormDate.js";
 import SaveButton from "@/components/forms/SaveButton";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
+import { useLanguage } from "@/context/LanguageContext";
 
 /* =========================================================
  * EMPTY FORM
@@ -263,6 +264,7 @@ function normalizePersonalInfo(data, preserve = {}) {
  * ========================================================= */
 
 export default function MyAccountPersonalPage() {
+  const { t } = useLanguage();
   const fileRef = useRef(null);
 
   /*
@@ -329,7 +331,7 @@ export default function MyAccountPersonalPage() {
       }
     } catch (loadError) {
       console.error("Cannot load my-account personal info:", loadError);
-      setError(loadError.message || "មិនអាចទាញយកព័ត៌មានផ្ទាល់ខ្លួនបានទេ។");
+      setError(loadError.message || t("memberPage.personalLoadFailed"));
     } finally {
       setLoading(false);
     }
@@ -410,13 +412,13 @@ export default function MyAccountPersonalPage() {
     const extension = file.name.split(".").pop()?.toLowerCase();
 
     if (!allowedExtensions.includes(extension)) {
-      setError("អនុញ្ញាតតែ PDF, DOCX, JPG, JPEG និង PNG ប៉ុណ្ណោះ។");
+      setError(t("memberPage.cvAllowedTypes"));
       event.target.value = "";
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError("ទំហំឯកសារមិនត្រូវលើស 5MB។");
+      setError(t("memberPage.fileTooLarge"));
       event.target.value = "";
       return;
     }
@@ -438,12 +440,12 @@ export default function MyAccountPersonalPage() {
 
   const handleSave = async () => {
     if (!form.full_name_km.trim()) {
-      setError("សូមបញ្ចូលឈ្មោះជាភាសាខ្មែរ។");
+      setError(t("memberPage.khmerNameRequired"));
       return false;
     }
 
     if (!form.gender) {
-      setError("សូមជ្រើសរើសភេទ។");
+      setError(t("memberPage.genderRequired"));
       return false;
     }
 
@@ -509,13 +511,13 @@ export default function MyAccountPersonalPage() {
         setForm(normalized);
       }
 
-      setSuccess("រក្សាទុកព័ត៌មានបានជោគជ័យ។");
+      setSuccess(t("memberPage.saveSuccess"));
       setHasUnsavedChanges(false);
 
       return true;
     } catch (saveError) {
       console.error("Cannot save my-account personal info:", saveError);
-      setError(saveError.message || "មិនអាចរក្សាទុកព័ត៌មានបានទេ។");
+      setError(saveError.message || t("memberPage.saveFailed"));
 
       return false;
     } finally {
@@ -538,7 +540,7 @@ export default function MyAccountPersonalPage() {
   if (loading) {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
-        <p className="text-sm text-text-secondary">កំពុងទាញយកព័ត៌មានផ្ទាល់ខ្លួន...</p>
+        <p className="text-sm text-text-secondary">{t("memberPage.loadingPersonal")}</p>
       </div>
     );
   }
@@ -569,78 +571,78 @@ export default function MyAccountPersonalPage() {
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-border bg-bg-page-white p-4 sm:p-5 lg:p-6">
-        <h2 className="text-lg font-bold text-primary">ព័ត៌មានផ្ទាល់ខ្លួន</h2>
+        <h2 className="text-lg font-bold text-primary">{t("memberPage.detailPersonal")}</h2>
 
         <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
           {/* FORM */}
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <BoxFill
-              label="ឈ្មោះជាភាសាខ្មែរ"
+              label={t("memberPage.nameKm")}
               value={form.full_name_km}
               onChange={handleChange("full_name_km")}
-              placeholder="បញ្ចូលឈ្មោះជាភាសាខ្មែរ"
+              placeholder={t("memberPage.nameKmPlaceholder")}
             />
 
             <BoxFill
-              label="ឈ្មោះជាអក្សរឡាតាំង"
+              label={t("memberPage.nameEn")}
               value={form.full_name_en}
               onChange={handleChange("full_name_en")}
-              placeholder="បញ្ចូលឈ្មោះជាអក្សរឡាតាំង"
+              placeholder={t("memberPage.nameEnPlaceholder")}
             />
 
             <FormSelect
-              label="ភេទ"
+              label={t("memberPage.gender")}
               value={form.gender}
               onChange={handleChange("gender")}
-              placeholder="ជ្រើសរើសភេទ"
+              placeholder={t("memberPage.selectGender")}
               options={genders}
             />
 
             <FormDate
-              label="ថ្ងៃខែឆ្នាំកំណើត"
+              label={t("memberPage.dateOfBirth")}
               name="date_of_birth"
               value={form.date_of_birth}
               onChange={handleChange("date_of_birth")}
             />
 
             <BoxFill
-              label="អ៊ីមែល"
+              label={t("memberPage.email")}
               type="email"
               value={form.email}
               onChange={handleChange("email")}
-              placeholder="បញ្ចូលអ៊ីមែល"
+              placeholder={t("memberPage.emailPlaceholder")}
             />
 
             <BoxFill
-              label="លេខទូរស័ព្ទ"
+              label={t("memberPage.phone")}
               type="tel"
               value={form.phone}
               onChange={handleChange("phone")}
-              placeholder="បញ្ចូលលេខទូរស័ព្ទ"
+              placeholder={t("memberPage.phonePlaceholder")}
             />
 
             <FormSelect
-              label="សញ្ជាតិ"
+              label={t("memberPage.nationality")}
               value={form.nationality_id}
               onChange={handleChange("nationality_id")}
-              placeholder="ជ្រើសរើសសញ្ជាតិ"
+              placeholder={t("memberPage.selectNationality")}
               options={nationalities}
             />
 
             <FormSelect
-              label="ជនជាតិ"
+              label={t("memberPage.ethnicity")}
               value={form.ethnicity_id}
               onChange={handleChange("ethnicity_id")}
-              placeholder="ជ្រើសរើសជនជាតិ"
+              placeholder={t("memberPage.selectEthnicity")}
               options={ethnicities}
             />
 
             <FormSelect
-              label="សាសនា"
+              label={t("memberPage.religion")}
               value={form.religion_id}
               onChange={handleChange("religion_id")}
-              placeholder="ជ្រើសរើសសាសនា"
+              placeholder={t("memberPage.selectReligion")}
               options={religions}
             />
 
@@ -653,7 +655,7 @@ export default function MyAccountPersonalPage() {
             */}
             <div className="min-w-0">
               <p className="mb-2 text-sm font-semibold text-text-primary">
-                សាខា
+                {t("memberPage.branch")}
               </p>
 
               <div className="flex min-h-[34px] flex-wrap items-center gap-2 rounded-lg border border-border bg-bg-page-gray px-3 py-1.5">
@@ -674,30 +676,30 @@ export default function MyAccountPersonalPage() {
 
             {/* ROLE — read-only; only staff can change an account's role */}
             <BoxFill
-              label="តួនាទី"
+              label={t("memberPage.role")}
               value={form.has_account ? getRoleLabel(form.account_role) : "-"}
               readOnly
             />
 
             <FormSelect
-              label="កម្រិតសមាជិក(កាំ)"
+              label={t("memberPage.memberLevel")}
               value={form.member_level_id}
               onChange={handleChange("member_level_id")}
-              placeholder="ជ្រើសរើសកម្រិតសមាជិក"
+              placeholder={t("memberPage.selectMemberLevel")}
               options={levels}
             />
 
             <FormSelect
-              label="ទំហំអាវ"
+              label={t("memberPage.tshirtSize")}
               value={form.tshirt_size}
               onChange={handleChange("tshirt_size")}
-              placeholder="ជ្រើសរើសទំហំអាវ"
+              placeholder={t("memberPage.selectTshirtSize")}
               options={tshirtSizes}
             />
 
             {/* ACCOUNT STATUS — read-only; only staff can enable/disable an account */}
             <BoxFill
-              label="ស្ថានភាព"
+              label={t("memberPage.status")}
               value={form.has_account ? getStatusLabel(form.account_status) : "-"}
               readOnly
             />
@@ -707,7 +709,7 @@ export default function MyAccountPersonalPage() {
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
-              បញ្ចូល CV
+              {t("memberPage.uploadCv")}
             </label>
 
             <div className="flex min-h-[190px] w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-bg-page-gray px-4 text-center">
@@ -744,11 +746,11 @@ export default function MyAccountPersonalPage() {
                 onClick={() => fileRef.current?.click()}
                 className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
               >
-                {fileName ? "ជំនួស CV" : "បញ្ចូលឯកសារ"}
+                {fileName ? t("memberPage.replaceCv") : t("memberPage.uploadFile")}
               </button>
 
               <p className="mt-2 max-w-full truncate text-xs text-text-secondary" title={fileName}>
-                {fileName || "JPG, JPEG, DOCX, PDF, PNG (មិនលើស 5MB)"}
+                {fileName || t("memberPage.cvHelpText")}
               </p>
             </div>
           </div>
@@ -769,7 +771,7 @@ export default function MyAccountPersonalPage() {
 
       <div className="flex justify-end">
         <SaveButton onClick={handleSave} disabled={saving}>
-          {saving ? "កំពុងរក្សាទុក..." : "រក្សាទុក"}
+          {saving ? t("common.saving") : t("common.save")}
         </SaveButton>
       </div>
     </div>

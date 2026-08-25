@@ -44,24 +44,7 @@ import {
 } from "@/lib/navigation";
 
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
-
-const PARTICIPANTS_EXPORT_COLUMNS = [
-  { header: "ល.រ", accessor: "no" },
-  { header: "ឈ្មោះអ្នកចូលរួម", accessor: "name" },
-  { header: "អ៊ីមែល", accessor: "email" },
-  { header: "ភេទ", accessor: "gender" },
-  { header: "តួនាទី", accessor: "role" },
-  { header: "សាខា", accessor: "branch" },
-  { header: "ថ្ងៃ/ខែ/ឆ្នាំ ចូលរួម", accessor: "joinedDate" },
-  {
-    header: "ស្ថានភាពអញ្ជើញ",
-    exportValue: (row) => (row.isInvited ? "បានអញ្ជើញ" : "មិនបានអញ្ជើញ"),
-  },
-  {
-    header: "ស្ថានភាពចូលរួម",
-    exportValue: (row) => (row.isParticipated ? "បានចូលរួម" : "មិនបានចូលរួម"),
-  },
-];
+import { useLanguage } from "@/context/LanguageContext";
 
 async function fetchApi(
   path,
@@ -237,6 +220,7 @@ function normalizeExistingParticipant(
 export default function ActivityParticipantsPage({
   params,
 }) {
+  const { t } = useLanguage();
   const { id } =
     use(params);
 
@@ -458,7 +442,7 @@ export default function ActivityParticipantsPage({
           rosterBranchId <= 0
         ) {
           throw new Error(
-            "មិនអាចកំណត់សាខារបស់កម្មវិធីនេះបានទេ។",
+            t("activityPage.cannotResolveBranch"),
           );
         }
 
@@ -814,7 +798,7 @@ export default function ActivityParticipantsPage({
           setLoadError(
             error instanceof Error
               ? error.message
-              : "មានបញ្ហាកើតឡើង",
+              : t("activityPage.genericError"),
           );
 
           setActivityParticipants(
@@ -1047,6 +1031,24 @@ export default function ActivityParticipantsPage({
     ]);
 
   const handleDownloadReport = () => {
+    const exportColumns = [
+      { header: t("memberPage.no"), accessor: "no" },
+      { header: t("activityPage.participantName"), accessor: "name" },
+      { header: t("memberPage.email"), accessor: "email" },
+      { header: t("memberPage.gender"), accessor: "gender" },
+      { header: t("memberPage.role"), accessor: "role" },
+      { header: t("memberPage.branch"), accessor: "branch" },
+      { header: t("activityPage.joinedDate"), accessor: "joinedDate" },
+      {
+        header: t("activityPage.invitationStatus"),
+        exportValue: (row) => (row.isInvited ? t("activityPage.invited") : t("activityPage.notInvited")),
+      },
+      {
+        header: t("activityPage.participationStatus"),
+        exportValue: (row) => (row.isParticipated ? t("activityPage.participated") : t("activityPage.notParticipated")),
+      },
+    ];
+
     const exportRows = filteredParticipants.map(
       (participant, index) => ({
         ...participant,
@@ -1056,7 +1058,7 @@ export default function ActivityParticipantsPage({
 
     downloadTableAsExcel({
       data: exportRows,
-      columns: PARTICIPANTS_EXPORT_COLUMNS,
+      columns: exportColumns,
       fileName: `participants-${activity?.name || activity?.id || id || "report"}`,
     });
   };
@@ -1067,7 +1069,7 @@ export default function ActivityParticipantsPage({
         {
           key: "no",
 
-          label: "ល.រ",
+          label: t("memberPage.no"),
 
           width: "5%",
 
@@ -1087,7 +1089,7 @@ export default function ActivityParticipantsPage({
           key: "name",
 
           label:
-            "ឈ្មោះអ្នកចូលរួម",
+            t("activityPage.participantName"),
 
           width: "20%",
 
@@ -1111,7 +1113,7 @@ export default function ActivityParticipantsPage({
           key:
             "gender",
 
-          label: "ភេទ",
+          label: t("memberPage.gender"),
 
           width: "10%",
 
@@ -1128,7 +1130,7 @@ export default function ActivityParticipantsPage({
           key: "role",
 
           label:
-            "តួនាទី",
+            t("memberPage.role"),
 
           width: "10%",
 
@@ -1145,7 +1147,7 @@ export default function ActivityParticipantsPage({
           key:
             "branch",
 
-          label: "សាខា",
+          label: t("memberPage.branch"),
 
           width: "10%",
 
@@ -1163,7 +1165,7 @@ export default function ActivityParticipantsPage({
             "joinedDate",
 
           label:
-            "ថ្ងៃ/ខែ/ឆ្នាំ ចូលរួម",
+            t("activityPage.joinedDate"),
 
           width: "12%",
 
@@ -1181,7 +1183,7 @@ export default function ActivityParticipantsPage({
             "isInvited",
 
           label:
-            "ស្ថានភាពអញ្ជើញ",
+            t("activityPage.invitationStatus"),
 
           width: "12%",
 
@@ -1193,8 +1195,8 @@ export default function ActivityParticipantsPage({
               <StatusBadge
                 status={
                   row.isInvited
-                    ? "បានអញ្ជើញ"
-                    : "មិនបានអញ្ជើញ"
+                    ? t("activityPage.invited")
+                    : t("activityPage.notInvited")
                 }
               />
             ),
@@ -1205,7 +1207,7 @@ export default function ActivityParticipantsPage({
             "isParticipated",
 
           label:
-            "ស្ថានភាពចូលរួម",
+            t("activityPage.participationStatus"),
 
           width: "14%",
 
@@ -1217,8 +1219,8 @@ export default function ActivityParticipantsPage({
               <StatusBadge
                 status={
                   row.isParticipated
-                    ? "បានចូលរួម"
-                    : "មិនបានចូលរួម"
+                    ? t("activityPage.participated")
+                    : t("activityPage.notParticipated")
                 }
               />
             ),
@@ -1229,7 +1231,7 @@ export default function ActivityParticipantsPage({
             "actions",
 
           label:
-            "សកម្មភាព",
+            t("activityPage.actions"),
 
           width: "7%",
 
@@ -1245,7 +1247,7 @@ export default function ActivityParticipantsPage({
                     row,
                   )
                 }
-                aria-label={`មើលព័ត៌មាន ${row.name || "សមាជិក"}`}
+                aria-label={t("activityPage.previewMemberInfo").replace("{name}", row.name || t("memberPage.member"))}
                 className="mx-auto flex w-fit rounded-md p-1 text-primary transition hover:bg-primary-light"
               >
                 <Eye
@@ -1255,7 +1257,7 @@ export default function ActivityParticipantsPage({
             ),
         },
       ],
-      [],
+      [t],
     );
 
   /*
@@ -1389,7 +1391,7 @@ export default function ActivityParticipantsPage({
       const message =
         error instanceof Error
           ? error.message
-          : "មានបញ្ហាកើតឡើង";
+          : t("activityPage.genericError");
 
       setSaveError(
         message,
@@ -1402,7 +1404,7 @@ export default function ActivityParticipantsPage({
   if (isMember) {
     return (
       <div className="rounded-xl border border-error/30 bg-error-bg p-6 text-center text-error">
-        អ្នកមិនមានសិទ្ធិមើលទំព័រនេះទេ
+        {t("activityPage.noPermissionPage")}
       </div>
     );
   }
@@ -1410,7 +1412,7 @@ export default function ActivityParticipantsPage({
   if (loading) {
     return (
       <div className="rounded-xl border border-border bg-bg-page-white p-6 text-center text-text-secondary">
-        កំពុងផ្ទុក...
+        {t("activityPage.loading")}
       </div>
     );
   }
@@ -1426,7 +1428,7 @@ export default function ActivityParticipantsPage({
   if (!activity) {
     return (
       <div className="rounded-xl border border-border bg-bg-page-white p-6 text-center text-text-secondary">
-        មិនអាចរកឃើញកម្មវិធីនេះទេ
+        {t("activityPage.notFound")}
       </div>
     );
   }
@@ -1439,7 +1441,7 @@ export default function ActivityParticipantsPage({
             href="/activity"
             className="hover:text-primary"
           >
-            កម្មវិធី
+            {t("activityPage.activity")}
           </Link>
 
           <ChevronRight
@@ -1450,7 +1452,7 @@ export default function ActivityParticipantsPage({
             href={`/activity/${activity.id}`}
             className="hover:text-primary"
           >
-            ព័ត៌មានលម្អិត
+            {t("activityPage.detail")}
           </Link>
 
           <ChevronRight
@@ -1458,7 +1460,7 @@ export default function ActivityParticipantsPage({
           />
 
           <span className="font-semibold text-primary">
-            សមាសភាពចូលរួម
+            {t("activityPage.participantComposition")}
           </span>
         </div>
 
@@ -1509,7 +1511,7 @@ export default function ActivityParticipantsPage({
             onChange={
               setSearchQuery
             }
-            placeholder="ស្វែងរកសមាជិក..."
+            placeholder={t("activityPage.memberSearchPlaceholder")}
             width="w-full sm:w-[300px]"
           />
 
@@ -1525,7 +1527,7 @@ export default function ActivityParticipantsPage({
                   setSelectedRole,
 
                 placeholder:
-                  "តួនាទី",
+                  t("memberPage.role"),
 
                 options:
                   roles,
@@ -1542,7 +1544,7 @@ export default function ActivityParticipantsPage({
                   setSelectedBranch,
 
                 placeholder:
-                  "សាខា",
+                  t("memberPage.branch"),
 
                 options:
                   branches,
@@ -1558,7 +1560,7 @@ export default function ActivityParticipantsPage({
                   setSelectedDate,
 
                 placeholder:
-                  "ថ្ងៃ/ខែ/ឆ្នាំ",
+                  t("activityPage.datePlaceholder"),
 
                 type:
                   "date",
@@ -1590,7 +1592,7 @@ export default function ActivityParticipantsPage({
                   size={16}
                 />
 
-                កែប្រែការចូលរួម
+                {t("activityPage.editParticipation")}
               </button>
             )}
 
@@ -1602,7 +1604,7 @@ export default function ActivityParticipantsPage({
                 handleDownloadReport
               }
             >
-              ទាញយករបាយការណ៍
+              {t("activityPage.downloadReport")}
             </Button>
           </div>
         </div>
@@ -1618,7 +1620,7 @@ export default function ActivityParticipantsPage({
 
           rowsPerPage={10}
 
-          emptyMessage="មិនមានសមាជិកចូលរួមទេ"
+          emptyMessage={t("activityPage.noParticipantMembers")}
         />
       </div>
 

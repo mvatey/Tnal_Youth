@@ -4,8 +4,9 @@ import {
   Activity,
   Handshake,
 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
-function getStats(activities, invitedActivityCount) {
+function getStats(activities, invitedActivityCount, t) {
   // Prefer the backend's own count (ActivityPageResponse.invitedActivityCount
   // — the full count, not capped by this page's size=1000 fetch); fall back
   // to counting the already-loaded rows when that isn't available yet.
@@ -16,7 +17,7 @@ function getStats(activities, invitedActivityCount) {
 
   return [
   {
-    label: "កម្មវិធីសរុប",
+    label: t("activityPage.totalActivities"),
     value: activities.length,
     icon: Activity,
     accent: "bg-primary",
@@ -24,7 +25,7 @@ function getStats(activities, invitedActivityCount) {
     iconColor: "text-primary",
   },
   {
-    label: "កម្មវិធីបន្ទាប់",
+    label: t("activityPage.upcomingActivities"),
     value: activities.filter((item) => item.status === "upcoming").length,
     icon: CalendarDays,
     accent: "bg-secondary-hover",
@@ -32,7 +33,7 @@ function getStats(activities, invitedActivityCount) {
     iconColor: "text-secondary-hover",
   },
   {
-    label: "សាខាដែលបានអញ្ជើញ",
+    label: t("activityPage.invitedBranches"),
     value: invitedCount,
     icon: Handshake,
     accent: "bg-warning",
@@ -40,7 +41,7 @@ function getStats(activities, invitedActivityCount) {
     iconColor: "text-warning",
   },
   {
-    label: "បានបញ្ចប់",
+    label: t("activityPage.completed"),
     value: activities.filter((item) => item.status === "completed").length,
     icon: CheckCircle,
     accent: "bg-success",
@@ -112,7 +113,8 @@ export default function ActivityStats({
   activities = [],
   invitedActivityCount = null,
 }) {
-  const stats = getStats(activities, invitedActivityCount);
+  const { t } = useLanguage();
+  const stats = getStats(activities, invitedActivityCount, t);
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

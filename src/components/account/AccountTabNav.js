@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FileText, LockKeyhole } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 const tabs = [
   {
-    label: "ប័ណ្ណសម្គាល់ខ្លួន និង លិខិត",
+    labelKey: "memberPage.tabDocuments",
     href: "/myAcc/documents",
     icon: FileText,
   },
   {
-    label: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
+    labelKey: "memberPage.tabPassword",
     href: "/myAcc/password",
     icon: LockKeyhole,
   },
@@ -19,6 +20,7 @@ const tabs = [
 
 export default function AccountTabs() {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   return (
     <nav className="overflow-hidden rounded-xl border border-border bg-bg-page-white shadow-sm">
@@ -55,7 +57,7 @@ export default function AccountTabs() {
             >
               <Icon size={16} className="shrink-0" />
               <span className="truncate">
-                {tab.label}
+                {t(tab.labelKey)}
               </span>
             </Link>
           );

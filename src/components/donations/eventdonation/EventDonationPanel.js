@@ -5,6 +5,7 @@ import EventDonationFilters from "./EventDonationFilters";
 import EventDonationTable from "./EventDonationTable";
 import AddAlert from "@/components/forms/addalert";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
+import { useLanguage } from "@/context/LanguageContext";
 
 const rowsPerPage = 12;
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
@@ -18,6 +19,7 @@ export default function EventDonationPanel({
   // "all branches" or manual-pick option here.
   branchScoped = false,
 }) {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [internalSelectedBranch, setInternalSelectedBranch] = useState("all");
   const [startDate, setStartDate] = useState("");
@@ -76,7 +78,7 @@ export default function EventDonationPanel({
           organizerResponse.json().catch(() => null),
         ]);
         if (!branchResponse.ok || branchBody?.success === false) {
-          throw new Error("មិនអាចទាញយកបញ្ជីសាខាបានទេ។");
+          throw new Error(t("donationPage.loadBranchesFailed"));
         }
         if (cancelled) return;
         setBranches(toBranchOptions(branchBody?.data ?? branchBody));
@@ -87,7 +89,7 @@ export default function EventDonationPanel({
           ));
         }
       } catch {
-        if (!cancelled) setError("មិនអាចទាញយកបញ្ជីសាខាបានទេ។");
+        if (!cancelled) setError(t("donationPage.loadBranchesFailed"));
       }
     }
     loadBranches();
@@ -120,10 +122,10 @@ export default function EventDonationPanel({
           donationResponse.json().catch(() => null),
         ]);
         if (!activityResponse.ok || activityBody?.success === false) {
-          throw new Error(activityBody?.message || "មិនអាចទាញយកកម្មវិធីបានទេ។");
+          throw new Error(activityBody?.message || t("donationPage.loadActivitiesFailed"));
         }
         if (!donationResponse.ok || donationBody?.success === false) {
-          throw new Error(donationBody?.message || "មិនអាចទាញយកការបរិច្ចាកកម្មវិធីបានទេ។");
+          throw new Error(donationBody?.message || t("donationPage.loadEventDonationsFailed"));
         }
         if (cancelled) return;
 
@@ -140,7 +142,7 @@ export default function EventDonationPanel({
       } catch (loadError) {
         if (!cancelled) {
           setRows([]);
-          setError(loadError.message || "មិនអាចទាញយកការបរិច្ចាកកម្មវិធីបានទេ។");
+          setError(loadError.message || t("donationPage.loadEventDonationsFailed"));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -175,14 +177,14 @@ export default function EventDonationPanel({
   const updateFilter = (setter) => (value) => { setter(value); setCurrentPage(1); };
   const handleDownload = () => {
     const rows = sortedRows.map((row, index) => ({
-      "ល.រ": index + 1,
-      "កម្មវិធី": row.eventName,
-      "សាខា": row.branch,
-      "កាលបរិច្ឆេទចាប់ផ្តើម": row.startDate,
-      "កាលបរិច្ឆេទបញ្ចប់": row.endDate,
-      "ចំនួនថ្ងៃ": row.days,
-      "ចំនួនទឹកប្រាក់(រៀល)": row.rielAmount,
-      "ចំនួនទឹកប្រាក់(ដុល្លារ)": row.dollarAmount,
+      [t("donationPage.no")]: index + 1,
+      [t("donationPage.activity")]: row.eventName,
+      [t("donationPage.branch")]: row.branch,
+      [t("donationPage.startDate")]: row.startDate,
+      [t("donationPage.endDate")]: row.endDate,
+      [t("donationPage.days")]: row.days,
+      [t("donationPage.amountKhrPlain")]: row.rielAmount,
+      [t("donationPage.amountUsdPlain")]: row.dollarAmount,
     }));
 
     const branchLabel =
@@ -193,7 +195,7 @@ export default function EventDonationPanel({
     if (
       downloadTableAsExcel({
         data: rows,
-        fileName: branchLabel ? `វិភាគទានក្នុងកម្មវិធី-${branchLabel}` : "វិភាគទានក្នុងកម្មវិធី",
+        fileName: branchLabel ? `${t("donationPage.eventDonationTitle")}-${branchLabel}` : t("donationPage.eventDonationTitle"),
       })
     ) {
       setShowDownloadAlert(true);
@@ -211,12 +213,12 @@ export default function EventDonationPanel({
       {showDownloadAlert && <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10"><AddAlert /></div>}
       {error ? <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
       <div className="mb-4 flex flex-col gap-4">
-        <h1 className="text-base font-semibold text-secondary">វិភាគទានក្នុងកម្មវិធី</h1>
+        <h1 className="text-base font-semibold text-secondary">{t("donationPage.eventDonationTitle")}</h1>
         <EventDonationFilters searchQuery={searchQuery} onSearchChange={updateFilter(setSearchQuery)} selectedBranch={selectedBranch} onBranchChange={updateFilter(setSelectedBranch)} startDate={startDate} onStartDateChange={updateFilter(setStartDate)} endDate={endDate} onEndDateChange={updateFilter(setEndDate)} branches={branches} branchScoped={branchScoped} />
       </div>
       {hasSelectedBranch ? (
         loading ? (
-          <div className="py-10 text-center text-sm text-text-secondary">កំពុងទាញទិន្នន័យ...</div>
+          <div className="py-10 text-center text-sm text-text-secondary">{t("donationPage.loadingData")}</div>
         ) : (
           <EventDonationTable rows={pagedRows} currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} onDownload={handleDownload} moneySort={moneySort} onMoneySort={(field) => {
             setMoneySort((current) => ({ field, direction: current?.field === field && current.direction === "asc" ? "desc" : "asc" }));

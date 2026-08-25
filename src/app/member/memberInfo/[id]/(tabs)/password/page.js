@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import SaveButton from "@/components/forms/SaveButton";
+import { useLanguage } from "@/context/LanguageContext";
 
 async function requestJson(path, options = {}) {
   const response = await fetch(`/api${path}`, {
@@ -52,6 +53,7 @@ async function requestJson(path, options = {}) {
 }
 
 export default function PasswordPage() {
+  const { t } = useLanguage();
   const params = useParams();
 
   const memberId = Array.isArray(params?.id)
@@ -100,35 +102,35 @@ export default function PasswordPage() {
 
     if (!newPassword) {
       setError(
-        "សូមបញ្ចូលពាក្យសម្ងាត់ថ្មី។",
+        t("memberPage.passwordRequired"),
       );
       return;
     }
 
     if (!minimumLength) {
       setError(
-        "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ។",
+        t("memberPage.passwordMinLength"),
       );
       return;
     }
 
     if (!confirmPassword) {
       setError(
-        "សូមបញ្ជាក់ពាក្យសម្ងាត់ថ្មី។",
+        t("memberPage.confirmPasswordRequired"),
       );
       return;
     }
 
     if (!passwordsMatch) {
       setError(
-        "ពាក្យសម្ងាត់ថ្មី និងការបញ្ជាក់ពាក្យសម្ងាត់មិនត្រូវគ្នា។",
+        t("memberPage.passwordMismatch"),
       );
       return;
     }
 
     if (!memberId) {
       setError(
-        "រកមិនឃើញលេខសម្គាល់សមាជិក។",
+        t("memberPage.missingMemberId"),
       );
       return;
     }
@@ -150,7 +152,7 @@ export default function PasswordPage() {
       );
 
       setSuccess(
-        "បានកំណត់ពាក្យសម្ងាត់ថ្មីដោយជោគជ័យ។",
+        t("memberPage.passwordSuccess"),
       );
 
       setNewPassword("");
@@ -163,7 +165,7 @@ export default function PasswordPage() {
 
       setError(
         submitError?.message ||
-          "មិនអាចកំណត់ពាក្យសម្ងាត់ថ្មីបានទេ។",
+          t("memberPage.passwordSaveFailed"),
       );
     } finally {
       setSubmitting(false);
@@ -174,13 +176,11 @@ export default function PasswordPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-text-primary">
-          ផ្លាស់ប្ដូរពាក្យសម្ងាត់
+          {t("memberPage.passwordTitle")}
         </h2>
 
         <p className="mt-2 text-sm text-text-secondary">
-          បញ្ចូលពាក្យសម្ងាត់ថ្មី
-          និងបញ្ជាក់ពាក្យសម្ងាត់ថ្មី
-          ដើម្បីកំណត់ពាក្យសម្ងាត់សម្រាប់សមាជិក។
+          {t("memberPage.passwordDescription")}
         </p>
       </div>
 
@@ -195,7 +195,7 @@ export default function PasswordPage() {
       >
         <div className="space-y-5">
           <PasswordInput
-            label="ពាក្យសម្ងាត់ថ្មី"
+            label={t("memberPage.newPassword")}
             value={newPassword}
             onChange={
               setNewPassword
@@ -210,7 +210,7 @@ export default function PasswordPage() {
           />
 
           <PasswordInput
-            label="បញ្ជាក់ពាក្យសម្ងាត់ថ្មី"
+            label={t("memberPage.confirmNewPassword")}
             value={
               confirmPassword
             }
@@ -268,8 +268,8 @@ export default function PasswordPage() {
               }
             >
               {submitting
-                ? "កំពុងរក្សាទុក..."
-                : "រក្សាទុក"}
+                ? t("common.saving")
+                : t("memberPage.save")}
             </SaveButton>
           </div>
         </div>
@@ -303,7 +303,7 @@ export default function PasswordPage() {
             </div>
 
             <h3 className="text-base font-semibold text-text-primary">
-              គន្លឹះសុវត្ថិភាព
+              {t("memberPage.safetyTips")}
             </h3>
           </div>
 
@@ -312,14 +312,14 @@ export default function PasswordPage() {
               valid={
                 minimumLength
               }
-              text="ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ"
+              text={t("memberPage.passwordRuleLength")}
             />
 
             <PasswordRule
               valid={
                 passwordsMatch
               }
-              text="ការបញ្ជាក់ពាក្យសម្ងាត់ត្រូវតែដូចពាក្យសម្ងាត់ថ្មី"
+              text={t("memberPage.passwordRuleMatch")}
             />
           </div>
         </div>
@@ -335,6 +335,8 @@ function PasswordInput({
   show,
   onToggle,
 }) {
+  const { t } = useLanguage();
+
   return (
     <div>
       <label
@@ -373,7 +375,7 @@ function PasswordInput({
               event.target.value,
             )
           }
-          placeholder="បញ្ចូលពាក្យសម្ងាត់"
+          placeholder={t("memberPage.passwordPlaceholder")}
           autoComplete="new-password"
           className="
             h-10

@@ -16,10 +16,12 @@ import {
 
 import PasswordInput from "@/components/ui/passwordInput";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
+import { useLanguage } from "@/context/LanguageContext";
 
 function SetActivationPasswordContent() {
   const router = useRouter();
   const params = useSearchParams();
+  const { t } = useLanguage();
 
   const identifierFromUrl =
     params.get("identifier") ||
@@ -82,23 +84,23 @@ function SetActivationPasswordContent() {
 
   function validateForm() {
     if (!phoneOrEmail.trim()) {
-      return "រកមិនឃើញលេខទូរស័ព្ទ ឬអ៊ីមែល";
+      return t("auth.identifierMissing", "រកមិនឃើញលេខទូរស័ព្ទ ឬអ៊ីមែល");
     }
 
     if (!/^\d{6}$/.test(otp)) {
-      return "លេខកូដ OTP មិនត្រឹមត្រូវ";
+      return t("auth.otpInvalid", "លេខកូដ OTP មិនត្រឹមត្រូវ");
     }
 
     if (!newPassword) {
-      return "សូមបញ្ចូលលេខសម្ងាត់ថ្មី";
+      return t("auth.newPasswordRequired", "សូមបញ្ចូលលេខសម្ងាត់ថ្មី");
     }
 
     if (newPassword.length < 6) {
-      return "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ";
+      return t("auth.passwordMinLength", "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ");
     }
 
     if (newPassword !== confirmPassword) {
-      return "លេខសម្ងាត់ទាំងពីរមិនដូចគ្នា";
+      return t("auth.passwordsNotSame", "លេខសម្ងាត់ទាំងពីរមិនដូចគ្នា");
     }
 
     return "";
@@ -154,7 +156,7 @@ function SetActivationPasswordContent() {
 
       if (!response.ok) {
         setError(
-          khmerErrorMessage(data?.message, "មិនអាចកំណត់លេខសម្ងាត់បានទេ")
+          khmerErrorMessage(data?.message, t("auth.setPasswordFailed", "មិនអាចកំណត់លេខសម្ងាត់បានទេ"))
         );
         return;
       }
@@ -179,7 +181,7 @@ function SetActivationPasswordContent() {
       );
 
       setError(
-        "មានបញ្ហាកើតឡើង សូមព្យាយាមម្តងទៀត"
+        t("auth.genericError", "មានបញ្ហាកើតឡើង សូមព្យាយាមម្តងទៀត")
       );
     } finally {
       setLoading(false);
@@ -189,11 +191,11 @@ function SetActivationPasswordContent() {
   return (
     <div>
       <h2 className="mb-2 text-center text-xl font-bold text-text-primary">
-        បង្កើតលេខសម្ងាត់
+        {t("auth.createPasswordTitle", "បង្កើតលេខសម្ងាត់")}
       </h2>
 
       <p className="mb-8 text-center text-sm leading-6 text-text-mute">
-        សូមបង្កើតលេខសម្ងាត់សម្រាប់គណនីរបស់អ្នក
+        {t("auth.createPasswordDescription", "សូមបង្កើតលេខសម្ងាត់សម្រាប់គណនីរបស់អ្នក")}
       </p>
 
       <form
@@ -202,8 +204,8 @@ function SetActivationPasswordContent() {
         noValidate
       >
         <PasswordInput
-          label="លេខសម្ងាត់"
-          placeholder="បញ្ចូលលេខសម្ងាត់"
+          label={t("auth.password", "លេខសម្ងាត់")}
+          placeholder={t("auth.passwordPlaceholder", "បញ្ចូលលេខសម្ងាត់")}
           autoComplete="new-password"
           value={newPassword}
           onChange={(event) => {
@@ -214,8 +216,8 @@ function SetActivationPasswordContent() {
         />
 
         <PasswordInput
-          label="បញ្ជាក់លេខសម្ងាត់"
-          placeholder="បញ្ចូលលេខសម្ងាត់ម្តងទៀត"
+          label={t("auth.confirmPassword", "បញ្ជាក់លេខសម្ងាត់")}
+          placeholder={t("auth.confirmPasswordPlaceholder", "បញ្ចូលលេខសម្ងាត់ម្តងទៀត")}
           autoComplete="new-password"
           value={confirmPassword}
           onChange={(event) => {
@@ -239,18 +241,18 @@ function SetActivationPasswordContent() {
           <CheckCircle2 size={18} />
 
           {loading
-            ? "កំពុងកំណត់..."
-            : "បញ្ជាក់លេខសម្ងាត់"}
+            ? t("auth.settingPassword", "កំពុងកំណត់...")
+            : t("auth.confirmPasswordButton", "បញ្ជាក់លេខសម្ងាត់")}
         </button>
 
         <p className="pt-2 text-center text-sm text-text-mute">
-          ត្រឡប់ទៅ{" "}
+          {t("auth.backTo", "ត្រឡប់ទៅ")}{" "}
 
           <a
             href="/auth/login"
             className="text-blue-700 hover:underline"
           >
-            ចូលប្រើប្រាស់
+            {t("auth.loginLink", "ចូលប្រើប្រាស់")}
           </a>
         </p>
       </form>

@@ -10,6 +10,7 @@ const ALLOWED_ROOTS = new Set([
   "payment-methods",
   "my-account",
   "notifications",
+  "organization-profile",
   "document-types",
   "donation-types",
   "exchange-rates",

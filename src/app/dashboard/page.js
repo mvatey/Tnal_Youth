@@ -20,6 +20,7 @@ import QuickActions from "@/components/dashboard/quickActions";
 import PerformanceSummary from "@/components/dashboard/performanceSummary";
 
 import { useBranch } from "@/context/BranchContext";
+import { useLanguage } from "@/context/LanguageContext";
 import useCurrentMember from "@/hooks/useCurrentMember";
 
 function getCurrentMonth() {
@@ -47,6 +48,9 @@ async function parseJsonSafely(response) {
 }
 
 export default function DashboardPage() {
+  const { t, label } =
+    useLanguage();
+
   const {
     branches,
     selectedBranch,
@@ -76,8 +80,8 @@ export default function DashboardPage() {
       (branch) => String(branch.id) === String(selectedBranch)
     );
 
-    return match?.nameKm || match?.nameEn || "";
-  }, [isBranchScoped, branches, selectedBranch]);
+    return label(match, "");
+  }, [isBranchScoped, branches, selectedBranch, label]);
 
   /*
    * This branch is ONLY for the Performance Summary card.
@@ -201,7 +205,7 @@ export default function DashboardPage() {
         if (!response.ok) {
           throw new Error(
             result?.message ||
-            "មិនអាចទាញយកទិន្នន័យបានទេ"
+            t("dashboard.loadFailed")
           );
         }
 
@@ -218,7 +222,7 @@ export default function DashboardPage() {
         setError(
           fetchError instanceof Error
             ? fetchError.message
-            : "មិនអាចទាញយកទិន្នន័យបានទេ"
+            : t("dashboard.loadFailed")
         );
 
       } finally {
@@ -229,6 +233,7 @@ export default function DashboardPage() {
       selectedYear,
       selectedBranch,
       effectivePerformanceBranch,
+      t,
     ]);
 
   useEffect(() => {
@@ -266,7 +271,7 @@ export default function DashboardPage() {
   ) {
     return (
       <div className="flex min-h-[400px] items-center justify-center text-sm text-text-mute">
-        កំពុងទាញយកទិន្នន័យ...
+        {t("dashboard.loadingData")}
       </div>
     );
   }
@@ -294,7 +299,7 @@ export default function DashboardPage() {
           }
           className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm text-white"
         >
-          ព្យាយាមម្តងទៀត
+          {t("dashboard.retry")}
         </button>
 
       </div>

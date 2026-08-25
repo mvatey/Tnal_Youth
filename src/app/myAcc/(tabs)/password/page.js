@@ -11,6 +11,7 @@ import {
 
 import SaveButton from "@/components/forms/SaveButton";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
+import { useLanguage } from "@/context/LanguageContext";
 
 function validatePassword(password) {
   return {
@@ -19,6 +20,7 @@ function validatePassword(password) {
 }
 
 export default function PasswordPage() {
+  const { t } = useLanguage();
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -43,32 +45,32 @@ export default function PasswordPage() {
     setSuccess("");
 
     if (!oldPassword) {
-      setError("សូមបញ្ចូលពាក្យសម្ងាត់បច្ចុប្បន្ន។");
+      setError(t("myAccount.currentPasswordRequired"));
       return;
     }
 
     if (!newPassword) {
-      setError("សូមបញ្ចូលពាក្យសម្ងាត់ថ្មី។");
+      setError(t("memberPage.passwordRequired"));
       return;
     }
 
     if (!rules.minimumLength) {
-      setError("ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ។");
+      setError(t("memberPage.passwordMinLength"));
       return;
     }
 
     if (!confirmPassword) {
-      setError("សូមបញ្ជាក់ពាក្យសម្ងាត់ថ្មី។");
+      setError(t("memberPage.confirmPasswordRequired"));
       return;
     }
 
     if (!passwordsMatch) {
-      setError("ពាក្យសម្ងាត់ថ្មី និងការបញ្ជាក់ពាក្យសម្ងាត់មិនត្រូវគ្នា។");
+      setError(t("memberPage.passwordMismatch"));
       return;
     }
 
     if (oldPassword === newPassword) {
-      setError("ពាក្យសម្ងាត់ថ្មីត្រូវខុសពីពាក្យសម្ងាត់បច្ចុប្បន្ន។");
+      setError(t("myAccount.passwordMustBeDifferent"));
       return;
     }
 
@@ -118,13 +120,13 @@ export default function PasswordPage() {
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setSuccess("បានផ្លាស់ប្ដូរពាក្យសម្ងាត់ដោយជោគជ័យ។");
+      setSuccess(t("myAccount.passwordChanged"));
     } catch (submitError) {
       console.error("Cannot change my password:", submitError);
       setError(
         khmerErrorMessage(
           submitError.message,
-          "មិនអាចផ្លាស់ប្ដូរពាក្យសម្ងាត់បានទេ",
+          t("myAccount.passwordChangeFailed"),
         ),
       );
     } finally {
@@ -136,11 +138,11 @@ export default function PasswordPage() {
     <div className="min-w-0 space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-text-primary">
-          ផ្លាស់ប្ដូរពាក្យសម្ងាត់
+          {t("memberPage.passwordTitle")}
         </h2>
 
         <p className="mt-2 text-sm text-text-secondary">
-          សូមបញ្ចូលពាក្យសម្ងាត់បច្ចុប្បន្ន និងពាក្យសម្ងាត់ថ្មីរបស់អ្នក។
+          {t("myAccount.passwordDescription")}
         </p>
       </div>
 
@@ -155,7 +157,7 @@ export default function PasswordPage() {
       >
         <div className="space-y-5">
           <BoxFill
-            label="ពាក្យសម្ងាត់បច្ចុប្បន្ន"
+            label={t("myAccount.currentPassword")}
             value={oldPassword}
             onChange={setOldPassword}
             show={showOld}
@@ -164,7 +166,7 @@ export default function PasswordPage() {
           />
 
           <BoxFill
-            label="ពាក្យសម្ងាត់ថ្មី"
+            label={t("memberPage.newPassword")}
             value={newPassword}
             onChange={setNewPassword}
             show={showNew}
@@ -173,7 +175,7 @@ export default function PasswordPage() {
           />
 
           <BoxFill
-            label="បញ្ជាក់ពាក្យសម្ងាត់ថ្មី"
+            label={t("memberPage.confirmNewPassword")}
             value={confirmPassword}
             onChange={setConfirmPassword}
             show={showConfirm}
@@ -199,8 +201,8 @@ export default function PasswordPage() {
               disabled={submitting}
             >
               {submitting
-                ? "កំពុងរក្សាទុក..."
-                : "រក្សាទុក"}
+                ? t("common.saving")
+                : t("common.save")}
             </SaveButton>
           </div>
         </div>
@@ -215,7 +217,7 @@ export default function PasswordPage() {
             </div>
 
             <h3 className="text-base font-semibold text-text-primary">
-              គន្លឹះសុវត្ថិភាព
+              {t("memberPage.safetyTips")}
             </h3>
           </div>
 
@@ -223,7 +225,7 @@ export default function PasswordPage() {
             <Rule valid={rules.minimumLength} />
             <Rule
               valid={passwordsMatch}
-              text="ការបញ្ជាក់ពាក្យសម្ងាត់ត្រូវតែដូចពាក្យសម្ងាត់ថ្មី"
+              text={t("memberPage.passwordRuleMatch")}
             />
           </div>
         </div>
@@ -240,6 +242,8 @@ function BoxFill({
   setShow,
   autoComplete,
 }) {
+  const { t } = useLanguage();
+
   return (
     <div>
       <label className="mb-2 block text-sm font-medium text-text-primary">
@@ -256,7 +260,7 @@ function BoxFill({
           type={show ? "text" : "password"}
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="បញ្ចូលពាក្យសម្ងាត់"
+          placeholder={t("memberPage.passwordPlaceholder")}
           autoComplete={autoComplete}
           className="
             h-[34px]
@@ -279,7 +283,7 @@ function BoxFill({
           type="button"
           onClick={() => setShow((previous) => !previous)}
           className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary"
-          aria-label={show ? "លាក់ពាក្យសម្ងាត់" : "បង្ហាញពាក្យសម្ងាត់"}
+          aria-label={show ? t("myAccount.hidePassword") : t("myAccount.showPassword")}
         >
           {show ? (
             <EyeOff size={18} />
@@ -294,8 +298,11 @@ function BoxFill({
 
 function Rule({
   valid,
-  text = "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ",
+  text,
 }) {
+  const { t } = useLanguage();
+  const displayText = text || t("memberPage.passwordRuleLength");
+
   return (
     <div className="flex items-center gap-3">
       <div
@@ -325,7 +332,7 @@ function Rule({
       </div>
 
       <p className="text-sm font-medium text-text-primary">
-        {text}
+        {displayText}
       </p>
     </div>
   );

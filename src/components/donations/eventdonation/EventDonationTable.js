@@ -5,9 +5,7 @@ import { usePathname } from "next/navigation";
 import { ArrowDown, ArrowUp, ChevronsUpDown, List } from "lucide-react";
 import Pagination from "@/components/navigation/Pagination";
 import SaveButton from "@/components/forms/save";
-import tableHeaders from "@/data/donation/tableHeaders.json";
-
-const { eventDonationHeaders: headers } = tableHeaders;
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function EventDonationTable({
   rows,
@@ -19,9 +17,22 @@ export default function EventDonationTable({
   onMoneySort,
 }) {
   const pathname = usePathname();
+  const { t } = useLanguage();
   const detailPath = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/eventdonation/detail"
     : "/donation/eventdonation/detail";
+
+  const headers = [
+    t("donationPage.no"),
+    t("donationPage.activity"),
+    t("donationPage.branch"),
+    t("donationPage.startDate"),
+    t("donationPage.endDate"),
+    t("donationPage.days"),
+    t("donationPage.amountKhrPlain"),
+    t("donationPage.amountUsdPlain"),
+    t("common.actions", "សកម្មភាព"),
+  ];
 
   return (
     <>
@@ -80,7 +91,7 @@ export default function EventDonationTable({
                       className="inline-flex h-[18px] min-w-[52px] items-center justify-center gap-[3px] rounded-[8px] bg-[#5636A3] px-2 text-[10px] font-normal leading-none text-white transition hover:bg-[#4b2f91]"
                     >
                       <List size={11} strokeWidth={2.2} />
-                      លម្អិត
+                      {t("donationPage.detail")}
                     </Link>
                   </div>
                 </td>
@@ -93,7 +104,7 @@ export default function EventDonationTable({
                   colSpan={headers.length}
                   className="px-4 py-8 text-center text-xs font-medium text-text-secondary"
                 >
-                  មិនមានទិន្នន័យ
+                  {t("donationPage.noData")}
                 </td>
               </tr>
             )}

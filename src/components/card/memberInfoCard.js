@@ -22,6 +22,7 @@ import {
 import {
   notifyProfileImageChange,
 } from "@/lib/member/profileImageStorage";
+import { useLanguage } from "@/context/LanguageContext";
 
 const BACKEND_ORIGIN =
   process.env.NEXT_PUBLIC_BACKEND_ORIGIN ||
@@ -531,6 +532,9 @@ export default function MemberInfoCard({
    */
   assignedBranches,
 }) {
+  const { t, label } =
+    useLanguage();
+
   const fileInputRef =
     useRef(null);
 
@@ -631,12 +635,7 @@ export default function MemberInfoCard({
    */
 
   const displayName =
-    member?.full_name_km ||
-    member?.fullNameKm ||
-    member?.name_kh ||
-    member?.nameKm ||
-    member?.name ||
-    "-";
+    label(member, "-");
 
   const englishName =
     member?.full_name_en ||
@@ -663,7 +662,15 @@ export default function MemberInfoCard({
   "";
 
   const roleLabel =
-    getRoleLabel(role);
+    getRoleCode(role) === "ADMIN"
+      ? t("memberPage.roleAdmin")
+      : getRoleCode(role) === "SECRETARY"
+        ? t("memberPage.roleSecretary")
+        : getRoleCode(role) === "BRANCH_LEADER"
+          ? t("memberPage.roleBranchLeader")
+          : getRoleCode(role) === "MEMBER"
+            ? t("memberPage.roleMember")
+            : getRoleLabel(role);
 
   /*
    * Personal info returns:
@@ -682,7 +689,15 @@ export default function MemberInfoCard({
     getStatusCode(status);
 
   const statusLabel =
-    getStatusLabel(status);
+    statusCode === "ACTIVE"
+      ? t("memberPage.active")
+      : statusCode === "INACTIVE"
+        ? t("memberPage.inactive")
+        : statusCode === "SUSPENDED"
+          ? t("memberPage.suspended")
+          : statusCode === "RESIGNED"
+            ? t("memberPage.resigned")
+            : getStatusLabel(status);
 
   const statusStyle =
     STATUS_BADGE_STYLES[
@@ -764,7 +779,7 @@ export default function MemberInfoCard({
         )
       ) {
         setImageError(
-          "សូមជ្រើសរើសឯកសាររូបភាពប៉ុណ្ណោះ។",
+          t("memberPage.imageOnly", "សូមជ្រើសរើសឯកសាររូបភាពប៉ុណ្ណោះ។"),
         );
 
         event.target.value = "";
@@ -777,7 +792,7 @@ export default function MemberInfoCard({
         MAX_PROFILE_IMAGE_SIZE
       ) {
         setImageError(
-          "ទំហំរូបភាពមិនត្រូវលើស 5MB។",
+          t("memberPage.imageTooLarge", "ទំហំរូបភាពមិនត្រូវលើស 5MB។"),
         );
 
         event.target.value = "";
@@ -787,7 +802,7 @@ export default function MemberInfoCard({
 
       if (!memberId) {
         setImageError(
-          "រកមិនឃើញលេខសម្គាល់សមាជិក។",
+          t("memberPage.missingMemberId", "រកមិនឃើញលេខសម្គាល់សមាជិក។"),
         );
 
         event.target.value = "";
@@ -822,9 +837,9 @@ export default function MemberInfoCard({
 
         if (!response.ok) {
           throw new Error(
-            responseBody?.message ||
+              responseBody?.message ||
               responseBody?.error ||
-              "មិនអាចបញ្ចូលរូបភាពប្រវត្តិរូបបានទេ។",
+              t("memberPage.uploadProfileFailed", "មិនអាចបញ្ចូលរូបភាពប្រវត្តិរូបបានទេ។"),
           );
         }
 
@@ -850,7 +865,7 @@ export default function MemberInfoCard({
       } catch (error) {
         setImageError(
           error?.message ||
-            "មិនអាចបញ្ចូលរូបភាពប្រវត្តិរូបបានទេ។",
+            t("memberPage.uploadProfileFailed", "មិនអាចបញ្ចូលរូបភាពប្រវត្តិរូបបានទេ។"),
         );
       } finally {
         setIsUploadingImage(false);
@@ -957,8 +972,8 @@ export default function MemberInfoCard({
                     onClick={
                       handleChooseImage
                     }
-                    aria-label="ប្ដូររូបភាពប្រវត្តិរូប"
-                    title="ប្ដូររូបភាពប្រវត្តិរូប"
+                    aria-label={t("memberPage.changeProfilePhoto", "ប្ដូររូបភាពប្រវត្តិរូប")}
+                    title={t("memberPage.changeProfilePhoto", "ប្ដូររូបភាពប្រវត្តិរូប")}
                     className="
                       absolute
                       -bottom-2
@@ -1071,7 +1086,7 @@ export default function MemberInfoCard({
         ================================= */}
 
         <InfoGroup
-          firstLabel="ភេទ"
+          firstLabel={t("memberPage.gender")}
           firstValue={getGenderDisplay(
             member?.gender,
           )}
@@ -1082,7 +1097,7 @@ export default function MemberInfoCard({
               )}
             </span>
           }
-          secondLabel="សាខា"
+          secondLabel={t("memberPage.branch")}
           secondValue={branchDisplay.text}
           secondTitle={branchDisplay.title}
           secondIcon={
@@ -1095,14 +1110,14 @@ export default function MemberInfoCard({
         ================================= */}
 
         <InfoGroup
-          firstLabel="លេខទូរស័ព្ទ"
+          firstLabel={t("branchPage.phone", "លេខទូរស័ព្ទ")}
           firstValue={
             member?.phone || "-"
           }
           firstIcon={
             <Phone className="h-4 w-4 shrink-0" />
           }
-          secondLabel="អ៊ីមែល"
+          secondLabel={t("branchPage.email", "អ៊ីមែល")}
           secondValue={
             member?.email || "-"
           }
@@ -1116,14 +1131,14 @@ export default function MemberInfoCard({
         ================================= */}
 
         <InfoGroup
-          firstLabel="ថ្ងៃកំណើត"
+          firstLabel={t("memberPage.dateOfBirth", "ថ្ងៃកំណើត")}
           firstValue={
             dateOfBirth
           }
           firstIcon={
             <Calendar className="h-4 w-4 shrink-0" />
           }
-          secondLabel="ថ្ងៃចូលរួម"
+          secondLabel={t("memberPage.joinedAt")}
           secondValue={
             joinedDate
           }
@@ -1137,14 +1152,14 @@ export default function MemberInfoCard({
         ================================= */}
 
         <InfoGroup
-          firstLabel="សញ្ជាតិ"
+          firstLabel={t("memberPage.nationality", "សញ្ជាតិ")}
           firstValue={
             nationality
           }
           firstIcon={
             <Globe className="h-4 w-4 shrink-0" />
           }
-          secondLabel="ជនជាតិ"
+          secondLabel={t("memberPage.ethnicity", "ជនជាតិ")}
           secondValue={
             ethnicity
           }

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import useCurrentMember from "@/hooks/useCurrentMember";
 
 import IdCard from "@/components/card/idCard";
@@ -178,6 +179,7 @@ function buildLoggedInMember(member, authUser) {
 }
 
 export default function DocumentsPage() {
+  const { t } = useLanguage();
   const [backendDocuments, setBackendDocuments] = useState([]);
   const [selectedBackendDocument, setSelectedBackendDocument] = useState(null);
   const {
@@ -377,7 +379,7 @@ export default function DocumentsPage() {
         "
       >
         <p className="text-sm text-text-secondary">
-          កំពុងទាញយកឯកសារ...
+          {t("common.loading")}
         </p>
       </div>
     );
@@ -415,7 +417,7 @@ export default function DocumentsPage() {
         "
       >
         <p className="text-sm text-text-secondary">
-          រកមិនឃើញព័ត៌មានគណនី
+          {t("myAccount.accountNotFound")}
         </p>
       </div>
     );
@@ -437,9 +439,9 @@ export default function DocumentsPage() {
         "
       >
         <DocumentPreviewCard
-          title="ប័ណ្ណសម្គាល់សមាជិក"
+          title={t("memberPage.memberIdCard")}
           actionType="print"
-          printText="បោះពុម្ព"
+          printText={t("memberPage.print")}
           previewClass="scale-[0.55]"
         >
           <IdCard

@@ -6,7 +6,9 @@ import Image from "next/image";
 import { Camera, Eye, EyeOff, Info, Lock, Mail } from "lucide-react";
 
 import SaveButton from "@/components/forms/SaveButton";
+import OrganizationProfileCard from "@/components/account/OrganizationProfileCard";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 const DEFAULT_PROFILE_IMAGE = "/profiles/default-avatar.jpg";
 const MAX_PROFILE_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -81,8 +83,12 @@ export default function StandaloneAccountSettings({
   profile,
   onProfileChanged,
 }) {
+  const isAdmin = String(profile?.role || "").toUpperCase() === "ADMIN";
+
   return (
     <div className="min-w-0 space-y-4">
+      {isAdmin && <OrganizationProfileCard canEdit />}
+
       <ProfileCard
         nameKm={profile?.nameKm}
         nameEn={profile?.nameEn}
@@ -114,6 +120,7 @@ function ProfileCard({
   profileImage,
   onProfileImageChanged,
 }) {
+  const { t } = useLanguage();
   const fileInputRef = useRef(null);
   const [preview, setPreview] = useState(profileImage || DEFAULT_PROFILE_IMAGE);
   const [uploading, setUploading] = useState(false);
@@ -137,13 +144,13 @@ function ProfileCard({
     }
 
     if (!file.type.startsWith("image/")) {
-      setError("សូមជ្រើសរើសឯកសាររូបភាពប៉ុណ្ណោះ។");
+      setError(t("memberPage.imageOnly"));
       event.target.value = "";
       return;
     }
 
     if (file.size > MAX_PROFILE_IMAGE_SIZE) {
-      setError("ទំហំរូបភាពមិនត្រូវលើស 5MB។");
+      setError(t("memberPage.imageTooLarge"));
       event.target.value = "";
       return;
     }
@@ -163,21 +170,21 @@ function ProfileCard({
       const body = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(body?.message || body?.error || "មិនអាចបញ្ចូលរូបភាពប្រវត្តិរូបបានទេ។");
+        throw new Error(body?.message || body?.error || t("memberPage.uploadProfileFailed"));
       }
 
       setPreview(body?.profileImage || body?.profile_image || DEFAULT_PROFILE_IMAGE);
       await onProfileImageChanged?.();
     } catch (uploadError) {
       console.error("Cannot upload my profile image:", uploadError);
-      setError(uploadError.message || "មិនអាចប្ដូររូបភាពប្រវត្តិរូបបានទេ");
+      setError(uploadError.message || t("memberPage.uploadProfileFailed"));
     } finally {
       setUploading(false);
       event.target.value = "";
     }
   };
 
-  const displayName = nameKm && nameKm !== "-" ? nameKm : "អ្នកប្រើប្រាស់";
+  const displayName = nameKm && nameKm !== "-" ? nameKm : t("common.user");
   const displayNameEn = nameEn && nameEn !== "-" ? nameEn : "";
   const displayPhone = phone && phone !== "-" ? phone : "";
   const roleLabel = role ? roleDisplayLabel(role, viewerScope) : "";
@@ -210,8 +217,8 @@ function ProfileCard({
             type="button"
             disabled={uploading}
             onClick={handleChooseImage}
-            aria-label="ប្ដូររូបភាពប្រវត្តិរូប"
-            title="ប្ដូររូបភាពប្រវត្តិរូប"
+            aria-label={t("memberPage.changeProfilePhoto")}
+            title={t("memberPage.changeProfilePhoto")}
             className="
               absolute
               -bottom-1
@@ -269,10 +276,11 @@ function ProfileCard({
 }
 
 function PasswordRulesCard() {
+  const { t } = useLanguage();
   const rules = [
-    "ពាក្យសម្ងាត់ថ្មីត្រូវមានយ៉ាងហោចណាស់ 6 តួអក្សរ",
-    "ពាក្យសម្ងាត់ថ្មីត្រូវខុសពីពាក្យសម្ងាត់បច្ចុប្បន្នរបស់អ្នក",
-    "ពាក្យសម្ងាត់ថ្មី និងការបញ្ជាក់ពាក្យសម្ងាត់ត្រូវតែដូចគ្នា",
+    t("memberPage.passwordRuleLength"),
+    t("myAccount.passwordRuleDifferent"),
+    t("myAccount.passwordRuleSame"),
   ];
 
   return (
@@ -280,7 +288,7 @@ function PasswordRulesCard() {
       <div className="flex items-center gap-2">
         <Info size={18} className="text-warning" />
         <h2 className="text-base font-semibold text-warning">
-          លក្ខខណ្ឌពាក្យសម្ងាត់
+          {t("myAccount.passwordRequirements")}
         </h2>
       </div>
 
@@ -297,6 +305,7 @@ function PasswordRulesCard() {
 }
 
 function PasswordSection() {
+  const { t } = useLanguage();
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -316,22 +325,22 @@ function PasswordSection() {
     setSuccess("");
 
     if (!oldPassword) {
-      setError("សូមបញ្ចូលពាក្យសម្ងាត់បច្ចុប្បន្ន។");
+      setError(t("myAccount.currentPasswordRequired"));
       return;
     }
 
     if (!newPassword || newPassword.length < 6) {
-      setError("ពាក្យសម្ងាត់ថ្មីត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ។");
+      setError(t("memberPage.passwordMinLength"));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError("ពាក្យសម្ងាត់ថ្មី និងការបញ្ជាក់ពាក្យសម្ងាត់មិនត្រូវគ្នា។");
+      setError(t("memberPage.passwordMismatch"));
       return;
     }
 
     if (oldPassword === newPassword) {
-      setError("ពាក្យសម្ងាត់ថ្មីត្រូវខុសពីពាក្យសម្ងាត់បច្ចុប្បន្ន។");
+      setError(t("myAccount.passwordMustBeDifferent"));
       return;
     }
 
@@ -347,10 +356,10 @@ function PasswordSection() {
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setSuccess("បានផ្លាស់ប្ដូរពាក្យសម្ងាត់ដោយជោគជ័យ។");
+      setSuccess(t("myAccount.passwordChanged"));
     } catch (submitError) {
       console.error("Cannot change my password:", submitError);
-      setError(submitError.message || "មិនអាចផ្លាស់ប្ដូរពាក្យសម្ងាត់បានទេ");
+      setError(submitError.message || t("myAccount.passwordChangeFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -360,17 +369,17 @@ function PasswordSection() {
     <div className="min-w-0 space-y-5 p-5">
       <div>
         <h2 className="text-base font-semibold text-text-primary">
-          ផ្លាស់ប្ដូរពាក្យសម្ងាត់
+          {t("memberPage.passwordTitle")}
         </h2>
 
         <p className="mt-1 text-sm text-text-secondary">
-          សូមបញ្ចូលពាក្យសម្ងាត់បច្ចុប្បន្ន និងពាក្យសម្ងាត់ថ្មីរបស់អ្នក។
+          {t("myAccount.passwordDescription")}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <PasswordInput
-          label="ពាក្យសម្ងាត់បច្ចុប្បន្ន"
+          label={t("myAccount.currentPassword")}
           value={oldPassword}
           onChange={setOldPassword}
           show={showOld}
@@ -379,7 +388,7 @@ function PasswordSection() {
         />
 
         <PasswordInput
-          label="ពាក្យសម្ងាត់ថ្មី"
+          label={t("memberPage.newPassword")}
           value={newPassword}
           onChange={setNewPassword}
           show={showNew}
@@ -388,7 +397,7 @@ function PasswordSection() {
         />
 
         <PasswordInput
-          label="បញ្ជាក់ពាក្យសម្ងាត់ថ្មី"
+          label={t("memberPage.confirmNewPassword")}
           value={confirmPassword}
           onChange={setConfirmPassword}
           show={showConfirm}
@@ -401,7 +410,7 @@ function PasswordSection() {
 
         <div className="flex justify-end pt-2">
           <SaveButton type="submit" disabled={submitting}>
-            {submitting ? "កំពុងរក្សាទុក..." : "រក្សាទុក"}
+            {submitting ? t("common.saving") : t("common.save")}
           </SaveButton>
         </div>
       </form>
@@ -410,6 +419,7 @@ function PasswordSection() {
 }
 
 function EmailSection({ currentEmail, onEmailChanged }) {
+  const { t } = useLanguage();
   const router = useRouter();
   const { logout } = useAuth();
   const [newEmail, setNewEmail] = useState(currentEmail || "");
@@ -434,12 +444,12 @@ function EmailSection({ currentEmail, onEmailChanged }) {
     const trimmed = newEmail.trim();
 
     if (!trimmed) {
-      setError("សូមបញ្ចូលអ៊ីមែល។");
+      setError(t("myAccount.emailRequired"));
       return;
     }
 
     if (trimmed === currentEmail) {
-      setError("អ៊ីមែលនេះដូចនឹងអ៊ីមែលបច្ចុប្បន្នរបស់អ្នករួចហើយ។");
+      setError(t("myAccount.sameEmail"));
       return;
     }
 
@@ -460,7 +470,7 @@ function EmailSection({ currentEmail, onEmailChanged }) {
        * turns that into an explicit "sign in with your new email" step
        * instead of a confusing dead session.
        */
-      setSuccess("បានផ្លាស់ប្ដូរអ៊ីមែលដោយជោគជ័យ។ សូមចូលប្រើប្រាស់ម្តងទៀតដោយប្រើអ៊ីមែលថ្មី។");
+      setSuccess(t("myAccount.emailChangedLoginAgain"));
 
       // The account's own session is about to be logged out below, so a
       // refetch failing here (its token is already stale) isn't a real
@@ -477,7 +487,7 @@ function EmailSection({ currentEmail, onEmailChanged }) {
       }, 1500);
     } catch (submitError) {
       console.error("Cannot change my email:", submitError);
-      setError(submitError.message || "មិនអាចផ្លាស់ប្ដូរអ៊ីមែលបានទេ");
+      setError(submitError.message || t("myAccount.emailChangeFailed"));
       setSubmitting(false);
     }
   };
@@ -486,18 +496,18 @@ function EmailSection({ currentEmail, onEmailChanged }) {
     <div className="min-w-0 space-y-5 p-5">
       <div>
         <h2 className="text-base font-semibold text-text-primary">
-          ផ្លាស់ប្ដូរអ៊ីមែល
+          {t("myAccount.changeEmail")}
         </h2>
 
         <p className="mt-1 text-sm text-text-secondary">
-          កែប្រែអ៊ីមែលខាងក្រោម ហើយចុចរក្សាទុកនៅពេលរួចរាល់។
+          {t("myAccount.emailDescription")}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="mb-2 block text-sm font-medium text-text-primary">
-            អ៊ីមែល
+            {t("memberPage.email")}
           </label>
 
           <div className="relative">
@@ -536,7 +546,7 @@ function EmailSection({ currentEmail, onEmailChanged }) {
 
         <div className="flex justify-end pt-2">
           <SaveButton type="submit" disabled={submitting}>
-            {submitting ? "កំពុងរក្សាទុក..." : "រក្សាទុក"}
+            {submitting ? t("common.saving") : t("common.save")}
           </SaveButton>
         </div>
       </form>
@@ -545,6 +555,7 @@ function EmailSection({ currentEmail, onEmailChanged }) {
 }
 
 function PasswordInput({ label, value, onChange, show, setShow, autoComplete }) {
+  const { t } = useLanguage();
   return (
     <div>
       <label className="mb-2 block text-sm font-medium text-text-primary">
@@ -561,7 +572,7 @@ function PasswordInput({ label, value, onChange, show, setShow, autoComplete }) 
           type={show ? "text" : "password"}
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="បញ្ចូលពាក្យសម្ងាត់"
+          placeholder={t("memberPage.passwordPlaceholder")}
           autoComplete={autoComplete}
           className="
             h-[34px]
@@ -584,7 +595,7 @@ function PasswordInput({ label, value, onChange, show, setShow, autoComplete }) 
           type="button"
           onClick={() => setShow((previous) => !previous)}
           className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary"
-          aria-label={show ? "Hide password" : "Show password"}
+          aria-label={show ? t("myAccount.hidePassword") : t("myAccount.showPassword")}
         >
           {show ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>

@@ -34,6 +34,7 @@ import Button from "@/components/ui/Button";
 import CreateBranchModal from "@/components/branch/CreateBranchModal";
 import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
 
 const BACKEND_ORIGIN =
@@ -41,12 +42,6 @@ const BACKEND_ORIGIN =
   "http://localhost:8081";
 
 const ALL_OPTION = "ទាំងអស់";
-
-const STATUS_OPTIONS = [
-  ALL_OPTION,
-  "សកម្ម",
-  "អសកម្ម",
-];
 
 const GENDER_LABELS = {
   MALE: "ប្រុស",
@@ -101,7 +96,7 @@ async function fetchJson(path, signal) {
   return responseBody;
 }
 
-function formatDate(value) {
+function formatDate(value, locale = "km") {
   if (!value) {
     return "-";
   }
@@ -113,7 +108,7 @@ function formatDate(value) {
   }
 
   return new Intl.DateTimeFormat(
-    "en-US",
+    locale === "en" ? "en-US" : "km-KH",
     {
       year: "numeric",
       month: "short",
@@ -134,11 +129,15 @@ function getGenderCode(value) {
   ).toUpperCase();
 }
 
-function getGenderLabel(value) {
+function getGenderLabel(value, label) {
   if (
     value &&
     typeof value === "object"
   ) {
+    if (label) {
+      return label(value, "-");
+    }
+
     return (
       value?.label_km ||
       value?.labelKm ||
@@ -172,7 +171,7 @@ function getRoleCode(value) {
   ).toUpperCase();
 }
 
-function getRoleLabel(value) {
+function getRoleLabel(value, label) {
   if (
     value &&
     typeof value === "object"
@@ -211,7 +210,7 @@ function getStatusCode(value) {
   ).toUpperCase();
 }
 
-function getStatusLabel(value) {
+function getStatusLabel(value, label, t) {
   const code =
     getStatusCode(value);
 
@@ -233,11 +232,11 @@ function getStatusLabel(value) {
   }
 
   if (code === "ACTIVE") {
-    return "សកម្ម";
+    return t ? t("branchPage.active") : "សកម្ម";
   }
 
   if (code === "INACTIVE") {
-    return "អសកម្ម";
+    return t ? t("branchPage.inactive") : "អសកម្ម";
   }
 
   return value || "-";
@@ -283,6 +282,9 @@ function getProfileImage(member) {
 }
 
 function StatusBadge({ status }) {
+  const { t, label } =
+    useLanguage();
+
   const statusCode =
     getStatusCode(status);
 
@@ -297,7 +299,7 @@ function StatusBadge({ status }) {
           : "bg-error-bg text-error"
       }`}
     >
-      {getStatusLabel(status)}
+      {getStatusLabel(status, label, t)}
     </span>
   );
 }
@@ -346,6 +348,9 @@ function LeaderCard({
   title,
   onAdd,
 }) {
+  const { t, locale } =
+    useLanguage();
+
   if (!person) {
   return (
     <div className="rounded-lg border border-dashed border-border bg-bg-page-white p-6 text-center shadow-sm">
@@ -355,11 +360,11 @@ function LeaderCard({
       />
 
       <p className="mt-2 text-sm font-semibold text-text-primary">
-        មិនទាន់មាន{title}
+        {t("branchPage.noAssigned").replace("{title}", title)}
       </p>
 
       <p className="mt-1 text-xs text-text-secondary">
-        សូមជ្រើសរើសសមាជិកម្នាក់ ដើម្បីកំណត់ជា{title}
+        {t("branchPage.chooseMemberForRole").replace("{title}", title)}
       </p>
 
       {onAdd && <button
@@ -368,7 +373,7 @@ function LeaderCard({
         className="mt-4 inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-success px-4 text-sm font-semibold text-white transition hover:bg-emerald-700"
       >
         <PlusCircle size={15} />
-        បន្ថែម{title}
+        {t("branchPage.addRole").replace("{title}", title)}
       </button>}
     </div>
   );
@@ -423,7 +428,7 @@ function LeaderCard({
             />
 
             <span className="text-[11px] text-text-secondary">
-              ភេទ
+              {t("branchPage.gender")}
             </span>
 
             <span className="truncate text-[13px] font-normal text-text-primary">
@@ -438,7 +443,7 @@ function LeaderCard({
             />
 
             <span className="text-[11px] text-text-secondary">
-              តួនាទី
+              {t("branchPage.role")}
             </span>
 
             <span className="truncate text-[13px] font-normal text-text-primary">
@@ -479,13 +484,14 @@ function LeaderCard({
             />
 
             <span className="text-xs text-text-secondary">
-              ថ្ងៃខែឆ្នាំកំណើត
+              {t("branchPage.dateOfBirth")}
             </span>
           </div>
 
           <p className="mt-2 text-sm font-medium text-text-primary">
             {formatDate(
               person.dateOfBirth,
+              locale,
             )}
           </p>
         </div>
@@ -499,12 +505,13 @@ function LeaderCard({
 
             <div className="min-w-0">
               <p className="text-xs text-text-secondary">
-                ថ្ងៃចូលរួម
+                {t("branchPage.joinedAt")}
               </p>
 
               <p className="mt-1 truncate text-sm font-medium text-text-primary">
                 {formatDate(
                   person.joinedAt,
+                  locale,
                 )}
               </p>
             </div>
@@ -518,7 +525,7 @@ function LeaderCard({
           >
             <List size={15} />
 
-            ព័ត៌មានលម្អិត
+            {t("branchPage.detail")}
           </Link>
         </div>
       </div>
@@ -528,6 +535,9 @@ function LeaderCard({
 
 export default function BranchDetailPage() {
   const { user } = useAuth();
+  const { t, label, locale } =
+    useLanguage();
+
   const isViewer = normalizeRole(user?.role) === "viewer";
   const params = useParams();
 
@@ -571,6 +581,15 @@ export default function BranchDetailPage() {
 
   const [loadError, setLoadError] =
     useState("");
+
+  const statusOptions = useMemo(
+    () => [
+      t("branchPage.all"),
+      t("branchPage.active"),
+      t("branchPage.inactive"),
+    ],
+    [t],
+  );
 
 const loadBranchDetails =
   useCallback(
@@ -722,7 +741,7 @@ const loadBranchDetails =
           );
 
           setLoadError(
-            "មិនអាចទាញយកព័ត៌មានសាខាបានទេ",
+            t("branchPage.loadDetailFailed"),
           );
         }
       } finally {
@@ -736,6 +755,7 @@ const loadBranchDetails =
       loadBranchDetails,
       loadLeaderCandidates,
       loadMembers,
+      t,
     ],
   );
 
@@ -762,11 +782,7 @@ const loadBranchDetails =
       id: item?.id,
 
       name:
-        item?.name_km ||
-        item?.nameKm ||
-        item?.name_en ||
-        item?.nameEn ||
-        "-",
+        label(item, "-"),
 
       nameKm:
         item?.name_km ||
@@ -904,12 +920,13 @@ const loadBranchDetails =
           gender:
             getGenderLabel(
               person?.gender,
+              label,
             ),
 
           role: roleCode,
 
           roleLabel:
-            getRoleLabel(roleCode),
+            getRoleLabel(roleCode, label),
 
           status: "ACTIVE",
 
@@ -917,7 +934,7 @@ const loadBranchDetails =
             getProfileImage(person),
         };
       }),
-    [branchDetails],
+    [branchDetails, label],
   );
 
   const branchLeader = useMemo(
@@ -980,10 +997,11 @@ const loadBranchDetails =
           gender:
             getGenderLabel(
               member?.gender,
+              label,
             ),
 
           role:
-            getRoleLabel(role),
+            getRoleLabel(role, label),
 
           status,
 
@@ -991,10 +1009,11 @@ const loadBranchDetails =
             formatDate(
               member?.joined_on ||
                 member?.joinedOn,
+              locale,
             ),
         };
       }),
-    [members],
+    [members, label, locale],
   );
 
   const leaderOptions = useMemo(
@@ -1006,11 +1025,15 @@ const loadBranchDetails =
             candidate?.fullNameKm ||
             candidate?.full_name_en ||
             candidate?.fullNameEn ||
-            `សមាជិក ${
-              candidate?.member_id ??
-              candidate?.memberId ??
-              candidate?.id
-            }`,
+            t("branchPage.memberFallback").replace(
+              "{id}",
+              String(
+                candidate?.member_id ??
+                  candidate?.memberId ??
+                  candidate?.id ??
+                  "",
+              ),
+            ),
 
           value: String(
             candidate?.member_id ??
@@ -1044,12 +1067,14 @@ const loadBranchDetails =
             gender:
               getGenderLabel(
                 candidate?.gender,
+                label,
               ),
 
             role:
               getRoleLabel(
                 candidate?.current_role ||
                   candidate?.currentRole,
+                label,
               ),
 
             profilePhotoId:
@@ -1061,7 +1086,7 @@ const loadBranchDetails =
           },
         }),
       ),
-    [leaderCandidates],
+    [leaderCandidates, label, t],
   );
 
   const filteredMembers = useMemo(() => {
@@ -1091,12 +1116,14 @@ const loadBranchDetails =
         const matchesStatus =
           selectedStatus ===
             ALL_OPTION ||
+          selectedStatus ===
+            t("branchPage.all") ||
           (selectedStatus ===
-            "សកម្ម" &&
+            t("branchPage.active") &&
             statusCode ===
               "ACTIVE") ||
           (selectedStatus ===
-            "អសកម្ម" &&
+            t("branchPage.inactive") &&
             statusCode ===
               "INACTIVE");
 
@@ -1110,6 +1137,7 @@ const loadBranchDetails =
     mappedMembers,
     searchQuery,
     selectedStatus,
+    t,
   ]);
 
   const handleCreateMember =
@@ -1152,7 +1180,7 @@ const loadBranchDetails =
   const columns = [
     {
       key: "no",
-      label: "ល.រ",
+      label: t("branchPage.no"),
       width: "6%",
       align: "center",
 
@@ -1161,7 +1189,7 @@ const loadBranchDetails =
     },
     {
       key: "nameKm",
-      label: "ឈ្មោះ",
+      label: t("branchPage.branchName"),
       width: "23%",
       align: "left",
 
@@ -1171,11 +1199,11 @@ const loadBranchDetails =
             <Image
               src={
                 row.profileImage ||
-                "/member.png"
+                "/profiles/default-avatar.jpg"
               }
               alt={
                 row.nameKm ||
-                "Member"
+                t("branchPage.members")
               }
               fill
               sizes="32px"
@@ -1192,19 +1220,19 @@ const loadBranchDetails =
     },
     {
       key: "gender",
-      label: "ភេទ",
+      label: t("branchPage.gender"),
       width: "11%",
       align: "center",
     },
     {
       key: "role",
-      label: "តួនាទី",
+      label: t("branchPage.role"),
       width: "20%",
       align: "center",
     },
     {
       key: "status",
-      label: "ស្ថានភាព",
+      label: t("branchPage.status"),
       width: "13%",
       align: "center",
 
@@ -1216,13 +1244,13 @@ const loadBranchDetails =
     },
     {
       key: "joinedAt",
-      label: "ថ្ងៃចូលរួម",
+      label: t("branchPage.joinedAt"),
       width: "15%",
       align: "center",
     },
     {
       key: "actions",
-      label: "សកម្មភាព",
+      label: t("branchPage.actions"),
       width: "12%",
       align: "center",
 
@@ -1233,7 +1261,7 @@ const loadBranchDetails =
         >
           <List size={14} />
 
-          មើល
+          {t("branchPage.view")}
         </Link>
       ),
     },
@@ -1246,9 +1274,9 @@ const loadBranchDetails =
       onChange:
         setSelectedStatus,
       placeholder:
-        "ស្ថានភាព",
+        t("branchPage.status"),
       options:
-        STATUS_OPTIONS,
+        statusOptions,
     },
   ];
 
@@ -1256,7 +1284,7 @@ const loadBranchDetails =
     return (
       <div className="rounded-xl border border-border bg-bg-page-white p-6">
         <p className="text-sm text-text-secondary">
-          កំពុងទាញយកព័ត៌មានសាខា...
+          {t("branchPage.loadingBranch")}
         </p>
       </div>
     );
@@ -1267,7 +1295,7 @@ const loadBranchDetails =
       <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
         <p className="text-sm text-error">
           {loadError ||
-            "រកមិនឃើញព័ត៌មានសាខា"}
+            t("branchPage.notFound")}
         </p>
       </div>
     );
@@ -1281,7 +1309,7 @@ const loadBranchDetails =
             href="/branch"
             className="text-text-secondary transition hover:text-primary"
           >
-            សាខា
+            {t("nav.branches")}
           </Link>
 
           <ChevronRight
@@ -1290,7 +1318,7 @@ const loadBranchDetails =
           />
 
           <span className="font-medium text-text-secondary">
-            ព័ត៌មានលម្អិត
+            {t("branchPage.detail")}
           </span>
         </div>
 
@@ -1301,7 +1329,7 @@ const loadBranchDetails =
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <DetailStatCard
-          title="ចំនួនវិភាគទាន"
+          title={t("branchPage.totalDonations")}
           value="-"
           icon={Banknote}
           iconClassName="bg-secondary-light text-secondary"
@@ -1309,7 +1337,7 @@ const loadBranchDetails =
         />
 
         <DetailStatCard
-          title="ចំនួនសមាជិក"
+          title={t("branchPage.totalMembers")}
           value={
             branch.memberCount
           }
@@ -1319,7 +1347,7 @@ const loadBranchDetails =
         />
 
         <DetailStatCard
-          title="ចំនួនកម្មវិធី"
+          title={t("branchPage.totalActivities")}
           value={
             branch.activityCount
           }
@@ -1332,7 +1360,7 @@ const loadBranchDetails =
       <section>
         <div className="mb-2 flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-primary">
-            ព័ត៌មានសាខា
+            {t("branchPage.branchInfo")}
           </h2>
 
           {!isViewer && <button
@@ -1346,7 +1374,7 @@ const loadBranchDetails =
           >
             <Pencil size={15} />
 
-            កែប្រែ
+            {t("branchPage.edit")}
           </button>}
         </div>
 
@@ -1370,7 +1398,7 @@ const loadBranchDetails =
 
               <div className="min-w-0">
                 <p className="text-[11px] text-white/70">
-                  លេខទូរស័ព្ទ
+                  {t("branchPage.phone")}
                 </p>
 
                 <p className="mt-1 truncate text-xs font-medium">
@@ -1387,7 +1415,7 @@ const loadBranchDetails =
 
               <div className="min-w-0">
                 <p className="text-[11px] text-white/70">
-                  អ៊ីមែល
+                  {t("branchPage.email")}
                 </p>
 
                 <p className="mt-1 truncate text-xs font-medium">
@@ -1404,7 +1432,7 @@ const loadBranchDetails =
 
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] text-white/70">
-                  ទីតាំង
+                  {t("branchPage.location")}
                 </p>
 
                 <p className="mt-1 truncate text-xs font-medium">
@@ -1428,7 +1456,7 @@ const loadBranchDetails =
                     size={14}
                   />
 
-                  ទីតាំង
+                  {t("branchPage.location")}
                 </button>
               )}
             </div>
@@ -1439,13 +1467,13 @@ const loadBranchDetails =
       <section>
         <div className="mb-2 flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-primary">
-            ប្រធានសាខា
+            {t("branchPage.branchLeader")}
           </h2>
         </div>
 
         <LeaderCard
           person={branchLeader}
-          title="ប្រធានសាខា"
+          title={t("branchPage.branchLeader")}
           onAdd={isViewer ? undefined : () =>
             setIsEditModalOpen(true)
           }
@@ -1455,7 +1483,7 @@ const loadBranchDetails =
       <section>
         <div className="mb-2">
           <h2 className="text-lg font-semibold text-primary">
-            លេខាធិការ
+            {t("branchPage.secretary")}
           </h2>
         </div>
 
@@ -1465,7 +1493,7 @@ const loadBranchDetails =
               <LeaderCard
                 key={person.id}
                 person={person}
-                title="លេខាធិការ"
+                title={t("branchPage.secretary")}
                 onAdd={isViewer ? undefined : () =>
                   setIsEditModalOpen(true)
                 }
@@ -1475,7 +1503,7 @@ const loadBranchDetails =
         ) : (
           <LeaderCard
             person={null}
-            title="លេខាធិការ"
+            title={t("branchPage.secretary")}
             onAdd={isViewer ? undefined : () =>
               setIsEditModalOpen(true)
             }
@@ -1491,7 +1519,7 @@ const loadBranchDetails =
               onChange={
                 setSearchQuery
               }
-              placeholder="ស្វែងរកសមាជិក..."
+              placeholder={t("branchPage.searchMember")}
               width="w-full"
             />
           </div>
@@ -1513,7 +1541,7 @@ const loadBranchDetails =
                 setIsCreateOpen(true)
               }
             >
-              បន្ថែមសមាជិកថ្មី
+              {t("branchPage.addMember")}
             </Button>}
           </div>
         </div>
@@ -1523,7 +1551,7 @@ const loadBranchDetails =
           data={filteredMembers}
           rowsPerPage={10}
           scrollable={false}
-          emptyMessage="មិនមានសមាជិកក្នុងសាខានេះទេ"
+          emptyMessage={t("branchPage.noMembers")}
         />
       </section>
 
@@ -1583,3 +1611,10 @@ const loadBranchDetails =
     </div>
   );
 }
+    if (label) {
+      return label(value, "-");
+    }
+
+    if (label) {
+      return label(value, "-");
+    }

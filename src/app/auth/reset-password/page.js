@@ -13,10 +13,12 @@ import { KeyRound } from "lucide-react";
 
 import PasswordInput from "@/components/ui/passwordInput";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
+import { useLanguage } from "@/context/LanguageContext";
 
 function ResetPasswordContent() {
   const router = useRouter();
   const params = useSearchParams();
+  const { t } = useLanguage();
 
   const [phoneOrEmail, setPhoneOrEmail] =
     useState("");
@@ -61,7 +63,7 @@ function ResetPasswordContent() {
 
     if (!savedData) {
       setError(
-        "រកមិនឃើញព័ត៌មានសម្រាប់កំណត់លេខសម្ងាត់ឡើងវិញ",
+        t("auth.resetInfoMissing", "រកមិនឃើញព័ត៌មានសម្រាប់កំណត់លេខសម្ងាត់ឡើងវិញ"),
       );
       return;
     }
@@ -81,7 +83,7 @@ function ResetPasswordContent() {
       );
 
       setError(
-        "ព័ត៌មានសម្រាប់កំណត់លេខសម្ងាត់ឡើងវិញមិនត្រឹមត្រូវ",
+        t("auth.resetInfoInvalid", "ព័ត៌មានសម្រាប់កំណត់លេខសម្ងាត់ឡើងវិញមិនត្រឹមត្រូវ"),
       );
     }
   }, [params]);
@@ -92,28 +94,28 @@ function ResetPasswordContent() {
 
     if (!phoneOrEmail || !otp) {
       setError(
-        "រកមិនឃើញព័ត៌មានសម្រាប់កំណត់លេខសម្ងាត់ឡើងវិញ",
+        t("auth.resetInfoMissing", "រកមិនឃើញព័ត៌មានសម្រាប់កំណត់លេខសម្ងាត់ឡើងវិញ"),
       );
       return;
     }
 
     if (!password || !confirmPassword) {
       setError(
-        "សូមបញ្ចូលលេខសម្ងាត់ថ្មី",
+        t("auth.newPasswordRequired", "សូមបញ្ចូលលេខសម្ងាត់ថ្មី"),
       );
       return;
     }
 
     if (password.length < 6) {
       setError(
-        "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ",
+        t("auth.passwordMinLength", "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងហោចណាស់ ៦ តួអក្សរ"),
       );
       return;
     }
 
     if (password !== confirmPassword) {
       setError(
-        "លេខសម្ងាត់ទាំងពីរមិនត្រូវគ្នា",
+        t("auth.passwordsMismatch", "លេខសម្ងាត់ទាំងពីរមិនត្រូវគ្នា"),
       );
       return;
     }
@@ -156,7 +158,7 @@ function ResetPasswordContent() {
         setError(
           khmerErrorMessage(
             data?.message || data?.error,
-            "មិនអាចកំណត់លេខសម្ងាត់ថ្មីបាន",
+            t("auth.resetFailed", "មិនអាចកំណត់លេខសម្ងាត់ថ្មីបាន"),
           ),
         );
         return;
@@ -177,7 +179,7 @@ function ResetPasswordContent() {
       );
 
       setError(
-        "មិនអាចកំណត់លេខសម្ងាត់ថ្មីបាន",
+        t("auth.resetFailed", "មិនអាចកំណត់លេខសម្ងាត់ថ្មីបាន"),
       );
     } finally {
       setLoading(false);
@@ -187,12 +189,11 @@ function ResetPasswordContent() {
   return (
     <div>
       <h2 className="mb-2 text-center text-xl font-bold text-text-primary">
-        កំណត់លេខសម្ងាត់ថ្មី
+        {t("auth.resetTitle", "កំណត់លេខសម្ងាត់ថ្មី")}
       </h2>
 
       <p className="mb-8 text-center text-sm text-text-mute">
-        សូមបញ្ចូលលេខសម្ងាត់ថ្មីរបស់អ្នក
-        ដើម្បីបន្តប្រើប្រាស់ប្រព័ន្ធ
+        {t("auth.resetDescription", "សូមបញ្ចូលលេខសម្ងាត់ថ្មីរបស់អ្នក ដើម្បីបន្តប្រើប្រាស់ប្រព័ន្ធ")}
       </p>
 
       <form
@@ -200,8 +201,8 @@ function ResetPasswordContent() {
         className="w-full space-y-5"
       >
         <PasswordInput
-          label="លេខសម្ងាត់ថ្មី"
-          placeholder="បញ្ចូលលេខសម្ងាត់ថ្មី"
+          label={t("auth.newPassword", "លេខសម្ងាត់ថ្មី")}
+          placeholder={t("auth.newPasswordPlaceholder", "បញ្ចូលលេខសម្ងាត់ថ្មី")}
           value={password}
           onChange={(event) => {
             setPassword(event.target.value);
@@ -210,8 +211,8 @@ function ResetPasswordContent() {
         />
 
         <PasswordInput
-          label="បញ្ជាក់លេខសម្ងាត់ថ្មី"
-          placeholder="បញ្ចូលលេខសម្ងាត់ថ្មីម្តងទៀត"
+          label={t("auth.confirmNewPassword", "បញ្ជាក់លេខសម្ងាត់ថ្មី")}
+          placeholder={t("auth.confirmNewPasswordPlaceholder", "បញ្ចូលលេខសម្ងាត់ថ្មីម្តងទៀត")}
           value={confirmPassword}
           onChange={(event) => {
             setConfirmPassword(event.target.value);
@@ -233,17 +234,17 @@ function ResetPasswordContent() {
           <KeyRound size={18} />
 
           {loading
-            ? "កំពុងដំណើរការ..."
-            : "បញ្ជូន"}
+            ? t("common.loading", "កំពុងដំណើរការ...")
+            : t("auth.submit", "បញ្ជូន")}
         </button>
 
         <p className="pt-2 text-center text-sm text-text-mute">
-          ត្រឡប់ទៅ{" "}
+          {t("auth.backTo", "ត្រឡប់ទៅ")}{" "}
           <a
             href="/auth/login"
             className="text-blue-700 hover:underline"
           >
-            ទំព័រចូលប្រើប្រាស់
+            {t("auth.loginPage", "ទំព័រចូលប្រើប្រាស់")}
           </a>
         </p>
       </form>

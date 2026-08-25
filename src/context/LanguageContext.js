@@ -11,6 +11,7 @@ import {
 
 import {
   DEFAULT_LOCALE,
+  LOCALE_COOKIE_NAME,
   LOCALE_STORAGE_KEY,
   localizedValue,
   normalizeLocale,
@@ -38,6 +39,7 @@ export function LanguageProvider({ children }) {
 
     document.documentElement.lang = locale;
     window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+    document.cookie = `${LOCALE_COOKIE_NAME}=${locale}; path=/; max-age=31536000; SameSite=Lax`;
   }, [locale, mounted]);
 
   const setLocale = useCallback((nextLocale) => {

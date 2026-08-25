@@ -2,7 +2,9 @@
 
 import { ChevronDown } from "lucide-react";
 
-function normalizeBranchOptions(branches = []) {
+import { useLanguage } from "@/context/LanguageContext";
+
+function normalizeBranchOptions(branches = [], label) {
   if (!Array.isArray(branches)) {
     return [];
   }
@@ -14,14 +16,7 @@ function normalizeBranchOptions(branches = []) {
         branch.branchId ??
         branch.branch_id,
 
-      name:
-        branch.nameKm ??
-        branch.name_km ??
-        branch.branchNameKm ??
-        branch.branch_name_km ??
-        branch.name ??
-        branch.label ??
-        "-",
+      name: label(branch, "-"),
     }))
     .filter(
       (branch) =>
@@ -36,6 +31,9 @@ function BranchDropdown({
   onChange,
   disabled = false,
 }) {
+  const { t } =
+    useLanguage();
+
   return (
     <div className="relative">
       <select
@@ -74,7 +72,7 @@ function BranchDropdown({
         "
       >
         <option value="all">
-          សាខាទាំងអស់
+          {t("dashboard.allBranches")}
         </option>
 
         {branches.map((branch) => (
@@ -205,9 +203,13 @@ export default function PerformanceSummary({
   loading = false,
   showBranchDropdown = true,
 }) {
+  const { t, label } =
+    useLanguage();
+
   const branchOptions =
     normalizeBranchOptions(
-      branches
+      branches,
+      label
     );
 
   const activities =
@@ -222,7 +224,7 @@ export default function PerformanceSummary({
   const stats = [
     {
       key: "activities",
-      label: "កម្មវិធីសរុប",
+      label: t("dashboard.totalActivities"),
 
       value: (
         Number(
@@ -238,7 +240,7 @@ export default function PerformanceSummary({
 
     {
       key: "donations",
-      label: "វិភាគទានសរុប",
+      label: t("dashboard.totalDonations"),
 
       value:
         formatDonationValue(
@@ -260,7 +262,7 @@ export default function PerformanceSummary({
        * counted up to the end of selected month,
        * not only newly joined members.
        */
-      label: "សមាជិកសរុប",
+      label: t("dashboard.totalMembers"),
 
       value: (
         Number(
@@ -323,7 +325,7 @@ export default function PerformanceSummary({
               fontWeight: 600,
             }}
           >
-            សមិទ្ធផលសរុបរបស់សាខា
+            {t("dashboard.branchPerformance")}
           </h3>
 
           {period && (

@@ -16,6 +16,7 @@ import { HiSaveAs } from "react-icons/hi";
 import Button from "@/components/ui/Button";
 import FormSelect from "@/components/forms/FormSelect";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 
@@ -28,23 +29,11 @@ const EXCHANGE_RATE_KEY = "__exchange-rate__";
 
 const PAYMENT_METHOD_PATH = "payment-methods";
 
-const PAYMENT_CATEGORY_OPTIONS = [
-  { label: "សាច់ប្រាក់ (Cash)", value: "CASH" },
-  { label: "ធនាគារ (Bank)", value: "BANK" },
-  { label: "ផ្សេងៗ (Other)", value: "OTHER" },
-];
-
 const POSITION_PATH = "positions";
 
 // The role a member holding this position is auto-assigned when created —
 // see CreateMemberModal's position picker. Every position maps to one of
 // these three; positions like "Support" simply map to MEMBER.
-const POSITION_ROLE_OPTIONS = [
-  { label: "ប្រធានសាខា (Branch Leader)", value: "BRANCH_LEADER" },
-  { label: "លេខាធិការ (Secretary)", value: "SECRETARY" },
-  { label: "សមាជិក (Member)", value: "MEMBER" },
-];
-
 const EMPTY_FORM = {
   nameKm: "",
   nameEn: "",
@@ -64,7 +53,7 @@ const EMPTY_RATE_FORM = {
   effectiveFrom: "",
 };
 
-function StatusBadge({ active }) {
+function StatusBadge({ active, t }) {
   return (
     <span
       className={`inline-flex min-w-[68px] items-center justify-center rounded-full px-3 py-1 text-[11px] font-medium ${
@@ -73,19 +62,19 @@ function StatusBadge({ active }) {
           : "bg-error-bg text-error"
       }`}
     >
-      {active ? "សកម្ម" : "អសកម្ម"}
+      {active ? t("variablePage.active") : t("variablePage.inactive")}
     </span>
   );
 }
 
-function formatDateTime(value) {
+function formatDateTime(value, locale = "km") {
   if (!value) return "-";
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) return "-";
 
-  return new Intl.DateTimeFormat("km-KH", {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "km-KH", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -145,7 +134,27 @@ async function requestJson(fullPath, options = {}) {
 
 export default function VariablePage() {
   const { user } = useAuth();
+  const { t, label, locale } = useLanguage();
   const isViewer = normalizeRole(user?.role) === "viewer";
+  const paymentCategoryOptions = useMemo(() => [
+    { label: t("variablePage.cash"), value: "CASH" },
+    { label: t("variablePage.bank"), value: "BANK" },
+    { label: t("variablePage.other"), value: "OTHER" },
+  ], [t]);
+  const positionRoleOptions = useMemo(() => [
+    { label: t("variablePage.branchLeader"), value: "BRANCH_LEADER" },
+    { label: t("variablePage.secretary"), value: "SECRETARY" },
+    { label: t("variablePage.member"), value: "MEMBER" },
+  ], [t]);
+  const statusFilterOptions = useMemo(() => [
+    { label: t("variablePage.allStatuses"), value: ALL_STATUS },
+    { label: t("variablePage.active"), value: "ACTIVE" },
+    { label: t("variablePage.inactive"), value: "INACTIVE" },
+  ], [t]);
+  const statusOptions = useMemo(() => [
+    { label: t("variablePage.active"), value: "ACTIVE" },
+    { label: t("variablePage.inactive"), value: "INACTIVE" },
+  ], [t]);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState("");
@@ -194,6 +203,15 @@ export default function VariablePage() {
     () => categories.find((category) => category.path === selectedPath),
     [categories, selectedPath],
   );
+  const selectedCategoryLabel = label(selectedCategory, t("variablePage.variableFallback"));
+  const createSelectedLabel =
+    locale === "en"
+      ? `${t("variablePage.createPrefix")} ${t("variablePage.newSuffix")} ${selectedCategoryLabel}`
+      : `${t("variablePage.createPrefix")}${selectedCategoryLabel}${t("variablePage.newSuffix")}`;
+  const editSelectedLabel =
+    locale === "en"
+      ? `${t("variablePage.editPrefix")} ${selectedCategoryLabel}`
+      : `${t("variablePage.editPrefix")}${selectedCategoryLabel}`;
 
   /* =======================================================
    * LOAD CATEGORIES
@@ -222,7 +240,7 @@ export default function VariablePage() {
       } catch (loadError) {
         if (active) {
           setCategoriesError(
-            loadError.message || "មិនអាចទាញយកប្រភេទអថេរបានទេ។",
+            loadError.message || t("variablePage.loadCategoriesFailed"),
           );
         }
       } finally {
@@ -235,7 +253,7 @@ export default function VariablePage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [t]);
 
   /* =======================================================
    * LOAD EXCHANGE RATE COUNT (for the sidebar badge — fetched
@@ -300,7 +318,7 @@ export default function VariablePage() {
         if (active) {
           setItems([]);
           setItemsError(
-            loadError.message || "មិនអាចទាញយកទិន្នន័យអថេរបានទេ។",
+            loadError.message || t("variablePage.loadItemsFailed"),
           );
         }
       } finally {
@@ -313,7 +331,7 @@ export default function VariablePage() {
     return () => {
       active = false;
     };
-  }, [selectedPath, selectedStatus]);
+  }, [selectedPath, selectedStatus, t]);
 
   const filteredItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -342,10 +360,10 @@ export default function VariablePage() {
 
         return (
           formatRate(rate.rate).toLowerCase().includes(query) ||
-          formatDateTime(rate.effective_from).toLowerCase().includes(query)
+          formatDateTime(rate.effective_from, locale).toLowerCase().includes(query)
         );
       });
-  }, [rateHistory, searchQuery, selectedStatus]);
+  }, [locale, rateHistory, searchQuery, selectedStatus]);
 
   const isRateHistoryExpanded = showRateHistory || Boolean(searchQuery.trim());
 
@@ -398,7 +416,7 @@ export default function VariablePage() {
       setRateCount(list.length);
     } catch (loadError) {
       setRateError(
-        loadError.message || "មិនអាចទាញយកប្រវត្តិអត្រាប្ដូរប្រាក់បានទេ។",
+        loadError.message || t("variablePage.loadRateFailed"),
       );
     } finally {
       setRateLoading(false);
@@ -461,7 +479,7 @@ export default function VariablePage() {
     event.preventDefault();
 
     if (!form.nameKm.trim()) {
-      setFormError("សូមបញ្ចូលឈ្មោះប្រភេទជាភាសាខ្មែរ។");
+      setFormError(t("variablePage.nameKmRequired"));
       return;
     }
 
@@ -512,7 +530,7 @@ export default function VariablePage() {
       await refreshCategoryCounts();
       closeModal();
     } catch (saveError) {
-      setFormError(saveError.message || "មិនអាចរក្សាទុកទិន្នន័យបានទេ។");
+      setFormError(saveError.message || t("variablePage.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -551,12 +569,12 @@ export default function VariablePage() {
     const numericRate = Number(rateForm.rate);
 
     if (!rateForm.rate || Number.isNaN(numericRate) || numericRate <= 0) {
-      setRateFormError("សូមបញ្ចូលអត្រាប្ដូរប្រាក់ដែលត្រឹមត្រូវ។");
+      setRateFormError(t("variablePage.invalidRate"));
       return;
     }
 
     if (!rateForm.effectiveFrom) {
-      setRateFormError("សូមជ្រើសរើសកាលបរិច្ឆេទចាប់ផ្ដើមប្រើប្រាស់។");
+      setRateFormError(t("variablePage.effectiveFromRequired"));
       return;
     }
 
@@ -577,7 +595,7 @@ export default function VariablePage() {
       await loadExchangeRateData();
       closeRateModal();
     } catch (saveError) {
-      setRateFormError(saveError.message || "មិនអាចរក្សាទុកអត្រាបានទេ។");
+      setRateFormError(saveError.message || t("variablePage.saveRateFailed"));
     } finally {
       setRateSaving(false);
     }
@@ -588,7 +606,7 @@ export default function VariablePage() {
       {/* Left variable categories */}
       <aside className="w-full shrink-0 rounded-xl border border-border bg-bg-page-white p-3 lg:w-[250px]">
         <h2 className="px-3 py-2 text-lg font-semibold text-text-primary">
-          ប្រភេទអថេរ
+          {t("variablePage.categories")}
         </h2>
 
         {categoriesError && (
@@ -600,7 +618,7 @@ export default function VariablePage() {
         <div className="mt-2 space-y-1">
           {categoriesLoading && categories.length === 0 ? (
             <p className="px-3 py-3 text-xs text-text-secondary">
-              កំពុងទាញយក...
+              {t("variablePage.loading")}
             </p>
           ) : (
             categories.map((category) => {
@@ -621,7 +639,7 @@ export default function VariablePage() {
                       : "border-transparent text-text-secondary hover:bg-bg-page-gray"
                   }`}
                 >
-                  <span className="truncate">{category.labelKm}</span>
+                  <span className="truncate">{label(category)}</span>
 
                   <span className="ml-3 inline-flex min-w-7 items-center justify-center rounded-md bg-primary-light px-2 py-1 text-[10px] text-primary">
                     {category.count}
@@ -646,7 +664,7 @@ export default function VariablePage() {
                 : "border-transparent text-text-secondary hover:bg-bg-page-gray"
             }`}
           >
-            <span className="truncate">អត្រាប្ដូរប្រាក់</span>
+            <span className="truncate">{t("variablePage.exchangeRate")}</span>
 
             <span className="ml-3 inline-flex min-w-7 items-center justify-center rounded-md bg-primary-light px-2 py-1 text-[10px] text-primary">
               {rateCount ?? 0}
@@ -661,7 +679,7 @@ export default function VariablePage() {
           <div className="rounded-xl border border-border bg-bg-page-white">
             <div className="border-b border-border p-4">
               <h1 className="text-lg font-semibold text-text-primary">
-                អត្រាប្ដូរប្រាក់ (USD → KHR)
+                {t("variablePage.exchangeRateTitle")}
               </h1>
 
               <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -675,7 +693,7 @@ export default function VariablePage() {
                     type="text"
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
-                    placeholder="ស្វែងរក..."
+                    placeholder={t("variablePage.searchPlaceholder")}
                     className="h-10 w-full rounded-lg border border-border bg-bg-page-white pl-10 pr-4 text-sm outline-none transition focus:border-primary"
                   />
                 </div>
@@ -686,11 +704,7 @@ export default function VariablePage() {
                     value={selectedStatus}
                     onChange={(event) => setSelectedStatus(event.target.value)}
                     placeholder=""
-                    options={[
-                      { label: "ស្ថានភាពទាំងអស់", value: ALL_STATUS },
-                      { label: "សកម្ម", value: "ACTIVE" },
-                      { label: "អសកម្ម", value: "INACTIVE" },
-                    ]}
+                    options={statusFilterOptions}
                   />
                 </div>
 
@@ -700,7 +714,7 @@ export default function VariablePage() {
                   icon={<PlusCircle size={16} />}
                   onClick={openRateModal}
                 >
-                  កំណត់អត្រាថ្មី
+                  {t("variablePage.setNewRate")}
                 </Button>}
               </div>
             </div>
@@ -716,27 +730,27 @@ export default function VariablePage() {
                 <thead className="bg-bg-page-gray">
                   <tr className="border-b border-border">
                     <th className="w-[7%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
-                      ល.រ
+                      {t("variablePage.no")}
                     </th>
 
                     <th className="w-[24%] px-4 py-3 text-left text-xs font-medium text-text-secondary">
-                      អត្រា (1 USD =)
+                      {t("variablePage.rate")}
                     </th>
 
                     <th className="w-[16%] px-4 py-3 text-left text-xs font-medium text-text-secondary">
-                      រូបិយប័ណ្ណ
+                      {t("variablePage.currency")}
                     </th>
 
                     <th className="w-[12%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
-                      ស្ថានភាព
+                      {t("variablePage.status")}
                     </th>
 
                     <th className="w-[20%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
-                      ថ្ងៃចាប់ផ្ដើម
+                      {t("variablePage.effectiveFrom")}
                     </th>
 
                     <th className="w-[21%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
-                      ថ្ងៃផុតកំណត់
+                      {t("variablePage.effectiveTo")}
                     </th>
                   </tr>
                 </thead>
@@ -748,7 +762,7 @@ export default function VariablePage() {
                         colSpan={6}
                         className="px-4 py-12 text-center text-sm text-text-secondary"
                       >
-                        កំពុងទាញយកទិន្នន័យ...
+                        {t("variablePage.loadingData")}
                       </td>
                     </tr>
                   ) : visibleRateHistory.length > 0 ? (
@@ -771,15 +785,15 @@ export default function VariablePage() {
                         </td>
 
                         <td className="px-4 py-3 text-center">
-                          <StatusBadge active={rate.is_active} />
+                          <StatusBadge active={rate.is_active} t={t} />
                         </td>
 
                         <td className="px-4 py-3 text-center text-xs text-text-secondary">
-                          {formatDateTime(rate.effective_from)}
+                          {formatDateTime(rate.effective_from, locale)}
                         </td>
 
                         <td className="px-4 py-3 text-center text-xs text-text-secondary">
-                          {formatDateTime(rate.effective_to)}
+                          {formatDateTime(rate.effective_to, locale)}
                         </td>
                       </tr>
                     ))
@@ -789,7 +803,7 @@ export default function VariablePage() {
                         colSpan={6}
                         className="px-4 py-12 text-center text-sm text-text-secondary"
                       >
-                        មិនមានទិន្នន័យអថេរទេ
+                        {t("variablePage.noData")}
                       </td>
                     </tr>
                   )}
@@ -805,8 +819,8 @@ export default function VariablePage() {
                   className="text-sm font-semibold text-primary transition hover:opacity-80"
                 >
                   {showRateHistory
-                    ? "លាក់ប្រវត្តិ"
-                    : `មើលប្រវត្តិទាំងអស់ (${filteredRateHistory.length - 1})`}
+                    ? t("variablePage.hideHistory")
+                    : `${t("variablePage.viewAllHistory")} (${filteredRateHistory.length - 1})`}
                 </button>
               </div>
             )}
@@ -815,7 +829,7 @@ export default function VariablePage() {
           <div className="rounded-xl border border-border bg-bg-page-white">
             <div className="border-b border-border p-4">
               <h1 className="text-lg font-semibold text-text-primary">
-                {selectedCategory?.labelKm || "កំណត់អថេរ"}
+                {label(selectedCategory, t("variablePage.title"))}
               </h1>
 
               <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -829,7 +843,7 @@ export default function VariablePage() {
                     type="text"
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
-                    placeholder="ស្វែងរក..."
+                    placeholder={t("variablePage.searchPlaceholder")}
                     className="h-10 w-full rounded-lg border border-border bg-bg-page-white pl-10 pr-4 text-sm outline-none transition focus:border-primary"
                   />
                 </div>
@@ -840,11 +854,7 @@ export default function VariablePage() {
                     value={selectedStatus}
                     onChange={(event) => setSelectedStatus(event.target.value)}
                     placeholder=""
-                    options={[
-                      { label: "ស្ថានភាពទាំងអស់", value: ALL_STATUS },
-                      { label: "សកម្ម", value: "ACTIVE" },
-                      { label: "អសកម្ម", value: "INACTIVE" },
-                    ]}
+                    options={statusFilterOptions}
                   />
                 </div>
 
@@ -855,7 +865,7 @@ export default function VariablePage() {
                   onClick={openCreateModal}
                   disabled={!selectedPath}
                 >
-                  បង្កើត{selectedCategory?.labelKm || "អថេរ"}ថ្មី
+                  {createSelectedLabel}
                 </Button>}
               </div>
             </div>
@@ -871,44 +881,44 @@ export default function VariablePage() {
                 <thead className="bg-bg-page-gray">
                   <tr className="border-b border-border">
                     <th className="w-[6%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
-                      ល.រ
+                      {t("variablePage.no")}
                     </th>
 
                     <th className="w-[14%] px-4 py-3 text-left text-xs font-medium text-text-secondary">
-                      ឈ្មោះប្រភេទ
+                      {t("variablePage.nameKm")}
                     </th>
 
                     <th className="w-[14%] px-4 py-3 text-left text-xs font-medium text-text-secondary">
-                      ឈ្មោះជាអក្សរឡាតាំង
+                      {t("variablePage.nameEn")}
                     </th>
 
                     {isPaymentMethod && (
                       <th className="w-[10%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
-                        ប្រភេទ
+                        {t("variablePage.category")}
                       </th>
                     )}
 
                     {isPosition && (
                       <th className="w-[13%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
-                        តួនាទី
+                        {t("variablePage.role")}
                       </th>
                     )}
 
                     <th className="w-[11%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
-                      ស្ថានភាព
+                      {t("variablePage.status")}
                     </th>
 
                     <th className="w-[13%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
-                      ថ្ងៃបង្កើត
+                      {t("variablePage.createdAt")}
                     </th>
 
                     <th className="w-[13%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
-                      ថ្ងៃកែប្រែ
+                      {t("variablePage.updatedAt")}
                     </th>
 
                     {!isViewer && (
                       <th className="w-[7%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
-                        សកម្មភាព
+                        {t("variablePage.actions")}
                       </th>
                     )}
                   </tr>
@@ -921,7 +931,7 @@ export default function VariablePage() {
                         colSpan={(hasExtraColumn ? 7 : 6) + (isViewer ? 0 : 1)}
                         className="px-4 py-12 text-center text-sm text-text-secondary"
                       >
-                        កំពុងទាញយកទិន្នន័យ...
+                        {t("variablePage.loadingData")}
                       </td>
                     </tr>
                   ) : filteredItems.length > 0 ? (
@@ -944,7 +954,7 @@ export default function VariablePage() {
 
                         {isPaymentMethod && (
                           <td className="px-4 py-3 text-center text-xs text-text-secondary">
-                            {PAYMENT_CATEGORY_OPTIONS.find(
+                            {paymentCategoryOptions.find(
                               (option) => option.value === item.category,
                             )?.label || item.category || "-"}
                           </td>
@@ -952,22 +962,22 @@ export default function VariablePage() {
 
                         {isPosition && (
                           <td className="px-4 py-3 text-center text-xs text-text-secondary">
-                            {POSITION_ROLE_OPTIONS.find(
+                            {positionRoleOptions.find(
                               (option) => option.value === item.mappedRole,
                             )?.label || item.mappedRole || "-"}
                           </td>
                         )}
 
                         <td className="px-4 py-3 text-center">
-                          <StatusBadge active={item.active} />
+                          <StatusBadge active={item.active} t={t} />
                         </td>
 
                         <td className="px-4 py-3 text-center text-xs text-text-secondary">
-                          {formatDateTime(item.createdAt)}
+                          {formatDateTime(item.createdAt, locale)}
                         </td>
 
                         <td className="px-4 py-3 text-center text-xs text-text-secondary">
-                          {formatDateTime(item.updatedAt)}
+                          {formatDateTime(item.updatedAt, locale)}
                         </td>
 
                         {!isViewer && (
@@ -976,7 +986,7 @@ export default function VariablePage() {
                               type="button"
                               onClick={() => openEditModal(item)}
                               className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-warning transition hover:bg-warning-bg"
-                              aria-label="កែប្រែ"
+                              aria-label={t("variablePage.edit")}
                             >
                               <SquarePen size={19} strokeWidth={1.8} />
                             </button>
@@ -990,7 +1000,7 @@ export default function VariablePage() {
                         colSpan={(hasExtraColumn ? 7 : 6) + (isViewer ? 0 : 1)}
                         className="px-4 py-12 text-center text-sm text-text-secondary"
                       >
-                        មិនមានទិន្នន័យអថេរទេ
+                        {t("variablePage.noData")}
                       </td>
                     </tr>
                   )}
@@ -1017,9 +1027,7 @@ export default function VariablePage() {
               <div className="flex items-start justify-between px-7 pb-3 pt-6">
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl font-bold text-text-secondary">
-                    {editingItem
-                      ? `កែប្រែប្រភេទ${selectedCategory?.labelKm || "អថេរ"}`
-                      : `បង្កើតប្រភេទ${selectedCategory?.labelKm || "អថេរ"}`}
+                    {editingItem ? editSelectedLabel : createSelectedLabel}
                   </h2>
                 </div>
 
@@ -1027,7 +1035,7 @@ export default function VariablePage() {
                   type="button"
                   onClick={closeModal}
                   className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition hover:bg-bg-page-gray"
-                  aria-label="បិទ"
+                  aria-label={t("variablePage.close")}
                 >
                   <X size={18} />
                 </button>
@@ -1037,75 +1045,72 @@ export default function VariablePage() {
               <div className="space-y-5 px-7 pb-7">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-text-primary">
-                    ឈ្មោះប្រភេទជាភាសាខ្មែរ
+                    {t("variablePage.nameKmFull")}
                   </label>
 
                   <input
                     type="text"
                     value={form.nameKm}
                     onChange={updateField("nameKm")}
-                    placeholder="បញ្ចូលឈ្មោះប្រភេទ"
+                    placeholder={t("variablePage.enterNameKm")}
                     className="h-11 w-full rounded-lg border border-border px-4 text-sm leading-6 outline-none transition placeholder:text-text-mute focus:border-primary"
                   />
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-text-primary">
-                    ឈ្មោះជាភាសាអង់គ្លេស
+                    {t("variablePage.nameEnFull")}
                   </label>
 
                   <input
                     type="text"
                     value={form.nameEn}
                     onChange={updateField("nameEn")}
-                    placeholder="បញ្ចូលឈ្មោះជាអក្សរឡាតាំង"
+                    placeholder={t("variablePage.enterNameEn")}
                     className="h-11 w-full rounded-lg border border-border px-4 text-sm leading-6 outline-none transition placeholder:text-text-mute focus:border-primary"
                   />
                 </div>
 
                 {isPaymentMethod && (
                   <FormSelect
-                    label="ប្រភេទការទូទាត់"
+                    label={t("variablePage.paymentCategory")}
                     name="variable-payment-category"
                     value={form.category}
                     onChange={updateField("category")}
                     placeholder=""
-                    options={PAYMENT_CATEGORY_OPTIONS}
+                    options={paymentCategoryOptions}
                   />
                 )}
 
                 {isPosition && (
                   <FormSelect
-                    label="តួនាទីដែលកំណត់ដោយស្វ័យប្រវត្តិ"
+                    label={t("variablePage.mappedRole")}
                     name="variable-position-role"
                     value={form.mappedRole}
                     onChange={updateField("mappedRole")}
                     placeholder=""
-                    options={POSITION_ROLE_OPTIONS}
+                    options={positionRoleOptions}
                   />
                 )}
 
                 <FormSelect
-                  label="ស្ថានភាព"
+                  label={t("variablePage.status")}
                   name="variable-status"
                   value={form.status}
                   onChange={updateField("status")}
                   placeholder=""
-                  options={[
-                    { label: "សកម្ម", value: "ACTIVE" },
-                    { label: "អសកម្ម", value: "INACTIVE" },
-                  ]}
+                  options={statusOptions}
                 />
 
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-text-primary">
-                    ពិពណ៌នា
+                    {t("variablePage.description")}
                   </label>
 
                   <textarea
                     value={form.description}
                     onChange={updateField("description")}
-                    placeholder="សរសេរពិពណ៌នាអំពីប្រភេទអថេរនេះ..."
+                    placeholder={t("variablePage.descriptionPlaceholder")}
                     rows={4}
                     className="min-h-[125px] w-full resize-none rounded-lg border border-border px-4 py-3 text-sm leading-6 outline-none transition placeholder:text-text-mute focus:border-primary"
                   />
@@ -1123,7 +1128,7 @@ export default function VariablePage() {
                     disabled={saving}
                     className="flex h-11 w-[120px] shrink-0 items-center justify-center rounded-lg border border-border bg-bg-page-gray text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray/70 disabled:opacity-60"
                   >
-                    បោះបង់
+                    {t("variablePage.cancel")}
                   </button>
 
                   <button
@@ -1138,10 +1143,10 @@ export default function VariablePage() {
                     )}
 
                     {saving
-                      ? "កំពុងរក្សាទុក..."
+                      ? t("variablePage.saving")
                       : editingItem
-                        ? "រក្សាទុក"
-                        : "បង្កើត"}
+                        ? t("variablePage.save")
+                        : t("variablePage.create")}
                   </button>
                 </div>
               </div>
@@ -1164,14 +1169,14 @@ export default function VariablePage() {
             <form onSubmit={handleRateSubmit}>
               <div className="flex items-start justify-between px-7 pb-3 pt-6">
                 <h2 className="text-xl font-bold text-text-secondary">
-                  កំណត់អត្រាប្ដូរប្រាក់ថ្មី
+                  {t("variablePage.setNewExchangeRate")}
                 </h2>
 
                 <button
                   type="button"
                   onClick={closeRateModal}
                   className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition hover:bg-bg-page-gray"
-                  aria-label="បិទ"
+                  aria-label={t("variablePage.close")}
                 >
                   <X size={18} />
                 </button>
@@ -1179,12 +1184,12 @@ export default function VariablePage() {
 
               <div className="space-y-5 px-7 pb-7">
                 <p className="rounded-lg bg-bg-page-gray px-4 py-2 text-sm text-text-secondary">
-                  ដុល្លារអាមេរិក (USD) → រៀល (KHR)
+                  {t("variablePage.usdToKhr")}
                 </p>
 
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-text-primary">
-                    អត្រា (1 USD = ? KHR)
+                    {t("variablePage.rateInputLabel")}
                   </label>
 
                   <input
@@ -1193,14 +1198,14 @@ export default function VariablePage() {
                     min="0"
                     value={rateForm.rate}
                     onChange={updateRateField("rate")}
-                    placeholder="ឧ. 4100"
+                    placeholder={t("variablePage.ratePlaceholder")}
                     className="h-11 w-full rounded-lg border border-border px-4 text-sm leading-6 outline-none transition placeholder:text-text-mute focus:border-primary"
                   />
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-text-primary">
-                    ថ្ងៃចាប់ផ្ដើមប្រើប្រាស់
+                    {t("variablePage.effectiveFromFull")}
                   </label>
 
                   {/*
@@ -1242,7 +1247,7 @@ export default function VariablePage() {
                     disabled={rateSaving}
                     className="flex h-11 w-[120px] shrink-0 items-center justify-center rounded-lg border border-border bg-bg-page-gray text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray/70 disabled:opacity-60"
                   >
-                    បោះបង់
+                    {t("variablePage.cancel")}
                   </button>
 
                   <button
@@ -1252,7 +1257,7 @@ export default function VariablePage() {
                   >
                     <SquarePlus size={17} />
 
-                    {rateSaving ? "កំពុងរក្សាទុក..." : "រក្សាទុក"}
+                    {rateSaving ? t("variablePage.saving") : t("variablePage.save")}
                   </button>
                 </div>
               </div>

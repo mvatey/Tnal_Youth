@@ -1,4 +1,5 @@
 import tableHeaders from "@/data/donation/tableHeaders.json";
+import { useLanguage } from "@/context/LanguageContext";
 
 const { addDonationHeaders } = tableHeaders;
 const DOB_HEADER = "ថ្ងៃខែឆ្នាំកំណើត";
@@ -14,6 +15,18 @@ const ACTION_HEADER = "សកម្មភាព";
 // content in per-row rowEditMode (the pencil/check/cancel icons), so an
 // empty header with nothing under it is dropped whenever that mode is off.
 export default function AddDonationTableHeader({ hideDob = false, hideAction = false }) {
+  const { t } = useLanguage();
+  const headerLabels = {
+    "ល.រ": t("donationPage.no"),
+    "សមាជិក": t("donationPage.member"),
+    "ភេទ": t("donationPage.gender"),
+    "ថ្ងៃខែឆ្នាំកំណើត": t("donationPage.dateOfBirth"),
+    "ចំនួនប្រាក់រៀល": t("donationPage.amountKhrPlain"),
+    "ចំនួនប្រាក់ដុល្លារ": t("donationPage.amountUsdPlain"),
+    "វិធីសាស្ត្រទូទាត់": t("donationPage.paymentMethod"),
+    "វិក័យប័ត្រ": t("donationPage.receipt"),
+    "សកម្មភាព": t("donationPage.action"),
+  };
   const headers = addDonationHeaders.filter((header) => {
     if (hideDob && header === DOB_HEADER) return false;
     if (hideAction && header === ACTION_HEADER) return false;
@@ -28,7 +41,7 @@ export default function AddDonationTableHeader({ hideDob = false, hideAction = f
             key={header}
             className={`px-3 ${header === DOB_HEADER ? "whitespace-nowrap" : ""}`}
           >
-            {header}
+            {headerLabels[header] || header}
           </th>
         ))}
       </tr>

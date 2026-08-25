@@ -10,8 +10,10 @@ import {
   filterOwnDonationType,
   mapDonationRecord,
 } from "@/lib/memberDonationRecords";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function DonationRecordsPage() {
+  const { t, label } = useLanguage();
   const { id } = useParams();
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +47,7 @@ export default function DonationRecordsPage() {
       } catch (loadError) {
         if (loadError.name !== "AbortError") {
           setRows([]);
-          setError(loadError.message || "មិនអាចទាញយកទិន្នន័យវិភាគទានបានទេ។");
+          setError(loadError.message || t("memberPage.loadDonationFailed"));
         }
       } finally {
         if (!controller.signal.aborted) setIsLoading(false);
@@ -64,13 +66,13 @@ export default function DonationRecordsPage() {
     })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកវិធីសាស្ត្រទូទាត់បានទេ។");
+        if (!response.ok) throw new Error(body?.message || t("memberPage.loadPaymentMethodsFailed"));
         const methods = Array.isArray(body) ? body : (body?.data || []);
         setPaymentMethods(
           methods
             .map((method) => ({
-              label: method.label_km || method.labelKm || method.label_en || method.labelEn || method.code,
-              value: method.label_km || method.labelKm || method.label_en || method.labelEn || method.code,
+              label: label(method, method.code),
+              value: label(method, method.code),
             }))
             .filter((method) => method.value),
         );
@@ -80,7 +82,7 @@ export default function DonationRecordsPage() {
       });
 
     return () => controller.abort();
-  }, []);
+  }, [label, t]);
 
   const filteredData = useMemo(() => {
     const search = query.trim().toLowerCase();
@@ -102,17 +104,17 @@ export default function DonationRecordsPage() {
   }, [rows, query, methodFilter]);
 
   const columns = [
-    { header: "ល.រ", width: "w-[7%]", align: "center", render: (_, index) => index },
+    { header: t("memberPage.no"), width: "w-[7%]", align: "center", render: (_, index) => index },
     {
-      header: "ប្រចាំខែ",
+      header: t("memberPage.month"),
       width: "w-[18%]",
       align: "left",
       render: (item) => <span>{item.month}, {item.year}</span>,
     },
-    { header: "ចំនួន", width: "w-[16%]", align: "left", accessor: "amount" },
-    { header: "ថ្ងៃបរិច្ឆេទ", width: "w-[19%]", align: "left", accessor: "date" },
-    { header: "កត់ត្រាដោយ", width: "w-[20%]", align: "left", accessor: "recordedBy" },
-    { header: "វិធីសាស្រ្តទូទាត់", width: "w-[20%]", align: "left", accessor: "paymentMethod" },
+    { header: t("memberPage.amount"), width: "w-[16%]", align: "left", accessor: "amount" },
+    { header: t("memberPage.date"), width: "w-[19%]", align: "left", accessor: "date" },
+    { header: t("memberPage.recordedBy"), width: "w-[20%]", align: "left", accessor: "recordedBy" },
+    { header: t("memberPage.paymentMethod"), width: "w-[20%]", align: "left", accessor: "paymentMethod" },
   ];
 
   const filters = [
@@ -121,13 +123,13 @@ export default function DonationRecordsPage() {
       value: methodFilter,
       onChange: setMethodFilter,
       options: paymentMethods,
-      placeholder: "វិធីសាស្រ្តទូទាត់",
+      placeholder: t("memberPage.paymentMethod"),
     },
   ];
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold text-text-primary">បញ្ជីវិភាគទានកម្មវិធី</h2>
+      <h2 className="text-lg font-semibold text-text-primary">{t("memberPage.sponsorListTitle")}</h2>
 
       {error && (
         <div className="rounded-lg border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
@@ -137,7 +139,7 @@ export default function DonationRecordsPage() {
 
       {isLoading && (
         <div className="rounded-lg border border-border bg-bg-page-white px-4 py-3 text-sm text-text-secondary">
-          កំពុងទាញយកទិន្នន័យ...
+          {t("branchPage.loadingData")}
         </div>
       )}
 
@@ -147,14 +149,14 @@ export default function DonationRecordsPage() {
         filters={filters}
         searchQuery={query}
         onSearchChange={setQuery}
-        searchPlaceholder="ស្វែងរក..."
+        searchPlaceholder={t("memberPage.search")}
         pageSize={10}
         minTableWidth={560}
         onDownload={() =>
           downloadTableAsExcel({
             data: filteredData,
             columns,
-            fileName: "វិភាគទានកម្មវិធី",
+            fileName: t("memberPage.activityDonationFile"),
           })
         }
       />

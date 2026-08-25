@@ -9,6 +9,7 @@ import SaveAlert from "@/components/forms/savealert";
 import sponsorOptions from "@/data/donation/sponsorOptions.json";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch, useBranchChangeGuard } from "@/context/BranchContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 const {
   equipmentTypes,
@@ -81,6 +82,7 @@ function TextField({
 }
 
 function QuantityField({ label, value, onChange, disabled = false }) {
+  const { t } = useLanguage();
   const quantity = Math.max(0, Number.parseInt(value, 10) || 0);
 
   const changeQuantity = (nextValue) => {
@@ -113,7 +115,7 @@ function QuantityField({ label, value, onChange, disabled = false }) {
           <button
             type="button"
             disabled={disabled}
-            aria-label="បន្ថែមចំនួនសម្ភារៈ"
+            aria-label={t("donationPage.increaseMaterialQuantity")}
             onClick={() => changeQuantity(quantity + 1)}
             className="flex min-h-0 flex-1 items-center justify-center text-text-secondary transition hover:bg-secondary-light hover:text-secondary disabled:cursor-not-allowed"
           >
@@ -121,7 +123,7 @@ function QuantityField({ label, value, onChange, disabled = false }) {
           </button>
           <button
             type="button"
-            aria-label="បន្ថយចំនួនសម្ភារៈ"
+            aria-label={t("donationPage.decreaseMaterialQuantity")}
             onClick={() => changeQuantity(quantity - 1)}
             disabled={disabled || quantity === 0}
             className="flex min-h-0 flex-1 items-center justify-center border-t border-border text-text-secondary transition hover:bg-secondary-light hover:text-secondary disabled:cursor-not-allowed disabled:opacity-40"
@@ -308,12 +310,13 @@ function DateField({ label, value, onChange, required = false, className = "" })
 }
 
 function PaymentMethodField({ value, onChange, methods = [], className = "" }) {
+  const { t } = useLanguage();
   const logo = paymentLogos[value];
 
   return (
     <label className={`block ${className}`}>
       <span className="mb-2 block truncate whitespace-nowrap text-[13px] font-semibold leading-5 text-text-secondary">
-        វិធីសាស្ត្រទូទាត់
+        {t("donationPage.paymentMethod")}
         <RequiredMark />
       </span>
       <div className="relative flex h-[34px] items-center rounded-xl border border-border bg-bg-page-white px-4 transition focus-within:border-secondary">
@@ -333,7 +336,7 @@ function PaymentMethodField({ value, onChange, methods = [], className = "" }) {
           value={value}
           onChange={(event) => onChange(event.target.value)}
           className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-          aria-label="វិធីសាស្ត្រទូទាត់"
+          aria-label={t("donationPage.paymentMethod")}
         >
           {(methods.length ? methods : paymentMethods.map((method) => ({ value: method, label: method }))).map((method) => (
             <option key={optionValue(method)} value={method.code || optionValue(method)}>
@@ -352,6 +355,7 @@ function PaymentMethodField({ value, onChange, methods = [], className = "" }) {
 }
 
 function ReceiptUpload({ value, onChange }) {
+  const { t } = useLanguage();
   const handleFileChange = (event) => {
     const file = event.target.files?.[0];
 
@@ -376,7 +380,7 @@ function ReceiptUpload({ value, onChange }) {
   return (
     <label className="block max-w-[250px] cursor-pointer">
       <span className="mb-2 block truncate whitespace-nowrap text-[14px] font-semibold leading-5 text-secondary">
-        វិក្កយបត្រ (Optional)
+        {t("donationPage.receiptOptional")}
       </span>
       <span className="relative flex min-h-[86px] items-center justify-center rounded-lg border-2 border-dashed border-border bg-bg-page-gray px-4 py-3 text-center text-[11px] font-medium leading-5 text-text-mute transition hover:border-secondary">
         <input
@@ -393,7 +397,7 @@ function ReceiptUpload({ value, onChange }) {
               onChange(null);
             }}
             className="absolute right-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-[#EF4444] text-white shadow-sm transition hover:bg-[#DC2626]"
-            aria-label="Remove receipt"
+            aria-label={t("donationPage.removeReceipt")}
           >
             <X size={12} strokeWidth={3} />
           </button>
@@ -401,7 +405,7 @@ function ReceiptUpload({ value, onChange }) {
         {value?.type?.startsWith("image/") ? (
           <img
             src={value.dataUrl}
-            alt={value.name || "Receipt preview"}
+            alt={value.name || t("donationPage.receiptPreview")}
             className="h-[72px] w-full rounded-md object-cover"
           />
         ) : value ? (
@@ -412,9 +416,9 @@ function ReceiptUpload({ value, onChange }) {
         ) : (
           <span>
             <CloudUpload className="mx-auto mb-1 h-6 w-6 text-text-secondary" />
-            ប្រភេទ: JPG, Docx, PDF, PNG (អតិបរមា 5MB)
+            {t("donationPage.receiptFileHint")}
             <br />
-            ទំហំរូបភាព: 16:9
+            {t("donationPage.imageRatioHint")}
           </span>
         )}
       </span>
@@ -450,6 +454,7 @@ function buildInitialForm(initialData = {}, prefill = {}) {
 }
 
 export default function SponsorDonationForm({ initialData = null }) {
+  const { t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -560,7 +565,7 @@ export default function SponsorDonationForm({ initialData = null }) {
         })));
       })
       .catch((loadError) => {
-        if (!cancelled) setError(loadError.message || "មិនអាចទាញយកជម្រើសការបរិច្ចាកបានទេ។");
+        if (!cancelled) setError(loadError.message || t("donationPage.loadDonationOptionsFailed"));
       });
     return () => { cancelled = true; };
   }, [isBranchScoped, scopedBranchId]);
@@ -582,7 +587,7 @@ export default function SponsorDonationForm({ initialData = null }) {
       .catch((loadError) => {
         if (!cancelled) {
           setMemberOptions([]);
-          setError(loadError.message || "មិនអាចទាញយកសមាជិកសាខាបានទេ។");
+          setError(loadError.message || t("donationPage.loadBranchMembersFailed"));
         }
       });
     return () => { cancelled = true; };
@@ -697,15 +702,15 @@ export default function SponsorDonationForm({ initialData = null }) {
     ) || backendPaymentMethods[0];
 
     if (!form.branch || !form.date || !method) {
-      setError("សូមជ្រើសរើសសាខា កាលបរិច្ឆេទ និងវិធីសាស្ត្រទូទាត់");
+      setError(t("donationPage.branchDatePaymentRequired"));
       return false;
     }
     if (donorKind === "MEMBER" && !form.memberId) {
-      setError("សូមជ្រើសរើសសមាជិកក្នុងសាខា");
+      setError(t("donationPage.selectBranchMemberRequired"));
       return false;
     }
     if (donorKind !== "MEMBER" && !form.sponsorName.trim()) {
-      setError("សូមបញ្ចូលឈ្មោះអ្នកឧបត្ថម្ភ");
+      setError(t("donationPage.sponsorNameRequired"));
       return false;
     }
 
@@ -749,7 +754,7 @@ export default function SponsorDonationForm({ initialData = null }) {
       router.push(listPath);
       return true;
     } catch (saveError) {
-      setError(saveError.message || "មិនអាចរក្សាទុកការបរិច្ចាកបានទេ។");
+      setError(saveError.message || t("donationPage.eventDonationSaveFailed"));
       return false;
     } finally {
       setSaving(false);
@@ -758,16 +763,16 @@ export default function SponsorDonationForm({ initialData = null }) {
 
   const sponsorNamePlaceholder =
     form.sponsorType === sponsorTypes[0]
-      ? "បញ្ចូលឈ្មោះបុគ្គល"
+      ? t("donationPage.enterIndividualName")
       : form.sponsorType === sponsorTypes[1]
-        ? "បញ្ចូលឈ្មោះស្ថាប័ន"
-        : "បញ្ចូលឈ្មោះបុគ្គលឬស្ថាប័ន";
+        ? t("donationPage.enterInstitutionName")
+        : t("donationPage.enterIndividualOrInstitutionName");
 
   return (
     <>
       {showSaveAlert && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 pt-10">
-          <SaveAlert message="អបអរសាទរ ! ថវិការឧបត្ថម្ភត្រូវបានបន្ថែមដោយជោគជ័យ" />
+          <SaveAlert message={t("donationPage.sponsorDonationSaved")} />
         </div>
       )}
 
@@ -778,13 +783,13 @@ export default function SponsorDonationForm({ initialData = null }) {
           </div>
         ) : null}
         <h1 className="mb-7 text-base font-semibold text-secondary">
-          ការកត់ត្រាថវិការឧបត្ថម្ភ
+          {t("donationPage.sponsorDonationRecordTitle")}
         </h1>
 
         <div className="flex w-full flex-nowrap justify-between gap-10 overflow-x-auto">
           <div className="w-[466px] shrink-0 space-y-4 focus:placeholder:text-transparent">
             <h2 className="text-[15px] font-semibold text-secondary">
-              ១. ព័ត៌មានអ្នកឧបត្ថម្ភ
+              {t("donationPage.sponsorInfoSection")}
             </h2>
 
             <fieldset className="flex gap-8 text-[13px] font-medium text-text-secondary">
@@ -806,33 +811,33 @@ export default function SponsorDonationForm({ initialData = null }) {
             {form.sponsorType === "សមាជិក" ? (
               <div className="flex items-end gap-3">
                 <SelectField
-                  label="សាខា"
+                  label={t("donationPage.branch")}
                    required
                   value={form.branch}
                   onChange={handleMemberBranchChange}
                   options={branchOptions}
-                  placeholder="ជ្រើសរើសសាខា"
+                  placeholder={t("donationPage.selectBranch")}
                   disabled={isBranchScoped}
                   className="min-w-0 flex-1"
                 />
                 <div className="min-w-0 flex-1">
                   <MemberSelectField
-                    label="ឈ្មោះអ្នកឧបត្ថម្ភ"
+                    label={t("donationPage.sponsorName")}
                     required
                     value={form.memberId}
                     onChange={handleMemberChange}
                     options={branchMemberNames}
                     placeholder={
                       form.branch
-                        ? "ជ្រើសរើសសមាជិក"
-                        : "សូមជ្រើសរើសសាខាជាមុន"
+                        ? t("donationPage.selectMember")
+                        : t("donationPage.selectBranchFirst")
                     }
                   />
                 </div>
               </div>
             ) : (
               <TextField
-                label="ឈ្មោះអ្នកឧបត្ថម្ភ"
+                label={t("donationPage.sponsorName")}
                 required
                 value={form.sponsorName}
                 onChange={updateField("sponsorName")}
@@ -841,25 +846,25 @@ export default function SponsorDonationForm({ initialData = null }) {
               />
             )}
             <TextField
-              label="លេខទូរស័ព្ទ"
+              label={t("donationPage.phone")}
               value={form.phone}
               onChange={updateField("phone")}
-              placeholder="បញ្ចូលលេខទូរស័ព្ទ"
+              placeholder={t("donationPage.enterPhone")}
               className="focus:placeholder-transparent"
             />
             <TextField
-              label="អ៊ីមែល"
+              label={t("donationPage.email")}
               type="email"
               value={form.email}
               onChange={updateField("email")}
-              placeholder="បញ្ចូលអ៊ីមែល"
+              placeholder={t("donationPage.enterEmail")}
               className="focus:placeholder-transparent"
             />
               <TextField
-                label="អាសយដ្ឋាន(Optional)"
+                label={t("donationPage.addressOptional")}
                 value={form.address}
                 onChange={updateField("address")}
-                placeholder="បញ្ចូលអាសយដ្ឋាន"
+                placeholder={t("donationPage.enterAddress")}
                 className="min-w-0 flex-1 focus:placeholder-transparent"
               />
             <ReceiptUpload
@@ -870,14 +875,14 @@ export default function SponsorDonationForm({ initialData = null }) {
 
           <div className="w-[455px] shrink-0 space-y-4">
             <h2 className="text-[15px] font-semibold text-secondary">
-              ២. ព័ត៌មានវិភាគទានឧបត្ថម្ភ
+              {t("donationPage.sponsorDonationInfoSection")}
             </h2>
 
             <div className="h-5" aria-hidden="true" />
 
             <div className="flex items-end gap-4">
               <DateField
-                label="កាលបរិច្ឆេទនៃការឧបត្ថម្ភ"
+                label={t("donationPage.sponsorDate")}
                 value={form.date}
                 onChange={updateField("date")}
                 required
@@ -893,7 +898,7 @@ export default function SponsorDonationForm({ initialData = null }) {
 
       <div className="grid grid-cols-2 gap-4">
   <TextField
-    label="ចំនួនទឹកប្រាក់ (រៀល)"
+    label={t("donationPage.amountKhrPlain")}
     value={form.amountRiel}
     onChange={updateField("amountRiel")}
     leadingIcon={
@@ -906,13 +911,13 @@ export default function SponsorDonationForm({ initialData = null }) {
     placeholder={
       focusedField === "amountRiel"
         ? ""
-        : "បញ្ចូលចំនួនទឹកប្រាក់"
+        : t("donationPage.enterAmount")
     }
     className="min-w-0"
   />
 
   <TextField
-    label="ចំនួនទឹកប្រាក់ (ដុល្លារ)"
+    label={t("donationPage.amountUsdPlain")}
     value={form.amountDollar}
     onChange={updateField("amountDollar")}
     leadingIcon={
@@ -925,7 +930,7 @@ export default function SponsorDonationForm({ initialData = null }) {
     placeholder={
       focusedField === "amountDollar"
         ? ""
-        : "បញ្ចូលចំនួនទឹកប្រាក់"
+        : t("donationPage.enterAmount")
     }
     className="min-w-0"
   />
@@ -940,50 +945,50 @@ export default function SponsorDonationForm({ initialData = null }) {
                       onChange={handleEquipmentChange}
                       className="h-3.5 w-3.5 accent-[#1689F2]"
                     />
-                    សម្ភារៈ
+                    {t("donationPage.material")}
                   </label>
                 </fieldset>
 
             <div className="flex items-end gap-4">
           
                 <TextField
-                  label="ប្រភេទសម្ភារៈ"
+                  label={t("donationPage.materialType")}
                   value={form.equipmentUnit}
                   onChange={updateField("equipmentUnit")}
                   disabled={form.equipment !== "សម្ភារៈ"}
                   options={equipmentTypes}
-                  placeholder="បញ្ចូលនូវឈ្មោះសម្ភារៈ"
+                  placeholder={t("donationPage.enterMaterialName")}
                   className="min-w-0 flex-1"
                 />
                 <QuantityField
-                  label="ចំនួនសម្ភារៈ"
+                  label={t("donationPage.materialQuantity")}
                   value={form.equipmentCount}
                   onChange={updateField("equipmentCount")}
                   disabled={form.equipment !== "សម្ភារៈ"}
                 />
                 <TextField
-                  label="ឯកតាសម្ភារៈ"
+                  label={t("donationPage.materialUnit")}
                   value={form.equipmentType}
                   onChange={updateField("equipmentType")}
                   disabled={form.equipment !== "សម្ភារៈ"}
                   options={equipmentTypes}
-                  placeholder="ឯកតាសម្ភារៈ"
+                  placeholder={t("donationPage.materialUnit")}
                   className="w-[100px] shrink-0"
                 />
               </div>
 
             <div className="flex items-end gap-4">
               <SelectField
-                label="សាខា(Optional)"
+                label={t("donationPage.branchOptional")}
                 value={form.branch}
                 onChange={updateField("branch")}
                 options={branchOptions}
-                placeholder="ជ្រើសរើសសាខា"
+                placeholder={t("donationPage.selectBranch")}
                 disabled={isBranchScoped}
                 className="min-w-0 flex-1"
               />
               <SelectField
-                label="ឧបត្ថម្ភក្នុងកម្មវិធី(Optional)"
+                label={t("donationPage.activitySponsorOptional")}
                 value={form.status}
                 onChange={updateField("status")}
                 options={activityOptions.filter(
@@ -992,16 +997,16 @@ export default function SponsorDonationForm({ initialData = null }) {
                     activity.branchId === String(form.branch) ||
                     activity.managedInvitedBranchId === String(form.branch),
                 )}
-                placeholder="ជ្រើសរើសកម្មវិធី"
+                placeholder={t("donationPage.selectActivity")}
                 className="min-w-0 flex-1"
               />
               </div>
 
               <TextField
-                label="Note (Optional)"
+                label={t("donationPage.noteOptional")}
                 value={form.note}
                 onChange={updateField("note")}
-                placeholder="សរសេរ Note"
+                placeholder={t("donationPage.enterNote")}
                 heightClass="h-[86px]"
               />
 
@@ -1014,7 +1019,7 @@ export default function SponsorDonationForm({ initialData = null }) {
             onClick={() => router.push(listPath)}
             className="inline-flex h-[34px] w-[196px] items-center justify-center rounded-lg border border-border bg-bg-page-gray px-3 text-[14px] font-semibold text-text-primary shadow-sm transition hover:bg-bg-page-gray"
           >
-            បោះបង់
+            {t("donationPage.cancel")}
           </button>
           <button
             type="button"
@@ -1023,7 +1028,7 @@ export default function SponsorDonationForm({ initialData = null }) {
             className="inline-flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary px-3 text-[14px] font-semibold text-white shadow-sm transition hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             <HiSaveAs size={16} />
-            រក្សាទុក
+            {t("donationPage.save")}
           </button>
         </div>
       </section>

@@ -18,6 +18,7 @@ import {
 import TextInput from "@/components/ui/textInput";
 import PasswordInput from "@/components/ui/passwordInput";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { getRoleHomePath } from "@/lib/navigation";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 
@@ -48,6 +49,7 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setUser } = useAuth();
+  const { t } = useLanguage();
 
   const identifierFromUrl =
     searchParams.get("identifier") || "";
@@ -115,7 +117,7 @@ function LoginContent() {
       setError("");
 
       setSuccessMessage(
-        "គណនីរបស់អ្នកត្រូវបានបើកដំណើរការរួចរាល់។ សូមបញ្ចូលលេខសម្ងាត់ដើម្បីចូលប្រើប្រាស់"
+        t("auth.accountActivated", "គណនីរបស់អ្នកត្រូវបានបើកដំណើរការរួចរាល់។ សូមបញ្ចូលលេខសម្ងាត់ដើម្បីចូលប្រើប្រាស់")
       );
     }
   }, [
@@ -168,7 +170,7 @@ function LoginContent() {
         setError(
           khmerErrorMessage(
             data?.message || data?.data?.message,
-            "មិនអាចផ្ញើលេខកូដ OTP បានទេ",
+            t("auth.otpSendFailed", "មិនអាចផ្ញើលេខកូដ OTP បានទេ"),
           )
         );
 
@@ -194,7 +196,7 @@ function LoginContent() {
       );
 
       setError(
-        "មិនអាចផ្ញើលេខកូដ OTP បានទេ"
+        t("auth.otpSendFailed", "មិនអាចផ្ញើលេខកូដ OTP បានទេ")
       );
 
       return false;
@@ -207,7 +209,7 @@ function LoginContent() {
 
     if (!normalizedLogin) {
       setError(
-        "សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល"
+        t("auth.identifierRequired", "សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល")
       );
 
       return;
@@ -255,7 +257,7 @@ function LoginContent() {
         setError(
           khmerErrorMessage(
             data?.message || data?.data?.message,
-            "មិនអាចពិនិត្យស្ថានភាពគណនីបានទេ",
+            t("auth.checkStatusFailed", "មិនអាចពិនិត្យស្ថានភាពគណនីបានទេ"),
           )
         );
 
@@ -310,7 +312,7 @@ function LoginContent() {
           "ACCOUNT_NOT_FOUND"
       ) {
         setError(
-          "រកមិនឃើញគណនីដែលប្រើលេខទូរស័ព្ទ ឬអ៊ីមែលនេះទេ"
+          t("auth.accountNotFound", "រកមិនឃើញគណនីដែលប្រើលេខទូរស័ព្ទ ឬអ៊ីមែលនេះទេ")
         );
 
         return;
@@ -354,7 +356,7 @@ function LoginContent() {
         status === "INACTIVE"
       ) {
         setError(
-          "គណនីនេះត្រូវបានបិទ។ សូមទាក់ទងអ្នកគ្រប់គ្រង"
+          t("auth.accountInactive", "គណនីនេះត្រូវបានបិទ។ សូមទាក់ទងអ្នកគ្រប់គ្រង")
         );
 
         return;
@@ -366,7 +368,7 @@ function LoginContent() {
         status === "LOCKED"
       ) {
         setError(
-          "គណនីនេះត្រូវបានចាក់សោ។ សូមព្យាយាមម្ដងទៀតនៅពេលក្រោយ"
+          t("auth.accountLocked", "គណនីនេះត្រូវបានចាក់សោ។ សូមព្យាយាមម្ដងទៀតនៅពេលក្រោយ")
         );
 
         return;
@@ -380,7 +382,7 @@ function LoginContent() {
       setError(
         khmerErrorMessage(
           accountStatus?.message || data?.message,
-          "មិនអាចកំណត់ស្ថានភាពគណនីបានទេ",
+          t("auth.unknownAccountStatus", "មិនអាចកំណត់ស្ថានភាពគណនីបានទេ"),
         )
       );
     } catch (statusError) {
@@ -390,7 +392,7 @@ function LoginContent() {
       );
 
       setError(
-        "មានបញ្ហាកើតឡើង សូមព្យាយាមម្ដងទៀត"
+        t("auth.genericError", "មានបញ្ហាកើតឡើង សូមព្យាយាមម្ដងទៀត")
       );
     } finally {
       setLoading(false);
@@ -403,7 +405,7 @@ function LoginContent() {
 
     if (!normalizedLogin) {
       setError(
-        "សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល"
+        t("auth.identifierRequired", "សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល")
       );
 
       return;
@@ -411,7 +413,7 @@ function LoginContent() {
 
     if (!password) {
       setError(
-        "សូមបញ្ចូលលេខសម្ងាត់"
+        t("auth.passwordRequired", "សូមបញ្ចូលលេខសម្ងាត់")
       );
 
       return;
@@ -451,7 +453,7 @@ function LoginContent() {
         setError(
           khmerErrorMessage(
             data?.message || data?.data?.message,
-            "លេខទូរស័ព្ទ អ៊ីមែល ឬលេខសម្ងាត់មិនត្រឹមត្រូវ",
+            t("auth.invalidCredentials", "លេខទូរស័ព្ទ អ៊ីមែល ឬលេខសម្ងាត់មិនត្រឹមត្រូវ"),
           )
         );
 
@@ -491,7 +493,7 @@ function LoginContent() {
           setError(
             khmerErrorMessage(
               meData?.message,
-              "ចូលប្រើប្រាស់បាន ប៉ុន្តែមិនអាចទាញយកព័ត៌មានអ្នកប្រើប្រាស់បាន",
+              t("auth.profileLoadAfterLoginFailed", "ចូលប្រើប្រាស់បាន ប៉ុន្តែមិនអាចទាញយកព័ត៌មានអ្នកប្រើប្រាស់បាន"),
             )
           );
 
@@ -534,7 +536,7 @@ function LoginContent() {
       );
 
       setError(
-        "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ"
+        t("auth.backendUnavailable", "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបានទេ")
       );
     } finally {
       setLoading(false);
@@ -574,13 +576,13 @@ function LoginContent() {
   return (
     <div className="w-full">
       <h1 className="mb-2 text-center text-2xl font-bold text-text-primary">
-        ចូលប្រើប្រាស់
+        {t("auth.loginTitle", "ចូលប្រើប្រាស់")}
       </h1>
 
       <p className="mb-7 text-center text-sm text-text-mute">
         {step === LOGIN_STEP.IDENTIFIER
-          ? "សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែលរបស់អ្នក"
-          : "សូមបញ្ចូលលេខសម្ងាត់របស់អ្នក"}
+          ? t("auth.loginIdentifierSubtitle", "សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែលរបស់អ្នក")
+          : t("auth.loginPasswordSubtitle", "សូមបញ្ចូលលេខសម្ងាត់របស់អ្នក")}
       </p>
 
       <form
@@ -596,8 +598,8 @@ function LoginContent() {
         )}
 
         <TextInput
-          label="លេខទូរស័ព្ទ ឬអ៊ីមែល"
-          placeholder="បញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល"
+          label={t("auth.phoneOrEmail", "លេខទូរស័ព្ទ ឬអ៊ីមែល")}
+          placeholder={t("auth.phoneOrEmailPlaceholder", "បញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល")}
           value={phoneOrEmail}
           onChange={(event) => {
             setPhoneOrEmail(
@@ -617,8 +619,8 @@ function LoginContent() {
 
         {step === LOGIN_STEP.PASSWORD && (
           <PasswordInput
-            label="លេខសម្ងាត់"
-            placeholder="បញ្ចូលលេខសម្ងាត់"
+            label={t("auth.password", "លេខសម្ងាត់")}
+            placeholder={t("auth.passwordPlaceholder", "បញ្ចូលលេខសម្ងាត់")}
             value={password}
             onChange={(event) => {
               setPassword(
@@ -651,14 +653,14 @@ function LoginContent() {
                 className="h-4 w-4 rounded border-border"
               />
 
-              ចងចាំខ្ញុំ
+              {t("auth.rememberMe", "ចងចាំខ្ញុំ")}
             </label>
 
             <a
               href="/auth/forget-password"
               className="text-sm font-medium text-blue-700 hover:underline"
             >
-              ភ្លេចលេខសម្ងាត់?
+              {t("auth.forgotPassword", "ភ្លេចលេខសម្ងាត់?")}
             </a>
           </div>
         )}
@@ -677,11 +679,11 @@ function LoginContent() {
           <LogIn size={18} />
 
           {loading
-            ? "កំពុងដំណើរការ..."
+            ? t("common.loading", "កំពុងដំណើរការ...")
             : step ===
                 LOGIN_STEP.IDENTIFIER
-              ? "បន្ត"
-              : "ចូលប្រើប្រាស់"}
+              ? t("auth.continue", "បន្ត")
+              : t("auth.loginTitle", "ចូលប្រើប្រាស់")}
         </button>
 
         {step === LOGIN_STEP.PASSWORD && (
@@ -695,7 +697,7 @@ function LoginContent() {
           >
             <ArrowLeft size={17} />
 
-            ប្រើលេខទូរស័ព្ទ ឬអ៊ីមែលផ្សេង
+            {t("auth.useDifferentIdentifier", "ប្រើលេខទូរស័ព្ទ ឬអ៊ីមែលផ្សេង")}
           </button>
         )}
       </form>

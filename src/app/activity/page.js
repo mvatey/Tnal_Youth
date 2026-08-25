@@ -16,6 +16,7 @@ import { useBranch } from "@/context/BranchContext";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import { useAuth } from "@/context/AuthContext";
 import { normalizeRole } from "@/lib/navigation";
+import { useLanguage } from "@/context/LanguageContext";
 
 function getLookupLabel(lookup) {
   return (
@@ -151,17 +152,18 @@ function TypeBadge({ type }) {
 }
 
 function StatusBadge({ status }) {
+  const { t } = useLanguage();
   const isUpcoming = status === "upcoming";
   const isOngoing = status === "ongoing";
   const isCancelled = status === "cancelled";
 
   const label = isCancelled
-    ? "បានលុបចោល"
+    ? t("activityPage.cancelled")
     : isOngoing
-      ? "កំពុងដំណើរការ"
+      ? t("activityPage.ongoing")
       : isUpcoming
-        ? "ឆាប់ៗនេះ"
-        : "បានបញ្ចប់";
+        ? t("activityPage.upcoming")
+        : t("activityPage.completed");
 
   const style = isCancelled
     ? "bg-danger-bg text-danger"
@@ -181,6 +183,7 @@ function StatusBadge({ status }) {
 }
 
 export default function ActivityPage() {
+  const { t, label } = useLanguage();
   const { user } = useAuth();
   const role = normalizeRole(user?.role);
 
@@ -307,27 +310,20 @@ export default function ActivityPage() {
       setBranchOptions(
         (Array.isArray(branchBody) ? branchBody : []).map((branch) => ({
           value: branch.value ?? branch.id,
-          label:
-            branch.labelKm ||
-            branch.labelEn ||
-            branch.nameKm ||
-            branch.nameEn ||
-            branch.label ||
-            branch.code ||
-            "-",
+          label: label(branch, branch.code || "-"),
         })),
       );
     } catch (error) {
       if (mountedRef.current && requestId === requestIdRef.current) {
         setActivityRecords([]);
-        setLoadError(error.message || "មិនអាចទាញយកកម្មវិធីបានទេ។");
+          setLoadError(error.message || t("activityPage.loadFailed"));
       }
     } finally {
       if (mountedRef.current && requestId === requestIdRef.current) {
         setLoading(false);
       }
     }
-  }, [selectedBranch]);
+  }, [label, selectedBranch, t]);
 
   useEffect(() => {
     setSelectedScope("all");
@@ -370,13 +366,13 @@ export default function ActivityPage() {
         await loadActivities();
       } catch (error) {
         if (mountedRef.current) {
-          setRespondError(error.message || "មិនអាចធ្វើបច្ចុប្បន្នភាពការអញ្ជើញបានទេ។");
+      setRespondError(error.message || t("activityPage.respondFailed"));
         }
       } finally {
         if (mountedRef.current) setRespondingActivityId(null);
       }
     },
-    [loadActivities],
+    [loadActivities, t],
   );
 
   const activities = useMemo(
@@ -514,14 +510,14 @@ export default function ActivityPage() {
   const columns = [
     {
       key: "no",
-      label: "ល.រ",
+      label: t("memberPage.no"),
       width: "4%",
       align: "center",
       render: (_row, index) => index + 1,
     },
     {
       key: "name",
-      label: "ឈ្មោះកម្មវិធី",
+      label: t("activityPage.activityName"),
       width: "13%",
       align: "left",
       truncate: true,
@@ -530,7 +526,7 @@ export default function ActivityPage() {
     },
     {
       key: "type",
-      label: "ប្រភេទ",
+      label: t("memberPage.type"),
       width: "10%",
       align: "center",
       render: (row) => (
@@ -539,20 +535,20 @@ export default function ActivityPage() {
     },
     {
       key: "sector",
-      label: "វិស័យ",
+      label: t("activityPage.sector"),
       width: "6%",
       align: "center",
     },
     {
       key: "branch",
-      label: "សាខា",
+      label: t("memberPage.branch"),
       width: "12%",
       align: "center",
       cellClassName: "whitespace-nowrap",
     },
     {
       key: "location",
-      label: "ទីតាំង",
+      label: t("memberPage.location"),
       width: "8%",
       align: "center",
       truncate: true,
@@ -570,25 +566,25 @@ export default function ActivityPage() {
     },
     {
       key: "date",
-      label: "ថ្ងៃចាប់ផ្តើម",
+      label: t("activityPage.startDate"),
       width: "10%",
       align: "center",
     },
     {
       key: "duration",
-      label: "រយៈពេល",
+      label: t("activityPage.duration"),
       width: "6%",
       align: "center",
     },
     {
       key: "participants",
-      label: "ចំនួនអ្នកចូលរួម",
+      label: t("activityPage.participants"),
       width: "9%",
       align: "center",
     },
     {
       key: "status",
-      label: "ស្ថានភាព",
+      label: t("memberPage.status"),
       width: "8%",
       align: "center",
       render: (row) => (
@@ -597,7 +593,7 @@ export default function ActivityPage() {
     },
     {
       key: "actions",
-      label: "សកម្មភាព",
+      label: t("activityPage.actions"),
       width: "14%",
       align: "center",
       render: (row) => {
@@ -620,7 +616,7 @@ export default function ActivityPage() {
                 className="inline-flex h-[22px] items-center justify-center gap-1 whitespace-nowrap rounded-[8px] bg-success px-2 text-[10px] font-Regular text-white transition hover:bg-emerald-700 disabled:opacity-60"
               >
                 <CheckCircle2 size={12} />
-                ទទួល
+                {t("activityPage.accept")}
               </button>
               <button
                 type="button"
@@ -631,7 +627,7 @@ export default function ActivityPage() {
                 className="inline-flex h-[22px] items-center justify-center gap-1 whitespace-nowrap rounded-[8px] border border-border px-2 text-[10px] font-Regular text-text-secondary transition hover:bg-bg-page-gray disabled:opacity-60"
               >
                 <XCircle size={12} />
-                បដិសេធ
+                {t("activityPage.decline")}
               </button>
             </div>
           );
@@ -645,7 +641,7 @@ export default function ActivityPage() {
           return (
             <span className="mx-auto inline-flex h-[22px] w-fit items-center justify-center gap-1 whitespace-nowrap rounded-[8px] bg-error-bg px-2.5 text-[10px] font-Regular text-error">
               <XCircle size={12} />
-              បានបដិសេធ
+              {t("activityPage.declined")}
             </span>
           );
         }
@@ -656,7 +652,7 @@ export default function ActivityPage() {
             className="mx-auto flex h-[22px] w-fit items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] bg-primary px-3 text-[10px] font-Regular text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-sm active:translate-y-0"
           >
             <List size={14} />
-            ព័ត៌មានលម្អិត
+            {t("activityPage.detail")}
           </Link>
         );
       },
@@ -668,37 +664,37 @@ export default function ActivityPage() {
       key: "type",
       value: selectedType,
       onChange: setSelectedType,
-      placeholder: "ប្រភេទ",
+      placeholder: t("memberPage.type"),
       options: types,
     },
     {
       key: "sector",
       value: selectedSector,
       onChange: setSelectedSector,
-      placeholder: "វិស័យ",
+      placeholder: t("activityPage.sector"),
       options: sectors,
     },
     {
       key: "date",
       value: selectedDateRange,
       onChange: setSelectedDateRange,
-      placeholder: "ថ្ងៃ/ខែ/ឆ្នាំ",
+      placeholder: t("activityPage.datePlaceholder"),
       type: "daterange",
     },
   ];
 
   const handleDownload = () => {
     const rows = filteredActivities.map((item, index) => ({
-      "ល.រ": index + 1,
-      "ឈ្មោះកម្មវិធី": item.name,
-      "ប្រភេទ": item.type,
-      "វិស័យ": item.sector,
-      "សាខា": item.branch,
-      "ទីតាំង": item.location,
-      "កាលបរិច្ឆេទ": item.date,
-      "រយៈពេល": item.duration,
-      "អ្នកចូលរួម": item.participants,
-      "ស្ថានភាព": item.status,
+      [t("memberPage.no")]: index + 1,
+      [t("activityPage.activityName")]: item.name,
+      [t("memberPage.type")]: item.type,
+      [t("activityPage.sector")]: item.sector,
+      [t("memberPage.branch")]: item.branch,
+      [t("memberPage.location")]: item.location,
+      [t("memberPage.date")]: item.date,
+      [t("activityPage.duration")]: item.duration,
+      [t("activityPage.participants")]: item.participants,
+      [t("memberPage.status")]: item.status,
     }));
 
     const branchLabel =
@@ -708,7 +704,7 @@ export default function ActivityPage() {
 
     downloadTableAsExcel({
       data: rows,
-      fileName: branchLabel ? `កម្មវិធី-${branchLabel}` : "កម្មវិធី",
+      fileName: branchLabel ? `${t("activityPage.fileName")}-${branchLabel}` : t("activityPage.fileName"),
     });
   };
 
@@ -743,9 +739,9 @@ export default function ActivityPage() {
         {hasOwnBranchData && (
           <div className="mb-4 inline-flex w-fit shrink-0 rounded-lg border border-border bg-bg-page-gray p-1 text-xs font-medium">
             {[
-              { key: "all", label: "ទាំងអស់" },
-              { key: "own", label: "សាខាខ្លួនឯង" },
-              { key: "invited", label: "សាខាដែលបានអញ្ជើញ" },
+              { key: "all", label: t("activityPage.all") },
+              { key: "own", label: t("activityPage.ownBranch") },
+              { key: "invited", label: t("activityPage.invitedBranch") },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -773,7 +769,7 @@ export default function ActivityPage() {
     <SearchBar
       value={searchQuery}
       onChange={setSearchQuery}
-      placeholder="ស្វែងរកសកម្មភាព..."
+      placeholder={t("activityPage.searchPlaceholder")}
       width="w-full"
     />
   </div>
@@ -792,7 +788,7 @@ export default function ActivityPage() {
             variant="success"
             icon={<PlusCircle size={16} />}
           >
-            បង្កើតកម្មវិធី
+            {t("activityPage.createActivity")}
           </Button>
         </Link>
       )}
@@ -807,8 +803,8 @@ export default function ActivityPage() {
           tableClassName="min-w-[980px]"
           emptyMessage={
             loading
-              ? "កំពុងទាញយកទិន្នន័យ..."
-              : "មិនមានទិន្នន័យកម្មវិធីទេ"
+              ? t("activityPage.loadingData")
+              : t("activityPage.noData")
           }
         />
       </section>

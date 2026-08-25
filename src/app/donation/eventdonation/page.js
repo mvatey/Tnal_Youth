@@ -12,6 +12,7 @@ import NumberSponsorCard from "@/components/donations/eventdonation/sponsorcard"
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 import { useBranch } from "@/context/BranchContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
@@ -27,7 +28,7 @@ function mapMyEventRow(row) {
   };
 }
 
-async function fetchAllActivityDonationRows(branchId) {
+async function fetchAllActivityDonationRows(branchId, fallbackMessage) {
   const makeParams = (page) => {
     const params = new URLSearchParams({
       page: String(page),
@@ -44,7 +45,7 @@ async function fetchAllActivityDonationRows(branchId) {
     );
     const body = await response.json().catch(() => null);
     if (!response.ok || body?.success === false) {
-      throw new Error(body?.message || "មិនអាចទាញយកការបរិច្ចាកកម្មវិធីបានទេ។");
+      throw new Error(body?.message || fallbackMessage);
     }
     return body?.data ?? body;
   };
@@ -118,6 +119,7 @@ function MyEventDonationsTable({ rows }) {
 }
 
 export default function EventDonationPage() {
+  const { t } = useLanguage();
   const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
   const viewRole = currentMember?.effectiveRole || currentMember?.role;
   const isMemberScoped = viewRole === "member";
@@ -186,6 +188,7 @@ export default function EventDonationPage() {
     setRows([]);
     fetchAllActivityDonationRows(
       isBranchScoped ? effectiveBranchId : null,
+      t("donationPage.loadEventDonationsFailed"),
     )
       .then((items) => {
         if (!cancelled) setRows(items);
@@ -229,12 +232,12 @@ export default function EventDonationPage() {
         {error ? <div className="rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <EventDonationSummaryCard
-            label="វិភាគទានក្នុងកម្មវិធីរបស់ខ្ញុំ"
+            label={t("donationPage.myEventDonations")}
             value={`$${myTotalDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
             growth=""
             note=""
           />
-          <DonorCard label="ចំនួនកំណត់ត្រា" value={`${myRows.length} លើក`} growth="" note="" />
+          <DonorCard label={t("donationPage.recordCount")} value={`${myRows.length} ${t("donationPage.timeUnit")}`} growth="" note="" />
         </div>
         <MyEventDonationsTable rows={myRows} />
       </div>
@@ -246,15 +249,17 @@ export default function EventDonationPage() {
       <DonationTabs />
       {error ? <div className="rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <EventDonationSummaryCard value={`$${totalDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="" note="" />
-        <DonorCard label="អ្នកវិភាគទានសរុប" value={`${memberCount + sponsorCount} នាក់`} growth="" note="" />
+        <EventDonationSummaryCard label={t("donationPage.eventDonationTitle")} value={`$${totalDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="" note="" />
+        <DonorCard label={t("donationPage.donorsTotal")} value={`${memberCount + sponsorCount} ${t("donationPage.personUnit")}`} growth="" note="" />
         <MemberCard
-          value={`${memberCount} នាក់`}
+          label={t("donationPage.member")}
+          value={`${memberCount} ${t("donationPage.personUnit")}`}
           growth=""
           note=""
         />
         <NumberSponsorCard
-          value={`${sponsorCount} នាក់`}
+          label={t("memberPage.tabSponsor")}
+          value={`${sponsorCount} ${t("donationPage.personUnit")}`}
           growth=""
           note=""
         />

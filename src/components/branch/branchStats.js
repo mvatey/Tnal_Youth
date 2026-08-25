@@ -6,10 +6,13 @@ import {
   Users,
 } from "lucide-react";
 
+import { useLanguage } from "@/context/LanguageContext";
+
 const STAT_CONFIG = [
   {
     key: "totalBranches",
     label: "ចំនួនសាខាសរុប",
+    labelKey: "branchPage.totalBranches",
     Icon: Building2,
     iconClass:
       "bg-secondary-light text-secondary",
@@ -18,6 +21,7 @@ const STAT_CONFIG = [
   {
     key: "subBranches",
     label: "ចំនួនអនុសាខា",
+    labelKey: "branchPage.subBranches",
     Icon: BadgeCheck,
     iconClass: "bg-warning-bg text-warning",
     borderClass: "border-t-warning",
@@ -25,6 +29,7 @@ const STAT_CONFIG = [
   {
     key: "totalMembers",
     label: "ចំនួនសមាជិកសរុប",
+    labelKey: "branchPage.totalMembers",
     Icon: Users,
     iconClass:
       "bg-success-bg text-success",
@@ -33,6 +38,9 @@ const STAT_CONFIG = [
 ];
 
 export default function BranchStats({ branches = [] }) {
+  const { t } =
+    useLanguage();
+
   const isProvincialLevel = (branch) => {
     const level = String(
       branch.levelCode ||
@@ -69,6 +77,7 @@ export default function BranchStats({ branches = [] }) {
         ({
           key,
           label,
+          labelKey,
           Icon,
           iconClass,
           borderClass,
@@ -86,7 +95,7 @@ export default function BranchStats({ branches = [] }) {
 
               <div>
                 <p className="text-xs text-text-secondary">
-                  {label}
+                  {t(labelKey, label)}
                 </p>
 
                 <p className="mt-1 text-2xl font-bold text-text-primary">

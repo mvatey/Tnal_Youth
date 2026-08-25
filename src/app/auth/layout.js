@@ -1,7 +1,14 @@
 // app/auth/layout.jsx
+"use client";
+
 import Image from "next/image";
+import { useLanguage } from "@/context/LanguageContext";
+import useOrganizationProfile from "@/hooks/useOrganizationProfile";
 
 export default function AuthLayout({ children }) {
+  const { t } = useLanguage();
+  const { localized } = useOrganizationProfile();
+
   return (
     <div className="min-h-screen flex">
       {/* Left panel — shared across all auth pages */}
@@ -17,13 +24,13 @@ export default function AuthLayout({ children }) {
         <div className="relative z-10 flex flex-col justify-center px-20 text-white">
           <div className="w-10 h-px bg-white mb-8" />
           <h1 className="text-4xl font-bold text-yellow-400 leading-snug mb-2">
-            ប្រព័ន្ធគ្រប់គ្រង
+            {localized.name || t("auth.heroTitle", "ប្រព័ន្ធគ្រប់គ្រង")}
           </h1>
           <h2 className="text-4xl font-bold leading-snug mb-6">
-            សមាជិក · សកម្មភាព · វិភាគទាន
+            {localized.tagline || t("auth.heroSubtitle", "សមាជិក · សកម្មភាព · វិភាគទាន")}
           </h2>
             <p className="text-slate-300 text-base leading-relaxed mb-6">
-            គ្រប់គ្រងទិន្នន័យសមាជិក ការបង់វិភាគទាន និងសកម្មភាពទាំងនៅទីនេះដោយពួកគេ
+            {localized.about || t("auth.heroDescription", "គ្រប់គ្រងទិន្នន័យសមាជិក ការបង់វិភាគទាន និងសកម្មភាពទាំងនៅទីនេះដោយពួកគេ")}
           </p>
           <div className="w-16 h-px bg-white/60" />
         </div>
@@ -32,7 +39,7 @@ export default function AuthLayout({ children }) {
         {/* Right panel */}
         <div className="w-full md:w-1/2 flex flex-col items-center justify-center px-8 py-12">
         <div className="w-full max-w-md mx-auto"> {/* add mx-auto explicitly */}
-            <img src="/logo.png" alt="Logo" className="w-24 h-24 mb-6 mx-auto" />
+            <img src={localized.logoUrl || "/logo.png"} alt={localized.name || "Logo"} className="w-24 h-24 mb-6 mx-auto object-contain" />
             {children}
         </div>
         </div>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import EventDonationSummaryCard from "@/components/donations/EventDonationSummaryCard";
 import DonorCard from "@/components/donations/DonorCard";
+import { useLanguage } from "@/context/LanguageContext";
 
 /**
  * Activity-level donation cards.
@@ -15,6 +16,7 @@ import DonorCard from "@/components/donations/DonorCard";
  * too without exposing that branch's individual donor rows.
  */
 export default function EventDonationDetailCards() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const activityId = searchParams.get("event");
   const [branchTotals, setBranchTotals] = useState([]);
@@ -37,7 +39,7 @@ export default function EventDonationDetailCards() {
       .then(async (response) => {
         const body = await response.json().catch(() => null);
         if (!response.ok || body?.success === false) {
-          throw new Error(body?.message || "មិនអាចទាញយកសរុបការបរិច្ចាកកម្មវិធីបានទេ។");
+          throw new Error(body?.message || t("donationPage.donationSummaryLoadFailed"));
         }
         return body?.data ?? body;
       })
@@ -76,6 +78,7 @@ export default function EventDonationDetailCards() {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <EventDonationSummaryCard
+        label={t("donationPage.eventDonationTitle")}
         value={`$${summary.overall.toLocaleString(undefined, {
           maximumFractionDigits: 2,
         })}`}
@@ -83,8 +86,8 @@ export default function EventDonationDetailCards() {
         note={`៛ ${summary.riel.toLocaleString()}`}
       />
       <DonorCard
-        label="អ្នកវិភាគទាន"
-        value={`${summary.donorCount} នាក់`}
+        label={t("donationPage.donor")}
+        value={`${summary.donorCount} ${t("donationPage.personUnit")}`}
         growth=""
         note=""
       />

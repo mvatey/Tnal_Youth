@@ -16,6 +16,7 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 import { UnsavedChangesProvider } from "@/context/UnsavedChangesContext";
 import StatCard from "@/components/dashboard/statCard";
 import { fetchAllDonationRecords, summarizeDonationRecords } from "@/lib/memberDonationRecords";
+import { useLanguage } from "@/context/LanguageContext";
 
 const ROLE_LABELS = {
   SECRETARY: "លេខាធិការ",
@@ -37,6 +38,7 @@ export default function MyAccountLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const { member, loading, error, refetch } = useCurrentMember();
+  const { t } = useLanguage();
 
   /*
    * Staff (mainly secretaries) can be assigned to more than one
@@ -137,10 +139,10 @@ export default function MyAccountLayout({ children }) {
     member?.fullNameKm ||
     member?.name_en ||
     member?.fullNameEn ||
-    "អ្នកប្រើប្រាស់";
+    t("common.user");
 
   const displayRole =
-    member?.roleLabel || ROLE_LABELS[member?.role] || member?.role || "គណនី";
+    member?.roleLabel || ROLE_LABELS[member?.role] || member?.role || t("myAccount.account");
 
   const displayAvatar =
     member?.profile_photo || member?.profileImage || "/profiles/default-avatar.jpg";
@@ -164,13 +166,13 @@ export default function MyAccountLayout({ children }) {
       />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <Topbar title="គណនីរបស់ខ្ញុំ" />
+        <Topbar title={t("myAccount.title")} />
 
         <main className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
           {loading && (
             <div className="flex min-h-[300px] items-center justify-center">
               <p className="text-sm text-text-mute">
-                កំពុងទាញយកព័ត៌មានសមាជិក...
+                {t("memberPage.loadingMember")}
               </p>
             </div>
           )}
@@ -183,7 +185,7 @@ export default function MyAccountLayout({ children }) {
 
           {!loading && !error && !member && (
             <div className="rounded-xl border border-border bg-bg-page-white p-6 text-center text-sm text-text-mute">
-              រកមិនឃើញព័ត៌មានសមាជិក
+              {t("memberPage.memberNotFound")}
             </div>
           )}
 
@@ -216,17 +218,17 @@ export default function MyAccountLayout({ children }) {
               <HeaderMemberInfo
                 title={
                   isDetailsPage
-                    ? "ប្រវត្តិរូបលម្អិតសមាជិក"
-                    : "ប្រវត្តិរូបសមាជិក"
+                    ? t("myAccount.detailProfileTitle")
+                    : t("myAccount.profileTitle")
                 }
                 breadcrumb={{
-                  parent: isDetailsPage ? "ប្រវត្តិរូបសមាជិក" : "គណនីរបស់ខ្ញុំ",
+                  parent: isDetailsPage ? t("myAccount.profileTitle") : t("myAccount.title"),
                   current: isDetailsPage
-                    ? "ប្រវត្តិរូបលម្អិតសមាជិក"
-                    : "ប្រវត្តិរូបសមាជិក",
+                    ? t("myAccount.detailProfileTitle")
+                    : t("myAccount.profileTitle"),
                 }}
                 onBack={handleBack}
-                buttonText={isDetailsPage ? undefined : "ព័ត៌មានលម្អិត"}
+                buttonText={isDetailsPage ? undefined : t("memberPage.detail")}
                 onButtonClick={
                   isDetailsPage
                     ? undefined
@@ -236,19 +238,19 @@ export default function MyAccountLayout({ children }) {
 
               {isDonation && (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  <StatCard icon={FaHandHoldingDollar} label="ចំនួនវិភាគទាន" value={monthlyDonationSummary.donationCount} iconColor="text-primary" iconBg="bg-secondary-light" />
-                  <StatCard icon={CircleDollarSign} label="ទឹកប្រាក់សរុប" value={formatDonationTotal(monthlyDonationSummary.totalDonationKhr, monthlyDonationSummary.totalDonationUsd)} iconColor="text-error" iconBg="bg-error-bg" />
-                  <StatCard icon={HiCash} label="ការទូទាត់តាម Cash" value={monthlyDonationSummary.cashPaymentCount} iconColor="text-warning" iconBg="bg-warning-bg" />
-                  <StatCard icon={CreditCard} label="ការទូទាត់តាមធនាគារ" value={monthlyDonationSummary.bankPaymentCount} iconColor="text-secondary" iconBg="bg-secondary-light" />
+                  <StatCard icon={FaHandHoldingDollar} label={t("memberPage.donationCount")} value={monthlyDonationSummary.donationCount} iconColor="text-primary" iconBg="bg-secondary-light" />
+                  <StatCard icon={CircleDollarSign} label={t("memberPage.totalAmount")} value={formatDonationTotal(monthlyDonationSummary.totalDonationKhr, monthlyDonationSummary.totalDonationUsd)} iconColor="text-error" iconBg="bg-error-bg" />
+                  <StatCard icon={HiCash} label={t("memberPage.cashPayment")} value={monthlyDonationSummary.cashPaymentCount} iconColor="text-warning" iconBg="bg-warning-bg" />
+                  <StatCard icon={CreditCard} label={t("memberPage.bankPayment")} value={monthlyDonationSummary.bankPaymentCount} iconColor="text-secondary" iconBg="bg-secondary-light" />
                 </div>
               )}
 
               {isSponsor && (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  <StatCard icon={FaHandHoldingDollar} label="ចំនួនការបរិច្ចាក" value={activityDonationSummary.donationCount} iconColor="text-primary" iconBg="bg-secondary-light" />
-                  <StatCard icon={CircleDollarSign} label="ទឹកប្រាក់សរុប" value={formatDonationTotal(activityDonationSummary.totalDonationKhr, activityDonationSummary.totalDonationUsd)} iconColor="text-success" iconBg="bg-success-bg" />
-                  <StatCard icon={HandCoins} label="ចំនួនសម្ភារៈ" value={activityDonationSummary.materialDonationCount} iconColor="text-warning" iconBg="bg-warning-bg" />
-                  <StatCard icon={CreditCard} label="ការទូទាត់តាមធនាគារ" value={activityDonationSummary.bankPaymentCount} iconColor="text-secondary" iconBg="bg-secondary-light" />
+                  <StatCard icon={FaHandHoldingDollar} label={t("memberPage.contributionCount")} value={activityDonationSummary.donationCount} iconColor="text-primary" iconBg="bg-secondary-light" />
+                  <StatCard icon={CircleDollarSign} label={t("memberPage.totalAmount")} value={formatDonationTotal(activityDonationSummary.totalDonationKhr, activityDonationSummary.totalDonationUsd)} iconColor="text-success" iconBg="bg-success-bg" />
+                  <StatCard icon={HandCoins} label={t("memberPage.materialCount")} value={activityDonationSummary.materialDonationCount} iconColor="text-warning" iconBg="bg-warning-bg" />
+                  <StatCard icon={CreditCard} label={t("memberPage.bankPayment")} value={activityDonationSummary.bankPaymentCount} iconColor="text-secondary" iconBg="bg-secondary-light" />
                 </div>
               )}
 

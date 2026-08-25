@@ -18,19 +18,10 @@ import { RiDownloadCloud2Line } from "react-icons/ri";
 import { HiSaveAs } from "react-icons/hi";
 
 import QuantityInput from "@/components/forms/QuantityInput";
+import { useLanguage } from "@/context/LanguageContext";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
 
 const KHR_PER_USD = 4000;
-
-const EXPENSE_EXPORT_COLUMNS = [
-  { header: "ល.រ", accessor: "no" },
-  { header: "ឈ្មោះ", accessor: "name" },
-  { header: "ការពិពណ៌នា", accessor: "category" },
-  { header: "ចំនួន", accessor: "quantity" },
-  { header: "តម្លៃ/ឯកតា (រៀល)", accessor: "unitPriceRiel" },
-  { header: "តម្លៃ/ឯកតា ($)", accessor: "unitPriceDollar" },
-  { header: "តម្លៃសរុប ($)", exportValue: (row) => formatDollar(row.totalDollar) },
-];
 
 function createEmptyRow(id) {
   return {
@@ -159,6 +150,7 @@ function expenseToRow(expense) {
 }
 
 export default function ExpensePage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("activityId");
@@ -205,7 +197,7 @@ export default function ExpensePage() {
       })
       .catch((loadError) => {
         if (!cancelled) {
-          setError(loadError.message || "មិនអាចទាញយកចំណាយកម្មវិធីបានទេ។");
+          setError(loadError.message || t("donationPage.loadExpenseFailed"));
         }
       });
 
@@ -360,13 +352,22 @@ export default function ExpensePage() {
   }, [rows]);
 
   const handleDownloadReport = () => {
+    const expenseExportColumns = [
+      { header: t("donationPage.no"), accessor: "no" },
+      { header: t("donationPage.expenseName"), accessor: "name" },
+      { header: t("donationPage.description"), accessor: "category" },
+      { header: t("donationPage.quantity"), accessor: "quantity" },
+      { header: t("donationPage.unitPriceKhr"), accessor: "unitPriceRiel" },
+      { header: t("donationPage.unitPriceUsd"), accessor: "unitPriceDollar" },
+      { header: t("donationPage.totalPriceUsd"), exportValue: (row) => formatDollar(row.totalDollar) },
+    ];
     const activeRows = rows
       .filter((row) => row.name.trim())
       .map((row, index) => ({ ...row, no: index + 1 }));
 
     downloadTableAsExcel({
       data: activeRows,
-      columns: EXPENSE_EXPORT_COLUMNS,
+      columns: expenseExportColumns,
       fileName: `expense-${activity?.name || id || "report"}`,
     });
   };
@@ -374,7 +375,7 @@ export default function ExpensePage() {
   const handleSave = async () => {
     const activeRows = rows.filter((row) => row.name.trim());
     if (!id || activeRows.length === 0) {
-      setError("សូមបញ្ចូលឈ្មោះចំណាយយ៉ាងហោចណាស់មួយ។");
+      setError(t("donationPage.expenseNameRequired"));
       return;
     }
 
@@ -418,7 +419,7 @@ export default function ExpensePage() {
 
       router.push(`/activity/${id}`);
     } catch (saveError) {
-      setError(saveError.message || "មិនអាចរក្សាទុកចំណាយកម្មវិធីបានទេ។");
+      setError(saveError.message || t("donationPage.saveExpenseFailed"));
     } finally {
       setIsSaving(false);
     }
@@ -433,7 +434,7 @@ export default function ExpensePage() {
             href="/activity"
             className="hover:text-primary"
           >
-            កម្មវិធី
+            {t("donationPage.activity")}
           </Link>
 
           <ChevronRight size={14} />
@@ -442,18 +443,18 @@ export default function ExpensePage() {
             href={`/activity/${activity?.id}`}
             className="hover:text-primary"
           >
-            ព័ត៌មានលម្អិត
+            {t("donationPage.detailInfo")}
           </Link>
 
           <ChevronRight size={14} />
 
           <span className="font-semibold text-primary">
-            ចំណាយ
+            {t("donationPage.expense")}
           </span>
         </div>
 
         <h1 className="mt-3 text-2xl font-bold text-secondary">
-          ចំណាយ
+          {t("donationPage.expense")}
         </h1>
 
         <p className="mt-1 text-sm text-text-secondary">
@@ -478,7 +479,7 @@ export default function ExpensePage() {
               size={18}
             />
 
-            ទាញយករបាយការណ៍
+            {t("donationPage.downloadReport")}
           </button>
         </div>
 
@@ -487,35 +488,35 @@ export default function ExpensePage() {
             <thead>
               <tr className="h-11 border-b border-border bg-bg-page-gray font-medium text-text-secondary">
                 <th className="w-[5%] text-center">
-                  ល.រ
+                  {t("donationPage.no")}
                 </th>
 
                 <th className="w-[18%] text-center">
-                  ឈ្មោះ
+                  {t("donationPage.expenseName")}
                 </th>
 
                 <th className="w-[18%] text-center">
-                  ការពិពណ៌នា
+                  {t("donationPage.description")}
                 </th>
 
                 <th className="w-[8%] text-center">
-                  ចំនួន
+                  {t("donationPage.quantity")}
                 </th>
 
                 <th className="w-[15%] text-center">
-                  តម្លៃ/ឯកតា (រៀល)
+                  {t("donationPage.unitPriceKhr")}
                 </th>
 
                 <th className="w-[15%] text-center">
-                  តម្លៃ/ឯកតា ($)
+                  {t("donationPage.unitPriceUsd")}
                 </th>
 
                 <th className="w-[13%] text-center">
-                  តម្លៃសរុប ($)
+                  {t("donationPage.totalPriceUsd")}
                 </th>
 
                 <th className="w-[8%] text-center">
-                  សកម្មភាព
+                  {t("donationPage.action")}
                 </th>
               </tr>
             </thead>
@@ -543,7 +544,7 @@ export default function ExpensePage() {
                             event.target.value
                           )
                         }
-                        placeholder={row.name ? "" : "បញ្ចូលឈ្មោះ"}
+                        placeholder={row.name ? "" : t("donationPage.enterName")}
                         className="h-10 w-full rounded-md border border-border px-3 text-[12px] text-text-secondary outline-none transition placeholder:text-text-secondary focus:border-secondary"
                       />
                     </td>
@@ -560,7 +561,7 @@ export default function ExpensePage() {
                             event.target.value
                           )
                         }
-                        placeholder={row.category ? "" : "បញ្ចូលការពិពណ៌នា"}
+                        placeholder={row.category ? "" : t("donationPage.enterDescription")}
                         className="h-10 w-full rounded-md border border-border px-3 text-[12px] text-text-secondary outline-none transition placeholder:text-text-secondary focus:border-secondary"
                       />
                     </td>
@@ -676,7 +677,7 @@ export default function ExpensePage() {
                             )
                           }
                           className="text-success transition hover:scale-110"
-                          aria-label="បន្ថែមជួរ"
+                          aria-label={t("donationPage.addRow")}
                         >
                           <PlusCircle
                             size={17}
@@ -691,7 +692,7 @@ export default function ExpensePage() {
                             )
                           }
                           className="text-error transition hover:scale-110"
-                          aria-label="លុបជួរ"
+                          aria-label={t("donationPage.deleteRow")}
                         >
                           <Trash2
                             size={17}
@@ -709,12 +710,12 @@ export default function ExpensePage() {
         {/* Summary */}
         <div className="ml-auto mt-5 w-full max-w-[405px] rounded-lg border border-border p-5">
           <h3 className="mb-4 text-lg font-bold text-secondary">
-            សរុបចំណាយ
+            {t("donationPage.totalExpense")}
           </h3>
 
           <div className="flex items-center justify-between text-sm text-text-secondary">
             <span>
-              សរុបចំណាយ (រៀល)
+              {t("donationPage.totalExpenseKhr")}
             </span>
 
             <span className="font-semibold text-text-primary">
@@ -725,7 +726,7 @@ export default function ExpensePage() {
 
           <div className="mt-3 flex items-center justify-between text-sm text-text-secondary">
             <span>
-              សរុបចំណាយ ($)
+              {t("donationPage.totalExpenseUsd")}
             </span>
 
             <span className="font-semibold text-text-primary">
@@ -738,7 +739,7 @@ export default function ExpensePage() {
 
           <div className="mt-4 flex items-center justify-between border-t border-border pt-4 font-bold text-secondary">
             <span>
-              សរុបទាំងអស់ ($)
+              {t("donationPage.totalAllUsd")}
             </span>
 
             <span>
@@ -756,7 +757,7 @@ export default function ExpensePage() {
             href={id ? `/activity/create?edit=${id}` : "/activity/create"}
             className="flex h-[34px] w-full items-center justify-center rounded-lg border border-border bg-bg-page-white text-sm font-semibold text-text-secondary sm:w-[91px]"
           >
-            បោះបង់
+            {t("donationPage.cancel")}
           </Link>
 
           <button
@@ -767,7 +768,7 @@ export default function ExpensePage() {
           >
             <HiSaveAs size={16} />
 
-            រក្សាទុក
+            {t("donationPage.save")}
           </button>
         </div>
       </div>

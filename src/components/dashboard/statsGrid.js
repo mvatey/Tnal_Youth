@@ -7,14 +7,18 @@ import {
   FaUsers,
 } from "react-icons/fa6";
 
+import { useLanguage } from "@/context/LanguageContext";
+
 const CARD_CONFIG = [
   {
     key: "branches",
     label: "សាខាសរុប",
+    labelKey: "dashboard.totalBranches",
     // Shown instead of the label above when this card is scoped to a
     // single branch (see isBranchScoped below) -- "Total branches" reads
     // oddly once the value itself is one branch's name, not a count.
     scopedLabel: "សាខា",
+    scopedLabelKey: "dashboard.branch",
     icon: FaBuilding,
     accent: "bg-primary",
     iconBg: "bg-primary-light",
@@ -23,6 +27,7 @@ const CARD_CONFIG = [
   {
     key: "members",
     label: "សមាជិកសរុប",
+    labelKey: "dashboard.totalMembers",
     icon: FaUsers,
     accent: "bg-secondary-hover",
     iconBg: "bg-secondary-light",
@@ -31,6 +36,7 @@ const CARD_CONFIG = [
   {
     key: "activities",
     label: "កម្មវិធីសរុប",
+    labelKey: "dashboard.totalActivities",
     icon: FaClipboardCheck,
     accent: "bg-success",
     iconBg: "bg-success-bg",
@@ -39,6 +45,7 @@ const CARD_CONFIG = [
   {
     key: "donations",
     label: "វិភាគទានសរុប",
+    labelKey: "dashboard.totalDonations",
     icon: FaHandHoldingHeart,
     accent: "bg-warning",
     iconBg: "bg-warning-bg",
@@ -76,6 +83,9 @@ function SummaryCard({
   // month" comparison doesn't mean anything for a branch's own name.
   showGrowth = true,
 }) {
+  const { t } =
+    useLanguage();
+
   const normalizedChange =
     Number(changePercent) || 0;
 
@@ -126,7 +136,7 @@ function SummaryCard({
             </div>
 
             <span className="text-xs text-text-mute">
-              ក្នុងខែនេះ
+              {t("dashboard.thisMonth")}
             </span>
           </div>
         )}
@@ -172,6 +182,9 @@ export default function StatsGrid({
   isBranchScoped = false,
   branchName = "",
 }) {
+  const { t } =
+    useLanguage();
+
   const summary =
     data?.summary ?? {};
 
@@ -199,8 +212,11 @@ export default function StatsGrid({
             key={config.key}
             label={
               isScopedBranchCard
-                ? config.scopedLabel ?? config.label
-                : config.label
+                ? t(
+                    config.scopedLabelKey,
+                    config.scopedLabel ?? config.label
+                  )
+                : t(config.labelKey, config.label)
             }
             icon={config.icon}
             accent={config.accent}

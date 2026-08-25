@@ -14,6 +14,7 @@ import { useBranch, useBranchChangeGuard } from "@/context/BranchContext";
 import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import { RiDownloadCloud2Line } from "react-icons/ri";
+import { useLanguage } from "@/context/LanguageContext";
 
 async function fetchJson(url, options) {
   const response = await fetch(url, { cache: "no-store", ...options });
@@ -89,6 +90,7 @@ function mergeSavedDonations(memberItems, donations, selectedBranch) {
 }
 
 export default function EventDonationDetailForm({ initialQuery = {}, onCancel }) {
+  const { t } = useLanguage();
   const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
   const router = useRouter();
   const pathname = usePathname();
@@ -280,7 +282,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
         setDonationTypeId(eventType?.id ?? null);
       })
       .catch((loadError) => {
-        if (!cancelled) setError(loadError.message || "មិនអាចទាញយកជម្រើសការបរិច្ចាកបានទេ។");
+        if (!cancelled) setError(loadError.message || t("donationPage.loadDonationOptionsFailed"));
       });
     return () => { cancelled = true; };
   }, []);
@@ -364,7 +366,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
       .catch((loadError) => {
         if (!cancelled) {
           setMembers([]);
-          setError(loadError.message || "មិនអាចទាញយកសមាជិកសម្រាប់សាខានេះបានទេ។");
+          setError(loadError.message || t("donationPage.loadBranchMembersFailed"));
         }
       })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -393,11 +395,11 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   }, [activeTab, isBranchOrganizer, isInvitedBranch]);
 
   const handleSave = async (rows) => {
-    if (!canEdit) { setError("អ្នកមិនមានសិទ្ធិកែប្រែវិភាគទាននេះទេ។"); return false; }
+    if (!canEdit) { setError(t("donationPage.noEditPermission")); return false; }
     const completed = rows.filter((row) => Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0);
-    if (!donationTypeId) { setError("Event donation type is missing in the backend."); return false; }
-    if (selectedBranch === "all" || selectedEvent === "all") { setError("សូមជ្រើសរើសសាខា និងកម្មវិធី។"); return false; }
-    if (completed.length === 0) { setError("សូមបញ្ចូលចំនួនទឹកប្រាក់សម្រាប់សមាជិកនេះ។"); return false; }
+    if (!donationTypeId) { setError(t("donationPage.missingEventDonationType")); return false; }
+    if (selectedBranch === "all" || selectedEvent === "all") { setError(t("donationPage.selectBranchAndActivity")); return false; }
+    if (completed.length === 0) { setError(t("donationPage.memberAmountRequired")); return false; }
 
     setSaving(true);
     setError("");
@@ -455,13 +457,13 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           expectedUpdatedAt: saved.updatedAt,
         } : row;
       }));
-      setSavedMessage(`បានរក្សាទុកវិភាគទាន ${completed.length} នាក់`);
+      setSavedMessage(t("donationPage.savedMemberCount").replace("{count}", completed.length));
       setShowSaveAlert(true);
       setHasUnsavedEdits(false);
       if (!isDetailPage) window.setTimeout(() => router.push(listPath), 500);
       return true;
     } catch (saveError) {
-      setError(saveError.message || "មិនអាចរក្សាទុកការបរិច្ចាកកម្មវិធីបានទេ។");
+      setError(saveError.message || t("donationPage.eventDonationSaveFailed"));
       return false;
     } finally {
       setSaving(false);
@@ -502,12 +504,12 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
 
   const handleDownloadMembers = () => {
     const rows = members.map((member, index) => ({
-      "ល.រ": index + 1,
-      "សមាជិក": member.name,
-      "ភេទ": member.gender,
-      "ចំនួនប្រាក់រៀល": member.realAmount,
-      "ចំនួនប្រាក់ដុល្លារ": member.dollarAmount,
-      "វិធីសាស្ត្រទូទាត់": member.paymentMethod,
+      [t("donationPage.no")]: index + 1,
+      [t("donationPage.member")]: member.name,
+      [t("donationPage.gender")]: member.gender,
+      [t("donationPage.amountKhrPlain")]: member.realAmount,
+      [t("donationPage.amountUsdPlain")]: member.dollarAmount,
+      [t("donationPage.paymentMethod")]: member.paymentMethod,
     }));
 
     const activityLabel = eventOptions.find(
@@ -517,11 +519,11 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
       (option) => String(option.value) === String(selectedBranch),
     )?.label;
 
-    const fileName = [activityLabel, branchLabel, "សមាជិក"]
+    const fileName = [activityLabel, branchLabel, t("donationPage.member")]
       .filter(Boolean)
       .join("-");
 
-    downloadTableAsExcel({ data: rows, fileName: fileName || "សមាជិក" });
+    downloadTableAsExcel({ data: rows, fileName: fileName || t("donationPage.member") });
   };
 
   return (
@@ -537,14 +539,14 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
               <Check size={22} strokeWidth={2.5} />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-text-primary">បានរក្សាទុកដោយជោគជ័យ</p>
-              <p className="mt-0.5 text-xs text-text-secondary">ទិន្នន័យវិភាគទានរបស់សមាជិកត្រូវបានធ្វើបច្ចុប្បន្នភាព។</p>
+              <p className="font-semibold text-text-primary">{t("donationPage.saveSuccessTitle")}</p>
+              <p className="mt-0.5 text-xs text-text-secondary">{t("donationPage.saveSuccessDescription")}</p>
             </div>
             <button
               type="button"
               onClick={() => setShowSaveAlert(false)}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-text-secondary transition hover:bg-bg-page-gray hover:text-text-primary"
-              aria-label="Close notification"
+              aria-label={t("memberPage.close")}
             >
               <X size={18} />
             </button>
@@ -553,14 +555,14 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
       ) : null}
       <section className="min-h-[545px] rounded-md border border-border bg-bg-page-white p-6">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-base font-semibold text-secondary">ការកត់ត្រាវិភាគទានក្នុងកម្មវិធី</h1>
+          <h1 className="text-base font-semibold text-secondary">{t("donationPage.eventDonationRecordTitle")}</h1>
           {savedMessage ? <p className="text-sm font-medium text-success">{savedMessage}</p> : null}
         </div>
         {error ? <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-wrap items-end gap-6">
-            <DonationFilterSelect label="សាខា" value={selectedBranch} onChange={handleBranchChange} options={branches} allLabel="ជ្រើសរើសសាខា" className="w-[158px]" required disabled={isDetailPage || isBranchScoped} />
-            <DonationFilterSelect label="កម្មវិធី" value={selectedEvent} onChange={handleEventChange} options={eventOptions} allLabel="ជ្រើសរើសកម្មវិធី" className="w-[158px]" required disabled={isDetailPage} />
+            <DonationFilterSelect label={t("donationPage.branch")} value={selectedBranch} onChange={handleBranchChange} options={branches} allLabel={t("donationPage.selectBranch")} className="w-[158px]" required disabled={isDetailPage || isBranchScoped} />
+            <DonationFilterSelect label={t("donationPage.activity")} value={selectedEvent} onChange={handleEventChange} options={eventOptions} allLabel={t("donationPage.selectActivity")} className="w-[158px]" required disabled={isDetailPage} />
           </div>
           {activeTab === "members" ? (
             <div className="flex items-center gap-3">
@@ -572,7 +574,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
                 className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-secondary px-4 text-xs font-bold text-white shadow-sm transition hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <RiDownloadCloud2Line size={15} />
-                ទាញយក
+                {t("common.download")}
               </button>
             </div>
           ) : null}
@@ -590,11 +592,11 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
         {hasBranchAndEvent && (
           <div className="mb-4 inline-flex w-fit shrink-0 rounded-lg border border-border bg-bg-page-gray p-1 text-xs font-medium">
             {(isInvitedBranch
-              ? [{ key: "members", label: "សមាជិក" }]
+              ? [{ key: "members", label: t("donationPage.member") }]
               : [
-                  { key: "members", label: "សមាជិក" },
-                  { key: "branches", label: "សាខា" },
-                  ...(isBranchOrganizer ? [{ key: "sponsor", label: "អ្នកឧបត្ថម្ភ" }] : []),
+                  { key: "members", label: t("donationPage.member") },
+                  { key: "branches", label: t("donationPage.branch") },
+                  ...(isBranchOrganizer ? [{ key: "sponsor", label: t("memberPage.tabSponsor") }] : []),
                 ]
             ).map((tab) => (
               <button
@@ -613,7 +615,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           </div>
         )}
 
-        {loading ? <div className="py-10 text-center text-sm text-text-secondary">កំពុងទាញទិន្នន័យសមាជិក...</div> : null}
+        {loading ? <div className="py-10 text-center text-sm text-text-secondary">{t("donationPage.loadingData")}</div> : null}
         {!loading && hasBranchAndEvent && activeTab === "members" ? (
           <Table
             members={members}
@@ -643,7 +645,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
         ) : null}
         {!loading && hasBranchAndEvent && activeTab === "members" && members.length > 0 ? (
           <DonationTotalsCard
-            title="សរុបវិភាគទាន"
+            title={t("donationPage.contributionTotal")}
             riel={memberTotals.riel}
             dollar={memberTotals.dollar}
             total={memberTotals.total}

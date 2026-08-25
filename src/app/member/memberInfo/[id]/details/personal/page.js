@@ -18,6 +18,7 @@ import FormDate from "@/components/forms/FormDate.js";
 import MultiSelect from "@/components/forms/multiselect.js";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 import { useBranch } from "@/context/BranchContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 /* =========================================================
  * EMPTY FORM
@@ -437,6 +438,7 @@ function computeBranchIds(source) {
 export default function PersonalPage() {
   const { role, isAdmin, canEditMemberDetails, canManageMemberAccount } = useMemberPermissions();
   const { branches: accessibleBranches } = useBranch();
+  const { t } = useLanguage();
   const isReadOnly = !canEditMemberDetails;
   const params =
     useParams();
@@ -740,7 +742,7 @@ export default function PersonalPage() {
         if (active) {
           setError(
             loadError.message ||
-              "មិនអាចទាញយកព័ត៌មានផ្ទាល់ខ្លួនបានទេ។",
+              t("memberPage.personalLoadFailed"),
           );
         }
       } finally {
@@ -1305,8 +1307,8 @@ export default function PersonalPage() {
           extension,
         )
       ) {
-        setError(
-          "អនុញ្ញាតតែ PDF, DOCX, JPG, JPEG និង PNG ប៉ុណ្ណោះ។",
+          setError(
+          t("memberPage.cvAllowedTypes"),
         );
 
         event.target.value =
@@ -1322,7 +1324,7 @@ export default function PersonalPage() {
           1024
       ) {
         setError(
-          "ទំហំឯកសារមិនត្រូវលើស 5MB។",
+          t("memberPage.fileTooLarge"),
         );
 
         event.target.value =
@@ -1406,8 +1408,8 @@ export default function PersonalPage() {
       }
 
       if (!memberId) {
-        setError(
-          "រកមិនឃើញលេខសម្គាល់សមាជិក។",
+          setError(
+          t("memberPage.missingMemberId"),
         );
 
         return false;
@@ -1417,7 +1419,7 @@ export default function PersonalPage() {
         !form.full_name_km.trim()
       ) {
         setError(
-          "សូមបញ្ចូលឈ្មោះជាភាសាខ្មែរ។",
+          t("memberPage.khmerNameRequired"),
         );
 
         return false;
@@ -1425,7 +1427,7 @@ export default function PersonalPage() {
 
       if (!form.gender) {
         setError(
-          "សូមជ្រើសរើសភេទ។",
+          t("memberPage.genderRequired"),
         );
 
         return false;
@@ -1442,7 +1444,7 @@ export default function PersonalPage() {
           : !form.branch_id
       ) {
         setError(
-          "សូមជ្រើសរើសសាខាយ៉ាងហោចណាស់មួយ។",
+          t("memberPage.branchRequired"),
         );
 
         return false;
@@ -1831,7 +1833,7 @@ export default function PersonalPage() {
         }
 
         setSuccess(
-          "រក្សាទុកព័ត៌មានបានជោគជ័យ។",
+          t("memberPage.saveSuccess"),
         );
 
         setHasUnsavedChanges(false);
@@ -1845,7 +1847,7 @@ export default function PersonalPage() {
 
         setError(
           saveError.message ||
-            "មិនអាចរក្សាទុកព័ត៌មានបានទេ។",
+            t("memberPage.saveFailed"),
         );
 
         return false;
@@ -1873,7 +1875,7 @@ export default function PersonalPage() {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
         <p className="text-sm text-text-secondary">
-          កំពុងទាញយកព័ត៌មានផ្ទាល់ខ្លួន...
+          {t("memberPage.loadingPersonal")}
         </p>
       </div>
     );
@@ -1897,7 +1899,7 @@ export default function PersonalPage() {
         "
       >
         <h2 className="text-lg font-bold text-primary">
-          ព័ត៌មានផ្ទាល់ខ្លួន
+          {t("memberPage.detailPersonal")}
         </h2>
 
         <div
@@ -1921,7 +1923,7 @@ export default function PersonalPage() {
             `}
           >
             <BoxFill
-              label="ឈ្មោះជាភាសាខ្មែរ"
+              label={t("memberPage.nameKm")}
               value={
                 form.full_name_km
               }
@@ -1930,11 +1932,11 @@ export default function PersonalPage() {
                   "full_name_km",
                 )
               }
-              placeholder="បញ្ចូលឈ្មោះជាភាសាខ្មែរ"
+              placeholder={t("memberPage.nameKmPlaceholder")}
             />
 
             <BoxFill
-              label="ឈ្មោះជាអក្សរឡាតាំង"
+              label={t("memberPage.nameEn")}
               value={
                 form.full_name_en
               }
@@ -1943,11 +1945,11 @@ export default function PersonalPage() {
                   "full_name_en",
                 )
               }
-              placeholder="បញ្ចូលឈ្មោះជាអក្សរឡាតាំង"
+              placeholder={t("memberPage.nameEnPlaceholder")}
             />
 
             <FormSelect
-              label="ភេទ"
+              label={t("memberPage.gender")}
               value={
                 form.gender
               }
@@ -1956,14 +1958,14 @@ export default function PersonalPage() {
                   "gender",
                 )
               }
-              placeholder="ជ្រើសរើសភេទ"
+              placeholder={t("memberPage.selectGender")}
               options={
                 genders
               }
             />
 
             <FormDate
-              label="ថ្ងៃខែឆ្នាំកំណើត"
+              label={t("memberPage.dateOfBirth")}
               name="date_of_birth"
               value={
                 form.date_of_birth
@@ -1976,7 +1978,7 @@ export default function PersonalPage() {
             />
 
             <BoxFill
-              label="អ៊ីមែល"
+              label={t("memberPage.email")}
               type="email"
               value={
                 form.email
@@ -1986,11 +1988,11 @@ export default function PersonalPage() {
                   "email",
                 )
               }
-              placeholder="បញ្ចូលអ៊ីមែល"
+              placeholder={t("memberPage.emailPlaceholder")}
             />
 
             <BoxFill
-              label="លេខទូរស័ព្ទ"
+              label={t("memberPage.phone")}
               type="tel"
               value={
                 form.phone
@@ -2000,11 +2002,11 @@ export default function PersonalPage() {
                   "phone",
                 )
               }
-              placeholder="បញ្ចូលលេខទូរស័ព្ទ"
+              placeholder={t("memberPage.phonePlaceholder")}
             />
 
             <FormSelect
-              label="សញ្ជាតិ"
+              label={t("memberPage.nationality")}
               value={
                 form.nationality_id
               }
@@ -2013,14 +2015,14 @@ export default function PersonalPage() {
                   "nationality_id",
                 )
               }
-              placeholder="ជ្រើសរើសសញ្ជាតិ"
+              placeholder={t("memberPage.selectNationality")}
               options={
                 nationalities
               }
             />
 
             <FormSelect
-              label="ជនជាតិ"
+              label={t("memberPage.ethnicity")}
               value={
                 form.ethnicity_id
               }
@@ -2029,14 +2031,14 @@ export default function PersonalPage() {
                   "ethnicity_id",
                 )
               }
-              placeholder="ជ្រើសរើសជនជាតិ"
+              placeholder={t("memberPage.selectEthnicity")}
               options={
                 ethnicities
               }
             />
 
             <FormSelect
-              label="សាសនា"
+              label={t("memberPage.religion")}
               value={
                 form.religion_id
               }
@@ -2045,7 +2047,7 @@ export default function PersonalPage() {
                   "religion_id",
                 )
               }
-              placeholder="ជ្រើសរើសសាសនា"
+              placeholder={t("memberPage.selectReligion")}
               options={
                 religions
               }
@@ -2064,8 +2066,8 @@ export default function PersonalPage() {
             {form.account_role ===
             "SECRETARY" ? (
               <MultiSelect
-                label="សាខា"
-                placeholder="ជ្រើសរើសសាខា"
+                label={t("memberPage.branch")}
+                placeholder={t("memberPage.selectBranch")}
                 options={
                   branchOptions
                 }
@@ -2082,14 +2084,14 @@ export default function PersonalPage() {
               />
             ) : (
               <FormSelect
-                label="សាខា"
+                label={t("memberPage.branch")}
                 value={
                   form.branch_id
                 }
                 onChange={handleChange(
                   "branch_id",
                 )}
-                placeholder="ជ្រើសរើសសាខា"
+                placeholder={t("memberPage.selectBranch")}
                 options={
                   branchOptions
                 }
@@ -2104,7 +2106,7 @@ export default function PersonalPage() {
             {/* ROLE */}
 
             <FormSelect
-              label="តួនាទី"
+              label={t("memberPage.role")}
               value={
                 form.account_role
               }
@@ -2115,8 +2117,8 @@ export default function PersonalPage() {
               }
               placeholder={
                 form.has_account
-                  ? "ជ្រើសរើសតួនាទី"
-                  : "មិនមានគណនី"
+                  ? t("memberPage.selectRole")
+                  : t("memberPage.noAccount")
               }
               options={
                 roleOptions
@@ -2129,7 +2131,7 @@ export default function PersonalPage() {
             />
 
             <FormSelect
-              label="កម្រិតសមាជិក(កាំ)"
+              label={t("memberPage.memberLevel")}
               value={
                 form.member_level_id
               }
@@ -2138,14 +2140,14 @@ export default function PersonalPage() {
                   "member_level_id",
                 )
               }
-              placeholder="ជ្រើសរើសកម្រិតសមាជិក"
+              placeholder={t("memberPage.selectMemberLevel")}
               options={
                 levels
               }
             />
 
             <FormSelect
-              label="ទំហំអាវ"
+              label={t("memberPage.tshirtSize")}
               value={
                 form.tshirt_size
               }
@@ -2154,7 +2156,7 @@ export default function PersonalPage() {
                   "tshirt_size",
                 )
               }
-              placeholder="ជ្រើសរើសទំហំអាវ"
+              placeholder={t("memberPage.selectTshirtSize")}
               options={
                 tshirtSizes
               }
@@ -2165,10 +2167,10 @@ export default function PersonalPage() {
                 It is backed by members.status_id and is the same
                 status used by Member list and linked Users rows. */}
             <FormSelect
-              label="ស្ថានភាព"
+              label={t("memberPage.status")}
               value={form.member_status_id}
               onChange={handleChange("member_status_id")}
-              placeholder="ជ្រើសរើសស្ថានភាព"
+              placeholder={t("memberPage.selectStatus")}
               options={memberStatusOptions}
               disabled={!canManageMemberAccount}
               selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
@@ -2181,7 +2183,7 @@ export default function PersonalPage() {
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
-              បញ្ចូល CV
+              {t("memberPage.uploadCv")}
             </label>
 
             <div
@@ -2237,10 +2239,10 @@ export default function PersonalPage() {
                 onClick={() => fileRef.current?.click()}
                 className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
               >
-                {fileName ? "ជំនួស CV" : "បញ្ចូលឯកសារ"}
+                {fileName ? t("memberPage.replaceCv") : t("memberPage.uploadFile")}
               </button>}
               <p className="mt-2 max-w-full truncate text-xs text-text-secondary" title={fileName}>
-                {fileName || "JPG, JPEG, DOCX, PDF, PNG (មិនលើស 5MB)"}
+                {fileName || t("memberPage.cvHelpText")}
               </p>
             </div>
           </div>
@@ -2281,8 +2283,8 @@ export default function PersonalPage() {
           }
         >
           {saving
-            ? "កំពុងរក្សាទុក..."
-            : "រក្សាទុក"}
+            ? t("common.saving")
+            : t("memberPage.save")}
         </SaveButton>
       </div>}
     </div>

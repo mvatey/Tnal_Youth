@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { User, KeyRound } from "lucide-react";
 import TextInput from "@/components/ui/textInput";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [phoneOrEmail, setPhoneOrEmail] =
   useState("");
   const [error, setError] = useState("");
@@ -20,7 +22,7 @@ export default function ForgotPasswordPage() {
 
   if (!identifier) {
     setError(
-      "សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល",
+      t("auth.identifierRequired", "សូមបញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល"),
     );
     return;
   }
@@ -58,7 +60,7 @@ export default function ForgotPasswordPage() {
 
     if (!res.ok) {
       setError(
-        khmerErrorMessage(data?.message, "មិនអាចផ្ញើលេខកូដ OTP បាន"),
+        khmerErrorMessage(data?.message, t("auth.otpSendFailed", "មិនអាចផ្ញើលេខកូដ OTP បាន")),
       );
       return;
     }
@@ -75,7 +77,7 @@ export default function ForgotPasswordPage() {
     );
 
     setError(
-      "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបាន",
+      t("auth.backendUnavailable", "មិនអាចភ្ជាប់ទៅម៉ាស៊ីនមេបាន"),
     );
   } finally {
     setLoading(false);
@@ -85,17 +87,17 @@ export default function ForgotPasswordPage() {
   return (
     <div>
       <h2 className="text-xl font-bold text-text-primary mb-2 text-center">
-        ភ្លេចលេខសម្ងាត់?
+        {t("auth.forgotTitle", "ភ្លេចលេខសម្ងាត់?")}
       </h2>
       <p className="text-sm text-text-mute mb-8 text-center">
-        សូមបញ្ជូលព័ត៌មានលេខទូរស័ព្ទរបស់អ្នក ដើម្បីទទួលបានលេខកូដផ្ទៀងផ្ទាត់
+        {t("auth.forgotDescription", "សូមបញ្ជូលព័ត៌មានលេខទូរស័ព្ទរបស់អ្នក ដើម្បីទទួលបានលេខកូដផ្ទៀងផ្ទាត់")}
       </p>
 
       <form onSubmit={handleSubmit} className="w-full space-y-5">
         <TextInput
-            label="លេខទូរស័ព្ទប្រើប្រាស់ ឬ អ៊ីមែល"
+            label={t("auth.phoneOrEmailUser", "លេខទូរស័ព្ទប្រើប្រាស់ ឬ អ៊ីមែល")}
             icon={User}
-            placeholder="បញ្ចូលលេខទូរស័ព្ទ ឬ អ៊ីមែល"
+            placeholder={t("auth.phoneOrEmailPlaceholder", "បញ្ចូលលេខទូរស័ព្ទ ឬ អ៊ីមែល")}
             value={phoneOrEmail}
             onChange={(e) =>
               setPhoneOrEmail(e.target.value)
@@ -110,13 +112,13 @@ export default function ForgotPasswordPage() {
           className="w-full bg-primary text-white rounded-lg py-2.5 text-sm font-semibold hover:bg-slate-800 transition disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <KeyRound size={18} />
-          {loading ? "..." : "ស្វែងរកលេខសម្ងាត់?"}
+          {loading ? "..." : t("auth.findPassword", "ស្វែងរកលេខសម្ងាត់?")}
         </button>
 
         <p className="text-center text-sm text-text-mute pt-2">
-          ត្រឡប់ទៅ{" "}
+          {t("auth.backTo", "ត្រឡប់ទៅ")}{" "}
           <a href="/auth/login" className="text-blue-700 hover:underline">
-            ទំព័រចូលប្រើប្រាស់
+            {t("auth.loginPage", "ទំព័រចូលប្រើប្រាស់")}
           </a>
         </p>
       </form>

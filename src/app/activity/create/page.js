@@ -30,6 +30,7 @@ import MemberSelectModal from "@/components/activity/MemberSelectModal";
 import { useBranch } from "@/context/BranchContext";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import useMemberPermissions from "@/hooks/useMemberPermissions";
+import { useLanguage } from "@/context/LanguageContext";
 
 const BRANCH_OPTIONS = [
   "ភ្នំពេញ",
@@ -610,6 +611,7 @@ function MultipleFileUpload({
 }
 
 export default function CreateActivityPage() {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -817,7 +819,7 @@ export default function CreateActivityPage() {
         }
       } catch (error) {
         console.error("Load activity form data error:", error);
-        if (!cancelled) alert(error.message || "មិនអាចទាញយកទិន្នន័យទម្រង់កម្មវិធីបានទេ។");
+        if (!cancelled) alert(error.message || t("activityPage.loadFormFailed"));
       }
     }
 
@@ -878,7 +880,7 @@ export default function CreateActivityPage() {
         if (!cancelled) {
           setMemberOptions([]);
           setSelectedMemberIds([]);
-          setMemberLoadError(error.message || "មិនអាចទាញយកសមាជិកសម្រាប់សាខានេះបានទេ។");
+          setMemberLoadError(error.message || t("activityPage.loadBranchMembersFailed"));
         }
       })
       .finally(() => {
@@ -945,7 +947,7 @@ export default function CreateActivityPage() {
 
   const handleDeleteExistingImage = async (photo) => {
     if (!photo?.id || !editId) return;
-    if (!window.confirm("តើអ្នកចង់លុបរូបភាពនេះមែនទេ?")) return;
+    if (!window.confirm(t("activityPage.confirmDeleteImage"))) return;
 
     setDeletingExistingId(`image-${photo.id}`);
     try {
@@ -972,7 +974,7 @@ export default function CreateActivityPage() {
       });
     } catch (error) {
       console.error("Delete activity photo error:", error);
-      alert(error.message || "លុបរូបភាពមិនបានសម្រេច");
+      alert(error.message || t("activityPage.deleteImageFailed"));
     } finally {
       setDeletingExistingId(null);
     }
@@ -980,7 +982,7 @@ export default function CreateActivityPage() {
 
   const handleDeleteExistingDocument = async (document) => {
     if (!document?.id || !editId) return;
-    if (!window.confirm("តើអ្នកចង់លុបឯកសារនេះមែនទេ?")) return;
+    if (!window.confirm(t("activityPage.confirmDeleteDocument"))) return;
 
     setDeletingExistingId(`document-${document.id}`);
     try {
@@ -991,7 +993,7 @@ export default function CreateActivityPage() {
       setExistingDocuments((current) => current.filter((item) => item.id !== document.id));
     } catch (error) {
       console.error("Delete activity attachment error:", error);
-      alert(error.message || "លុបឯកសារមិនបានសម្រេច");
+      alert(error.message || t("activityPage.deleteDocumentFailed"));
     } finally {
       setDeletingExistingId(null);
     }
@@ -1000,7 +1002,7 @@ export default function CreateActivityPage() {
   const handleOpenMemberModal = () => {
     if (isInvitedBranchOnly) {
       if (!invitedBranchId) {
-        alert("មិនអាចកំណត់អត្តសញ្ញាណសាខារបស់អ្នកទេ");
+        alert(t("activityPage.cannotResolveYourBranch"));
         return;
       }
       setShowMemberModal(true);
@@ -1008,7 +1010,7 @@ export default function CreateActivityPage() {
     }
 
     if (!form.branch) {
-      alert("សូមជ្រើសរើសសាខាជាមុនសិន");
+      alert(t("activityPage.selectBranchFirst"));
       return;
     }
 
@@ -1052,7 +1054,7 @@ export default function CreateActivityPage() {
       setSelectedMemberIds(updatedParticipantIds);
     } catch (error) {
       console.error("Invite additional members error:", error);
-      alert(error.message || "មិនអាចអញ្ជើញសមាជិកបន្ថែមបានទេ");
+      alert(error.message || t("activityPage.inviteMoreMembersFailed"));
       throw error;
     }
   };
@@ -1068,37 +1070,37 @@ export default function CreateActivityPage() {
 
   const validateForm = () => {
     if (!form.name.trim()) {
-      alert("សូមបញ្ចូលឈ្មោះកម្មវិធី");
+      alert(t("activityPage.nameRequired"));
       return false;
     }
 
     if (!form.branch) {
-      alert("សូមជ្រើសរើសសាខារៀបចំកម្មវិធី");
+      alert(t("activityPage.hostBranchRequired"));
       return false;
     }
 
     if (!form.type) {
-      alert("សូមជ្រើសរើសប្រភេទកម្មវិធី");
+      alert(t("activityPage.typeRequired"));
       return false;
     }
 
     if (!form.sector) {
-      alert("សូមជ្រើសរើសវិស័យ");
+      alert(t("activityPage.sectorRequired"));
       return false;
     }
 
     if (!form.startDate) {
-      alert("សូមជ្រើសរើសកាលបរិច្ឆេទចាប់ផ្តើម");
+      alert(t("activityPage.startDateRequired"));
       return false;
     }
 
     if (!form.endDate) {
-      alert("សូមជ្រើសរើសកាលបរិច្ឆេទបញ្ចប់");
+      alert(t("activityPage.endDateRequired"));
       return false;
     }
 
     if (!form.province) {
-      alert("សូមជ្រើសរើសខេត្ត/រាជធានី");
+      alert(t("activityPage.provinceRequired"));
       return false;
     }
 
@@ -1110,7 +1112,7 @@ export default function CreateActivityPage() {
       endsAt &&
       new Date(endsAt).getTime() <= new Date(startsAt).getTime()
     ) {
-      alert("កាលបរិច្ឆេទបញ្ចប់មិនអាចមុនកាលបរិច្ឆេទចាប់ផ្តើមបានទេ");
+      alert(t("activityPage.endBeforeStart"));
       return false;
     }
 
@@ -1190,20 +1192,20 @@ export default function CreateActivityPage() {
       // happened to instead of a single generic message that leaves the
       // person guessing.
       const requiredFieldLabels = [
-        ["ប្រភេទកម្មវិធី", payload.typeId],
-        ["វិស័យ", payload.sectorId],
-        ["ស្ថានភាព", payload.statusId],
-        ["សាខារៀបចំកម្មវិធី", payload.branchId],
-        ["ខេត្ត/រាជធានី", payload.provinceId],
-        ["កាលបរិច្ឆេទចាប់ផ្តើម", payload.startsAt],
-        ["កាលបរិច្ឆេទបញ្ចប់", payload.endsAt],
+        [t("activityPage.selectType"), payload.typeId],
+        [t("activityPage.sector"), payload.sectorId],
+        [t("memberPage.status"), payload.statusId],
+        [t("activityPage.hostBranch"), payload.branchId],
+        [t("activityPage.province"), payload.provinceId],
+        [t("activityPage.startDate"), payload.startsAt],
+        [t("activityPage.endDate"), payload.endsAt],
       ];
       const missingFieldLabels = requiredFieldLabels
         .filter(([, value]) => value == null)
         .map(([label]) => label);
       if (missingFieldLabels.length > 0) {
         throw new Error(
-          `សូមបំពេញព័ត៌មានដែលខ្វះខាតៈ ${missingFieldLabels.join(", ")}`,
+          t("activityPage.missingFields").replace("{fields}", missingFieldLabels.join(", ")),
         );
       }
       if (!isEditMode) {
@@ -1279,7 +1281,7 @@ export default function CreateActivityPage() {
       console.error("Save activity error:", error);
       alert(
         error?.message ||
-          "មិនអាចរក្សាទុកកម្មវិធីបានទេ",
+          t("activityPage.saveFailed"),
       );
     } finally {
       setIsSaving(false);
@@ -1304,21 +1306,21 @@ export default function CreateActivityPage() {
       <div className="rounded-xl border border-error/30 bg-error-bg p-6 text-center text-error">
         <p className="text-sm font-semibold">
           {isBlockedFromEditing
-            ? "អ្នកមិនមានសិទ្ធិកែប្រែកម្មវិធីនេះទេ"
-            : "អ្នកមិនមានសិទ្ធិបង្កើតកម្មវិធីទេ"}
+            ? t("activityPage.cannotEditActivity")
+            : t("activityPage.cannotCreateActivity")}
         </p>
 
         <p className="mt-1 text-xs">
           {isBlockedFromEditing
-            ? "មានតែអ្នកដឹកនាំសាខា ឬលេខាធិការនៃសាខារៀបចំកម្មវិធីនេះ ឬសាខាដែលបានទទួល ការអញ្ជើញចូលរួមរៀបចំកម្មវិធីនេះប៉ុណ្ណោះ ដែលអាចចូលមើលទំព័រនេះបាន។"
-            : "មានតែអ្នកដឹកនាំសាខា ឬលេខាធិការប៉ុណ្ណោះ ដែលអាចបង្កើតកម្មវិធីថ្មីបាន។"}
+            ? t("activityPage.editPermissionDescription")
+            : t("activityPage.createPermissionDescription")}
         </p>
 
         <Link
           href={isBlockedFromEditing ? `/activity/${editId}` : "/activity"}
           className="mt-4 inline-flex h-9 items-center justify-center rounded-lg bg-secondary px-4 text-sm font-medium text-white hover:bg-secondary-hover"
         >
-          {isBlockedFromEditing ? "ត្រឡប់ទៅព័ត៌មានកម្មវិធី" : "ត្រឡប់ទៅកម្មវិធីទាំងអស់"}
+          {isBlockedFromEditing ? t("activityPage.backToActivityDetail") : t("activityPage.backToActivities")}
         </Link>
       </div>
     );
@@ -1330,7 +1332,7 @@ export default function CreateActivityPage() {
         <div>
           <div className="mb-2 flex flex-wrap items-center gap-1 text-sm">
             <Link href="/activity" className="text-text-secondary transition hover:text-primary">
-              កម្មវិធី
+              {t("activityPage.activity")}
             </Link>
 
             <ChevronRight size={14} className="shrink-0 text-text-secondary" />
@@ -1338,7 +1340,7 @@ export default function CreateActivityPage() {
             {isEditMode && (
               <>
                 <Link href={`/activity/${editId}`} className="max-w-[250px] truncate text-text-secondary transition hover:text-primary">
-                  {editingActivity?.name || "ព័ត៌មានកម្មវិធី"}
+                  {editingActivity?.name || t("activityPage.activityInfo")}
                 </Link>
 
                 <ChevronRight size={14} className="shrink-0 text-text-secondary" />
@@ -1347,22 +1349,20 @@ export default function CreateActivityPage() {
 
             <span className="font-semibold text-primary">
               {isEditMode
-                ? "កែប្រែកម្មវិធី"
-                : "បង្កើតកម្មវិធីថ្មី"}
+                ? t("activityPage.editActivity")
+                : t("activityPage.createNewActivity")}
             </span>
           </div>
 
           <h1 className="text-2xl font-bold text-secondary">
             {isEditMode
-              ? "កែប្រែកម្មវិធី"
-              : "បង្កើតកម្មវិធីថ្មី"}
+              ? t("activityPage.editActivity")
+              : t("activityPage.createNewActivity")}
           </h1>
 
           {isInvitedBranchOnly && (
             <p className="mt-2 rounded-lg border border-warning/30 bg-warning-bg px-4 py-3 text-sm text-warning">
-              សាខារបស់អ្នកត្រូវបានអញ្ជើញចូលរួមរៀបចំកម្មវិធីនេះ។ អ្នកអាចអញ្ជើញ
-              សមាជិកនៃសាខារបស់អ្នក និងកត់ត្រាចំណូល/ចំណាយបានប៉ុណ្ណោះ —
-              ព័ត៌មានផ្សេងទៀតរបស់កម្មវិធីនេះកែប្រែបានតែពីសាខារៀបចំកម្មវិធីប៉ុណ្ណោះ។
+              {t("activityPage.invitedBranchNotice")}
             </p>
           )}
         </div>
@@ -1370,7 +1370,7 @@ export default function CreateActivityPage() {
         <section className="rounded-xl border border-border bg-bg-page-white p-5">
           <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
             <Info size={18} />
-            ព័ត៌មានកម្មវិធី
+            {t("activityPage.activityInfo")}
           </h2>
 
           {/* A co-hosting (invited) branch may never edit the activity's own
@@ -1380,17 +1380,17 @@ export default function CreateActivityPage() {
           <div className="space-y-5">
             <div className="grid grid-cols-1 items-end gap-5 md:grid-cols-2 xl:grid-cols-3">
               <FormControl
-                label="ឈ្មោះកម្មវិធី"
+                label={t("activityPage.activityName")}
                 value={form.name}
                 onChange={(event) => setValue("name", event.target.value)}
                 placeholder="កម្មវិធីដាំដើមឈើ"
               />
 
               <FormSelect
-                label="សាខារៀបចំកម្មវិធី"
+                label={t("activityPage.hostBranch")}
                 value={form.branch}
                 onChange={handleBranchChange}
-                placeholder="ជ្រើសរើសសាខា"
+                placeholder={t("memberPage.selectBranch")}
                 options={
                   isBranchScoped
                     ? form.branch
@@ -1402,28 +1402,28 @@ export default function CreateActivityPage() {
               />
 
               <FormSelect
-                label="ប្រភេទកម្មវិធី"
+                label={t("memberPage.type")}
                 value={form.type}
                 onChange={(event) => setValue("type", event.target.value)}
-                placeholder="ជ្រើសរើសប្រភេទ"
+                placeholder={t("activityPage.selectType")}
                 options={typeOptions}
               />
             </div>
 
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <FormSelect
-                label="វិស័យ"
+                label={t("activityPage.sector")}
                 value={form.sector}
                 onChange={(event) => setValue("sector", event.target.value)}
-                placeholder="ជ្រើសរើសវិស័យ"
+                placeholder={t("activityPage.selectSector")}
                 options={sectorOptions}
               />
 
               <FormSelect
-                label="ការផ្សព្វផ្សាយ"
+                label={t("activityPage.visibility")}
                 value={form.visibility}
                 onChange={(event) => setValue("visibility", event.target.value)}
-                placeholder="ជ្រើសរើសការផ្សព្វផ្សាយ"
+                placeholder={t("activityPage.selectVisibility")}
                 options={VISIBILITY_OPTIONS}
               />
             </div>
@@ -1434,7 +1434,7 @@ export default function CreateActivityPage() {
               htmlFor="activity-description"
               className="mb-2 block text-sm font-semibold text-text-primary"
             >
-              ការពិពណ៌នា
+              {t("activityPage.description")}
             </label>
 
             <textarea
@@ -1446,7 +1446,7 @@ export default function CreateActivityPage() {
               placeholder={
                 form.description
                   ? ""
-                  : "ពិពណ៌នាអំពីកម្មវិធី..."
+                  : t("activityPage.descriptionPlaceholder")
               }
               className="h-32 w-full resize-none rounded-lg border border-border bg-bg-page-white px-4 py-3 text-sm text-text-primary outline-none transition placeholder:text-text-secondary focus:border-primary"
             />
@@ -1459,19 +1459,19 @@ export default function CreateActivityPage() {
           <div className="rounded-xl border border-border bg-bg-page-white p-5">
             <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
               <CalendarDays size={18} />
-              កាលបរិច្ឆេទ និង ពេលវេលា
+              {t("activityPage.dateTime")}
             </h2>
 
             <div className="grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2">
               <DatePickerField
-                label="កាលបរិច្ឆេទចាប់ផ្តើម"
+                label={t("activityPage.startDate")}
                 value={form.startDate}
                 onChange={(date) => setValue("startDate", date)}
                 variant="start"
               />
 
               <DatePickerField
-                label="កាលបរិច្ឆេទបញ្ចប់"
+                label={t("activityPage.endDate")}
                 value={form.endDate}
                 min={formatDate(form.startDate)}
                 onChange={(date) => setValue("endDate", date)}
@@ -1479,7 +1479,7 @@ export default function CreateActivityPage() {
               />
 
               <FormControl
-                label="ពេលវេលាចាប់ផ្តើម"
+                label={t("activityPage.startTime")}
                 type="time"
                 value={form.startTime}
                 onChange={(event) => setValue("startTime", event.target.value)}
@@ -1487,7 +1487,7 @@ export default function CreateActivityPage() {
               />
 
               <FormControl
-                label="ពេលវេលាបញ្ចប់"
+                label={t("activityPage.endTime")}
                 type="time"
                 value={form.endTime}
                 onChange={(event) => setValue("endTime", event.target.value)}
@@ -1499,26 +1499,26 @@ export default function CreateActivityPage() {
           <div className="rounded-xl border border-border bg-bg-page-white p-5">
             <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
               <MapPin size={18} />
-              ទីតាំង
+              {t("memberPage.location")}
             </h2>
 
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <FormSelect
-                label="ខេត្ត/រាជធានី"
+                label={t("activityPage.province")}
                 value={form.province}
                 onChange={(event) => setValue("province", event.target.value)}
-                placeholder="ជ្រើសរើសខេត្ត/រាជធានី"
+                placeholder={t("activityPage.selectProvince")}
                 options={provinceOptions}
                 required
               />
 
               <div >
                 <label className="mb-2 block text-sm font-semibold text-text-primary">
-                  ទីតាំងផែនទី
+                  {t("memberPage.location")}
                 </label>
 
                 <div className="relative">
-                  <input type="url" value={form.mapLink} onChange={(event) => setValue("mapLink", event.target.value)} placeholder={form.mapLink ? "" : "បញ្ចូល Google Maps link"} className="h-[34px] w-full rounded-lg border border-border bg-bg-page-white pl-4 pr-11 text-sm text-text-primary outline-none transition placeholder:text-text-mute focus:border-secondary" />
+                  <input type="url" value={form.mapLink} onChange={(event) => setValue("mapLink", event.target.value)} placeholder={form.mapLink ? "" : t("activityPage.mapLinkPlaceholder")} className="h-[34px] w-full rounded-lg border border-border bg-bg-page-white pl-4 pr-11 text-sm text-text-primary outline-none transition placeholder:text-text-mute focus:border-secondary" />
 
                   {form.mapLink ? (
                     <a href={form.mapLink} target="_blank" rel="noopener noreferrer" className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary transition hover:text-primary">
@@ -1532,10 +1532,10 @@ export default function CreateActivityPage() {
 
               <div className="md:col-span-2">
                 <FormControl
-                  label="អាសយដ្ឋានលម្អិត"
+                  label={t("activityPage.detailAddress")}
                   value={form.address}
                   onChange={(event) => setValue("address", event.target.value)}
-                  placeholder="ភូមិ, ឃុំ, ស្រុក, ខេត្ត..."
+                  placeholder={t("activityPage.detailAddressPlaceholder")}
                 />
               </div>
             </div>
@@ -1546,7 +1546,7 @@ export default function CreateActivityPage() {
         <section className="rounded-xl border border-border bg-bg-page-white p-5">
           <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
             <PencilLine size={18} />
-            ព័ត៌មានបន្ថែម
+            {t("memberPage.detail")}
           </h2>
 
           {/* Which branches are invited, and the activity's status, stay
@@ -1555,18 +1555,18 @@ export default function CreateActivityPage() {
           <fieldset disabled={isInvitedBranchOnly} className="m-0 min-w-0 border-0 p-0">
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <SearchableBranchMultiSelect
-              label="សាខាដែលត្រូវអញ្ជើញ"
+              label={t("activityPage.branchesToInvite")}
               options={invitedBranchOptions}
               values={form.invitedBranches}
               onChange={(values) => setValue("invitedBranches", values)}
-              placeholder="ស្វែងរក និងជ្រើសរើសសាខា"
+              placeholder={t("activityPage.selectBranchFirst")}
             />
 
             <FormSelect
-              label="ស្ថានភាព"
+              label={t("memberPage.status")}
               value={form.status}
               onChange={(event) => setValue("status", event.target.value)}
-              placeholder="ជ្រើសរើសស្ថានភាពកម្មវិធី"
+              placeholder={t("activityPage.selectActivityStatus")}
                 options={statusOptions}
             />
           </div>
@@ -1575,31 +1575,31 @@ export default function CreateActivityPage() {
           <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
             {isEditMode ? (
               <Link href={`/activity/${editId}/participants`} className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90">
-                សមាសភាពចូលរួម
+                {t("activityPage.participantComposition")}
               </Link>
             ) : (
               <button type="button" onClick={handleOpenMemberModal} className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90">
-                ជ្រើសរើសសមាសភាព
+                {t("activityPage.inviteMembers")}
               </button>
             )}
 
             {isEditMode ? (
               <Link href={activityIncomeHref} className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90">
-                ចំណូល
+                {t("activityPage.income")}
               </Link>
             ) : (
-              <button type="button" disabled title="សូមរក្សាទុកសកម្មភាពជាមុនសិន" className="flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white opacity-60">
-                ចំណូល
+              <button type="button" disabled title={t("activityPage.saveActivityFirst")} className="flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white opacity-60">
+                {t("activityPage.income")}
               </button>
             )}
 
             {isEditMode ? (
               <Link href={`/activity/create/expense?activityId=${editId}`} className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90">
-                ចំណាយ
+                {t("activityPage.expense")}
               </Link>
             ) : (
-              <button type="button" disabled title="សូមរក្សាទុកសកម្មភាពជាមុនសិន" className="flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white opacity-60">
-                ចំណាយ
+              <button type="button" disabled title={t("activityPage.saveActivityFirst")} className="flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white opacity-60">
+                {t("activityPage.expense")}
               </button>
             )}
           </div>
@@ -1610,7 +1610,7 @@ export default function CreateActivityPage() {
               onClick={handleOpenMemberModal}
               className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-primary text-sm font-semibold text-primary transition hover:bg-primary-light md:w-auto md:px-5"
             >
-              អញ្ជើញសមាជិកបន្ថែម
+              {t("activityPage.inviteMembers")}
             </button>
           )}
         </section>
@@ -1621,7 +1621,7 @@ export default function CreateActivityPage() {
         <section className="rounded-xl border border-border bg-bg-page-white p-5">
           <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
             <Paperclip size={18} />
-            រូបភាព និងឯកសារ
+            {t("activityPage.imagesAndDocuments")}
           </h2>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -1650,7 +1650,7 @@ export default function CreateActivityPage() {
                         onClick={() => handleDeleteExistingImage(photo)}
                         disabled={deletingExistingId === `image-${photo.id}`}
                         className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition group-hover:opacity-100 disabled:opacity-60"
-                        aria-label={`លុប ${photo.name}`}
+                        aria-label={`${t("memberPage.delete")} ${photo.name}`}
                       >
                         <X size={13} />
                       </button>
@@ -1660,12 +1660,12 @@ export default function CreateActivityPage() {
               )}
 
               <MultipleFileUpload
-                label="រូបភាពកម្មវិធី"
+                label={t("activityPage.activityImages")}
                 files={activityImages}
                 onChange={setActivityImages}
                 accept="image/png,image/jpeg,image/jpg,image/webp"
-                uploadText="បញ្ចូលរូបភាព"
-                helperText="PNG, JPG, JPEG, WEBP — អតិបរមា 5MB ក្នុងមួយរូប"
+                uploadText={t("activityPage.uploadImage")}
+                helperText={t("activityPage.imageUploadHelp")}
                 maxSize={MAX_IMAGE_SIZE}
                 kind="image"
               />
@@ -1702,7 +1702,7 @@ export default function CreateActivityPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="rounded-md p-1.5 text-primary transition hover:bg-primary/10"
-                            aria-label={`មើល ${document.name}`}
+                            aria-label={`${t("activityPage.detail")} ${document.name}`}
                           >
                             <Eye size={16} />
                           </a>
@@ -1713,7 +1713,7 @@ export default function CreateActivityPage() {
                           onClick={() => handleDeleteExistingDocument(document)}
                           disabled={deletingExistingId === `document-${document.id}`}
                           className="rounded-md p-1.5 text-error transition hover:bg-error-bg disabled:opacity-60"
-                          aria-label={`លុប ${document.name}`}
+                          aria-label={`${t("memberPage.delete")} ${document.name}`}
                         >
                           <X size={16} />
                         </button>
@@ -1724,12 +1724,12 @@ export default function CreateActivityPage() {
               )}
 
               <MultipleFileUpload
-                label="ឯកសារផ្សេងៗ"
+                label={t("activityPage.otherDocuments")}
                 files={activityDocuments}
                 onChange={setActivityDocuments}
                 accept=".pdf,.doc,.docx,.xls,.xlsx"
-                uploadText="បញ្ចូលឯកសារ"
-                helperText="PDF, DOC, DOCX, XLS, XLSX — អតិបរមា 20MB"
+                uploadText={t("memberPage.uploadFile")}
+                helperText={t("activityPage.documentUploadHelp")}
                 maxSize={MAX_DOCUMENT_SIZE}
                 kind="file"
               />
@@ -1743,7 +1743,7 @@ export default function CreateActivityPage() {
             action="cancel"
             onClick={handleCancel}
             disabled={isSaving}
-            label={isInvitedBranchOnly ? "ត្រឡប់ក្រោយ" : undefined}
+            label={isInvitedBranchOnly ? t("activityPage.back") : undefined}
           />
 
           {/* Nothing on the main form is editable in invited-branch-only
@@ -1756,10 +1756,10 @@ export default function CreateActivityPage() {
               disabled={isSaving}
               label={
                 isSaving
-                  ? "កំពុងរក្សាទុក..."
+                  ? t("common.saving")
                   : isEditMode
-                    ? "រក្សាទុកការកែប្រែ"
-                    : "រក្សាទុក"
+                    ? t("activityPage.saveChanges")
+                    : t("common.save")
               }
             />
           )}

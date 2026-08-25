@@ -3,6 +3,7 @@
 import { CalendarDays, PlusCircle, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import DonationFilterSelect from "../monthlydonation/DonationFilterSelect";
+import { useLanguage } from "@/context/LanguageContext";
 
 function EventDateInput({ label, value, onChange, min }) {
   const openDatePicker = (event) => {
@@ -47,6 +48,7 @@ export default function EventDonationFilters({
   branchScoped = false,
 }) {
   const router = useRouter();
+  const { t } = useLanguage();
 
   return (
     <div className="flex w-full flex-col items-stretch justify-end gap-2 pb-1 sm:flex-row sm:flex-nowrap sm:items-center sm:overflow-x-auto">
@@ -56,30 +58,30 @@ export default function EventDonationFilters({
             className="w-full flex-1 bg-transparent pr-2 text-[12px] font-medium text-text-secondary outline-none placeholder:text-text-secondary focus:placeholder-transparent"
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="ស្វែងរកតាមឈ្មោះកម្មវិធី ..."
+            placeholder={t("donationPage.searchActivityPlaceholder")}
           />
           <Search size={16} className="text-text-secondary" />
         </span>
       </label>
 
       <DonationFilterSelect
-        label="សាខា"
+        label={t("donationPage.branch")}
         value={selectedBranch}
         onChange={onBranchChange}
         options={branches}
-        allLabel="ជ្រើសរើសសាខា"
+        allLabel={t("donationPage.selectBranch")}
         showLabel={false}
         disabled={branchScoped}
         includeAllOption={!branchScoped}
       />
 
       <EventDateInput
-        label="កាលបរិច្ឆេទចាប់ផ្តើម"
+        label={t("donationPage.startDate")}
         value={startDate}
         onChange={onStartDateChange}
       />
       <EventDateInput
-        label="កាលបរិច្ឆេទបញ្ចប់"
+        label={t("donationPage.endDate")}
         value={endDate}
         min={startDate}
         onChange={onEndDateChange}

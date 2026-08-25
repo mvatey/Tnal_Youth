@@ -5,6 +5,7 @@
 import Sidebar from "@/components/navigation/sidebar";
 import Topbar from "@/components/navigation/topbar";
 import useCurrentMember from "@/hooks/useCurrentMember";
+import { useLanguage } from "@/context/LanguageContext";
 
 const ROLE_LABELS = {
   ADMIN: "អ្នកគ្រប់គ្រង",
@@ -13,18 +14,19 @@ const ROLE_LABELS = {
 
 export default function UsersLayout({ children }) {
   const { member } = useCurrentMember();
+  const { t } = useLanguage();
 
   const userName =
     member?.name_kh ||
     member?.fullNameKm ||
     member?.name_en ||
     member?.fullNameEn ||
-    "អ្នកប្រើប្រាស់";
+    t("usersPage.fallbackUserName");
 
   const userTitle =
     member?.roleLabel ||
     ROLE_LABELS[member?.role] ||
-    "អ្នកគ្រប់គ្រង";
+    t("usersPage.admin");
 
   const userAvatar =
     member?.profile_photo ||
@@ -41,7 +43,7 @@ export default function UsersLayout({ children }) {
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <Topbar title="អ្នកប្រើប្រាស់" />
+        <Topbar title={t("usersPage.title")} />
 
         <main className="min-h-0 flex-1 overflow-hidden bg-bg-page-gray">
           <div className="no-scrollbar h-full overflow-y-auto p-5">
