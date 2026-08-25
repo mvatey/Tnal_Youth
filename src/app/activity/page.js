@@ -320,7 +320,7 @@ export default function ActivityPage() {
     } catch (error) {
       if (mountedRef.current && requestId === requestIdRef.current) {
         setActivityRecords([]);
-        setLoadError(error.message || "Cannot load activities");
+        setLoadError(error.message || "មិនអាចទាញយកកម្មវិធីបានទេ។");
       }
     } finally {
       if (mountedRef.current && requestId === requestIdRef.current) {

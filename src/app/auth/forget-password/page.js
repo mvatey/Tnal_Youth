@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { User, KeyRound } from "lucide-react";
 import TextInput from "@/components/ui/textInput";
+import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -57,8 +58,7 @@ export default function ForgotPasswordPage() {
 
     if (!res.ok) {
       setError(
-        data?.message ||
-          "មិនអាចផ្ញើលេខកូដ OTP បាន",
+        khmerErrorMessage(data?.message, "មិនអាចផ្ញើលេខកូដ OTP បាន"),
       );
       return;
     }

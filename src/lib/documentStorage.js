@@ -55,7 +55,7 @@ export async function saveTemplateFile({
 }) {
   if (!id || !file) {
     throw new Error(
-      "Template ID and file are required.",
+      "សូមបញ្ជាក់គំរូ និងឯកសារ។",
     );
   }
 

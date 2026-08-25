@@ -151,7 +151,7 @@ export default function PendingInvitationBanner({ activityId }) {
       setError(
         respondError instanceof Error
           ? respondError.message
-          : "Something went wrong",
+          : "មានបញ្ហាកើតឡើង",
       );
     } finally {
       setResponding(false);

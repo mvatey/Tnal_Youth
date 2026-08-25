@@ -12,6 +12,7 @@ import {
 import { ShieldCheck } from "lucide-react";
 
 import OtpInput from "@/components/ui/otpInput";
+import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 
 function VerifyActivationOtpContent() {
   const router = useRouter();
@@ -125,8 +126,7 @@ function VerifyActivationOtpContent() {
 
       if (!response.ok) {
         setError(
-          data?.message ||
-            "លេខកូដ OTP មិនត្រឹមត្រូវ ឬផុតកំណត់"
+          khmerErrorMessage(data?.message, "លេខកូដ OTP មិនត្រឹមត្រូវ ឬផុតកំណត់")
         );
         return;
       }
@@ -200,8 +200,7 @@ function VerifyActivationOtpContent() {
 
       if (!response.ok) {
         setError(
-          data?.message ||
-            "មិនអាចផ្ញើលេខកូដ OTP ម្តងទៀតបានទេ"
+          khmerErrorMessage(data?.message, "មិនអាចផ្ញើលេខកូដ OTP ម្តងទៀតបានទេ")
         );
         return;
       }

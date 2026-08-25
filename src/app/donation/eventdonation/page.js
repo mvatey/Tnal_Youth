@@ -44,7 +44,7 @@ async function fetchAllActivityDonationRows(branchId) {
     );
     const body = await response.json().catch(() => null);
     if (!response.ok || body?.success === false) {
-      throw new Error(body?.message || "Unable to load activity donations.");
+      throw new Error(body?.message || "មិនអាចទាញយកការបរិច្ចាកកម្មវិធីបានទេ។");
     }
     return body?.data ?? body;
   };

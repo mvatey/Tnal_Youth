@@ -15,8 +15,8 @@ export default function DocumentFilters({
 
   return (
     <div className="shrink-0 border-b border-border p-4">
-      <div className="flex items-center gap-4">
-        <div className="relative w-[260px]">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+        <div className="relative w-full lg:w-[260px]">
           <input
             value={query}
             onChange={(e) => {
@@ -29,7 +29,7 @@ export default function DocumentFilters({
           <Search className="absolute right-3 top-2.5 h-4 w-4 text-text-mute" />
         </div>
 
-        <div className="relative w-[180px]">
+        <div className="relative w-full sm:w-[180px]">
           <select
             value={branchFilter}
             onChange={(e) => {
@@ -46,7 +46,7 @@ export default function DocumentFilters({
           <ChevronDown className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-text-mute" />
         </div>
 
-        <div className="w-[240px]">
+        <div className="w-full sm:w-[240px]">
           <input
             type="date"
             value={dateFilter}
@@ -60,7 +60,7 @@ export default function DocumentFilters({
 
         <button
           onClick={onAdd}
-          className="ml-auto flex h-[38px] items-center gap-2 rounded-md bg-[#118447] px-4 text-sm font-medium text-white hover:bg-[#0d6f3b]"
+          className="flex h-[38px] w-full items-center justify-center gap-2 rounded-md bg-[#118447] px-4 text-sm font-medium text-white hover:bg-[#0d6f3b] sm:w-auto lg:ml-auto"
         >
           <Plus className="h-5 w-5" />
           {isMember ? "បង្កើតឯកសារ" : "បញ្ចូលឯកសារ"}

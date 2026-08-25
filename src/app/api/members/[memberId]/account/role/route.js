@@ -86,7 +86,7 @@ export async function PATCH(
     return Response.json(
       {
         message:
-          "Could not update role",
+          "មិនអាចកែប្រែតួនាទីបានទេ",
       },
       {
         status: 502,

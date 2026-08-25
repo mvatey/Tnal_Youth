@@ -46,7 +46,7 @@ export default function DocumentPreviewCard({
   const previewRef = useRef(null);
 
   return (
-    <div className="w-[380px] rounded-xl border border-gray-200 border-t-4 border-t-secondary bg-[#f8f9fc] p-3 shadow-sm">
+    <div className="w-full rounded-xl border border-gray-200 border-t-4 border-t-secondary bg-[#f8f9fc] p-3 shadow-sm sm:max-w-[380px]">
       <h2 className="text-base font-bold text-primary">{title}</h2>
 
       {subtitle && (

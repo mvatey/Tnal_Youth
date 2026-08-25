@@ -50,7 +50,7 @@ export function downloadExcel({
     rows.length === 0
   ) {
     console.warn(
-      "No data available to export.",
+      "មិនមានទិន្នន័យសម្រាប់នាំចេញទេ។",
     );
 
     return false;

@@ -33,8 +33,8 @@ const tabs = [
   ];
 
   return (
-    <div className="bg-bg-page-white rounded-lg shadow-sm overflow-hidden">
-      <div className="grid grid-cols-5">
+    <div className="overflow-x-auto rounded-lg bg-bg-page-white shadow-sm">
+      <div className="grid min-w-max grid-cols-5 sm:min-w-0">
         {tabs.map((tab) => {
           const active = pathname === tab.href;
 
@@ -54,7 +54,9 @@ const tabs = [
                 items-center
                 justify-center
                 border-t-2
+                min-w-[150px]
                 px-3
+                sm:min-w-0
                 text-sm
                 font-medium
                 transition-all

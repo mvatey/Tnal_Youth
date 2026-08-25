@@ -232,7 +232,7 @@ const paymentSummary = useMemo(
         })));
       })
       .catch((loadError) => {
-        if (!cancelled) setError(loadError.message || "Unable to load donation options.");
+        if (!cancelled) setError(loadError.message || "មិនអាចទាញយកជម្រើសការបរិច្ចាកបានទេ។");
       });
     return () => { cancelled = true; };
   }, [currentMemberLoading, isBranchScoped, effectiveBranchId]);
@@ -277,7 +277,7 @@ const paymentSummary = useMemo(
       .catch((loadError) => {
         if (!cancelled) {
           setEditableRows([]);
-          setError(loadError.message || "Unable to load branch members.");
+          setError(loadError.message || "មិនអាចទាញយកសមាជិកសាខាបានទេ។");
         }
       })
       .finally(() => { if (!cancelled) setLoadingMembers(false); });
@@ -371,7 +371,7 @@ const paymentSummary = useMemo(
         }),
       });
     } catch (saveError) {
-      setError(saveError.message || "Unable to save monthly donations.");
+      setError(saveError.message || "មិនអាចរក្សាទុកការបរិច្ចាកបានទេ។");
       return false;
     } finally {
       setSaving(false);

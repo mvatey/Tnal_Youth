@@ -152,13 +152,13 @@ export default function SponsorPanel({
           credentials: "include",
         });
         const body = await response.json().catch(() => null);
-        if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load sponsor donations.");
+        if (!response.ok || body?.success === false) throw new Error(body?.message || "មិនអាចទាញយកការបរិច្ចាកបានទេ។");
         const page = body?.data ?? body;
         if (!cancelled) setAllRows((Array.isArray(page?.items) ? page.items : []).map(mapSponsorRow));
       } catch (loadError) {
         if (!cancelled) {
           setAllRows([]);
-          setError(loadError.message || "Unable to load sponsor donations.");
+          setError(loadError.message || "មិនអាចទាញយកការបរិច្ចាកបានទេ។");
         }
       } finally {
         if (!cancelled) setLoading(false);

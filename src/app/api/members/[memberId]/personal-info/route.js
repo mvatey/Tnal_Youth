@@ -82,7 +82,7 @@ export async function GET(
     return Response.json(
       {
         message:
-          "Could not connect to personal info endpoint",
+          "មិនអាចភ្ជាប់ទៅកាន់សេវាកម្មព័ត៌មានផ្ទាល់ខ្លួនបានទេ",
       },
       {
         status: 502,
@@ -149,7 +149,7 @@ export async function PUT(
     return Response.json(
       {
         message:
-          "Could not update personal info",
+          "មិនអាចកែប្រែព័ត៌មានផ្ទាល់ខ្លួនបានទេ",
       },
       {
         status: 502,

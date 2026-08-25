@@ -17,6 +17,7 @@ import Button from "@/components/ui/Button";
 import FormSelect from "@/components/forms/FormSelect";
 import { useAuth } from "@/context/AuthContext";
 import { normalizeRole } from "@/lib/navigation";
+import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 
 const ALL_STATUS = "ALL";
 
@@ -134,7 +135,9 @@ async function requestJson(fullPath, options = {}) {
         ? body?.message || body?.detail || body?.error
         : body;
 
-    throw new Error(message || `Request failed with status ${response.status}`);
+    throw new Error(
+      khmerErrorMessage(message, `សំណើមិនបានសម្រេច (${response.status})`),
+    );
   }
 
   return body;
@@ -581,9 +584,9 @@ export default function VariablePage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-110px)] min-w-0 gap-5">
+    <div className="flex min-h-[calc(100vh-110px)] min-w-0 flex-col gap-5 lg:flex-row">
       {/* Left variable categories */}
-      <aside className="w-[250px] shrink-0 rounded-xl border border-border bg-bg-page-white p-3">
+      <aside className="w-full shrink-0 rounded-xl border border-border bg-bg-page-white p-3 lg:w-[250px]">
         <h2 className="px-3 py-2 text-lg font-semibold text-text-primary">
           ប្រភេទអថេរ
         </h2>
@@ -661,8 +664,8 @@ export default function VariablePage() {
                 អត្រាប្ដូរប្រាក់ (USD → KHR)
               </h1>
 
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <div className="relative min-w-[260px] flex-1">
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <div className="relative w-full min-w-0 flex-1 sm:min-w-[260px]">
                   <Search
                     size={16}
                     className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"
@@ -677,7 +680,7 @@ export default function VariablePage() {
                   />
                 </div>
 
-                <div className="w-[180px]">
+                <div className="w-full sm:w-[180px]">
                   <FormSelect
                     name="variable-status-filter"
                     value={selectedStatus}
@@ -709,7 +712,7 @@ export default function VariablePage() {
             )}
 
             <div className="overflow-x-auto">
-              <table className="w-full table-fixed border-collapse">
+              <table className="w-full min-w-[820px] table-fixed border-collapse">
                 <thead className="bg-bg-page-gray">
                   <tr className="border-b border-border">
                     <th className="w-[7%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
@@ -815,8 +818,8 @@ export default function VariablePage() {
                 {selectedCategory?.labelKm || "កំណត់អថេរ"}
               </h1>
 
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <div className="relative min-w-[260px] flex-1">
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <div className="relative w-full min-w-0 flex-1 sm:min-w-[260px]">
                   <Search
                     size={16}
                     className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"
@@ -831,7 +834,7 @@ export default function VariablePage() {
                   />
                 </div>
 
-                <div className="w-[180px]">
+                <div className="w-full sm:w-[180px]">
                   <FormSelect
                     name="variable-status-filter"
                     value={selectedStatus}
@@ -864,7 +867,7 @@ export default function VariablePage() {
             )}
 
             <div className="overflow-x-auto">
-              <table className="w-full table-fixed border-collapse">
+              <table className="w-full min-w-[820px] table-fixed border-collapse">
                 <thead className="bg-bg-page-gray">
                   <tr className="border-b border-border">
                     <th className="w-[6%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
@@ -1055,7 +1058,7 @@ export default function VariablePage() {
                     type="text"
                     value={form.nameEn}
                     onChange={updateField("nameEn")}
-                    placeholder="Enter name"
+                    placeholder="បញ្ចូលឈ្មោះជាអក្សរឡាតាំង"
                     className="h-11 w-full rounded-lg border border-border px-4 text-sm leading-6 outline-none transition placeholder:text-text-mute focus:border-primary"
                   />
                 </div>

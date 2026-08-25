@@ -15,7 +15,7 @@ export async function proxyBackend(request, path) {
   if (!accessToken) {
     return apiErrorResponse(
       "UNAUTHENTICATED",
-      "Your login session has expired. Please sign in again.",
+      "សម័យចូលប្រើរបស់អ្នកផុតកំណត់ហើយ។ សូមចូលប្រើម្ដងទៀត។",
       401,
     );
   }
@@ -60,7 +60,7 @@ export async function proxyBackend(request, path) {
     console.error(`Backend request failed for ${path}:`, error);
     return apiErrorResponse(
       "BACKEND_UNAVAILABLE",
-      "Unable to connect to the backend service.",
+      "មិនអាចភ្ជាប់ទៅកាន់សេវាកម្មខាងក្រោយបានទេ។",
       502,
     );
   }

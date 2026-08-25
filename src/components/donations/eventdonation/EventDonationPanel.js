@@ -120,10 +120,10 @@ export default function EventDonationPanel({
           donationResponse.json().catch(() => null),
         ]);
         if (!activityResponse.ok || activityBody?.success === false) {
-          throw new Error(activityBody?.message || "Unable to load activities.");
+          throw new Error(activityBody?.message || "មិនអាចទាញយកកម្មវិធីបានទេ។");
         }
         if (!donationResponse.ok || donationBody?.success === false) {
-          throw new Error(donationBody?.message || "Unable to load event donations.");
+          throw new Error(donationBody?.message || "មិនអាចទាញយកការបរិច្ចាកកម្មវិធីបានទេ។");
         }
         if (cancelled) return;
 
@@ -140,7 +140,7 @@ export default function EventDonationPanel({
       } catch (loadError) {
         if (!cancelled) {
           setRows([]);
-          setError(loadError.message || "Unable to load event donations.");
+          setError(loadError.message || "មិនអាចទាញយកការបរិច្ចាកកម្មវិធីបានទេ។");
         }
       } finally {
         if (!cancelled) setLoading(false);

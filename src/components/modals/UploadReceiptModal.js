@@ -72,7 +72,7 @@ export default function UploadReceiptModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25">
-      <div className="relative h-[319px] w-[391px] rounded-[8px] bg-bg-page-white px-7 py-7 shadow-xl">
+      <div className="relative min-h-[319px] w-[calc(100vw-2rem)] max-w-[391px] rounded-[8px] bg-bg-page-white px-7 py-7 shadow-xl">
         <button
           onClick={handleClose}
           className="absolute right-5 top-5 flex h-[20px] w-[20px] items-center justify-center rounded-full border-2 border-border text-text-secondary transition hover:bg-bg-page-gray"

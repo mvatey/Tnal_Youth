@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import PasswordInput from "@/components/ui/passwordInput";
+import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 
 function SetActivationPasswordContent() {
   const router = useRouter();
@@ -153,8 +154,7 @@ function SetActivationPasswordContent() {
 
       if (!response.ok) {
         setError(
-          data?.message ||
-            "មិនអាចកំណត់លេខសម្ងាត់បានទេ"
+          khmerErrorMessage(data?.message, "មិនអាចកំណត់លេខសម្ងាត់បានទេ")
         );
         return;
       }

@@ -44,7 +44,7 @@ export default function IdCardForm({
           );
           const body = await response.json().catch(() => null);
           if (!response.ok) {
-            throw new Error(body?.message || "Unable to load members");
+            throw new Error(body?.message || "មិនអាចទាញយកសមាជិកបានទេ។");
           }
 
           const pageRows = body?.content ?? body?.data?.content ?? body?.data ?? body;
@@ -67,7 +67,7 @@ export default function IdCardForm({
         })).filter((user) => user.id && user.name_kh));
       } catch (error) {
         if (error.name !== "AbortError") {
-          setMembersError(error.message || "Unable to load members");
+          setMembersError(error.message || "មិនអាចទាញយកសមាជិកបានទេ។");
         }
       }
     }

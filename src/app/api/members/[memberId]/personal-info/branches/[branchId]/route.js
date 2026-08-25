@@ -84,7 +84,7 @@ export async function DELETE(
     return Response.json(
       {
         message:
-          "Could not remove branch",
+          "មិនអាចដកសាខាបានទេ",
       },
       {
         status: 502,

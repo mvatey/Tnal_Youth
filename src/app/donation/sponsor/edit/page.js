@@ -48,10 +48,10 @@ export default function EditSponsorDonationQueryPage() {
     fetch(`/api/backend/donations/sponsor/${encodeURIComponent(id)}`, { cache: "no-store" })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
-        if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load sponsor donation.");
+        if (!response.ok || body?.success === false) throw new Error(body?.message || "មិនអាចទាញយកការបរិច្ចាកបានទេ។");
         if (!cancelled) setSponsor(mapSponsor(body?.data ?? body));
       })
-      .catch((loadError) => { if (!cancelled) setError(loadError.message || "Unable to load sponsor donation."); });
+      .catch((loadError) => { if (!cancelled) setError(loadError.message || "មិនអាចទាញយកការបរិច្ចាកបានទេ។"); });
     return () => { cancelled = true; };
   }, [id]);
 

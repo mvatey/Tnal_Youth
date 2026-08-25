@@ -208,7 +208,7 @@ export default function IncomePage() {
           setPaymentMethods(methodList);
         }
       } catch (loadError) {
-        if (!cancelled) setError(loadError.message || "Unable to load income data.");
+        if (!cancelled) setError(loadError.message || "មិនអាចទាញយកទិន្នន័យចំណូលបានទេ។");
       }
     }
 
@@ -330,7 +330,7 @@ export default function IncomePage() {
       (row) => parseAmount(row.amountRiel) > 0 || parseAmount(row.amountDollar) > 0,
     );
     if (!activityId || activeRows.length === 0) {
-      setError("Please enter at least one income amount.");
+      setError("សូមបញ្ចូលចំនួនទឹកប្រាក់ចំណូលយ៉ាងហោចណាស់មួយ។");
       return;
     }
 
@@ -360,7 +360,7 @@ export default function IncomePage() {
         }),
       );
       if (items.some((item) => !Number.isFinite(item.payment_method_id))) {
-        throw new Error("Payment method is required.");
+        throw new Error("សូមជ្រើសរើសវិធីសាស្ត្រទូទាត់។");
       }
       await fetchJson(`/api/backend/activities/${encodeURIComponent(activityId)}/incomes/batch`, {
         method: "POST",
@@ -369,7 +369,7 @@ export default function IncomePage() {
       });
       router.push(`/activity/${activityId}`);
     } catch (saveError) {
-      setError(saveError.message || "Unable to save activity income.");
+      setError(saveError.message || "មិនអាចរក្សាទុកចំណូលកម្មវិធីបានទេ។");
     } finally {
       setIsSaving(false);
     }

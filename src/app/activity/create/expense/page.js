@@ -205,7 +205,7 @@ export default function ExpensePage() {
       })
       .catch((loadError) => {
         if (!cancelled) {
-          setError(loadError.message || "Unable to load activity expenses.");
+          setError(loadError.message || "មិនអាចទាញយកចំណាយកម្មវិធីបានទេ។");
         }
       });
 
@@ -374,7 +374,7 @@ export default function ExpensePage() {
   const handleSave = async () => {
     const activeRows = rows.filter((row) => row.name.trim());
     if (!id || activeRows.length === 0) {
-      setError("Please enter at least one expense name.");
+      setError("សូមបញ្ចូលឈ្មោះចំណាយយ៉ាងហោចណាស់មួយ។");
       return;
     }
 
@@ -418,7 +418,7 @@ export default function ExpensePage() {
 
       router.push(`/activity/${id}`);
     } catch (saveError) {
-      setError(saveError.message || "Unable to save activity expenses.");
+      setError(saveError.message || "មិនអាចរក្សាទុកចំណាយកម្មវិធីបានទេ។");
     } finally {
       setIsSaving(false);
     }

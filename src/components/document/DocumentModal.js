@@ -20,11 +20,12 @@ export default function DocumentModal({
       {/* Modal position */}
       <div
         className="
-        absolute
-        left-[55%]
-        top-1/2
-        -translate-x-1/2
-        -translate-y-1/2
+        fixed
+        inset-0
+        flex
+        items-center
+        justify-center
+        p-4
         "
       >
 
@@ -38,12 +39,12 @@ export default function DocumentModal({
 
           ${
             size === "large"
-              ? "w-[700px]"
+              ? "w-full max-w-[700px]"
               : size === "certificate"
-              ? "w-[360px]"
+              ? "w-full max-w-[360px]"
               : size === "institution"
-              ? "w-[420px]"
-              : "w-[600px]"
+              ? "w-full max-w-[420px]"
+              : "w-full max-w-[600px]"
           }
 
           ${

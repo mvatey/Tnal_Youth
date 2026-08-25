@@ -8,6 +8,7 @@ import {
 import { ShieldCheck } from "lucide-react";
 
 import OtpInput from "@/components/ui/otpInput";
+import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 
 function VerifyOtpContent() {
   const router = useRouter();
@@ -74,8 +75,7 @@ function VerifyOtpContent() {
 
       if (!response.ok) {
         setError(
-          data?.message ||
-            "លេខកូដមិនត្រឹមត្រូវ",
+          khmerErrorMessage(data?.message, "លេខកូដមិនត្រឹមត្រូវ"),
         );
         return;
       }

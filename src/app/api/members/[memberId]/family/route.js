@@ -122,7 +122,7 @@ async function proxyFamily(
     return Response.json(
       {
         message:
-          "Could not process family information",
+          "មិនអាចដំណើរការព័ត៌មានគ្រួសារបានទេ",
       },
       {
         status: 502,

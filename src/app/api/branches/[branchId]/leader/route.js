@@ -89,7 +89,7 @@ export async function GET(
     return Response.json(
       {
         message:
-          "Branch ID is required",
+          "សូមបញ្ជាក់លេខសម្គាល់សាខា",
       },
       {
         status: 400,
@@ -131,7 +131,7 @@ export async function GET(
       {
         message:
           error?.message ||
-          "Could not load branch leader",
+          "មិនអាចទាញយកប្រធានសាខាបានទេ",
       },
       {
         status: 502,
@@ -173,7 +173,7 @@ export async function PUT(
     return Response.json(
       {
         message:
-          "Branch ID is required",
+          "សូមបញ្ជាក់លេខសម្គាល់សាខា",
       },
       {
         status: 400,
@@ -216,7 +216,7 @@ export async function PUT(
     return Response.json(
       {
         message:
-          "Branch leader member ID is required",
+          "សូមបញ្ជាក់លេខសម្គាល់សមាជិកដែលជាប្រធានសាខា",
       },
       {
         status: 400,
@@ -291,7 +291,7 @@ export async function PUT(
       {
         message:
           error?.message ||
-          "Could not assign branch leader",
+          "មិនអាចកំណត់ប្រធានសាខាបានទេ",
       },
       {
         status: 502,

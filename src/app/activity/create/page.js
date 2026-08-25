@@ -817,7 +817,7 @@ export default function CreateActivityPage() {
         }
       } catch (error) {
         console.error("Load activity form data error:", error);
-        if (!cancelled) alert(error.message || "Unable to load activity form data.");
+        if (!cancelled) alert(error.message || "មិនអាចទាញយកទិន្នន័យទម្រង់កម្មវិធីបានទេ។");
       }
     }
 
@@ -878,7 +878,7 @@ export default function CreateActivityPage() {
         if (!cancelled) {
           setMemberOptions([]);
           setSelectedMemberIds([]);
-          setMemberLoadError(error.message || "Unable to load members for this branch.");
+          setMemberLoadError(error.message || "មិនអាចទាញយកសមាជិកសម្រាប់សាខានេះបានទេ។");
         }
       })
       .finally(() => {

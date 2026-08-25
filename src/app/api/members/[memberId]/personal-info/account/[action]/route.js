@@ -94,7 +94,7 @@ export async function PATCH(
     return Response.json(
       {
         message:
-          "Could not update account status",
+          "មិនអាចកែប្រែស្ថានភាពគណនីបានទេ",
       },
       {
         status: 502,

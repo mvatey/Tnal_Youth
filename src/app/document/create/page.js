@@ -155,7 +155,7 @@ export default function CreateDocumentPage() {
     const typeBody = await typeResponse.json().catch(() => null);
 
     if (!typeResponse.ok) {
-      throw new Error(typeBody?.message || "Unable to load document types.");
+      throw new Error(typeBody?.message || "មិនអាចទាញយកប្រភេទឯកសារបានទេ។");
     }
 
     const memberDocumentType = normalizeArray(typeBody?.data ?? typeBody).find(
@@ -180,7 +180,7 @@ export default function CreateDocumentPage() {
       throw new Error(
         uploadedFile?.message ||
           uploadedFile?.detail ||
-          "ID-card template upload failed.",
+          "បញ្ចូលគំរូប័ណ្ណសម្គាល់ខ្លួនមិនបានសម្រេច។",
       );
     }
 
@@ -201,7 +201,7 @@ export default function CreateDocumentPage() {
       throw new Error(
         createdDocument?.message ||
           createdDocument?.detail ||
-          "Unable to save the member ID card.",
+          "មិនអាចរក្សាទុកប័ណ្ណសម្គាល់ខ្លួនសមាជិកបានទេ។",
       );
     }
 
@@ -264,7 +264,7 @@ export default function CreateDocumentPage() {
     const typeBody = await typeResponse.json().catch(() => null);
 
     if (!typeResponse.ok) {
-      throw new Error(typeBody?.message || "Unable to load document types.");
+      throw new Error(typeBody?.message || "មិនអាចទាញយកប្រភេទឯកសារបានទេ។");
     }
 
     const documentTypes = normalizeArray(typeBody?.data ?? typeBody);
@@ -282,7 +282,7 @@ export default function CreateDocumentPage() {
       const memberId = Number(generatedDocument.member?.id);
 
       if (!memberId) {
-        throw new Error("Member ID is required.");
+        throw new Error("សូមជ្រើសរើសសមាជិក។");
       }
 
       const upload = new FormData();
@@ -295,7 +295,7 @@ export default function CreateDocumentPage() {
       const uploadedFile = await uploadResponse.json().catch(() => null);
 
       if (!uploadResponse.ok || !uploadedFile?.id) {
-        throw new Error(uploadedFile?.message || "Certificate upload failed.");
+        throw new Error(uploadedFile?.message || "បញ្ចូលវិញ្ញាបនបត្រមិនបានសម្រេច។");
       }
 
       const createResponse = await fetch("/api/backend/documents", {
@@ -312,7 +312,7 @@ export default function CreateDocumentPage() {
       const createdDocument = await createResponse.json().catch(() => null);
 
       if (!createResponse.ok) {
-        throw new Error(createdDocument?.message || "Unable to save certificate.");
+        throw new Error(createdDocument?.message || "មិនអាចរក្សាទុកវិញ្ញាបនបត្របានទេ។");
       }
 
       if (data.activityId) {
@@ -335,7 +335,7 @@ export default function CreateDocumentPage() {
 
         if (!credentialResponse.ok) {
           throw new Error(
-            credentialBody?.message || "Unable to connect the certificate to the member credential tab.",
+            credentialBody?.message || "មិនអាចភ្ជាប់វិញ្ញាបនបត្រទៅកាន់ផ្ទាំងឯកសាររបស់សមាជិកបានទេ។",
           );
         }
       }
@@ -361,7 +361,7 @@ export default function CreateDocumentPage() {
     const typeResponse = await fetch("/api/backend/document-types", { cache: "no-store" });
     const typeBody = await typeResponse.json().catch(() => null);
     if (!typeResponse.ok) {
-      throw new Error(typeBody?.message || "Unable to load document types.");
+      throw new Error(typeBody?.message || "មិនអាចទាញយកប្រភេទឯកសារបានទេ។");
     }
 
     const memberDocumentType = normalizeArray(typeBody?.data ?? typeBody).find(
@@ -390,7 +390,7 @@ export default function CreateDocumentPage() {
         uploadedFile?.message ||
           uploadedFile?.detail ||
           uploadedFile?.error ||
-          "Appointment letter upload failed.",
+          "បញ្ចូលលិខិតតែងតាំងមិនបានសម្រេច។",
       );
     }
 
@@ -412,7 +412,7 @@ export default function CreateDocumentPage() {
       if (!createResponse.ok) {
         throw new Error(
           createdDocument?.message || createdDocument?.detail || createdDocument?.error ||
-            "Unable to save appointment letter.",
+            "មិនអាចរក្សាទុកលិខិតតែងតាំងបានទេ។",
         );
       }
 
@@ -433,7 +433,7 @@ export default function CreateDocumentPage() {
       const credentialBody = await credentialResponse.json().catch(() => null);
       if (!credentialResponse.ok) {
         throw new Error(
-          credentialBody?.message || "Unable to connect the appointment letter to the member credential tab.",
+          credentialBody?.message || "មិនអាចភ្ជាប់លិខិតតែងតាំងទៅកាន់ផ្ទាំងឯកសាររបស់សមាជិកបានទេ។",
         );
       }
     }

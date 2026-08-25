@@ -37,7 +37,7 @@ export async function PATCH(
     return Response.json(
       {
         message:
-          "Member ID is required",
+          "សូមបញ្ជាក់លេខសម្គាល់សមាជិក",
       },
       {
         status: 400,
@@ -99,7 +99,7 @@ export async function PATCH(
     return Response.json(
       {
         message:
-          "Could not connect to member password endpoint",
+          "មិនអាចភ្ជាប់ទៅកាន់សេវាកម្មពាក្យសម្ងាត់សមាជិកបានទេ",
       },
       {
         status: 502,

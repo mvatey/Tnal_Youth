@@ -560,7 +560,7 @@ export default function SponsorDonationForm({ initialData = null }) {
         })));
       })
       .catch((loadError) => {
-        if (!cancelled) setError(loadError.message || "Unable to load sponsor donation options.");
+        if (!cancelled) setError(loadError.message || "មិនអាចទាញយកជម្រើសការបរិច្ចាកបានទេ។");
       });
     return () => { cancelled = true; };
   }, [isBranchScoped, scopedBranchId]);
@@ -582,7 +582,7 @@ export default function SponsorDonationForm({ initialData = null }) {
       .catch((loadError) => {
         if (!cancelled) {
           setMemberOptions([]);
-          setError(loadError.message || "Unable to load branch members.");
+          setError(loadError.message || "មិនអាចទាញយកសមាជិកសាខាបានទេ។");
         }
       });
     return () => { cancelled = true; };
@@ -749,7 +749,7 @@ export default function SponsorDonationForm({ initialData = null }) {
       router.push(listPath);
       return true;
     } catch (saveError) {
-      setError(saveError.message || "Unable to save sponsor donation.");
+      setError(saveError.message || "មិនអាចរក្សាទុកការបរិច្ចាកបានទេ។");
       return false;
     } finally {
       setSaving(false);

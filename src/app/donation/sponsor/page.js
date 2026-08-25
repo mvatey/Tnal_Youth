@@ -85,7 +85,7 @@ async function fetchAllSponsorRows(selectedBranch) {
   });
   const firstBody = await firstResponse.json().catch(() => null);
   if (!firstResponse.ok || firstBody?.success === false) {
-    throw new Error(firstBody?.message || "Unable to load sponsor summary.");
+    throw new Error(firstBody?.message || "មិនអាចទាញយកសង្ខេបការបរិច្ចាកបានទេ។");
   }
 
   const firstPage = firstBody?.data ?? firstBody;

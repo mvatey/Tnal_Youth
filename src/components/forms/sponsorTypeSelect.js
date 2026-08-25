@@ -7,7 +7,7 @@ export default function SponsorTypeSelect({
   onChange,
   options = ["បុគ្គល", "ស្ថាប័ន", "សមាជិក"],
   placeholder = "ជ្រើសរើសប្រភេទអ្នកឧបត្ថម្ភ",
-  className = "w-[430px]",
+  className = "w-full sm:w-[430px]",
   size = "large",
 }) {
   const isCompact = size === "compact";

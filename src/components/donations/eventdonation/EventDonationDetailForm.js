@@ -280,7 +280,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
         setDonationTypeId(eventType?.id ?? null);
       })
       .catch((loadError) => {
-        if (!cancelled) setError(loadError.message || "Unable to load donation options.");
+        if (!cancelled) setError(loadError.message || "មិនអាចទាញយកជម្រើសការបរិច្ចាកបានទេ។");
       });
     return () => { cancelled = true; };
   }, []);
@@ -364,7 +364,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
       .catch((loadError) => {
         if (!cancelled) {
           setMembers([]);
-          setError(loadError.message || "Unable to load members for this branch.");
+          setError(loadError.message || "មិនអាចទាញយកសមាជិកសម្រាប់សាខានេះបានទេ។");
         }
       })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -396,8 +396,8 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     if (!canEdit) { setError("អ្នកមិនមានសិទ្ធិកែប្រែវិភាគទាននេះទេ។"); return false; }
     const completed = rows.filter((row) => Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0);
     if (!donationTypeId) { setError("Event donation type is missing in the backend."); return false; }
-    if (selectedBranch === "all" || selectedEvent === "all") { setError("Please choose a branch and activity."); return false; }
-    if (completed.length === 0) { setError("Please enter an amount for this member."); return false; }
+    if (selectedBranch === "all" || selectedEvent === "all") { setError("សូមជ្រើសរើសសាខា និងកម្មវិធី។"); return false; }
+    if (completed.length === 0) { setError("សូមបញ្ចូលចំនួនទឹកប្រាក់សម្រាប់សមាជិកនេះ។"); return false; }
 
     setSaving(true);
     setError("");
@@ -461,7 +461,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
       if (!isDetailPage) window.setTimeout(() => router.push(listPath), 500);
       return true;
     } catch (saveError) {
-      setError(saveError.message || "Unable to save event donations.");
+      setError(saveError.message || "មិនអាចរក្សាទុកការបរិច្ចាកកម្មវិធីបានទេ។");
       return false;
     } finally {
       setSaving(false);

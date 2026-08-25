@@ -824,7 +824,7 @@ export default function MemberInfoCard({
           throw new Error(
             responseBody?.message ||
               responseBody?.error ||
-              "Unable to upload profile image",
+              "មិនអាចបញ្ចូលរូបភាពប្រវត្តិរូបបានទេ។",
           );
         }
 
@@ -850,7 +850,7 @@ export default function MemberInfoCard({
       } catch (error) {
         setImageError(
           error?.message ||
-            "Unable to upload profile image",
+            "មិនអាចបញ្ចូលរូបភាពប្រវត្តិរូបបានទេ។",
         );
       } finally {
         setIsUploadingImage(false);

@@ -53,7 +53,7 @@ async function proxy(request, context, method) {
     );
 
     return Response.json(
-      { message: "Could not update branch assignments" },
+      { message: "មិនអាចកែប្រែការកំណត់សាខាបានទេ" },
       { status: 502 },
     );
   }

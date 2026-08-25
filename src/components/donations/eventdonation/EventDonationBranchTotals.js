@@ -52,7 +52,7 @@ export default function EventDonationBranchTotals({
       .catch((loadError) => {
         if (!cancelled) {
           setAllRows([]);
-          setError(loadError.message || "Unable to load branch totals.");
+          setError(loadError.message || "មិនអាចទាញយកសរុបតាមសាខាបានទេ។");
         }
       })
       .finally(() => {

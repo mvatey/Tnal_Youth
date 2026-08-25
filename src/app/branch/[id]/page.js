@@ -1274,7 +1274,7 @@ const loadBranchDetails =
   }
 
   return (
-    <div className="min-w-0 space-y-5 overflow-x-hidden">
+    <div className="min-w-0 space-y-5 overflow-x-auto">
       <div className="space-y-1">
         <div className="flex items-center gap-2 text-sm">
           <Link

@@ -15,7 +15,7 @@ export async function GET(request, { params }) {
   if (!token) {
     return apiErrorResponse(
       "UNAUTHENTICATED",
-      "Authentication is required.",
+      "សូមចូលប្រើគណនីជាមុនសិន។",
       401,
     );
   }
@@ -60,7 +60,7 @@ export async function GET(request, { params }) {
     console.error("File content proxy error:", error);
     return apiErrorResponse(
       "BACKEND_UNAVAILABLE",
-      "Could not connect to the file service.",
+      "មិនអាចភ្ជាប់ទៅកាន់សេវាកម្មឯកសារបានទេ។",
       502,
     );
   }

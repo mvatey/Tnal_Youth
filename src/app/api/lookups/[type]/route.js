@@ -51,7 +51,7 @@ export async function GET(request, context) {
   if (!ALLOWED_LOOKUPS.has(type)) {
     return Response.json(
       {
-        message: "Lookup not found",
+        message: "រកមិនឃើញទិន្នន័យជម្រើសនេះទេ",
       },
       {
         status: 404,

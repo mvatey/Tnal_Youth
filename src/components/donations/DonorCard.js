@@ -5,7 +5,7 @@ export default function DonorCard({ label, value, growth, note }) {
   const unit = unitParts.join(" ");
 
   return (
-    <article className="h-[65px] w-[200px] rounded-2xl border-2 border-border bg-bg-page-white px-3 py-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-secondary/40 hover:shadow-md">
+    <article className="min-h-[65px] w-full rounded-2xl border-2 border-border bg-bg-page-white px-3 py-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-secondary/40 hover:shadow-md sm:max-w-[200px]">
       <div className="flex h-full items-center gap-2">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FFF3CF] text-[#F59E0B]">
           <FaUsers size={22} />

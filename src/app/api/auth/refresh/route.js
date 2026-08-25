@@ -85,7 +85,7 @@ export async function POST() {
       }
 
       return Response.json(
-        { success: false, message: body?.message || "Session refresh failed." },
+        { success: false, message: body?.message || "មិនអាចបន្តសម័យចូលប្រើបានទេ។" },
         { status: backendResponse.status },
       );
     }
@@ -123,7 +123,7 @@ export async function POST() {
   } catch (error) {
     console.error("Session refresh proxy error:", error);
     return Response.json(
-      { success: false, message: "Unable to connect to the backend service." },
+      { success: false, message: "មិនអាចភ្ជាប់ទៅកាន់សេវាកម្មខាងក្រោយបានទេ។" },
       { status: 502 },
     );
   }

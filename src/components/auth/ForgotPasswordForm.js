@@ -26,7 +26,7 @@ export default function ForgotPasswordForm() {
 
     if (!res.ok) {
       const data = await res.json();
-      setError(data.message || "Something went wrong");
+      setError(data.message || "មានបញ្ហាកើតឡើង");
       return;
     }
 

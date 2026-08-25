@@ -51,7 +51,7 @@ export default function useCurrentMember() {
         });
 
         if (!memberResponse.ok) {
-          throw new Error("The member profile linked to this account could not be loaded");
+          throw new Error("មិនអាចទាញយកប្រវត្តិរូបសមាជិកដែលភ្ជាប់ជាមួយគណនីនេះបានទេ");
         }
 
         const memberBody = await memberResponse.json();

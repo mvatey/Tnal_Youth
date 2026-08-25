@@ -154,7 +154,7 @@ export default function DonationTable() {
     rows.forEach((row) => unique.set(String(row.branchId), row.branch));
     return [...unique].map(([value, label]) => ({ value, label }));
   }, [rows, isBranchScoped, accessibleBranches, effectiveBranchId, currentMember?.branch]);
-  const handleDelete = () => setError("Open the monthly detail to delete an individual donation record.");
+  const handleDelete = () => setError("សូមបើកព័ត៌មានលម្អិតប្រចាំខែ ដើម្បីលុបកំណត់ត្រាវិភាគទាននីមួយៗ។");
   const filteredRows = useMemo(
     () =>
       rows.filter((row) => {
@@ -268,7 +268,7 @@ export default function DonationTable() {
           const body = await response.json().catch(() => null);
 
           if (!response.ok) {
-            throw new Error(body?.message || "Unable to load monthly donations.");
+            throw new Error(body?.message || "មិនអាចទាញយកវិភាគទានប្រចាំខែបានទេ។");
           }
 
           const page = body?.data ?? body;
@@ -284,13 +284,13 @@ export default function DonationTable() {
           credentials: "include",
         });
         const body = await response.json().catch(() => null);
-        if (!response.ok || body?.success === false) throw new Error(body?.message || "Unable to load monthly donations.");
+        if (!response.ok || body?.success === false) throw new Error(body?.message || "មិនអាចទាញយកវិភាគទានប្រចាំខែបានទេ។");
         const page = body?.data ?? body;
         if (!cancelled) {
           setRows((Array.isArray(page?.items) ? page.items : []).map(mapMonthlyRow));
         }
       } catch (loadError) {
-        if (!cancelled) setError(loadError.message || "Unable to load monthly donations.");
+        if (!cancelled) setError(loadError.message || "មិនអាចទាញយកវិភាគទានប្រចាំខែបានទេ។");
       } finally {
         if (!cancelled) setLoading(false);
       }

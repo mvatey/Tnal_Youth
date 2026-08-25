@@ -52,9 +52,9 @@ export default function MemberDetailNav(){
 
   return (
 
-    <div className="rounded-lg bg-bg-page-white shadow-sm overflow-hidden">
+    <div className="overflow-x-auto rounded-lg bg-bg-page-white shadow-sm">
 
-      <div className="grid grid-cols-6">
+      <div className="grid min-w-max grid-cols-6 sm:min-w-0">
 
 
         {
@@ -81,7 +81,7 @@ export default function MemberDetailNav(){
                   }
                 }}
 
-                className={`flex h-10 items-center justify-center border-t-2 px-3 text-sm font-medium transition-all ${
+                className={`flex h-10 min-w-[140px] items-center justify-center border-t-2 px-3 text-sm font-medium transition-all sm:min-w-0 ${
 
                   active
                   ?

@@ -60,7 +60,7 @@ export async function GET(
     return Response.json(
       {
         message:
-          "Member ID is required",
+          "សូមបញ្ជាក់លេខសម្គាល់សមាជិក",
       },
       {
         status: 400,
@@ -99,7 +99,7 @@ export async function GET(
     return Response.json(
       {
         message:
-          "Could not connect to member detail endpoint",
+          "មិនអាចភ្ជាប់ទៅកាន់សេវាកម្មព័ត៌មានលម្អិតសមាជិកបានទេ",
       },
       {
         status: 502,

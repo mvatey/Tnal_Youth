@@ -37,7 +37,7 @@ export default function EventDonationDetailCards() {
       .then(async (response) => {
         const body = await response.json().catch(() => null);
         if (!response.ok || body?.success === false) {
-          throw new Error(body?.message || "Unable to load activity donation totals.");
+          throw new Error(body?.message || "មិនអាចទាញយកសរុបការបរិច្ចាកកម្មវិធីបានទេ។");
         }
         return body?.data ?? body;
       })

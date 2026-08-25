@@ -123,7 +123,7 @@ export default function ParticipationEditModal({
       await onSave(updatedParticipants);
     } catch (error) {
       setSaveError(
-        error instanceof Error ? error.message : "Something went wrong",
+        error instanceof Error ? error.message : "មានបញ្ហាកើតឡើង",
       );
     } finally {
       setIsSaving(false);

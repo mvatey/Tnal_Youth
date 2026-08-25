@@ -682,7 +682,7 @@ export default function ActivityMembersPage({
             setMemberLoadError(
               error instanceof Error
                 ? error.message
-                : "Unable to load members.",
+                : "មិនអាចទាញយកបញ្ជីសមាជិកបានទេ។",
             );
           }
         } finally {
@@ -697,7 +697,7 @@ export default function ActivityMembersPage({
           setLoadError(
             error instanceof Error
               ? error.message
-              : "Something went wrong",
+              : "មានបញ្ហាកើតឡើង",
           );
 
           setLoading(false);

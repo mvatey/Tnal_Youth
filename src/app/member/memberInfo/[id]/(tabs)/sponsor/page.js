@@ -64,7 +64,7 @@ export default function DonationRecordsPage() {
     })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || "Unable to load payment methods.");
+        if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកវិធីសាស្ត្រទូទាត់បានទេ។");
         const methods = Array.isArray(body) ? body : (body?.data || []);
         setPaymentMethods(
           methods

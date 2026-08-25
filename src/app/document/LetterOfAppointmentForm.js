@@ -75,10 +75,10 @@ export default function LetterOfAppointmentForm({
     fetch("/api/lookups/branches", { cache: "no-store" })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || "Unable to load branches.");
+        if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកសាខាបានទេ។");
         if (active) setBranches(Array.isArray(body) ? body : (body?.data ?? []));
       })
-      .catch((error) => active && setDataError(error.message || "Unable to load branches."));
+      .catch((error) => active && setDataError(error.message || "មិនអាចទាញយកសាខាបានទេ។"));
     return () => { active = false; };
   }, []);
 
@@ -101,7 +101,7 @@ export default function LetterOfAppointmentForm({
           { cache: "no-store", signal: controller.signal },
         );
         const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || "Unable to load members.");
+        if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកសមាជិកបានទេ។");
         const pageRows = body?.content ?? body?.data?.content ?? body?.data ?? body;
         rows.push(...(Array.isArray(pageRows) ? pageRows : []));
         totalPages = Math.max(1, Number(body?.totalPages ?? body?.data?.totalPages) || 1);
@@ -110,7 +110,7 @@ export default function LetterOfAppointmentForm({
       setMembers(rows);
     })()
       .catch((error) => {
-        if (error.name !== "AbortError") setDataError(error.message || "Unable to load members.");
+        if (error.name !== "AbortError") setDataError(error.message || "មិនអាចទាញយកសមាជិកបានទេ។");
       })
       .finally(() => setLoadingMembers(false));
 

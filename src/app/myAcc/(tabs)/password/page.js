@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import SaveButton from "@/components/forms/SaveButton";
+import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 
 function validatePassword(password) {
   return {
@@ -110,8 +111,7 @@ export default function PasswordPage() {
             : body;
 
         throw new Error(
-          message ||
-            `Request failed with status ${response.status}`,
+          khmerErrorMessage(message, `សំណើមិនបានសម្រេច (${response.status})`),
         );
       }
 
@@ -122,8 +122,10 @@ export default function PasswordPage() {
     } catch (submitError) {
       console.error("Cannot change my password:", submitError);
       setError(
-        submitError.message ||
+        khmerErrorMessage(
+          submitError.message,
           "មិនអាចផ្លាស់ប្ដូរពាក្យសម្ងាត់បានទេ",
+        ),
       );
     } finally {
       setSubmitting(false);
@@ -277,7 +279,7 @@ function BoxFill({
           type="button"
           onClick={() => setShow((previous) => !previous)}
           className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary"
-          aria-label={show ? "Hide password" : "Show password"}
+          aria-label={show ? "លាក់ពាក្យសម្ងាត់" : "បង្ហាញពាក្យសម្ងាត់"}
         >
           {show ? (
             <EyeOff size={18} />

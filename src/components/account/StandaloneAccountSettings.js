@@ -163,7 +163,7 @@ function ProfileCard({
       const body = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(body?.message || body?.error || "Unable to upload profile image");
+        throw new Error(body?.message || body?.error || "មិនអាចបញ្ចូលរូបភាពប្រវត្តិរូបបានទេ។");
       }
 
       setPreview(body?.profileImage || body?.profile_image || DEFAULT_PROFILE_IMAGE);

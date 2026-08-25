@@ -23,7 +23,7 @@ export async function fetchAllDonationRecords(baseUrl, signal) {
       throw new Error(
         payload?.message ||
         payload?.detail ||
-        "Unable to load donation records.",
+        "មិនអាចទាញយកកំណត់ត្រាវិភាគទានបានទេ។",
       );
     }
 

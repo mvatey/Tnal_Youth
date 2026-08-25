@@ -1601,7 +1601,7 @@ export default function BranchPage() {
    */
 
   return (
-    <div className="min-w-0 space-y-5 overflow-x-hidden">
+    <div className="min-w-0 space-y-5 overflow-x-auto">
       <div>
         <h1 className="text-xl font-bold text-primary">
           បញ្ជីសាខា
@@ -1667,7 +1667,7 @@ export default function BranchPage() {
               type="button"
               variant="success"
               disabled={isViewer}
-              title={isViewer ? "Viewer accounts are read-only" : undefined}
+              title={isViewer ? "គណនីមើលទិន្នន័យមិនអាចកែប្រែបានទេ" : undefined}
               icon={
                 <PlusCircle
                   size={16}

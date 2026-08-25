@@ -12,6 +12,7 @@ import {
 import { KeyRound } from "lucide-react";
 
 import PasswordInput from "@/components/ui/passwordInput";
+import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -153,9 +154,10 @@ function ResetPasswordContent() {
 
       if (!response.ok) {
         setError(
-          data?.message ||
-            data?.error ||
+          khmerErrorMessage(
+            data?.message || data?.error,
             "មិនអាចកំណត់លេខសម្ងាត់ថ្មីបាន",
+          ),
         );
         return;
       }

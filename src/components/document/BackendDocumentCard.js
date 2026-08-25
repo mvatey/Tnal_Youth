@@ -69,7 +69,7 @@ export default function BackendDocumentCard({ document, onView, onDelete }) {
   const openPreview = () => onView?.(previewDocument);
 
   return (
-    <article className="group relative flex w-[380px] min-w-0 flex-col rounded-xl border border-border border-t-4 border-t-secondary bg-bg-page-white p-3 shadow-sm">
+    <article className="group relative flex w-full min-w-0 flex-col rounded-xl border border-border border-t-4 border-t-secondary bg-bg-page-white p-3 shadow-sm sm:max-w-[380px]">
       {onDelete ? (
         <button
           type="button"

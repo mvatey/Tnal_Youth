@@ -34,7 +34,7 @@ export async function GET(
     return Response.json(
       {
         message:
-          "Branch ID is required",
+          "សូមបញ្ជាក់លេខសម្គាល់សាខា",
       },
       {
         status: 400,
@@ -84,7 +84,7 @@ export async function GET(
     return Response.json(
       {
         message:
-          "Could not connect to the branch details endpoint",
+          "មិនអាចភ្ជាប់ទៅកាន់សេវាកម្មព័ត៌មានលម្អិតសាខាបានទេ",
       },
       {
         status: 502,

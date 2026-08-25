@@ -60,7 +60,7 @@ export default function NotificationPanel({ type = "all" }) {
 
       if (!response.ok || body?.success === false) {
         throw new Error(
-          body?.message || "Unable to load notifications.",
+          body?.message || "មិនអាចទាញយកការជូនដំណឹងបានទេ។",
         );
       }
 
@@ -147,7 +147,7 @@ export default function NotificationPanel({ type = "all" }) {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "Unable to load notifications.",
+          : "មិនអាចទាញយកការជូនដំណឹងបានទេ។",
       );
     } finally {
       setIsLoading(false);

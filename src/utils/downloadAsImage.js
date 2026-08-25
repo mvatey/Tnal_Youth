@@ -2,7 +2,7 @@ import { toPng } from "html-to-image";
 
 export async function downloadAsImage(element, filename = "document.png") {
   if (!element) {
-    throw new Error("The image element was not found.");
+    throw new Error("រកមិនឃើញផ្នែករូបភាពសម្រាប់ទាញយកទេ។");
   }
 
   try {

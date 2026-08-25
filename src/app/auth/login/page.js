@@ -19,6 +19,7 @@ import TextInput from "@/components/ui/textInput";
 import PasswordInput from "@/components/ui/passwordInput";
 import { useAuth } from "@/context/AuthContext";
 import { getRoleHomePath } from "@/lib/navigation";
+import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 
 const LOGIN_STEP = {
   IDENTIFIER: "IDENTIFIER",
@@ -165,9 +166,10 @@ function LoginContent() {
 
       if (!response.ok) {
         setError(
-          data?.message ||
-            data?.data?.message ||
-            "មិនអាចផ្ញើលេខកូដ OTP បានទេ"
+          khmerErrorMessage(
+            data?.message || data?.data?.message,
+            "មិនអាចផ្ញើលេខកូដ OTP បានទេ",
+          )
         );
 
         return false;
@@ -251,9 +253,10 @@ function LoginContent() {
 
       if (!response.ok) {
         setError(
-          data?.message ||
-            data?.data?.message ||
-            "មិនអាចពិនិត្យស្ថានភាពគណនីបានទេ"
+          khmerErrorMessage(
+            data?.message || data?.data?.message,
+            "មិនអាចពិនិត្យស្ថានភាពគណនីបានទេ",
+          )
         );
 
         return;
@@ -375,9 +378,10 @@ function LoginContent() {
       );
 
       setError(
-        accountStatus?.message ||
-          data?.message ||
-          "មិនអាចកំណត់ស្ថានភាពគណនីបានទេ"
+        khmerErrorMessage(
+          accountStatus?.message || data?.message,
+          "មិនអាចកំណត់ស្ថានភាពគណនីបានទេ",
+        )
       );
     } catch (statusError) {
       console.error(
@@ -445,9 +449,10 @@ function LoginContent() {
 
       if (!response.ok) {
         setError(
-          data?.message ||
-            data?.data?.message ||
-            "លេខទូរស័ព្ទ អ៊ីមែល ឬលេខសម្ងាត់មិនត្រឹមត្រូវ"
+          khmerErrorMessage(
+            data?.message || data?.data?.message,
+            "លេខទូរស័ព្ទ អ៊ីមែល ឬលេខសម្ងាត់មិនត្រឹមត្រូវ",
+          )
         );
 
         return;
@@ -484,8 +489,10 @@ function LoginContent() {
 
         if (!meResponse.ok) {
           setError(
-            meData?.message ||
-              "ចូលប្រើប្រាស់បាន ប៉ុន្តែមិនអាចទាញយកព័ត៌មានអ្នកប្រើប្រាស់បាន"
+            khmerErrorMessage(
+              meData?.message,
+              "ចូលប្រើប្រាស់បាន ប៉ុន្តែមិនអាចទាញយកព័ត៌មានអ្នកប្រើប្រាស់បាន",
+            )
           );
 
           return;

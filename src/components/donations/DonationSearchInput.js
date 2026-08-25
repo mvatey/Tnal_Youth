@@ -2,7 +2,7 @@ import { Search } from "lucide-react";
 
 export default function DonationSearchInput({ value, onChange, showLabel = true }) {
   return (
-    <label className="ml-auto block w-[260px]">
+    <label className="block w-full sm:ml-auto sm:w-[260px]">
       {showLabel && (
         <span className="mb-1 block text-[12px] font-medium text-text-secondary">ស្វែងរក</span>
       )}

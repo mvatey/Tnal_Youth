@@ -69,7 +69,7 @@ export async function GET(
     return NextResponse.json(
       {
         message:
-          "Unable to connect to the backend.",
+          "មិនអាចភ្ជាប់ទៅកាន់ប្រព័ន្ធខាងក្រោយបានទេ។",
       },
       {
         status: 500,

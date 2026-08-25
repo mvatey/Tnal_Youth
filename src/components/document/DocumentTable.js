@@ -31,7 +31,7 @@ export default function DocumentTable({
       <table
         className="
         w-full
-        min-w-[1100px]
+        min-w-[760px]
         table-fixed
         border-collapse
         text-sm

@@ -89,7 +89,7 @@ export default function CompanyDocumentPreview({ document, onClose }) {
 
       try {
         const response = await fetch(fileUrl, { signal: controller.signal });
-        if (!response.ok) throw new Error("Unable to load document");
+        if (!response.ok) throw new Error("មិនអាចទាញយកឯកសារបានទេ។");
 
         if (isDocx) {
           const mammothModule = await import("mammoth/mammoth.browser");

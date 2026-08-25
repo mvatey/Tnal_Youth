@@ -233,14 +233,14 @@ export default function CertificateForm({
             signal: controller.signal,
           });
           const body = await response.json().catch(() => null);
-          if (!response.ok) throw new Error(body?.message || "Unable to load activities");
+          if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកកម្មវិធីបានទេ។");
           rows.push(...(Array.isArray(body?.content) ? body.content : []));
           totalPages = Math.max(1, Number(body?.totalPages) || 1);
           page += 1;
         } while (page < totalPages);
         setActivities(rows);
       } catch (error) {
-        if (error.name !== "AbortError") setDataError(error.message || "Unable to load activities");
+        if (error.name !== "AbortError") setDataError(error.message || "មិនអាចទាញយកកម្មវិធីបានទេ។");
       }
     })();
     return () => controller.abort();
@@ -258,11 +258,11 @@ export default function CertificateForm({
     })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || "Unable to load activity attendees");
+        if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកអ្នកចូលរួមកម្មវិធីបានទេ។");
         setActivityParticipants(Array.isArray(body) ? body : (body?.content || []));
       })
       .catch((error) => {
-        if (error.name !== "AbortError") setDataError(error.message || "Unable to load activity attendees");
+        if (error.name !== "AbortError") setDataError(error.message || "មិនអាចទាញយកអ្នកចូលរួមកម្មវិធីបានទេ។");
       });
     return () => controller.abort();
   }, [form.activityId]);
@@ -301,7 +301,7 @@ export default function CertificateForm({
         });
         const body = await response.json().catch(() => null);
         if (!response.ok) {
-          throw new Error(body?.message || "Unable to load branches");
+          throw new Error(body?.message || "មិនអាចទាញយកសាខាបានទេ។");
         }
 
         setBranchOptions(
@@ -311,7 +311,7 @@ export default function CertificateForm({
         );
       } catch (error) {
         if (error.name !== "AbortError") {
-          setDataError(error.message || "Unable to load branches");
+          setDataError(error.message || "មិនអាចទាញយកសាខាបានទេ។");
         }
       } finally {
         if (!controller.signal.aborted) setLoadingBranches(false);
@@ -355,7 +355,7 @@ export default function CertificateForm({
             { cache: "no-store", signal: controller.signal },
           );
           const body = await response.json().catch(() => null);
-          if (!response.ok) throw new Error(body?.message || "Unable to load members");
+          if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកសមាជិកបានទេ។");
           rows.push(...unwrapList(body));
           totalPages = Math.max(1, Number(body?.totalPages ?? body?.data?.totalPages) || 1);
           page += 1;
@@ -369,7 +369,7 @@ export default function CertificateForm({
       } catch (error) {
         if (error.name !== "AbortError") {
           setMembers([]);
-          setDataError(error.message || "Unable to load members");
+          setDataError(error.message || "មិនអាចទាញយកសមាជិកបានទេ។");
         }
       } finally {
         if (!controller.signal.aborted) setLoadingMembers(false);

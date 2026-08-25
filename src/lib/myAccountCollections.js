@@ -3,7 +3,7 @@ async function readResponse(response) {
 
   if (!response.ok) {
     throw new Error(
-      body.message || body.error || "Something went wrong",
+      body.message || body.error || "មានបញ្ហាកើតឡើង",
     );
   }
 

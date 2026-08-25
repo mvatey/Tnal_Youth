@@ -30,7 +30,7 @@ export async function GET() {
     if (!accessToken) {
       return apiErrorResponse(
         "UNAUTHENTICATED",
-        "Authentication is required.",
+        "សូមចូលប្រើគណនីជាមុនសិន។",
         401,
       );
     }

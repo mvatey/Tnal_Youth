@@ -73,7 +73,7 @@ export async function GET() {
     return Response.json(
       {
         message:
-          "Could not load branch options",
+          "មិនអាចទាញយកជម្រើសសាខាបានទេ",
       },
       {
         status: 502,

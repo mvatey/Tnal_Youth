@@ -44,7 +44,7 @@ export async function PATCH(request, { params }) {
     console.error("Member status proxy error:", error);
 
     return Response.json(
-      { message: "Unable to connect to member status endpoint" },
+      { message: "មិនអាចភ្ជាប់ទៅកាន់សេវាកម្មស្ថានភាពសមាជិកបានទេ" },
       { status: 502 },
     );
   }

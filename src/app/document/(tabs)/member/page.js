@@ -71,7 +71,7 @@ export default function MemberDocumentPage() {
           { cache: "no-store" },
         );
         const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || "Unable to load documents.");
+        if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកឯកសារបានទេ។");
         const pageRows = body?.data?.content ?? body?.content ?? body?.data ?? body;
         rows.push(...(Array.isArray(pageRows) ? pageRows : []));
         totalPages = Math.max(1, Number(body?.data?.total_pages ?? body?.total_pages ?? body?.totalPages) || 1);
@@ -80,7 +80,7 @@ export default function MemberDocumentPage() {
 
       setDocuments(rows.filter((row) => row.member).map(mapMemberDocument));
     } catch (loadError) {
-      setError(loadError.message || "Unable to load documents.");
+      setError(loadError.message || "មិនអាចទាញយកឯកសារបានទេ។");
     } finally {
       setLoading(false);
     }

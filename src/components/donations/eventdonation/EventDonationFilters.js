@@ -10,7 +10,7 @@ function EventDateInput({ label, value, onChange, min }) {
   };
 
   return (
-    <label className="group relative block h-[34px] w-[192px] shrink-0 cursor-pointer">
+    <label className="group relative block h-[34px] w-full cursor-pointer sm:w-[192px] sm:shrink-0">
       <input
         type="date"
         value={value}
@@ -49,8 +49,8 @@ export default function EventDonationFilters({
   const router = useRouter();
 
   return (
-    <div className="flex w-full flex-nowrap items-center justify-end gap-[5px] overflow-x-auto pb-1">
-      <label className="block h-[34px] w-[202px] shrink-0">
+    <div className="flex w-full flex-col items-stretch justify-end gap-2 pb-1 sm:flex-row sm:flex-nowrap sm:items-center sm:overflow-x-auto">
+      <label className="block h-[34px] w-full sm:w-[202px] sm:shrink-0">
         <span className="flex h-full items-center rounded-lg border border-border bg-bg-page-white px-3 shadow-sm">
           <input
             className="w-full flex-1 bg-transparent pr-2 text-[12px] font-medium text-text-secondary outline-none placeholder:text-text-secondary focus:placeholder-transparent"

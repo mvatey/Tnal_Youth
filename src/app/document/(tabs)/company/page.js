@@ -96,7 +96,7 @@ export default function CompanyDocumentPage() {
           { cache: "no-store" },
         );
         const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || "Unable to load documents.");
+        if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកឯកសារបានទេ។");
         const rows = body?.data?.content ?? body?.content ?? body?.data ?? body;
         documentRows.push(...(Array.isArray(rows) ? rows : []));
         totalPages = Math.max(1, Number(body?.data?.total_pages ?? body?.total_pages ?? body?.totalPages) || 1);
@@ -107,7 +107,7 @@ export default function CompanyDocumentPage() {
         fetch("/api/lookups/branches", { cache: "no-store" }),
         fetch("/api/backend/document-types", { cache: "no-store" }),
       ]);
-      if (!branchResponse.ok || !typeResponse.ok) throw new Error("Unable to load documents.");
+      if (!branchResponse.ok || !typeResponse.ok) throw new Error("មិនអាចទាញយកឯកសារបានទេ។");
       const [branchBody, typeBody] = await Promise.all([branchResponse.json(), typeResponse.json()]);
 
       setDocuments(
@@ -118,7 +118,7 @@ export default function CompanyDocumentPage() {
       setBranches(Array.isArray(branchBody) ? branchBody : (branchBody?.data ?? []));
       setDocumentTypes(Array.isArray(typeBody) ? typeBody : (typeBody?.data ?? []));
     } catch (loadError) {
-      setError(loadError.message || "Unable to load documents.");
+      setError(loadError.message || "មិនអាចទាញយកឯកសារបានទេ។");
     } finally {
       setLoading(false);
     }
@@ -341,7 +341,7 @@ export default function CompanyDocumentPage() {
         upload.append("file", item.file);
         const uploadResponse = await fetch("/api/backend/files/attachments", { method: "POST", body: upload });
         const uploadedFile = await uploadResponse.json().catch(() => null);
-        if (!uploadResponse.ok) throw new Error(uploadedFile?.message || "File upload failed.");
+        if (!uploadResponse.ok) throw new Error(uploadedFile?.message || "បញ្ចូលឯកសារមិនបានសម្រេច។");
         const createResponse = await fetch("/api/backend/documents", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -354,13 +354,13 @@ export default function CompanyDocumentPage() {
           }),
         });
         const created = await createResponse.json().catch(() => null);
-        if (!createResponse.ok) throw new Error(created?.message || "Unable to save document.");
+        if (!createResponse.ok) throw new Error(created?.message || "មិនអាចរក្សាទុកឯកសារបានទេ។");
       }
       setForm(EMPTY_FORM);
       setShowAddForm(false);
       await loadPage();
     } catch (saveError) {
-      setError(saveError.message || "Unable to save document.");
+      setError(saveError.message || "មិនអាចរក្សាទុកឯកសារបានទេ។");
     } finally {
       setSaving(false);
     }
@@ -375,7 +375,7 @@ export default function CompanyDocumentPage() {
       const uploadResponse = await fetch("/api/backend/files/attachments", { method: "POST", body: upload });
       const uploadedFile = await uploadResponse.json().catch(() => null);
       if (!uploadResponse.ok || !uploadedFile?.id) {
-        throw new Error(uploadedFile?.message || "File upload failed.");
+        throw new Error(uploadedFile?.message || "បញ្ចូលឯកសារមិនបានសម្រេច។");
       }
       fileId = uploadedFile.id;
     }
@@ -392,7 +392,7 @@ export default function CompanyDocumentPage() {
       }),
     });
     const body = await response.json().catch(() => null);
-    if (!response.ok) throw new Error(body?.message || "Unable to update document.");
+    if (!response.ok) throw new Error(body?.message || "មិនអាចកែប្រែឯកសារបានទេ។");
     setEditDocument(null);
     await loadPage();
   };
@@ -401,7 +401,7 @@ export default function CompanyDocumentPage() {
     const response = await fetch(`/api/backend/documents/${deleteDocument.id}`, { method: "DELETE" });
     if (!response.ok) {
       const body = await response.json().catch(() => null);
-      setError(body?.message || "Unable to delete document.");
+      setError(body?.message || "មិនអាចលុបឯកសារបានទេ។");
       return;
     }
     setDeleteDocument(null);

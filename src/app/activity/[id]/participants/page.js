@@ -458,7 +458,7 @@ export default function ActivityParticipantsPage({
           rosterBranchId <= 0
         ) {
           throw new Error(
-            "Unable to determine your activity branch.",
+            "មិនអាចកំណត់សាខារបស់កម្មវិធីនេះបានទេ។",
           );
         }
 
@@ -814,7 +814,7 @@ export default function ActivityParticipantsPage({
           setLoadError(
             error instanceof Error
               ? error.message
-              : "Something went wrong",
+              : "មានបញ្ហាកើតឡើង",
           );
 
           setActivityParticipants(
@@ -1389,7 +1389,7 @@ export default function ActivityParticipantsPage({
       const message =
         error instanceof Error
           ? error.message
-          : "Something went wrong";
+          : "មានបញ្ហាកើតឡើង";
 
       setSaveError(
         message,
