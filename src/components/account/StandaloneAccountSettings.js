@@ -95,8 +95,8 @@ export default function StandaloneAccountSettings({
 
       <div className="grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-2">
         <div className="min-w-0 divide-y divide-border rounded-xl border border-border bg-bg-page-white">
-          <PasswordSection />
           <EmailSection currentEmail={currentEmail} onEmailChanged={onEmailChanged} />
+          <PasswordSection />
         </div>
 
         <PasswordRulesCard />

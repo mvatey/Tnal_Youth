@@ -482,8 +482,8 @@ export default function ExpensePage() {
           </button>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-border">
-          <table className="w-full table-fixed border-collapse text-[12px] text-text-secondary">
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full min-w-[920px] table-fixed border-collapse text-[12px] text-text-secondary">
             <thead>
               <tr className="h-11 border-b border-border bg-bg-page-gray font-medium text-text-secondary">
                 <th className="w-[5%] text-center">
@@ -751,10 +751,10 @@ export default function ExpensePage() {
         </div>
 
         {/* Actions */}
-        <div className="mt-5 flex justify-between">
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-between">
           <Link
             href={id ? `/activity/create?edit=${id}` : "/activity/create"}
-            className="flex h-[34px] w-[91px] items-center justify-center rounded-lg border border-border bg-bg-page-white text-sm font-semibold text-text-secondary"
+            className="flex h-[34px] w-full items-center justify-center rounded-lg border border-border bg-bg-page-white text-sm font-semibold text-text-secondary sm:w-[91px]"
           >
             បោះបង់
           </Link>
@@ -763,7 +763,7 @@ export default function ExpensePage() {
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white hover:bg-secondary-hover"
+            className="flex h-[34px] w-full items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white hover:bg-secondary-hover sm:w-[196px]"
           >
             <HiSaveAs size={16} />
 

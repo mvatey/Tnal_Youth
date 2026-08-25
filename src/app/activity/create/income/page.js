@@ -740,10 +740,10 @@ export default function IncomePage() {
       </div>
 
       {/* Actions */}
-      <div className="flex justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
         <Link
           href={cancelHref}
-          className="flex h-[34px] w-[91px] items-center justify-center rounded-lg border border-border bg-bg-page-white text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray"
+          className="flex h-[34px] w-full items-center justify-center rounded-lg border border-border bg-bg-page-white text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray sm:w-[91px]"
         >
           បោះបង់
         </Link>
@@ -753,7 +753,7 @@ export default function IncomePage() {
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white transition hover:bg-secondary-hover"
+            className="flex h-[34px] w-full items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white transition hover:bg-secondary-hover sm:w-[196px]"
           >
             <HiSaveAs size={16} />
 

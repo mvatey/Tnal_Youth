@@ -15,6 +15,11 @@ import {
 } from "react";
 
 import {
+  Menu,
+  X,
+} from "lucide-react";
+
+import {
   FaBell,
   FaCalendarAlt,
   FaChevronDown,
@@ -189,6 +194,11 @@ export default function Sidebar() {
     setProfileOpen,
   ] = useState(false);
 
+  const [
+    mobileOpen,
+    setMobileOpen,
+  ] = useState(false);
+
   const [mounted, setMounted] = useState(false);
 
   const [
@@ -351,8 +361,33 @@ export default function Sidebar() {
   }
 
   return (
-    <aside
-      className="
+    <>
+      {!mobileOpen && (
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          aria-label="បើកម៉ឺនុយ"
+          className="fixed left-4 top-4 z-[80] flex h-10 w-10 items-center justify-center rounded-xl bg-primary-sidebar text-white shadow-lg transition hover:bg-primary lg:hidden"
+        >
+          <Menu size={20} />
+        </button>
+      )}
+
+      {mobileOpen && (
+        <button
+          type="button"
+          onClick={() => setMobileOpen(false)}
+          aria-label="បិទម៉ឺនុយ"
+          className="fixed inset-0 z-[60] bg-black/35 lg:hidden"
+        />
+      )}
+
+      <aside
+        className={`
+        fixed
+        inset-y-0
+        left-0
+        z-[70]
         flex
         h-screen
         w-72
@@ -361,13 +396,22 @@ export default function Sidebar() {
         justify-between
         bg-primary-sidebar
         text-white
-      "
-    >
+        shadow-2xl
+        transition-transform
+        duration-200
+        lg:relative
+        lg:z-auto
+        lg:translate-x-0
+        lg:shadow-none
+        ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+      `}
+      >
       <div className="min-h-0 flex-1 overflow-y-auto">
         {/* Logo */}
 
         <div
           className="
+            relative
             flex
             flex-col
             items-center
@@ -377,6 +421,15 @@ export default function Sidebar() {
             text-center
           "
         >
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            aria-label="បិទម៉ឺនុយ"
+            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg text-white/70 transition hover:bg-white/10 hover:text-white lg:hidden"
+          >
+            <X size={18} />
+          </button>
+
           <div
             className="
               mb-3
@@ -757,6 +810,7 @@ export default function Sidebar() {
           />
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

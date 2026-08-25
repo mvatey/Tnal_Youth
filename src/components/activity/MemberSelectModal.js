@@ -691,7 +691,7 @@ async function handleSave() {
         </div>
 
         {/* FOOTER */}
-        <div className="mt-5 flex items-center justify-between">
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
           {/*
            * Cancel:
@@ -703,7 +703,7 @@ async function handleSave() {
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="h-[34px] w-[91px] rounded-lg border border-border bg-bg-page-white text-sm font-semibold text-text-secondary disabled:opacity-60"
+            className="h-[34px] w-full rounded-lg border border-border bg-bg-page-white text-sm font-semibold text-text-secondary disabled:opacity-60 sm:w-[91px]"
           >
             បោះបង់
           </button>
@@ -726,7 +726,7 @@ async function handleSave() {
               saving
             }
 
-            className="flex h-[34px] w-[196px] items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white transition hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-[34px] w-full items-center justify-center gap-2 rounded-lg bg-secondary text-sm font-semibold text-white transition hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60 sm:w-[196px]"
           >
             <HiSaveAs
               size={16}

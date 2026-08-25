@@ -157,8 +157,8 @@ export default function ParticipationEditModal({
           </button>
         </div>
 
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          <div className="relative min-w-[250px] flex-1">
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
+          <div className="relative w-full min-w-0 flex-1 lg:min-w-[250px]">
             <input
               value={query}
               onChange={(event) =>
@@ -193,13 +193,13 @@ export default function ParticipationEditModal({
             ]}
           />
 
-          <span className="ml-auto whitespace-nowrap text-sm font-semibold text-text-primary">
+          <span className="whitespace-nowrap text-sm font-semibold text-text-primary lg:ml-auto">
             {selectedIds.length}/{participants.length} នាក់
           </span>
         </div>
 
-        <div className="max-h-[430px] overflow-y-auto rounded-lg border border-border">
-          <table className="w-full table-fixed border-collapse text-xs text-text-secondary">
+        <div className="max-h-[430px] overflow-auto rounded-lg border border-border">
+          <table className="w-full min-w-[760px] table-fixed border-collapse text-xs text-text-secondary">
             <thead className="sticky top-0 z-10 bg-bg-page-white">
               <tr className="h-11 border-b border-border">
                 <th className="w-[5%] text-center">
@@ -317,11 +317,11 @@ export default function ParticipationEditModal({
           </div>
         )}
 
-        <div className="mt-5 flex items-center justify-between gap-3">
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
             onClick={onClose}
-            className="flex h-10 min-w-[110px] items-center justify-center rounded-lg border border-border bg-bg-page-white px-5 text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray"
+            className="flex h-10 w-full items-center justify-center rounded-lg border border-border bg-bg-page-white px-5 text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray sm:min-w-[110px] sm:w-auto"
           >
             បោះបង់
           </button>
@@ -330,7 +330,7 @@ export default function ParticipationEditModal({
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="flex h-10 min-w-[190px] items-center justify-center gap-2 rounded-lg bg-secondary px-5 text-sm font-semibold text-white transition hover:opacity-90"
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-secondary px-5 text-sm font-semibold text-white transition hover:opacity-90 sm:min-w-[190px] sm:w-auto"
           >
             <HiSaveAs size={17} />
             {isSaving ? "កំពុងរក្សាទុក..." : "រក្សាទុកការចូលរួម"}

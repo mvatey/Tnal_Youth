@@ -48,17 +48,17 @@ export default function Pagination({
 
   return (
     <div className={className}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-center justify-between gap-2 overflow-x-auto no-scrollbar">
         <button
           onClick={() => goTo(currentPage - 1)}
           disabled={currentPage === 1}
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-bg-page-white px-4 text-sm font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-text-secondary"
+          className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-border bg-bg-page-white px-3 text-xs font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:text-text-secondary sm:gap-2 sm:px-4 sm:text-sm"
         >
           <ArrowLeft size={15} />
           មុននេះ
         </button>
 
-        <div className="flex items-center justify-center gap-1.5">
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-1 sm:gap-1.5">
           {pageNumbers.map((page, idx) =>
             page === "..." ? (
               <span key={`ellipsis-${idx}`} className={pageButton}>
@@ -81,7 +81,7 @@ export default function Pagination({
         <button
           onClick={() => goTo(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-bg-page-white px-4 text-sm font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:text-text-secondary"
+          className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-border bg-bg-page-white px-3 text-xs font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:text-text-secondary sm:gap-2 sm:px-4 sm:text-sm"
         >
           បន្ទាប់
           <ArrowRight size={15} />

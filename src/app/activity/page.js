@@ -713,7 +713,7 @@ export default function ActivityPage() {
   };
 
   return (
-    <div className="min-w-0 space-y-5 overflow-x-hidden">
+    <div className="min-w-0 space-y-5 overflow-x-auto">
       <ActivityStats
         activities={branchScopedActivities}
         // The backend's invitedActivityCount is a total across every
@@ -768,8 +768,8 @@ export default function ActivityPage() {
           </div>
         )}
 
-        <div className="mb-4 flex min-w-0 flex-nowrap items-center gap-3">
-  <div className="w-[265px] shrink-0">
+        <div className="mb-4 flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center">
+  <div className="w-full xl:w-[265px] xl:shrink-0">
     <SearchBar
       value={searchQuery}
       onChange={setSearchQuery}
@@ -778,11 +778,11 @@ export default function ActivityPage() {
     />
   </div>
 
-  <div className="shrink-0">
-    <FilterBar filters={filters} className="flex-nowrap" />
+  <div className="min-w-0">
+    <FilterBar filters={filters} className="flex-wrap xl:flex-nowrap" />
   </div>
 
-  <div className="ml-auto flex shrink-0 items-center gap-3">
+  <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center xl:ml-auto">
     <PrimaryActionButton onClick={handleDownload} />
 
     {canCreateActivity && (
@@ -803,7 +803,8 @@ export default function ActivityPage() {
           columns={columns}
           data={filteredActivities}
           rowsPerPage={10}
-          scrollable={false}
+          scrollable
+          tableClassName="min-w-[980px]"
           emptyMessage={
             loading
               ? "កំពុងទាញយកទិន្នន័យ..."

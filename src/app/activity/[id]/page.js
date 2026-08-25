@@ -832,7 +832,7 @@ export default async function ActivityDetailPage({
                 </p>
               </div>
 
-              <div className="mt-12 grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-5 text-xs text-text-secondary">
+              <div className="mt-8 grid grid-cols-1 gap-5 text-xs text-text-secondary sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] xl:mt-12">
                 <div className="flex items-start gap-2">
                   <CalendarDays
                     size={15}
@@ -959,7 +959,7 @@ export default async function ActivityDetailPage({
               }
             </p>
 
-            <div className="grid grid-cols-2 gap-x-8 gap-y-4 border-t border-border pt-5 text-sm">
+            <div className="grid grid-cols-1 gap-x-8 gap-y-4 border-t border-border pt-5 text-sm sm:grid-cols-2">
               <InfoItem
                 icon={FileText}
                 label="ឈ្មោះកម្មវិធី"
@@ -1076,7 +1076,7 @@ export default async function ActivityDetailPage({
               សមាសភាព
             </h3>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <SummaryCard
                 icon={
                   UserCheck

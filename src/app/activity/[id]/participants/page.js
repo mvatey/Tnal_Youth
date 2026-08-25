@@ -1510,7 +1510,7 @@ export default function ActivityParticipantsPage({
               setSearchQuery
             }
             placeholder="ស្វែងរកសមាជិក..."
-            width="w-[300px]"
+            width="w-full sm:w-[300px]"
           />
 
           <FilterBar

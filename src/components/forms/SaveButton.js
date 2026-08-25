@@ -6,25 +6,17 @@ export default function SaveButton({
   onClick,
   children = "រក្សាទុក",
   disabled = false,
+  type = "submit",
+  className = "",
+  ...buttonProps
 }) {
-
-  const handleClick = () => {
-
-    if (onClick) {
-      onClick();
-      return;
-    }
-
-    alert("រក្សាទុកបានជោគជ័យ");
-
-  };
-
-
   return (
     <button
-      onClick={handleClick}
+      type={type}
+      onClick={onClick}
       disabled={disabled}
-      className="inline-flex  h-[34px] items-center gap-2 rounded-lg bg-secondary px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60"
+      {...buttonProps}
+      className={`inline-flex h-[34px] items-center justify-center gap-2 rounded-lg bg-secondary px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
     >
       <HiSaveAs size={17} />
       {children}

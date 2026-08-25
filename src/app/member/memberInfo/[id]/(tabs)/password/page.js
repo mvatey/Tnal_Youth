@@ -8,8 +8,9 @@ import {
   EyeOff,
   CircleCheck,
   Info,
-  Save,
 } from "lucide-react";
+
+import SaveButton from "@/components/forms/SaveButton";
 
 async function requestJson(path, options = {}) {
   const response = await fetch(`/api${path}`, {
@@ -260,35 +261,16 @@ export default function PasswordPage() {
           )}
 
           <div className="flex justify-end pt-3">
-            <button
+            <SaveButton
               type="submit"
               disabled={
                 submitting
               }
-              className="
-                inline-flex
-                min-w-[120px]
-                items-center
-                justify-center
-                gap-2
-                rounded-lg
-                bg-[#5533a5]
-                px-6
-                py-2.5
-                text-sm
-                font-medium
-                text-white
-                transition
-                hover:opacity-90
-                disabled:cursor-not-allowed
-                disabled:opacity-60
-              "
             >
-              <Save size={16} />
               {submitting
                 ? "កំពុងរក្សាទុក..."
                 : "រក្សាទុក"}
-            </button>
+            </SaveButton>
           </div>
         </div>
 
