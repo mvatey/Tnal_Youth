@@ -84,14 +84,19 @@ export function useLanguage() {
   const context = useContext(LanguageContext);
 
   if (!context) {
+    const fallbackLocale =
+      typeof window !== "undefined"
+        ? normalizeLocale(window.localStorage.getItem(LOCALE_STORAGE_KEY))
+        : DEFAULT_LOCALE;
+
     return {
-      locale: DEFAULT_LOCALE,
+      locale: fallbackLocale,
       setLocale: () => {},
       toggleLocale: () => {},
-      t: (key, fallback) => fallback || key,
-      label: (value, fallback) => localizedValue(value, DEFAULT_LOCALE, fallback),
-      isEnglish: false,
-      isKhmer: true,
+      t: (key, fallback) => translate(fallbackLocale, key, fallback),
+      label: (value, fallback) => localizedValue(value, fallbackLocale, fallback),
+      isEnglish: fallbackLocale === "en",
+      isKhmer: fallbackLocale === "km",
     };
   }
 

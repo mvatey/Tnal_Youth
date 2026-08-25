@@ -2,18 +2,21 @@
 
 import { useEffect } from "react";
 import NotFoundPage from "@/components/errors/NotFoundPage";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function GlobalError({ error }) {
+  const { t, locale } = useLanguage();
+
   useEffect(() => {
     console.error("Global application error:", error);
   }, [error]);
 
   return (
-    <html lang="km">
+    <html lang={locale}>
       <body>
         <NotFoundPage
-          title="សូមអភ័យទោស!"
-          message="កម្មវិធីមិនអាចដំណើរការបានទេ ដោយសារមានបញ្ហាបច្ចេកទេស។ សូមត្រឡប់ទៅទំព័រមុន។"
+          title={t("errors.sorry")}
+          message={t("errors.appCrashed")}
         />
       </body>
     </html>

@@ -1,5 +1,6 @@
 import AddDonationLink from "../donations/AddDonationLink";
 import DonationFilterSelect from "../donations/monthlydonation/DonationFilterSelect";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function FilterBar({
   years = [],
@@ -13,35 +14,37 @@ export default function FilterBar({
   onBranchChange,
   branchScoped = false,
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="space-y-4">
-      <h3 className="text-base font-semibold text-secondary">វិភាគទានប្រចាំខែ</h3>
+      <h3 className="text-base font-semibold text-secondary">{t("donationPage.monthlyDonation")}</h3>
 
-      <div className="flex flex-wrap items-center justify-end gap-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(3,158px)_auto] lg:items-center lg:justify-end">
         <DonationFilterSelect
-          label="សាខា"
+          label={t("memberPage.branch")}
           value={selectedBranch}
           onChange={onBranchChange}
           options={branches}
-          allLabel="សាខាទាំងអស់"
+          allLabel={t("branchPage.allBranches")}
           showLabel={false}
           disabled={branchScoped}
           includeAllOption={!branchScoped}
         />
         <DonationFilterSelect
-          label="ខែ"
+          label={t("donationPage.month")}
           value={selectedMonth}
           onChange={onMonthChange}
           options={months}
-          allLabel="ខែទាំងអស់"
+          allLabel={t("donationPage.allMonths")}
           showLabel={false}
         />
         <DonationFilterSelect
-          label="ឆ្នាំ"
+          label={t("donationPage.year")}
           value={selectedYear}
           onChange={onYearChange}
           options={years}
-          allLabel="ឆ្នាំទាំងអស់"
+          allLabel={t("donationPage.allYears")}
           showLabel={false}
         />
         <AddDonationLink />

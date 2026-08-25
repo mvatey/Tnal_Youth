@@ -6,6 +6,7 @@ import DonorCard from "./DonorCard";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 import { useBranch } from "@/context/BranchContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 const toNumber = (value) => {
   const parsed = Number(value ?? 0);
@@ -30,6 +31,7 @@ const summarizeMonthlyGroups = (rows) =>
   );
 
 export default function DonationCards() {
+  const { t } = useLanguage();
   const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
   const effectiveRole = currentMember?.effectiveRole || currentMember?.role;
   const isBranchScoped = ["secretary", "branch_leader"].includes(effectiveRole);
@@ -124,11 +126,11 @@ export default function DonationCards() {
   }, [currentMemberLoading, isBranchScoped, isMemberScoped, scopedBranchId]);
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <DonationCard label="ថវិកាសរុប" value={`$${summary.totalUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="" note="" />
+    <div className="grid max-w-[540px] grid-cols-1 gap-4 sm:grid-cols-2">
+      <DonationCard label={t("donationPage.totalDonation")} value={`$${summary.totalUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="" note="" />
       <DonorCard
-        label={isMemberScoped ? "ចំនួនកំណត់ត្រា" : "អ្នកបរិច្ចាគសរុប"}
-        value={`${summary.donors} ${isMemberScoped ? "លើក" : "នាក់"}`}
+        label={isMemberScoped ? t("donationPage.recordCount") : t("donationPage.donorsTotal")}
+        value={`${summary.donors} ${isMemberScoped ? t("donationPage.timeUnit") : t("donationPage.personUnit")}`}
         growth=""
         note=""
       />

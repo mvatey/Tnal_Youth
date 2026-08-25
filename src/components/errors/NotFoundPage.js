@@ -2,18 +2,22 @@
 
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function NotFoundPage({
-  title = "សូមអភ័យទោស!",
-  message = "ទំព័រដែលអ្នកកំពុងស្វែងរកមិនមាន ឬមិនអាចបង្ហាញបានទេ។ សូមពិនិត្យតំណភ្ជាប់ ឬត្រឡប់ទៅទំព័រមុន។",
+  title,
+  message,
 }) {
   const router = useRouter();
+  const { t } = useLanguage();
+  const displayTitle = title ?? t("errors.sorry");
+  const displayMessage = message ?? t("errors.notFound");
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg-page-white px-5">
       <div className="w-full max-w-[620px] text-center">
         <h1 className="text-xl font-bold text-[#4b3192]">
-          {title}
+          {displayTitle}
         </h1>
 
         <div className="relative mx-auto mt-8 flex h-[170px] items-center justify-center">
@@ -25,7 +29,7 @@ export default function NotFoundPage({
         </div>
 
         <p className="mx-auto mt-6 max-w-[560px] text-sm leading-7 text-text-mute">
-          {message}
+          {displayMessage}
         </p>
 
         <button
@@ -34,7 +38,7 @@ export default function NotFoundPage({
           className="mx-auto mt-10 flex h-11 w-[240px] items-center justify-center gap-2 rounded-lg bg-[#4b3192] text-sm font-semibold text-white transition hover:bg-[#3d2877]"
         >
           <ArrowLeft size={17} />
-          ត្រឡប់
+          {t("errors.back")}
         </button>
       </div>
     </div>

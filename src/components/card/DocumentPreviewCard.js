@@ -8,6 +8,7 @@ import {
 
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function DocumentPreviewCard({
   title,
@@ -26,6 +27,7 @@ export default function DocumentPreviewCard({
 
   orientation = "landscape",
 }) {
+  const { t } = useLanguage();
   const previewRef = useRef(null);
 
   const [downloading, setDownloading] =
@@ -51,7 +53,7 @@ export default function DocumentPreviewCard({
 
     if (!previewElement) {
       alert(
-        "រកមិនឃើញឯកសារសម្រាប់ទាញយក។",
+        t("documentPage.downloadTargetMissing"),
       );
 
       return;
@@ -72,7 +74,7 @@ export default function DocumentPreviewCard({
 
       if (!contentElement) {
         throw new Error(
-          "រកមិនឃើញមាតិកាឯកសារ។",
+          t("documentPage.documentContentMissing"),
         );
       }
 
@@ -187,7 +189,7 @@ export default function DocumentPreviewCard({
         !canvas.height
       ) {
         throw new Error(
-          "មិនអាចបង្កើតរូបភាពសម្រាប់ PDF បានទេ។",
+          t("documentPage.pdfImageFailed"),
         );
       }
 
@@ -267,7 +269,7 @@ export default function DocumentPreviewCard({
 
       alert(
         error?.message ||
-          "មានបញ្ហាក្នុងការទាញយកឯកសារជា PDF។",
+          t("documentPage.pdfDownloadFailed"),
       );
     } finally {
       setDownloading(false);
@@ -300,7 +302,7 @@ export default function DocumentPreviewCard({
 
     if (!printWindow) {
       alert(
-        "កម្មវិធីរុករកបានរារាំងផ្ទាំងបោះពុម្ព។ សូមអនុញ្ញាត Pop-up ជាមុនសិន។",
+        t("documentPage.printPopupBlocked"),
       );
 
       return;
@@ -481,17 +483,17 @@ export default function DocumentPreviewCard({
       <div className="mt-3 space-y-2 text-xs">
         <div className="flex justify-between">
           <span className="text-text-secondary">
-            ចេញនៅថ្ងៃ
+            {t("documentPage.issuedAt")}
           </span>
 
           <span className="font-semibold">
-            ឯកសារ
+            {t("documentPage.document")}
           </span>
         </div>
 
         <div className="flex justify-between">
           <span className="text-text-secondary">
-            លេខ
+            {t("documentPage.number")}
           </span>
 
           <span className="font-semibold">
@@ -501,7 +503,7 @@ export default function DocumentPreviewCard({
 
         <div className="flex justify-between">
           <span className="text-text-secondary">
-            ផុតកំណត់
+            {t("documentPage.expiresAt")}
           </span>
 
           <span className="font-semibold">
@@ -547,7 +549,7 @@ export default function DocumentPreviewCard({
         {isPrintAction
           ? printText
           : downloading
-            ? "កំពុងបង្កើត PDF..."
+            ? t("documentPage.generatingPdf")
             : downloadText}
       </button>
     </div>

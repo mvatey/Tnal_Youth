@@ -298,6 +298,9 @@ export default function ParticipationChart({
   onYearChange,
   loading = false,
 }) {
+  const { t, locale } =
+    useLanguage();
+
   /*
    * Backend response:
    *

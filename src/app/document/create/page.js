@@ -8,6 +8,7 @@ import IdCardForm from "@/app/document/IdCardForm";
 import LetterOfAppointmentForm from "@/app/document/LetterOfAppointmentForm";
 import Link from "next/link";
 import useMemberPermissions from "@/hooks/useMemberPermissions";
+import { useLanguage } from "@/context/LanguageContext";
 
 const ID_CARD_DOCUMENT_MARKER = "[TNAL:ID_CARD]";
 
@@ -72,6 +73,7 @@ function normalizeArray(value) {
 
 export default function CreateDocumentPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [type, setType] = useState("");
   const [form, setForm] = useState(EMPTY_FORM);
@@ -84,17 +86,17 @@ export default function CreateDocumentPage() {
   if (!permissionsLoading && !canCreateDocuments) {
     return (
       <div className="rounded-xl border border-error/30 bg-error-bg p-6 text-center text-error">
-        <p className="text-sm font-semibold">អ្នកមិនមានសិទ្ធិបង្កើតឯកសារទេ</p>
+        <p className="text-sm font-semibold">{t("documentPage.cannotCreateDocument")}</p>
 
         <p className="mt-1 text-xs">
-          មានតែអ្នកដឹកនាំសាខា ឬលេខាធិការប៉ុណ្ណោះ ដែលអាចបង្កើតឯកសារថ្មីបាន។
+          {t("documentPage.createPermissionDescription")}
         </p>
 
         <Link
           href="/document"
           className="mt-4 inline-flex h-9 items-center justify-center rounded-lg bg-secondary px-4 text-sm font-medium text-white hover:bg-secondary-hover"
         >
-          ត្រឡប់ទៅឯកសារទាំងអស់
+          {t("documentPage.backToDocuments")}
         </Link>
       </div>
     );
@@ -108,10 +110,10 @@ export default function CreateDocumentPage() {
 
       type:
         selectedType === "certificate"
-          ? "វិញ្ញាបនបត្រ"
+          ? t("memberPage.certificate")
           : selectedType === "id_card"
-            ? "ប័ណ្ណសមាជិក"
-            : "លិខិតតែងតាំង",
+            ? t("memberPage.memberIdCard")
+            : t("documentPage.appointmentLetter"),
     });
   };
 
@@ -142,11 +144,11 @@ export default function CreateDocumentPage() {
     const memberId = Number(data.userId || data.selectedUser?.id);
 
     if (!Number.isInteger(memberId) || memberId <= 0) {
-      throw new Error("រកមិនឃើញលេខសម្គាល់សមាជិក");
+      throw new Error(t("documentPage.memberIdMissing"));
     }
 
     if (!data.idCardTemplateFile) {
-      throw new Error("សូមបញ្ចូលរូបភាពគំរូប័ណ្ណសមាជិក");
+      throw new Error(t("documentPage.idCardTemplateRequired"));
     }
 
     const typeResponse = await fetch("/api/backend/document-types", {
@@ -155,7 +157,7 @@ export default function CreateDocumentPage() {
     const typeBody = await typeResponse.json().catch(() => null);
 
     if (!typeResponse.ok) {
-      throw new Error(typeBody?.message || "មិនអាចទាញយកប្រភេទឯកសារបានទេ។");
+      throw new Error(t("documentPage.loadDocumentTypesFailed"));
     }
 
     const memberDocumentType = normalizeArray(typeBody?.data ?? typeBody).find(
@@ -164,7 +166,7 @@ export default function CreateDocumentPage() {
     );
 
     if (!memberDocumentType?.id) {
-      throw new Error("The member document type is not configured.");
+      throw new Error(t("documentPage.memberDocumentTypeMissing"));
     }
 
     const upload = new FormData();
@@ -178,9 +180,9 @@ export default function CreateDocumentPage() {
 
     if (!uploadResponse.ok || !uploadedFile?.id) {
       throw new Error(
-        uploadedFile?.message ||
+          uploadedFile?.message ||
           uploadedFile?.detail ||
-          "បញ្ចូលគំរូប័ណ្ណសម្គាល់ខ្លួនមិនបានសម្រេច។",
+          t("documentPage.idCardTemplateUploadFailed"),
       );
     }
 
@@ -190,7 +192,7 @@ export default function CreateDocumentPage() {
       body: JSON.stringify({
         type_id: Number(memberDocumentType.id),
         file_id: Number(uploadedFile.id),
-        title: "ប័ណ្ណសម្គាល់សមាជិក",
+        title: t("memberPage.memberIdCard"),
         description: ID_CARD_DOCUMENT_MARKER,
         member_id: memberId,
       }),
@@ -199,9 +201,9 @@ export default function CreateDocumentPage() {
 
     if (!createResponse.ok) {
       throw new Error(
-        createdDocument?.message ||
+          createdDocument?.message ||
           createdDocument?.detail ||
-          "មិនអាចរក្សាទុកប័ណ្ណសម្គាល់ខ្លួនសមាជិកបានទេ។",
+          t("documentPage.saveIdCardFailed"),
       );
     }
 
@@ -218,7 +220,7 @@ export default function CreateDocumentPage() {
     }
 
     if (!data.activityId) {
-      throw new Error("សូមជ្រើសរើសកម្មវិធីជាមុនសិន");
+      throw new Error(t("documentPage.selectActivityFirst"));
     }
 
     const response = await fetch(
@@ -233,7 +235,7 @@ export default function CreateDocumentPage() {
 
     if (!response.ok) {
       throw new Error(
-        body?.message || "មិនអាចផ្ញើការជូនដំណឹងទៅសាខាបានទេ។",
+        t("documentPage.notifyBranchesFailed"),
       );
     }
 
@@ -255,7 +257,7 @@ export default function CreateDocumentPage() {
     const generatedDocuments = normalizeArray(data.generatedDocuments);
 
     if (generatedDocuments.length === 0) {
-      throw new Error("No generated certificate file was found.");
+      throw new Error(t("documentPage.noGeneratedCertificate"));
     }
 
     const typeResponse = await fetch("/api/backend/document-types", {
@@ -264,7 +266,7 @@ export default function CreateDocumentPage() {
     const typeBody = await typeResponse.json().catch(() => null);
 
     if (!typeResponse.ok) {
-      throw new Error(typeBody?.message || "មិនអាចទាញយកប្រភេទឯកសារបានទេ។");
+      throw new Error(t("documentPage.loadDocumentTypesFailed"));
     }
 
     const documentTypes = normalizeArray(typeBody?.data ?? typeBody);
@@ -275,14 +277,14 @@ export default function CreateDocumentPage() {
     );
 
     if (!memberDocumentType?.id) {
-      throw new Error("The member document type is not configured.");
+      throw new Error(t("documentPage.memberDocumentTypeMissing"));
     }
 
     for (const generatedDocument of generatedDocuments) {
       const memberId = Number(generatedDocument.member?.id);
 
       if (!memberId) {
-        throw new Error("សូមជ្រើសរើសសមាជិក។");
+        throw new Error(t("documentPage.selectMemberRequired"));
       }
 
       const upload = new FormData();
@@ -295,7 +297,7 @@ export default function CreateDocumentPage() {
       const uploadedFile = await uploadResponse.json().catch(() => null);
 
       if (!uploadResponse.ok || !uploadedFile?.id) {
-        throw new Error(uploadedFile?.message || "បញ្ចូលវិញ្ញាបនបត្រមិនបានសម្រេច។");
+        throw new Error(uploadedFile?.message || t("documentPage.certificateUploadFailed"));
       }
 
       const createResponse = await fetch("/api/backend/documents", {
@@ -312,7 +314,7 @@ export default function CreateDocumentPage() {
       const createdDocument = await createResponse.json().catch(() => null);
 
       if (!createResponse.ok) {
-        throw new Error(createdDocument?.message || "មិនអាចរក្សាទុកវិញ្ញាបនបត្របានទេ។");
+        throw new Error(createdDocument?.message || t("documentPage.saveCertificateFailed"));
       }
 
       if (data.activityId) {
@@ -335,7 +337,7 @@ export default function CreateDocumentPage() {
 
         if (!credentialResponse.ok) {
           throw new Error(
-            credentialBody?.message || "មិនអាចភ្ជាប់វិញ្ញាបនបត្រទៅកាន់ផ្ទាំងឯកសាររបស់សមាជិកបានទេ។",
+            t("documentPage.linkCertificateFailed"),
           );
         }
       }
@@ -350,25 +352,25 @@ export default function CreateDocumentPage() {
     const memberId = Number(data.memberId || memberIds[0]);
 
     if (!Number.isInteger(memberId) || memberId <= 0) {
-      throw new Error("សូមជ្រើសរើសសមាជិកម្នាក់");
+      throw new Error(t("documentPage.selectOneMemberRequired"));
     }
     const appointmentMemberIds = memberIds.length > 0 ? memberIds : [memberId];
 
     if (!data.templateFile) {
-      throw new Error("សូមបញ្ចូលលិខិតតែងតាំង");
+      throw new Error(t("documentPage.appointmentFileRequired"));
     }
 
     const typeResponse = await fetch("/api/backend/document-types", { cache: "no-store" });
     const typeBody = await typeResponse.json().catch(() => null);
     if (!typeResponse.ok) {
-      throw new Error(typeBody?.message || "មិនអាចទាញយកប្រភេទឯកសារបានទេ។");
+      throw new Error(t("documentPage.loadDocumentTypesFailed"));
     }
 
     const memberDocumentType = normalizeArray(typeBody?.data ?? typeBody).find(
       (item) => String(item.code || "").trim().toUpperCase() === "MEMBER_DOCUMENT",
     );
     if (!memberDocumentType?.id) {
-      throw new Error("The member document type is not configured.");
+      throw new Error(t("documentPage.memberDocumentTypeMissing"));
     }
 
     const upload = new FormData();
@@ -387,16 +389,16 @@ export default function CreateDocumentPage() {
     const uploadedFile = await uploadResponse.json().catch(() => null);
     if (!uploadResponse.ok || !uploadedFile?.id) {
       throw new Error(
-        uploadedFile?.message ||
+          uploadedFile?.message ||
           uploadedFile?.detail ||
           uploadedFile?.error ||
-          "បញ្ចូលលិខិតតែងតាំងមិនបានសម្រេច។",
+          t("documentPage.appointmentUploadFailed"),
       );
     }
 
     for (const [index, selectedMemberId] of appointmentMemberIds.entries()) {
       const member = selectedMembers.find((item) => Number(item.id) === selectedMemberId);
-      const title = data.title?.trim() || "លិខិតតែងតាំង";
+      const title = data.title?.trim() || t("documentPage.appointmentLetter");
       const createResponse = await fetch("/api/backend/documents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -404,7 +406,7 @@ export default function CreateDocumentPage() {
           type_id: Number(memberDocumentType.id),
           file_id: Number(uploadedFile.id),
           title,
-          description: data.description?.trim() || `លិខិតតែងតាំងសម្រាប់ ${getBranchName(data.branch) || getBranchName(member?.branch)}`,
+          description: data.description?.trim() || t("documentPage.appointmentDescriptionFor").replace("{branch}", getBranchName(data.branch) || getBranchName(member?.branch) || "-"),
           member_id: selectedMemberId,
         }),
       });
@@ -412,7 +414,7 @@ export default function CreateDocumentPage() {
       if (!createResponse.ok) {
         throw new Error(
           createdDocument?.message || createdDocument?.detail || createdDocument?.error ||
-            "មិនអាចរក្សាទុកលិខិតតែងតាំងបានទេ។",
+            t("documentPage.saveAppointmentFailed"),
         );
       }
 
@@ -433,7 +435,7 @@ export default function CreateDocumentPage() {
       const credentialBody = await credentialResponse.json().catch(() => null);
       if (!credentialResponse.ok) {
         throw new Error(
-          credentialBody?.message || "មិនអាចភ្ជាប់លិខិតតែងតាំងទៅកាន់ផ្ទាំងឯកសាររបស់សមាជិកបានទេ។",
+          t("documentPage.linkAppointmentFailed"),
         );
       }
     }
@@ -454,7 +456,7 @@ export default function CreateDocumentPage() {
       if (type === "id_card") {
         const memberId = await saveIdCardToBackend(data);
 
-        alert("✅ បង្កើតប័ណ្ណសមាជិកដោយជោគជ័យ!");
+        alert(t("documentPage.idCardCreated"));
 
         openMemberDocuments(memberId);
 
@@ -464,7 +466,7 @@ export default function CreateDocumentPage() {
       if (type === "certificate" && data.recipientType === "member") {
         const memberId = await saveMemberCertificatesToBackend(data);
 
-        alert("✅ បង្កើតវិញ្ញាបនបត្រដោយជោគជ័យ!");
+        alert(t("documentPage.certificateCreated"));
 
         openMemberDocuments(memberId);
 
@@ -480,10 +482,10 @@ export default function CreateDocumentPage() {
 
           const notifiedNote =
             notifyResult.notifiedBranchIds.length > 0
-              ? ` និងបានជូនដំណឹងទៅ ${notifyResult.notifiedBranchIds.length} សាខា`
+              ? t("documentPage.notifiedBranchesSuffix").replace("{count}", String(notifyResult.notifiedBranchIds.length))
               : "";
 
-          alert(`✅ បង្កើតវិញ្ញាបនបត្រដោយជោគជ័យ${notifiedNote}!`);
+          alert(`${t("documentPage.certificateCreated")}${notifiedNote}`);
 
           openMemberDocuments(firstMemberId);
 
@@ -492,7 +494,7 @@ export default function CreateDocumentPage() {
 
         if (notifyResult.notifiedBranchIds.length > 0) {
           alert(
-            `✅ បានផ្ញើការជូនដំណឹងទៅ ${notifyResult.notifiedBranchIds.length} សាខាដោយជោគជ័យ!`,
+            t("documentPage.notifiedBranches").replace("{count}", String(notifyResult.notifiedBranchIds.length)),
           );
 
           router.push("/document/member");
@@ -501,13 +503,13 @@ export default function CreateDocumentPage() {
         }
 
         throw new Error(
-          "សូមជ្រើសរើសសមាជិកសាខារបស់អ្នក ឬសាខាដែលត្រូវជូនដំណឹង",
+          t("documentPage.selectMemberOrBranchToNotify"),
         );
       }
       if (type === "appointment_letter") {
         const memberId = await saveAppointmentLettersToBackend(data);
 
-        alert("✅ បង្កើតលិខិតតែងតាំងដោយជោគជ័យ!");
+        alert(t("documentPage.appointmentCreated"));
 
         openMemberDocuments(memberId);
 
@@ -518,7 +520,7 @@ export default function CreateDocumentPage() {
     } catch (error) {
       console.error("Cannot save created document:", error);
 
-      alert(error?.message || "មានបញ្ហាក្នុងការរក្សាទុកឯកសារ");
+      alert(error?.message || t("documentPage.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -526,21 +528,21 @@ export default function CreateDocumentPage() {
 
   const pageTitle =
     type === "certificate"
-      ? "បង្កើតវិញ្ញាបនបត្រ"
+      ? t("documentPage.createCertificate")
       : type === "id_card"
-        ? "បង្កើតប័ណ្ណសមាជិក"
+        ? t("documentPage.createIdCard")
         : type === "appointment_letter"
-          ? "បង្កើតលិខិតតែងតាំង"
-          : "បង្កើតឯកសារ";
+          ? t("documentPage.createAppointmentLetter")
+          : t("documentPage.createDocument");
 
   const pageDescription =
     type === "certificate"
-      ? "បំពេញព័ត៌មានដើម្បីបង្កើតវិញ្ញាបនបត្រ"
+      ? t("documentPage.createCertificateDescription")
       : type === "id_card"
-        ? "បំពេញព័ត៌មានដើម្បីបង្កើតប័ណ្ណសមាជិក"
+        ? t("documentPage.createIdCardDescription")
         : type === "appointment_letter"
-          ? "បំពេញព័ត៌មានដើម្បីបង្កើតលិខិតតែងតាំង"
-          : "ជ្រើសរើសប្រភេទឯកសារដែលអ្នកចង់បង្កើត";
+          ? t("documentPage.createAppointmentDescription")
+          : t("documentPage.chooseDocumentTypeDescription");
 
   return (
     <div className="space-y-4">
@@ -560,7 +562,7 @@ export default function CreateDocumentPage() {
               hover:text-primary
             "
           >
-            បញ្ជីឯកសារ
+            {t("documentPage.documentList")}
           </button>
 
           <span className="text-base text-text-mute">›</span>
@@ -580,7 +582,7 @@ export default function CreateDocumentPage() {
                   hover:text-primary
                 "
               >
-                ប្រភេទឯកសារ
+                {t("documentPage.documentType")}
               </button>
 
               <span className="text-base text-text-mute">›</span>
@@ -623,11 +625,11 @@ export default function CreateDocumentPage() {
             <div className="flex h-[115px] flex-col justify-between p-4">
               <div>
                 <h2 className="text-base font-bold text-primary">
-                  វិញ្ញាបនបត្រ
+                  {t("memberPage.certificate")}
                 </h2>
 
                 <p className="mt-1 text-xs text-text-secondary">
-                  បង្កើតវិញ្ញាបនបត្រសម្រាប់សមាជិក ឬកម្មវិធី
+                  {t("documentPage.certificateCardDescription")}
                 </p>
               </div>
 
@@ -651,7 +653,7 @@ export default function CreateDocumentPage() {
                     hover:opacity-80
                   "
                 >
-                  ជ្រើសរើស
+                  {t("documentPage.select")}
                 </button>
               </div>
             </div>
@@ -681,11 +683,11 @@ export default function CreateDocumentPage() {
             <div className="flex h-[115px] flex-col justify-between p-4">
               <div>
                 <h2 className="text-base font-bold text-primary">
-                  លិខិតតែងតាំង
+                  {t("documentPage.appointmentLetter")}
                 </h2>
 
                 <p className="mt-1 text-xs text-text-secondary">
-                  បង្កើតលិខិតតែងតាំងសម្រាប់សមាជិក
+                  {t("documentPage.appointmentCardDescription")}
                 </p>
               </div>
 
@@ -709,7 +711,7 @@ export default function CreateDocumentPage() {
                     hover:opacity-80
                   "
                 >
-                  ជ្រើសរើស
+                  {t("documentPage.select")}
                 </button>
               </div>
             </div>

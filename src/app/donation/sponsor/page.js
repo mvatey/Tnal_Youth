@@ -8,6 +8,7 @@ import SponsorPanel from "@/components/donations/sponsor/SponsorPanel";
 import MyAccountSponsorPage from "@/app/myAcc/(tabs)/sponsor/page";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch } from "@/context/BranchContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 
 const EMPTY_SUMMARY = {
@@ -112,6 +113,7 @@ async function fetchAllSponsorRows(selectedBranch) {
 
 export default function SponsorPage() {
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
+  const { t } = useLanguage();
   const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
   const { branches: accessibleBranches = [], selectedBranch: globalSelectedBranch = "all" } = useBranch();
 
@@ -163,14 +165,14 @@ export default function SponsorPage() {
   return (
     <div className="space-y-4">
       <DonationTabs />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid max-w-[540px] grid-cols-1 gap-4 sm:grid-cols-2">
         <SponsorCard
           value={`$${Number(summary.overallTotalUsd || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
           growth=""
         />
         <DonorCard
-          label={isPersonalMember ? "ចំនួនកំណត់ត្រារបស់ខ្ញុំ" : "អ្នកឧបត្ថម្ភសរុប"}
-          value={`${summary.donorCount || 0} ${isPersonalMember ? "លើក" : "នាក់"}`}
+          label={isPersonalMember ? t("donationPage.myRecordCount") : t("donationPage.sponsorsTotal")}
+          value={`${summary.donorCount || 0} ${isPersonalMember ? t("donationPage.timeUnit") : t("donationPage.personUnit")}`}
           growth=""
           note=""
         />

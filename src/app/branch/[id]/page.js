@@ -1302,7 +1302,7 @@ const loadBranchDetails =
   }
 
   return (
-    <div className="min-w-0 space-y-5 overflow-x-auto">
+    <div className="min-w-0 space-y-5">
       <div className="space-y-1">
         <div className="flex items-center gap-2 text-sm">
           <Link
@@ -1512,8 +1512,8 @@ const loadBranchDetails =
       </section>
 
       <section className="rounded-xl border border-border bg-bg-page-white p-4 shadow-sm">
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          <div className="w-full sm:w-[320px]">
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-center">
+          <div className="min-w-0 sm:col-span-2 lg:w-[320px]">
             <SearchBar
               value={searchQuery}
               onChange={
@@ -1526,9 +1526,10 @@ const loadBranchDetails =
 
           <FilterBar
             filters={filters}
+            className="w-full sm:w-auto [&>div]:w-full sm:[&>div]:w-auto [&_select]:w-full sm:[&_select]:w-auto"
           />
 
-          <div className="ml-auto">
+          <div className="sm:col-span-2 lg:ml-auto lg:col-span-1 [&>button]:w-full sm:[&>button]:w-auto">
             {!isViewer && <Button
               type="button"
               variant="success"
@@ -1550,7 +1551,7 @@ const loadBranchDetails =
           columns={columns}
           data={filteredMembers}
           rowsPerPage={10}
-          scrollable={false}
+          scrollable={true}
           emptyMessage={t("branchPage.noMembers")}
         />
       </section>
@@ -1611,10 +1612,3 @@ const loadBranchDetails =
     </div>
   );
 }
-    if (label) {
-      return label(value, "-");
-    }
-
-    if (label) {
-      return label(value, "-");
-    }

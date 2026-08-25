@@ -64,8 +64,9 @@ export default function OrganizationProfileCard({ canEdit = false }) {
       }
 
       setProfile({
-        ...data,
-        logo_url: normalizeLogoUrl(data?.logo_url),
+        ...form,
+        ...(data || {}),
+        logo_url: normalizeLogoUrl(data?.logo_url ?? data?.logoUrl ?? form.logo_url),
       });
       setMessage(t("organizationProfile.saved"));
     } catch (saveError) {
@@ -106,8 +107,9 @@ export default function OrganizationProfileCard({ canEdit = false }) {
       }
 
       setProfile({
+        ...form,
         ...body,
-        logo_url: normalizeLogoUrl(body?.logo_url),
+        logo_url: normalizeLogoUrl(body?.logo_url ?? body?.logoUrl),
       });
       setMessage(t("organizationProfile.logoSaved"));
     } catch (uploadError) {
@@ -159,6 +161,10 @@ export default function OrganizationProfileCard({ canEdit = false }) {
           <TextField label={t("organizationProfile.nameEn")} value={form.name_en || ""} onChange={(value) => updateField("name_en", value)} />
           <TextField label={t("organizationProfile.taglineKm")} value={form.tagline_km || ""} onChange={(value) => updateField("tagline_km", value)} />
           <TextField label={t("organizationProfile.taglineEn")} value={form.tagline_en || ""} onChange={(value) => updateField("tagline_en", value)} />
+          <TextField label={t("organizationProfile.heroHeadlineKm")} value={form.hero_headline_km || ""} onChange={(value) => updateField("hero_headline_km", value)} />
+          <TextField label={t("organizationProfile.heroHeadlineEn")} value={form.hero_headline_en || ""} onChange={(value) => updateField("hero_headline_en", value)} />
+          <TextareaField label={t("organizationProfile.heroDescriptionKm")} value={form.hero_description_km || ""} onChange={(value) => updateField("hero_description_km", value)} />
+          <TextareaField label={t("organizationProfile.heroDescriptionEn")} value={form.hero_description_en || ""} onChange={(value) => updateField("hero_description_en", value)} />
           <TextareaField label={t("organizationProfile.aboutKm")} value={form.about_km || ""} onChange={(value) => updateField("about_km", value)} />
           <TextareaField label={t("organizationProfile.aboutEn")} value={form.about_en || ""} onChange={(value) => updateField("about_en", value)} />
         </div>

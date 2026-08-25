@@ -26,14 +26,13 @@ const EMPTY_FORM = {
 };
 
 /*
- * Password is optional. Leave it blank and the account is created
- * PENDING_ACTIVATION with the new user setting their own first
- * password through the existing OTP activation flow (send-otp ->
- * verify-otp -> set-password). Set one here instead, and that becomes
- * the account's real password right away — the account still requires
- * that same OTP activation before it can log in, the person just
- * already knows what to type. Email is required either way: it's the
- * OTP delivery channel.
+ * Password is required when creating a standalone account — it
+ * becomes the account's real password immediately and the account is
+ * created ACTIVE, so it can log in right away with no OTP step. (When
+ * editing, password stays optional — see EMPTY_FORM/isFormValid below
+ * — leave it blank to keep the account's current password unchanged.)
+ * Member-linked accounts still go through OTP-based first activation;
+ * that path isn't this modal.
  */
 const REQUIRED_FIELDS = [
   "fullNameKm",
@@ -201,7 +200,9 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     ) &&
     (!isViewer || String(form.viewerScope).trim() !== "") &&
     (!requiresBranch || String(form.branchId).trim() !== "") &&
-    (form.password.trim() === "" || form.password.trim().length >= 6);
+    (isEditing
+      ? form.password.trim() === "" || form.password.trim().length >= 6
+      : form.password.trim().length >= 6);
 
   const submit = async (event) => {
     event.preventDefault();

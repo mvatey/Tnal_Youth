@@ -4,9 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
 import calendarData from "@/data/calendar.json";
+import { useLanguage } from "@/context/LanguageContext";
 
 const KHMER_MONTHS = Object.keys(calendarData.months);
 const KHMER_WEEKDAYS = ["អា", "ច", "អ", "ព", "ព្រ", "សុ", "ស"];
+const EN_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const EN_WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
 function parseIsoDate(value) {
   if (!value || typeof value !== "string") {
@@ -30,14 +33,15 @@ function toIsoDate(date) {
   return `${year}-${month}-${day}`;
 }
 
-function formatDisplayDate(isoValue) {
+function formatDisplayDate(isoValue, locale = "km") {
   const date = parseIsoDate(isoValue);
 
   if (!date) {
     return "";
   }
 
-  return `${date.getDate()} ${KHMER_MONTHS[date.getMonth()]}, ${date.getFullYear()}`;
+  const months = locale === "en" ? EN_MONTHS : KHMER_MONTHS;
+  return `${date.getDate()} ${months[date.getMonth()]}, ${date.getFullYear()}`;
 }
 
 function buildMonthGrid(year, month) {
@@ -66,6 +70,7 @@ export default function DateRangePicker({
   placeholder = "ថ្ងៃ/ខែ/ឆ្នាំ",
   disabled = false,
 }) {
+  const { locale, t } = useLanguage();
   const from = value?.from || "";
   const to = value?.to || "";
 
@@ -109,11 +114,14 @@ export default function DateRangePicker({
   const displayText =
     from && to
       ? from === to
-        ? formatDisplayDate(from)
-        : `${formatDisplayDate(from)} - ${formatDisplayDate(to)}`
+        ? formatDisplayDate(from, locale)
+        : `${formatDisplayDate(from, locale)} - ${formatDisplayDate(to, locale)}`
       : from
-        ? formatDisplayDate(from)
+        ? formatDisplayDate(from, locale)
         : "";
+
+  const monthLabels = locale === "en" ? EN_MONTHS : KHMER_MONTHS;
+  const weekdayLabels = locale === "en" ? EN_WEEKDAYS : KHMER_WEEKDAYS;
 
   function openPicker() {
     if (disabled) {
@@ -205,7 +213,7 @@ export default function DateRangePicker({
             </button>
 
             <span className="text-sm font-semibold text-text-primary">
-              {KHMER_MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}
+              {monthLabels[viewDate.getMonth()]} {viewDate.getFullYear()}
             </span>
 
             <button
@@ -219,8 +227,8 @@ export default function DateRangePicker({
           </div>
 
           <div className="grid grid-cols-7 gap-y-1 text-center text-xs text-text-mute">
-            {KHMER_WEEKDAYS.map((weekday) => (
-              <div key={weekday} className="py-1 font-medium">
+            {weekdayLabels.map((weekday, weekdayIndex) => (
+              <div key={`${weekday}-${weekdayIndex}`} className="py-1 font-medium">
                 {weekday}
               </div>
             ))}

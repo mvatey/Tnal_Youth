@@ -204,7 +204,6 @@ export default function DashboardPage() {
 
         if (!response.ok) {
           throw new Error(
-            result?.message ||
             t("dashboard.loadFailed")
           );
         }

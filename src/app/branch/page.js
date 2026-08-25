@@ -1646,7 +1646,7 @@ export default function BranchPage() {
    */
 
   return (
-    <div className="min-w-0 space-y-5 overflow-x-auto">
+    <div className="min-w-0 space-y-5">
       <div>
         <h1 className="text-xl font-bold text-primary">
           {t("branchPage.listTitle")}
@@ -1667,9 +1667,9 @@ export default function BranchPage() {
       />
 
       <section className="rounded-xl border border-border bg-bg-page-white p-4 transition-shadow duration-200 hover:shadow-sm">
-        <div className="mb-4 flex min-w-0 flex-wrap items-center gap-3 xl:flex-nowrap">
+        <div className="mb-4 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(220px,1fr)_auto] xl:flex xl:items-center xl:flex-nowrap">
           {/* Search */}
-          <div className="w-full shrink-0 sm:w-[265px]">
+          <div className="min-w-0 sm:col-span-2 xl:col-span-1 xl:w-[265px] xl:shrink-0">
             <SearchBar
               value={
                 searchQuery
@@ -1683,17 +1683,17 @@ export default function BranchPage() {
           </div>
 
           {/* Filters */}
-          <div className="min-w-0 shrink-0">
+          <div className="min-w-0 sm:col-span-2 xl:col-span-1 xl:shrink-0">
             <FilterBar
               filters={
                 filters
               }
-              className="flex-wrap xl:flex-nowrap"
+              className="grid grid-cols-1 sm:grid-cols-3 xl:flex xl:flex-nowrap [&>div]:w-full xl:[&>div]:w-auto [&_select]:w-full xl:[&_select]:w-auto"
             />
           </div>
 
           {/* Actions */}
-          <div className="ml-auto flex shrink-0 items-center gap-3">
+          <div className="flex min-w-0 flex-col gap-3 sm:col-span-2 sm:flex-row xl:col-span-1 xl:ml-auto xl:shrink-0 xl:items-center [&>button]:w-full sm:[&>button]:w-auto">
             <Button
               type="button"
               variant="primary"
@@ -1744,7 +1744,7 @@ export default function BranchPage() {
             10
           }
           scrollable={
-            false
+            true
           }
           emptyMessage={
             isLoading

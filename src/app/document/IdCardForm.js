@@ -7,6 +7,7 @@ import IdCard from "@/components/card/idCard";
 import FormSelect from "@/components/forms/FormSelect";
 import BoxFill from "@/components/forms/boxFill";
 import DocumentActionButton from "@/components/forms/documentActionbutton";
+import { useLanguage } from "@/context/LanguageContext";
 
 const MAX_TEMPLATE_SIZE = 5 * 1024 * 1024;
 
@@ -23,6 +24,7 @@ export default function IdCardForm({
   onClose,
   saving = false,
 }) {
+  const { t, label } = useLanguage();
   const [users, setUsers] = useState([]);
   const [membersError, setMembersError] = useState("");
   const [showValidationError, setShowValidationError] =
@@ -44,7 +46,7 @@ export default function IdCardForm({
           );
           const body = await response.json().catch(() => null);
           if (!response.ok) {
-            throw new Error(body?.message || "មិនអាចទាញយកសមាជិកបានទេ។");
+            throw new Error(body?.message || t("documentPage.loadMembersFailed"));
           }
 
           const pageRows = body?.content ?? body?.data?.content ?? body?.data ?? body;
@@ -67,17 +69,19 @@ export default function IdCardForm({
         })).filter((user) => user.id && user.name_kh));
       } catch (error) {
         if (error.name !== "AbortError") {
-          setMembersError(error.message || "មិនអាចទាញយកសមាជិកបានទេ។");
+          setMembersError(error.message || t("documentPage.loadMembersFailed"));
         }
       }
     }
 
     loadMembers();
     return () => controller.abort();
-  }, []);
+  }, [t]);
 
   const userOptions = users.map((user) => ({
-    label: user.name_kh,
+    label: label({ labelKm: user.name_kh, labelEn: user.name_en }, user.name_kh),
+    labelKm: user.name_kh,
+    labelEn: user.name_en,
     value: String(user.id),
   }));
 
@@ -170,9 +174,7 @@ export default function IdCardForm({
 
       branch:
         typeof user.branch === "object"
-          ? user.branch?.name_kh ||
-            user.branch?.name_en ||
-            ""
+          ? label(user.branch, "")
           : user.branch || "",
 
       role: user.role || "member",
@@ -201,7 +203,7 @@ export default function IdCardForm({
       )
     ) {
       alert(
-        "សូមជ្រើសរើសរូបភាព JPG, PNG ឬ WEBP",
+        t("documentPage.selectImageType"),
       );
 
       event.target.value = "";
@@ -214,7 +216,7 @@ export default function IdCardForm({
       MAX_TEMPLATE_SIZE
     ) {
       alert(
-        "ទំហំរូបភាពមិនអាចលើស 5MB",
+        t("documentPage.imageMaxSize"),
       );
 
       event.target.value = "";
@@ -302,7 +304,7 @@ export default function IdCardForm({
       );
 
       alert(
-        "មានបញ្ហាក្នុងការបង្កើតប័ណ្ណសមាជិក",
+        t("documentPage.createIdCardFailed"),
       );
     }
   };
@@ -369,11 +371,11 @@ export default function IdCardForm({
 
         <div className="space-y-4">
           <FormSelect
-            label="ឈ្មោះសមាជិក"
+            label={t("documentPage.memberName")}
             name="userId"
             value={form.userId || ""}
             onChange={handleUserChange}
-            placeholder="ជ្រើសរើសសមាជិក"
+            placeholder={t("documentPage.selectMember")}
             options={userOptions}
           />
 
@@ -384,45 +386,45 @@ export default function IdCardForm({
           )}
 
           <BoxFill
-            label="ភេទ"
+            label={t("documentPage.gender")}
             name="gender"
             value={form.gender || ""}
-            placeholder="ភេទ"
+            placeholder={t("documentPage.gender")}
             readOnly
           />
 
           <BoxFill
-            label="អ៊ីមែល"
+            label={t("documentPage.email")}
             name="email"
             type="email"
             value={form.email || ""}
-            placeholder="អ៊ីមែល"
+            placeholder={t("documentPage.email")}
             readOnly
           />
 
           <BoxFill
-            label="លេខទូរស័ព្ទ"
+            label={t("documentPage.phone")}
             name="phone"
             value={form.phone || ""}
-            placeholder="លេខទូរស័ព្ទ"
+            placeholder={t("documentPage.phone")}
             readOnly
           />
 
           <BoxFill
-            label="ថ្ងៃខែឆ្នាំកំណើត"
+            label={t("documentPage.dateOfBirth")}
             name="dateOfBirth"
             value={
               form.dateOfBirth || ""
             }
-            placeholder="ថ្ងៃខែឆ្នាំកំណើត"
+            placeholder={t("documentPage.dateOfBirth")}
             readOnly
           />
 
           <BoxFill
-            label="សាខា"
+            label={t("documentPage.branch")}
             name="branch"
             value={form.branch || ""}
-            placeholder="សាខា"
+            placeholder={t("documentPage.branch")}
             readOnly
           />
 
@@ -430,7 +432,7 @@ export default function IdCardForm({
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
-              រូបភាពគំរូប័ណ្ណសមាជិក
+              {t("documentPage.idCardTemplateImage")}
             </label>
 
             {form.idCardTemplatePreview ? (
@@ -477,7 +479,7 @@ export default function IdCardForm({
                     transition
                     hover:bg-error-bg
                   "
-                  aria-label="លុបរូបភាពគំរូ"
+                  aria-label={t("documentPage.removeTemplateImage")}
                 >
                   <X size={17} />
                 </button>
@@ -507,17 +509,16 @@ export default function IdCardForm({
                 />
 
                 <p className="text-sm font-semibold text-primary">
-                  បញ្ចូលរូបភាពគំរូ
+                  {t("documentPage.uploadTemplateImage")}
                 </p>
 
                 <p className="mt-1 text-xs text-text-mute">
                   JPG, PNG, WEBP —
-                  មិនលើស 5MB
+                  {t("documentPage.max5Mb")}
                 </p>
 
                 <p className="text-xs text-text-mute">
-                  ទំហំគំរូណែនាំ 856 ×
-                  540 px
+                  {t("documentPage.recommendedTemplateSize")} 856 × 540 px
                 </p>
 
                 <input
@@ -572,11 +573,11 @@ export default function IdCardForm({
                   "
                 >
                   <p className="text-xl font-bold text-text-primary">
-                    មិនទាន់មានគំរូប័ណ្ណសមាជិក
+                    {t("documentPage.noIdCardTemplate")}
                   </p>
 
                   <p className="mt-3 text-sm leading-6 text-gray-500">
-                    សូមបញ្ចូលរូបភាពគំរូប័ណ្ណសមាជិកជាមុនសិន
+                    {t("documentPage.uploadIdCardTemplateFirst")}
                   </p>
                 </div>
               </div>
@@ -604,7 +605,7 @@ export default function IdCardForm({
           {showValidationError &&
             !isFormValid && (
               <p className="mt-4 text-xs font-medium text-error">
-                សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
+                {t("documentPage.completeRequiredInfo")}
               </p>
             )}
 
@@ -615,9 +616,9 @@ export default function IdCardForm({
             onCreate={handleSave}
             isValid={isFormValid}
             saving={saving}
-            cancelText="បោះបង់"
-            createText="បង្កើតប័ណ្ណ"
-            savingText="កំពុងរក្សាទុក..."
+            cancelText={t("documentPage.cancel")}
+            createText={t("documentPage.createCard")}
+            savingText={t("documentPage.saving")}
           />
         </div>
       </div>

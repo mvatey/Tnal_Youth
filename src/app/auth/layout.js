@@ -27,10 +27,10 @@ export default function AuthLayout({ children }) {
             {localized.name || t("auth.heroTitle", "ប្រព័ន្ធគ្រប់គ្រង")}
           </h1>
           <h2 className="text-4xl font-bold leading-snug mb-6">
-            {localized.tagline || t("auth.heroSubtitle", "សមាជិក · សកម្មភាព · វិភាគទាន")}
+            {localized.heroHeadline || t("auth.heroSubtitle", "សមាជិក · សកម្មភាព · វិភាគទាន")}
           </h2>
             <p className="text-slate-300 text-base leading-relaxed mb-6">
-            {localized.about || t("auth.heroDescription", "គ្រប់គ្រងទិន្នន័យសមាជិក ការបង់វិភាគទាន និងសកម្មភាពទាំងនៅទីនេះដោយពួកគេ")}
+            {localized.heroDescription || t("auth.heroDescription", "គ្រប់គ្រងទិន្នន័យសមាជិក ការបង់វិភាគទាន និងសកម្មភាពទាំងនៅទីនេះដោយពួកគេ")}
           </p>
           <div className="w-16 h-px bg-white/60" />
         </div>

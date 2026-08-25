@@ -18,6 +18,7 @@ import FormSelect from "@/components/forms/FormSelect";
 import MultiSelect from "@/components/forms/multiselect";
 import CertificateCard from "@/components/card/certificate";
 import DocumentActionButton from "@/components/forms/documentActionbutton";
+import { useLanguage } from "@/context/LanguageContext";
 
 
 const MAX_TEMPLATE_SIZE =
@@ -32,10 +33,14 @@ const ALLOWED_TEMPLATE_TYPES = [
 const DOCUMENT_TYPE_OPTIONS = [
   {
     label: "លិខិតបញ្ជាក់",
+    labelKm: "លិខិតបញ្ជាក់",
+    labelEn: "Certificate letter",
     value: "លិខិតបញ្ជាក់",
   },
   {
     label: "បណ្ណសរសើរ",
+    labelKm: "បណ្ណសរសើរ",
+    labelEn: "Appreciation certificate",
     value: "បណ្ណសរសើរ",
   },
 ];
@@ -77,6 +82,8 @@ const CARD_SIZE_OPTIONS = [
 const LANGUAGE_OPTIONS = [
   {
     label: "ភាសាខ្មែរ",
+    labelKm: "ភាសាខ្មែរ",
+    labelEn: "Khmer",
     value: "km",
   },
   {
@@ -149,6 +156,8 @@ function mapBranchOption(branch) {
   return {
     value: String(id ?? ""),
     label: getBranchLabel(branch) || branch?.label || String(id || ""),
+    labelKm: branch?.labelKm || branch?.label_km || branch?.nameKm || branch?.name_km,
+    labelEn: branch?.labelEn || branch?.label_en || branch?.nameEn || branch?.name_en,
   };
 }
 
@@ -197,6 +206,7 @@ export default function CertificateForm({
   onClose,
   saving = false,
 }) {
+  const { t, label, isEnglish } = useLanguage();
   const recipientType =
     form.recipientType ||
     "member";
@@ -233,18 +243,18 @@ export default function CertificateForm({
             signal: controller.signal,
           });
           const body = await response.json().catch(() => null);
-          if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកកម្មវិធីបានទេ។");
+          if (!response.ok) throw new Error(body?.message || t("documentPage.loadActivitiesFailed"));
           rows.push(...(Array.isArray(body?.content) ? body.content : []));
           totalPages = Math.max(1, Number(body?.totalPages) || 1);
           page += 1;
         } while (page < totalPages);
         setActivities(rows);
       } catch (error) {
-        if (error.name !== "AbortError") setDataError(error.message || "មិនអាចទាញយកកម្មវិធីបានទេ។");
+        if (error.name !== "AbortError") setDataError(error.message || t("documentPage.loadActivitiesFailed"));
       }
     })();
     return () => controller.abort();
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!form.activityId) {
@@ -258,14 +268,14 @@ export default function CertificateForm({
     })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកអ្នកចូលរួមកម្មវិធីបានទេ។");
+        if (!response.ok) throw new Error(body?.message || t("documentPage.loadActivityParticipantsFailed"));
         setActivityParticipants(Array.isArray(body) ? body : (body?.content || []));
       })
       .catch((error) => {
-        if (error.name !== "AbortError") setDataError(error.message || "មិនអាចទាញយកអ្នកចូលរួមកម្មវិធីបានទេ។");
+        if (error.name !== "AbortError") setDataError(error.message || t("documentPage.loadActivityParticipantsFailed"));
       });
     return () => controller.abort();
-  }, [form.activityId]);
+  }, [form.activityId, t]);
 
   /*
    * Every time a different activity is selected, reset which of the
@@ -301,17 +311,23 @@ export default function CertificateForm({
         });
         const body = await response.json().catch(() => null);
         if (!response.ok) {
-          throw new Error(body?.message || "មិនអាចទាញយកសាខាបានទេ។");
+          throw new Error(body?.message || t("documentPage.loadBranchesFailed"));
         }
 
         setBranchOptions(
           unwrapList(body)
-            .map(mapBranchOption)
+            .map((branch) => {
+              const option = mapBranchOption(branch);
+              return {
+                ...option,
+                label: label(option, option.label),
+              };
+            })
             .filter((branch) => branch.value && branch.label),
         );
       } catch (error) {
         if (error.name !== "AbortError") {
-          setDataError(error.message || "មិនអាចទាញយកសាខាបានទេ។");
+          setDataError(error.message || t("documentPage.loadBranchesFailed"));
         }
       } finally {
         if (!controller.signal.aborted) setLoadingBranches(false);
@@ -320,7 +336,7 @@ export default function CertificateForm({
 
     loadBranches();
     return () => controller.abort();
-  }, []);
+  }, [label, t]);
 
   useEffect(() => {
     const branchId = String(form.branch || "");
@@ -355,7 +371,7 @@ export default function CertificateForm({
             { cache: "no-store", signal: controller.signal },
           );
           const body = await response.json().catch(() => null);
-          if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកសមាជិកបានទេ។");
+          if (!response.ok) throw new Error(body?.message || t("documentPage.loadMembersFailed"));
           rows.push(...unwrapList(body));
           totalPages = Math.max(1, Number(body?.totalPages ?? body?.data?.totalPages) || 1);
           page += 1;
@@ -369,7 +385,7 @@ export default function CertificateForm({
       } catch (error) {
         if (error.name !== "AbortError") {
           setMembers([]);
-          setDataError(error.message || "មិនអាចទាញយកសមាជិកបានទេ។");
+          setDataError(error.message || t("documentPage.loadMembersFailed"));
         }
       } finally {
         if (!controller.signal.aborted) setLoadingMembers(false);
@@ -378,7 +394,7 @@ export default function CertificateForm({
 
     loadMembers();
     return () => controller.abort();
-  }, [form.branch, recipientType]);
+  }, [form.branch, recipientType, t]);
 
   /*
    * Multi-member IDs.
@@ -419,7 +435,9 @@ export default function CertificateForm({
 
   const activityOptions = activities
     .map((activity) => ({
-      label: activity.titleKm || activity.title_km || activity.titleEn || activity.title_en,
+      label: label(activity, activity.titleKm || activity.title_km || activity.titleEn || activity.title_en),
+      labelKm: activity.titleKm || activity.title_km,
+      labelEn: activity.titleEn || activity.title_en,
       value: String(activity.id),
     }))
     .filter((option) => option.label && option.value);
@@ -503,17 +521,15 @@ export default function CertificateForm({
         const branchId = String(
           participant.branchId ?? participant.branch_id ?? "",
         );
-        const label =
-          participant.branchNameKm ||
-          participant.branch_name_km ||
-          participant.branchNameEn ||
-          participant.branch_name_en ||
-          branchId;
+        const branchLabel = label({
+          labelKm: participant.branchNameKm || participant.branch_name_km,
+          labelEn: participant.branchNameEn || participant.branch_name_en,
+        }, branchId);
         const existing = groups.get(branchId);
         if (existing) {
           existing.count += 1;
         } else {
-          groups.set(branchId, { branchId, label, count: 1 });
+          groups.set(branchId, { branchId, label: branchLabel, count: 1 });
         }
         return groups;
       }, new Map())
@@ -543,12 +559,16 @@ export default function CertificateForm({
   );
 
   const memberOptions = members.map((member) => ({
-    label: member.name_kh,
+    label: label({ labelKm: member.name_kh, labelEn: member.name_en }, member.name_kh),
+    labelKm: member.name_kh,
+    labelEn: member.name_en,
     value: String(member.id),
   }));
 
   const ownBranchMemberOptions = ownBranchMembers.map((member) => ({
-    label: member.name_kh,
+    label: label({ labelKm: member.name_kh, labelEn: member.name_en }, member.name_kh),
+    labelKm: member.name_kh,
+    labelEn: member.name_en,
     value: String(member.id),
   }));
 
@@ -843,7 +863,7 @@ export default function CertificateForm({
         )
       ) {
         alert(
-          "សូមជ្រើសរើសរូបភាព JPG, PNG ឬ WEBP",
+          t("documentPage.selectImageType"),
         );
 
         event.target.value =
@@ -857,7 +877,7 @@ export default function CertificateForm({
         MAX_TEMPLATE_SIZE
       ) {
         alert(
-          "ទំហំរូបភាពមិនអាចលើស 5MB",
+          t("documentPage.imageMaxSize"),
         );
 
         event.target.value =
@@ -1064,7 +1084,7 @@ export default function CertificateForm({
         );
 
         alert(
-          "មានបញ្ហាក្នុងការបង្កើតវិញ្ញាបនបត្រ",
+          t("documentPage.createCertificateFailed"),
         );
       }
     };
@@ -1094,7 +1114,7 @@ export default function CertificateForm({
 
         <div className="space-y-5">
           <BoxFill
-            label="ឈ្មោះឯកសារ"
+            label={t("documentPage.documentName")}
             name="title"
             value={
               form.title || ""
@@ -1102,17 +1122,17 @@ export default function CertificateForm({
             onChange={updateField(
               "title",
             )}
-            placeholder="បញ្ចូលឈ្មោះឯកសារ"
+            placeholder={t("documentPage.enterDocumentName")}
           />
 
           <FormSelect
-            label="សាខា"
+            label={t("documentPage.branch")}
             name="branch"
             value={
               form.branch || ""
             }
             onChange={handleBranchChange}
-            placeholder="ជ្រើសរើសសាខា"
+            placeholder={t("documentPage.selectBranch")}
             options={
               branchOptions
             }
@@ -1121,7 +1141,7 @@ export default function CertificateForm({
           />
 
           <FormSelect
-            label="ប្រភេទឯកសារ"
+            label={t("documentPage.documentType")}
             name="documentType"
             value={
               form.documentType ||
@@ -1130,7 +1150,7 @@ export default function CertificateForm({
             onChange={updateField(
               "documentType",
             )}
-            placeholder="ជ្រើសរើសប្រភេទឯកសារ"
+            placeholder={t("documentPage.selectDocumentType")}
             options={
               DOCUMENT_TYPE_OPTIONS
             }
@@ -1148,7 +1168,7 @@ export default function CertificateForm({
                 text-text-primary
               "
             >
-              ប្រភេទ
+              {t("documentPage.type")}
             </label>
 
             <div className="flex flex-wrap items-center gap-6">
@@ -1176,7 +1196,7 @@ export default function CertificateForm({
                   className="h-4 w-4 accent-primary"
                 />
 
-                សមាជិក
+                {t("documentPage.member")}
               </label>
 
               <label
@@ -1203,7 +1223,7 @@ export default function CertificateForm({
                   className="h-4 w-4 accent-primary"
                 />
 
-                កម្មវិធី
+                {t("documentPage.activity")}
               </label>
             </div>
           </div>
@@ -1213,30 +1233,30 @@ export default function CertificateForm({
           {recipientType ===
           "member" ? (
             <MultiSelect
-              label="សមាជិក"
+              label={t("documentPage.member")}
               value={
                 selectedMemberIds
               }
               onChange={
                 handleMemberChange
               }
-              placeholder="ជ្រើសរើសសមាជិក"
+              placeholder={t("documentPage.selectMember")}
               options={
                 memberOptions
               }
               disabled={!form.branch || loadingMembers}
               emptyLabel={
                 !form.branch
-                  ? "សូមជ្រើសរើសសាខាជាមុន"
+                  ? t("documentPage.selectBranchFirst")
                   : loadingMembers
-                    ? "កំពុងទាញយកសមាជិក..."
-                    : "មិនមានសមាជិកនៅក្នុងសាខានេះ"
+                    ? t("documentPage.loadingMembers")
+                    : t("documentPage.noMembersInBranch")
               }
             />
           ) : (
             <div className="space-y-5">
               <FormSelect
-                label="កម្មវិធី"
+                label={t("documentPage.activity")}
                 name="activityId"
                 value={
                   form.activityId ||
@@ -1245,7 +1265,7 @@ export default function CertificateForm({
                 onChange={
                   handleActivityChange
                 }
-                placeholder="ជ្រើសរើសកម្មវិធី"
+                placeholder={t("documentPage.selectActivity")}
                 options={
                   activityOptions
                 }
@@ -1254,27 +1274,26 @@ export default function CertificateForm({
               {form.activityId ? (
                 <>
                   <MultiSelect
-                    label="សមាជិកសាខារបស់អ្នក (បង្កើតវិញ្ញាបនបត្រផ្ទាល់ខ្លួន)"
+                    label={t("documentPage.ownBranchMembersForCertificates")}
                     value={selectedActivityMemberIds}
                     onChange={handleActivityMemberChange}
-                    placeholder="ជ្រើសរើសសមាជិក"
+                    placeholder={t("documentPage.selectMember")}
                     options={ownBranchMemberOptions}
-                    emptyLabel="មិនមានសមាជិកសាខារបស់អ្នកចូលរួមកម្មវិធីនេះទេ"
+                    emptyLabel={t("documentPage.noOwnBranchMembersInActivity")}
                   />
 
                   <MultiSelect
-                    label="សាខាដែលបានអញ្ជើញ (ជូនដំណឹងទៅអ្នកគ្រប់គ្រងសាខា)"
+                    label={t("documentPage.invitedBranchesForNotification")}
                     value={selectedNotifyBranchIds}
                     onChange={handleNotifyBranchChange}
-                    placeholder="ជ្រើសរើសសាខា"
+                    placeholder={t("documentPage.selectBranch")}
                     options={otherBranchOptions}
-                    emptyLabel="មិនមានសាខាផ្សេងទៀតចូលរួមកម្មវិធីនេះទេ"
+                    emptyLabel={t("documentPage.noOtherBranchesInActivity")}
                   />
 
                   {selectedNotifyBranches.length > 0 ? (
                     <p className="text-xs text-text-mute">
-                      សាខាដែលបានជ្រើសរើសនឹងមិនទទួលបានឯកសារវិញ្ញាបនបត្រដោយផ្ទាល់ទេ
-                      — មានតែប្រធានសាខា និងលេខាធិការសាខានោះប៉ុណ្ណោះនឹងទទួលបានការជូនដំណឹងថាវិញ្ញាបនបត្រសម្រាប់សមាជិកសាខារបស់ពួកគេបានរួចរាល់។
+                      {t("documentPage.notifyBranchesOnlyHint")}
                     </p>
                   ) : null}
                 </>
@@ -1298,7 +1317,7 @@ export default function CertificateForm({
                 text-text-primary
               "
             >
-              សេចក្តីពិពណ៌នា
+              {t("documentPage.description")}
             </label>
 
             <textarea
@@ -1310,7 +1329,7 @@ export default function CertificateForm({
               onChange={updateField(
                 "description",
               )}
-              placeholder="បញ្ចូលសេចក្តីពិពណ៌នា"
+              placeholder={t("documentPage.enterDescription")}
               className="
                 h-[105px]
                 w-full
@@ -1342,7 +1361,7 @@ export default function CertificateForm({
                 text-text-primary
               "
             >
-              រូបភាពគំរូវិញ្ញាបនបត្រ
+              {t("documentPage.certificateTemplateImage")}
             </label>
 
             {form.templatePreview ? (
@@ -1373,7 +1392,7 @@ export default function CertificateForm({
                   onClick={
                     removeTemplate
                   }
-                  aria-label="លុបគំរូ"
+                  aria-label={t("documentPage.removeTemplate")}
                   className="
                     absolute
                     right-2
@@ -1419,17 +1438,16 @@ export default function CertificateForm({
                 />
 
                 <p className="text-xs font-semibold text-primary">
-                  បញ្ចូលរូបភាពគំរូ
+                  {t("documentPage.uploadTemplateImage")}
                 </p>
 
                 <p className="mt-1 text-[10px] text-text-mute">
                   JPG, PNG, WEBP —
-                  មិនលើស 5MB
+                  {t("documentPage.max5Mb")}
                 </p>
 
                 <p className="text-[10px] text-text-mute">
-                  ទំហំគំរូណែនាំ
-                  1600 × 900 px
+                  {t("documentPage.recommendedTemplateSize")} 1600 × 900 px
                 </p>
 
                 <input
@@ -1462,7 +1480,7 @@ export default function CertificateForm({
             "
           >
             <FormSelect
-              label="ពុម្ពអក្សរ"
+              label={t("documentPage.font")}
               name="font"
               value={
                 form.font ||
@@ -1477,7 +1495,7 @@ export default function CertificateForm({
             />
 
             <FormSelect
-              label="ទំហំ"
+              label={t("documentPage.size")}
               name="cardSize"
               value={
                 form.cardSize ||
@@ -1503,7 +1521,7 @@ export default function CertificateForm({
                   text-text-primary
                 "
               >
-                ពណ៌
+                {t("documentPage.color")}
               </label>
 
               <div className="flex h-[34px] items-center gap-3">
@@ -1555,7 +1573,7 @@ export default function CertificateForm({
                           backgroundColor:
                             color,
                         }}
-                        aria-label={`ជ្រើសរើសពណ៌ ${color}`}
+                        aria-label={`${t("documentPage.selectColor")} ${color}`}
                       />
                     );
                   },
@@ -1564,7 +1582,7 @@ export default function CertificateForm({
             </div>
 
             <FormSelect
-              label="ភាសា"
+              label={t("documentPage.language")}
               name="language"
               value={language}
               onChange={updateField(
@@ -1592,16 +1610,16 @@ export default function CertificateForm({
           >
             {!form.templatePreview ? (
               <EmptyPreview
-                title="មិនទាន់មានគំរូវិញ្ញាបនបត្រ"
-                message="សូមបញ្ចូលរូបភាពគំរូវិញ្ញាបនបត្រជាមុនសិន"
+                title={t("documentPage.noCertificateTemplate")}
+                message={t("documentPage.uploadCertificateTemplateFirst")}
               />
             ) : recipientType ===
               "member" ? (
               selectedMembers.length ===
               0 ? (
                 <EmptyPreview
-                  title="មិនទាន់ជ្រើសរើសសមាជិក"
-                  message="សូមជ្រើសរើសសមាជិកយ៉ាងតិចម្នាក់"
+                  title={t("documentPage.noMemberSelected")}
+                  message={t("documentPage.selectAtLeastOneMember")}
                 />
               ) : (
                 <div className="space-y-6">
@@ -1618,6 +1636,7 @@ export default function CertificateForm({
                         total={
                           selectedMembers.length
                         }
+                        label={t("documentPage.certificate")}
                       >
                         <CertificateCard
                           title={
@@ -1661,14 +1680,14 @@ export default function CertificateForm({
               )
             ) : !form.activityId ? (
               <EmptyPreview
-                title="មិនទាន់ជ្រើសរើសកម្មវិធី"
-                message="សូមជ្រើសរើសកម្មវិធី"
+                title={t("documentPage.noActivitySelected")}
+                message={t("documentPage.selectActivity")}
               />
             ) : selectedActivityMembers.length === 0 &&
               selectedNotifyBranches.length === 0 ? (
               <EmptyPreview
-                title="មិនមានអ្នកទទួល"
-                message="សូមជ្រើសរើសសមាជិកសាខារបស់អ្នក ឬសាខាដែលត្រូវជូនដំណឹង"
+                title={t("documentPage.noRecipients")}
+                message={t("documentPage.selectMembersOrBranchesToNotify")}
               />
             ) : (
               <div className="space-y-6">
@@ -1684,13 +1703,13 @@ export default function CertificateForm({
                     "
                   >
                     <p className="mb-2 font-semibold text-text-primary">
-                      សាខាដែលនឹងទទួលការជូនដំណឹង (គ្មានឯកសារបង្កើត)
+                      {t("documentPage.branchesToNotifyNoDocuments")}
                     </p>
 
                     <ul className="list-inside list-disc space-y-1 text-text-secondary">
                       {selectedNotifyBranches.map((branch) => (
                         <li key={`notify-branch-${branch.branchId}`}>
-                          {branch.label} — សមាជិក {branch.count} នាក់
+                          {branch.label} — {t("documentPage.memberCount").replace("{count}", branch.count)}
                         </li>
                       ))}
                     </ul>
@@ -1710,6 +1729,7 @@ export default function CertificateForm({
                       total={
                         selectedActivityMembers.length
                       }
+                      label={t("documentPage.certificate")}
                     >
                       <CertificateCard
                         title={
@@ -1755,7 +1775,7 @@ export default function CertificateForm({
           {showValidationError &&
             !isFormValid && (
               <p className="mt-4 text-xs font-medium text-error">
-                សូមបំពេញព័ត៌មានដែលត្រូវការឱ្យបានគ្រប់គ្រាន់។
+                {t("documentPage.completeRequiredInfo")}
               </p>
             )}
 
@@ -1766,8 +1786,8 @@ export default function CertificateForm({
               isFormValid
             }
             saving={saving}
-            cancelText="បោះបង់"
-            createText="បង្កើតឯកសារ"
+            cancelText={t("documentPage.cancel")}
+            createText={t("documentPage.createDocument")}
           />
         </div>
       </div>
@@ -1778,6 +1798,7 @@ export default function CertificateForm({
 function CertificatePreviewItem({
   index,
   total,
+  label,
   children,
 }) {
   return (
@@ -1790,7 +1811,7 @@ function CertificatePreviewItem({
           text-text-primary
         "
       >
-        វិញ្ញាបនបត្រ{" "}
+        {label}{" "}
         {index + 1} / {total}
       </div>
 

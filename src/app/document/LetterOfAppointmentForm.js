@@ -5,6 +5,7 @@ import { FileText, UploadCloud, X } from "lucide-react";
 
 import FormSelect from "@/components/forms/FormSelect";
 import DocumentActionButton from "@/components/forms/documentActionbutton";
+import { useLanguage } from "@/context/LanguageContext";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -45,6 +46,7 @@ export default function LetterOfAppointmentForm({
   onClose,
   saving = false,
 }) {
+  const { t, label, isEnglish } = useLanguage();
   const fileInputRef = useRef(null);
 
   const [showValidationError, setShowValidationError] = useState(false);
@@ -56,9 +58,11 @@ export default function LetterOfAppointmentForm({
   const [dataError, setDataError] = useState("");
 
   const branchOptions = useMemo(() => branches.map((branch) => ({
-    label: getBranchName(branch),
+    label: label(branch, getBranchName(branch)),
+    labelKm: branch.labelKm || branch.label_km || branch.nameKm || branch.name_km || branch.name_kh,
+    labelEn: branch.labelEn || branch.label_en || branch.nameEn || branch.name_en,
     value: String(branch.value ?? branch.id ?? branch.branchId ?? branch.branch_id ?? ""),
-  })).filter((option) => option.label && option.value), [branches]);
+  })).filter((option) => option.label && option.value), [branches, label]);
 
   const selectedMemberIds = useMemo(
     () => (Array.isArray(form.memberIds) ? form.memberIds.map(String) : form.memberId ? [String(form.memberId)] : []),
@@ -75,12 +79,12 @@ export default function LetterOfAppointmentForm({
     fetch("/api/lookups/branches", { cache: "no-store" })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកសាខាបានទេ។");
+        if (!response.ok) throw new Error(body?.message || t("documentPage.loadBranchesFailed"));
         if (active) setBranches(Array.isArray(body) ? body : (body?.data ?? []));
       })
-      .catch((error) => active && setDataError(error.message || "មិនអាចទាញយកសាខាបានទេ។"));
+      .catch((error) => active && setDataError(error.message || t("documentPage.loadBranchesFailed")));
     return () => { active = false; };
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!form.branchId) {
@@ -101,7 +105,7 @@ export default function LetterOfAppointmentForm({
           { cache: "no-store", signal: controller.signal },
         );
         const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || "មិនអាចទាញយកសមាជិកបានទេ។");
+        if (!response.ok) throw new Error(body?.message || t("documentPage.loadMembersFailed"));
         const pageRows = body?.content ?? body?.data?.content ?? body?.data ?? body;
         rows.push(...(Array.isArray(pageRows) ? pageRows : []));
         totalPages = Math.max(1, Number(body?.totalPages ?? body?.data?.totalPages) || 1);
@@ -110,12 +114,12 @@ export default function LetterOfAppointmentForm({
       setMembers(rows);
     })()
       .catch((error) => {
-        if (error.name !== "AbortError") setDataError(error.message || "មិនអាចទាញយកសមាជិកបានទេ។");
+        if (error.name !== "AbortError") setDataError(error.message || t("documentPage.loadMembersFailed"));
       })
       .finally(() => setLoadingMembers(false));
 
     return () => controller.abort();
-  }, [form.branchId]);
+  }, [form.branchId, t]);
 
   useEffect(() => {
     return () => {
@@ -142,7 +146,7 @@ export default function LetterOfAppointmentForm({
     setForm((previous) => ({
       ...previous,
       branchId,
-      branch: getBranchName(branch),
+      branch: label(branch, getBranchName(branch)),
       memberId: "",
       memberIds: [],
       selectedMembers: [],
@@ -157,7 +161,7 @@ export default function LetterOfAppointmentForm({
       memberId,
       memberIds: [memberId],
       selectedMembers: [member],
-      member: getMemberNameKh(member),
+      member: isEnglish ? getMemberNameEn(member) || getMemberNameKh(member) : getMemberNameKh(member) || getMemberNameEn(member),
       memberNameEn: getMemberNameEn(member),
     }));
     setShowValidationError(false);
@@ -176,14 +180,14 @@ export default function LetterOfAppointmentForm({
     const extension = selectedFile.name.split(".").pop()?.toLowerCase() || "";
 
     if (!ALLOWED_FILE_EXTENSIONS.includes(extension)) {
-      setFileError("សូមជ្រើសរើសឯកសារ JPG, PNG, PDF ឬ DOCX។");
+      setFileError(t("documentPage.selectAppointmentFileType"));
 
       event.target.value = "";
       return;
     }
 
     if (selectedFile.size > MAX_FILE_SIZE) {
-      setFileError("ទំហំឯកសារមិនអាចលើសពី 5MB បានទេ។");
+      setFileError(t("documentPage.fileMaxSize"));
 
       event.target.value = "";
       return;
@@ -252,11 +256,11 @@ export default function LetterOfAppointmentForm({
       await onSave?.({
         ...form,
 
-        title: form.title?.trim() || "លិខិតតែងតាំង",
+        title: form.title?.trim() || t("documentPage.appointmentLetter"),
 
-        type: "លិខិតតែងតាំង",
+        type: t("documentPage.appointmentLetter"),
 
-        documentType: "លិខិតតែងតាំង",
+        documentType: t("documentPage.appointmentLetter"),
 
         fileType: form.fileType || "",
 
@@ -292,26 +296,26 @@ export default function LetterOfAppointmentForm({
         {/* Left side */}
         <div className="space-y-5">
           <FormSelect
-            label="សាខា"
+            label={t("documentPage.branch")}
             name="branchId"
             value={form.branchId || ""}
             onChange={handleBranchChange}
-            placeholder="ជ្រើសរើសសាខា"
+            placeholder={t("documentPage.selectBranch")}
             options={branchOptions}
           />
 
           <div>
             <div className="mb-2 flex items-center justify-between text-sm font-semibold text-text-primary">
-              <span>ជ្រើសរើសសមាជិកក្នុងសាខា</span>
-              <span>{selectedMemberIds.length > 0 ? "1 នាក់" : "0 នាក់"}</span>
+              <span>{t("documentPage.selectBranchMember")}</span>
+              <span>{selectedMemberIds.length > 0 ? t("documentPage.onePerson") : t("documentPage.zeroPeople")}</span>
             </div>
             <div className="h-[255px] overflow-y-auto rounded-xl border border-border bg-bg-page-white p-3">
               {!form.branchId ? (
-                <p className="py-20 text-center text-sm text-text-mute">សូមជ្រើសរើសសាខាជាមុន</p>
+                <p className="py-20 text-center text-sm text-text-mute">{t("documentPage.selectBranchFirst")}</p>
               ) : loadingMembers ? (
-                <p className="py-20 text-center text-sm text-text-mute">កំពុងទាញយកសមាជិក...</p>
+                <p className="py-20 text-center text-sm text-text-mute">{t("documentPage.loadingMembers")}</p>
               ) : members.length === 0 ? (
-                <p className="py-20 text-center text-sm text-text-mute">មិនមានសមាជិកក្នុងសាខានេះ</p>
+                <p className="py-20 text-center text-sm text-text-mute">{t("documentPage.noMembersInBranch")}</p>
               ) : (
                 <div className="space-y-1">
                   {members.map((member) => {
@@ -327,7 +331,7 @@ export default function LetterOfAppointmentForm({
                           className="h-4 w-4 accent-primary"
                         />
                         <span className="min-w-0 truncate text-sm text-text-primary">
-                          {getMemberNameKh(member) || getMemberNameEn(member) || `#${memberId}`}
+                          {(isEnglish ? getMemberNameEn(member) || getMemberNameKh(member) : getMemberNameKh(member) || getMemberNameEn(member)) || `#${memberId}`}
                         </span>
                       </label>
                     );
@@ -350,7 +354,7 @@ export default function LetterOfAppointmentForm({
               text-text-primary
             "
           >
-            បញ្ចូលលិខិតតែងតាំង
+            {t("documentPage.uploadAppointmentLetter")}
           </label>
 
           <input
@@ -398,7 +402,7 @@ export default function LetterOfAppointmentForm({
                   text-text-mute
                 "
               >
-                បញ្ចូលជាប្រភេទ JPG, Docx, PDF, PNG (អតិបរមា 5MB),
+                {t("documentPage.appointmentFileHint")}
               </p>
 
               <p
@@ -408,7 +412,7 @@ export default function LetterOfAppointmentForm({
                   text-text-mute
                 "
               >
-                ទំហំគំរូ៖ 16:9
+                {t("documentPage.templateRatio")}
               </p>
             </button>
           ) : (
@@ -478,7 +482,7 @@ export default function LetterOfAppointmentForm({
               <button
                 type="button"
                 onClick={removeFile}
-                aria-label="លុបឯកសារ"
+                aria-label={t("documentPage.removeDocument")}
                 className="
                   absolute
                   right-4
@@ -523,7 +527,7 @@ export default function LetterOfAppointmentForm({
                   text-error
                 "
             >
-              សូមជ្រើសរើសសាខា សមាជិក បំពេញពិពណ៌នា និងបញ្ចូលឯកសារ។
+              {t("documentPage.appointmentRequiredInfo")}
             </p>
           )}
           <div className="mt-12">
@@ -532,9 +536,9 @@ export default function LetterOfAppointmentForm({
               onCreate={handleSave}
               isValid={isFormValid}
               saving={saving}
-              cancelText="បោះបង់"
-              createText="រក្សាទុក"
-              savingText="កំពុងរក្សាទុក..."
+              cancelText={t("documentPage.cancel")}
+              createText={t("documentPage.save")}
+              savingText={t("documentPage.saving")}
             />
           </div>
         </div>

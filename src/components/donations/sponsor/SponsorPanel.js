@@ -20,8 +20,10 @@ import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
+import { useLanguage } from "@/context/LanguageContext";
+import { localizedValue } from "@/lib/i18n";
 
-const { sponsorHeaders: headers } = tableHeaders;
+const { sponsorHeaders: fallbackHeaders } = tableHeaders;
 const rowsPerPage = 12;
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
@@ -50,6 +52,8 @@ function SponsorReceiptPreview({ receipt }) {
 }
 
 function DateFilter({ value, onChange }) {
+  const { t } = useLanguage();
+
   return (
     <label className="relative block h-[34px] w-full cursor-pointer">
       <input
@@ -57,11 +61,11 @@ function DateFilter({ value, onChange }) {
         value={value}
         onChange={(event) => onChange(event.target.value)}
         className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-        aria-label="កាលបរិច្ឆេទ"
+        aria-label={t("documentPage.date")}
        
       />
       <span className="flex h-full w-full items-center justify-between rounded-lg border border-border bg-bg-page-white px-3 text-[16px] font-Semibold text-text-secondary shadow-sm transition hover:border-secondary">
-        <span className="truncate">{value || "កាលបរិច្ឆេទ"}</span>
+        <span className="truncate">{value || t("documentPage.date")}</span>
         <CalendarDays size={16} strokeWidth={2.2} />
       </span>
     </label>
@@ -88,6 +92,7 @@ export default function SponsorPanel({
   // sponsor donations (that stays in the main "ថវិកាឧបត្ថម្ភ" module).
   readOnly = false,
 }) {
+  const { t, label, locale } = useLanguage();
   const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
   const router = useRouter();
   const pathname = usePathname();
@@ -118,6 +123,21 @@ export default function SponsorPanel({
   const selectedBranchLabel =
     branchOptions.find((option) => String(option.value) === String(selectedBranch))?.label ||
     "-";
+  const headers = useMemo(
+    () => [
+      t("donationPage.no"),
+      t("donationPage.sponsorName"),
+      t("donationPage.sponsorType"),
+      t("donationPage.phone"),
+      t("donationPage.email"),
+      t("documentPage.date"),
+      t("donationPage.amountKhrPlain"),
+      t("donationPage.amountUsdPlain"),
+      t("donationPage.paymentMethod"),
+      t("donationPage.action"),
+    ],
+    [t],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -128,7 +148,7 @@ export default function SponsorPanel({
         if (isMemberScoped) {
           const myRows = await fetchMyAccountCollection("donations/sponsors");
           if (!cancelled) {
-            setAllRows(myRows.map((row) => mapMySponsorRow(row, currentMember)));
+            setAllRows(myRows.map((row) => mapMySponsorRow(row, currentMember, locale)));
           }
           return;
         }
@@ -152,13 +172,13 @@ export default function SponsorPanel({
           credentials: "include",
         });
         const body = await response.json().catch(() => null);
-        if (!response.ok || body?.success === false) throw new Error(body?.message || "មិនអាចទាញយកការបរិច្ចាកបានទេ។");
+        if (!response.ok || body?.success === false) throw new Error(t("donationPage.loadSponsorDonationsFailed"));
         const page = body?.data ?? body;
-        if (!cancelled) setAllRows((Array.isArray(page?.items) ? page.items : []).map(mapSponsorRow));
+        if (!cancelled) setAllRows((Array.isArray(page?.items) ? page.items : []).map((row) => mapSponsorRow(row, locale)));
       } catch (loadError) {
         if (!cancelled) {
           setAllRows([]);
-          setError(loadError.message || "មិនអាចទាញយកការបរិច្ចាកបានទេ។");
+          setError(loadError.message || t("donationPage.loadSponsorDonationsFailed"));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -166,22 +186,22 @@ export default function SponsorPanel({
     }
     loadRows();
     return () => { cancelled = true; };
-  }, [branchScoped, currentMember, isMemberScoped, selectedBranch]);
+  }, [branchScoped, currentMember, isMemberScoped, selectedBranch, locale, t]);
 
   useEffect(() => {
     let cancelled = false;
     fetch("/api/lookups/branches", { cache: "no-store" })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error("មិនអាចទាញយកបញ្ជីសាខាបានទេ។");
+        if (!response.ok) throw new Error(t("donationPage.loadBranchesFailed"));
         if (!cancelled) setBranchOptions((Array.isArray(body) ? body : []).map((branch) => ({
           value: String(branch.value ?? branch.id),
-          label: branch.labelKm || branch.labelEn || branch.nameKm || branch.nameEn || branch.label || branch.code || "-",
+          label: label(branch, branch.code || "-"),
         })));
       })
-      .catch(() => { if (!cancelled) setError("មិនអាចទាញយកបញ្ជីសាខាបានទេ។"); });
+      .catch(() => { if (!cancelled) setError(t("donationPage.loadBranchesFailed")); });
     return () => { cancelled = true; };
-  }, []);
+  }, [label, t]);
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -242,22 +262,22 @@ export default function SponsorPanel({
 
   const handleDownload = () => {
     const rows = sortedRows.map((row, index) => ({
-      "ល.រ": index + 1,
-      "ឈ្មោះអ្នកឧបត្ថម្ភ": row.name,
-      "ប្រភេទឧបត្ថម្ភ": row.type,
-      "លេខទូរស័ព្ទ": row.phone,
-      "អ៊ីមែល": row.email,
-      "សាខា": row.branch,
-      "កាលបរិច្ឆេទ": row.date,
-      "ចំនួនទឹកប្រាក់(រៀល)": row.rielAmount,
-      "ចំនួនទឹកប្រាក់(ដុល្លារ)": row.dollarAmount,
+      [t("donationPage.no")]: index + 1,
+      [t("donationPage.sponsorName")]: row.name,
+      [t("donationPage.sponsorType")]: row.type,
+      [t("donationPage.phone")]: row.phone,
+      [t("donationPage.email")]: row.email,
+      [t("memberPage.branch")]: row.branch,
+      [t("documentPage.date")]: row.date,
+      [t("donationPage.amountKhrPlain")]: row.rielAmount,
+      [t("donationPage.amountUsdPlain")]: row.dollarAmount,
     }));
 
     if (
       downloadTableAsExcel({
         data: rows,
         fileName:
-          selectedBranch !== "all" ? `ថវិកាឧបត្ថម្ភ-${selectedBranchLabel}` : "ថវិកាឧបត្ថម្ភ",
+          selectedBranch !== "all" ? `${t("donationPage.sponsorDonationFile")}-${selectedBranchLabel}` : t("donationPage.sponsorDonationFile"),
       })
     ) {
       setShowDownloadAlert(true);
@@ -279,13 +299,13 @@ export default function SponsorPanel({
     <section className="min-h-[650px] rounded-md border border-border bg-bg-page-white px-7 py-4 shadow-sm">
       {showDownloadAlert && (
         <div className="fixed right-6 top-6 z-[100]">
-          <AddAlert message="ការទាញយកថវិការឧបត្ថម្ភជោគជ័យ!" />
+          <AddAlert message={t("common.downloadSuccess")} />
         </div>
       )}
 
       {showSaveAlert && (
         <div className="fixed right-6 top-6 z-[100]">
-          <SaveAlert message="អបអរសាទរ ! ថវិការឧបត្ថម្ភត្រូវបានរក្សាទុកដោយជោគជ័យ" />
+          <SaveAlert message={t("donationPage.sponsorDonationSaved")} />
         </div>
       )}
 
@@ -293,7 +313,7 @@ export default function SponsorPanel({
 
       <div className="mb-4 flex flex-col gap-4">
         <h1 className="text-base font-semibold text-secondary">
-          ថវិកាឧបត្ថម្ភ
+          {t("donationPage.sponsorDonationRecordTitle")}
           {selectedBranch !== "all" && ` — ${selectedBranchLabel}`}
         </h1>
 
@@ -305,7 +325,7 @@ export default function SponsorPanel({
                   className=" flex-1 bg-transparent pr-2 text-[12px] font-medium text-text-secondary outline-none placeholder:text-text-secondary focus:placeholder-transparent"
                   value={searchQuery}
                   onChange={(event) => updateFilter(setSearchQuery)(event.target.value)}
-                  placeholder="ស្វែងរកតាមឈ្មោះអ្នកឧបត្ថម្ភ ..."
+                  placeholder={t("donationPage.searchSponsorPlaceholder")}
                 />
                 <Search size={16} className="text-text-secondary" />
               </span>
@@ -315,17 +335,17 @@ export default function SponsorPanel({
               value={selectedType}
               onChange={updateFilter(setSelectedType)}
               options={typeOptions}
-              placeholder="ប្រភេទអ្នកឧបត្ថម្ភ"
+              placeholder={t("donationPage.sponsorType")}
               className="w-full"
               size="compact"
             />
 
             <DonationFilterSelect
-              label="សាខា"
+              label={t("memberPage.branch")}
               value={selectedBranch}
               onChange={updateFilter(setSelectedBranch)}
               options={branchOptions}
-              allLabel="សាខាទាំងអស់"
+              allLabel={t("branchPage.allBranches")}
               showLabel={false}
               className="w-full"
               disabled={branchScoped}
@@ -351,7 +371,7 @@ export default function SponsorPanel({
                 className="inline-flex h-[34px] w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700 sm:col-span-2 xl:col-span-1 xl:w-auto"
               >
                 <PlusCircle size={17} />
-                បន្ថែមការឧបត្ថម្ភ
+                {t("donationPage.addSponsorDonation")}
               </button>
             )}
           </div>
@@ -439,7 +459,7 @@ export default function SponsorPanel({
 
       {readOnly && sortedRows.length > 0 && (
         <DonationTotalsCard
-          title="សរុបការឧបត្ថម្ភ"
+          title={t("donationPage.totalSponsorDonation")}
           riel={totals.riel}
           dollar={totals.dollar}
           total={totals.total}
@@ -459,28 +479,44 @@ export default function SponsorPanel({
   );
 }
 
-function mapSponsorRow(row) {
+function mapSponsorRow(row, locale = "km") {
   const donorKindLabels = {
-    MEMBER: "សមាជិក",
-    INDIVIDUAL: "បុគ្គល",
-    ORGANIZATION: "ស្ថាប័ន",
-    INSTITUTION: "ស្ថាប័ន",
+    km: {
+      MEMBER: "សមាជិក",
+      INDIVIDUAL: "បុគ្គល",
+      ORGANIZATION: "ស្ថាប័ន",
+      INSTITUTION: "ស្ថាប័ន",
+    },
+    en: {
+      MEMBER: "Member",
+      INDIVIDUAL: "Individual",
+      ORGANIZATION: "Organization",
+      INSTITUTION: "Institution",
+    },
   };
+  const labels = locale === "en" ? donorKindLabels.en : donorKindLabels.km;
   return {
     id: row.donationId,
     name: row.name || "-",
-    type: donorKindLabels[row.donorKind] || row.donorKind || "-",
+    type: labels[row.donorKind] || row.donorKind || "-",
     donorKind: row.donorKind,
     phone: row.phone || "-",
     email: row.email || "-",
-    branch: row.branchNameKm || "-",
+    branch: localizedValue({
+      nameKm: row.branchNameKm,
+      nameEn: row.branchNameEn,
+    }, locale, "-"),
     branchId: row.branchId,
     activityId: row.activityId,
     date: row.paidAt ? new Date(row.paidAt).toLocaleDateString("en-GB") : "-",
     dateValue: row.paidAt ? row.paidAt.slice(0, 10) : "",
     rielAmount: Number(row.amountKhr || 0).toLocaleString(),
     dollarAmount: Number(row.amountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
-    method: row.paymentMethodLabelKm || row.paymentMethodCode || "-",
+    method: localizedValue({
+      labelKm: row.paymentMethodLabelKm,
+      labelEn: row.paymentMethodLabelEn,
+      code: row.paymentMethodCode,
+    }, locale, "-"),
     receipt: row.receiptFileId ? {
       name: "Receipt",
       dataUrl: `/api/backend/files/${row.receiptFileId}/content`,
@@ -492,7 +528,7 @@ function mapSponsorRow(row) {
 // Maps a single MyDonationResponse (member's own sponsor-type donation)
 // into the same row shape mapSponsorRow produces, so this table is reused
 // as-is for the member's read-only "my donations" view.
-function mapMySponsorRow(row, currentMember) {
+function mapMySponsorRow(row, currentMember, locale = "km") {
   const memberName =
     currentMember?.name_kh ||
     currentMember?.name_en ||
@@ -508,18 +544,18 @@ function mapMySponsorRow(row, currentMember) {
     // Older rows may have neither sponsor_id nor donor_name populated,
     // so fall back to the logged-in member identity instead of showing '-'.
     name: row.sponsor?.name || row.donorName || memberName,
-    type: "សមាជិក",
+    type: locale === "en" ? "Member" : "សមាជិក",
     donorKind: "MEMBER",
     phone: row.sponsor?.phone || "-",
     email: row.sponsor?.email || "-",
-    branch: row.branch?.nameKm || row.branch?.nameEn || "-",
+    branch: localizedValue(row.branch, locale, "-"),
     branchId: row.branch?.id,
     activityId: row.activity?.id ?? row.activityId,
     date: row.paidAt ? new Date(row.paidAt).toLocaleDateString("en-GB") : "-",
     dateValue: row.paidAt ? row.paidAt.slice(0, 10) : "",
     rielAmount: Number(row.amountKhr || 0).toLocaleString(),
     dollarAmount: Number(row.amountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
-    method: row.paymentMethod?.labelKm || row.paymentMethod?.labelEn || row.paymentMethod?.code || "-",
+    method: localizedValue(row.paymentMethod, locale, "-"),
     receipt: row.receipt?.id ? {
       name: row.receipt.originalName || "Receipt",
       dataUrl: `/api/backend/files/${row.receipt.id}/content`,

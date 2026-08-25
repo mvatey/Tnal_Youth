@@ -4,7 +4,7 @@ export default function DonationFilterSelect({
   onChange,
   options = [],
   allLabel,
-  className = "w-[158px]",
+  className = "w-full lg:w-[158px]",
   showLabel = true,
   required = false,
   disabled = false,

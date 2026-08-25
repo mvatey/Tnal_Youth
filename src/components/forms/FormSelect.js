@@ -1,8 +1,10 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
+import { localizedValue } from "@/lib/i18n";
 
-function normalizeOption(option, index) {
+function normalizeOption(option, index, locale) {
   if (
     typeof option === "object" &&
     option !== null
@@ -14,12 +16,11 @@ function normalizeOption(option, index) {
       "";
 
     const label =
-      option.label ??
-      option.nameKm ??
-      option.name_km ??
-      option.name ??
-      option.nameEn ??
-      option.name_en ??
+      localizedValue(
+        option,
+        locale,
+        "",
+      ) ||
       String(value);
 
     return {
@@ -58,8 +59,16 @@ export default function FormSelect({
   emptyLabel = "មិនមានទិន្នន័យ",
   ...selectProps
 }) {
+  const { locale, t } = useLanguage();
+
   const normalizedOptions = Array.isArray(options)
-    ? options.map(normalizeOption)
+    ? options.map((option, index) =>
+        normalizeOption(
+          option,
+          index,
+          locale,
+        ),
+      )
     : [];
 
   const hasEmptyOption =
@@ -145,7 +154,7 @@ export default function FormSelect({
             !hasEmptyOption && (
               <option value="">
                 {loading
-                  ? "កំពុងទាញយក..."
+                  ? t("common.loading")
                   : placeholder}
               </option>
             )}

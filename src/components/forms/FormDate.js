@@ -4,6 +4,9 @@ import { useRef } from "react";
 import { Calendar } from "lucide-react";
 
 import calendarData from "@/data/calendar.json";
+import { useLanguage } from "@/context/LanguageContext";
+
+const EN_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function getTodayLocalDate() {
   const now = new Date();
@@ -63,8 +66,9 @@ function convertKhmerDateToInputDate(
   ).padStart(2, "0")}`;
 }
 
-function formatKhmerDisplayDate(
+function formatDisplayDate(
   date,
+  locale = "km",
 ) {
   if (!date) {
     return "";
@@ -82,6 +86,9 @@ function formatKhmerDisplayDate(
   }
 
   const monthName =
+    locale === "en"
+      ? EN_MONTHS[Number(month) - 1]
+      :
     Object.keys(
       calendarData.months,
     ).find(
@@ -106,6 +113,7 @@ export default function FormDate({
   minDate,
   disabled = false,
 }) {
+  const { locale, t } = useLanguage();
   const inputRef = useRef(null);
 
   const formattedValue =
@@ -186,10 +194,11 @@ export default function FormDate({
           type="text"
           readOnly
           disabled={disabled}
-          value={formatKhmerDisplayDate(
+          value={formatDisplayDate(
             formattedValue,
+            locale,
           )}
-          placeholder="ថ្ងៃ/ខែ/ឆ្នាំ"
+          placeholder={t("common.datePlaceholder", "ថ្ងៃ/ខែ/ឆ្នាំ")}
           className="
             box-border
             h-[34px]

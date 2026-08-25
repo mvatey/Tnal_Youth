@@ -12,6 +12,8 @@ import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch } from "@/context/BranchContext";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
+import { useLanguage } from "@/context/LanguageContext";
+import { localizedValue } from "@/lib/i18n";
 
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
@@ -29,11 +31,26 @@ const KHMER_MONTHS = [
   "វិច្ឆិកា",
   "ធ្នូ",
 ];
+const EN_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
-const getKhmerMonth = (month) =>
-  KHMER_MONTHS[Number(month) - 1] || month;
+const getMonthLabel = (month, locale = "km") =>
+  (locale === "en" ? EN_MONTHS : KHMER_MONTHS)[Number(month) - 1] || month;
 
 export default function DonationTable() {
+  const { t, label, locale } = useLanguage();
   const {
     member: currentMember,
     loading: currentMemberLoading,
@@ -82,14 +99,14 @@ export default function DonationTable() {
   ]);
   const rowsPerPage = 12;
   const headers = [
-    "ល.រ",
-    "ខែ",
-    "ឆ្នាំ",
-    "សាខា",
-    "ចំនួនប្រាក់រៀល",
-    "ចំនួនប្រាក់ដុល្លារ",
-    "ប្រាក់សរុប(ដុល្លារ)",
-    "សកម្មភាព",
+    t("donationPage.no"),
+    t("donationPage.month"),
+    t("donationPage.year"),
+    t("memberPage.branch"),
+    t("donationPage.amountKhrPlain"),
+    t("donationPage.amountUsdPlain"),
+    t("donationPage.totalAllUsd"),
+    t("donationPage.action"),
   ];
   const isAdmin = effectiveRole === "admin";
   // Real secretary/branch_leader (never a viewer) get full manage
@@ -121,9 +138,9 @@ export default function DonationTable() {
         .sort((left, right) => Number(left) - Number(right))
         .map((month) => ({
           value: month,
-          label: getKhmerMonth(month),
+          label: getMonthLabel(month, locale),
         })),
-    [rows],
+    [rows, locale],
   );
   const branches = useMemo(() => {
     if (isBranchScoped) {
@@ -139,7 +156,7 @@ export default function DonationTable() {
         return [
           {
             value: String(match.id),
-            label: match.nameKm || match.nameEn || `សាខា ${match.id}`,
+            label: label(match, `Branch ${match.id}`),
           },
         ];
       }
@@ -153,8 +170,8 @@ export default function DonationTable() {
     const unique = new Map();
     rows.forEach((row) => unique.set(String(row.branchId), row.branch));
     return [...unique].map(([value, label]) => ({ value, label }));
-  }, [rows, isBranchScoped, accessibleBranches, effectiveBranchId, currentMember?.branch]);
-  const handleDelete = () => setError("សូមបើកព័ត៌មានលម្អិតប្រចាំខែ ដើម្បីលុបកំណត់ត្រាវិភាគទាននីមួយៗ។");
+  }, [rows, isBranchScoped, accessibleBranches, effectiveBranchId, currentMember?.branch, label]);
+  const handleDelete = () => setError(t("donationPage.openMonthlyDetailToDelete"));
   const filteredRows = useMemo(
     () =>
       rows.filter((row) => {
@@ -199,13 +216,13 @@ export default function DonationTable() {
 
   const handleDownload = () => {
     const rows = sortedRows.map((row, index) => ({
-      "ល.រ": index + 1,
-      "ខែ": row.monthLabel,
-      "ឆ្នាំ": row.year,
-      "សាខា": row.branch,
-      "ចំនួនប្រាក់រៀល": row.monthlyRiel,
-      "ចំនួនប្រាក់ដុល្លារ": row.monthlyUsd,
-      "ប្រាក់សរុប(ដុល្លារ)": row.total,
+      [t("donationPage.no")]: index + 1,
+      [t("donationPage.month")]: row.monthLabel,
+      [t("donationPage.year")]: row.year,
+      [t("memberPage.branch")]: row.branch,
+      [t("donationPage.amountKhrPlain")]: row.monthlyRiel,
+      [t("donationPage.amountUsdPlain")]: row.monthlyUsd,
+      [t("donationPage.totalAllUsd")]: row.total,
     }));
 
     const branchLabel =
@@ -216,7 +233,7 @@ export default function DonationTable() {
     if (
       downloadTableAsExcel({
         data: rows,
-        fileName: branchLabel ? `វិភាគទានប្រចាំខែ-${branchLabel}` : "វិភាគទានប្រចាំខែ",
+        fileName: branchLabel ? `${t("donationPage.monthlyDonationFile")}-${branchLabel}` : t("donationPage.monthlyDonationFile"),
       })
     ) {
       setShowDownloadAlert(true);
@@ -244,12 +261,12 @@ export default function DonationTable() {
       setError("");
       try {
         if (isBranchScoped && !effectiveBranchId) {
-          throw new Error("គណនីនេះមិនទាន់បានកំណត់សាខា។");
+          throw new Error(t("donationPage.accountBranchNotSet"));
         }
 
         if (isMemberScoped) {
           const myRows = await fetchMyAccountCollection("donations/monthly");
-          if (!cancelled) setRows(myRows.map(mapMyMonthlyRow));
+          if (!cancelled) setRows(myRows.map((row) => mapMyMonthlyRow(row, locale)));
           return;
         }
 
@@ -268,12 +285,12 @@ export default function DonationTable() {
           const body = await response.json().catch(() => null);
 
           if (!response.ok) {
-            throw new Error(body?.message || "មិនអាចទាញយកវិភាគទានប្រចាំខែបានទេ។");
+            throw new Error(t("donationPage.loadMonthlyDonationsFailed"));
           }
 
           const page = body?.data ?? body;
           if (!cancelled) {
-            setRows((Array.isArray(page?.items) ? page.items : []).map(mapMonthlyRow));
+            setRows((Array.isArray(page?.items) ? page.items : []).map((row) => mapMonthlyRow(row, locale)));
           }
           return;
         }
@@ -284,20 +301,20 @@ export default function DonationTable() {
           credentials: "include",
         });
         const body = await response.json().catch(() => null);
-        if (!response.ok || body?.success === false) throw new Error(body?.message || "មិនអាចទាញយកវិភាគទានប្រចាំខែបានទេ។");
+        if (!response.ok || body?.success === false) throw new Error(t("donationPage.loadMonthlyDonationsFailed"));
         const page = body?.data ?? body;
         if (!cancelled) {
-          setRows((Array.isArray(page?.items) ? page.items : []).map(mapMonthlyRow));
+          setRows((Array.isArray(page?.items) ? page.items : []).map((row) => mapMonthlyRow(row, locale)));
         }
       } catch (loadError) {
-        if (!cancelled) setError(loadError.message || "មិនអាចទាញយកវិភាគទានប្រចាំខែបានទេ។");
+        if (!cancelled) setError(loadError.message || t("donationPage.loadMonthlyDonationsFailed"));
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
     loadRows();
     return () => { cancelled = true; };
-  }, [currentMemberLoading, isBranchScoped, isMemberScoped, effectiveBranchId]);
+  }, [currentMemberLoading, isBranchScoped, isMemberScoped, effectiveBranchId, locale, t]);
 
   useEffect(() => {
     if (!showDownloadAlert && !showSaveAlert) return undefined;
@@ -399,7 +416,7 @@ export default function DonationTable() {
             {filteredRows.length === 0 && (
               <tr>
                 <td colSpan={visibleHeaders.length} className="px-4 py-8 text-center text-xs font-medium text-text-secondary">
-                  មិនមានទិន្នន័យ
+                  {t("donationPage.noData")}
                 </td>
               </tr>
             )}
@@ -421,14 +438,18 @@ export default function DonationTable() {
   );
 }
 
-function mapMonthlyRow(row) {
+function mapMonthlyRow(row, locale = "km") {
   const period = row.donationPeriod ? new Date(`${row.donationPeriod}T00:00:00`) : null;
   return {
     id: `${row.branchId}-${row.donationPeriod}`,
     branchId: row.branchId,
-    branch: row.branchNameKm || row.branchNameEn || row.branchCode || "-",
+    branch: localizedValue({
+      nameKm: row.branchNameKm,
+      nameEn: row.branchNameEn,
+      code: row.branchCode,
+    }, locale, "-"),
     month: period ? String(period.getMonth() + 1).padStart(2, "0") : "-",
-    monthLabel: period ? getKhmerMonth(period.getMonth() + 1) : "-",
+    monthLabel: period ? getMonthLabel(period.getMonth() + 1, locale) : "-",
     year: period ? String(period.getFullYear()) : "-",
     monthlyRiel: Number(row.totalKhr || 0).toLocaleString(),
     monthlyUsd: Number(row.totalUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
@@ -440,14 +461,14 @@ function mapMonthlyRow(row) {
 // Maps a single MyDonationResponse (member's own monthly donation record)
 // into the same row shape mapMonthlyRow produces, so the table/columns are
 // reused as-is for the member's read-only "my donations" view.
-function mapMyMonthlyRow(row) {
+function mapMyMonthlyRow(row, locale = "km") {
   const period = row.donationPeriod ? new Date(`${row.donationPeriod}T00:00:00`) : null;
   return {
     id: row.id,
     branchId: row.branch?.id ?? null,
-    branch: row.branch?.nameKm || row.branch?.nameEn || "-",
+    branch: localizedValue(row.branch, locale, "-"),
     month: period ? String(period.getMonth() + 1).padStart(2, "0") : "-",
-    monthLabel: period ? getKhmerMonth(period.getMonth() + 1) : "-",
+    monthLabel: period ? getMonthLabel(period.getMonth() + 1, locale) : "-",
     year: period ? String(period.getFullYear()) : "-",
     monthlyRiel: Number(row.amountKhr || 0).toLocaleString(),
     monthlyUsd: Number(row.amountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
