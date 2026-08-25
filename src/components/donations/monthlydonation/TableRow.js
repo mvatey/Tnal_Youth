@@ -10,7 +10,6 @@ export default function TableRow({
   onDelete,
   hasMoney = false,
   canManage = false,
-  readOnlyViewer = false,
   showAction = true,
   showDetailOnly = false,
 }) {
@@ -54,28 +53,6 @@ export default function TableRow({
                 className="inline-flex h-[18px] w-[18px] items-center justify-center text-[#E92824] transition hover:text-red-700"
                 aria-label={`Delete donation row ${row.id}`}
                 onClick={() => onDelete(row.id)}
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          ) : readOnlyViewer ? (
-            <div
-              className="flex cursor-not-allowed items-center justify-center gap-[5px] opacity-45"
-              title="Viewer accounts are read-only"
-            >
-              <button
-                type="button"
-                disabled
-                className="inline-flex h-[18px] min-w-[52px] cursor-not-allowed items-center justify-center gap-[3px] rounded-[8px] bg-[#5636A3] px-2 text-[10px] font-Regular leading-none text-white"
-              >
-                <List size={11} strokeWidth={2.2} />
-                លម្អិត
-              </button>
-              <button
-                type="button"
-                disabled
-                className="inline-flex h-[18px] w-[18px] cursor-not-allowed items-center justify-center text-[#E92824]"
-                aria-label={`Delete donation row ${row.id} disabled`}
               >
                 <Trash2 size={18} />
               </button>

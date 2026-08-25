@@ -124,10 +124,14 @@ export default function EventDonationPage() {
   // Only entry staff (secretary / branch_leader) may open the bulk "record
   // donations for members" flow — admin/viewer are view-only.
   const canManage = !currentMember?.isViewer && ["secretary", "branch_leader"].includes(currentMember?.role);
-  // Same role set is also who's always scoped to exactly one branch — the
-  // one active in the sidebar's global dropdown (see DonationTable.js) —
-  // rather than an independent "all branches" pick on this page.
-  const isBranchScoped = canManage;
+  // Branch-scoping is a broader set than canManage: a viewer/secretary or
+  // viewer/branch_leader (viewRole resolves their viewerScope through
+  // effectiveRole) is just as much locked to one branch as the real role —
+  // they just can't write. Using canManage here left those two accounts
+  // looking unscoped, so their branch filter stayed on the empty "choose a
+  // branch" placeholder instead of locking to the one branch they actually
+  // have.
+  const isBranchScoped = ["secretary", "branch_leader"].includes(viewRole);
   const { branches: accessibleBranches = [], selectedBranch: globalSelectedBranch = "all" } = useBranch();
   const effectiveBranchId = useMemo(() => {
     if (!isBranchScoped) return null;

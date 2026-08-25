@@ -92,11 +92,16 @@ export default function DonationTable() {
     "សកម្មភាព",
   ];
   const isAdmin = effectiveRole === "admin";
-  // Viewer Secretary / Viewer Branch Leader sees the same action column as
-  // the scoped role, but the controls are disabled below. Admin gets the
-  // same column too, but detail-only (no delete) — see showDetailOnly below.
+  // Real secretary/branch_leader (never a viewer) get full manage
+  // (edit+delete). Everyone else who still sees this column — real admin,
+  // and every viewer variant (viewer/admin, viewer/secretary,
+  // viewer/branch_leader all resolve to one of those effectiveRoles above)
+  // — gets a working Detail-only button instead of a disabled one: they can
+  // always at least look, scoped the same way the row data itself already
+  // is (their one branch for a scoped viewer, every branch for viewer/admin).
   const showActionColumn = isBranchScoped || isAdmin;
   const canManage = isBranchScoped && !isReadOnlyViewer;
+  const showDetailOnly = showActionColumn && !canManage;
   const visibleHeaders = showActionColumn ? headers : headers.slice(0, -1);
   const [selectedYear, setSelectedYear] = useState("all");
   const [selectedMonth, setSelectedMonth] = useState("all");
@@ -387,9 +392,8 @@ export default function DonationTable() {
                 onDelete={handleDelete}
                 hasMoney={row.donorCount > 0}
                 canManage={canManage}
-                readOnlyViewer={isReadOnlyViewer}
                 showAction={showActionColumn}
-                showDetailOnly={isAdmin && !isReadOnlyViewer}
+                showDetailOnly={showDetailOnly}
               />
             ))}
             {filteredRows.length === 0 && (
