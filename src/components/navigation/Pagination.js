@@ -1,4 +1,5 @@
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Builds a compact page list like: 1 2 3 ... 8 9 10
 function getPageNumbers(current, total) {
@@ -36,6 +37,7 @@ export default function Pagination({
   onDownload,
   className = "mt-3 space-y-8",
 }) {
+  const { t } = useLanguage();
   const pageButton =
     "flex h-11 min-w-11 items-center justify-center rounded-lg px-3 text-sm font-medium text-text-secondary transition hover:bg-primary-lighter hover:text-primary";
 
@@ -55,7 +57,7 @@ export default function Pagination({
           className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-border bg-bg-page-white px-3 text-xs font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:text-text-secondary sm:gap-2 sm:px-4 sm:text-sm"
         >
           <ArrowLeft size={15} />
-          មុននេះ
+          {t("common.previous", "មុននេះ")}
         </button>
 
         <div className="flex min-w-0 flex-1 items-center justify-center gap-1 sm:gap-1.5">
@@ -83,7 +85,7 @@ export default function Pagination({
           disabled={currentPage === totalPages}
           className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-border bg-bg-page-white px-3 text-xs font-semibold text-text-secondary shadow-sm transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:text-text-secondary sm:gap-2 sm:px-4 sm:text-sm"
         >
-          បន្ទាប់
+          {t("common.next", "បន្ទាប់")}
           <ArrowRight size={15} />
         </button>
       </div>

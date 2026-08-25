@@ -5,6 +5,10 @@ import Pagination from "@/components/dashboard/Pagination";
 
 export default function Table({ columns = [], data = [], emptyMessage = "មិនមានទិន្នន័យទេ", rowKey, rowsPerPage = 10, tableClassName = "", scrollable = true }) {
   const [currentPage, setCurrentPage] = useState(1);
+  const resolvedTableClassName =
+    scrollable && !tableClassName.includes("min-w")
+      ? `min-w-[840px] ${tableClassName}`
+      : tableClassName;
 
   const totalPages = Math.max(1, Math.ceil(data.length / rowsPerPage));
 
@@ -19,8 +23,8 @@ export default function Table({ columns = [], data = [], emptyMessage = "មិ�
 
   return (
     <div className="min-w-0">
-      <div className={`max-w-full rounded-lg border border-border bg-bg-page-white ${scrollable ? "overflow-x-auto no-scrollbar" : "overflow-hidden"}`}>
-        <table className={`w-full table-fixed border-collapse ${tableClassName}`}>
+      <div className={`max-w-full rounded-lg border border-border bg-bg-page-white ${scrollable ? "overflow-x-auto" : "overflow-hidden"}`}>
+        <table className={`w-full table-fixed border-collapse ${resolvedTableClassName}`}>
           <thead className="bg-bg-page-white">
             <tr className="h-[42px] border-b border-border text-[12px] text-text-secondary">
               {columns.map((column) => (

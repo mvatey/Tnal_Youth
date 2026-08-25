@@ -35,6 +35,7 @@ import {
 
 import { useAuth } from "@/context/AuthContext";
 import { useBranch } from "@/context/BranchContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
 
@@ -189,6 +190,11 @@ export default function Sidebar() {
     setSelectedBranch = () => {},
   } = useBranch();
 
+  const {
+    t,
+    label: localizedLabel,
+  } = useLanguage();
+
   const [
     profileOpen,
     setProfileOpen,
@@ -239,7 +245,7 @@ export default function Sidebar() {
   const userTitle =
     isViewer
       ? `អ្នកមើល · ${ROLE_LABELS[String(user?.viewerScope || "ADMIN").toUpperCase()] || user?.viewerScope || "Admin"}`
-      : ROLE_LABELS[currentMember?.role] || ROLE_LABELS[user?.role] || ROLE_LABELS[role] || role || "";
+      : t(`roles.${String(currentMember?.role || user?.role || role || "").toUpperCase()}`, ROLE_LABELS[currentMember?.role] || ROLE_LABELS[user?.role] || ROLE_LABELS[role] || role || "");
 
   const defaultUserAvatar =
     getDefaultAvatar(
@@ -347,7 +353,7 @@ export default function Sidebar() {
         className="flex h-screen w-72 shrink-0 items-center justify-center bg-primary-sidebar text-white"
       >
         <span className="text-sm text-white/60">
-          កំពុងដំណើរការ...
+          {t("common.loading", "កំពុងដំណើរការ...")}
         </span>
       </aside>
     );
@@ -363,10 +369,10 @@ export default function Sidebar() {
   return (
     <>
       {!mobileOpen && (
-        <button
-          type="button"
-          onClick={() => setMobileOpen(true)}
-          aria-label="បើកម៉ឺនុយ"
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+          aria-label={t("common.openMenu", "បើកម៉ឺនុយ")}
           className="fixed left-4 top-4 z-[80] flex h-10 w-10 items-center justify-center rounded-xl bg-primary-sidebar text-white shadow-lg transition hover:bg-primary lg:hidden"
         >
           <Menu size={20} />
@@ -374,10 +380,10 @@ export default function Sidebar() {
       )}
 
       {mobileOpen && (
-        <button
-          type="button"
-          onClick={() => setMobileOpen(false)}
-          aria-label="បិទម៉ឺនុយ"
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+          aria-label={t("common.closeMenu", "បិទម៉ឺនុយ")}
           className="fixed inset-0 z-[60] bg-black/35 lg:hidden"
         />
       )}
@@ -424,7 +430,7 @@ export default function Sidebar() {
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            aria-label="បិទម៉ឺនុយ"
+            aria-label={t("common.closeMenu", "បិទម៉ឺនុយ")}
             className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg text-white/70 transition hover:bg-white/10 hover:text-white lg:hidden"
           >
             <X size={18} />
@@ -458,7 +464,7 @@ export default function Sidebar() {
           </h3>
 
           <p className="mt-1 text-xs text-white/60">
-            ការគ្រប់គ្រងប្រព័ន្ធយុវជន
+            {t("sidebar.subtitle", "ការគ្រប់គ្រងប្រព័ន្ធយុវជន")}
           </p>
         </div>
 
@@ -537,7 +543,7 @@ export default function Sidebar() {
                             }
                             className="text-black"
                           >
-                            {branchLabel}
+                            {localizedLabel(branch, branchLabel)}
                           </option>
                         );
                       },
@@ -582,8 +588,9 @@ export default function Sidebar() {
                   "
                 >
                   <span className="truncate">
-                    {getBranchOptionLabel(
+                    {localizedLabel(
                       branches[0],
+                      getBranchOptionLabel(branches[0]),
                     )}
                   </span>
                 </div>
@@ -644,7 +651,7 @@ export default function Sidebar() {
                   )}
 
                   <span>
-                    {item.label}
+                    {t(item.labelKey, item.label)}
                   </span>
                 </Link>
               );
@@ -707,7 +714,7 @@ export default function Sidebar() {
                 size={15}
               />
 
-              ចាកចេញ
+              {t("sidebar.logout", "ចាកចេញ")}
             </button>
           </div>
         )}

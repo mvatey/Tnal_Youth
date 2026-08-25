@@ -28,7 +28,7 @@ export default function AddDonationLink() {
       }}
       disabled={isReadOnlyViewer}
       title={isReadOnlyViewer ? "Viewer accounts are read-only" : undefined}
-      className={`inline-flex h-[34px] items-center gap-2 rounded-lg bg-success px-4 text-xs font-medium text-white shadow-sm transition ${
+      className={`inline-flex h-[34px] w-full items-center justify-center gap-2 rounded-lg bg-success px-4 text-xs font-medium text-white shadow-sm transition ${
         isReadOnlyViewer
           ? "cursor-not-allowed opacity-50"
           : "hover:bg-emerald-700"

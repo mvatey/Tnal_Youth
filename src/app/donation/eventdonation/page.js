@@ -227,7 +227,7 @@ export default function EventDonationPage() {
       <div className="space-y-4">
         <DonationTabs />
         {error ? <div className="rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
-        <div className="flex gap-[50px] xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <EventDonationSummaryCard
             label="វិភាគទានក្នុងកម្មវិធីរបស់ខ្ញុំ"
             value={`$${myTotalDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
@@ -245,7 +245,7 @@ export default function EventDonationPage() {
     <div className="space-y-4">
       <DonationTabs />
       {error ? <div className="rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
-      <div className="flex gap-[50px] xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <EventDonationSummaryCard value={`$${totalDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="" note="" />
         <DonorCard label="អ្នកវិភាគទានសរុប" value={`${memberCount + sponsorCount} នាក់`} growth="" note="" />
         <MemberCard

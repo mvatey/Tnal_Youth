@@ -124,7 +124,7 @@ export default function DonationCards() {
   }, [currentMemberLoading, isBranchScoped, isMemberScoped, scopedBranchId]);
 
   return (
-    <div className="flex gap-[50px] xl:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <DonationCard label="ថវិកាសរុប" value={`$${summary.totalUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="" note="" />
       <DonorCard
         label={isMemberScoped ? "ចំនួនកំណត់ត្រា" : "អ្នកបរិច្ចាគសរុប"}

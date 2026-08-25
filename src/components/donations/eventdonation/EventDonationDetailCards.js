@@ -74,7 +74,7 @@ export default function EventDonationDetailCards() {
   );
 
   return (
-    <div className="flex gap-[50px] xl:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <EventDonationSummaryCard
         value={`$${summary.overall.toLocaleString(undefined, {
           maximumFractionDigits: 2,

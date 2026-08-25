@@ -1,7 +1,9 @@
 export const NAV_ITEMS = [
   {
     id: "dashboard",
+    labelKey: "nav.dashboard",
     label: "ផ្ទាំងគ្រប់គ្រង",
+    labelEn: "Dashboard",
     href: "/dashboard",
     icon: "dashboard",
     roles: [
@@ -13,21 +15,27 @@ export const NAV_ITEMS = [
   },
   {
     id: "branches",
+    labelKey: "nav.branches",
     label: "សាខា",
+    labelEn: "Branches",
     href: "/branch",
     icon: "building",
     roles: ["admin", "viewer"],
   },
   {
     id: "members",
+    labelKey: "nav.members",
     label: "សមាជិក",
+    labelEn: "Members",
     href: "/member",
     icon: "users",
     roles: ["admin","branch_leader", "secretary", "viewer"],
   },
   {
     id: "activities",
+    labelKey: "nav.activities",
     label: "កម្មវិធី",
+    labelEn: "Activities",
     href: "/activity",
     icon: "calendar",
     roles: [
@@ -40,7 +48,9 @@ export const NAV_ITEMS = [
   },
   {
     id: "donations",
+    labelKey: "nav.donations",
     label: "ហិរញ្ញវត្ថុ",
+    labelEn: "Finance",
     href: "/donation",
     icon: "donation",
     roles: [
@@ -53,7 +63,9 @@ export const NAV_ITEMS = [
   },
   {
     id: "documents",
+    labelKey: "nav.documents",
     label: "ឯកសារ",
+    labelEn: "Documents",
     href: "/document",
     icon: "file",
     roles: [
@@ -66,7 +78,9 @@ export const NAV_ITEMS = [
   },
   {
     id: "profile",
+    labelKey: "nav.profile",
     label: "ប្រវត្តិរូប",
+    labelEn: "My Account",
     href: "/myAcc",
     icon: "profile",
     roles: [
@@ -79,21 +93,27 @@ export const NAV_ITEMS = [
   },
   {
     id: "users",
+    labelKey: "nav.users",
     label: "អ្នកប្រើប្រាស់",
+    labelEn: "Users",
     href: "/users",
     icon: "userAccounts",
     roles: ["admin", "viewer"],
   },
   {
     id: "variables",
+    labelKey: "nav.variables",
     label: "ការកំណត់អថេរ",
+    labelEn: "Variables",
     href: "/variable",
     icon: "settings",
     roles: ["admin", "viewer"],
   },
   {
   id: "notification",
+  labelKey: "nav.notification",
   label: "ការជូនដំណឹង",
+  labelEn: "Notifications",
   href: "/notification",
   icon: "bell",
   roles: [

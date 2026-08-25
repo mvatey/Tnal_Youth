@@ -1,12 +1,15 @@
 "use client";
 
 import { RiDownloadCloud2Line } from "react-icons/ri";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function SaveButton({
   onClick,
   className = "",
   ...buttonProps
 }) {
+  const { t } = useLanguage();
+
   return (
     <button
       type="button"
@@ -42,7 +45,7 @@ export default function SaveButton({
         className="shrink-0"
       />
 
-      <span>ទាញយក</span>
+      <span>{t("common.download", "ទាញយក")}</span>
     </button>
   );
 }

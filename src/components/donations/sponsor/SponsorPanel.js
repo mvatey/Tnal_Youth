@@ -51,7 +51,7 @@ function SponsorReceiptPreview({ receipt }) {
 
 function DateFilter({ value, onChange }) {
   return (
-    <label className="relative block h-[34px] w-[154px] shrink-0 cursor-pointer">
+    <label className="relative block h-[34px] w-full cursor-pointer">
       <input
         type="date"
         value={value}
@@ -298,8 +298,8 @@ export default function SponsorPanel({
         </h1>
 
         {!readOnly && (
-          <div className="flex w-full flex-nowrap items-center justify-end gap-[5px] overflow-x-auto pb-1">
-            <label className="block h-[34px] w-[260px] shrink-0">
+          <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-center">
+            <label className="block h-[34px] w-full">
               <span className="flex h-full items-center rounded-lg border border-border bg-bg-page-white px-3 shadow-sm">
                 <input
                   className=" flex-1 bg-transparent pr-2 text-[12px] font-medium text-text-secondary outline-none placeholder:text-text-secondary focus:placeholder-transparent"
@@ -316,7 +316,7 @@ export default function SponsorPanel({
               onChange={updateFilter(setSelectedType)}
               options={typeOptions}
               placeholder="ប្រភេទអ្នកឧបត្ថម្ភ"
-              className="w-[180px]"
+              className="w-full"
               size="compact"
             />
 
@@ -327,7 +327,7 @@ export default function SponsorPanel({
               options={branchOptions}
               allLabel="សាខាទាំងអស់"
               showLabel={false}
-              className="w-[180px]"
+              className="w-full"
               disabled={branchScoped}
               includeAllOption={!branchScoped}
             />
@@ -348,7 +348,7 @@ export default function SponsorPanel({
                       : "");
                   router.push(`${routePrefix}/add${scopedQuery}`);
                 }}
-                className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-green-600 px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
+                className="inline-flex h-[34px] w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700 sm:col-span-2 xl:col-span-1 xl:w-auto"
               >
                 <PlusCircle size={17} />
                 បន្ថែមការឧបត្ថម្ភ

@@ -17,13 +17,14 @@ export default function DonationFilterBar({
       <h3 className="text-base font-semibold text-secondary">
         វិភាគទានប្រចាំខែ
       </h3>
-      <div className="flex flex-wrap items-center justify-end gap-5">
+      <div className="grid grid-cols-1 gap-3">
         <DonationFilterSelect
           label="សាខា"
           value={selectedBranch}
           onChange={onBranchChange}
           options={branches}
           allLabel="សាខាទាំងអស់"
+          className="w-full"
           showLabel={false}
         />
         <DonationFilterSelect
@@ -32,6 +33,7 @@ export default function DonationFilterBar({
           onChange={onMonthChange}
           options={months}
           allLabel="ខែទាំងអស់"
+          className="w-full"
           showLabel={false}
         />
         <DonationFilterSelect
@@ -40,9 +42,12 @@ export default function DonationFilterBar({
           onChange={onYearChange}
           options={years}
           allLabel="ឆ្នាំទាំងអស់"
+          className="w-full"
           showLabel={false}
         />
-        <AddDonationLink />
+        <div>
+          <AddDonationLink />
+        </div>
       </div>
     </div>
   );

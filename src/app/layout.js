@@ -30,6 +30,7 @@
 import { ThemeProvider } from "@/components/providers/themeProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import { BranchProvider } from "@/context/BranchContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 
 import "./globals.css";
 
@@ -43,11 +44,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="km">
       <body>
-        <ThemeProvider>
-          <AuthProvider>
-            <BranchProvider>{children}</BranchProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <LanguageProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <BranchProvider>{children}</BranchProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

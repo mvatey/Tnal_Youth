@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { FaBuilding, FaUsers, FaUserShield, FaCalendarAlt, FaHandHoldingHeart, FaFileAlt, FaUserCircle, FaCog, FaBell} from "react-icons/fa";
 import { NAV_ITEMS } from "@/lib/navigation";
 import ChartIcon from "@/components/ui/icons/chartIcon";
+import { useLanguage } from "@/context/LanguageContext";
 
 const ICON_MAP = {
   dashboard: ChartIcon,
@@ -20,6 +21,7 @@ const ICON_MAP = {
 
 export default function PageHeader() {
   const pathname = usePathname();
+  const { t } = useLanguage();
   const current = NAV_ITEMS.find(
     (item) => pathname === item.href || pathname?.startsWith(item.href + "/")
   );
@@ -33,7 +35,9 @@ export default function PageHeader() {
       <div className="w-8 h-8 rounded-md bg-primary-light flex items-center justify-center flex-shrink-0">
         {Icon && <Icon size={16} className="text-primary" />}
       </div>
-      <h1 className="text-base font-bold text-text-primary">{current.label}</h1>
+      <h1 className="text-base font-bold text-text-primary">
+        {t(current.labelKey, current.label)}
+      </h1>
     </div>
   );
 }

@@ -163,7 +163,7 @@ export default function SponsorPage() {
   return (
     <div className="space-y-4">
       <DonationTabs />
-      <div className="flex gap-[50px] xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <SponsorCard
           value={`$${Number(summary.overallTotalUsd || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
           growth=""
