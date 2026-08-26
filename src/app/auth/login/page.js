@@ -445,11 +445,6 @@ function LoginContent() {
       const data =
         await parseResponse(response);
 
-      console.log("Login response:", {
-        status: response.status,
-        data,
-      });
-
       if (!response.ok) {
         setError(
           khmerErrorMessage(

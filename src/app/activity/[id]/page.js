@@ -44,16 +44,16 @@ const BACKEND_URL =
   process.env.BACKEND_API_URL ||
   "http://localhost:8081/api";
 
-function lookupLabel(value) {
+function lookupLabel(value, locale = "km") {
   return (
-    value?.labelKm ||
-    value?.labelEn ||
+    (locale === "en" ? value?.labelEn : value?.labelKm) ||
+    (locale === "en" ? value?.labelKm : value?.labelEn) ||
     value?.code ||
     "-"
   );
 }
 
-function formatDate(value) {
+function formatDate(value, locale = "km") {
   if (!value) {
     return "-";
   }
@@ -64,33 +64,35 @@ function formatDate(value) {
     return "-";
   }
 
-  return new Intl.DateTimeFormat("km-KH", {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "km-KH", {
     year: "numeric",
     month: "short",
     day: "2-digit",
+    timeZone: "Asia/Phnom_Penh",
   }).format(date);
 }
 
-function formatTime(value) {
+function formatTime(value, locale = "km") {
   if (!value) {
     return "-";
   }
 
-  const date = new Date(value);
+  // Keep the clock value exactly as entered in the edit form. Converting this
+  // ISO value through the server timezone can shift it before rendering.
+  const match = String(value).match(/T(\d{2}):(\d{2})/);
+  if (!match) return "-";
 
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-
-  return new Intl.DateTimeFormat("km-KH", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+  const hour = Number(match[1]);
+  const minute = match[2];
+  const hour12 = hour % 12 || 12;
+  const suffix = hour >= 12 ? "PM" : "AM";
+  return `${String(hour12).padStart(2, "0")}:${minute} ${suffix}`;
 }
 
 function formatDuration(
   startsAt,
   endsAt,
+  locale = "km",
 ) {
   const start = new Date(startsAt);
   const end = new Date(endsAt);
@@ -102,9 +104,20 @@ function formatDuration(
     return "-";
   }
 
-  return `${Math.round(
-    (end - start) / 3_600_000,
-  )} ម៉ោង`;
+  const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  const days = Math.round((endDay - startDay) / 86_400_000) + 1;
+  return days === 1
+    ? `${Math.round((end - start) / 3_600_000)} ${locale === "en" ? "hours" : "ម៉ោង"}`
+    : `${days} ${locale === "en" ? "days" : "ថ្ងៃ"}`;
+}
+
+function formatDailySchedule(schedule) {
+  if (!Array.isArray(schedule) || schedule.length === 0) return [];
+  return schedule.map((item, index) => ({
+    index: index + 1,
+    time: `${String(item.startsAt).slice(0, 5)} - ${String(item.endsAt).slice(0, 5)}`,
+  }));
 }
 
 function formatFileSize(bytes) {
@@ -164,6 +177,10 @@ function getEffectiveActivityStatus(
     storedStatus === "canceled"
   ) {
     return "cancelled";
+  }
+
+  if (storedStatus === "future") {
+    return "upcoming";
   }
 
   const now = Date.now();
@@ -511,8 +528,8 @@ export default async function ActivityDetailPage({
       record.branchId,
 
     name:
-      record.titleKm ||
-      record.titleEn ||
+      (locale === "en" ? record.titleEn : record.titleKm) ||
+      (locale === "en" ? record.titleKm : record.titleEn) ||
       "-",
 
     descriptionBrief:
@@ -524,14 +541,10 @@ export default async function ActivityDetailPage({
       "-",
 
     type:
-      lookupLabel(
-        record.type,
-      ),
+      lookupLabel(record.type, locale),
 
     sector:
-      lookupLabel(
-        record.sector,
-      ),
+      lookupLabel(record.sector, locale),
 
     status:
       getEffectiveActivityStatus(
@@ -541,10 +554,10 @@ export default async function ActivityDetailPage({
       ),
 
     branch:
-      branch?.labelKm ||
-      branch?.labelEn ||
-      record.branchNameKm ||
-      record.branchNameEn ||
+      (locale === "en" ? branch?.labelEn : branch?.labelKm) ||
+      (locale === "en" ? branch?.labelKm : branch?.labelEn) ||
+      (locale === "en" ? record.branchNameEn : record.branchNameKm) ||
+      (locale === "en" ? record.branchNameKm : record.branchNameEn) ||
       branch?.code ||
       "-",
 
@@ -571,35 +584,27 @@ export default async function ActivityDetailPage({
         : "/activity-placeholder.svg",
 
     date:
-      formatDate(
-        record.startsAt,
-      ),
+      formatDate(record.startsAt, locale),
 
     startDate:
-      formatDate(
-        record.startsAt,
-      ),
+      formatDate(record.startsAt, locale),
 
     endDate:
-      formatDate(
-        record.endsAt,
-      ),
+      formatDate(record.endsAt, locale),
 
     startTime:
-      formatTime(
-        record.startsAt,
-      ),
+      formatTime(record.startsAt, locale),
 
     endTime:
-      formatTime(
-        record.endsAt,
-      ),
+      formatTime(record.endsAt, locale),
 
     duration:
       formatDuration(
         record.startsAt,
         record.endsAt,
+        locale,
       ),
+    dailySchedule: formatDailySchedule(record.dailySchedules),
 
     // Always show member_joined / invited from the same participant list
     // used by the detail information below (for example 0/4).
@@ -689,7 +694,7 @@ export default async function ActivityDetailPage({
         : activity.status ===
             "cancelled"
           ? t("activityPage.cancelled")
-          : t("activityPage.future");
+          : t("activityPage.upcoming");
 
   const statusStyle =
     activity.status ===
@@ -715,6 +720,13 @@ export default async function ActivityDetailPage({
     canManage ||
     canManageAsInvitedBranch;
 
+  // Keep the branch context while an invited branch opens the participant
+  // screen. Without it, returning from that screen reloads the activity as
+  // the host branch and incorrectly shows the host-only Edit Activity action.
+  const activityBranchQuery = branchId
+    ? `?branchId=${encodeURIComponent(branchId)}`
+    : "";
+
   /*
    * Your required button flow:
    *
@@ -728,8 +740,8 @@ export default async function ActivityDetailPage({
     canInviteMembers &&
     activity.status !==
       "completed"
-      ? `/activity/${activity.id}/members`
-      : `/activity/${activity.id}/participants`;
+      ? `/activity/${activity.id}/members${activityBranchQuery}`
+      : `/activity/${activity.id}/participants${activityBranchQuery}`;
 
   const participantButtonLabel =
     canInviteMembers &&
@@ -887,7 +899,7 @@ export default async function ActivityDetailPage({
 
                 <InfoIcon
                   icon={Sprout}
-                  label={t("activityPage.environment")}
+                  label={activity.sector}
                   sub={t("activityPage.sectorType")}
                 />
               </div>
@@ -1003,6 +1015,10 @@ export default async function ActivityDetailPage({
                   activity.duration
                 }
               />
+
+              {activity.dailySchedule?.map((item) => (
+                <InfoItem key={item.index} icon={Clock} label={`${t("activityPage.day")} ${item.index}`} value={item.time} />
+              ))}
 
               <InfoItem
                 icon={MapPin}

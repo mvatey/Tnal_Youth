@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { List, Trash2 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function TableRow({
   row,
@@ -13,6 +14,7 @@ export default function TableRow({
   showAction = true,
   showDetailOnly = false,
 }) {
+  const { t } = useLanguage();
   const pathname = usePathname();
   const addPath = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/add"
@@ -46,7 +48,7 @@ export default function TableRow({
                 className="inline-flex h-[18px] min-w-[52px] items-center justify-center gap-[3px] rounded-[8px] bg-[#5636A3] px-2 text-[10px] font-Regular leading-none text-white transition hover:bg-[#4b2f91]"
               >
                 <List size={11} strokeWidth={2.2} />
-                លម្អិត
+                {t("donationPage.detail")}
               </Link>
               <button
                 type="button"
@@ -64,7 +66,7 @@ export default function TableRow({
                 className="inline-flex h-[18px] min-w-[52px] items-center justify-center gap-[3px] rounded-[8px] bg-[#5636A3] px-2 text-[10px] font-Regular leading-none text-white transition hover:bg-[#4b2f91]"
               >
                 <List size={11} strokeWidth={2.2} />
-                លម្អិត
+                {t("donationPage.detail")}
               </Link>
             </div>
           ) : (

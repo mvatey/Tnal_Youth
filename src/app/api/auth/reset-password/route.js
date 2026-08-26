@@ -113,16 +113,6 @@ export async function POST(request) {
       backendResponse,
     );
 
-    console.log("RESET PASSWORD PROXY:", {
-      request: {
-        phoneOrEmail,
-        otp,
-        newPasswordLength: newPassword.length,
-      },
-      backendStatus: backendResponse.status,
-      backendResponse: data,
-    });
-
     if (!backendResponse.ok) {
       return NextResponse.json(
         {

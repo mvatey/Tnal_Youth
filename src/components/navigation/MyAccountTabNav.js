@@ -2,32 +2,34 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLanguage } from "@/context/LanguageContext";
 
 const TABS = [
   {
-    label: "ប័ណ្ណសម្គាល់ខ្លួននិងលិខិត",
+    key: "tabDocuments",
     href: "/myAcc/documents",
   },
   {
-    label: "ការចូលរួមកម្មវិធី",
+    key: "tabParticipation",
     href: "/myAcc/participation",
   },
   {
-    label: "ការធ្វើវិភាគទាន",
+    key: "tabDonation",
     href: "/myAcc/donation",
   },
   {
-    label: "ការបរិច្ចាក",
+    key: "tabSponsor",
     href: "/myAcc/sponsor",
   },
   {
-    label: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
+    key: "tabPassword",
     href: "/myAcc/password",
   },
 ];
 
 export default function MyAccountTabNav() {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   return (
     <div className="overflow-x-auto rounded-lg bg-bg-page-white shadow-sm">
@@ -62,7 +64,7 @@ export default function MyAccountTabNav() {
                 }
               `}
             >
-              <span className="truncate">{tab.label}</span>
+              <span className="truncate">{t(`memberPage.${tab.key}`)}</span>
             </Link>
           );
         })}

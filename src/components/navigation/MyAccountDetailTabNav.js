@@ -3,18 +3,20 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useUnsavedChanges } from "@/context/UnsavedChangesContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function MyAccountDetailTabNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { isDirty, guardNavigate } = useUnsavedChanges();
+  const { t } = useLanguage();
   const tabs = [
-    { name: "ព័ត៌មានផ្ទាល់ខ្លួន", href: "/myAcc/details/personal" },
-    { name: "ព័ត៌មានគ្រួសារ", href: "/myAcc/details/family" },
-    { name: "ប្រវត្តិការងារ", href: "/myAcc/details/work" },
-    { name: "ការអប់រំ/បណ្តុះបណ្តាល", href: "/myAcc/details/education" },
-    { name: "ជំនាញបច្ចេកទេស", href: "/myAcc/details/skill" },
-    { name: "កិច្ចការនយោបាយ", href: "/myAcc/details/political" },
+    { name: t("memberPage.detailPersonal"), href: "/myAcc/details/personal" },
+    { name: t("memberPage.detailFamily"), href: "/myAcc/details/family" },
+    { name: t("memberPage.detailWork"), href: "/myAcc/details/work" },
+    { name: t("memberPage.detailEducation"), href: "/myAcc/details/education" },
+    { name: t("memberPage.detailSkill"), href: "/myAcc/details/skill" },
+    { name: t("memberPage.detailPolitical"), href: "/myAcc/details/political" },
   ];
 
   return (

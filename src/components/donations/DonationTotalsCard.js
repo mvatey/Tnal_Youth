@@ -1,4 +1,5 @@
 "use client";
+import { useLanguage } from "@/context/LanguageContext";
 
 /*
  * The small right-aligned summary card already used on the monthly-donation
@@ -12,11 +13,12 @@ export default function DonationTotalsCard({
   riel,
   dollar,
   total,
-  rielLabel = "សរុបចំនួន (រៀល)",
-  dollarLabel = "សរុបចំនួន (ដុល្លារ)",
-  totalLabel = "សរុបទាំងអស់ ($)",
+  rielLabel,
+  dollarLabel,
+  totalLabel,
   className = "",
 }) {
+  const { t } = useLanguage();
   return (
     <div
       className={`ml-auto mt-5 w-full max-w-[360px] rounded-lg border border-border bg-bg-page-white p-4 ${className}`}
@@ -25,21 +27,21 @@ export default function DonationTotalsCard({
       <h3 className="mb-3 font-bold text-secondary">{title}</h3>
 
       <div className="flex justify-between gap-5 text-sm text-text-secondary">
-        <span>{rielLabel}</span>
+        <span>{rielLabel || t("donationPage.totalDonationKhr")}</span>
         <span className="font-semibold text-text-primary">
           {(riel || 0).toLocaleString()} ៛
         </span>
       </div>
 
       <div className="mt-2 flex justify-between gap-5 text-sm text-text-secondary">
-        <span>{dollarLabel}</span>
+        <span>{dollarLabel || t("donationPage.totalDonationUsd")}</span>
         <span className="font-semibold text-text-primary">
           {(dollar || 0).toFixed(2)} $
         </span>
       </div>
 
       <div className="mt-3 flex justify-between gap-5 border-t border-border pt-3 font-bold text-secondary">
-        <span>{totalLabel}</span>
+        <span>{totalLabel || t("donationPage.totalAllUsd")}</span>
         <span>{(total || 0).toFixed(2)} $</span>
       </div>
     </div>

@@ -18,31 +18,36 @@ import { useAuth } from "@/context/AuthContext";
 import { normalizeRole } from "@/lib/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 
-function getLookupLabel(lookup) {
+function getLookupLabel(lookup, locale = "km") {
   return (
-    lookup?.labelKm ||
-    lookup?.label_km ||
-    lookup?.labelEn ||
-    lookup?.label_en ||
+    (locale === "en" ? lookup?.labelEn : lookup?.labelKm) ||
+    (locale === "en" ? lookup?.label_en : lookup?.label_km) ||
+    (locale === "en" ? lookup?.labelKm : lookup?.labelEn) ||
+    (locale === "en" ? lookup?.label_km : lookup?.label_en) ||
     lookup?.code ||
     "-"
   );
 }
 
-function formatDate(value) {
+function formatDate(value, locale = "km") {
   if (!value) return "-";
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
 
-  return new Intl.DateTimeFormat("km-KH", {
+  if (locale !== "en") {
+    const khmerMonths = ["មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា", "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ"];
+    return `${date.getDate()} ${khmerMonths[date.getMonth()]} ${date.getFullYear()}`;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
     month: "short",
     day: "2-digit",
   }).format(date);
 }
 
-function formatDuration(startsAt, endsAt) {
+function formatDuration(startsAt, endsAt, locale = "km") {
   const start = new Date(startsAt);
   const end = new Date(endsAt);
 
@@ -54,8 +59,16 @@ function formatDuration(startsAt, endsAt) {
     return "-";
   }
 
-  const hours = Math.round((end - start) / 3_600_000);
-  return `${hours} ម៉ោង`;
+  const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  const days = Math.round((endDay - startDay) / 86_400_000) + 1;
+
+  if (days === 1) {
+    const hours = Math.round((end - start) / 3_600_000);
+    return locale === "en" ? `${hours} hours` : `${hours} ម៉ោង`;
+  }
+
+  return locale === "en" ? `${days} days` : `${days} ថ្ងៃ`;
 }
 
 function getEffectiveActivityStatus(status, startsAt, endsAt) {
@@ -74,7 +87,7 @@ function getEffectiveActivityStatus(status, startsAt, endsAt) {
   return storedStatus || "upcoming";
 }
 
-function normalizeActivity(item, branchOptions) {
+function normalizeActivity(item, branchOptions, locale = "km") {
   const branch = branchOptions.find(
     (option) => String(option.value) === String(item.branchId),
   );
@@ -87,14 +100,14 @@ function normalizeActivity(item, branchOptions) {
 
   return {
     id: item.id,
-    name: item.titleKm || item.titleEn || "-",
-    type: getLookupLabel(item.type),
+    name: (locale === "en" ? item.titleEn : item.titleKm) || (locale === "en" ? item.titleKm : item.titleEn) || "-",
+    type: getLookupLabel(item.type, locale),
     typeId: item.type?.id,
-    sector: getLookupLabel(item.sector),
+    sector: getLookupLabel(item.sector, locale),
     sectorId: item.sector?.id,
     branch:
-      item.branchNameKm ||
-      item.branchNameEn ||
+      (locale === "en" ? item.branchNameEn : item.branchNameKm) ||
+      (locale === "en" ? item.branchNameKm : item.branchNameEn) ||
       branch?.label ||
       "-",
     branchId: item.branchId,
@@ -104,9 +117,9 @@ function normalizeActivity(item, branchOptions) {
       item.locationName ||
       item.address ||
       "-",
-    date: formatDate(item.startsAt),
+    date: formatDate(item.startsAt, locale),
     dateValue: item.startsAt?.slice(0, 10) || "",
-    duration: formatDuration(item.startsAt, item.endsAt),
+    duration: formatDuration(item.startsAt, item.endsAt, locale),
     // Activity attendance = member_joined / invited for every role.
     // Capacity is a limit and must not be shown as the invitation count.
     participants: `${Number(item.joinedCount ?? 0)}/${Number(item.invitedCount ?? 0)}`,
@@ -137,14 +150,16 @@ function normalizeActivity(item, branchOptions) {
 }
 
 function TypeBadge({ type }) {
+  const normalizedType = String(type || "").trim().toLowerCase();
+  const isExternal = normalizedType === "កម្មវិធីខាងក្រៅ" || normalizedType.includes("external");
   const style =
-    type === "កម្មវិធីខាងក្រៅ"
+    isExternal
       ? "bg-success-bg text-success"
       : "bg-secondary-light text-secondary";
 
   return (
     <span
-      className={`inline-flex w-[70px] items-center justify-center whitespace-nowrap rounded-full px-2 py-1 text-[11px] font-normal ${style}`}
+      className={`inline-flex w-fit min-w-[70px] items-center justify-center whitespace-nowrap rounded-full px-2 py-1 text-[11px] font-normal ${style}`}
     >
       {type}
     </span>
@@ -183,7 +198,7 @@ function StatusBadge({ status }) {
 }
 
 export default function ActivityPage() {
-  const { t, label } = useLanguage();
+  const { t, label, locale } = useLanguage();
   const { user } = useAuth();
   const role = normalizeRole(user?.role);
 
@@ -378,9 +393,9 @@ export default function ActivityPage() {
   const activities = useMemo(
     () =>
       activityRecords.map((item) =>
-        normalizeActivity(item, branchOptions),
+        normalizeActivity(item, branchOptions, locale),
       ),
-    [activityRecords, branchOptions],
+    [activityRecords, branchOptions, locale],
   );
 
   // Every page-level summary — the stat cards, the own/invited tabs, the

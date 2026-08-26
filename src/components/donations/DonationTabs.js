@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import donationOptions from "@/data/donation/donationOptions.json";
+import { useLanguage } from "@/context/LanguageContext";
 
 const { donationTabs } = donationOptions;
 
 export default function DonationTabs() {
   const pathname = usePathname();
+  const { t } = useLanguage();
   const isAdminDonation = pathname?.startsWith("/admin/donation");
   const routePrefix = isAdminDonation ? "/admin/donation" : "/donation";
   const monthlyHref = routePrefix;
@@ -38,7 +40,7 @@ export default function DonationTabs() {
                 : "text-text-primary hover:bg-primary-lighter"
             }`}
           >
-            {tab.label}
+            {tab.href === "/donation" ? t("donationPage.monthlyDonation") : tab.href.includes("eventdonation") ? t("donationPage.eventDonationTitle") : t("donationPage.sponsorDonations")}
           </Link>
         );
       })}

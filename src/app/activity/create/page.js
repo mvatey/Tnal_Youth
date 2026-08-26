@@ -173,8 +173,24 @@ function combineDateAndTime(dateValue, timeValue) {
   const date = convertToDate(dateValue);
   if (!date) return null;
   const [hours, minutes] = String(timeValue || "00:00").split(":").map(Number);
-  date.setHours(Number.isFinite(hours) ? hours : 0, Number.isFinite(minutes) ? minutes : 0, 0, 0);
-  return date.toISOString();
+  const safeHours = Number.isFinite(hours) ? hours : 0;
+  const safeMinutes = Number.isFinite(minutes) ? minutes : 0;
+
+  // Do not use toISOString() here. It converts the selected local calendar
+  // day into UTC, which can make the backend save/display the following day
+  // after an activity is edited. Send the local calendar date and its actual
+  // browser timezone offset instead.
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hour = String(safeHours).padStart(2, "0");
+  const minute = String(safeMinutes).padStart(2, "0");
+  const offsetMinutes = -date.getTimezoneOffset();
+  const offsetSign = offsetMinutes >= 0 ? "+" : "-";
+  const offsetHours = String(Math.floor(Math.abs(offsetMinutes) / 60)).padStart(2, "0");
+  const offsetRemainder = String(Math.abs(offsetMinutes) % 60).padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hour}:${minute}:00${offsetSign}${offsetHours}:${offsetRemainder}`;
 }
 
 async function fetchJson(path, options = {}) {
@@ -231,6 +247,7 @@ function createInitialForm(activity) {
       endDate: null,
       startTime: "",
       endTime: "",
+      dailySchedules: [],
       location: "",
       province: "",
       mapLink: "",
@@ -266,6 +283,7 @@ function createInitialForm(activity) {
     ),
     startTime: activity.startTime24 || activity.startTime || activity.startsAt?.slice(11, 16) || "",
     endTime: activity.endTime24 || activity.endTime || activity.endsAt?.slice(11, 16) || "",
+    dailySchedules: Array.isArray(activity.dailySchedules) ? activity.dailySchedules.map((item) => ({ scheduleDate: item.scheduleDate, startsAt: String(item.startsAt).slice(0, 5), endsAt: String(item.endsAt).slice(0, 5) })) : [],
     location: activity.locationName || getActivityLocation(activity.location),
     province:
       (typeof activity.province === "object"
@@ -611,7 +629,7 @@ function MultipleFileUpload({
 }
 
 export default function CreateActivityPage() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -619,6 +637,14 @@ export default function CreateActivityPage() {
   const isEditMode = Boolean(editId);
   const [editingActivity, setEditingActivity] = useState(null);
   const [form, setForm] = useState(() => createInitialForm(null));
+  // An untouched schedule must be sent back exactly as the server gave it to
+  // us. Rebuilding it from a browser Date can otherwise shift the day.
+  const scheduleChangedRef = useRef({
+    startDate: false,
+    endDate: false,
+    startTime: false,
+    endTime: false,
+  });
   const [lookupData, setLookupData] = useState({
     branches: [],
     invitableBranches: [],
@@ -737,14 +763,23 @@ export default function CreateActivityPage() {
     return getOptionLabel(match);
   }, [isBranchScoped, effectiveBranchId, lookupData.branches]);
 
-  const branchOptions = lookupData.branches.map(getOptionLabel).filter(Boolean);
+  const localizedOptionLabel = (option) => locale === "en"
+    ? (option?.labelEn || option?.label_en || option?.nameEn || option?.name_en || option?.labelKm || option?.label_km || option?.nameKm || option?.name_km || option?.code || "")
+    : (option?.labelKm || option?.label_km || option?.nameKm || option?.name_km || option?.labelEn || option?.label_en || option?.nameEn || option?.name_en || option?.code || "");
+  const branchOptions = lookupData.branches.map(localizedOptionLabel).filter(Boolean);
   const allInvitableBranchOptions = lookupData.invitableBranches
     .map(getOptionLabel)
     .filter(Boolean);
   const provinceOptions = lookupData.provinces.map(getOptionLabel).filter(Boolean);
-  const typeOptions = lookupData.types.map(getOptionLabel).filter(Boolean);
-  const sectorOptions = lookupData.sectors.map(getOptionLabel).filter(Boolean);
-  const statusOptions = lookupData.statuses.map(getOptionLabel).filter(Boolean);
+  const typeOptions = lookupData.types.map(localizedOptionLabel).filter(Boolean);
+  const sectorOptions = lookupData.sectors.map(localizedOptionLabel).filter(Boolean);
+  const visibilityOptions = [t("activityPage.publicVisibility"), t("activityPage.internalVisibility")];
+  // Draft is assigned automatically to a new activity; Cancelled is a
+  // workflow result, not something a user should choose from this form.
+  const statusOptions = lookupData.statuses
+    .filter((option) => !["DRAFT", "CANCELLED"].includes(getOptionCode(option)))
+    .map(localizedOptionLabel)
+    .filter(Boolean);
 
   useEffect(() => {
     let cancelled = false;
@@ -811,6 +846,12 @@ export default function CreateActivityPage() {
           if (!cancelled) {
             setEditingActivity(normalized);
             setForm(createInitialForm(normalized));
+            scheduleChangedRef.current = {
+              startDate: false,
+              endDate: false,
+              startTime: false,
+              endTime: false,
+            };
             setExistingParticipantIds(currentParticipantIds);
             setSelectedMemberIds(currentParticipantIds);
             setExistingImages(normalizedImages);
@@ -902,6 +943,22 @@ export default function CreateActivityPage() {
       ...currentForm,
       [field]: value,
     }));
+  };
+
+  const setScheduleValue = (field, value) => {
+    scheduleChangedRef.current[field] = true;
+    setValue(field, value);
+  };
+
+  const createDailySchedules = () => {
+    if (!form.startDate || !form.endDate) return;
+    const start = new Date(formatDate(form.startDate) + "T00:00:00");
+    const end = new Date(formatDate(form.endDate) + "T00:00:00");
+    const rows = [];
+    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+      rows.push({ scheduleDate: formatDate(date), startsAt: form.startTime || "08:00", endsAt: form.endTime || "17:00" });
+    }
+    setForm((current) => ({ ...current, dailySchedules: rows }));
   };
 
   const handleBranchChange = (event) => {
@@ -1130,12 +1187,28 @@ export default function CreateActivityPage() {
 
     try {
       const findOptionId = (options, label) => {
-        const match = options.find((option) => getOptionLabel(option) === label);
+        // The form can contain a Khmer value selected before switching to
+        // English (or the reverse). Match either translation to one id.
+        const match = options.find((option) => {
+          const labels = [
+            localizedOptionLabel(option),
+            getOptionLabel(option),
+            option?.labelKm,
+            option?.label_km,
+            option?.labelEn,
+            option?.label_en,
+            option?.nameKm,
+            option?.nameEn,
+          ].filter(Boolean);
+          return labels.includes(label);
+        });
         const value = getOptionValue(match);
         return Number.isFinite(value) && value > 0 ? value : null;
       };
       const selectedStatusOption = lookupData.statuses.find(
-        (option) => getOptionLabel(option) === form.status,
+        (option) => (locale === "en"
+          ? (option.labelEn || option.label_en || option.labelKm || option.label_km)
+          : (option.labelKm || option.label_km || option.labelEn || option.label_en)) === form.status,
       );
       const shouldComplete = getOptionCode(selectedStatusOption) === "COMPLETED";
       const currentStatusId = getOptionValue(editingActivity?.status);
@@ -1160,6 +1233,10 @@ export default function CreateActivityPage() {
           ? currentStatusId
           : draftStatusId
         : fallbackStatusId;
+      const scheduleIsUnchanged =
+        isEditMode &&
+        !Object.values(scheduleChangedRef.current).some(Boolean);
+
       const payload = {
         titleKm: form.name.trim(),
         titleEn: editingActivity?.titleEn || null,
@@ -1170,9 +1247,14 @@ export default function CreateActivityPage() {
           ? saveStatusId
           : null,
         branchId: findOptionId(lookupData.branches, form.branch),
-        isPublic: form.visibility === VISIBILITY_OPTIONS[0],
-        startsAt: combineDateAndTime(form.startDate, form.startTime),
-        endsAt: combineDateAndTime(form.endDate, form.endTime),
+        isPublic: form.visibility === visibilityOptions[0],
+        startsAt: scheduleIsUnchanged
+          ? editingActivity?.startsAt
+          : combineDateAndTime(form.startDate, form.startTime),
+        endsAt: scheduleIsUnchanged
+          ? editingActivity?.endsAt
+          : combineDateAndTime(form.endDate, form.endTime),
+        dailySchedules: form.dailySchedules.length ? form.dailySchedules : undefined,
         provinceId: findOptionId(lookupData.provinces, form.province),
         districtId: editingActivity?.districtId || null,
         communeId: editingActivity?.communeId || null,
@@ -1424,9 +1506,10 @@ export default function CreateActivityPage() {
                 value={form.visibility}
                 onChange={(event) => setValue("visibility", event.target.value)}
                 placeholder={t("activityPage.selectVisibility")}
-                options={VISIBILITY_OPTIONS}
+                options={visibilityOptions}
               />
             </div>
+
           </div>
 
           <div className="mt-5">
@@ -1466,7 +1549,7 @@ export default function CreateActivityPage() {
               <DatePickerField
                 label={t("activityPage.startDate")}
                 value={form.startDate}
-                onChange={(date) => setValue("startDate", date)}
+                onChange={(date) => setScheduleValue("startDate", date)}
                 variant="start"
               />
 
@@ -1474,7 +1557,7 @@ export default function CreateActivityPage() {
                 label={t("activityPage.endDate")}
                 value={form.endDate}
                 min={formatDate(form.startDate)}
-                onChange={(date) => setValue("endDate", date)}
+                onChange={(date) => setScheduleValue("endDate", date)}
                 variant="end"
               />
 
@@ -1482,7 +1565,7 @@ export default function CreateActivityPage() {
                 label={t("activityPage.startTime")}
                 type="time"
                 value={form.startTime}
-                onChange={(event) => setValue("startTime", event.target.value)}
+                onChange={(event) => setScheduleValue("startTime", event.target.value)}
                 className = "h-[34px]"
               />
 
@@ -1490,10 +1573,26 @@ export default function CreateActivityPage() {
                 label={t("activityPage.endTime")}
                 type="time"
                 value={form.endTime}
-                onChange={(event) => setValue("endTime", event.target.value)}
+                onChange={(event) => setScheduleValue("endTime", event.target.value)}
                 className = "h-[34px]"
               />
             </div>
+
+            {form.startDate && form.endDate && formatDate(form.startDate) !== formatDate(form.endDate) && (
+              <div className="mt-5 rounded-lg border border-border p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <div><p className="font-semibold text-text-primary">{t("activityPage.dailySchedule")}</p><p className="text-xs text-text-secondary">{t("activityPage.optional")}</p></div>
+                  <button type="button" onClick={createDailySchedules} className="rounded bg-primary px-3 py-1.5 text-sm text-white">{t("activityPage.createDays")}</button>
+                </div>
+                {form.dailySchedules.map((row, index) => (
+                  <div key={row.scheduleDate} className="mb-2 grid grid-cols-3 gap-3 items-center">
+                    <span className="text-sm">{t("activityPage.day")} {index + 1}: {row.scheduleDate}</span>
+                    <input aria-label={`${t("activityPage.startTime")} ${index + 1}`} type="time" value={row.startsAt} onChange={(event) => setForm((current) => ({ ...current, dailySchedules: current.dailySchedules.map((item, itemIndex) => itemIndex === index ? { ...item, startsAt: event.target.value } : item) }))} />
+                    <input aria-label={`${t("activityPage.endTime")} ${index + 1}`} type="time" value={row.endsAt} onChange={(event) => setForm((current) => ({ ...current, dailySchedules: current.dailySchedules.map((item, itemIndex) => itemIndex === index ? { ...item, endsAt: event.target.value } : item) }))} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="rounded-xl border border-border bg-bg-page-white p-5">

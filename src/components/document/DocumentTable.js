@@ -5,6 +5,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 
 export default function DocumentTable({
@@ -15,6 +16,7 @@ export default function DocumentTable({
   onEdit,
   onDelete,
 }) {
+  const { t } = useLanguage();
 
 
   return (
@@ -60,14 +62,14 @@ export default function DocumentTable({
 
 
             {[
-              "ល.រ",
+              t("documentPage.no"),
               "",
-              "ឈ្មោះឯកសារ",
-              "សាខា",
-              "កាលបរិច្ឆេទ",
-              "ទំហំ",
-              "ប្រភេទឯកសារ",
-              "សកម្មភាព",
+              t("documentPage.documentName"),
+              t("documentPage.branch"),
+              t("documentPage.date"),
+              t("documentPage.size"),
+              t("documentPage.documentType"),
+              t("documentPage.actions"),
             ].map((header,index)=>(
 
               <th
@@ -296,7 +298,7 @@ export default function DocumentTable({
                 "
               >
 
-                មិនមានទិន្នន័យ
+                {t("documentPage.emptyMessage")}
 
               </td>
 

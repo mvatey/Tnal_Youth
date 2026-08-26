@@ -447,7 +447,17 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           body: JSON.stringify(payload),
         });
       }));
-      const savedByMember = new Map(savedRows.map((saved) => [String(saved.memberId), saved]));
+      // POST /api/donations returns a creation result (id, donationNo,
+      // totalAmountUsd, createdAt), while PUT returns the full donation.
+      // Pair responses with the submitted rows by position so a new row
+      // receives its donationId and a second Save updates it instead of
+      // creating a duplicate donation.
+      const savedByMember = new Map(
+        savedRows.map((saved, index) => [
+          String(completed[index].memberId),
+          saved,
+        ]),
+      );
       setMembers((current) => current.map((row) => {
         const saved = savedByMember.get(String(row.memberId));
         return saved ? {

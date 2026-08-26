@@ -8,6 +8,7 @@ import {
 
 import { useRouter } from "next/navigation";
 import useCurrentMember from "@/hooks/useCurrentMember";
+import { useLanguage } from "@/context/LanguageContext";
 
 import DataTable from "@/components/table/DataTable.js";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
@@ -271,6 +272,7 @@ function mapParticipation(item) {
 }
 
 export default function ParticipationPage() {
+  const { t } = useLanguage();
   const router = useRouter();
 
   const {
@@ -574,7 +576,7 @@ export default function ParticipationPage() {
 
   const columns = [
     {
-      header: "ល.រ",
+      header: t("memberPage.no"),
       width: "w-[5%]",
       align: "center",
 
@@ -584,7 +586,7 @@ export default function ParticipationPage() {
 
     {
       header:
-        "ឈ្មោះកម្មវិធី",
+        t("memberPage.activityName"),
 
       width: "w-[32%]",
       align: "left",
@@ -597,7 +599,7 @@ export default function ParticipationPage() {
     },
 
     {
-      header: "ប្រភេទ",
+      header: t("memberPage.type"),
       width: "w-[14%]",
       align: "center",
 
@@ -631,7 +633,7 @@ export default function ParticipationPage() {
     },
 
     {
-      header: "ការចូលរួម",
+      header: t("memberPage.attendance"),
       width: "w-[13%]",
       align: "center",
 
@@ -665,7 +667,7 @@ export default function ParticipationPage() {
     },
 
     {
-      header: "ទីតាំង",
+      header: t("memberPage.location"),
       width: "w-[14%]",
       align: "left",
 
@@ -677,7 +679,7 @@ export default function ParticipationPage() {
     },
 
     {
-      header: "ថ្ងៃចូលរួម",
+      header: t("memberPage.date"),
       width: "w-[14%]",
       align: "left",
 
@@ -689,7 +691,7 @@ export default function ParticipationPage() {
     },
 
     {
-      header: "សកម្មភាព",
+      header: t("memberPage.actions"),
       width: "w-[8%]",
       align: "center",
 
@@ -720,7 +722,7 @@ export default function ParticipationPage() {
         typeOptions,
 
       placeholder:
-        "ប្រភេទ",
+        t("memberPage.type"),
     },
   ];
 
@@ -728,7 +730,7 @@ export default function ParticipationPage() {
     return (
       <div className="flex min-h-[250px] items-center justify-center">
         <p className="text-sm text-text-secondary">
-          កំពុងទាញយកប្រវត្តិការចូលរួម...
+          {t("memberPage.loadingParticipation")}
         </p>
       </div>
     );
@@ -747,7 +749,7 @@ export default function ParticipationPage() {
   return (
     <div className="min-w-0">
       <h2 className="mb-4 text-lg font-bold text-primary">
-        ប្រវត្តិការចូលរួមសកម្មភាព
+        {t("memberPage.participationHistory")}
       </h2>
 
       <DataTable
@@ -766,14 +768,14 @@ export default function ParticipationPage() {
         onSearchChange={
           setQuery
         }
-        searchPlaceholder="ស្វែងរក..."
+        searchPlaceholder={t("memberPage.search")}
         pageSize={10}
         minTableWidth={560}
         onDownload={() =>
           downloadTableAsExcel({
             data: participations,
             columns,
-            fileName: `ការចូលរួមសកម្មភាព-${member?.name_kh || "ខ្ញុំ"}`,
+            fileName: t("memberPage.participationFile").replace("{id}", member?.id || "member"),
           })
         }
       />

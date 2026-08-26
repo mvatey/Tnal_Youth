@@ -8,6 +8,7 @@ import {
 
 import {
   useRouter,
+  useSearchParams,
 } from "next/navigation";
 
 import Link from "next/link";
@@ -241,6 +242,15 @@ export default function ActivityMembersPage({
 
   const router =
     useRouter();
+
+  // The activity detail page passes the branch that is currently viewing
+  // the activity. Preserve it on Cancel and Save so an invited branch does
+  // not return as the host branch and receive the Edit Activity button.
+  const searchParams = useSearchParams();
+  const viewingBranchId = searchParams.get("branchId");
+  const detailHref = viewingBranchId
+    ? `/activity/${id}?branchId=${encodeURIComponent(viewingBranchId)}`
+    : `/activity/${id}`;
 
   const { user } =
     useAuth();
@@ -723,7 +733,7 @@ export default function ActivityMembersPage({
 
   function handleClose() {
     router.push(
-      `/activity/${id}`,
+      detailHref,
     );
   }
 
@@ -816,7 +826,7 @@ export default function ActivityMembersPage({
       />
 
       <Link
-        href={`/activity/${id}`}
+        href={detailHref}
         className="hover:text-primary"
       >
         {t("activityPage.detail")}

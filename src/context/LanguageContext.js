@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   DEFAULT_LOCALE,
@@ -21,6 +22,7 @@ import {
 const LanguageContext = createContext(null);
 
 export function LanguageProvider({ children }) {
+  const router = useRouter();
   const [locale, setLocaleState] = useState(DEFAULT_LOCALE);
   const [mounted, setMounted] = useState(false);
 
@@ -42,13 +44,24 @@ export function LanguageProvider({ children }) {
     document.cookie = `${LOCALE_COOKIE_NAME}=${locale}; path=/; max-age=31536000; SameSite=Lax`;
   }, [locale, mounted]);
 
+  const applyLocale = useCallback((nextLocale) => {
+    const normalized = normalizeLocale(nextLocale);
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = normalized;
+      window.localStorage.setItem(LOCALE_STORAGE_KEY, normalized);
+      document.cookie = `${LOCALE_COOKIE_NAME}=${normalized}; path=/; max-age=31536000; SameSite=Lax`;
+    }
+    setLocaleState(normalized);
+    router.refresh();
+  }, [router]);
+
   const setLocale = useCallback((nextLocale) => {
-    setLocaleState(normalizeLocale(nextLocale));
-  }, []);
+    applyLocale(nextLocale);
+  }, [applyLocale]);
 
   const toggleLocale = useCallback(() => {
-    setLocaleState((current) => (current === "km" ? "en" : "km"));
-  }, []);
+    applyLocale(locale === "km" ? "en" : "km");
+  }, [applyLocale, locale]);
 
   const t = useCallback(
     (key, fallback) => translate(locale, key, fallback),

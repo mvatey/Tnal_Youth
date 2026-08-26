@@ -1,5 +1,6 @@
 import { Pencil, RefreshCw } from "lucide-react";
 import { HiSaveAs } from "react-icons/hi";
+import { useLanguage } from "@/context/LanguageContext";
 
 const BUTTONS = {
   reset: {
@@ -31,7 +32,14 @@ export default function Button({
   disabled = false,
   label,
 }) {
+  const { t } = useLanguage();
   const { label: defaultLabel, Icon, className } = BUTTONS[action];
+  const translatedLabel = {
+    reset: t("donationPage.reset"),
+    save: t("donationPage.save"),
+    cancel: t("donationPage.cancel"),
+    edit: t("donationPage.editDonation"),
+  }[action] || defaultLabel;
 
   return (
     <button
@@ -41,7 +49,7 @@ export default function Button({
       className={`activity-form-action-button inline-flex h-[34px] items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
     >
       {Icon && <Icon size={16} />}
-      {label || defaultLabel}
+      {label || translatedLabel}
     </button>
   );
 }

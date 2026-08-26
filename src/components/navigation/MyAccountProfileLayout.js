@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useUnsavedChanges } from "@/context/UnsavedChangesContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Only ever rendered for a member-linked account — a standalone account
 // (ADMIN, or a secretary/branch-leader/member account with no member
@@ -12,26 +13,27 @@ export default function MyAccountProfileLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const { isDirty, guardNavigate } = useUnsavedChanges();
+  const { t } = useLanguage();
 
   const tabs = [
     {
-      name: "ប័ណ្ណសម្គាល់ខ្លួននិងលិខិត",
+      name: t("memberPage.tabDocuments"),
       href: "/myAcc/documents",
     },
     {
-      name: "សកម្មភាព",
+      name: t("memberPage.tabParticipation"),
       href: "/myAcc/participation",
     },
     {
-      name: "ការធ្វើវិភាគទាន",
+      name: t("memberPage.tabDonation"),
       href: "/myAcc/donation",
     },
     {
-      name: "ការបរិច្ចាក",
+      name: t("memberPage.tabSponsor"),
       href: "/myAcc/sponsor",
     },
     {
-      name: "ផ្លាស់ប្ដូរពាក្យសម្ងាត់",
+      name: t("memberPage.tabPassword"),
       href: "/myAcc/password",
     },
   ];
