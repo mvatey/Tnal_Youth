@@ -108,7 +108,7 @@ export default function AddDonationForm() {
     String(currentMember?.role || "").toLowerCase() === "viewer";
   const isBranchScoped = ["secretary", "branch_leader"].includes(effectiveRole);
   const canManageMonthlyDonation =
-    !isViewer && ["admin", "secretary", "branch_leader"].includes(effectiveRole);
+    !isViewer && ["secretary", "branch_leader"].includes(effectiveRole);
   // A secretary/branch_leader is always scoped to exactly ONE branch — the
   // one currently active in the sidebar's global branch dropdown (see
   // BranchContext) — never a branch picked independently in this form.
@@ -538,7 +538,7 @@ const paymentSummary = useMemo(() => {
         />
       </div>
 
-      <section className="min-h-[545px] rounded-md border border-border bg-bg-page-white p-6">
+      <section className="min-h-[545px] min-w-0 rounded-md border border-border bg-bg-page-white p-4 sm:p-6">
         {error || currentMemberError ? (
           <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
             {error || currentMemberError}

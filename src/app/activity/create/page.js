@@ -692,7 +692,7 @@ export default function CreateActivityPage() {
   // (guarded below by the server-computed canManage/canManageAsInvitedBranch
   // flags), a brand-new activity has no branch yet to check against, so this
   // is a plain role check.
-  const canCreateActivity = ["ADMIN", "SECRETARY", "BRANCH_LEADER"].includes(loggedInRole);
+  const canCreateActivity = ["SECRETARY", "BRANCH_LEADER"].includes(loggedInRole);
   const {
     branches: accessibleBranches = [],
     selectedBranch: globalSelectedBranch = "all",

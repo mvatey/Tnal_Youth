@@ -47,13 +47,13 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 flex h-[82px] items-center justify-between border-b border-gray-100 bg-white/90 px-12 backdrop-blur">
+    <header className="sticky top-0 z-40 flex min-h-[72px] items-center justify-between gap-3 border-b border-gray-100 bg-white/90 px-4 py-3 backdrop-blur sm:px-6 lg:h-[82px] lg:px-12 lg:py-0">
       <div
-        className="flex items-center gap-4">
-        <Image src="/logo.png" width={55} height={55} alt="logo" className="rounded-full"/>
+        className="flex min-w-0 items-center gap-3 sm:gap-4">
+        <Image src="/logo.png" width={55} height={55} alt="logo" className="h-11 w-11 shrink-0 rounded-full sm:h-[55px] sm:w-[55px]"/>
 
-        <div>
-          <h2 className=" text-base font-bold text-[#17194d]" >
+        <div className="min-w-0">
+          <h2 className="truncate text-sm font-bold text-[#17194d] sm:text-base" >
             សមាគមថ្នាលយុវជនកម្ពុជា
           </h2>
           <p className=" text-xs text-gray-400">
@@ -79,7 +79,7 @@ export default function Header() {
           </button>
         ))}
       </nav>
-      <div className="flex items-center gap-8">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-4 lg:gap-8">
         <button
           type="button"
           aria-label="Help"
@@ -90,7 +90,7 @@ export default function Header() {
 
         <Link
           href="/auth/login"
-          className="group flex items-center gap-2 rounded-lg bg-[#4b3192] px-7 py-3 text-sm font-medium text-white shadow-lg shadow-purple-200 transition-all duration-300 hover:bg-[#392477] hover:-translate-y-0.5"
+          className="group flex items-center gap-2 rounded-lg bg-[#4b3192] px-4 py-2.5 text-xs font-medium text-white shadow-lg shadow-purple-200 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#392477] sm:px-7 sm:py-3 sm:text-sm"
         >
           ចូលប្រើប្រាស់
           <span className="transition-transform duration-300 group-hover:translate-x-1">

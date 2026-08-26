@@ -553,25 +553,25 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           </div>
         </div>
       ) : null}
-      <section className="min-h-[545px] rounded-md border border-border bg-bg-page-white p-6">
+      <section className="min-h-[545px] min-w-0 rounded-md border border-border bg-bg-page-white p-4 sm:p-6">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-base font-semibold text-secondary">{t("donationPage.eventDonationRecordTitle")}</h1>
           {savedMessage ? <p className="text-sm font-medium text-success">{savedMessage}</p> : null}
         </div>
         {error ? <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-          <div className="flex flex-wrap items-end gap-6">
-            <DonationFilterSelect label={t("donationPage.branch")} value={selectedBranch} onChange={handleBranchChange} options={branches} allLabel={t("donationPage.selectBranch")} className="w-[158px]" required disabled={isDetailPage || isBranchScoped} />
-            <DonationFilterSelect label={t("donationPage.activity")} value={selectedEvent} onChange={handleEventChange} options={eventOptions} allLabel={t("donationPage.selectActivity")} className="w-[158px]" required disabled={isDetailPage} />
+        <div className="mb-6 grid grid-cols-1 items-end gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:max-w-[360px]">
+            <DonationFilterSelect label={t("donationPage.branch")} value={selectedBranch} onChange={handleBranchChange} options={branches} allLabel={t("donationPage.selectBranch")} className="w-full" required disabled={isDetailPage || isBranchScoped} />
+            <DonationFilterSelect label={t("donationPage.activity")} value={selectedEvent} onChange={handleEventChange} options={eventOptions} allLabel={t("donationPage.selectActivity")} className="w-full" required disabled={isDetailPage} />
           </div>
           {activeTab === "members" ? (
-            <div className="flex items-center gap-3">
+            <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(220px,1fr)_auto]">
               <DonationSearchInput value={searchQuery} onChange={setSearchQuery} showLabel={false} />
               <button
                 type="button"
                 onClick={handleDownloadMembers}
                 disabled={members.length === 0}
-                className="inline-flex h-[34px] shrink-0 items-center gap-2 rounded-lg bg-secondary px-4 text-xs font-bold text-white shadow-sm transition hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-[34px] w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-secondary px-4 text-xs font-bold text-white shadow-sm transition hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
               >
                 <RiDownloadCloud2Line size={15} />
                 {t("common.download")}

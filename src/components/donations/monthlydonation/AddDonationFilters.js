@@ -19,14 +19,14 @@ export default function AddDonationFilters({
   const { t } = useLanguage();
 
   return (
-    <div className="mb-6 flex flex-wrap items-end gap-4">
+    <div className="mb-6 grid grid-cols-1 items-end gap-4 sm:grid-cols-2 xl:grid-cols-[158px_160px_160px_minmax(220px,1fr)]">
       <DonationFilterSelect
         label={t("donationPage.branch")}
         value={selectedBranch}
         onChange={onBranchChange}
         options={branches}
         allLabel={t("donationPage.selectBranch")}
-        className="w-[158px]"
+        className="w-full"
         required
         disabled={branchScoped}
         includeAllOption={!branchScoped}
@@ -44,7 +44,7 @@ export default function AddDonationFilters({
         onChange={onYearChange}
         options={years}
         allLabel={t("donationPage.selectYear")}
-        className="w-[160px]"
+        className="w-full"
         required
       />
       <DonationFilterSelect
@@ -59,7 +59,7 @@ export default function AddDonationFilters({
               ? t("donationPage.noAvailableMonth")
               : t("donationPage.selectMonth")
         }
-        className="w-[160px]"
+        className="w-full"
         required
         disabled={!selectedYear || selectedYear === "all"}
       />

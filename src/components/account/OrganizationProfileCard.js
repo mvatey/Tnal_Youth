@@ -200,7 +200,7 @@ function TextField({ label, value, onChange, required = false }) {
         value={value}
         required={required}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 h-[36px] w-full rounded-lg border border-border bg-bg-page-white px-3 text-sm text-text-primary outline-none focus:border-primary"
+        className="mt-2 h-[36px] w-full rounded-lg border border-border bg-bg-page-white px-3 text-sm font-normal text-text-secondary outline-none focus:border-primary"
       />
     </label>
   );
@@ -214,7 +214,7 @@ function TextareaField({ label, value, onChange }) {
         value={value}
         rows={4}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full resize-y rounded-lg border border-border bg-bg-page-white px-3 py-2 text-sm text-text-primary outline-none focus:border-primary"
+        className="mt-2 w-full resize-y rounded-lg border border-border bg-bg-page-white px-3 py-2 text-sm font-normal text-text-secondary outline-none focus:border-primary"
       />
     </label>
   );

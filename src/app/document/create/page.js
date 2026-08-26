@@ -81,7 +81,7 @@ export default function CreateDocumentPage() {
   const [saving, setSaving] = useState(false);
 
   const { role: loggedInRole, loading: permissionsLoading } = useMemberPermissions();
-  const canCreateDocuments = ["ADMIN", "SECRETARY", "BRANCH_LEADER"].includes(loggedInRole);
+  const canCreateDocuments = ["SECRETARY", "BRANCH_LEADER"].includes(loggedInRole);
 
   if (!permissionsLoading && !canCreateDocuments) {
     return (

@@ -12,8 +12,11 @@ return (
 id="programs"
 className="
 scroll-mt-[82px]
-px-10
-py-12
+px-4
+py-10
+sm:px-6
+lg:px-10
+lg:py-12
 "
 >
 
@@ -21,9 +24,10 @@ py-12
 
 <h2
 className="
-text-[32px]
+text-2xl
 font-extrabold
 text-[#17194d]
+sm:text-[32px]
 "
 >
 ព្រឹត្តិការណ៍ជាសាធារណៈ
@@ -45,8 +49,12 @@ text-gray-500
 className="
 mt-8
 grid
-grid-cols-5
-gap-5
+grid-cols-1
+gap-4
+sm:grid-cols-2
+lg:grid-cols-3
+xl:grid-cols-5
+xl:gap-5
 "
 >
 

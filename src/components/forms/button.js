@@ -5,22 +5,22 @@ const BUTTONS = {
   reset: {
     label: "ចាប់ផ្ដើមសារថ្មី",
     Icon: RefreshCw,
-    className: "bg-bg-page-gray border border-border text-center text-text-secondary hover:bg-bg-page-gray/70 w-[150px] h-[34px]",
+    className: "h-[34px] w-full border border-border bg-bg-page-gray text-center text-text-secondary hover:bg-bg-page-gray/70 sm:w-[150px]",
   },
   save: {
     label: "រក្សាទុក",
     Icon: HiSaveAs,
-    className: "bg-[#1F285A] text-white text-center hover:bg-[#182149] w-[196px] h-[34px]",
+    className: "h-[34px] w-full bg-[#1F285A] text-center text-white hover:bg-[#182149] sm:w-[196px]",
   },
   cancel: {
     label: "បោះបង់",
     Icon: null,
-    className: "border border-border bg-bg-page-gray text-text-secondary hover:bg-bg-page-gray/70 w-[91px] h-[34px]",
+    className: "h-[34px] w-full border border-border bg-bg-page-gray text-text-secondary hover:bg-bg-page-gray/70 sm:w-[91px]",
   },
   edit: {
     label: "កែប្រែ",
     Icon: Pencil,
-    className: "bg-[#4B2E91] text-white text-center hover:bg-[#3d2577] w-[120px] h-[34px]",
+    className: "h-[34px] w-full bg-[#4B2E91] text-center text-white hover:bg-[#3d2577] sm:w-[120px]",
   },
 };
 

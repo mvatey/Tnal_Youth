@@ -432,6 +432,7 @@ function LoginContent() {
             "Content-Type":
               "application/json",
           },
+          credentials: "include",
           body: JSON.stringify({
             phoneOrEmail:
               normalizedLogin,
@@ -483,6 +484,7 @@ function LoginContent() {
                 "application/json",
             },
             cache: "no-store",
+            credentials: "include",
           }
         );
 

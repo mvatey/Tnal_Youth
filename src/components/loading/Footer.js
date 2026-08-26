@@ -14,17 +14,22 @@ return (
 <footer
 className="
 bg-[#171d52]
-px-16
+px-4
 py-10
 text-white
+sm:px-6
+lg:px-16
 "
 >
 {/* TOP FOOTER */}
 <div
 className="
 grid
-grid-cols-[3fr_1fr_1fr_1fr]
-gap-6
+grid-cols-1
+gap-8
+sm:grid-cols-2
+lg:grid-cols-[3fr_1fr_1fr_1fr]
+lg:gap-6
 "
 >
 {/* Logo Section */}
@@ -224,13 +229,17 @@ info@cny.org.kh
 className="
 mt-8
 flex
-items-center
+flex-col
+items-start
 justify-between
+gap-4
 border-t
 border-white/10
 pt-5
 text-xs
 text-gray-400
+lg:flex-row
+lg:items-center
 "
 >
 <p>
@@ -239,7 +248,9 @@ text-gray-400
 <div
 className="
 flex
-gap-8
+flex-wrap
+gap-4
+lg:gap-8
 "
 >
 <span>លក្ខខណ្ឌប្រើប្រាស់</span>

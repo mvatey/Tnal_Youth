@@ -1,10 +1,10 @@
 "use client";
 
 const SIZE = {
-  sm: "w-[380px]",
-  md: "w-[520px]",
-  lg: "w-[700px]",
-  xl: "w-[900px]",
+  sm: "w-full sm:w-[380px]",
+  md: "w-full sm:w-[520px]",
+  lg: "w-full sm:w-[700px]",
+  xl: "w-full sm:w-[900px]",
 };
 
 export default function PopupCard({
@@ -27,13 +27,16 @@ export default function PopupCard({
         className="
           fixed
           bottom-0
-          left-64
+          left-0
           right-0
-          top-16
+          top-0
           flex
           items-center
           justify-center
-          p-4
+          p-3
+          sm:top-16
+          sm:p-4
+          lg:left-64
         "
       >
         <div
@@ -43,12 +46,14 @@ export default function PopupCard({
           className={`
             relative
             ${SIZE[size]}
-            max-h-[90vh]
+            max-h-[calc(100vh-1.5rem)]
+            sm:max-h-[90vh]
             overflow-y-auto
             rounded-2xl
             bg-bg-page-white
-            p-6
+            p-4
             shadow-xl
+            sm:p-6
             ${className}
           `}
         >

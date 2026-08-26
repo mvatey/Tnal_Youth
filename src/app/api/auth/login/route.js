@@ -190,9 +190,14 @@ export async function POST(request) {
     */
     const cookieStore = await cookies();
 
+    const requestProtocol =
+      request.headers.get("x-forwarded-proto") ||
+      request.nextUrl?.protocol?.replace(":", "") ||
+      "http";
+
     const commonCookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: requestProtocol === "https",
       sameSite: "lax",
       path: "/",
     };

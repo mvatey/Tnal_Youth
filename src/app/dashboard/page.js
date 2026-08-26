@@ -311,7 +311,7 @@ export default function DashboardPage() {
    * =========================================================
    */
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-4 overflow-x-hidden">
 
       {error && (
         <div className="rounded-xl border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
@@ -341,7 +341,7 @@ export default function DashboardPage() {
       {/* ===============================
           CHARTS
       =============================== */}
-      <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
+      <div className="grid min-w-0 grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
 
         <ActivitySummaryChart
           data={
@@ -382,7 +382,7 @@ export default function DashboardPage() {
           ACTIVITIES + QUICK ACTIONS
           + PERFORMANCE
       =============================== */}
-      <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-1 items-stretch gap-4 lg:grid-cols-3">
 
         <RecentActivities
           activities={

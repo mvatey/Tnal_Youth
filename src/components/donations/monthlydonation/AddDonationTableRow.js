@@ -43,7 +43,7 @@ function normalizeAvatarUrl(value) {
 // convention so the "green" state is unmistakable at a glance.
 const getAmountFieldClass = (value) =>
   Number(value) > 0
-    ? "border-success/40 bg-success-bg"
+    ? "border-success/30 bg-success-bg/70"
     : "border-border bg-bg-page-gray";
 
 const getAmountTextClass = (value) =>
@@ -115,6 +115,9 @@ export default function AddDonationTableRow({
   const [focusedAmountField, setFocusedAmountField] = useState(null);
   const receipt = member.receipt;
   const avatarUrl = normalizeAvatarUrl(member.avatar);
+  const amountFieldDisabledClass = readOnly
+    ? "cursor-not-allowed opacity-70"
+    : "transition-colors focus-within:border-secondary";
 
   const handleAmountInput = (callback) => (e) => {
     const value = e.target.value.replace(/[^0-9.]/g, "");
@@ -162,7 +165,7 @@ export default function AddDonationTableRow({
       {/* ចំនួនប្រាក់រៀល (editable) */}
       <td className="px-3">
         <div
-          className={`mx-auto flex h-7 w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(
+          className={`mx-auto flex h-7 w-[112px] items-center gap-1 rounded-md border px-2 ${amountFieldDisabledClass} ${getAmountFieldClass(
             member.realAmount,
           )}`}
         >
@@ -179,7 +182,7 @@ export default function AddDonationTableRow({
             )}
             onBlur={() => setFocusedAmountField(null)}
             placeholder={focusedAmountField === "realAmount" ? "" : "0"}
-            className={`w-full bg-transparent text-[13px] outline-none placeholder:text-text-mute disabled:cursor-not-allowed ${getAmountTextClass(
+            className={`w-full bg-transparent text-[13px] outline-none placeholder:text-text-mute disabled:cursor-not-allowed disabled:text-text-mute ${getAmountTextClass(
               member.realAmount,
             )}`}
           />
@@ -190,7 +193,7 @@ export default function AddDonationTableRow({
       {/* ចំនួនប្រាក់ដុល្លារ (editable) */}
       <td className="px-3">
         <div
-          className={`mx-auto flex h-7 w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(
+          className={`mx-auto flex h-7 w-[112px] items-center gap-1 rounded-md border px-2 ${amountFieldDisabledClass} ${getAmountFieldClass(
             member.dollarAmount,
           )}`}
         >
@@ -207,7 +210,7 @@ export default function AddDonationTableRow({
             )}
             onBlur={() => setFocusedAmountField(null)}
             placeholder={focusedAmountField === "dollarAmount" ? "" : "0.00"}
-            className={`w-full bg-transparent text-[13px] outline-none placeholder:text-text-mute disabled:cursor-not-allowed ${getAmountTextClass(
+            className={`w-full bg-transparent text-[13px] outline-none placeholder:text-text-mute disabled:cursor-not-allowed disabled:text-text-mute ${getAmountTextClass(
               member.dollarAmount,
             )}`}
           />

@@ -340,6 +340,7 @@ export default function ParticipationChart({
         flex
         h-full
         min-h-[340px]
+        min-w-0
         w-full
         flex-col
         rounded-[14px]
@@ -349,7 +350,7 @@ export default function ParticipationChart({
         shadow-[0_1px_2px_rgba(16,24,40,0.04),0_1px_3px_rgba(16,24,40,0.06)]
       "
     >
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <h3 className="m-0 text-[15px] font-semibold text-text-primary">
           {t("dashboard.monthlyParticipation")}
         </h3>
@@ -364,7 +365,7 @@ export default function ParticipationChart({
       {loading && !data ? (
         <ChartSkeleton />
       ) : (
-        <div className="relative min-h-0 flex-1 pb-2">
+        <div className="relative min-h-0 min-w-0 flex-1 pb-2">
           <ResponsiveContainer
             width="100%"
             height="100%"

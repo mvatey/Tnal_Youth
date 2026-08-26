@@ -257,8 +257,8 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
 
   return (
     <PopupCard size="lg" onClose={onClose} className="no-scrollbar">
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-lg font-bold text-primary">
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <h2 className="min-w-0 text-base font-bold leading-7 text-primary sm:text-lg">
           {isEditing ? t("usersPage.editUserAccount") : t("usersPage.createUserAccount")}
         </h2>
 

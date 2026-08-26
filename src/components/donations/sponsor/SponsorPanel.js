@@ -296,7 +296,7 @@ export default function SponsorPanel({
   }, [showDownloadAlert, showSaveAlert]);
 
   return (
-    <section className="min-h-[650px] rounded-md border border-border bg-bg-page-white px-7 py-4 shadow-sm">
+    <section className="min-h-[650px] min-w-0 rounded-md border border-border bg-bg-page-white px-4 py-4 shadow-sm sm:px-7">
       {showDownloadAlert && (
         <div className="fixed right-6 top-6 z-[100]">
           <AddAlert message={t("common.downloadSuccess")} />
@@ -378,8 +378,8 @@ export default function SponsorPanel({
         )}
       </div>
 
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[980px] border-collapse border border-border">
+      <div className="mt-4 overflow-x-auto rounded-lg border border-border bg-bg-page-white shadow-sm">
+        <table className="w-full min-w-[980px] border-collapse">
           <thead>
             <tr className="h-12 border-b border-border bg-bg-page-gray text-center text-xs font-medium text-text-secondary">
               {visibleHeaders.map((header, index) => (

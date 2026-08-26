@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
 
-const DEFAULT_ACTIONS = [
+const CREATE_ACTIONS = [
   {
     id: "program",
     label: "បង្កើតកម្មវិធី",
@@ -90,18 +90,10 @@ const VIEWER_ACTIONS = [
   },
 ];
 
-const HOVER_STYLES = {
-  program: "hover:bg-success-bg hover:text-success",
-  branch: "hover:bg-primary-light hover:text-primary",
-  activity: "hover:bg-secondary-light hover:text-secondary",
-  member: "hover:bg-warning-bg hover:text-warning",
-  "view-activities": "hover:bg-success-bg hover:text-success",
-
-  "view-branch": "hover:bg-primary-light hover:text-primary",
-  "view-activity": "hover:bg-secondary-light hover:text-secondary",
-  "view-program": "hover:bg-success-bg hover:text-success",
-  "view-member": "hover:bg-warning-bg hover:text-warning",
-};
+const ADMIN_ACTIONS = [
+  ...VIEWER_ACTIONS.filter((action) => action.id !== "view-member"),
+  CREATE_ACTIONS.find((action) => action.id === "member"),
+].filter(Boolean);
 
 export default function QuickActions() {
   const { user, authLoading } = useAuth();
@@ -110,7 +102,12 @@ export default function QuickActions() {
 
   const role = normalizeRole(user?.role);
 
-  const actions = role === "viewer" ? VIEWER_ACTIONS : DEFAULT_ACTIONS;
+  const actions =
+    role === "viewer"
+      ? VIEWER_ACTIONS
+      : role === "admin"
+        ? ADMIN_ACTIONS
+        : CREATE_ACTIONS;
 
   if (authLoading) {
     return (
@@ -123,12 +120,12 @@ export default function QuickActions() {
   }
 
   return (
-    <div className="app-card flex h-full flex-col rounded-xl border border-border bg-bg-page-white p-4">
+    <div className="app-card flex h-full min-w-0 flex-col rounded-xl border border-border bg-bg-page-white p-4">
       <h3 className="mb-4 text-sm font-semibold text-text-primary">
         {t("dashboard.quickActions")}
       </h3>
 
-      <div className={`grid flex-1 content-center gap-3 ${actions.length === 2 ? "grid-cols-1" : "grid-cols-2"}`}>
+      <div className={`grid flex-1 content-center gap-3 ${actions.length === 2 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}>
         {actions.map((action) => {
           const Icon = action.icon;
 
@@ -136,7 +133,7 @@ export default function QuickActions() {
             <Link
               key={action.id}
               href={action.href}
-              className={`flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-xs font-medium transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm ${action.bg} ${action.color} ${HOVER_STYLES[action.id]}`}
+              className={`flex min-w-0 items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-xs font-medium transition-all duration-200 hover:-translate-y-0.5 hover:border-secondary/30 hover:bg-bg-page-gray hover:shadow-sm ${action.bg} ${action.color}`}
             >
               <Icon size={16} strokeWidth={2} />
               {t(action.labelKey, action.label)}

@@ -233,8 +233,8 @@ export default function Table({
   };
 
   return (
-    <div>
-      <div className="overflow-x-auto rounded-sm border border-border bg-bg-page-white">
+    <div className="min-w-0">
+      <div className="overflow-x-auto rounded-lg border border-border bg-bg-page-white shadow-sm">
         <table className="w-full min-w-[980px] border-collapse">
           <AddDonationTableHeader hideDob={hideDob} hideAction={!rowEditMode} />
           <tbody>

@@ -121,15 +121,15 @@ export default function EventDonationBranchTotals({
   }
 
   return (
-    <section className="min-h-[300px] rounded-md border border-border bg-bg-page-white p-6">
+    <section className="min-h-[300px] rounded-lg border border-border bg-bg-page-white p-4 shadow-sm sm:p-6">
       {error ? (
         <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
           {error}
         </div>
       ) : null}
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] border-collapse border border-border">
+      <div className="overflow-x-auto rounded-lg border border-border bg-bg-page-white">
+        <table className="w-full min-w-[720px] border-collapse">
           <thead>
             <tr className="h-12 border-b border-border bg-bg-page-gray text-center text-xs font-medium text-text-secondary">
               {headers.map((header) => (

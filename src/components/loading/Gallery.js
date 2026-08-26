@@ -6,17 +6,21 @@ export default function Gallery() {
       id="charity"
       className="
       scroll-mt-[82px]
-      px-10
-      py-12
+      px-4
+      py-10
+      sm:px-6
+      lg:px-10
+      lg:py-12
       "
     >
       {/* Title */}
       <h2
         className="
         mt-10
-        text-[32px]
+        text-2xl
         font-extrabold
         text-[#17194d]
+        sm:text-[32px]
         "
       >
         សកម្មភាពសប្បុរសធម៌របស់យើង
@@ -35,8 +39,11 @@ export default function Gallery() {
         className="
         mt-8
         grid
-        grid-cols-4
-        gap-5
+        grid-cols-1
+        gap-4
+        sm:grid-cols-2
+        lg:grid-cols-4
+        lg:gap-5
         "
       >
         {gallery.map((item, index) => (
@@ -44,7 +51,8 @@ export default function Gallery() {
             key={index}
             className="
               group
-              h-[250px]
+              h-[220px]
+              sm:h-[250px]
               overflow-hidden
               rounded-xl
               "
