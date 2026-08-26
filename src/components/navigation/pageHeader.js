@@ -31,11 +31,11 @@ export default function PageHeader() {
   const Icon = ICON_MAP[current.icon];
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="w-8 h-8 rounded-md bg-primary-light flex items-center justify-center flex-shrink-0">
+    <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+      <div className="hidden h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-primary-light sm:flex">
         {Icon && <Icon size={16} className="text-primary" />}
       </div>
-      <h1 className="text-base font-bold text-text-primary">
+      <h1 className="min-w-0 truncate text-sm font-bold leading-tight text-text-primary sm:text-base">
         {t(current.labelKey, current.label)}
       </h1>
     </div>

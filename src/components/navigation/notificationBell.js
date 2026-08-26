@@ -130,7 +130,7 @@ export default function NotificationBell({
   return (
     <Link
       href="/notification"
-      className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border transition hover:bg-bg-page-gray"
+      className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border transition hover:bg-bg-page-gray"
     >
       <Bell
         size={18}

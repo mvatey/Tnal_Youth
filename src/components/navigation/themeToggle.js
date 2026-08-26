@@ -12,12 +12,13 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="flex items-center h-9 gap-1.5 border border-border rounded-full pl-1 pr-3 text-sm hover:bg-bg-page-gray transition"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-sm transition hover:bg-bg-page-gray sm:w-auto sm:gap-1.5 sm:pl-1 sm:pr-3"
+      aria-label="Toggle light or dark theme"
     >
-      <span className="w-6 h-6 rounded-full bg-bg-page-gray flex items-center justify-center">
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-bg-page-gray">
         {theme === "light" ? <Sun size={14} className="text-secondary" /> : <Moon size={14} className="text-secondary" />}
       </span>
-      <span className="text-text-primary font-medium">Light/Dark</span>
+      <span className="hidden font-medium text-text-primary sm:inline">Light/Dark</span>
     </button>
   );
 }
