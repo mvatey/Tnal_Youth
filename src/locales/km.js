@@ -1114,6 +1114,8 @@ const km = {
     branchesToInvite: "សាខាដែលត្រូវអញ្ជើញ",
     selectActivityStatus: "ជ្រើសរើសស្ថានភាពកម្មវិធី",
     cancelThisActivity: "បោះបង់កម្មវិធីនេះ",
+    cancellationReason: "មូលហេតុនៃការលុបចោល",
+    cancellationReasonPlaceholder: "សូមបញ្ចូលមូលហេតុនៃការលុបចោលកម្មវិធីនេះ...",
     statusAutoNote: "ស្ថានភាពគណនាដោយស្វ័យប្រវត្តិតាមកាលបរិច្ឆេទ",
     income: "ចំណូល",
     expense: "ចំណាយ",

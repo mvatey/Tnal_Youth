@@ -682,6 +682,7 @@ export default function CreateActivityPage() {
   // still under manual control, via this explicit toggle rather than a
   // free-pick status dropdown.
   const [isCancelled, setIsCancelled] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState("");
   // An untouched schedule must be sent back exactly as the server gave it to
   // us. Rebuilding it from a browser Date can otherwise shift the day.
   const scheduleChangedRef = useRef({
@@ -891,6 +892,7 @@ export default function CreateActivityPage() {
             setEditingActivity(normalized);
             setForm(createInitialForm(normalized));
             setIsCancelled(getOptionCode(normalized.status) === "CANCELLED");
+            setCancellationReason(normalized.cancellationReason || "");
             scheduleChangedRef.current = {
               startDate: false,
               endDate: false,
@@ -1302,6 +1304,7 @@ export default function CreateActivityPage() {
         locationName: form.location || null,
         address: form.address.trim() || null,
         googleMapUrl: form.mapLink.trim() || null,
+        cancellationReason: isCancelled ? cancellationReason.trim() || null : null,
         capacity: editingActivity?.capacity || null,
         coverImageId: editingActivity?.coverImageId || null,
       };
@@ -1729,6 +1732,21 @@ export default function CreateActivityPage() {
                   />
                   {t("activityPage.cancelThisActivity")}
                 </label>
+              )}
+
+              {isEditMode && isCancelled && (
+                <div className="mt-2">
+                  <label className="mb-1.5 block text-sm font-medium text-text-secondary">
+                    {t("activityPage.cancellationReason")}
+                  </label>
+                  <textarea
+                    value={cancellationReason}
+                    onChange={(event) => setCancellationReason(event.target.value)}
+                    placeholder={t("activityPage.cancellationReasonPlaceholder")}
+                    rows={3}
+                    className="w-full resize-none rounded-lg border border-border bg-bg-page-white px-3 py-2 text-sm text-text-primary outline-none"
+                  />
+                </div>
               )}
             </div>
           </div>
