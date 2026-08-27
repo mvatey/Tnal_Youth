@@ -139,8 +139,9 @@ function StatMiniCard({
         style={{
           display: "flex",
           flex: 1,
-          alignItems: "center",
-          gap: 8,
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: 4,
         }}
       >
         <span
