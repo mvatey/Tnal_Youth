@@ -443,13 +443,29 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   const handleSave = async (rows) => {
     if (!canEdit) { setError(t("donationPage.noEditPermission")); return false; }
     const completed = rows.filter((row) => Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0);
+    // Resetting a saved row to zero means remove that contribution. Without
+    // this, a reload merges the old database record back into the table.
+    const removedRows = rows.filter(
+      (row) =>
+        row.donationId &&
+        Number(row.realAmount || 0) <= 0 &&
+        Number(row.dollarAmount || 0) <= 0,
+    );
     if (!donationTypeId) { setError(t("donationPage.missingEventDonationType")); return false; }
     if (selectedBranch === "all" || selectedEvent === "all") { setError(t("donationPage.selectBranchAndActivity")); return false; }
-    if (completed.length === 0) { setError(t("donationPage.memberAmountRequired")); return false; }
+    if (completed.length === 0 && removedRows.length === 0) { setError(t("donationPage.memberAmountRequired")); return false; }
 
     setSaving(true);
     setError("");
     try {
+      await Promise.all(
+        removedRows.map((row) =>
+          fetchJson(`/api/backend/donations/${encodeURIComponent(row.donationId)}`, {
+            method: "DELETE",
+          }),
+        ),
+      );
+
       const savedRows = await Promise.all(completed.map((row) => {
         // Resolve the CURRENT dropdown selection first, then fall back to
         // the loaded id. Table.js clears paymentMethodId whenever the user
@@ -517,9 +533,15 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
         lastSavedMembersRef.current = updated;
         return updated;
       });
-      setSavedMessage(t("donationPage.savedMemberCount").replace("{count}", completed.length));
+      setSavedMessage(
+        t("donationPage.savedMemberCount").replace(
+          "{count}",
+          completed.length + removedRows.length,
+        ),
+      );
       setShowSaveAlert(true);
       setHasUnsavedEdits(false);
+      window.dispatchEvent(new Event("tnal-youth:donations-updated"));
       if (!isDetailPage) window.setTimeout(() => router.push(listPath), 500);
       return true;
     } catch (saveError) {

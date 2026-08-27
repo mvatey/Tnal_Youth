@@ -20,6 +20,13 @@ export default function EventDonationDetailCards() {
   const searchParams = useSearchParams();
   const activityId = searchParams.get("event");
   const [branchTotals, setBranchTotals] = useState([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const refresh = () => setRefreshKey((value) => value + 1);
+    window.addEventListener("tnal-youth:donations-updated", refresh);
+    return () => window.removeEventListener("tnal-youth:donations-updated", refresh);
+  }, []);
 
   useEffect(() => {
     if (!activityId) {
@@ -55,7 +62,7 @@ export default function EventDonationDetailCards() {
     return () => {
       cancelled = true;
     };
-  }, [activityId]);
+  }, [activityId, refreshKey]);
 
   const summary = useMemo(
     () =>

@@ -376,8 +376,17 @@ const paymentSummary = useMemo(() => {
     const completed = rows.filter(
       (row) => Number(row.realAmount) > 0 || Number(row.dollarAmount) > 0,
     );
+    // A reset changes the visible amount to zero. Existing donations with
+    // zero on this save must be removed; otherwise their old value returns
+    // when the page reloads.
+    const removedRows = rows.filter(
+      (row) =>
+        row.donationId &&
+        Number(row.realAmount || 0) <= 0 &&
+        Number(row.dollarAmount || 0) <= 0,
+    );
 
-    if (completed.length === 0) {
+    if (completed.length === 0 && removedRows.length === 0) {
       setSavedMessage(t("donationPage.memberAmountRequired"));
       return false;
     }
@@ -412,6 +421,15 @@ const paymentSummary = useMemo(() => {
     setError("");
 
     try {
+      await Promise.all(
+        removedRows.map((row) =>
+          fetchJson(
+            `/api/backend/donations/monthly/${encodeURIComponent(row.donationId)}`,
+            { method: "DELETE" },
+          ),
+        ),
+      );
+
       if (newRows.length > 0) {
         const items = newRows.map((row) => {
           const method = resolveMethod(row);
@@ -485,8 +503,14 @@ const paymentSummary = useMemo(() => {
         ),
       );
 
-      setSavedMessage(t("donationPage.savedMemberCount").replace("{count}", completed.length));
+      setSavedMessage(
+        t("donationPage.savedMemberCount").replace(
+          "{count}",
+          completed.length + removedRows.length,
+        ),
+      );
       setHasUnsavedEdits(false);
+      window.dispatchEvent(new Event("tnal-youth:donations-updated"));
       return true;
     } catch (saveError) {
       setError(saveError.message || t("donationPage.saveMonthlyDonationFailed"));

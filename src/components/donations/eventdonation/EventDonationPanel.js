@@ -32,6 +32,13 @@ export default function EventDonationPanel({
   const [organizerBranchNames, setOrganizerBranchNames] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const refresh = () => setRefreshKey((value) => value + 1);
+    window.addEventListener("tnal-youth:donations-updated", refresh);
+    return () => window.removeEventListener("tnal-youth:donations-updated", refresh);
+  }, []);
 
   const selectedBranch = controlledSelectedBranch ?? internalSelectedBranch;
   const setSelectedBranch = onBranchChange ?? setInternalSelectedBranch;
@@ -150,7 +157,7 @@ export default function EventDonationPanel({
     }
     loadRows();
     return () => { cancelled = true; };
-  }, [hasSelectedBranch, organizerBranchNames, selectedBranch]);
+  }, [hasSelectedBranch, organizerBranchNames, selectedBranch, refreshKey]);
 
   const filteredRows = useMemo(() => rows.filter((row) => {
     const query = searchQuery.trim().toLowerCase();

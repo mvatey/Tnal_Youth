@@ -19,6 +19,7 @@ export default function Table({
   onCancel,
   onSave,
   onReceiptSave,
+  readOnly = false,
 }) {
   const [rows, setRows] = useState(members);
   const [currentPage, setCurrentPage] = useState(1);
@@ -209,6 +210,7 @@ const updateRow = (id, values) => {
                   }
                   onShowInfo={setSelectedReceiptMember}
                   onRemoveReceipt={handleReceiptRemove}
+                  readOnly={readOnly}
                 />
               ))
             ) : (
@@ -232,6 +234,7 @@ const updateRow = (id, values) => {
         onReset={handleReset}
         onCancel={onCancel}
         onSave={() => onSave?.(filteredRows)}
+        readOnly={readOnly}
       />
 
       {selectedReceiptMember && (

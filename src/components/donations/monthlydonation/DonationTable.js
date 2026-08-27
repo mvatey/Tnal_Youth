@@ -130,6 +130,13 @@ export default function DonationTable() {
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [showSaveAlert, setShowSaveAlert] = useState(false);
   const [moneySort, setMoneySort] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const refresh = () => setRefreshKey((value) => value + 1);
+    window.addEventListener("tnal-youth:donations-updated", refresh);
+    return () => window.removeEventListener("tnal-youth:donations-updated", refresh);
+  }, []);
 
   const years = useMemo(() => [...new Set(rows.map((row) => row.year))], [rows]);
   const months = useMemo(
@@ -314,7 +321,7 @@ export default function DonationTable() {
     }
     loadRows();
     return () => { cancelled = true; };
-  }, [currentMemberLoading, isBranchScoped, isMemberScoped, effectiveBranchId, locale, t]);
+  }, [currentMemberLoading, isBranchScoped, isMemberScoped, effectiveBranchId, locale, t, refreshKey]);
 
   useEffect(() => {
     if (!showDownloadAlert && !showSaveAlert) return undefined;

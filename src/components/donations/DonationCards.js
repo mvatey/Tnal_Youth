@@ -64,6 +64,13 @@ export default function DonationCards() {
   ]);
 
   const [summary, setSummary] = useState({ totalUsd: 0, donors: 0 });
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const refresh = () => setRefreshKey((value) => value + 1);
+    window.addEventListener("tnal-youth:donations-updated", refresh);
+    return () => window.removeEventListener("tnal-youth:donations-updated", refresh);
+  }, []);
 
   useEffect(() => {
     // Wait for the current member to resolve so a branch-scoped user
@@ -123,7 +130,7 @@ export default function DonationCards() {
       });
 
     return () => { cancelled = true; };
-  }, [currentMemberLoading, isBranchScoped, isMemberScoped, scopedBranchId]);
+  }, [currentMemberLoading, isBranchScoped, isMemberScoped, scopedBranchId, refreshKey]);
 
   return (
     <div className="grid max-w-[540px] grid-cols-1 gap-4 sm:grid-cols-2">

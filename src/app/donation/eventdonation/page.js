@@ -139,6 +139,13 @@ export default function EventDonationPage() {
   const [rows, setRows] = useState([]);
   const [myRows, setMyRows] = useState([]);
   const [error, setError] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const refresh = () => setRefreshKey((value) => value + 1);
+    window.addEventListener("tnal-youth:donations-updated", refresh);
+    return () => window.removeEventListener("tnal-youth:donations-updated", refresh);
+  }, []);
 
   useEffect(() => {
     if (currentMemberLoading) return undefined;
@@ -193,6 +200,7 @@ export default function EventDonationPage() {
     isMemberScoped,
     isBranchScoped,
     effectiveBranchId,
+    refreshKey,
   ]);
 
   const branchRows = useMemo(() => rows.filter((row) =>
