@@ -92,6 +92,7 @@ const km = {
     saveExpenseFailed: "មិនអាចរក្សាទុកចំណាយកម្មវិធីបានទេ។",
     eventDonationTitle: "វិភាគទានក្នុងកម្មវិធី",
     eventDonationRecordTitle: "ការកត់ត្រាវិភាគទានក្នុងកម្មវិធី",
+    sponsorAmountInActivities: "ថវិកាឧបត្ថម្ភក្នុងកម្មវិធី",
     searchActivityPlaceholder: "ស្វែងរកតាមឈ្មោះកម្មវិធី ...",
     branch: "សាខា",
     selectBranch: "ជ្រើសរើសសាខា",

@@ -183,17 +183,7 @@ function formatDonationValue(
       donations?.amount_usd
     ) || 0;
 
-  const amountKhr =
-    Number(
-      donations?.amountKhr ??
-      donations?.amount_khr
-    ) || 0;
-
-  if (amountUsd > 0) {
-    return `$${amountUsd.toLocaleString()}`;
-  }
-
-  return `${amountKhr.toLocaleString()}៛`;
+  return `$${amountUsd.toLocaleString()}`;
 }
 
 export default function PerformanceSummary({
@@ -250,8 +240,7 @@ export default function PerformanceSummary({
 
       growth:
         Number(
-          donations?.changePercentUsd ??
-          donations?.changePercentKhr
+          donations?.changePercent
         ) || 0,
     },
 

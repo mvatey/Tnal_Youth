@@ -92,6 +92,7 @@ const en = {
     saveExpenseFailed: "Could not save activity expenses.",
     eventDonationTitle: "Activity donations",
     eventDonationRecordTitle: "Record activity donations",
+    sponsorAmountInActivities: "Sponsor funds in activities",
     searchActivityPlaceholder: "Search by activity name ...",
     branch: "Branch",
     selectBranch: "Select branch",

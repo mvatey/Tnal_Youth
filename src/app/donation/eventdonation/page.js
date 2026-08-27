@@ -26,7 +26,13 @@ function mapMyEventRow(row) {
   };
 }
 
-async function fetchAllActivityDonationRows(branchId, fallbackMessage) {
+/**
+ * Every donation row for this branch scope, unfiltered by type -- callers
+ * derive whichever subset they need (activity-typed rows, sponsor rows
+ * earmarked for an activity, etc.) so the same paginated fetch isn't
+ * repeated per subset.
+ */
+async function fetchAllDonationRows(branchId, fallbackMessage) {
   const makeParams = (page) => {
     const params = new URLSearchParams({
       page: String(page),
@@ -61,20 +67,35 @@ async function fetchAllActivityDonationRows(branchId, fallbackMessage) {
       )
     : [];
 
-  return firstItems
-    .concat(
-      ...remainingPages.map((page) =>
-        Array.isArray(page?.items) ? page.items : [],
-      ),
-    )
-    .filter(
-      (row) =>
-        String(row?.typeCode || "").toUpperCase() ===
-          "ACTIVITY_DONATION" ||
-        // Compatibility fallback for older rows/API versions where typeCode
-        // was not exposed yet. Activity donations always carry activityId.
-        (!row?.typeCode && row?.activityId),
-    );
+  return firstItems.concat(
+    ...remainingPages.map((page) =>
+      Array.isArray(page?.items) ? page.items : [],
+    ),
+  );
+}
+
+function isActivityDonationRow(row) {
+  return (
+    String(row?.typeCode || "").toUpperCase() === "ACTIVITY_DONATION" ||
+    // Compatibility fallback for older rows/API versions where typeCode
+    // was not exposed yet. Activity donations always carry activityId.
+    (!row?.typeCode && row?.activityId)
+  );
+}
+
+// A sponsor can also earmark their donation for a specific activity -- that
+// row is typed SPONSOR_DONATION (not ACTIVITY_DONATION), so it's excluded
+// from isActivityDonationRow() above and from the sponsor tab's own count
+// unless that tab separately filters for it. It's still just one row in the
+// donations table either way (see the dashboard-total explanation): this
+// helper exists only so the "sponsor funds in activities" assurance card
+// can show which slice of sponsor money already sits inside the activity
+// total above -- never to be added a second time on top of it.
+function isSponsorDonationForActivityRow(row) {
+  return (
+    String(row?.typeCode || "").toUpperCase() === "SPONSOR_DONATION" &&
+    Boolean(row?.activityId)
+  );
 }
 
 function MyEventDonationsTable({ rows }) {
@@ -184,7 +205,7 @@ export default function EventDonationPage() {
     if (isBranchScoped && !effectiveBranchId) return undefined;
 
     setRows([]);
-    fetchAllActivityDonationRows(
+    fetchAllDonationRows(
       isBranchScoped ? effectiveBranchId : null,
       t("donationPage.loadEventDonationsFailed"),
     )
@@ -206,13 +227,21 @@ export default function EventDonationPage() {
   const branchRows = useMemo(() => rows.filter((row) =>
     selectedBranch === "all" || String(row.branchId) === String(selectedBranch),
   ), [rows, selectedBranch]);
-  const memberCount = new Set(branchRows.filter((row) => row.memberId).map((row) => row.memberId)).size;
-  const sponsorCount = new Set(branchRows.filter((row) => !row.memberId).map((row) => `${row.sponsorId || row.donorName || row.id}`)).size;
-  const totalDollar = branchRows.reduce((total, row) => {
+  const activityDonationRows = branchRows.filter(isActivityDonationRow);
+  const sponsorInActivityRows = branchRows.filter(isSponsorDonationForActivityRow);
+  const memberCount = new Set(activityDonationRows.filter((row) => row.memberId).map((row) => row.memberId)).size;
+  const sponsorCount = new Set(activityDonationRows.filter((row) => !row.memberId).map((row) => `${row.sponsorId || row.donorName || row.id}`)).size;
+  const sumTotalDollar = (donationRows) => donationRows.reduce((total, row) => {
     const storedTotal = Number(row.totalAmountUsd);
     if (Number.isFinite(storedTotal)) return total + storedTotal;
     return total + Number(row.amountUsd || 0) + Number(row.amountKhr || 0) / Number(row.exchangeRateKhrPerUsd || 4000);
   }, 0);
+  const totalDollar = sumTotalDollar(activityDonationRows);
+  // Assurance figure only -- this money is already part of totalDollar
+  // above (a sponsor-for-activity row is still one row, counted once).
+  // Never add this on top of totalDollar; it exists so a tester can see
+  // which slice of it came specifically from sponsors.
+  const sponsorInActivityDollar = sumTotalDollar(sponsorInActivityRows);
   const myTotalDollar = myRows.reduce((total, row) => total + parseMoney(row.dollarAmount), 0);
 
   const handleBranchChange = (branch) => {
@@ -258,6 +287,12 @@ export default function EventDonationPage() {
         <NumberSponsorCard
           label={t("memberPage.tabSponsor")}
           value={`${sponsorCount} ${t("donationPage.personUnit")}`}
+          growth=""
+          note=""
+        />
+        <NumberSponsorCard
+          label={t("donationPage.sponsorAmountInActivities")}
+          value={`$${sponsorInActivityDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
           growth=""
           note=""
         />

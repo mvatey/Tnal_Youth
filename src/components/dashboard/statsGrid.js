@@ -159,14 +159,6 @@ function formatCardValue(key, stat) {
 }
 
 function getChangePercent(key, stat) {
-  if (key === "donations") {
-    return (
-      Number(
-        stat?.changePercentUsd
-      ) || 0
-    );
-  }
-
   return (
     Number(stat?.changePercent) || 0
   );
