@@ -98,7 +98,7 @@ function SummaryCard({
         className={`h-[3px] w-full ${accent}`}
       />
 
-      <div className="flex min-w-0 flex-wrap items-center gap-3 p-4 sm:flex-nowrap">
+      <div className="flex min-w-0 items-center gap-3 p-4">
         <div
           className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBg}`}
         >
@@ -107,7 +107,7 @@ function SummaryCard({
           />
         </div>
 
-        <div className="min-w-0 flex-1 basis-[120px]">
+        <div className="min-w-0 flex-1">
           <div className="mb-0.5 text-sm text-text-primary">
             {label}
           </div>
@@ -115,31 +115,31 @@ function SummaryCard({
           <div className="truncate text-lg font-bold text-text-primary sm:text-xl">
             {value}
           </div>
-        </div>
 
-        {showGrowth && (
-          <div className="hidden min-w-0 shrink-0 flex-col items-end gap-1 sm:flex">
-            <div
-              className={`flex min-w-0 items-center gap-1 text-xs font-semibold sm:text-sm ${
-                isUp
-                  ? "text-success"
-                  : "text-error"
-              }`}
-            >
-              <span>
-                {isUp ? "↑" : "↓"}
+          {showGrowth && (
+            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
+              <span
+                className={`flex items-center gap-1 text-xs font-semibold ${
+                  isUp
+                    ? "text-success"
+                    : "text-error"
+                }`}
+              >
+                <span>
+                  {isUp ? "↑" : "↓"}
+                </span>
+
+                <span>
+                  {Math.abs(normalizedChange)}%
+                </span>
               </span>
 
-              <span className="max-w-[110px] truncate sm:max-w-[92px]">
-                {Math.abs(normalizedChange)}%
+              <span className="text-xs text-text-mute">
+                {t("dashboard.thisMonth")}
               </span>
             </div>
-
-            <span className="text-xs text-text-mute">
-              {t("dashboard.thisMonth")}
-            </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
