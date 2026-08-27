@@ -6,6 +6,7 @@ import AddDonationActions from "../donations/monthlydonation/AddDonationActions"
 import AddDonationTableHeader from "../donations/monthlydonation/AddDonationTableHeader";
 import AddDonationTableRow from "../donations/monthlydonation/AddDonationTableRow";
 import UploadPopup from "../forms/popup";
+import ResetConfirmModal from "../popup/ResetConfirmModal";
 import { useLanguage } from "@/context/LanguageContext";
 
 const ROWS_PER_PAGE = 11;
@@ -46,6 +47,7 @@ export default function Table({
   const [selectedReceiptMember, setSelectedReceiptMember] = useState(null);
   const [editingRowId, setEditingRowId] = useState(null);
   const [editingSnapshot, setEditingSnapshot] = useState(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const receiptUrlsRef = useRef(new Set());
 
   useEffect(() => {
@@ -185,7 +187,7 @@ export default function Table({
     onReceiptSave?.(id, null);
   };
 
-  const handleReset = () => {
+  const performReset = () => {
     const resettableRows = filteredRows.filter((member) => !isRowLocked?.(member));
     const resetIds = new Set(resettableRows.map((member) => member.id));
     const resetRows = resettableRows.map((member) => ({
@@ -286,12 +288,21 @@ export default function Table({
 
       {!rowEditMode && !readOnly && (
         <AddDonationActions
-          onReset={handleReset}
+          onReset={() => setShowResetConfirm(true)}
           onCancel={onCancel}
           onSave={() => onSave?.(filteredRows)}
           readOnly={readOnly}
         />
       )}
+
+      <ResetConfirmModal
+        open={showResetConfirm}
+        onCancel={() => setShowResetConfirm(false)}
+        onConfirm={() => {
+          setShowResetConfirm(false);
+          performReset();
+        }}
+      />
 
       {selectedReceiptMember && (
         <UploadPopup

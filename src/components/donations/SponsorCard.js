@@ -19,10 +19,12 @@ export default function SponsorCard({
               <p className="mt-1 truncate text-[14px] font-medium leading-none text-text-primary">{value}</p>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
-              <span className="flex items-center text-[10px] font-medium leading-none text-emerald-500">
-                <ArrowUp size={12} strokeWidth={3} />
-                {growth}
-              </span>
+              {growth && (
+                <span className="flex items-center text-[10px] font-medium leading-none text-emerald-500">
+                  <ArrowUp size={12} strokeWidth={3} />
+                  {growth}
+                </span>
+              )}
               <span className="text-[10px] font-medium leading-none text-text-primary">{note}</span>
             </div>
           </div>

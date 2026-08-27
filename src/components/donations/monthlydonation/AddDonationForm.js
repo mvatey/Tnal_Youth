@@ -485,7 +485,7 @@ const paymentSummary = useMemo(() => {
         ),
       );
 
-      setSavedMessage(t("donationPage.savedMemberCount", { count: completed.length }));
+      setSavedMessage(t("donationPage.savedMemberCount").replace("{count}", completed.length));
       setHasUnsavedEdits(false);
       return true;
     } catch (saveError) {

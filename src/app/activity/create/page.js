@@ -31,6 +31,7 @@ import { useBranch } from "@/context/BranchContext";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import useMemberPermissions from "@/hooks/useMemberPermissions";
 import { useLanguage } from "@/context/LanguageContext";
+import { activityStatusLabel } from "@/lib/activityStatusLabels";
 
 const BRANCH_OPTIONS = [
   "ភ្នំពេញ",
@@ -96,6 +97,44 @@ function convertToDate(dateValue) {
   const date = new Date(dateValue);
 
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+// Local Date object for comparison purposes only -- distinct from
+// combineDateAndTime further below, which returns an ISO string (with
+// timezone offset) for the actual save payload. Kept separate rather than
+// reusing that one so a parsing change on either side can't silently
+// break the other.
+function combineDateAndTimeAsDate(dateValue, timeValue) {
+  const base = convertToDate(dateValue);
+  if (!base) return null;
+
+  const result = new Date(base);
+  const match = String(timeValue || "").match(/^(\d{1,2}):(\d{2})/);
+
+  if (match) {
+    result.setHours(Number(match[1]), Number(match[2]), 0, 0);
+  } else {
+    result.setHours(0, 0, 0, 0);
+  }
+
+  return result;
+}
+
+// Mirrors getEffectiveActivityStatus on the Activity list page (see
+// src/app/activity/page.js) so what this form previews/saves an activity
+// as always matches what the list page will display it as afterward.
+// Returns null until both dates are filled in.
+function computeEffectiveStatusCode(startDate, startTime, endDate, endTime) {
+  const start = combineDateAndTimeAsDate(startDate, startTime);
+  const end = combineDateAndTimeAsDate(endDate, endTime);
+
+  if (!start || !end) return null;
+
+  const now = Date.now();
+
+  if (now >= end.getTime()) return "COMPLETED";
+  if (now >= start.getTime()) return "ONGOING";
+  return "UPCOMING";
 }
 
 function formatDate(dateValue) {
@@ -637,6 +676,12 @@ export default function CreateActivityPage() {
   const isEditMode = Boolean(editId);
   const [editingActivity, setEditingActivity] = useState(null);
   const [form, setForm] = useState(() => createInitialForm(null));
+  // The activity's status is otherwise entirely auto-derived from its
+  // dates (see computeEffectiveStatusCode below) -- CANCELLED is the one
+  // state that can never be derived from a date, so it's the only thing
+  // still under manual control, via this explicit toggle rather than a
+  // free-pick status dropdown.
+  const [isCancelled, setIsCancelled] = useState(false);
   // An untouched schedule must be sent back exactly as the server gave it to
   // us. Rebuilding it from a browser Date can otherwise shift the day.
   const scheduleChangedRef = useRef({
@@ -683,16 +728,6 @@ export default function CreateActivityPage() {
   const isInvitedBranchOnly =
     isEditMode && !canManage && canManageAsInvitedBranch;
 
-  const incomeBranchId = isInvitedBranchOnly
-    ? invitedBranchId
-    : (editingActivity?.branchId ?? editingActivity?.branch_id ?? null);
-
-  const activityIncomeHref =
-    isEditMode && incomeBranchId != null
-      ? `/donation/eventdonation/detail?event=${encodeURIComponent(editId)}&branch=${encodeURIComponent(incomeBranchId)}`
-      : isEditMode
-        ? `/donation/eventdonation/detail?event=${encodeURIComponent(editId)}`
-        : null;
   const invitedBranchLabel = getOptionLabel(
     lookupData.branches.find(
       (option) => getOptionValue(option) === invitedBranchId,
@@ -774,12 +809,21 @@ export default function CreateActivityPage() {
   const typeOptions = lookupData.types.map(localizedOptionLabel).filter(Boolean);
   const sectorOptions = lookupData.sectors.map(localizedOptionLabel).filter(Boolean);
   const visibilityOptions = [t("activityPage.publicVisibility"), t("activityPage.internalVisibility")];
-  // Draft is assigned automatically to a new activity; Cancelled is a
-  // workflow result, not something a user should choose from this form.
-  const statusOptions = lookupData.statuses
-    .filter((option) => !["DRAFT", "CANCELLED"].includes(getOptionCode(option)))
-    .map(localizedOptionLabel)
-    .filter(Boolean);
+  // Status is no longer a free pick -- it's derived straight from the
+  // dates/times above (see computeEffectiveStatusCode), the same way the
+  // Activity list page computes what badge to show. CANCELLED is the one
+  // exception, since no date makes an activity cancelled -- that stays a
+  // manual toggle (isCancelled) instead of a dropdown option.
+  const autoStatusCode = computeEffectiveStatusCode(
+    form.startDate,
+    form.startTime,
+    form.endDate,
+    form.endTime,
+  );
+  const displayStatusCode = isCancelled ? "CANCELLED" : autoStatusCode;
+  const displayStatusLabel = displayStatusCode
+    ? activityStatusLabel(displayStatusCode, t)
+    : t("activityPage.selectActivityStatus");
 
   useEffect(() => {
     let cancelled = false;
@@ -846,6 +890,7 @@ export default function CreateActivityPage() {
           if (!cancelled) {
             setEditingActivity(normalized);
             setForm(createInitialForm(normalized));
+            setIsCancelled(getOptionCode(normalized.status) === "CANCELLED");
             scheduleChangedRef.current = {
               startDate: false,
               endDate: false,
@@ -1205,34 +1250,30 @@ export default function CreateActivityPage() {
         const value = getOptionValue(match);
         return Number.isFinite(value) && value > 0 ? value : null;
       };
-      const selectedStatusOption = lookupData.statuses.find(
-        (option) => (locale === "en"
-          ? (option.labelEn || option.label_en || option.labelKm || option.label_km)
-          : (option.labelKm || option.label_km || option.labelEn || option.label_en)) === form.status,
-      );
-      const shouldComplete = getOptionCode(selectedStatusOption) === "COMPLETED";
+      // displayStatusCode is derived from the dates/isCancelled toggle above
+      // -- no more free-pick dropdown to match a label against.
       const currentStatusId = getOptionValue(editingActivity?.status);
       const draftStatusId = getOptionValue(
         lookupData.statuses.find((option) => getOptionCode(option) === "DRAFT"),
       );
-      // "ស្ថានភាព" (status) has no specific alert in validateForm above --
-      // rather than force every create to explicitly pick a status, an
-      // unselected one (getOptionValue returns NaN, not null/undefined, for
-      // a not-found option -- so this can't just be a "?? draftStatusId")
-      // silently falls back to DRAFT, same as a brand new activity
-      // implicitly is until someone marks it otherwise.
-      const explicitStatusId = getOptionValue(selectedStatusOption);
-      const fallbackStatusId =
-        Number.isFinite(explicitStatusId) && explicitStatusId > 0
-          ? explicitStatusId
-          : draftStatusId;
-      const saveStatusId = shouldComplete
-        ? Number.isFinite(currentStatusId) &&
-          currentStatusId > 0 &&
-          getOptionCode(editingActivity?.status) !== "COMPLETED"
-          ? currentStatusId
-          : draftStatusId
-        : fallbackStatusId;
+      const alreadyCompleted = getOptionCode(editingActivity?.status) === "COMPLETED";
+      // COMPLETED can only be reached through the dedicated /complete
+      // endpoint (called further below, after this save succeeds) -- the
+      // backend rejects it in a plain create/update payload. Submit
+      // whatever status is already valid here instead (the activity's
+      // current one when editing, DRAFT for a brand-new one) and let
+      // shouldComplete finish the transition afterward.
+      const shouldComplete = displayStatusCode === "COMPLETED" && !alreadyCompleted;
+      const codeToSubmit = displayStatusCode === "COMPLETED" ? null : displayStatusCode;
+      const idForCode = codeToSubmit
+        ? getOptionValue(lookupData.statuses.find((option) => getOptionCode(option) === codeToSubmit))
+        : null;
+      const saveStatusId =
+        Number.isFinite(idForCode) && idForCode > 0
+          ? idForCode
+          : Number.isFinite(currentStatusId) && currentStatusId > 0
+            ? currentStatusId
+            : draftStatusId;
       const scheduleIsUnchanged =
         isEditMode &&
         !Object.values(scheduleChangedRef.current).some(Boolean);
@@ -1661,13 +1702,35 @@ export default function CreateActivityPage() {
               placeholder={t("activityPage.selectBranchFirst")}
             />
 
-            <FormSelect
-              label={t("memberPage.status")}
-              value={form.status}
-              onChange={(event) => setValue("status", event.target.value)}
-              placeholder={t("activityPage.selectActivityStatus")}
-                options={statusOptions}
-            />
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-text-secondary">
+                {t("memberPage.status")}
+              </label>
+
+              <div
+                className={`flex h-[34px] w-full items-center rounded-lg border border-border bg-bg-page-gray px-3 text-sm ${
+                  displayStatusCode ? "text-text-primary" : "text-text-mute"
+                }`}
+              >
+                {displayStatusLabel}
+              </div>
+
+              <p className="mt-1 text-xs text-text-mute">
+                {t("activityPage.statusAutoNote")}
+              </p>
+
+              {isEditMode && (
+                <label className="mt-2 flex items-center gap-2 text-sm text-text-secondary">
+                  <input
+                    type="checkbox"
+                    checked={isCancelled}
+                    onChange={(event) => setIsCancelled(event.target.checked)}
+                    className="h-4 w-4 rounded border-border"
+                  />
+                  {t("activityPage.cancelThisActivity")}
+                </label>
+              )}
+            </div>
           </div>
           </fieldset>
 
@@ -1682,25 +1745,36 @@ export default function CreateActivityPage() {
               </button>
             )}
 
-            {isEditMode ? (
-              <Link href={activityIncomeHref} className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90">
-                {t("activityPage.income")}
-              </Link>
-            ) : (
-              <button type="button" disabled title={t("activityPage.saveActivityFirst")} className="flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white opacity-60">
-                {t("activityPage.income")}
-              </button>
-            )}
+            {/* Income/expense are only ever clickable from the activity's
+                own detail page (/activity/[id]) — managing money for an
+                activity that's still being created, or that you're
+                mid-edit on (dates/status could still change), belongs to
+                a stable, already-saved view, not this form. */}
+            <button
+              type="button"
+              disabled
+              title={
+                isEditMode
+                  ? t("activityPage.manageIncomeExpenseFromDetail")
+                  : t("activityPage.saveActivityFirst")
+              }
+              className="flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white opacity-60"
+            >
+              {t("activityPage.income")}
+            </button>
 
-            {isEditMode ? (
-              <Link href={`/activity/create/expense?activityId=${editId}`} className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90">
-                {t("activityPage.expense")}
-              </Link>
-            ) : (
-              <button type="button" disabled title={t("activityPage.saveActivityFirst")} className="flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white opacity-60">
-                {t("activityPage.expense")}
-              </button>
-            )}
+            <button
+              type="button"
+              disabled
+              title={
+                isEditMode
+                  ? t("activityPage.manageIncomeExpenseFromDetail")
+                  : t("activityPage.saveActivityFirst")
+              }
+              className="flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white opacity-60"
+            >
+              {t("activityPage.expense")}
+            </button>
           </div>
 
           {canInviteMoreMembers && (

@@ -16,6 +16,17 @@ export default function BranchSwitchConfirmModal({
   onCancel,
   onDiscard,
   onSave,
+  // Overridable so the same "unsaved changes" pattern can be reused
+  // outside the branch-switch context (e.g. switching tabs mid-edit on
+  // the event-donation detail page) without the copy still talking about
+  // branches. Defaults keep the original branch-switch wording exactly
+  // as-is for BranchContext's own usage.
+  title = "មានទិន្នន័យមិនទាន់រក្សាទុក",
+  message = "អ្នកកំពុងកែប្រែទិន្នន័យនៅសាខាបច្ចុប្បន្ន។ ប្តូរសាខាឥឡូវនេះ នឹងបោះបង់ការកែប្រែដែលមិនទាន់រក្សាទុក។ តើអ្នកចង់រក្សាទុកជាមុន ឬបោះបង់ ហើយប្តូរសាខា?",
+  saveLabel = "រក្សាទុក ហើយប្តូរសាខា",
+  savingLabel = "កំពុងរក្សាទុក...",
+  discardLabel = "បោះបង់ការកែប្រែ ហើយប្តូរសាខា",
+  cancelLabel = "បន្តកែប្រែសាខានេះ",
 }) {
   if (!open) return null;
 
@@ -40,13 +51,11 @@ export default function BranchSwitchConfirmModal({
         </div>
 
         <h2 className="mb-2 text-lg font-bold text-text-primary">
-          មានទិន្នន័យមិនទាន់រក្សាទុក
+          {title}
         </h2>
 
         <p className="mb-6 text-sm text-text-secondary">
-          អ្នកកំពុងកែប្រែទិន្នន័យនៅសាខាបច្ចុប្បន្ន។ ប្តូរសាខាឥឡូវនេះ
-          នឹងបោះបង់ការកែប្រែដែលមិនទាន់រក្សាទុក។
-          តើអ្នកចង់រក្សាទុកជាមុន ឬបោះបង់ ហើយប្តូរសាខា?
+          {message}
         </p>
 
         {error ? (
@@ -72,7 +81,7 @@ export default function BranchSwitchConfirmModal({
               disabled:opacity-60
             "
           >
-            {busy ? "កំពុងរក្សាទុក..." : "រក្សាទុក ហើយប្តូរសាខា"}
+            {busy ? savingLabel : saveLabel}
           </button>
 
           <button
@@ -92,7 +101,7 @@ export default function BranchSwitchConfirmModal({
               disabled:opacity-60
             "
           >
-            បោះបង់ការកែប្រែ ហើយប្តូរសាខា
+            {discardLabel}
           </button>
 
           <button
@@ -112,7 +121,7 @@ export default function BranchSwitchConfirmModal({
               disabled:opacity-60
             "
           >
-            បន្តកែប្រែសាខានេះ
+            {cancelLabel}
           </button>
         </div>
       </div>

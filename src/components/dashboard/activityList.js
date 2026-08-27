@@ -465,12 +465,20 @@ export function RecentActivities({
   const { t } =
     useLanguage();
 
+  const router =
+    useRouter();
+
   return (
     <ActivityListCard
       title={t("dashboard.recentActivities")}
       activities={activities}
       loading={loading}
       variant="completed"
+      onViewAll={() =>
+        router.push(
+          "/activity?status=completed"
+        )
+      }
     />
   );
 }
@@ -482,12 +490,20 @@ export function UpcomingActivities({
   const { t } =
     useLanguage();
 
+  const router =
+    useRouter();
+
   return (
     <ActivityListCard
       title={t("dashboard.upcomingActivities")}
       activities={activities}
       loading={loading}
       variant="upcoming"
+      onViewAll={() =>
+        router.push(
+          "/activity?status=upcoming"
+        )
+      }
     />
   );
 }

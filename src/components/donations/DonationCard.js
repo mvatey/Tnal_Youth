@@ -42,10 +42,12 @@ export default function DonationCard({ label, value, growth, note, variant = "bl
             </div>
 
             <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
-              <span className={`flex items-center text-[10px] font-medium leading-none ${style.accent}`}>
-                <FaArrowUp size={10} />
-                {growth}
-              </span>
+              {growth && (
+                <span className={`flex items-center text-[10px] font-medium leading-none ${style.accent}`}>
+                  <FaArrowUp size={10} />
+                  {growth}
+                </span>
+              )}
               <span className="text-[10px] font-medium leading-none text-text-primary">{note}</span>
             </div>
           </div>

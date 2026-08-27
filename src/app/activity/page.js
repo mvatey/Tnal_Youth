@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, List, PlusCircle, XCircle } from "lucide-react";
 
@@ -17,6 +18,7 @@ import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import { useAuth } from "@/context/AuthContext";
 import { normalizeRole } from "@/lib/navigation";
 import { useLanguage } from "@/context/LanguageContext";
+import { activityStatusLabel } from "@/lib/activityStatusLabels";
 
 function getLookupLabel(lookup, locale = "km") {
   return (
@@ -201,6 +203,7 @@ export default function ActivityPage() {
   const { t, label, locale } = useLanguage();
   const { user } = useAuth();
   const role = normalizeRole(user?.role);
+  const searchParams = useSearchParams();
 
   const canCreateActivity =
   role === "secretary" ||
@@ -230,6 +233,31 @@ export default function ActivityPage() {
 
   const [selectedType, setSelectedType] =
     useState("all");
+
+  // Same effective status values getEffectiveActivityStatus/StatusBadge
+  // already compute (upcoming, ongoing, completed, cancelled) mapped to
+  // their displayed label -- the type/sector filters below compare against
+  // the rendered label too (item.type/item.sector are already localized),
+  // so this stays consistent with that pattern instead of introducing a
+  // separate value/label shape FilterBar doesn't support. Sourced from
+  // activityStatusLabels.js so this can't drift from the Create/Edit
+  // form's own status field again.
+  const STATUS_LABEL_BY_CODE = {
+    upcoming: activityStatusLabel("UPCOMING", t),
+    ongoing: activityStatusLabel("ONGOING", t),
+    completed: activityStatusLabel("COMPLETED", t),
+    cancelled: activityStatusLabel("CANCELLED", t),
+  };
+
+  // Pre-filtered when arriving via the dashboard's "មើលទាំងអស់" (View All)
+  // link on the Recent/Upcoming activity cards — see
+  // components/dashboard/activityList.js, which passes ?status=completed
+  // or ?status=upcoming.
+  const [selectedStatus, setSelectedStatus] =
+    useState(() => {
+      const fromUrl = String(searchParams.get("status") || "").toLowerCase();
+      return STATUS_LABEL_BY_CODE[fromUrl] ?? "all";
+    });
 
   const [selectedDateRange, setSelectedDateRange] =
     useState([null, null]);
@@ -505,12 +533,17 @@ export default function ActivityPage() {
         (selectedScope === "own" && item.ownBranch === true) ||
         (selectedScope === "invited" && item.ownBranch === false);
 
+      const matchesStatus =
+        selectedStatus === "all" ||
+        STATUS_LABEL_BY_CODE[item.status] === selectedStatus;
+
       return (
         matchesSearch &&
         matchesSector &&
         matchesType &&
         matchesDate &&
-        matchesScope
+        matchesScope &&
+        matchesStatus
       );
     });
   }, [
@@ -519,6 +552,7 @@ export default function ActivityPage() {
     selectedType,
     selectedDateRange,
     selectedScope,
+    selectedStatus,
     branchScopedActivities,
   ]);
 
@@ -688,6 +722,13 @@ export default function ActivityPage() {
       onChange: setSelectedSector,
       placeholder: t("activityPage.sector"),
       options: sectors,
+    },
+    {
+      key: "status",
+      value: selectedStatus,
+      onChange: setSelectedStatus,
+      placeholder: t("memberPage.status"),
+      options: Object.values(STATUS_LABEL_BY_CODE),
     },
     {
       key: "date",

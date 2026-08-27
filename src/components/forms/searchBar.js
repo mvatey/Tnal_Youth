@@ -13,7 +13,7 @@ export default function DonationSearchInput({ value, onChange, showLabel = true 
         className="min-w-0 flex-1 bg-transparent pr-2 text-[12px] font-medium outline-none focus:placeholder-transparent"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder={t("donationPage.searchMemberPlaceholder")}
+        placeholder={t("common.searchMemberPlaceholder")}
         />
         <Search size={16} className="text-text-secondary" />
       </span>

@@ -35,7 +35,7 @@ export default function Button({
   const { t } = useLanguage();
   const { label: defaultLabel, Icon, className } = BUTTONS[action];
   const translatedLabel = {
-    reset: t("donationPage.reset"),
+    reset: t("common.reset"),
     save: t("donationPage.save"),
     cancel: t("donationPage.cancel"),
     edit: t("donationPage.editDonation"),

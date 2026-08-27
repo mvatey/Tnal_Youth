@@ -573,7 +573,7 @@ export default async function ActivityDetailPage({
 
     mapLink:
       record.googleMapUrl ||
-      "#",
+      null,
 
     mapImage:
       "/map.png",
@@ -1059,26 +1059,32 @@ export default async function ActivityDetailPage({
           </h3>
 
           <div className="flex-1 rounded-xl border border-border bg-bg-page-white p-5">
-            <a
-              href={
-                activity.mapLink ||
-                "#"
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block h-[190px] overflow-hidden rounded-lg bg-bg-page-gray"
-            >
-              <Image
-                src={
-                  activity.mapImage ||
-                  "/map.jpg"
-                }
-                width={500}
-                height={220}
-                className="h-full w-full rounded-lg object-cover transition-opacity hover:opacity-90"
-                alt="map"
-              />
-            </a>
+            {activity.mapLink ? (
+              <a
+                href={activity.mapLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block h-[190px] overflow-hidden rounded-lg bg-bg-page-gray"
+              >
+                <Image
+                  src={
+                    activity.mapImage ||
+                    "/map.jpg"
+                  }
+                  width={500}
+                  height={220}
+                  className="h-full w-full rounded-lg object-cover transition-opacity hover:opacity-90"
+                  alt="map"
+                />
+              </a>
+            ) : (
+              <div className="flex h-[190px] flex-col items-center justify-center gap-2 rounded-lg bg-bg-page-gray text-text-secondary">
+                <MapPin size={24} className="text-text-secondary" />
+                <span className="text-sm">
+                  {t("activityPage.noMapLinkYet")}
+                </span>
+              </div>
+            )}
 
             <p className="mt-3 flex items-start gap-2 text-sm text-text-secondary">
               <MapPin

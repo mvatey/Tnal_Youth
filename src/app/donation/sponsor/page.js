@@ -169,6 +169,7 @@ export default function SponsorPage() {
         <SponsorCard
           value={`$${Number(summary.overallTotalUsd || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
           growth=""
+          note=""
         />
         <DonorCard
           label={isPersonalMember ? t("donationPage.myRecordCount") : t("donationPage.sponsorsTotal")}

@@ -384,9 +384,9 @@ async function handleSave() {
       <div className="w-full max-w-5xl rounded-xl bg-bg-page-white p-5 shadow-xl">
 
         {/* SEARCH + FILTERS */}
-        <div className="mb-4 flex items-center gap-3">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
 
-          <div className="relative flex-1">
+          <div className="relative w-full sm:flex-1">
             <input
               value={query}
               onChange={(event) =>
@@ -450,8 +450,8 @@ async function handleSave() {
         </div>
 
         {/* TABLE */}
-        <div className="max-h-[430px] overflow-y-auto rounded-lg border border-border">
-          <table className="w-full table-fixed border-collapse text-[12px] text-text-secondary">
+        <div className="max-h-[430px] overflow-x-auto overflow-y-auto rounded-lg border border-border">
+          <table className="w-full min-w-[680px] table-fixed border-collapse text-[12px] text-text-secondary">
 
             <thead className="sticky top-0 z-10 bg-bg-page-white">
               <tr className="h-11 border-b border-border font-medium text-text-secondary">

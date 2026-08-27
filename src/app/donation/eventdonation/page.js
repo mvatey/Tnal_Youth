@@ -5,8 +5,6 @@ import DonationTabs from "@/components/donations/DonationTabs";
 import EventDonationSummaryCard from "@/components/donations/EventDonationSummaryCard";
 import DonorCard from "@/components/donations/DonorCard";
 import EventDonationPanel from "@/components/donations/eventdonation/EventDonationPanel";
-import EventDonationDetailForm from "@/components/donations/eventdonation/EventDonationDetailForm";
-import SponsorPanel from "@/components/donations/sponsor/SponsorPanel";
 import MemberCard from "@/components/donations/eventdonation/membercard";
 import NumberSponsorCard from "@/components/donations/eventdonation/sponsorcard";
 import useCurrentMember from "@/hooks/useCurrentMember";
@@ -123,16 +121,10 @@ export default function EventDonationPage() {
   const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
   const viewRole = currentMember?.effectiveRole || currentMember?.role;
   const isMemberScoped = viewRole === "member";
-  // Only entry staff (secretary / branch_leader) may open the bulk "record
-  // donations for members" flow — admin/viewer are view-only.
-  const canManage = !currentMember?.isViewer && ["secretary", "branch_leader"].includes(currentMember?.role);
-  // Branch-scoping is a broader set than canManage: a viewer/secretary or
-  // viewer/branch_leader (viewRole resolves their viewerScope through
-  // effectiveRole) is just as much locked to one branch as the real role —
-  // they just can't write. Using canManage here left those two accounts
-  // looking unscoped, so their branch filter stayed on the empty "choose a
-  // branch" placeholder instead of locking to the one branch they actually
-  // have.
+  // A viewer/secretary or viewer/branch_leader (viewRole resolves their
+  // viewerScope through effectiveRole) is just as locked to one branch as
+  // the real role, even though they can't write — so this checks viewRole,
+  // not the raw (write-capable-only) role.
   const isBranchScoped = ["secretary", "branch_leader"].includes(viewRole);
   const { branches: accessibleBranches = [], selectedBranch: globalSelectedBranch = "all" } = useBranch();
   const effectiveBranchId = useMemo(() => {
@@ -142,7 +134,6 @@ export default function EventDonationPage() {
     return currentMember?.branchId ? String(currentMember.branchId) : null;
   }, [isBranchScoped, globalSelectedBranch, accessibleBranches, currentMember?.branchId]);
 
-  const [selectedPeopleCard, setSelectedPeopleCard] = useState(null);
   const [internalSelectedBranch, setInternalSelectedBranch] = useState("all");
   const selectedBranch = isBranchScoped ? (effectiveBranchId ?? "all") : internalSelectedBranch;
   const [rows, setRows] = useState([]);
@@ -222,7 +213,6 @@ export default function EventDonationPage() {
     // effectiveBranchId above); the panels below are rendered with their
     // own branch filter locked (branchScoped) for this role.
     if (!isBranchScoped) setInternalSelectedBranch(branch);
-    setSelectedPeopleCard(null);
   };
 
   if (isMemberScoped) {
@@ -264,22 +254,11 @@ export default function EventDonationPage() {
           note=""
         />
       </div>
-      {selectedPeopleCard === "members" && canManage ? (
-        <EventDonationDetailForm initialQuery={{ branch: selectedBranch }} onCancel={() => setSelectedPeopleCard(null)} />
-      ) : selectedPeopleCard === "sponsors" ? (
-        <SponsorPanel
-          selectedBranch={selectedBranch}
-          onBranchChange={handleBranchChange}
-          showAddButton={false}
-          branchScoped={isBranchScoped}
-        />
-      ) : (
-        <EventDonationPanel
-          selectedBranch={selectedBranch}
-          onBranchChange={handleBranchChange}
-          branchScoped={isBranchScoped}
-        />
-      )}
+      <EventDonationPanel
+        selectedBranch={selectedBranch}
+        onBranchChange={handleBranchChange}
+        branchScoped={isBranchScoped}
+      />
     </div>
   );
 }

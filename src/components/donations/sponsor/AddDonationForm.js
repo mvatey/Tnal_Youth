@@ -381,7 +381,7 @@ const paymentSummary = useMemo(
 
     // Stay on the page (the rest of this month's sponsors are still right
     // there) rather than navigating away after a bulk save.
-    setSavedMessage(t("donationPage.savedMemberCount", { count: completed.length }));
+    setSavedMessage(t("donationPage.savedMemberCount").replace("{count}", completed.length));
     setHasUnsavedEdits(false);
     return true;
   };

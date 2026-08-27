@@ -121,7 +121,7 @@ export default function EventDonationBranchTotals({
   }
 
   return (
-    <section className="min-h-[300px] rounded-lg border border-border bg-bg-page-white p-4 shadow-sm sm:p-6">
+    <section className="min-h-[300px]">
       {error ? (
         <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
           {error}

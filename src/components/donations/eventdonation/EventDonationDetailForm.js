@@ -8,6 +8,7 @@ import Table from "@/components/tables/table";
 import EventDonationBranchTotals from "./EventDonationBranchTotals";
 import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
 import SponsorPanel from "@/components/donations/sponsor/SponsorPanel";
+import BranchSwitchConfirmModal from "@/components/popup/BranchSwitchConfirmModal";
 import { Check, X } from "lucide-react";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch, useBranchChangeGuard } from "@/context/BranchContext";
@@ -89,6 +90,36 @@ function mergeSavedDonations(memberItems, donations, selectedBranch) {
   });
 }
 
+// True only when at least one row's actual amount/payment details differ
+// from what's on record (lastSavedMembersRef) -- not just "onRowsChange
+// fired at some point." Without this, typing into a field and then
+// clearing it back to the original value (or Table.js's own internal
+// row-edit bookkeeping) still latched hasUnsavedEdits permanently true,
+// so the tab-switch guard fired on every click, not just real edits.
+function rowsDifferFromSaved(rows, savedRows) {
+  const savedById = new Map(savedRows.map((row) => [row.id, row]));
+
+  return rows.some((row) => {
+    const saved = savedById.get(row.id);
+    const currentKhr = Number(row.realAmount || 0);
+    const currentUsd = Number(row.dollarAmount || 0);
+    const savedKhr = Number(saved?.realAmount || 0);
+    const savedUsd = Number(saved?.dollarAmount || 0);
+
+    if (currentKhr !== savedKhr || currentUsd !== savedUsd) return true;
+
+    // Amounts match (including the "no saved donation, still 0" case) --
+    // only a real payment-method/reference edit on an already-saved row
+    // still counts as a change.
+    if (!saved) return false;
+
+    return (
+      normalizePaymentMethodCode(row.paymentMethod) !== normalizePaymentMethodCode(saved.paymentMethod) ||
+      (row.paymentReference || "") !== (saved.paymentReference || "")
+    );
+  });
+}
+
 export default function EventDonationDetailForm({ initialQuery = {}, onCancel }) {
   const { t } = useLanguage();
   const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
@@ -166,6 +197,17 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   // confirmation guard: switching branches mid-entry with nothing typed
   // just follows the sidebar silently, same as before.
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
+  // The tab key the user clicked while hasUnsavedEdits was true -- holds
+  // off actually switching until they pick Save / Discard / Cancel in the
+  // confirm modal below (same "don't silently lose typed amounts" pattern
+  // useBranchChangeGuard already applies to the sidebar's branch switch).
+  const [pendingTab, setPendingTab] = useState(null);
+  // The last server-confirmed snapshot of `members` -- refreshed whenever
+  // rows are freshly loaded and after every successful save. "Discard and
+  // switch tab" resets to this instead of an empty/zeroed table, so
+  // whatever was actually saved last is still there if the user comes
+  // back to the Member tab.
+  const lastSavedMembersRef = useRef([]);
 
   // Clears the whole in-progress entry -- selected activity, tab, search,
   // rows, dirty flag -- back to a fresh start. Called whenever the branch
@@ -177,6 +219,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     setActiveTab("members");
     setSearchQuery("");
     setMembers([]);
+    lastSavedMembersRef.current = [];
     setHasUnsavedEdits(false);
   }
 
@@ -308,6 +351,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   useEffect(() => {
     if (selectedBranch === "all" || selectedEvent === "all") {
       setMembers([]);
+      lastSavedMembersRef.current = [];
       return undefined;
     }
     let cancelled = false;
@@ -357,11 +401,13 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           paymentMethodId: paymentMethods[0]?.id,
           paymentReference: "",
         }));
-        setMembers(mergeSavedDonations(
+        const merged = mergeSavedDonations(
           memberItems,
           Array.isArray(donationItems) ? donationItems : [],
           selectedBranch,
-        ));
+        );
+        setMembers(merged);
+        lastSavedMembersRef.current = merged;
       })
       .catch((loadError) => {
         if (!cancelled) {
@@ -458,15 +504,19 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           saved,
         ]),
       );
-      setMembers((current) => current.map((row) => {
-        const saved = savedByMember.get(String(row.memberId));
-        return saved ? {
-          ...row,
-          donationId: saved.id,
-          paidAt: saved.paidAt,
-          expectedUpdatedAt: saved.updatedAt,
-        } : row;
-      }));
+      setMembers((current) => {
+        const updated = current.map((row) => {
+          const saved = savedByMember.get(String(row.memberId));
+          return saved ? {
+            ...row,
+            donationId: saved.id,
+            paidAt: saved.paidAt,
+            expectedUpdatedAt: saved.updatedAt,
+          } : row;
+        });
+        lastSavedMembersRef.current = updated;
+        return updated;
+      });
       setSavedMessage(t("donationPage.savedMemberCount").replace("{count}", completed.length));
       setShowSaveAlert(true);
       setHasUnsavedEdits(false);
@@ -538,6 +588,30 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
 
   return (
     <>
+      <BranchSwitchConfirmModal
+        open={pendingTab !== null}
+        busy={saving}
+        error={pendingTab !== null ? error : ""}
+        title="មិនទាន់រក្សាទុក"
+        message="តើរក្សាទុកមុនប្តូរផ្ទាំង?"
+        saveLabel="រក្សាទុក"
+        discardLabel="កុំរក្សាទុក"
+        cancelLabel="បោះបង់"
+        onCancel={() => setPendingTab(null)}
+        onDiscard={() => {
+          setMembers(lastSavedMembersRef.current);
+          setHasUnsavedEdits(false);
+          setActiveTab(pendingTab);
+          setPendingTab(null);
+        }}
+        onSave={async () => {
+          const saved = await handleSave(members);
+          if (saved) {
+            setActiveTab(pendingTab);
+            setPendingTab(null);
+          }
+        }}
+      />
       {showSaveAlert ? (
         <div className="pointer-events-none fixed left-1/2 top-6 z-[70] w-[min(92vw,560px)] -translate-x-1/2">
           <div
@@ -612,7 +686,13 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => {
+                  if (activeTab === "members" && hasUnsavedEdits && tab.key !== activeTab) {
+                    setPendingTab(tab.key);
+                    return;
+                  }
+                  setActiveTab(tab.key);
+                }}
                 className={`rounded-md px-3 py-1.5 transition ${
                   activeTab === tab.key
                     ? "bg-secondary text-white"
@@ -641,10 +721,14 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
             readOnly={!canEdit}
             onRowsChange={(rows) => {
               setMembers(rows);
-              setHasUnsavedEdits(true);
+              setHasUnsavedEdits(rowsDifferFromSaved(rows, lastSavedMembersRef.current));
             }}
             onReset={() => {
-              setMembers((rows) => rows.map((row) => ({ ...row, realAmount: "0", dollarAmount: "0" })));
+              // Table.js already zeroed every row's amount and pushed that
+              // through onRowsChange above (which just flagged this as
+              // dirty via rowsDifferFromSaved) -- this only clears that
+              // flag back to clean, matching the confirm-gated "start
+              // over" intent: a deliberate blank slate, not a pending edit.
               setHasUnsavedEdits(false);
             }}
             onCancel={onCancel || (() => router.push(listPath))}
@@ -674,6 +758,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
             selectedBranch={selectedBranch}
             branchScoped
             readOnly
+            embedded
           />
         ) : null}
       </section>

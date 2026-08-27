@@ -91,6 +91,13 @@ export default function SponsorPanel({
   // view of this same data scoped to one activity, not a place to manage
   // sponsor donations (that stays in the main "ថវិកាឧបត្ថម្ភ" module).
   readOnly = false,
+  // True when the caller (EventDonationDetailForm's Sponsor tab) already
+  // renders its own bordered card around this panel — without this, the
+  // panel's own border/shadow/padding nested inside that outer card
+  // produced a visibly "double-boxed" look the Member/Branch tabs don't
+  // have. Standalone callers (donation/sponsor, donation/eventdonation)
+  // leave this false and keep the panel's own card.
+  embedded = false,
 }) {
   const { t, label, locale } = useLanguage();
   const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
@@ -296,7 +303,13 @@ export default function SponsorPanel({
   }, [showDownloadAlert, showSaveAlert]);
 
   return (
-    <section className="min-h-[650px] min-w-0 rounded-md border border-border bg-bg-page-white px-4 py-4 shadow-sm sm:px-7">
+    <section
+      className={
+        embedded
+          ? "min-h-[300px] min-w-0"
+          : "min-h-[650px] min-w-0 rounded-md border border-border bg-bg-page-white px-4 py-4 shadow-sm sm:px-7"
+      }
+    >
       {showDownloadAlert && (
         <div className="fixed right-6 top-6 z-[100]">
           <AddAlert message={t("common.downloadSuccess")} />
