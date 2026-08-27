@@ -1114,6 +1114,8 @@ const en = {
     branchesToInvite: "Branches to invite",
     selectActivityStatus: "Select activity status",
     cancelThisActivity: "Cancel this activity",
+    cancellationReason: "Cancellation reason",
+    cancellationReasonPlaceholder: "Enter the reason this activity is being cancelled...",
     statusAutoNote: "Status is calculated automatically from the dates",
     income: "Income",
     expense: "Expense",

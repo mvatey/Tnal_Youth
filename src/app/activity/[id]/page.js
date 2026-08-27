@@ -21,6 +21,7 @@ import {
 } from "@/lib/i18n";
 
 import {
+  AlertTriangle,
   Banknote,
   CalendarDays,
   CheckCircle2,
@@ -572,6 +573,10 @@ export default async function ActivityDetailPage({
         record.endsAt,
       ),
 
+    cancellationReason:
+      record.cancellationReason ||
+      null,
+
     branch:
       (locale === "en" ? branch?.labelEn : branch?.labelKm) ||
       (locale === "en" ? branch?.labelKm : branch?.labelEn) ||
@@ -943,6 +948,17 @@ export default async function ActivityDetailPage({
               {statusLabel}
             </span>
           </StatusRow>
+
+          {activity.status === "cancelled" && activity.cancellationReason && (
+            <StatusRow
+              icon={AlertTriangle}
+              label={t("activityPage.cancellationReason")}
+            >
+              <span className="text-sm font-semibold text-danger">
+                {activity.cancellationReason}
+              </span>
+            </StatusRow>
+          )}
 
           <StatusRow
             icon={Eye}
