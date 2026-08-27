@@ -72,18 +72,37 @@ function formatDate(value, locale = "km") {
   }).format(date);
 }
 
+function getCambodiaClock(value) {
+  if (!value) return null;
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: "Asia/Phnom_Penh",
+  }).formatToParts(date);
+
+  const hour = Number(parts.find((part) => part.type === "hour")?.value);
+  const minute = parts.find((part) => part.type === "minute")?.value;
+
+  return Number.isFinite(hour) && minute ? { hour, minute } : null;
+}
+
 function formatTime(value, locale = "km") {
   if (!value) {
     return "-";
   }
 
-  // Keep the clock value exactly as entered in the edit form. Converting this
-  // ISO value through the server timezone can shift it before rendering.
-  const match = String(value).match(/T(\d{2}):(\d{2})/);
-  if (!match) return "-";
+  const clock = getCambodiaClock(value);
+  if (!clock) return "-";
 
-  const hour = Number(match[1]);
-  const minute = match[2];
+  const { hour, minute } = clock;
   const hour12 = hour % 12 || 12;
   const suffix = hour >= 12 ? "PM" : "AM";
   return `${String(hour12).padStart(2, "0")}:${minute} ${suffix}`;

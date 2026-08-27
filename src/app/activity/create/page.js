@@ -99,6 +99,31 @@ function convertToDate(dateValue) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+// The API returns an instant (for example, with +07:00 or Z). Always turn it
+// into the Cambodia wall-clock value before placing it back in the edit form.
+// This must match the detail page formatter exactly.
+function getCambodiaTimeInput(value) {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value).slice(11, 16);
+  }
+
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: "Asia/Phnom_Penh",
+  }).formatToParts(date);
+
+  const hour = parts.find((part) => part.type === "hour")?.value;
+  const minute = parts.find((part) => part.type === "minute")?.value;
+
+  return hour && minute ? `${hour}:${minute}` : String(value).slice(11, 16);
+}
+
 // Local Date object for comparison purposes only -- distinct from
 // combineDateAndTime further below, which returns an ISO string (with
 // timezone offset) for the actual save payload. Kept separate rather than
@@ -215,21 +240,15 @@ function combineDateAndTime(dateValue, timeValue) {
   const safeHours = Number.isFinite(hours) ? hours : 0;
   const safeMinutes = Number.isFinite(minutes) ? minutes : 0;
 
-  // Do not use toISOString() here. It converts the selected local calendar
-  // day into UTC, which can make the backend save/display the following day
-  // after an activity is edited. Send the local calendar date and its actual
-  // browser timezone offset instead.
+  // Activities always use Cambodia local time. Do not depend on the browser
+  // timezone: someone opening the system from another country must still
+  // save the same Cambodia calendar date and clock time.
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   const hour = String(safeHours).padStart(2, "0");
   const minute = String(safeMinutes).padStart(2, "0");
-  const offsetMinutes = -date.getTimezoneOffset();
-  const offsetSign = offsetMinutes >= 0 ? "+" : "-";
-  const offsetHours = String(Math.floor(Math.abs(offsetMinutes) / 60)).padStart(2, "0");
-  const offsetRemainder = String(Math.abs(offsetMinutes) % 60).padStart(2, "0");
-
-  return `${year}-${month}-${day}T${hour}:${minute}:00${offsetSign}${offsetHours}:${offsetRemainder}`;
+  return `${year}-${month}-${day}T${hour}:${minute}:00+07:00`;
 }
 
 async function fetchJson(path, options = {}) {
@@ -320,8 +339,8 @@ function createInitialForm(activity) {
         activity.dateValue ||
         activity.date
     ),
-    startTime: activity.startTime24 || activity.startTime || activity.startsAt?.slice(11, 16) || "",
-    endTime: activity.endTime24 || activity.endTime || activity.endsAt?.slice(11, 16) || "",
+    startTime: getCambodiaTimeInput(activity.startsAt) || activity.startTime24 || activity.startTime || "",
+    endTime: getCambodiaTimeInput(activity.endsAt) || activity.endTime24 || activity.endTime || "",
     dailySchedules: Array.isArray(activity.dailySchedules) ? activity.dailySchedules.map((item) => ({ scheduleDate: item.scheduleDate, startsAt: String(item.startsAt).slice(0, 5), endsAt: String(item.endsAt).slice(0, 5) })) : [],
     location: activity.locationName || getActivityLocation(activity.location),
     province:
