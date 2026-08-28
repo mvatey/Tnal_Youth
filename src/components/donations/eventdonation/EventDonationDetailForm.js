@@ -316,7 +316,13 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
         if (cancelled) return;
         setBranches(toOptions(branchItems, ["nameKm", "labelKm", "name", "label"]));
         const activityItems = activityPage?.content ?? activityPage?.items ?? activityPage;
-        setActivities(toOptions(activityItems, ["titleKm", "titleEn", "nameKm", "nameEn"]));
+        // Cancelled activities remain in the Activity history screen only;
+        // never offer them as a donation target.
+        const donationEligibleActivities = (Array.isArray(activityItems) ? activityItems : [])
+          .filter((activity) => String(
+            activity?.statusCode ?? activity?.status?.code ?? activity?.status ?? "",
+          ).toUpperCase() !== "CANCELLED");
+        setActivities(toOptions(donationEligibleActivities, ["titleKm", "titleEn", "nameKm", "nameEn"]));
         setPaymentMethods(Array.isArray(methods) ? methods : []);
         const typeItems = Array.isArray(types) ? types : [];
         const eventType = typeItems.find((type) =>

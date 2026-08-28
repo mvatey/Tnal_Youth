@@ -145,7 +145,12 @@ export default function EventDonationPanel({
           ? donationPage.items
           : (Array.isArray(donationPage?.content) ? donationPage.content : []);
 
-        setRows(buildActivityDonationRows(activityItems, donationItems, selectedBranch, organizerBranchNames));
+        // A cancelled activity is history-only. Its saved records are not
+        // deleted, but it must not appear in the activity-donation feature.
+        const donationEligibleActivities = activityItems.filter((activity) => String(
+          activity?.statusCode ?? activity?.status?.code ?? activity?.status ?? "",
+        ).toUpperCase() !== "CANCELLED");
+        setRows(buildActivityDonationRows(donationEligibleActivities, donationItems, selectedBranch, organizerBranchNames));
       } catch (loadError) {
         if (!cancelled) {
           setRows([]);
