@@ -7,6 +7,7 @@ import IdCard from "@/components/card/idCard";
 import FormSelect from "@/components/forms/FormSelect";
 import BoxFill from "@/components/forms/boxFill";
 import DocumentActionButton from "@/components/forms/documentActionbutton";
+import FileTooLargeModal from "@/components/popup/FileTooLargeModal";
 import { useLanguage } from "@/context/LanguageContext";
 
 const MAX_TEMPLATE_SIZE = 5 * 1024 * 1024;
@@ -27,6 +28,7 @@ export default function IdCardForm({
   const { t, label } = useLanguage();
   const [users, setUsers] = useState([]);
   const [membersError, setMembersError] = useState("");
+  const [fileTooLargeMessage, setFileTooLargeMessage] = useState("");
   const [showValidationError, setShowValidationError] =
     useState(false);
 
@@ -215,7 +217,7 @@ export default function IdCardForm({
       selectedFile.size >
       MAX_TEMPLATE_SIZE
     ) {
-      alert(
+      setFileTooLargeMessage(
         t("documentPage.imageMaxSize"),
       );
 
@@ -622,6 +624,12 @@ export default function IdCardForm({
           />
         </div>
       </div>
+
+      <FileTooLargeModal
+        open={Boolean(fileTooLargeMessage)}
+        message={fileTooLargeMessage}
+        onClose={() => setFileTooLargeMessage("")}
+      />
     </div>
   );
 }

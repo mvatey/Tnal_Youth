@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import PopupCard from "@/components/popup/PopupCard";
+import FileTooLargeModal from "@/components/popup/FileTooLargeModal";
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
 import FormActionButtons from "@/components/forms/FormActionButton";
@@ -48,7 +49,7 @@ const FALLBACK_DOCUMENT_TYPE_OPTIONS = [
 ];
 
 const MAX_FILE_SIZE =
-  5 * 1024 * 1024;
+  50 * 1024 * 1024;
 
 export default function AddDocumentForm({
   form,
@@ -571,20 +572,14 @@ export default function AddDocumentForm({
               </div>
             )}
 
-            {fileError && (
-              <p
-                className="
-                  mt-2
-                  text-xs
-                  font-medium
-                  text-error
-                "
-              >
-                {fileError}
-              </p>
-            )}
           </div>
         </div>
+
+        <FileTooLargeModal
+          open={Boolean(fileError)}
+          message={fileError}
+          onClose={() => setFileError("")}
+        />
 
         {showValidationError &&
           !isFormValid && (

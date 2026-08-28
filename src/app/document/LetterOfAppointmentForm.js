@@ -5,9 +5,10 @@ import { FileText, UploadCloud, X } from "lucide-react";
 
 import FormSelect from "@/components/forms/FormSelect";
 import DocumentActionButton from "@/components/forms/documentActionbutton";
+import FileTooLargeModal from "@/components/popup/FileTooLargeModal";
 import { useLanguage } from "@/context/LanguageContext";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
 const ALLOWED_FILE_EXTENSIONS = ["jpg", "jpeg", "png", "pdf", "doc", "docx"];
 
@@ -52,6 +53,7 @@ export default function LetterOfAppointmentForm({
   const [showValidationError, setShowValidationError] = useState(false);
 
   const [fileError, setFileError] = useState("");
+  const [fileTooLargeMessage, setFileTooLargeMessage] = useState("");
   const [branches, setBranches] = useState([]);
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
@@ -187,7 +189,7 @@ export default function LetterOfAppointmentForm({
     }
 
     if (selectedFile.size > MAX_FILE_SIZE) {
-      setFileError(t("documentPage.fileMaxSize"));
+      setFileTooLargeMessage(t("documentPage.fileMaxSize"));
 
       event.target.value = "";
       return;
@@ -543,6 +545,12 @@ export default function LetterOfAppointmentForm({
           </div>
         </div>
       </div>
+
+      <FileTooLargeModal
+        open={Boolean(fileTooLargeMessage)}
+        message={fileTooLargeMessage}
+        onClose={() => setFileTooLargeMessage("")}
+      />
     </div>
   );
 }

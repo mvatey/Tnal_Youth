@@ -4,6 +4,7 @@ import { useState } from "react";
 import { UploadCloud, X } from "lucide-react";
 
 import PopupCard from "@/components/popup/PopupCard";
+import FileTooLargeModal from "@/components/popup/FileTooLargeModal";
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
 import FormActionButtons from "@/components/forms/FormActionButton";
@@ -20,7 +21,7 @@ const BRANCH_OPTIONS = [
   },
 ];
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
 export default function EditDocumentForm({
   form,
@@ -368,11 +369,6 @@ export default function EditDocumentForm({
               )}
             </div>
 
-            {fileError && (
-              <p className="mt-2 text-xs font-medium text-error">
-                {fileError}
-              </p>
-            )}
           </div>
 
           {/* Replace file */}
@@ -422,6 +418,12 @@ export default function EditDocumentForm({
             {t("documentPage.allFieldsAndFileRequired")}
           </p>
         )}
+
+        <FileTooLargeModal
+          open={Boolean(fileError)}
+          message={fileError}
+          onClose={() => setFileError("")}
+        />
 
         <FormActionButtons
           onCancel={onClose}

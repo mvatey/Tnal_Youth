@@ -18,6 +18,7 @@ import FormSelect from "@/components/forms/FormSelect";
 import MultiSelect from "@/components/forms/multiselect";
 import CertificateCard from "@/components/card/certificate";
 import DocumentActionButton from "@/components/forms/documentActionbutton";
+import FileTooLargeModal from "@/components/popup/FileTooLargeModal";
 import { useLanguage } from "@/context/LanguageContext";
 
 
@@ -222,6 +223,7 @@ export default function CertificateForm({
     setShowValidationError,
   ] = useState(false);
 
+  const [fileTooLargeMessage, setFileTooLargeMessage] = useState("");
   const [branchOptions, setBranchOptions] = useState([]);
   const [members, setMembers] = useState([]);
   const [activities, setActivities] = useState([]);
@@ -876,7 +878,7 @@ export default function CertificateForm({
         selectedFile.size >
         MAX_TEMPLATE_SIZE
       ) {
-        alert(
+        setFileTooLargeMessage(
           t("documentPage.imageMaxSize"),
         );
 
@@ -1791,6 +1793,12 @@ export default function CertificateForm({
           />
         </div>
       </div>
+
+      <FileTooLargeModal
+        open={Boolean(fileTooLargeMessage)}
+        message={fileTooLargeMessage}
+        onClose={() => setFileTooLargeMessage("")}
+      />
     </div>
   );
 }
