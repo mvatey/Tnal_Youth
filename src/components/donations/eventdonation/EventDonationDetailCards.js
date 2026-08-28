@@ -83,7 +83,7 @@ export default function EventDonationDetailCards() {
   );
 
   return (
-    <div className="grid max-w-[540px] grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="flex flex-col gap-3 sm:flex-row">
       <EventDonationSummaryCard
         label={t("donationPage.eventDonationTitle")}
         value={`$${summary.overall.toLocaleString(undefined, {

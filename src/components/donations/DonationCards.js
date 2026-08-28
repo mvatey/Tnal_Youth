@@ -133,7 +133,7 @@ export default function DonationCards() {
   }, [currentMemberLoading, isBranchScoped, isMemberScoped, scopedBranchId, refreshKey]);
 
   return (
-    <div className="grid max-w-[540px] grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="flex flex-col gap-3 sm:flex-row">
       <DonationCard label={t("donationPage.totalDonation")} value={`$${summary.totalUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="" note="" />
       <DonorCard
         label={isMemberScoped ? t("donationPage.recordCount") : t("donationPage.donorsTotal")}

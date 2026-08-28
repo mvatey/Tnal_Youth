@@ -41,7 +41,7 @@ export default function DonationRecordsPage() {
          * the whole branch/activity donor list into a member profile.
          */
         setRows(
-          filterOwnDonationType(allItems, "ACTIVITY_DONATION")
+          filterOwnDonationType(allItems, "SPONSOR_DONATION")
             .map(mapDonationRecord),
         );
       } catch (loadError) {
@@ -156,7 +156,7 @@ export default function DonationRecordsPage() {
           downloadTableAsExcel({
             data: filteredData,
             columns,
-            fileName: t("memberPage.activityDonationFile"),
+            fileName: t("memberPage.sponsorDonationFile"),
           })
         }
       />

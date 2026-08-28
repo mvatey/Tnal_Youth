@@ -17,8 +17,8 @@ import {
 
 import { downloadExcel } from "@/utils/downloadExcel";
 import { AiOutlineWoman } from "react-icons/ai";
-import { FaDharmachakra } from "react-icons/fa";
 import { RiAddCircleLine } from "react-icons/ri";
+import DharmaWheel from "@/components/icons/DharmaWheel";
 
 import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
 import DataTable from "@/components/table/DataTable.js";
@@ -1365,7 +1365,7 @@ export default function MembersPage() {
     <div className="flex min-h-full min-w-0 flex-col gap-4 overflow-hidden">
       {/* SUMMARY */}
 
-      <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+      <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard
           icon={Users}
           label={t("memberPage.totalMembers")}
@@ -1400,7 +1400,7 @@ export default function MembersPage() {
         />
 
         <StatCard
-          icon={FaDharmachakra}
+          icon={DharmaWheel}
           label={t("memberPage.buddhist")}
           value={String(
             summary.buddhist_members,
