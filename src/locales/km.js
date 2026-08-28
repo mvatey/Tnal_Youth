@@ -359,6 +359,7 @@ const km = {
     inactive: "អសកម្ម",
     no: "ល.រ",
     branchName: "ឈ្មោះសាខា",
+    memberName: "ឈ្មោះសមាជិក",
     members: "សមាជិក",
     createdAt: "ថ្ងៃបង្កើត",
     actions: "សកម្មភាព",

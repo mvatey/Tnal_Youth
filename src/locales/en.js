@@ -359,6 +359,7 @@ const en = {
     inactive: "Inactive",
     no: "No.",
     branchName: "Branch name",
+    memberName: "Member name",
     members: "Members",
     createdAt: "Created at",
     actions: "Actions",

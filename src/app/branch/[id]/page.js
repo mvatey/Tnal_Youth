@@ -43,17 +43,32 @@ const BACKEND_ORIGIN =
 
 const ALL_OPTION = "ទាំងអស់";
 
-const GENDER_LABELS = {
+// Fallback keys when t() has no key/translation is unavailable -- Khmer,
+// matching what this app already shows everywhere else by default.
+const GENDER_FALLBACK_KM = {
   MALE: "ប្រុស",
   FEMALE: "ស្រី",
   OTHER: "ផ្សេងៗ",
 };
 
-const ROLE_LABELS = {
+const ROLE_FALLBACK_KM = {
   ADMIN: "អ្នកគ្រប់គ្រង",
   BRANCH_LEADER: "ប្រធានសាខា",
   SECRETARY: "លេខាធិការ",
   MEMBER: "សមាជិក",
+};
+
+const GENDER_TRANSLATION_KEYS = {
+  MALE: "memberPage.male",
+  FEMALE: "memberPage.female",
+  OTHER: "usersPage.other",
+};
+
+const ROLE_TRANSLATION_KEYS = {
+  ADMIN: "usersPage.admin",
+  BRANCH_LEADER: "usersPage.branchLeader",
+  SECRETARY: "usersPage.secretary",
+  MEMBER: "usersPage.member",
 };
 
 async function fetchJson(path, signal) {
@@ -129,7 +144,9 @@ function getGenderCode(value) {
   ).toUpperCase();
 }
 
-function getGenderLabel(value, label) {
+function getGenderLabel(value, label, t) {
+  const code = getGenderCode(value);
+
   if (
     value &&
     typeof value === "object"
@@ -143,17 +160,17 @@ function getGenderLabel(value, label) {
       value?.labelKm ||
       value?.label_en ||
       value?.labelEn ||
-      GENDER_LABELS[
-        getGenderCode(value)
-      ] ||
+      (t
+        ? t(GENDER_TRANSLATION_KEYS[code])
+        : GENDER_FALLBACK_KM[code]) ||
       "-"
     );
   }
 
   return (
-    GENDER_LABELS[
-      getGenderCode(value)
-    ] ||
+    (t
+      ? t(GENDER_TRANSLATION_KEYS[code])
+      : GENDER_FALLBACK_KM[code]) ||
     value ||
     "-"
   );
@@ -171,19 +188,21 @@ function getRoleCode(value) {
   ).toUpperCase();
 }
 
-function getRoleLabel(value, label) {
+function getRoleLabel(value, label, t) {
   if (
     value &&
     typeof value === "object"
   ) {
+    const code = getRoleCode(value);
+
     return (
       value?.label_km ||
       value?.labelKm ||
       value?.label_en ||
       value?.labelEn ||
-      ROLE_LABELS[
-        getRoleCode(value)
-      ] ||
+      (t
+        ? t(ROLE_TRANSLATION_KEYS[code])
+        : ROLE_FALLBACK_KM[code]) ||
       "-"
     );
   }
@@ -192,7 +211,9 @@ function getRoleLabel(value, label) {
     getRoleCode(value);
 
   return (
-    ROLE_LABELS[roleCode] ||
+    (t
+      ? t(ROLE_TRANSLATION_KEYS[roleCode])
+      : ROLE_FALLBACK_KM[roleCode]) ||
     value ||
     "-"
   );
@@ -214,21 +235,18 @@ function getStatusLabel(value, label, t) {
   const code =
     getStatusCode(value);
 
-  if (
+  // Only trust the object's own label when it's genuinely bilingual (has
+  // an English field). The status object built for a plain member row is
+  // only ever {code, label_km} -- letting that win regardless would keep
+  // showing Khmer even in English locale, same bug as before.
+  const hasEnglishField =
     value &&
-    typeof value === "object"
-  ) {
-    return (
-      value?.label_km ||
-      value?.labelKm ||
-      value?.name_km ||
-      value?.nameKm ||
-      (code === "ACTIVE"
-        ? "សកម្ម"
-        : code === "INACTIVE"
-          ? "អសកម្ម"
-          : "-")
-    );
+    typeof value === "object" &&
+    (value?.label_en || value?.labelEn ||
+      value?.name_en || value?.nameEn);
+
+  if (hasEnglishField && label) {
+    return label(value, "-");
   }
 
   if (code === "ACTIVE") {
@@ -620,6 +638,7 @@ const loadBranchDetails =
           details?.summary ?? {
             total_members: 0,
             total_activities: 0,
+            total_donations_usd: 0,
           },
       });
     },
@@ -869,6 +888,14 @@ const loadBranchDetails =
             branchDetails?.summary
               ?.totalActivities,
         ) || 0,
+
+      donationTotalUsd:
+        Number(
+          branchDetails?.summary
+            ?.total_donations_usd ??
+            branchDetails?.summary
+              ?.totalDonationsUsd,
+        ) || 0,
     };
   }, [branchDetails, members.length]);
 
@@ -921,12 +948,13 @@ const loadBranchDetails =
             getGenderLabel(
               person?.gender,
               label,
+              t,
             ),
 
           role: roleCode,
 
           roleLabel:
-            getRoleLabel(roleCode, label),
+            getRoleLabel(roleCode, label, t),
 
           status: "ACTIVE",
 
@@ -934,7 +962,7 @@ const loadBranchDetails =
             getProfileImage(person),
         };
       }),
-    [branchDetails, label],
+    [branchDetails, label, t],
   );
 
   const branchLeader = useMemo(
@@ -998,10 +1026,11 @@ const loadBranchDetails =
             getGenderLabel(
               member?.gender,
               label,
+              t,
             ),
 
           role:
-            getRoleLabel(role, label),
+            getRoleLabel(role, label, t),
 
           status,
 
@@ -1013,7 +1042,7 @@ const loadBranchDetails =
             ),
         };
       }),
-    [members, label, locale],
+    [members, label, locale, t],
   );
 
   const leaderOptions = useMemo(
@@ -1021,6 +1050,9 @@ const loadBranchDetails =
       leaderCandidates.map(
         (candidate) => ({
           label:
+            (locale === "en"
+              ? candidate?.full_name_en || candidate?.fullNameEn
+              : candidate?.full_name_km || candidate?.fullNameKm) ||
             candidate?.full_name_km ||
             candidate?.fullNameKm ||
             candidate?.full_name_en ||
@@ -1068,6 +1100,7 @@ const loadBranchDetails =
               getGenderLabel(
                 candidate?.gender,
                 label,
+                t,
               ),
 
             role:
@@ -1075,6 +1108,7 @@ const loadBranchDetails =
                 candidate?.current_role ||
                   candidate?.currentRole,
                 label,
+                t,
               ),
 
             profilePhotoId:
@@ -1086,7 +1120,7 @@ const loadBranchDetails =
           },
         }),
       ),
-    [leaderCandidates, label, t],
+    [leaderCandidates, label, t, locale],
   );
 
   const filteredMembers = useMemo(() => {
@@ -1189,34 +1223,44 @@ const loadBranchDetails =
     },
     {
       key: "nameKm",
-      label: t("branchPage.branchName"),
+      label: t("branchPage.memberName"),
       width: "23%",
       align: "left",
 
-      render: (row) => (
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full">
-            <Image
-              src={
-                row.profileImage ||
-                "/profiles/default-avatar.jpg"
-              }
-              alt={
-                row.nameKm ||
-                t("branchPage.members")
-              }
-              fill
-              sizes="32px"
-              className="object-cover"
-              unoptimized={Boolean(row.profileImage)}
-            />
-          </div>
+      render: (row) => {
+        const displayName =
+          (locale === "en"
+            ? row.nameEn !== "-" && row.nameEn
+            : row.nameKm !== "-" && row.nameKm) ||
+          row.nameKm ||
+          row.nameEn ||
+          "-";
 
-          <span className="truncate font-medium text-text-primary">
-            {row.nameKm || "-"}
-          </span>
-        </div>
-      ),
+        return (
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full">
+              <Image
+                src={
+                  row.profileImage ||
+                  "/profiles/default-avatar.jpg"
+                }
+                alt={
+                  displayName ||
+                  t("branchPage.members")
+                }
+                fill
+                sizes="32px"
+                className="object-cover"
+                unoptimized={Boolean(row.profileImage)}
+              />
+            </div>
+
+            <span className="truncate font-medium text-text-primary">
+              {displayName}
+            </span>
+          </div>
+        );
+      },
     },
     {
       key: "gender",
@@ -1330,7 +1374,7 @@ const loadBranchDetails =
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <DetailStatCard
           title={t("branchPage.totalDonations")}
-          value="-"
+          value={`$${branch.donationTotalUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
           icon={Banknote}
           iconClassName="bg-secondary-light text-secondary"
           borderClassName="border-t-3 border-t-secondary"
@@ -1383,10 +1427,6 @@ const loadBranchDetails =
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">
                 {branch.name}
-              </p>
-
-              <p className="mt-1 text-[11px] text-white/75">
-                {branch.code}
               </p>
             </div>
 

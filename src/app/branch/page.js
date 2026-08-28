@@ -1144,6 +1144,7 @@ export default function BranchPage() {
                   ?.nameKm ||
                 getProvinceLabel(
                   districtLookup,
+                  label,
                 ) ||
                 "-",
 
@@ -1158,6 +1159,7 @@ export default function BranchPage() {
                   ?.nameKm ||
                 getProvinceLabel(
                   communeLookup,
+                  label,
                 ) ||
                 "-",
 
@@ -1416,10 +1418,6 @@ export default function BranchPage() {
             <p className="truncate font-medium text-text-primary">
               {row.name}
             </p>
-
-            <p className="truncate text-[11px] text-text-secondary">
-              {row.code}
-            </p>
           </div>
         ),
     },
@@ -1607,8 +1605,6 @@ export default function BranchPage() {
             "ល.រ": index + 1,
             "ឈ្មោះសាខា":
               branch.name || "-",
-            "លេខកូដសាខា":
-              branch.code || "-",
             "កម្រិតសាខា":
               branch.level || "-",
             "រាជធានី/ខេត្ត":
