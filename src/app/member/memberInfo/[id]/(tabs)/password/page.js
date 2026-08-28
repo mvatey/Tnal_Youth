@@ -12,6 +12,7 @@ import {
 
 import SaveButton from "@/components/forms/SaveButton";
 import { useLanguage } from "@/context/LanguageContext";
+import useCurrentMember from "@/hooks/useCurrentMember";
 
 async function requestJson(path, options = {}) {
   const response = await fetch(`/api${path}`, {
@@ -54,6 +55,10 @@ async function requestJson(path, options = {}) {
 
 export default function PasswordPage() {
   const { t } = useLanguage();
+  const { member: currentMember } =
+    useCurrentMember();
+  const isViewer =
+    currentMember?.isViewer === true;
   const params = useParams();
 
   const memberId = Array.isArray(params?.id)
@@ -170,6 +175,26 @@ export default function PasswordPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (isViewer) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold text-text-primary">
+            {t("memberPage.passwordTitle")}
+          </h2>
+
+          <p className="mt-2 text-sm text-text-secondary">
+            {t("memberPage.passwordDescription")}
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-border bg-bg-page-white px-4 py-3 text-sm text-text-secondary">
+          {t("memberPage.viewerReadOnly")}
+        </div>
+      </div>
+    );
   }
 
   return (

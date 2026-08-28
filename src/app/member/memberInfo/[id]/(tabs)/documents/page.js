@@ -16,6 +16,7 @@ import DocumentPreviewCard from "@/components/card/DocumentPreviewCard";
 import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
 import BackendDocumentCard from "@/components/document/BackendDocumentCard";
 import { useLanguage } from "@/context/LanguageContext";
+import useCurrentMember from "@/hooks/useCurrentMember";
 
 import {
   deleteTemplateFile,
@@ -654,6 +655,10 @@ function DeleteDocumentButton({
 
 export default function DocumentsPage() {
   const { t } = useLanguage();
+  const { member: currentMember } =
+    useCurrentMember();
+  const isViewer =
+    currentMember?.isViewer === true;
   const params =
     useParams();
 
@@ -1457,6 +1462,7 @@ export default function DocumentsPage() {
                 }
                 className="group relative min-w-0"
               >
+                {!isViewer && (
                 <DeleteDocumentButton
                   label={t("memberPage.deleteMemberIdCard")}
                   title={t("memberPage.delete")}
@@ -1479,6 +1485,7 @@ export default function DocumentsPage() {
                     )
                   }
                 />
+                )}
 
                 <DocumentPreviewCard
                   title={t("memberPage.memberIdCard")}
@@ -1508,11 +1515,13 @@ export default function DocumentsPage() {
             key={`backend-id-card-${document.id}`}
             className="group relative min-w-0"
           >
-            <DeleteDocumentButton
-              label={t("memberPage.deleteMemberIdCard")}
-              title={t("memberPage.delete")}
-              onClick={() => handleDeleteBackendDocument(document)}
-            />
+            {!isViewer && (
+              <DeleteDocumentButton
+                label={t("memberPage.deleteMemberIdCard")}
+                title={t("memberPage.delete")}
+                onClick={() => handleDeleteBackendDocument(document)}
+              />
+            )}
 
             <DocumentPreviewCard
               title={document.title || t("memberPage.memberIdCard")}
@@ -1598,6 +1607,7 @@ export default function DocumentsPage() {
                 }
                 className="group relative min-w-0"
               >
+                {!isViewer && (
                 <DeleteDocumentButton
                   label={t("memberPage.deleteCertificate")}
                   title={t("memberPage.delete")}
@@ -1620,6 +1630,7 @@ export default function DocumentsPage() {
                     )
                   }
                 />
+                )}
 
                 <DocumentPreviewCard
                   title={
@@ -1704,7 +1715,7 @@ export default function DocumentsPage() {
                 setSelectedBackendDocument
               }
               onDelete={
-                Number.isInteger(Number(document.id))
+                !isViewer && Number.isInteger(Number(document.id))
                   ? handleDeleteBackendDocument
                   : undefined
               }

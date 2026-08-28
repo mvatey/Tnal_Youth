@@ -30,10 +30,15 @@ import { useLanguage } from "@/context/LanguageContext";
 
 const EMPTY_SUMMARY = {
   total_members: 0,
+  total_members_change_percent: null,
   female_members: 0,
+  female_members_change_percent: null,
   monk_members: 0,
+  monk_members_change_percent: null,
   buddhist_members: 0,
+  buddhist_members_change_percent: null,
   islam_members: 0,
+  islam_members_change_percent: null,
 };
 
 const GENDER_LABELS_KM = {
@@ -533,25 +538,45 @@ export default function MembersPage() {
               data?.total_members,
             ) || 0,
 
+          total_members_change_percent:
+            data?.total_members_change_percent ??
+            null,
+
           female_members:
             Number(
               data?.female_members,
             ) || 0,
+
+          female_members_change_percent:
+            data?.female_members_change_percent ??
+            null,
 
           monk_members:
             Number(
               data?.monk_members,
             ) || 0,
 
+          monk_members_change_percent:
+            data?.monk_members_change_percent ??
+            null,
+
           buddhist_members:
             Number(
               data?.buddhist_members,
             ) || 0,
 
+          buddhist_members_change_percent:
+            data?.buddhist_members_change_percent ??
+            null,
+
           islam_members:
             Number(
               data?.islam_members,
             ) || 0,
+
+          islam_members_change_percent:
+            data?.islam_members_change_percent ??
+            null,
         });
       },
       [effectiveBranchFilter],
@@ -1372,7 +1397,9 @@ export default function MembersPage() {
           value={String(
             summary.total_members,
           )}
-          growth="0"
+          growth={
+            summary.total_members_change_percent
+          }
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -1383,7 +1410,9 @@ export default function MembersPage() {
           value={String(
             summary.female_members,
           )}
-          growth="0"
+          growth={
+            summary.female_members_change_percent
+          }
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -1394,7 +1423,9 @@ export default function MembersPage() {
           value={String(
             summary.monk_members,
           )}
-          growth="0"
+          growth={
+            summary.monk_members_change_percent
+          }
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -1405,7 +1436,9 @@ export default function MembersPage() {
           value={String(
             summary.buddhist_members,
           )}
-          growth="0"
+          growth={
+            summary.buddhist_members_change_percent
+          }
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
@@ -1416,7 +1449,9 @@ export default function MembersPage() {
           value={String(
             summary.islam_members,
           )}
-          growth="0"
+          growth={
+            summary.islam_members_change_percent
+          }
           iconColor="text-secondary"
           iconBg="bg-secondary-light"
         />
