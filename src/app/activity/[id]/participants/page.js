@@ -30,6 +30,7 @@ import ParticipantStats, {
 
 import ParticipationEditModal from "@/components/activity/ParticipantEditModal";
 import MemberPreviewModal from "@/components/activity/MemberPreviewModal";
+import DonationFilterSelect from "@/components/donations/monthlydonation/DonationFilterSelect";
 
 import {
   useAuth,
@@ -220,7 +221,7 @@ function normalizeExistingParticipant(
 export default function ActivityParticipantsPage({
   params,
 }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const { id } =
     use(params);
 
@@ -236,10 +237,44 @@ export default function ActivityParticipantsPage({
       user?.role,
     ) === "member";
 
+  const normalizedRole =
+    normalizeRole(
+      user?.role,
+    );
+
+  const isAdminOrViewer =
+    normalizedRole === "admin" ||
+    normalizedRole === "viewer";
+
   const [
     activity,
     setActivity,
   ] = useState(null);
+
+  const [
+    participantTab,
+    setParticipantTab,
+  ] = useState("mine");
+
+  const [
+    allBranchesParticipants,
+    setAllBranchesParticipants,
+  ] = useState([]);
+
+  const [
+    allBranchesLoading,
+    setAllBranchesLoading,
+  ] = useState(false);
+
+  const [
+    allBranchesError,
+    setAllBranchesError,
+  ] = useState("");
+
+  const [
+    allBranchesFilterId,
+    setAllBranchesFilterId,
+  ] = useState("all");
 
   /*
    * This table contains ONLY
@@ -846,6 +881,15 @@ export default function ActivityParticipantsPage({
       ),
     );
 
+  const hostBranchId =
+    Number(
+      getValue(
+        activity,
+        "branchId",
+        "branch_id",
+      ),
+    );
+
   const isInvitedBranch =
     !isHostBranch &&
     Boolean(
@@ -855,6 +899,207 @@ export default function ActivityParticipantsPage({
         "can_manage_as_invited_branch",
       ),
     );
+
+  /*
+   * Cross-branch view is only for
+   * the organizing (host) branch,
+   * plus admin/viewer who already
+   * see everything.
+   *
+   * An accepted INVITED branch
+   * still only ever sees its own
+   * roster (the "mine" tab).
+   */
+  const canViewAllBranches =
+    isHostBranch ||
+    isAdminOrViewer;
+
+  useEffect(() => {
+    if (
+      participantTab !==
+        "allBranches" ||
+      !canViewAllBranches ||
+      isMember
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadAllBranches() {
+      setAllBranchesLoading(
+        true,
+      );
+      setAllBranchesError(
+        "",
+      );
+
+      try {
+        const response =
+          await fetchApi(
+            `/activities/${id}/participants/all-branches`,
+          );
+
+        if (cancelled) {
+          return;
+        }
+
+        setAllBranchesParticipants(
+          asList(
+            response,
+          ).map(
+            normalizeExistingParticipant,
+          ),
+        );
+      } catch (error) {
+        if (!cancelled) {
+          setAllBranchesError(
+            error?.message ||
+              t(
+                "activityPage.genericError",
+              ),
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setAllBranchesLoading(
+            false,
+          );
+        }
+      }
+    }
+
+    loadAllBranches();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    participantTab,
+    canViewAllBranches,
+    isMember,
+    id,
+    t,
+  ]);
+
+  const allBranchesRows =
+    useMemo(
+      () =>
+        allBranchesParticipants.map(
+          (participant) => {
+            const name =
+              locale ===
+              "en"
+                ? participant.fullNameEn ||
+                  participant.fullNameKm
+                : participant.fullNameKm ||
+                  participant.fullNameEn;
+
+            const branchName =
+              locale ===
+              "en"
+                ? participant.branchNameEn ||
+                  participant.branchNameKm
+                : participant.branchNameKm ||
+                  participant.branchNameEn;
+
+            return {
+              id: participant.memberId,
+              memberId:
+                participant.memberId,
+              memberNo:
+                participant.memberNo ||
+                "-",
+              name:
+                name ||
+                "-",
+              branch:
+                branchName ||
+                "-",
+              branchId:
+                participant.branchId,
+              role:
+                participant.branchId ===
+                hostBranchId
+                  ? "ORGANIZER"
+                  : "INVITED",
+              isInvited:
+                participant.registrationSource !==
+                "WALK_IN",
+              isParticipated:
+                participant.attendanceStatus ===
+                "PRESENT",
+              registeredAtValue:
+                participant.registeredAt ||
+                "",
+            };
+          },
+        ),
+      [
+        allBranchesParticipants,
+        locale,
+        hostBranchId,
+      ],
+    );
+
+  const allBranchesOptions =
+    useMemo(() => {
+      const seen =
+        new Map();
+
+      allBranchesRows.forEach(
+        (row) => {
+          if (
+            row.branchId &&
+            !seen.has(
+              row.branchId,
+            )
+          ) {
+            seen.set(
+              row.branchId,
+              row.branch,
+            );
+          }
+        },
+      );
+
+      return [
+        ...seen.entries(),
+      ].map(
+        ([
+          value,
+          label,
+        ]) => ({
+          value: String(
+            value,
+          ),
+          label,
+        }),
+      );
+    }, [
+      allBranchesRows,
+    ]);
+
+  const filteredAllBranchesRows =
+    useMemo(() => {
+      if (
+        allBranchesFilterId ===
+        "all"
+      ) {
+        return allBranchesRows;
+      }
+
+      return allBranchesRows.filter(
+        (row) =>
+          String(
+            row.branchId,
+          ) ===
+          allBranchesFilterId,
+      );
+    }, [
+      allBranchesRows,
+      allBranchesFilterId,
+    ]);
 
   /*
    * Invited branch cards:
@@ -1260,6 +1505,80 @@ export default function ActivityParticipantsPage({
       [t],
     );
 
+  const allBranchesColumns =
+    useMemo(
+      () => [
+        {
+          key: "name",
+          label: t("activityPage.participantName"),
+          width: "30%",
+          render:
+            (row) =>
+              row.name ||
+              "-",
+        },
+
+        {
+          key: "branch",
+          label: t("memberPage.branch"),
+          width: "20%",
+          align: "center",
+          render:
+            (row) =>
+              row.branch ||
+              "-",
+        },
+
+        {
+          key: "role",
+          label: t("memberPage.role"),
+          width: "15%",
+          align: "center",
+          render:
+            (row) =>
+              row.role ===
+              "ORGANIZER"
+                ? t("donationPage.organizerBranch")
+                : t("donationPage.invitedBranch"),
+        },
+
+        {
+          key: "isInvited",
+          label: t("activityPage.invitationStatus"),
+          width: "17%",
+          align: "center",
+          render:
+            (row) => (
+              <StatusBadge
+                status={
+                  row.isInvited
+                    ? t("activityPage.invited")
+                    : t("activityPage.notInvited")
+                }
+              />
+            ),
+        },
+
+        {
+          key: "isParticipated",
+          label: t("activityPage.participationStatus"),
+          width: "18%",
+          align: "center",
+          render:
+            (row) => (
+              <StatusBadge
+                status={
+                  row.isParticipated
+                    ? t("activityPage.participated")
+                    : t("activityPage.notParticipated")
+                }
+              />
+            ),
+        },
+      ],
+      [t],
+    );
+
   /*
    * Both authorized branches may
    * edit attendance.
@@ -1469,6 +1788,45 @@ export default function ActivityParticipantsPage({
         </h1>
       </div>
 
+      {canViewAllBranches && (
+        <div className="inline-flex w-fit shrink-0 rounded-lg border border-border bg-bg-page-gray p-1 text-xs font-medium">
+          <button
+            type="button"
+            onClick={() =>
+              setParticipantTab(
+                "mine",
+              )
+            }
+            className={`rounded-md px-4 py-1.5 transition ${
+              participantTab ===
+              "mine"
+                ? "bg-secondary text-white"
+                : "text-text-secondary hover:text-text-primary"
+            }`}
+          >
+            {t("activityPage.myBranchTab")}
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setParticipantTab(
+                "allBranches",
+              )
+            }
+            className={`rounded-md px-4 py-1.5 transition ${
+              participantTab ===
+              "allBranches"
+                ? "bg-secondary text-white"
+                : "text-text-secondary hover:text-text-primary"
+            }`}
+          >
+            {t("activityPage.allInvitedBranchesTab")}
+          </button>
+        </div>
+      )}
+
+      {participantTab === "mine" && (
       <ParticipantStats
         total={
           displayedSummary.total
@@ -1623,6 +1981,52 @@ export default function ActivityParticipantsPage({
           emptyMessage={t("activityPage.noParticipantMembers")}
         />
       </div>
+      )}
+
+      {participantTab === "allBranches" && canViewAllBranches && (
+        <div className="rounded-xl border border-border bg-bg-page-white p-4">
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <DonationFilterSelect
+              label={t("activityPage.allBranchesFilterLabel")}
+              value={
+                allBranchesFilterId
+              }
+              onChange={
+                setAllBranchesFilterId
+              }
+              options={
+                allBranchesOptions
+              }
+              allLabel={t("activityPage.allBranchesFilterAll")}
+              showLabel={false}
+              className="w-full sm:w-[220px]"
+            />
+          </div>
+
+          {allBranchesError && (
+            <div className="mb-4 rounded-lg border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
+              {allBranchesError}
+            </div>
+          )}
+
+          {allBranchesLoading ? (
+            <div className="py-10 text-center text-sm text-text-secondary">
+              {t("activityPage.loading")}
+            </div>
+          ) : (
+            <Table
+              columns={
+                allBranchesColumns
+              }
+              data={
+                filteredAllBranchesRows
+              }
+              rowsPerPage={10}
+              emptyMessage={t("activityPage.noAllBranchesParticipants")}
+            />
+          )}
+        </div>
+      )}
 
       <ParticipationEditModal
         open={
