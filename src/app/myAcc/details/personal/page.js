@@ -171,24 +171,14 @@ function normalizeLookup(data, { valueMode = "id" } = {}) {
         rawValue = item?.id ?? item?.value ?? item?.code ?? "";
       }
 
-      const label =
-        item?.labelKm ||
-        item?.label_km ||
-        item?.nameKm ||
-        item?.name_km ||
-        item?.labelEn ||
-        item?.label_en ||
-        item?.nameEn ||
-        item?.name_en ||
-        item?.code ||
-        "";
-
       return {
-        label,
+        // Keep both translations. FormSelect uses localizedValue() and
+        // selects labelKm in Khmer mode or labelEn in English mode.
+        ...item,
         value: rawValue !== null && rawValue !== undefined ? String(rawValue) : "",
       };
     })
-    .filter((option) => option.value !== "" && option.label !== "");
+    .filter((option) => option.value !== "");
 }
 
 /* =========================================================

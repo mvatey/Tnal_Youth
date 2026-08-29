@@ -248,23 +248,10 @@ function normalizeLookup(
           "";
       }
 
-      const label =
-        item?.labelKm ||
-        item?.label_km ||
-        item?.nameKm ||
-        item?.name_km ||
-        item?.labelEn ||
-        item?.label_en ||
-        item?.nameEn ||
-        item?.name_en ||
-        item?.branchCode ||
-        item?.branch_code ||
-        item?.code ||
-        "";
-
       return {
-        label,
-
+        // Preserve every label field so FormSelect can react to a language
+        // change instead of being locked to the Khmer label at load time.
+        ...item,
         value:
           rawValue !== null &&
           rawValue !== undefined
@@ -274,11 +261,7 @@ function normalizeLookup(
             : "",
       };
     })
-    .filter(
-      (option) =>
-        option.value !== "" &&
-        option.label !== "",
-    );
+    .filter((option) => option.value !== "");
 }
 
 /* =========================================================

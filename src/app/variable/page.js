@@ -726,7 +726,7 @@ export default function VariablePage() {
             )}
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[820px] table-fixed border-collapse">
+              <table className="w-full min-w-[720px] table-fixed border-collapse">
                 <thead className="bg-bg-page-gray">
                   <tr className="border-b border-border">
                     <th className="w-[7%] px-4 py-3 text-center text-xs font-medium text-text-secondary">
@@ -884,12 +884,10 @@ export default function VariablePage() {
                       {t("variablePage.no")}
                     </th>
 
-                    <th className="w-[14%] px-4 py-3 text-left text-xs font-medium text-text-secondary">
-                      {t("variablePage.nameKm")}
-                    </th>
-
-                    <th className="w-[14%] px-4 py-3 text-left text-xs font-medium text-text-secondary">
-                      {t("variablePage.nameEn")}
+                    <th className="w-[28%] px-4 py-3 text-left text-xs font-medium text-text-secondary">
+                      {locale === "en"
+                        ? t("variablePage.nameEn")
+                        : t("variablePage.nameKm")}
                     </th>
 
                     {isPaymentMethod && (
@@ -928,7 +926,7 @@ export default function VariablePage() {
                   {itemsLoading ? (
                     <tr>
                       <td
-                        colSpan={(hasExtraColumn ? 7 : 6) + (isViewer ? 0 : 1)}
+                        colSpan={(hasExtraColumn ? 6 : 5) + (isViewer ? 0 : 1)}
                         className="px-4 py-12 text-center text-sm text-text-secondary"
                       >
                         {t("variablePage.loadingData")}
@@ -945,11 +943,7 @@ export default function VariablePage() {
                         </td>
 
                         <td className="px-4 py-3 text-sm font-medium text-text-primary">
-                          {item.labelKm || "-"}
-                        </td>
-
-                        <td className="px-4 py-3 text-sm text-text-secondary">
-                          {item.labelEn || "-"}
+                          {label(item, item.code || "-")}
                         </td>
 
                         {isPaymentMethod && (
@@ -997,7 +991,7 @@ export default function VariablePage() {
                   ) : (
                     <tr>
                       <td
-                        colSpan={(hasExtraColumn ? 7 : 6) + (isViewer ? 0 : 1)}
+                        colSpan={(hasExtraColumn ? 6 : 5) + (isViewer ? 0 : 1)}
                         className="px-4 py-12 text-center text-sm text-text-secondary"
                       >
                         {t("variablePage.noData")}

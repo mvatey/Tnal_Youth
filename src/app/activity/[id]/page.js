@@ -14,6 +14,7 @@ import { FaUsers } from "react-icons/fa";
 import { notFound } from "next/navigation";
 
 import PendingInvitationBanner from "@/components/activity/PendingInvitationBanner";
+import ActivityEditLink from "@/components/activity/ActivityEditLink";
 import {
   LOCALE_COOKIE_NAME,
   normalizeLocale,
@@ -30,7 +31,6 @@ import {
   FileText,
   History,
   MapPin,
-  Pencil,
   Phone,
   Tag,
   CircleDollarSign,
@@ -810,16 +810,12 @@ export default async function ActivityDetailPage({
          * Invited branch must NOT see
          * Edit Activity.
          */}
-        {canManage && (
-          <Link
-            href={`/activity/create?edit=${activity.id}`}
-            className="flex h-[34px] items-center gap-2 rounded-lg bg-secondary px-4 text-sm font-medium text-white hover:bg-secondary-hover"
-          >
-            <Pencil size={15} />
-
-            {t("activityPage.editInfo")}
-          </Link>
-        )}
+        <ActivityEditLink
+          activityId={activity.id}
+          hostBranchId={activity.branchId}
+          canManage={canManage}
+          label={t("activityPage.editInfo")}
+        />
       </div>
 
       {!isMember && (

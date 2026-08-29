@@ -55,10 +55,11 @@ async function fetchJson(url, options) {
   return body?.data ?? body;
 }
 
-function normalizeOptions(items) {
+function normalizeOptions(items, label) {
   return (Array.isArray(items) ? items : []).map((item) => ({
+    ...item,
     value: String(item.value ?? item.id),
-    label: item.labelKm || item.nameKm || item.labelEn || item.nameEn || item.label || item.code || String(item.value ?? item.id),
+    label: label(item, item.code || String(item.value ?? item.id)),
   }));
 }
 
@@ -84,7 +85,7 @@ function mapMonthlyMember(member, branchLabel, month, year) {
   };
 }
 export default function AddDonationForm() {
-  const { t } = useLanguage();
+  const { t, label } = useLanguage();
   const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
   const {
     member: currentMember,
@@ -265,7 +266,7 @@ const paymentSummary = useMemo(() => {
     ])
       .then(([branchItems, methodItems]) => {
         if (cancelled) return;
-        const normalizedBranches = normalizeOptions(branchItems);
+        const normalizedBranches = normalizeOptions(branchItems, label);
         setBranchOptions(normalizedBranches);
         if (isBranchScoped) {
           if (!effectiveBranchId) {
@@ -279,14 +280,14 @@ const paymentSummary = useMemo(() => {
         setPaymentMethods((Array.isArray(methodItems) ? methodItems : []).map((method) => ({
           id: String(method.id),
           code: method.code,
-          label: method.labelKm || method.labelEn || method.code,
+          label: label(method, method.code),
         })));
       })
       .catch((loadError) => {
         if (!cancelled) setError(loadError.message || t("donationPage.loadDonationOptionsFailed"));
       });
     return () => { cancelled = true; };
-  }, [currentMemberLoading, isBranchScoped, effectiveBranchId]);
+  }, [currentMemberLoading, isBranchScoped, effectiveBranchId, label, t]);
 
   // If the currently selected month falls out of the valid list — the
   // year changed, or that period just got recorded elsewhere — snap it

@@ -191,6 +191,44 @@ function normalizeExistingParticipant(
         ),
       ),
 
+    // The participant API intentionally uses snake_case JSON keys. Normalize
+    // them once so both the own-branch and all-invited-branches tables render
+    // the same member and branch details.
+    memberNo:
+      getValue(
+        participant,
+        "memberNo",
+        "member_no",
+      ),
+
+    fullNameKm:
+      getValue(
+        participant,
+        "fullNameKm",
+        "full_name_km",
+      ),
+
+    fullNameEn:
+      getValue(
+        participant,
+        "fullNameEn",
+        "full_name_en",
+      ),
+
+    branchNameKm:
+      getValue(
+        participant,
+        "branchNameKm",
+        "branch_name_km",
+      ),
+
+    branchNameEn:
+      getValue(
+        participant,
+        "branchNameEn",
+        "branch_name_en",
+      ),
+
     attendanceStatus:
       String(
         getValue(
@@ -205,6 +243,13 @@ function normalizeExistingParticipant(
         participant,
         "checkedInAt",
         "checked_in_at",
+      ),
+
+    registeredAt:
+      getValue(
+        participant,
+        "registeredAt",
+        "registered_at",
       ),
 
     registrationSource:
@@ -985,7 +1030,16 @@ export default function ActivityParticipantsPage({
   const allBranchesRows =
     useMemo(
       () =>
-        allBranchesParticipants.map(
+        allBranchesParticipants
+          // Keep the UI aligned with the API even while a stale browser
+          // response is cached: this tab is for invited branches only.
+          .filter(
+            (participant) =>
+              String(
+                participant.branchId,
+              ) !== String(hostBranchId),
+          )
+          .map(
           (participant) => {
             const name =
               locale ===
@@ -1018,17 +1072,15 @@ export default function ActivityParticipantsPage({
                 "-",
               branchId:
                 participant.branchId,
-              role:
-                participant.branchId ===
-                hostBranchId
-                  ? "ORGANIZER"
-                  : "INVITED",
               isInvited:
                 participant.registrationSource !==
                 "WALK_IN",
               isParticipated:
                 participant.attendanceStatus ===
-                "PRESENT",
+                  "PRESENT" ||
+                Boolean(
+                  participant.checkedInAt,
+                ),
               registeredAtValue:
                 participant.registeredAt ||
                 "",
@@ -1509,9 +1561,17 @@ export default function ActivityParticipantsPage({
     useMemo(
       () => [
         {
+          key: "no",
+          label: "ល.រ",
+          width: "8%",
+          align: "center",
+          render: (_row, index) => index + 1,
+        },
+
+        {
           key: "name",
           label: t("activityPage.participantName"),
-          width: "30%",
+          width: "32%",
           render:
             (row) =>
               row.name ||
@@ -1530,22 +1590,9 @@ export default function ActivityParticipantsPage({
         },
 
         {
-          key: "role",
-          label: t("memberPage.role"),
-          width: "15%",
-          align: "center",
-          render:
-            (row) =>
-              row.role ===
-              "ORGANIZER"
-                ? t("donationPage.organizerBranch")
-                : t("donationPage.invitedBranch"),
-        },
-
-        {
           key: "isInvited",
           label: t("activityPage.invitationStatus"),
-          width: "17%",
+          width: "25%",
           align: "center",
           render:
             (row) => (
@@ -1562,7 +1609,7 @@ export default function ActivityParticipantsPage({
         {
           key: "isParticipated",
           label: t("activityPage.participationStatus"),
-          width: "18%",
+          width: "25%",
           align: "center",
           render:
             (row) => (
@@ -1827,6 +1874,7 @@ export default function ActivityParticipantsPage({
       )}
 
       {participantTab === "mine" && (
+        <>
       <ParticipantStats
         total={
           displayedSummary.total
@@ -1981,6 +2029,7 @@ export default function ActivityParticipantsPage({
           emptyMessage={t("activityPage.noParticipantMembers")}
         />
       </div>
+        </>
       )}
 
       {participantTab === "allBranches" && canViewAllBranches && (

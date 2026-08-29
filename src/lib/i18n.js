@@ -44,7 +44,19 @@ export function localizedValue(value, locale = DEFAULT_LOCALE, fallback = "-") {
     value.fullNameEn ??
     value.full_name_en ??
     value.branchNameEn ??
-    value.branch_name_en;
+    value.branch_name_en ??
+    value.paymentMethodLabelEn ??
+    value.payment_method_label_en ??
+    value.activityTypeLabelEn ??
+    value.activity_type_label_en ??
+    value.sectorLabelEn ??
+    value.sector_label_en ??
+    value.genderLabelEn ??
+    value.gender_label_en ??
+    value.statusLabelEn ??
+    value.status_label_en ??
+    value.positionLabelEn ??
+    value.position_label_en;
 
   const khmerValue =
     value.labelKm ??
@@ -56,7 +68,19 @@ export function localizedValue(value, locale = DEFAULT_LOCALE, fallback = "-") {
     value.fullNameKm ??
     value.full_name_km ??
     value.branchNameKm ??
-    value.branch_name_km;
+    value.branch_name_km ??
+    value.paymentMethodLabelKm ??
+    value.payment_method_label_km ??
+    value.activityTypeLabelKm ??
+    value.activity_type_label_km ??
+    value.sectorLabelKm ??
+    value.sector_label_km ??
+    value.genderLabelKm ??
+    value.gender_label_km ??
+    value.statusLabelKm ??
+    value.status_label_km ??
+    value.positionLabelKm ??
+    value.position_label_km;
 
   return (
     (isEnglish ? englishValue || khmerValue : khmerValue || englishValue) ||

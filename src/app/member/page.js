@@ -307,8 +307,19 @@ function mapMember(
     label,
     locale,
     t,
+    branchLookups = [],
+    genderLookups = [],
   },
 ) {
+  const genderCode = String(member?.gender?.code || "").toUpperCase();
+  const branchId = member?.branch?.id ?? member?.branch_id;
+  const localizedGender = genderLookups.find(
+    (item) => String(item?.code || "").toUpperCase() === genderCode,
+  );
+  const localizedBranch = branchLookups.find(
+    (item) => String(item?.id ?? item?.value ?? "") === String(branchId ?? ""),
+  );
+
   return {
     id:
       member?.id,
@@ -318,7 +329,7 @@ function mapMember(
 
     genderLabel:
       getGenderLabel(
-        member?.gender,
+        localizedGender || member?.gender,
         label,
         t,
       ),
@@ -331,7 +342,7 @@ function mapMember(
 
     branchLabel:
       getBranchLabel(
-        member?.branch,
+        localizedBranch || member?.branch,
         label,
       ),
 
@@ -779,6 +790,8 @@ export default function MembersPage() {
                   label,
                   locale,
                   t,
+                  branchLookups,
+                  genderLookups,
                 }),
             ),
           );
@@ -839,17 +852,21 @@ export default function MembersPage() {
           allMembers.map(
             (member) =>
               mapMember(member, {
-                label,
-                locale,
-                t,
+                  label,
+                  locale,
+                  t,
+                  branchLookups,
+                  genderLookups,
               }),
           ),
         );
       },
       [
         effectiveBranchFilter,
+        branchLookups,
         debouncedQuery,
         genderFilter,
+        genderLookups,
         label,
         locale,
         statusFilter,

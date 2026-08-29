@@ -39,7 +39,7 @@ const DEFAULT_DOCUMENT_TYPE_STYLE =
 export default function CompanyDocumentPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, label, locale } = useLanguage();
   const role = normalizeRole(user?.role);
   const { selectedBranch } = useBranch();
 
@@ -136,28 +136,16 @@ export default function CompanyDocumentPage() {
         branch.branchId ??
         branch.branch_id;
 
-      const label =
-        branch.labelKm ??
-        branch.label_km ??
-        branch.nameKm ??
-        branch.name_km ??
-        branch.labelEn ??
-        branch.label_en ??
-        branch.nameEn ??
-        branch.name_en ??
-        branch.label ??
-        branch.name;
-
       return {
         value: value == null ? "" : String(value),
-        label: label == null ? "" : String(label),
+        label: label(branch, ""),
       };
     })
-    .filter((option) => option.value && option.label), [branches]);
+    .filter((option) => option.value && option.label), [branches, label]);
   const documentTypeOptions = useMemo(() => documentTypes.map((type) => ({
     value: String(type.id),
-    label: type.labelKm || type.label_km || type.labelEn || type.label_en || type.code,
-  })), [documentTypes]);
+    label: label(type, type.code),
+  })), [documentTypes, label]);
 
   const filteredDocuments = documents.filter((item) => {
     const searchValue = search.trim().toLowerCase();
@@ -201,7 +189,10 @@ export default function CompanyDocumentPage() {
     },
     {
       header: t("documentPage.branch"),
-      accessor: "branchName",
+      render: (item) =>
+        locale === "en"
+          ? item.branchNameEn || item.branchNameKm || "-"
+          : item.branchNameKm || item.branchNameEn || "-",
       width: "w-[15%]",
     },
     {
@@ -253,7 +244,12 @@ export default function CompanyDocumentPage() {
         <div className="flex items-center justify-center ">
           <button
             type="button"
-            onClick={() => setSelectedDocument({ ...item, branch: item.branchName })}
+            onClick={() => setSelectedDocument({
+              ...item,
+              branch: locale === "en"
+                ? item.branchNameEn || item.branchNameKm || "-"
+                : item.branchNameKm || item.branchNameEn || "-",
+            })}
             className="inline-flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-blue-50"
             aria-label={t("documentPage.viewDocument")}
           >
@@ -482,7 +478,8 @@ function mapDocument(row) {
     title: row.title,
     description: row.description || "",
     branch: String(row.branch?.id || ""),
-    branchName: row.branch?.nameKm || row.branch?.name_km || row.branch?.nameEn || row.branch?.name_en || "-",
+    branchNameKm: row.branch?.nameKm || row.branch?.name_km || "",
+    branchNameEn: row.branch?.nameEn || row.branch?.name_en || "",
     branchId: row.branch?.id,
     date: row.created_at ? row.created_at.slice(0, 10) : "-",
     size: formatSize(row.file?.sizeBytes),
