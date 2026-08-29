@@ -1106,9 +1106,26 @@ export default function PersonalPage() {
     // accessibleBranches entry as absent, since its id lives on .id).
     const scopedBranches = rawScopedBranches.map(
       (option) => ({
+        ...option,
         value: String(
           option.value ?? option.id ?? "",
         ),
+        // Keep both labels. FormSelect chooses the right one whenever the
+        // language changes, rather than permanently displaying Khmer.
+        labelKm:
+          option.labelKm ??
+          option.label_km ??
+          option.nameKm ??
+          option.name_km ??
+          option.label ??
+          "",
+        labelEn:
+          option.labelEn ??
+          option.label_en ??
+          option.nameEn ??
+          option.name_en ??
+          option.label ??
+          "",
         label:
           option.label ||
           option.nameKm ||
@@ -1142,9 +1159,12 @@ export default function PersonalPage() {
     return [
       ...scopedBranches,
       ...missing.map((value) => ({
-        label:
+        labelKm:
           (value === String(form.branch_id) &&
             form.branch_name_km) ||
+          labelsById.get(value) ||
+          value,
+        labelEn:
           labelsById.get(value) ||
           value,
         value,
@@ -2288,6 +2308,30 @@ function FormSelect({
   selectClassName = "",
   adminEditable = false,
 }) {
+  const { locale } = useLanguage();
+
+  const getOptionLabel = (option) => {
+    if (typeof option !== "object" || option === null) {
+      return String(option ?? "");
+    }
+
+    const khmerLabel =
+      option.labelKm ??
+      option.label_km ??
+      option.nameKm ??
+      option.name_km;
+
+    const englishLabel =
+      option.labelEn ??
+      option.label_en ??
+      option.nameEn ??
+      option.name_en;
+
+    return locale === "en"
+      ? englishLabel ?? khmerLabel ?? option.label ?? String(option.value ?? "")
+      : khmerLabel ?? englishLabel ?? option.label ?? String(option.value ?? "");
+  };
+
   return (
     <div className={`min-w-0 ${adminEditable ? "admin-editable [&_label]:!text-text-primary" : ""}`}>
       <label className="mb-2 block text-sm font-semibold text-text-primary">
@@ -2338,14 +2382,18 @@ function FormSelect({
             ) => (
               <option
                 key={String(
-                  option.value,
+                  typeof option === "object" && option !== null
+                    ? option.value
+                    : option,
                 )}
                 value={
-                  option.value
+                  typeof option === "object" && option !== null
+                    ? option.value
+                    : option
                 }
               >
                 {
-                  option.label
+                  getOptionLabel(option)
                 }
               </option>
             ),

@@ -239,19 +239,17 @@ function getGenderCode(gender) {
   ).toUpperCase();
 }
 
-function getGenderDisplay(gender) {
+function getGenderDisplay(gender, locale) {
   if (
     gender &&
     typeof gender === "object"
   ) {
-    const label =
-      gender?.label_km ||
-      gender?.labelKm ||
-      gender?.label_en ||
-      gender?.labelEn;
+    const label = locale === "en"
+      ? gender?.label_en || gender?.labelEn || gender?.label_km || gender?.labelKm
+      : gender?.label_km || gender?.labelKm || gender?.label_en || gender?.labelEn;
 
     if (label) {
-      return `ភេទ ${label}`;
+      return label;
     }
   }
 
@@ -259,15 +257,15 @@ function getGenderDisplay(gender) {
     getGenderCode(gender);
 
   if (code === "FEMALE") {
-    return "ភេទ ស្រី";
+    return locale === "en" ? "Female" : "ស្រី";
   }
 
   if (code === "MALE") {
-    return "ភេទ ប្រុស";
+    return locale === "en" ? "Male" : "ប្រុស";
   }
 
   if (code === "MONK") {
-    return "ព្រះសង្ឃ";
+    return locale === "en" ? "Monk" : "ព្រះសង្ឃ";
   }
 
   return gender || "-";
@@ -407,6 +405,7 @@ function getStatusLabel(status) {
 
 function getBranchLabel(
   member,
+  locale,
 ) {
   const branch =
     member?.branch;
@@ -415,25 +414,18 @@ function getBranchLabel(
     branch &&
     typeof branch === "object"
   ) {
-    return (
-      branch?.name_km ||
-      branch?.nameKm ||
-      branch?.label_km ||
-      branch?.labelKm ||
-      branch?.name_en ||
-      branch?.nameEn ||
-      "-"
-    );
+    return locale === "en"
+      ? branch?.name_en || branch?.nameEn || branch?.label_en || branch?.labelEn ||
+        branch?.name_km || branch?.nameKm || branch?.label_km || branch?.labelKm || "-"
+      : branch?.name_km || branch?.nameKm || branch?.label_km || branch?.labelKm ||
+        branch?.name_en || branch?.nameEn || "-";
   }
 
-  return (
-    member?.branch_name_km ||
-    member?.branchNameKm ||
-    member?.branch_name_en ||
-    member?.branchNameEn ||
-    branch ||
-    "-"
-  );
+  return locale === "en"
+    ? member?.branch_name_en || member?.branchNameEn || member?.branch_name_km ||
+      member?.branchNameKm || branch || "-"
+    : member?.branch_name_km || member?.branchNameKm || member?.branch_name_en ||
+      member?.branchNameEn || branch || "-";
 }
 
 /*
@@ -445,6 +437,7 @@ function getBranchLabel(
  */
 function getAssignedBranchNames(
   assignedBranches,
+  locale,
 ) {
   if (!Array.isArray(assignedBranches)) {
     return [];
@@ -453,11 +446,9 @@ function getAssignedBranchNames(
   return assignedBranches
     .map(
       (item) =>
-        item?.name_km ||
-        item?.nameKm ||
-        item?.name_en ||
-        item?.nameEn ||
-        "",
+        locale === "en"
+          ? item?.name_en || item?.nameEn || item?.name_km || item?.nameKm || ""
+          : item?.name_km || item?.nameKm || item?.name_en || item?.nameEn || "",
     )
     .filter(Boolean);
 }
@@ -465,10 +456,12 @@ function getAssignedBranchNames(
 function formatBranchDisplay(
   primaryLabel,
   assignedBranches,
+  locale,
 ) {
   const names =
     getAssignedBranchNames(
       assignedBranches,
+      locale,
     );
 
   if (names.length <= 1) {
@@ -487,7 +480,7 @@ function formatBranchDisplay(
   };
 }
 
-function getLookupLabel(value) {
+function getLookupLabel(value, locale) {
   if (!value) {
     return "-";
   }
@@ -498,18 +491,11 @@ function getLookupLabel(value) {
     return value;
   }
 
-  return (
-    value?.label_km ||
-    value?.labelKm ||
-    value?.name_km ||
-    value?.nameKm ||
-    value?.label_en ||
-    value?.labelEn ||
-    value?.name_en ||
-    value?.nameEn ||
-    value?.code ||
-    "-"
-  );
+  return locale === "en"
+    ? value?.label_en || value?.labelEn || value?.name_en || value?.nameEn ||
+      value?.label_km || value?.labelKm || value?.name_km || value?.nameKm || value?.code || "-"
+    : value?.label_km || value?.labelKm || value?.name_km || value?.nameKm ||
+      value?.label_en || value?.labelEn || value?.name_en || value?.nameEn || value?.code || "-";
 }
 
 /*
@@ -532,7 +518,7 @@ export default function MemberInfoCard({
    */
   assignedBranches,
 }) {
-  const { t, label } =
+  const { t, label, locale } =
     useLanguage();
 
   const fileInputRef =
@@ -710,7 +696,7 @@ export default function MemberInfoCard({
     "bg-gray-100 text-text-secondary";
 
   const branch =
-    getBranchLabel(member);
+    getBranchLabel(member, locale);
 
   const branchAssignments =
     assignedBranches ??
@@ -721,6 +707,7 @@ export default function MemberInfoCard({
     formatBranchDisplay(
       branch,
       branchAssignments,
+      locale,
     );
 
   const dateOfBirth =
@@ -739,6 +726,7 @@ export default function MemberInfoCard({
       member?.nationality ||
         member?.nationality_name_km ||
         member?.nationalityNameKm,
+      locale,
     );
 
   const ethnicity =
@@ -746,6 +734,7 @@ export default function MemberInfoCard({
       member?.ethnicity ||
         member?.ethnicity_name_km ||
         member?.ethnicityNameKm,
+      locale,
     );
 
   /*
@@ -1089,6 +1078,7 @@ export default function MemberInfoCard({
           firstLabel={t("memberPage.gender")}
           firstValue={getGenderDisplay(
             member?.gender,
+            locale,
           )}
           firstIcon={
             <span className="text-sm">

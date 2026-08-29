@@ -96,7 +96,7 @@ async function fetchJson(
   return body;
 }
 
-function getLabel(value) {
+function getLabel(value, locale = "km") {
   if (!value) {
     return "";
   }
@@ -107,25 +107,18 @@ function getLabel(value) {
     return value;
   }
 
-  return (
-    value?.label_km ||
-    value?.labelKm ||
-    value?.name_km ||
-    value?.nameKm ||
-    value?.title_km ||
-    value?.titleKm ||
-    value?.label_en ||
-    value?.labelEn ||
-    value?.name_en ||
-    value?.nameEn ||
-    value?.name ||
-    value?.code ||
-    ""
-  );
+  const khmer = value?.label_km || value?.labelKm || value?.name_km ||
+    value?.nameKm || value?.title_km || value?.titleKm;
+  const english = value?.label_en || value?.labelEn || value?.name_en ||
+    value?.nameEn || value?.title_en || value?.titleEn;
+
+  return locale === "en"
+    ? english || khmer || value?.name || value?.code || ""
+    : khmer || english || value?.name || value?.code || "";
 }
 
 
-function getLocationLabel(value) {
+function getLocationLabel(value, locale = "km") {
   if (!value) {
     return "";
   }
@@ -138,25 +131,16 @@ function getLocationLabel(value) {
     return String(value);
   }
 
-  const name =
-    value?.name_km ||
-    value?.nameKm ||
-    value?.name_en ||
-    value?.nameEn ||
-    value?.name ||
-    value?.label_km ||
-    value?.labelKm ||
-    value?.label_en ||
-    value?.labelEn ||
-    "";
-
-  const address =
-    value?.address_km ||
-    value?.addressKm ||
-    value?.address_en ||
-    value?.addressEn ||
-    value?.address ||
-    "";
+  const nameKm = value?.name_km || value?.nameKm || value?.label_km || value?.labelKm;
+  const nameEn = value?.name_en || value?.nameEn || value?.label_en || value?.labelEn;
+  const addressKm = value?.address_km || value?.addressKm;
+  const addressEn = value?.address_en || value?.addressEn;
+  const name = locale === "en"
+    ? nameEn || nameKm || value?.name || ""
+    : nameKm || nameEn || value?.name || "";
+  const address = locale === "en"
+    ? addressEn || addressKm || value?.address || ""
+    : addressKm || addressEn || value?.address || "";
 
   if (name && address && name !== address) {
     return `${name} - ${address}`;
@@ -183,7 +167,7 @@ function getCode(value) {
   ).toUpperCase();
 }
 
-function mapParticipation(item) {
+function mapParticipation(item, locale) {
   const activity =
     item?.activity || {};
 
@@ -217,33 +201,33 @@ function mapParticipation(item) {
       item?.activityId ??
       activity?.id,
 
-    activity:
-      item?.activity_title_km ||
-      item?.activityTitleKm ||
-      item?.activity_name_km ||
-      item?.activityNameKm ||
-      activity?.title_km ||
-      activity?.titleKm ||
-      activity?.name_km ||
-      activity?.nameKm ||
-      activity?.title ||
-      "-",
+    activity: locale === "en"
+      ? item?.activity_title_en || item?.activityTitleEn || item?.activity_name_en ||
+        item?.activityNameEn || activity?.title_en || activity?.titleEn ||
+        activity?.name_en || activity?.nameEn || item?.activity_title_km ||
+        item?.activityTitleKm || item?.activity_name_km || item?.activityNameKm ||
+        activity?.title_km || activity?.titleKm || activity?.name_km || activity?.nameKm ||
+        activity?.title || "-"
+      : item?.activity_title_km || item?.activityTitleKm || item?.activity_name_km ||
+        item?.activityNameKm || activity?.title_km || activity?.titleKm ||
+        activity?.name_km || activity?.nameKm || item?.activity_title_en ||
+        item?.activityTitleEn || activity?.title_en || activity?.titleEn || activity?.title || "-",
 
     sector:
       getLabel(
         item?.sector ||
           item?.activity_sector ||
           item?.activitySector ||
-          activity?.sector,
+          activity?.sector, locale,
       ) || "-",
 
     type:
-      getLabel(type) || "-",
+      getLabel(type, locale) || "-",
 
     typeCode,
 
     status:
-      getLabel(attendance) ||
+      getLabel(attendance, locale) ||
       "-",
 
     statusCode:
@@ -256,7 +240,7 @@ function mapParticipation(item) {
           activity?.location_name ||
           activity?.locationName ||
           activity?.location ||
-          item?.location,
+          item?.location, locale,
       ) || "-",
 
     date:
@@ -274,7 +258,7 @@ function mapParticipation(item) {
 }
 
 export default function ParticipationPage() {
-  const { t, label } = useLanguage();
+  const { t, label, locale } = useLanguage();
 
   const params =
     useParams();
@@ -469,9 +453,7 @@ export default function ParticipationPage() {
         } while (page < totalPages);
 
         setParticipations(
-          content.map(
-            mapParticipation,
-          ),
+          content.map((item) => mapParticipation(item, locale)),
         );
       } catch (fetchError) {
         if (
@@ -513,6 +495,7 @@ export default function ParticipationPage() {
     debouncedQuery,
     typeFilter,
     t,
+    locale,
   ]);
 
   /*

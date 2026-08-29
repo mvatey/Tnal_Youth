@@ -326,7 +326,9 @@ function mapMemberDocument(row, t, isEnglish) {
     gender: isEnglish
       ? row.member?.genderLabelEn || row.member?.gender_label_en || genderLabels[genderCode] || row.member?.genderLabelKm || row.member?.gender_label_km || "-"
       : row.member?.genderLabelKm || row.member?.gender_label_km || genderLabels[genderCode] || row.member?.genderLabelEn || row.member?.gender_label_en || "-",
-    branch: row.branch?.nameKm || row.branch?.name_km || row.branch?.nameEn || row.branch?.name_en || "-",
+    branch: isEnglish
+      ? row.branch?.nameEn || row.branch?.name_en || row.branch?.nameKm || row.branch?.name_km || "-"
+      : row.branch?.nameKm || row.branch?.name_km || row.branch?.nameEn || row.branch?.name_en || "-",
     branchId: row.branch?.id ?? row.branch?.branchId ?? row.branch?.branch_id ?? null,
     date: row.created_at ? row.created_at.slice(0, 10) : "-",
     size: formatSize(row.file?.sizeBytes),

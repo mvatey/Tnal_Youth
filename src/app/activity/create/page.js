@@ -194,6 +194,20 @@ function getOptionLabel(option) {
   );
 }
 
+function getLocalizedOptionLabel(option, locale) {
+  const english =
+    option?.labelEn ?? option?.label_en ?? option?.nameEn ?? option?.name_en;
+  const khmer =
+    option?.labelKm ?? option?.label_km ?? option?.nameKm ?? option?.name_km;
+
+  return (
+    (locale === "en" ? english || khmer : khmer || english) ||
+    option?.branchCode ||
+    option?.code ||
+    ""
+  );
+}
+
 function getOptionValue(option) {
   return Number(option?.value ?? option?.id);
 }
@@ -815,17 +829,15 @@ export default function CreateActivityPage() {
         String(getOptionValue(option)) === effectiveBranchId,
     );
 
-    return getOptionLabel(match);
-  }, [isBranchScoped, effectiveBranchId, lookupData.branches]);
+    return getLocalizedOptionLabel(match, locale);
+  }, [isBranchScoped, effectiveBranchId, lookupData.branches, locale]);
 
-  const localizedOptionLabel = (option) => locale === "en"
-    ? (option?.labelEn || option?.label_en || option?.nameEn || option?.name_en || option?.labelKm || option?.label_km || option?.nameKm || option?.name_km || option?.code || "")
-    : (option?.labelKm || option?.label_km || option?.nameKm || option?.name_km || option?.labelEn || option?.label_en || option?.nameEn || option?.name_en || option?.code || "");
+  const localizedOptionLabel = (option) => getLocalizedOptionLabel(option, locale);
   const branchOptions = lookupData.branches.map(localizedOptionLabel).filter(Boolean);
   const allInvitableBranchOptions = lookupData.invitableBranches
-    .map(getOptionLabel)
+    .map(localizedOptionLabel)
     .filter(Boolean);
-  const provinceOptions = lookupData.provinces.map(getOptionLabel).filter(Boolean);
+  const provinceOptions = lookupData.provinces.map(localizedOptionLabel).filter(Boolean);
   const typeOptions = lookupData.types.map(localizedOptionLabel).filter(Boolean);
   const sectorOptions = lookupData.sectors.map(localizedOptionLabel).filter(Boolean);
   const visibilityOptions = [t("activityPage.publicVisibility"), t("activityPage.internalVisibility")];
