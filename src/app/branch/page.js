@@ -356,6 +356,11 @@ export default function BranchPage() {
   ] = useState("");
 
   const [
+    selectedDate,
+    setSelectedDate,
+  ] = useState(null);
+
+  const [
     showSaveFile,
     setShowSaveFile,
   ] = useState(false);
@@ -1181,6 +1186,13 @@ export default function BranchPage() {
                     branch?.createdAt,
                   locale,
                 ),
+
+              createdAtValue:
+                String(
+                  branch?.created_at ||
+                    branch?.createdAt ||
+                    "",
+                ).slice(0, 10),
             };
           },
         ),
@@ -1278,6 +1290,13 @@ export default function BranchPage() {
             .trim()
             .toLowerCase();
 
+        const selectedDateValue =
+          selectedDate
+            ? selectedDate
+                .toISOString()
+                .split("T")[0]
+            : "";
+
         return mappedBranches.filter(
           (
             branch,
@@ -1344,11 +1363,20 @@ export default function BranchPage() {
               branch.statusLabel ===
                 selectedStatus;
 
+            /*
+             * Created date
+             */
+            const matchesDate =
+              !selectedDateValue ||
+              branch.createdAtValue ===
+                selectedDateValue;
+
             return (
               matchesSearch &&
               matchesLevel &&
               matchesProvince &&
-              matchesStatus
+              matchesStatus &&
+              matchesDate
             );
           },
         );
@@ -1359,6 +1387,7 @@ export default function BranchPage() {
         selectedLevel,
         selectedProvince,
         selectedStatus,
+        selectedDate,
         t,
       ],
     );
@@ -1596,6 +1625,23 @@ export default function BranchPage() {
       options:
         branchStatusOptions,
     },
+
+    {
+      key:
+        "date",
+
+      value:
+        selectedDate,
+
+      onChange:
+        setSelectedDate,
+
+      placeholder:
+        t("common.datePlaceholder"),
+
+      type:
+        "date",
+    },
   ];
 
     const handleDownload = () => {
@@ -1663,9 +1709,9 @@ export default function BranchPage() {
       />
 
       <section className="rounded-xl border border-border bg-bg-page-white p-4 transition-shadow duration-200 hover:shadow-sm">
-        <div className="mb-4 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(220px,1fr)_auto] xl:flex xl:items-center xl:flex-nowrap">
+        <div className="mb-4 flex min-w-0 flex-wrap items-center gap-3">
           {/* Search */}
-          <div className="min-w-0 sm:col-span-2 xl:col-span-1 xl:w-[265px] xl:shrink-0">
+          <div className="w-full sm:w-[265px]">
             <SearchBar
               value={
                 searchQuery
@@ -1679,17 +1725,17 @@ export default function BranchPage() {
           </div>
 
           {/* Filters */}
-          <div className="min-w-0 sm:col-span-2 xl:col-span-1 xl:shrink-0">
+          <div className="min-w-0">
             <FilterBar
               filters={
                 filters
               }
-              className="grid grid-cols-1 sm:grid-cols-3 xl:flex xl:flex-nowrap [&>div]:w-full xl:[&>div]:w-auto [&_select]:w-full xl:[&_select]:w-auto"
+              className="flex-wrap"
             />
           </div>
 
           {/* Actions */}
-          <div className="flex min-w-0 flex-col gap-3 sm:col-span-2 sm:flex-row xl:col-span-1 xl:ml-auto xl:shrink-0 xl:items-center [&>button]:w-full sm:[&>button]:w-auto">
+          <div className="flex min-w-0 flex-col gap-3 sm:ml-auto sm:flex-row sm:items-center [&>button]:w-full sm:[&>button]:w-auto">
             <Button
               type="button"
               variant="primary"
@@ -1704,22 +1750,22 @@ export default function BranchPage() {
               {t("branchPage.download")}
             </Button>
 
-            <Button
-              type="button"
-              variant="success"
-              disabled={isViewer}
-              title={isViewer ? t("branchPage.viewerReadOnly") : undefined}
-              icon={
-                <PlusCircle
-                  size={16}
-                />
-              }
-              onClick={() =>
-                !isViewer && setShowCreateModal(true)
-              }
-            >
-              {t("branchPage.createBranch")}
-            </Button>
+            {!isViewer && (
+              <Button
+                type="button"
+                variant="success"
+                icon={
+                  <PlusCircle
+                    size={16}
+                  />
+                }
+                onClick={() =>
+                  setShowCreateModal(true)
+                }
+              >
+                {t("branchPage.createBranch")}
+              </Button>
+            )}
           </div>
         </div>
 

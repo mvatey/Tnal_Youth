@@ -374,6 +374,11 @@ function mapMember(
         member?.joined_on,
         locale,
       ),
+
+    joinedOnRaw:
+      member?.joined_on
+        ? String(member.joined_on).slice(0, 10)
+        : "",
   };
 }
 
@@ -485,6 +490,11 @@ export default function MembersPage() {
   const [
     genderFilter,
     setGenderFilter,
+  ] = useState("");
+
+  const [
+    dateFilter,
+    setDateFilter,
   ] = useState("");
 
   const [
@@ -1013,6 +1023,28 @@ export default function MembersPage() {
 
   /*
    * =========================================
+   * DATE FILTER
+   *
+   * Applied client-side over the already-fetched
+   * member list (branch/status/gender/search are
+   * server-driven, but the backend has no joined-date
+   * param).
+   * =========================================
+   */
+
+  const filteredMembers = useMemo(
+    () =>
+      dateFilter
+        ? members.filter(
+            (member) =>
+              member.joinedOnRaw === dateFilter,
+          )
+        : members,
+    [members, dateFilter],
+  );
+
+  /*
+   * =========================================
    * STATUS OPTIONS
    * =========================================
    */
@@ -1052,6 +1084,72 @@ export default function MembersPage() {
 
               return {
                 label: statusLabel,
+
+                value:
+                  id !== null &&
+                  id !==
+                    undefined
+                    ? String(
+                        id,
+                      )
+                    : "",
+              };
+            },
+          )
+          .filter(
+            (status) =>
+              status.value !==
+              "",
+          ),
+      ],
+      [statusLookups, label, t],
+    );
+
+  // The status FILTER only ever needs Active/Inactive -- Suspended and
+  // Resigned stay selectable when creating/editing a member (memberStatuses
+  // above, passed to CreateMemberModal), just not offered as a way to
+  // filter the list.
+  const memberStatusFilterOptions =
+    useMemo(
+      () => [
+        {
+          label:
+            t("memberPage.allStatuses"),
+
+          value: "",
+        },
+
+        ...statusLookups
+          .filter(
+            (status) => {
+              const code =
+                String(
+                  status?.code ||
+                    "",
+                ).toUpperCase();
+
+              return (
+                code === "ACTIVE" ||
+                code === "INACTIVE"
+              );
+            },
+          )
+          .map(
+            (status) => {
+              const id =
+                status?.id ??
+                status?.status_id ??
+                status?.statusId ??
+                status?.value ??
+                "";
+
+              return {
+                label:
+                  getStatusLabel(
+                    status,
+                    label,
+                    t,
+                  ),
 
                 value:
                   id !== null &&
@@ -1189,13 +1287,13 @@ export default function MembersPage() {
 
   const handleDownloadMembers = () => {
   if (
-    !Array.isArray(members) ||
-    members.length === 0
+    !Array.isArray(filteredMembers) ||
+    filteredMembers.length === 0
   ) {
     return;
   }
 
-  const rows = members.map(
+  const rows = filteredMembers.map(
     (member, index) => ({
       [t("memberPage.no")]: index + 1,
       [t("memberPage.member")]:
@@ -1380,7 +1478,7 @@ export default function MembersPage() {
         setStatusFilter,
 
       options:
-        memberStatuses,
+        memberStatusFilterOptions,
 
       placeholder:
         t("memberPage.status"),
@@ -1400,6 +1498,21 @@ export default function MembersPage() {
 
       placeholder:
         t("memberPage.gender"),
+    },
+
+    {
+      name: "joinedAt",
+
+      type: "date",
+
+      value:
+        dateFilter,
+
+      onChange:
+        setDateFilter,
+
+      placeholder:
+        t("memberPage.joinedAt"),
     },
   ];
 
@@ -1479,48 +1592,47 @@ export default function MembersPage() {
       <div className="min-w-0 w-full">
         <DataTable
           title={t("memberPage.listTitle")}
-          data={members}
+          data={filteredMembers}
           columns={tableColumns}
           filters={filterConfig}
           searchQuery={query}
           onSearchChange={setQuery}
           searchPlaceholder={t("memberPage.searchByName")}
           pageSize={20}
+          emptyMessage={t("memberPage.noMembersFound")}
           onDownload={handleDownloadMembers}
           actionButton={
-            <button
-              type="button"
-              onClick={() =>
-                !isViewer && setIsCreateOpen(true)
-              }
-              disabled={isViewer}
-              title={isViewer ? t("memberPage.viewerReadOnly") : undefined}
-              className="
-                inline-flex
-                h-[34px]
-                w-full
-                items-center
-                justify-center
-                gap-2
-                whitespace-nowrap
-                rounded-lg
-                bg-success
-                px-4
-                text-sm
-                font-medium
-                text-white
-                transition
-                hover:opacity-90
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
-            >
-              <RiAddCircleLine className="h-4 w-4 shrink-0" />
+            isViewer ? null : (
+              <button
+                type="button"
+                onClick={() =>
+                  setIsCreateOpen(true)
+                }
+                className="
+                  inline-flex
+                  h-[34px]
+                  w-full
+                  items-center
+                  justify-center
+                  gap-2
+                  whitespace-nowrap
+                  rounded-lg
+                  bg-success
+                  px-4
+                  text-sm
+                  font-medium
+                  text-white
+                  transition
+                  hover:opacity-90
+                "
+              >
+                <RiAddCircleLine className="h-4 w-4 shrink-0" />
 
-              <span>
-                {t("memberPage.addMember")}
-              </span>
-            </button>
+                <span>
+                  {t("memberPage.addMember")}
+                </span>
+              </button>
+            )
           }
         />
       </div>

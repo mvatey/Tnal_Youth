@@ -92,7 +92,7 @@ const km = {
     saveExpenseFailed: "មិនអាចរក្សាទុកចំណាយកម្មវិធីបានទេ។",
     eventDonationTitle: "វិភាគទានក្នុងកម្មវិធី",
     eventDonationRecordTitle: "ការកត់ត្រាវិភាគទានក្នុងកម្មវិធី",
-    sponsorAmountInActivities: "ថវិកាឧបត្ថម្ភក្នុងកម្មវិធី",
+    sponsorAmountInActivities: "អ្នកឧបត្ថម្ភកម្មវិធី",
     searchActivityPlaceholder: "ស្វែងរកតាមឈ្មោះកម្មវិធី ...",
     branch: "សាខា",
     selectBranch: "ជ្រើសរើសសាខា",
@@ -436,6 +436,7 @@ const km = {
   memberPage: {
     listTitle: "បញ្ជីសមាជិក",
     searchByName: "ស្វែងរកតាមរយៈឈ្មោះ...",
+    noMembersFound: "មិនមានទិន្នន័យសមាជិកទេ",
     addMember: "បន្ថែមសមាជិកថ្មី",
     totalMembers: "សមាជិកសរុប",
     female: "ភេទស្រី",

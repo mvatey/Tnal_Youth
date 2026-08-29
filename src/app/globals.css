@@ -161,6 +161,10 @@ input::-webkit-credentials-auto-fill-button {
   font-size: 13px;
 }
 
+.date-filter-input .react-datepicker__close-icon {
+  right: 28px;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

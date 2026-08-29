@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import DatePicker from "react-datepicker";
+import { km, enUS } from "date-fns/locale";
 import { CalendarDays, ChevronDown } from "lucide-react";
+
+import { useLanguage } from "@/context/LanguageContext";
 
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -14,19 +17,25 @@ function FilterInput({
   placeholder = "ជ្រើសរើស",
   type = "select",
 }) {
+  const { locale } = useLanguage();
+  const datePickerLocale = locale === "en" ? enUS : km;
 
   if (type === "date") {
     return (
-      <div className="relative w-full sm:w-[140px]">
+      <div className="date-filter-input relative w-full sm:w-[190px]">
         <DatePicker
           selected={value}
           onChange={(date) => onChange?.(date)}
-          placeholderText={value ? "" : "ថ្ងៃ/ខែ/ឆ្នាំ"}
+          placeholderText={value ? "" : placeholder}
           dateFormat="dd/MM/yyyy"
+          locale={datePickerLocale}
+          onChangeRaw={(event) => event.preventDefault()}
           isClearable
-          className="h-[34px] w-full rounded-lg border border-border bg-bg-page-white px-3 pr-14 text-[12px] text-text-primary outline-none"
+          className="h-[34px] w-full cursor-pointer rounded-lg border border-border bg-bg-page-white px-3 pr-16 text-[12px] text-text-primary caret-transparent outline-none"
           wrapperClassName="w-full"
           popperClassName="small-calendar"
+          popperPlacement="bottom-start"
+          popperProps={{ strategy: "fixed" }}
         />
 
         <CalendarDays size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary" />
@@ -41,18 +50,22 @@ function FilterInput({
     const [startDate, endDate] = value || [null, null];
 
     return (
-      <div className="relative w-full sm:w-[190px]">
+      <div className="date-filter-input relative w-full sm:w-[240px]">
         <DatePicker
           selectsRange
           startDate={startDate}
           endDate={endDate}
           onChange={(dates) => onChange?.(dates)}
-          placeholderText="ថ្ងៃ/ខែ/ឆ្នាំ"
+          placeholderText={placeholder}
           dateFormat="dd/MM/yyyy"
+          locale={datePickerLocale}
+          onChangeRaw={(event) => event.preventDefault()}
           isClearable
-          className="h-[34px] w-full rounded-lg border border-border bg-bg-page-white px-3 pr-14 text-[12px] text-text-primary outline-none"
+          className="h-[34px] w-full cursor-pointer rounded-lg border border-border bg-bg-page-white px-3 pr-16 text-[12px] text-text-primary caret-transparent outline-none"
           wrapperClassName="w-full"
           popperClassName="small-calendar"
+          popperPlacement="bottom-start"
+          popperProps={{ strategy: "fixed" }}
         />
 
         <CalendarDays size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary" />

@@ -20,6 +20,7 @@ export default function BoxFill({
   list,
   suggestions = [],
   className = "",
+  autoComplete,
 }) {
   const [focused, setFocused] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -184,6 +185,7 @@ export default function BoxFill({
             type={isPassword && passwordVisible ? "text" : type}
             name={name}
             list={list}
+            autoComplete={autoComplete}
             {...sharedValueProps}
             readOnly={readOnly}
             disabled={disabled}

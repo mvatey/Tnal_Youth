@@ -17,6 +17,27 @@ import { normalizeRole } from "@/lib/navigation";
 
 const USERS_BASE = "/api/backend/admin/users";
 
+/*
+ * Intl.DateTimeFormat("km-KH", ...) silently falls back to English
+ * formatting in this environment instead of throwing, so it can't be
+ * trusted for the Khmer locale -- hand-roll it instead, matching the
+ * month names already used elsewhere in the app (e.g. member/page.js).
+ */
+const MONTHS_KM = [
+  "មករា",
+  "កុម្ភៈ",
+  "មីនា",
+  "មេសា",
+  "ឧសភា",
+  "មិថុនា",
+  "កក្កដា",
+  "សីហា",
+  "កញ្ញា",
+  "តុលា",
+  "វិច្ឆិកា",
+  "ធ្នូ",
+];
+
 const EMPTY_SUMMARY = {
   totalUsers: 0,
   activeUsers: 0,
@@ -35,37 +56,6 @@ const STATUS_BADGE_STYLES = {
   LOCKED: "bg-warning-bg text-warning",
   PENDING_ACTIVATION: "bg-bg-page-gray text-text-secondary",
 };
-
-async function fetchLookupOptions(path, signal) {
-  const response = await fetch(`/api/lookups/${path}`, {
-    method: "GET",
-    credentials: "include",
-    cache: "no-store",
-    headers: { Accept: "application/json" },
-    signal,
-  });
-
-  const text = await response.text();
-  let body = null;
-
-  if (text) {
-    try {
-      body = JSON.parse(text);
-    } catch {
-      body = text;
-    }
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      (typeof body === "object" &&
-        (body?.message || body?.detail || body?.error)) ||
-        `Request failed with status ${response.status}`,
-    );
-  }
-
-  return Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
-}
 
 async function fetchJson(path, params, signal) {
   const query = params ? `?${new URLSearchParams(params).toString()}` : "";
@@ -116,11 +106,17 @@ function formatDateTime(value, locale = "km") {
     return "-";
   }
 
-  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "km-KH", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(date);
+  if (locale === "en") {
+    return new Intl.DateTimeFormat("en-US", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(date);
+  }
+
+  const monthName = MONTHS_KM[date.getMonth()];
+
+  return `${date.getDate()} ${monthName}, ${date.getFullYear()}`;
 }
 
 function mapUser(user, labels, locale) {
@@ -134,7 +130,10 @@ function mapUser(user, labels, locale) {
 
   return {
     id: user?.id,
-    nameKh: user?.fullNameKm || user?.fullNameEn || "-",
+    nameKh:
+      (locale === "en"
+        ? user?.fullNameEn || user?.fullNameKm
+        : user?.fullNameKm || user?.fullNameEn) || "-",
     phone: user?.phone || "-",
     email: user?.email || "-",
     // Raw fields (unformatted) kept alongside the display-formatted ones
@@ -190,7 +189,7 @@ export default function UsersPage() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [createdRangeFilter, setCreatedRangeFilter] = useState({ from: "", to: "" });
+  const [createdDateFilter, setCreatedDateFilter] = useState("");
   const roleLabels = useMemo(() => ({
     ADMIN: t("usersPage.admin"),
     VIEWER: t("usersPage.viewer"),
@@ -208,12 +207,10 @@ export default function UsersPage() {
     PENDING_ACTIVATION: t("usersPage.pendingActivation"),
   }), [t]);
 
-  const fallbackStatusOptions = useMemo(() => [
+  const statusOptions = useMemo(() => [
     { label: t("usersPage.allStatuses"), value: "" },
     { label: t("usersPage.active"), value: "ACTIVE" },
     { label: t("usersPage.inactive"), value: "INACTIVE" },
-    { label: t("usersPage.suspended"), value: "SUSPENDED" },
-    { label: t("usersPage.resigned"), value: "RESIGNED" },
   ], [t]);
 
   const roleOptions = useMemo(() => [
@@ -224,8 +221,6 @@ export default function UsersPage() {
     { label: t("usersPage.member"), value: "MEMBER" },
     { label: t("usersPage.viewer"), value: "VIEWER" },
   ], [t]);
-
-  const [statusOptions, setStatusOptions] = useState([]);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -245,41 +240,6 @@ export default function UsersPage() {
       window.clearTimeout(timeoutId);
     };
   }, [query]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    fetchLookupOptions("member-statuses", controller.signal)
-      .then((rows) => {
-        const mapped = rows
-          .map((status) => {
-            const code = String(status?.code || status?.value || "").toUpperCase();
-            return {
-              value: code,
-              label:
-                (locale === "en"
-                  ? status?.labelEn || status?.label_en || status?.labelKm || status?.label_km
-                  : status?.labelKm || status?.label_km || status?.labelEn || status?.label_en) ||
-                statusLabels[code] ||
-                code,
-            };
-          })
-          .filter((option) => option.value);
-
-        setStatusOptions([
-          { label: t("usersPage.allStatuses"), value: "" },
-          ...mapped,
-        ]);
-      })
-      .catch((error) => {
-        if (error.name !== "AbortError") {
-          console.warn(t("usersPage.loadBranchesFailed"), error.message);
-          setStatusOptions(fallbackStatusOptions);
-        }
-      });
-
-    return () => controller.abort();
-  }, [fallbackStatusOptions, locale, statusLabels, t]);
 
   /*
    * =========================================
@@ -513,14 +473,17 @@ export default function UsersPage() {
   );
 
   // Role/status are server-filtered (loadUsers above); the created-date
-  // range narrows the already-fetched list client-side instead, same as
-  // branch/activity do for their own date filters.
+  // filter narrows the already-fetched list client-side to accounts
+  // created on that exact day.
   const displayedUsers = useMemo(
     () =>
       users.filter((user) =>
-        isWithinDateRange(user.createdAtRaw, createdRangeFilter),
+        isWithinDateRange(user.createdAtRaw, {
+          from: createdDateFilter,
+          to: createdDateFilter,
+        }),
       ),
-    [users, createdRangeFilter],
+    [users, createdDateFilter],
   );
 
   const filterConfig = [
@@ -539,10 +502,10 @@ export default function UsersPage() {
       placeholder: t("usersPage.status"),
     },
     {
-      name: "createdRange",
-      value: createdRangeFilter,
-      onChange: setCreatedRangeFilter,
-      type: "daterange",
+      name: "createdDate",
+      value: createdDateFilter,
+      onChange: setCreatedDateFilter,
+      type: "date",
     },
   ];
 
@@ -595,36 +558,34 @@ export default function UsersPage() {
               fileName: t("usersPage.usersFileName"),
             })
           }
-          actionButton={(
-            <button
-              type="button"
-              disabled={isViewer}
-              title={isViewer ? t("usersPage.viewerReadOnly") : undefined}
-              onClick={() => !isViewer && setIsCreateOpen(true)}
-              className="
-                inline-flex
-                h-[34px]
-                w-full
-                items-center
-                justify-center
-                gap-2
-                whitespace-nowrap
-                rounded-lg
-                bg-success
-                px-4
-                text-sm
-                font-medium
-                text-white
-                transition
-                hover:opacity-90
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
-            >
-              <RiAddCircleLine className="h-4 w-4 shrink-0" />
-              <span>{t("usersPage.createUser")}</span>
-            </button>
-          )}
+          actionButton={
+            isViewer ? null : (
+              <button
+                type="button"
+                onClick={() => setIsCreateOpen(true)}
+                className="
+                  inline-flex
+                  h-[34px]
+                  w-full
+                  items-center
+                  justify-center
+                  gap-2
+                  whitespace-nowrap
+                  rounded-lg
+                  bg-success
+                  px-4
+                  text-sm
+                  font-medium
+                  text-white
+                  transition
+                  hover:opacity-90
+                "
+              >
+                <RiAddCircleLine className="h-4 w-4 shrink-0" />
+                <span>{t("usersPage.createUser")}</span>
+              </button>
+            )
+          }
         />
       </div>
 

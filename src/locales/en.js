@@ -92,7 +92,7 @@ const en = {
     saveExpenseFailed: "Could not save activity expenses.",
     eventDonationTitle: "Activity donations",
     eventDonationRecordTitle: "Record activity donations",
-    sponsorAmountInActivities: "Sponsor funds in activities",
+    sponsorAmountInActivities: "Activity sponsor",
     searchActivityPlaceholder: "Search by activity name ...",
     branch: "Branch",
     selectBranch: "Select branch",
@@ -436,6 +436,7 @@ const en = {
   memberPage: {
     listTitle: "Member list",
     searchByName: "Search by name...",
+    noMembersFound: "No member data.",
     addMember: "Add new member",
     totalMembers: "Total members",
     female: "Female",

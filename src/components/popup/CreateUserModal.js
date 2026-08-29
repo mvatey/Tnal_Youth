@@ -284,7 +284,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
         </button>
       </div>
 
-      <form onSubmit={submit} className="flex flex-col gap-5">
+      <form onSubmit={submit} className="flex flex-col gap-5" autoComplete="off">
         <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
           <BoxFill
             label={t("usersPage.nameKm")}
@@ -319,6 +319,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             placeholder="example@email.com"
             value={form.email}
             onChange={update("email")}
+            autoComplete="off"
           />
 
           <BoxFill
@@ -328,6 +329,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             placeholder={t("usersPage.passwordPlaceholder")}
             value={form.password}
             onChange={update("password")}
+            autoComplete="new-password"
           />
 
           {isEditing && (

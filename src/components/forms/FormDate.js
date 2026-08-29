@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, X } from "lucide-react";
 
 import calendarData from "@/data/calendar.json";
 import { useLanguage } from "@/context/LanguageContext";
@@ -209,7 +209,7 @@ export default function FormDate({
             border-border
             bg-bg-page-white
             px-3
-            pr-10
+            pr-14
             text-sm
             leading-none
             text-text-secondary
@@ -246,6 +246,30 @@ export default function FormDate({
           "
           aria-hidden="true"
         />
+
+        {!disabled && formattedValue && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              handleDateChange({ target: { value: "" } });
+            }}
+            className="
+              absolute
+              right-8
+              top-1/2
+              -translate-y-1/2
+              rounded-full
+              p-0.5
+              text-text-secondary
+              transition
+              hover:text-text-primary
+            "
+            aria-label={locale === "en" ? "Clear date" : "សម្អាតកាលបរិច្ឆេទ"}
+          >
+            <X size={14} />
+          </button>
+        )}
 
         <Calendar
           size={16}

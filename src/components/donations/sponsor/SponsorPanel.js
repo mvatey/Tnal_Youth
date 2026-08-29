@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, CalendarDays, ChevronsUpDown, FileText, PencilLineIcon, PencilRulerIcon, PenSquareIcon, PlusCircle, Search, SquarePen, SquarePenIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, CalendarDays, ChevronsUpDown, FileText, PencilLineIcon, PencilRulerIcon, PenSquareIcon, PlusCircle, Search, SquarePen, SquarePenIcon, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import SponsorTypeSelect from "@/components/forms/sponsorTypeSelect";
 import Pagination from "@/components/navigation/Pagination";
@@ -52,23 +52,39 @@ function SponsorReceiptPreview({ receipt }) {
 }
 
 function DateFilter({ value, onChange }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   return (
-    <label className="relative block h-[34px] w-full cursor-pointer">
-      <input
-        type="date"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-        aria-label={t("documentPage.date")}
-       
-      />
-      <span className="flex h-full w-full items-center justify-between rounded-lg border border-border bg-bg-page-white px-3 text-[16px] font-Semibold text-text-secondary shadow-sm transition hover:border-secondary">
-        <span className="truncate">{value || t("documentPage.date")}</span>
-        <CalendarDays size={16} strokeWidth={2.2} />
-      </span>
-    </label>
+    <div className="relative h-[34px] w-full">
+      <label className="absolute inset-0 block cursor-pointer">
+        <input
+          type="date"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+          aria-label={t("documentPage.date")}
+        />
+        <span className="flex h-full w-full items-center justify-between rounded-lg border border-border bg-bg-page-white px-3 text-[16px] font-Semibold text-text-secondary shadow-sm transition hover:border-secondary">
+          <span className="truncate">{value || t("documentPage.date")}</span>
+          <CalendarDays size={16} strokeWidth={2.2} />
+        </span>
+      </label>
+
+      {value && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onChange("");
+          }}
+          className="absolute right-9 top-1/2 z-20 -translate-y-1/2 rounded-full p-0.5 text-text-secondary transition hover:text-text-primary"
+          aria-label={locale === "en" ? "Clear date" : "សម្អាតកាលបរិច្ឆេទ"}
+        >
+          <X size={14} />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -116,6 +132,27 @@ export default function SponsorPanel({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
+
+  // mapSponsorRow labels each row's `type` in the current locale (see
+  // below), so the filter's own option strings have to track locale too --
+  // otherwise they're stuck showing the hardcoded Khmer default from
+  // SponsorTypeSelect and silently stop matching any row once the UI
+  // switches to English (row.type would read "Individual"/"Organization"/
+  // "Member" while the dropdown still only offered the Khmer labels).
+  const sponsorTypeOptions = useMemo(
+    () =>
+      locale === "en"
+        ? ["Individual", "Organization", "Member"]
+        : ["បុគ្គល", "ស្ថាប័ន", "សមាជិក"],
+    [locale],
+  );
+
+  // A selection made in one locale (e.g. "Individual") won't exist among
+  // the other locale's option strings, so reset rather than leave a stale,
+  // now-invisible filter silently applied after a language switch.
+  useEffect(() => {
+    setSelectedType("");
+  }, [locale]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showDownloadAlert, setShowDownloadAlert] = useState(false);
   const [showSaveAlert, setShowSaveAlert] = useState(false);
@@ -347,7 +384,7 @@ export default function SponsorPanel({
             <SponsorTypeSelect
               value={selectedType}
               onChange={updateFilter(setSelectedType)}
-              options={typeOptions}
+              options={typeOptions || sponsorTypeOptions}
               placeholder={t("donationPage.sponsorType")}
               className="w-full"
               size="compact"

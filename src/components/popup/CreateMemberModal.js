@@ -790,10 +790,27 @@ export default function CreateMemberModal({
     t,
   ]);
 
+  // A new member can only ever be created Active or Inactive -- there's no
+  // workflow that suspends or marks someone resigned before they even
+  // exist as a member, so those two lookup rows don't belong in this list.
   const statusOptions =
     useMemo(
       () =>
         statusLookups
+          .filter(
+            (status) => {
+              const code =
+                String(
+                  status?.code ||
+                    "",
+                ).toUpperCase();
+
+              return (
+                code === "ACTIVE" ||
+                code === "INACTIVE"
+              );
+            },
+          )
           .map(
             (status) => {
               const id =
