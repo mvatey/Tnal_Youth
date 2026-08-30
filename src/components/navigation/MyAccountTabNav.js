@@ -18,8 +18,8 @@ const TABS = [
     href: "/myAcc/donation",
   },
   {
-    key: "tabSponsor",
-    href: "/myAcc/sponsor",
+    key: "tabEventDonation",
+    href: "/myAcc/eventdonation",
   },
   {
     key: "tabPassword",

@@ -48,6 +48,14 @@ export default function MemberDocumentPage() {
   const canManageDocuments =
     role === "secretary" || role === "branch_leader";
 
+  // The cross-branch tab only ever has content for branch-scoped staff —
+  // an activity's host branch certifying a co-hosting branch's member.
+  // Admin/viewer already see every branch in the main tab, so a second
+  // "cross-branch" view would just be an empty duplicate for them.
+  const showCrossBranchTab =
+    role === "secretary" || role === "branch_leader";
+
+  const [activeSubTab, setActiveSubTab] = useState("own");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -64,12 +72,17 @@ export default function MemberDocumentPage() {
       // so this needs every visible document, not just the backend's
       // default first page of 10 — loop through every page the same
       // way CertificateForm.js does for activities.
+      const endpoint =
+        activeSubTab === "cross-branch"
+          ? "/api/backend/documents/member-documents/cross-branch-certificates"
+          : "/api/backend/documents";
+
       const rows = [];
       let page = 0;
       let totalPages = 1;
       do {
         const response = await fetch(
-          `/api/backend/documents?page=${page}&size=100`,
+          `${endpoint}?page=${page}&size=100`,
           { cache: "no-store" },
         );
         const body = await response.json().catch(() => null);
@@ -86,7 +99,7 @@ export default function MemberDocumentPage() {
     } finally {
       setLoading(false);
     }
-  }, [isEnglish, t]);
+  }, [activeSubTab, isEnglish, t]);
 
   useEffect(() => { loadDocuments(); }, [loadDocuments]);
 
@@ -275,6 +288,32 @@ export default function MemberDocumentPage() {
 
   return (
     <>
+      {showCrossBranchTab ? (
+        <div className="mb-4 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveSubTab("own")}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+              activeSubTab === "own"
+                ? "bg-primary text-white"
+                : "bg-bg-page-white text-text-secondary hover:bg-bg-page-gray"
+            }`}
+          >
+            {t("documentPage.ownBranchDocumentsTab")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSubTab("cross-branch")}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+              activeSubTab === "cross-branch"
+                ? "bg-primary text-white"
+                : "bg-bg-page-white text-text-secondary hover:bg-bg-page-gray"
+            }`}
+          >
+            {t("documentPage.crossBranchCertificatesTab")}
+          </button>
+        </div>
+      ) : null}
       {error ? (
         <div className="mb-3 flex items-center justify-between rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
           <span>{error}</span>

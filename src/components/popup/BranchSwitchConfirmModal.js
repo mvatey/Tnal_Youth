@@ -2,6 +2,7 @@
 
 import { AlertTriangle } from "lucide-react";
 import PopupCard from "@/components/popup/PopupCard";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Shown whenever the sidebar's branch dropdown is switched while the page
 // currently open has unsaved progress (a form with entered-but-not-saved
@@ -21,14 +22,23 @@ export default function BranchSwitchConfirmModal({
   // the event-donation detail page) without the copy still talking about
   // branches. Defaults keep the original branch-switch wording exactly
   // as-is for BranchContext's own usage.
-  title = "មានទិន្នន័យមិនទាន់រក្សាទុក",
-  message = "អ្នកកំពុងកែប្រែទិន្នន័យនៅសាខាបច្ចុប្បន្ន។ ប្តូរសាខាឥឡូវនេះ នឹងបោះបង់ការកែប្រែដែលមិនទាន់រក្សាទុក។ តើអ្នកចង់រក្សាទុកជាមុន ឬបោះបង់ ហើយប្តូរសាខា?",
-  saveLabel = "រក្សាទុក ហើយប្តូរសាខា",
-  savingLabel = "កំពុងរក្សាទុក...",
-  discardLabel = "បោះបង់ការកែប្រែ ហើយប្តូរសាខា",
-  cancelLabel = "បន្តកែប្រែសាខានេះ",
+  title,
+  message,
+  saveLabel,
+  savingLabel,
+  discardLabel,
+  cancelLabel,
 }) {
+  const { t } = useLanguage();
+
   if (!open) return null;
+
+  const resolvedTitle = title ?? t("common.branchSwitchTitle");
+  const resolvedMessage = message ?? t("common.branchSwitchMessage");
+  const resolvedSaveLabel = saveLabel ?? t("common.branchSwitchSave");
+  const resolvedSavingLabel = savingLabel ?? t("common.saving");
+  const resolvedDiscardLabel = discardLabel ?? t("common.branchSwitchDiscard");
+  const resolvedCancelLabel = cancelLabel ?? t("common.branchSwitchCancel");
 
   return (
     <PopupCard size="sm" onClose={busy ? undefined : onCancel}>
@@ -51,11 +61,11 @@ export default function BranchSwitchConfirmModal({
         </div>
 
         <h2 className="mb-2 text-lg font-bold text-text-primary">
-          {title}
+          {resolvedTitle}
         </h2>
 
         <p className="mb-6 text-sm text-text-secondary">
-          {message}
+          {resolvedMessage}
         </p>
 
         {error ? (
@@ -81,7 +91,7 @@ export default function BranchSwitchConfirmModal({
               disabled:opacity-60
             "
           >
-            {busy ? savingLabel : saveLabel}
+            {busy ? resolvedSavingLabel : resolvedSaveLabel}
           </button>
 
           <button
@@ -101,7 +111,7 @@ export default function BranchSwitchConfirmModal({
               disabled:opacity-60
             "
           >
-            {discardLabel}
+            {resolvedDiscardLabel}
           </button>
 
           <button
@@ -121,7 +131,7 @@ export default function BranchSwitchConfirmModal({
               disabled:opacity-60
             "
           >
-            {cancelLabel}
+            {resolvedCancelLabel}
           </button>
         </div>
       </div>

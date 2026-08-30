@@ -87,45 +87,19 @@ export default function NotificationItem({
 
   return (
     <li
-      onClick={
-        notification.actionUrl ||
-        notification.activityId
-          ? handleOpenNotification
-          : undefined
-      }
+      onClick={handleOpenNotification}
       onKeyDown={(event) => {
         if (
           event.key === "Enter" ||
           event.key === " "
         ) {
           event.preventDefault();
-
-          if (
-            notification.actionUrl ||
-            notification.activityId
-          ) {
-            handleOpenNotification();
-          }
+          handleOpenNotification();
         }
       }}
-      role={
-        notification.actionUrl ||
-        notification.activityId
-          ? "button"
-          : undefined
-      }
-      tabIndex={
-        notification.actionUrl ||
-        notification.activityId
-          ? 0
-          : undefined
-      }
-      className={`grid grid-cols-[minmax(0,1fr)_120px_86px] items-start gap-5 border-b border-border px-8 last:border-b-0 ${
-        notification.actionUrl ||
-        notification.activityId
-          ? "cursor-pointer transition hover:bg-bg-page-gray"
-          : ""
-      } ${
+      role="button"
+      tabIndex={0}
+      className={`grid grid-cols-[minmax(0,1fr)_120px_86px] items-start gap-5 border-b border-border px-8 last:border-b-0 cursor-pointer transition hover:bg-bg-page-gray ${
         expanded
           ? "min-h-[132px] py-4"
           : "min-h-[86px] py-3"

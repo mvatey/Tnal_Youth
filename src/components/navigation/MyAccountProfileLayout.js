@@ -29,8 +29,8 @@ export default function MyAccountProfileLayout({ children }) {
       href: "/myAcc/donation",
     },
     {
-      name: t("memberPage.tabSponsor"),
-      href: "/myAcc/sponsor",
+      name: t("memberPage.tabEventDonation"),
+      href: "/myAcc/eventdonation",
     },
     {
       name: t("memberPage.tabPassword"),

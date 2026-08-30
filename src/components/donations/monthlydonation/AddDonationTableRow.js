@@ -228,7 +228,7 @@ export default function AddDonationTableRow({
         >
           {monthlyDonationPaymentMethods.map((method) => (
             <option key={method} value={method}>
-              {method}
+              {method === "សម្ភារៈ" ? t("donationPage.material") : method}
             </option>
           ))}
         </select>

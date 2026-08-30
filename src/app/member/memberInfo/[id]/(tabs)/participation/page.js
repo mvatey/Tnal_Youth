@@ -563,7 +563,7 @@ export default function ParticipationPage() {
       header:
         t("memberPage.activityName"),
 
-      width: "w-[32%]",
+      width: "w-[16%]",
       align: "left",
 
       render: (item) => (
@@ -575,7 +575,7 @@ export default function ParticipationPage() {
 
     {
       header: t("memberPage.type"),
-      width: "w-[14%]",
+      width: "w-[13%]",
       align: "center",
 
       render: (item) => (
@@ -609,7 +609,7 @@ export default function ParticipationPage() {
 
     {
       header: t("memberPage.attendance"),
-      width: "w-[13%]",
+      width: "w-[12%]",
       align: "center",
 
       render: (item) => (
@@ -643,7 +643,7 @@ export default function ParticipationPage() {
 
     {
       header: t("memberPage.location"),
-      width: "w-[14%]",
+      width: "w-[25%]",
       align: "left",
 
       render: (item) => (
@@ -655,7 +655,7 @@ export default function ParticipationPage() {
 
     {
       header: t("memberPage.joinedAt"),
-      width: "w-[14%]",
+      width: "w-[10%]",
       align: "left",
 
       render: (item) => (
@@ -667,7 +667,7 @@ export default function ParticipationPage() {
 
     {
       header: t("memberPage.actions"),
-      width: "w-[8%]",
+      width: "w-[19%]",
       align: "center",
 
       render: (item) => (

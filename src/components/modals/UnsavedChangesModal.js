@@ -2,6 +2,7 @@
 
 import { Save } from "lucide-react";
 import PopupCard from "@/components/modals/PopupCard";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function UnsavedChangesModal({
   open,
@@ -10,10 +11,15 @@ export default function UnsavedChangesModal({
   onCancel,
   onDiscard,
   onSaveAndContinue,
-  title = "មានការផ្លាស់ប្ដូរមិនទាន់រក្សាទុក",
-  message = "តើអ្នកចង់រក្សាទុកការផ្លាស់ប្ដូរឥឡូវនេះ ឬរំលងហើយបន្តទៅផ្ទាំងបន្ទាប់?",
+  title,
+  message,
 }) {
+  const { t } = useLanguage();
+
   if (!open) return null;
+
+  const resolvedTitle = title ?? t("memberPage.unsavedChangesTitle");
+  const resolvedMessage = message ?? t("memberPage.unsavedChangesMessage");
 
   return (
     <PopupCard
@@ -50,7 +56,7 @@ export default function UnsavedChangesModal({
           text-text-primary
           "
         >
-          {title}
+          {resolvedTitle}
         </h2>
 
         {/* Message */}
@@ -62,7 +68,7 @@ export default function UnsavedChangesModal({
           text-text-mute
           "
         >
-          {message}
+          {resolvedMessage}
         </p>
 
         {error && (
@@ -92,7 +98,7 @@ export default function UnsavedChangesModal({
             disabled:opacity-60
             "
           >
-            {saving ? "កំពុងរក្សាទុក..." : "រក្សាទុក ហើយបន្ត"}
+            {saving ? t("common.saving") : t("memberPage.saveAndContinue")}
           </button>
 
           <button
@@ -114,7 +120,7 @@ export default function UnsavedChangesModal({
             disabled:opacity-60
             "
           >
-            រំលង ហើយបន្ត
+            {t("memberPage.discardAndContinue")}
           </button>
 
           <button
@@ -133,7 +139,7 @@ export default function UnsavedChangesModal({
             disabled:opacity-60
             "
           >
-            បោះបង់
+            {t("memberPage.cancel")}
           </button>
         </div>
       </div>

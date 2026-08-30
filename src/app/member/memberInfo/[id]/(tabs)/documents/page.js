@@ -1360,8 +1360,8 @@ export default function DocumentsPage() {
           gap-6
           p-4
           md:p-6
-          xl:grid-cols-2
-          2xl:grid-cols-3
+          lg:grid-cols-2
+          xl:grid-cols-3
           2xl:gap-10
         "
       >

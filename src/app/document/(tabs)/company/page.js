@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, FileText, Pencil, Trash2 } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
 import DataTable from "@/components/table/DataTable";
@@ -174,13 +174,18 @@ export default function CompanyDocumentPage() {
     {
       header: t("documentPage.document"),
       width: "w-[8%]",
-      render: (item) => (
-        <img
-          src={item.image || "/document.jpg"}
-          alt={item.title || t("documentPage.document")}
-          className="h-8 w-6 rounded border border-border object-cover"
-        />
-      ),
+      render: (item) =>
+        item.isImage ? (
+          <img
+            src={item.image || "/document.jpg"}
+            alt={item.title || t("documentPage.document")}
+            className="h-8 w-6 rounded border border-border object-cover"
+          />
+        ) : (
+          <span className="inline-flex h-8 w-7 items-center justify-center rounded border border-border bg-bg-page-gray">
+            <FileText size={18} className="text-text-secondary" />
+          </span>
+        ),
     },
     {
       header: t("documentPage.documentName"),
@@ -486,6 +491,7 @@ function mapDocument(row) {
     type: extension || row.type?.code || "FILE",
     typeId: row.type?.id,
     fileId: row.file?.id,
+    isImage: ["PNG", "JPG", "JPEG", "WEBP", "GIF"].includes(extension),
     image: row.file?.id ? `/api/backend/files/${row.file.id}/content` : "/document.jpg",
     files: row.file ? [{ name: row.file.originalName, size: formatSize(row.file.sizeBytes), type: extension || "FILE" }] : [],
   };

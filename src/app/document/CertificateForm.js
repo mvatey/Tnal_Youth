@@ -44,6 +44,30 @@ const DOCUMENT_TYPE_OPTIONS = [
     labelEn: "Appreciation certificate",
     value: "បណ្ណសរសើរ",
   },
+  {
+    label: "វិញ្ញាបនបត្របញ្ជាក់ការចូលរួម",
+    labelKm: "វិញ្ញាបនបត្របញ្ជាក់ការចូលរួម",
+    labelEn: "Certificate of participation",
+    value: "វិញ្ញាបនបត្របញ្ជាក់ការចូលរួម",
+  },
+  {
+    label: "វិញ្ញាបនបត្របញ្ជាក់ការបញ្ចប់វគ្គបណ្តុះបណ្តាល",
+    labelKm: "វិញ្ញាបនបត្របញ្ជាក់ការបញ្ចប់វគ្គបណ្តុះបណ្តាល",
+    labelEn: "Certificate of training completion",
+    value: "វិញ្ញាបនបត្របញ្ជាក់ការបញ្ចប់វគ្គបណ្តុះបណ្តាល",
+  },
+  {
+    label: "សញ្ញាបត្រកិត្តិយស",
+    labelKm: "សញ្ញាបត្រកិត្តិយស",
+    labelEn: "Honorary certificate",
+    value: "សញ្ញាបត្រកិត្តិយស",
+  },
+  {
+    label: "លិខិតថ្លែងអំណរគុណ",
+    labelKm: "លិខិតថ្លែងអំណរគុណ",
+    labelEn: "Letter of appreciation",
+    value: "លិខិតថ្លែងអំណរគុណ",
+  },
 ];
 
 const FONT_OPTIONS = [
@@ -264,27 +288,68 @@ export default function CertificateForm({
       return undefined;
     }
     const controller = new AbortController();
-    fetch(`/api/backend/activities/${encodeURIComponent(form.activityId)}/participants`, {
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || t("documentPage.loadActivityParticipantsFailed"));
-        setActivityParticipants(Array.isArray(body) ? body : (body?.content || []));
-      })
-      .catch((error) => {
-        if (error.name !== "AbortError") setDataError(error.message || t("documentPage.loadActivityParticipantsFailed"));
-      });
+
+    /*
+     * `/participants` (no branchId) is scoped to the caller's OWN branch
+     * for a secretary/branch_leader -- it never includes other invited
+     * branches' participants, which left "Invited branches (notify
+     * branch admins)" permanently empty for host-branch staff even when
+     * other branches genuinely had attendees. `/participants/all-branches`
+     * fills in exactly that gap (host staff only; every other role gets a
+     * 403 there, which is fine -- it just means no extra rows to merge
+     * in). Fetched together and merged by participant id so admin/viewer
+     * -- whose plain `/participants` call already returns everyone --
+     * don't end up with the invited-branch rows listed twice.
+     */
+    async function loadParticipants() {
+      try {
+        const [ownResponse, allBranchesResponse] = await Promise.all([
+          fetch(`/api/backend/activities/${encodeURIComponent(form.activityId)}/participants`, {
+            cache: "no-store",
+            signal: controller.signal,
+          }),
+          fetch(`/api/backend/activities/${encodeURIComponent(form.activityId)}/participants/all-branches`, {
+            cache: "no-store",
+            signal: controller.signal,
+          }),
+        ]);
+
+        const ownBody = await ownResponse.json().catch(() => null);
+        if (!ownResponse.ok) {
+          throw new Error(ownBody?.message || t("documentPage.loadActivityParticipantsFailed"));
+        }
+        const ownList = Array.isArray(ownBody) ? ownBody : (ownBody?.content || []);
+
+        let allBranchesList = [];
+        if (allBranchesResponse.ok) {
+          const allBranchesBody = await allBranchesResponse.json().catch(() => null);
+          allBranchesList = Array.isArray(allBranchesBody) ? allBranchesBody : (allBranchesBody?.content || []);
+        }
+
+        const merged = new Map();
+        for (const participant of [...ownList, ...allBranchesList]) {
+          const key = participant?.id ?? participant?.memberId ?? participant?.member_id;
+          if (key != null) merged.set(key, participant);
+        }
+
+        setActivityParticipants(Array.from(merged.values()));
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setDataError(error.message || t("documentPage.loadActivityParticipantsFailed"));
+        }
+      }
+    }
+
+    loadParticipants();
     return () => controller.abort();
   }, [form.activityId, t]);
 
   /*
    * Every time a different activity is selected, reset which of the
-   * host branch's own members are selected (default: every present
-   * one) and clear any previously selected "other branches to notify"
-   * -- both lists are derived from this specific activity's roster and
-   * are meaningless once the activity changes.
+   * host branch's own members are selected (default: every present one)
+   * and clear any previously selected other-branch members -- both
+   * lists are derived from this specific activity's roster and are
+   * meaningless once the activity changes.
    */
   useEffect(() => {
     if (recipientType !== "activity") {
@@ -294,7 +359,7 @@ export default function CertificateForm({
     setForm((previous) => ({
       ...previous,
       activityMemberIds: null,
-      notifyBranchIds: [],
+      otherBranchMemberIds: [],
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.activityId]);
@@ -445,10 +510,10 @@ export default function CertificateForm({
     .filter((option) => option.label && option.value);
 
   /*
-   * The host (organizer) branch of the selected activity -- own-branch
-   * members get individual certificates generated directly; every other
-   * branch only gets grouped and, if selected, notified (never
-   * generated certificates for their individual members here).
+   * The host (organizer) branch of the selected activity -- kept only to
+   * separate "own branch members" from "other invited branches'
+   * members" into their own sections below. Both groups generate a
+   * personal certificate the same way.
    */
   const hostBranchId = String(
     selectedActivity?.branchId ?? selectedActivity?.branch_id ?? "",
@@ -486,6 +551,10 @@ export default function CertificateForm({
         "",
       name_en: participant.fullNameEn || participant.full_name_en || "",
       branchId: String(participant.branchId ?? participant.branch_id ?? ""),
+      branchLabel: label({
+        labelKm: participant.branchNameKm || participant.branch_name_km,
+        labelEn: participant.branchNameEn || participant.branch_name_en,
+      }, String(participant.branchId ?? participant.branch_id ?? "")),
     };
   }
 
@@ -505,38 +574,22 @@ export default function CertificateForm({
     .filter((member) => member.id);
 
   /*
-   * Every other invited branch that has attending participants --
-   * grouped by branch, listed as one selectable entry per branch (not
-   * per member). Selecting a branch never generates certificates for its
-   * individual members; it only queues that branch for the "certificates
-   * ready" notification sent to the branch's own leadership.
+   * Every other invited branch's attending participants -- listed
+   * individually (same as own-branch members), each one multi-selectable
+   * and generating its own personal certificate. Each member carries its
+   * own branchLabel (see participantToMember) so the option list below
+   * can prefix names with their branch, keeping people readable once
+   * several branches' rosters are mixed together in one list.
    */
-  const otherBranchGroups = Array.from(
-    presentActivityParticipants
-      .filter(
-        (participant) =>
-          String(participant.branchId ?? participant.branch_id ?? "") &&
-          String(participant.branchId ?? participant.branch_id ?? "") !==
-            hostBranchId,
-      )
-      .reduce((groups, participant) => {
-        const branchId = String(
-          participant.branchId ?? participant.branch_id ?? "",
-        );
-        const branchLabel = label({
-          labelKm: participant.branchNameKm || participant.branch_name_km,
-          labelEn: participant.branchNameEn || participant.branch_name_en,
-        }, branchId);
-        const existing = groups.get(branchId);
-        if (existing) {
-          existing.count += 1;
-        } else {
-          groups.set(branchId, { branchId, label: branchLabel, count: 1 });
-        }
-        return groups;
-      }, new Map())
-      .values(),
-  );
+  const otherBranchMembers = presentActivityParticipants
+    .filter(
+      (participant) =>
+        String(participant.branchId ?? participant.branch_id ?? "") &&
+        String(participant.branchId ?? participant.branch_id ?? "") !==
+          hostBranchId,
+    )
+    .map(participantToMember)
+    .filter((member) => member.id);
 
   const selectedActivityMemberIds = (
     Array.isArray(form.activityMemberIds)
@@ -552,12 +605,17 @@ export default function CertificateForm({
     selectedActivityMemberIds.includes(String(member.id)),
   );
 
-  const selectedNotifyBranchIds = (
-    Array.isArray(form.notifyBranchIds) ? form.notifyBranchIds : []
+  const selectedOtherBranchMemberIds = (
+    Array.isArray(form.otherBranchMemberIds) ? form.otherBranchMemberIds : []
   ).map(String);
 
-  const selectedNotifyBranches = otherBranchGroups.filter((branch) =>
-    selectedNotifyBranchIds.includes(String(branch.branchId)),
+  /*
+   * Other invited branches' members that are both present and currently
+   * selected -- these now get a personal certificate generated exactly
+   * like own-branch members do.
+   */
+  const selectedOtherBranchMembers = otherBranchMembers.filter((member) =>
+    selectedOtherBranchMemberIds.includes(String(member.id)),
   );
 
   const memberOptions = members.map((member) => ({
@@ -574,10 +632,20 @@ export default function CertificateForm({
     value: String(member.id),
   }));
 
-  const otherBranchOptions = otherBranchGroups.map((branch) => ({
-    label: `${branch.label} (${branch.count})`,
-    value: String(branch.branchId),
-  }));
+  /*
+   * Prefixed with the member's own branch name (e.g. "Svay Rieng · Phan
+   * Rithy") so that once several invited branches' rosters are mixed
+   * together in one list, it stays obvious who belongs to which branch.
+   */
+  const otherBranchMemberOptions = otherBranchMembers.map((member) => {
+    const memberName = label({ labelKm: member.name_kh, labelEn: member.name_en }, member.name_kh);
+    return {
+      label: member.branchLabel ? `${member.branchLabel} · ${memberName}` : memberName,
+      labelKm: member.branchLabel ? `${member.branchLabel} · ${member.name_kh}` : member.name_kh,
+      labelEn: member.branchLabel ? `${member.branchLabel} · ${member.name_en}` : member.name_en,
+      value: String(member.id),
+    };
+  });
 
   const handleActivityMemberChange = (memberIds) => {
     setForm((previous) => ({
@@ -589,10 +657,10 @@ export default function CertificateForm({
     setShowValidationError(false);
   };
 
-  const handleNotifyBranchChange = (branchIds) => {
+  const handleOtherBranchMemberChange = (memberIds) => {
     setForm((previous) => ({
       ...previous,
-      notifyBranchIds: Array.isArray(branchIds) ? branchIds.map(String) : [],
+      otherBranchMemberIds: Array.isArray(memberIds) ? memberIds.map(String) : [],
     }));
     setShowValidationError(false);
   };
@@ -625,18 +693,18 @@ export default function CertificateForm({
     recipientType === "member"
       ? selectedMembers.length > 0
       : selectedActivityMembers.length > 0 ||
-        selectedNotifyBranches.length > 0;
+        selectedOtherBranchMembers.length > 0;
 
   /*
-   * A certificate template image is only required when something is
-   * actually going to be generated. Notifying other branches' leadership
-   * that certificates are ready doesn't generate anything here, so a
-   * request that selects ONLY other branches (no own-branch members)
-   * doesn't need a template.
+   * A certificate template image is only required when a certificate is
+   * actually going to be generated -- which, for the "activity" flow, is
+   * every time either own-branch or other-invited-branch members are
+   * selected.
    */
   const needsTemplate =
     recipientType === "member" ||
-    selectedActivityMembers.length > 0;
+    selectedActivityMembers.length > 0 ||
+    selectedOtherBranchMembers.length > 0;
 
   const isFormValid =
     hasTitle &&
@@ -956,8 +1024,9 @@ export default function CertificateForm({
    * every selected member.
    *
    * For activity recipient:
-   * selectedActivityMembers contains
-   * every activity participant.
+   * selectedActivityMembers (own branch) and selectedOtherBranchMembers
+   * (every other invited branch) both generate a personal certificate
+   * the same way.
    */
   const handleSave =
     async () => {
@@ -979,7 +1048,7 @@ export default function CertificateForm({
         const generatedDocuments = [];
         const recipients =
           recipientType === "activity"
-            ? selectedActivityMembers
+            ? [...selectedActivityMembers, ...selectedOtherBranchMembers]
             : selectedMembers;
 
         for (const member of recipients) {
@@ -1065,19 +1134,15 @@ export default function CertificateForm({
           selectedMember,
 
           /*
-           * Activity data.
+           * Activity data. selectedActivityMembers (own branch) and
+           * selectedOtherBranchMembers (every other invited branch) both
+           * already have a generated certificate in generatedDocuments
+           * above -- create/page.js's upload step is driven entirely by
+           * that array and doesn't need to distinguish between the two.
            */
           selectedActivity,
           selectedActivityMembers,
-
-          /*
-           * Other invited branches to notify (leadership only) that
-           * certificates from this activity are ready for their own
-           * members -- no certificates are generated for them here.
-           */
-          notifyBranchIds: selectedNotifyBranches.map(
-            (branch) => branch.branchId,
-          ),
+          selectedOtherBranchMembers,
         });
       } catch (error) {
         console.error(
@@ -1086,7 +1151,8 @@ export default function CertificateForm({
         );
 
         alert(
-          t("documentPage.createCertificateFailed"),
+          error?.message ||
+            t("documentPage.createCertificateFailed"),
         );
       }
     };
@@ -1285,19 +1351,13 @@ export default function CertificateForm({
                   />
 
                   <MultiSelect
-                    label={t("documentPage.invitedBranchesForNotification")}
-                    value={selectedNotifyBranchIds}
-                    onChange={handleNotifyBranchChange}
-                    placeholder={t("documentPage.selectBranch")}
-                    options={otherBranchOptions}
-                    emptyLabel={t("documentPage.noOtherBranchesInActivity")}
+                    label={t("documentPage.otherBranchMembersForCertificates")}
+                    value={selectedOtherBranchMemberIds}
+                    onChange={handleOtherBranchMemberChange}
+                    placeholder={t("documentPage.selectMember")}
+                    options={otherBranchMemberOptions}
+                    emptyLabel={t("documentPage.noOtherBranchMembersInActivity")}
                   />
-
-                  {selectedNotifyBranches.length > 0 ? (
-                    <p className="text-xs text-text-mute">
-                      {t("documentPage.notifyBranchesOnlyHint")}
-                    </p>
-                  ) : null}
                 </>
               ) : null}
             </div>
@@ -1686,39 +1746,14 @@ export default function CertificateForm({
                 message={t("documentPage.selectActivity")}
               />
             ) : selectedActivityMembers.length === 0 &&
-              selectedNotifyBranches.length === 0 ? (
+              selectedOtherBranchMembers.length === 0 ? (
               <EmptyPreview
                 title={t("documentPage.noRecipients")}
-                message={t("documentPage.selectMembersOrBranchesToNotify")}
+                message={t("documentPage.selectAtLeastOneMember")}
               />
             ) : (
               <div className="space-y-6">
-                {selectedNotifyBranches.length > 0 ? (
-                  <div
-                    className="
-                      rounded-2xl
-                      border
-                      border-gray-200
-                      bg-white
-                      p-5
-                      text-sm
-                    "
-                  >
-                    <p className="mb-2 font-semibold text-text-primary">
-                      {t("documentPage.branchesToNotifyNoDocuments")}
-                    </p>
-
-                    <ul className="list-inside list-disc space-y-1 text-text-secondary">
-                      {selectedNotifyBranches.map((branch) => (
-                        <li key={`notify-branch-${branch.branchId}`}>
-                          {branch.label} — {t("documentPage.memberCount").replace("{count}", branch.count)}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-
-                {selectedActivityMembers.map(
+                {[...selectedActivityMembers, ...selectedOtherBranchMembers].map(
                   (
                     member,
                     index,
@@ -1729,7 +1764,8 @@ export default function CertificateForm({
                         index
                       }
                       total={
-                        selectedActivityMembers.length
+                        selectedActivityMembers.length +
+                        selectedOtherBranchMembers.length
                       }
                       label={t("documentPage.certificate")}
                     >
@@ -1766,6 +1802,7 @@ export default function CertificateForm({
                         templatePreview={
                           form.templatePreview
                         }
+                        captureId={`member-${member.id}`}
                       />
                     </CertificatePreviewItem>
                   ),

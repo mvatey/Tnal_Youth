@@ -280,11 +280,55 @@ export default function CreateDocumentPage() {
       throw new Error(t("documentPage.memberDocumentTypeMissing"));
     }
 
+    let firstProcessedMemberId = null;
+    let skippedCount = 0;
+
     for (const generatedDocument of generatedDocuments) {
       const memberId = Number(generatedDocument.member?.id);
 
       if (!memberId) {
         throw new Error(t("documentPage.selectMemberRequired"));
+      }
+
+      /*
+       * Retrying after a partial failure (some members already got their
+       * certificate before a later member in the same batch failed) must
+       * not re-throw on the ones already done -- skip them instead of
+       * re-uploading a duplicate document and hitting the backend's
+       * one-certificate-per-member-per-activity guard.
+       *
+       * This calls the dedicated activity-certificate-status check
+       * (authorized against the ACTIVITY's host branch), not the
+       * member's own credentials list -- that list is scoped to the
+       * member's own branch and would 403 for exactly the cross-branch
+       * members this whole flow exists for. An earlier version of this
+       * check used that list and silently treated its 403 as "no
+       * existing certificate found", which let a cross-branch member's
+       * document/file get re-uploaded every retry even though the
+       * credential step correctly kept rejecting the duplicate.
+       */
+      if (data.activityId) {
+        const existingResponse = await fetch(
+          `/api/backend/members/${memberId}/credentials/activity-certificate-status?activityId=${encodeURIComponent(data.activityId)}`,
+          { cache: "no-store" },
+        );
+
+        if (existingResponse.ok) {
+          const alreadyHasCertificate = await existingResponse.json().catch(() => false);
+
+          if (alreadyHasCertificate === true) {
+            skippedCount += 1;
+            firstProcessedMemberId = firstProcessedMemberId ?? String(memberId);
+            continue;
+          }
+        } else {
+          const existingBody = await existingResponse.json().catch(() => null);
+          throw new Error(
+            existingBody?.message ||
+              existingBody?.detail ||
+              t("documentPage.saveCertificateFailed"),
+          );
+        }
       }
 
       const upload = new FormData();
@@ -309,6 +353,23 @@ export default function CreateDocumentPage() {
           title: data.title,
           description: data.description || "",
           member_id: memberId,
+          /*
+           * For the activity flow, the credential step right below already
+           * sends the member a specific "certificate ready" notification --
+           * suppressing the generic "new document issued" one here avoids
+           * sending them two notifications for the same certificate.
+           */
+          suppress_notification: Boolean(data.activityId),
+          /*
+           * Lets the backend authorize this member-owned document against
+           * the ACTIVITY's host branch instead of the recipient member's
+           * own branch -- without this, the organizing branch can never
+           * certify a co-hosting branch's member, since that member's own
+           * branch is outside the organizer's normal access scope.
+           */
+          certificate_activity_id: data.activityId
+            ? Number(data.activityId)
+            : undefined,
         }),
       });
       const createdDocument = await createResponse.json().catch(() => null);
@@ -336,14 +397,28 @@ export default function CreateDocumentPage() {
         const credentialBody = await credentialResponse.json().catch(() => null);
 
         if (!credentialResponse.ok) {
+          console.error(
+            "Cannot link certificate credential:",
+            credentialResponse.status,
+            credentialBody,
+          );
+
           throw new Error(
-            t("documentPage.linkCertificateFailed"),
+            credentialBody?.message ||
+              credentialBody?.detail ||
+              t("documentPage.linkCertificateFailed"),
           );
         }
       }
+
+      firstProcessedMemberId = firstProcessedMemberId ?? String(memberId);
     }
 
-    return String(generatedDocuments[0].member.id);
+    if (!firstProcessedMemberId) {
+      throw new Error(t("documentPage.noGeneratedCertificate"));
+    }
+
+    return { memberId: firstProcessedMemberId, skippedCount };
   };
 
   const saveAppointmentLettersToBackend = async (data) => {
@@ -464,9 +539,14 @@ export default function CreateDocumentPage() {
       }
 
       if (type === "certificate" && data.recipientType === "member") {
-        const memberId = await saveMemberCertificatesToBackend(data);
+        const { memberId, skippedCount } = await saveMemberCertificatesToBackend(data);
 
-        alert(t("documentPage.certificateCreated"));
+        const skippedNote =
+          skippedCount > 0
+            ? t("documentPage.certificatesSkippedSuffix").replace("{count}", String(skippedCount))
+            : "";
+
+        alert(`${t("documentPage.certificateCreated")}${skippedNote}`);
 
         openMemberDocuments(memberId);
 
@@ -478,16 +558,37 @@ export default function CreateDocumentPage() {
         const generatedDocuments = normalizeArray(data.generatedDocuments);
 
         if (generatedDocuments.length > 0) {
-          const firstMemberId = await saveMemberCertificatesToBackend(data);
+          const { memberId: firstMemberId, skippedCount } = await saveMemberCertificatesToBackend(data);
 
           const notifiedNote =
             notifyResult.notifiedBranchIds.length > 0
               ? t("documentPage.notifiedBranchesSuffix").replace("{count}", String(notifyResult.notifiedBranchIds.length))
               : "";
 
-          alert(`${t("documentPage.certificateCreated")}${notifiedNote}`);
+          const skippedNote =
+            skippedCount > 0
+              ? t("documentPage.certificatesSkippedSuffix").replace("{count}", String(skippedCount))
+              : "";
 
-          openMemberDocuments(firstMemberId);
+          alert(`${t("documentPage.certificateCreated")}${notifiedNote}${skippedNote}`);
+
+          /*
+           * firstMemberId can belong to a co-hosting branch, whose full
+           * profile this staff member has no access to (only the
+           * certificate-issuing exception, not general viewing rights) --
+           * navigating there would just hit an access-denied page right
+           * after a successful save. Prefer an own-branch recipient
+           * (always viewable) and otherwise land on the member-documents
+           * list, where the new "Certificates issued to other branches"
+           * tab can show what was just created.
+           */
+          const ownBranchMember = normalizeArray(data.selectedActivityMembers)[0];
+
+          if (ownBranchMember?.id) {
+            openMemberDocuments(String(ownBranchMember.id));
+          } else {
+            router.push("/document/member");
+          }
 
           return;
         }

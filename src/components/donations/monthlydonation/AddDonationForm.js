@@ -46,6 +46,11 @@ const KHMER_MONTHS = [
   "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ",
 ];
 
+const ENGLISH_MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
 async function fetchJson(url, options) {
   const response = await fetch(url, { cache: "no-store", ...options });
   const body = await response.json().catch(() => null);
@@ -63,7 +68,27 @@ function normalizeOptions(items, label) {
   }));
 }
 
-function mapMonthlyMember(member, branchLabel, month, year) {
+// /monthly-donations' member rows only ever carry a plain gender code
+// string ("MALE"/"FEMALE"), not the {code, label_km, label_en} lookup
+// object other endpoints return -- so it has to be translated by code
+// directly, the same fix already applied to the activity member-invite
+// pages, rather than via label()/localizedValue(), which has nothing to
+// resolve here.
+function resolveGenderLabel(gender, t) {
+  const code = String(gender || "").toUpperCase();
+
+  if (code === "MALE") {
+    return t("memberPage.male");
+  }
+
+  if (code === "FEMALE") {
+    return t("memberPage.femaleGender");
+  }
+
+  return gender || "-";
+}
+
+function mapMonthlyMember(member, branchLabel, month, year, locale, t) {
   return {
     id: member.memberId,
     memberId: member.memberId,
@@ -71,9 +96,12 @@ function mapMonthlyMember(member, branchLabel, month, year) {
     branchId: member.branchId,
     month,
     year,
-    name: member.fullNameKm || member.fullNameEn || member.memberNo || `#${member.memberId}`,
+    name:
+      locale === "en"
+        ? member.fullNameEn || member.fullNameKm || member.memberNo || `#${member.memberId}`
+        : member.fullNameKm || member.fullNameEn || member.memberNo || `#${member.memberId}`,
     avatar: member.profilePhotoId ? `/api/files/${member.profilePhotoId}/content` : "",
-    gender: member.gender || "-",
+    gender: resolveGenderLabel(member.gender, t),
     dob: member.dateOfBirth || "-",
     realAmount: member.amountKhr ?? "0",
     dollarAmount: member.amountUsd ?? "0",
@@ -85,7 +113,7 @@ function mapMonthlyMember(member, branchLabel, month, year) {
   };
 }
 export default function AddDonationForm() {
-  const { t, label } = useLanguage();
+  const { t, label, locale } = useLanguage();
   const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
   const {
     member: currentMember,
@@ -198,11 +226,13 @@ export default function AddDonationForm() {
   const months = useMemo(() => {
     if (!selectedYear || selectedYear === "all") return [];
 
-    return KHMER_MONTHS.map((label, index) => ({
+    const monthNames = locale === "en" ? ENGLISH_MONTHS : KHMER_MONTHS;
+
+    return monthNames.map((monthLabel, index) => ({
       value: String(index + 1).padStart(2, "0"),
-      label,
+      label: monthLabel,
     }));
-  }, [selectedYear]);
+  }, [selectedYear, locale]);
 
 const summary = useMemo(() => {
   const riel = editableRows.reduce(
@@ -322,7 +352,7 @@ const paymentSummary = useMemo(() => {
         if (cancelled) return;
         const branchLabel = branchOptions.find((option) => option.value === selectedBranch)?.label || selectedBranch;
         setEditableRows((Array.isArray(page?.items) ? page.items : []).map((member) =>
-          mapMonthlyMember(member, branchLabel, selectedMonth, selectedYear),
+          mapMonthlyMember(member, branchLabel, selectedMonth, selectedYear, locale, t),
         ));
         setHasUnsavedEdits(false);
       })
@@ -335,7 +365,7 @@ const paymentSummary = useMemo(() => {
       .finally(() => { if (!cancelled) setLoadingMembers(false); });
 
     return () => { cancelled = true; };
-  }, [allFiltersSelected, branchOptions, searchQuery, selectedBranch, selectedMonth, selectedYear]);
+  }, [allFiltersSelected, branchOptions, searchQuery, selectedBranch, selectedMonth, selectedYear, locale, t]);
 
   useEffect(() => {
     if (isBranchScoped) {
@@ -500,7 +530,7 @@ const paymentSummary = useMemo(() => {
 
       setEditableRows(
         (Array.isArray(page?.items) ? page.items : []).map((member) =>
-          mapMonthlyMember(member, branchLabel, selectedMonth, selectedYear),
+          mapMonthlyMember(member, branchLabel, selectedMonth, selectedYear, locale, t),
         ),
       );
 
@@ -547,19 +577,19 @@ const paymentSummary = useMemo(() => {
           label={t("donationPage.member")}
           value={`${editableRows.length} ${t("donationPage.personUnit")}`}
           growth="+15%"
-          note="ក្នុងខែនេះ"
+          note={t("dashboard.thisMonth")}
         />
         <CashCard
           label={t("donationPage.cashPayment")}
           value={`${paymentSummary.cash} ${t("donationPage.personUnit")}`}
           growth="+15%"
-          note="ក្នុងខែនេះ"
+          note={t("dashboard.thisMonth")}
         />
         <BankCard
           label={t("donationPage.bankPayment")}
           value={`${paymentSummary.bank} ${t("donationPage.personUnit")}`}
           growth="+15%"
-          note="ក្នុងខែនេះ"
+          note={t("dashboard.thisMonth")}
         />
       </div>
 

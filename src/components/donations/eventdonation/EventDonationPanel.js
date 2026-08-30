@@ -170,6 +170,7 @@ export default function EventDonationPanel({
           new Map(branchTotalsByActivity),
           selectedBranch,
           organizerBranchNames,
+          locale,
         ));
       } catch (loadError) {
         if (!cancelled) {
@@ -182,7 +183,7 @@ export default function EventDonationPanel({
     }
     loadRows();
     return () => { cancelled = true; };
-  }, [hasSelectedBranch, organizerBranchNames, selectedBranch, refreshKey]);
+  }, [hasSelectedBranch, organizerBranchNames, selectedBranch, refreshKey, locale]);
 
   useEffect(() => {
     if (!onTotalsChange) return;
@@ -316,7 +317,7 @@ function sumBranchTotals(branchTotalRows) {
 // looking at the same shared activity both see who actually ran it, rather
 // than the table silently relabeling the same activity with whichever
 // branch happens to be selected.
-function buildActivityDonationRows(activities, branchTotalsByActivityId, branchId, organizerBranchNames) {
+function buildActivityDonationRows(activities, branchTotalsByActivityId, branchId, organizerBranchNames, locale) {
   return activities.map((activity) => {
     const totals = sumBranchTotals(branchTotalsByActivityId.get(activity.id));
     const startDateValue = toDateValue(activity.startsAt);
@@ -327,8 +328,9 @@ function buildActivityDonationRows(activities, branchTotalsByActivityId, branchI
       ? Math.max(1, Math.round((end - start) / 86400000) + 1)
       : 1;
     const organizerBranchLabel =
-      activity.branchNameKm ||
-      activity.branchNameEn ||
+      (locale === "en"
+        ? activity.branchNameEn || activity.branchNameKm
+        : activity.branchNameKm || activity.branchNameEn) ||
       organizerBranchNames[String(activity.branchId)] ||
       "-";
 
@@ -337,7 +339,10 @@ function buildActivityDonationRows(activities, branchTotalsByActivityId, branchI
       branchId: Number(branchId),
       organizerBranchId: activity.branchId,
       activityId: activity.id,
-      eventName: activity.titleKm || activity.titleEn || "-",
+      eventName:
+        (locale === "en"
+          ? activity.titleEn || activity.titleKm
+          : activity.titleKm || activity.titleEn) || "-",
       branch: organizerBranchLabel,
       startDate: startDateValue || "-",
       endDate: endDateValue || "-",

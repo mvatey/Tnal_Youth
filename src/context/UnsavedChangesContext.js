@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import UnsavedChangesModal from "@/components/modals/UnsavedChangesModal";
+import { useLanguage } from "@/context/LanguageContext";
 
 /*
  * Shared "is the current tab's form dirty" tracker + the
@@ -29,6 +30,7 @@ import UnsavedChangesModal from "@/components/modals/UnsavedChangesModal";
 const UnsavedChangesContext = createContext(null);
 
 export function UnsavedChangesProvider({ children }) {
+  const { t } = useLanguage();
   const [isDirty, setIsDirty] = useState(false);
   const [pendingNavigate, setPendingNavigate] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -89,7 +91,7 @@ export function UnsavedChangesProvider({ children }) {
 
       if (result === false) {
         setSaveError(
-          "មិនអាចរក្សាទុកបានទេ សូមព្យាយាមម្តងទៀត។",
+          t("memberPage.saveFailed"),
         );
         return;
       }
@@ -99,12 +101,12 @@ export function UnsavedChangesProvider({ children }) {
       navigate?.();
     } catch {
       setSaveError(
-        "មិនអាចរក្សាទុកបានទេ សូមព្យាយាមម្តងទៀត។",
+        t("memberPage.saveFailed"),
       );
     } finally {
       setSaving(false);
     }
-  }, [pendingNavigate]);
+  }, [pendingNavigate, t]);
 
   const value = useMemo(
     () => ({

@@ -12,6 +12,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 
+import { useLanguage } from "@/context/LanguageContext";
+
 function normalizeOption(
   option,
   index,
@@ -62,16 +64,22 @@ function normalizeOption(
 export default function MultiSelect({
   label,
   name,
-  placeholder = "ជ្រើសរើស",
+  placeholder,
   options = [],
   value = [],
   onChange,
   disabled = false,
   required = false,
   error = "",
-  selectAllLabel = "ជ្រើសរើសទាំងអស់",
-  emptyLabel = "មិនមានទិន្នន័យ",
+  selectAllLabel,
+  emptyLabel,
 }) {
+  const { t } = useLanguage();
+
+  const resolvedPlaceholder = placeholder ?? t("common.select");
+  const resolvedSelectAllLabel = selectAllLabel ?? t("common.selectAll");
+  const resolvedEmptyLabel = emptyLabel ?? t("common.noOptionsAvailable");
+
   const wrapperRef =
     useRef(null);
 
@@ -264,7 +272,7 @@ export default function MultiSelect({
     if (
       selectedLabels.length === 0
     ) {
-      return placeholder;
+      return resolvedPlaceholder;
     }
 
     /*
@@ -284,7 +292,7 @@ export default function MultiSelect({
     }
 
     if (allSelected) {
-      return `${selectAllLabel} (${selectedLabels.length})`;
+      return `${resolvedSelectAllLabel} (${selectedLabels.length})`;
     }
 
     return `${selectedLabels
@@ -437,7 +445,7 @@ export default function MultiSelect({
                 "
               >
                 <span className="min-w-0 flex-1 truncate">
-                  {selectAllLabel}
+                  {resolvedSelectAllLabel}
                 </span>
 
                 <CheckboxIndicator
@@ -513,7 +521,7 @@ export default function MultiSelect({
             </>
           ) : (
             <p className="px-3 py-4 text-center text-sm text-text-mute">
-              {emptyLabel}
+              {resolvedEmptyLabel}
             </p>
           )}
         </div>

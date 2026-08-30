@@ -683,11 +683,11 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
         open={pendingTab !== null}
         busy={saving}
         error={pendingTab !== null ? error : ""}
-        title="មិនទាន់រក្សាទុក"
-        message="តើរក្សាទុកមុនប្តូរផ្ទាំង?"
-        saveLabel="រក្សាទុក"
-        discardLabel="កុំរក្សាទុក"
-        cancelLabel="បោះបង់"
+        title={t("donationPage.unsavedTabTitle")}
+        message={t("donationPage.unsavedTabMessage")}
+        saveLabel={t("donationPage.save")}
+        discardLabel={t("donationPage.discardChanges")}
+        cancelLabel={t("donationPage.cancel")}
         onCancel={() => setPendingTab(null)}
         onDiscard={() => {
           setMembers(lastSavedMembersRef.current);

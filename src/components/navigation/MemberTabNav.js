@@ -24,8 +24,8 @@ const tabs = [
       name: t("memberPage.tabDonation"),
       href: `/member/memberInfo/${memberId}/donation`,
     },{
-      name: t("memberPage.tabSponsor"),
-      href: `/member/memberInfo/${memberId}/sponsor`,
+      name: t("memberPage.tabEventDonation"),
+      href: `/member/memberInfo/${memberId}/eventdonation`,
     },
     {
       name: t("memberPage.tabPassword"),

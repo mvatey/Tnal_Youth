@@ -207,8 +207,8 @@ export default function MemberInfoLayout({
   const isDonation =
     pathname.endsWith("/donation");
 
-  const isSponsor =
-    pathname.endsWith("/sponsor");
+  const isEventDonation =
+    pathname.endsWith("/eventdonation");
 
   const isPassword =
     pathname.endsWith("/password");
@@ -400,7 +400,7 @@ export default function MemberInfoLayout({
   }, [id, isDonation]);
 
   useEffect(() => {
-    if (!id || !isSponsor) return undefined;
+    if (!id || !isEventDonation) return undefined;
 
     const controller = new AbortController();
 
@@ -419,7 +419,7 @@ export default function MemberInfoLayout({
       });
 
     return () => controller.abort();
-  }, [id, isSponsor]);
+  }, [id, isEventDonation]);
 
   const handleOpenDetails = () => {
     router.push(
@@ -599,7 +599,7 @@ export default function MemberInfoLayout({
         )}
 
       {!isDetailPage &&
-        isSponsor && (
+        isEventDonation && (
           <div
             className="
               grid

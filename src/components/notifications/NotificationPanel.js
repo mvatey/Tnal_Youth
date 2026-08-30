@@ -5,11 +5,14 @@ import Pagination from "@/components/navigation/Pagination";
 import NotificationItem from "./NotificationItem";
 import { getNotificationHeading } from "./notificationData";
 import { useBranch } from "@/context/BranchContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 const rowsPerPage = 10;
 
 export default function NotificationPanel({ type = "all" }) {
-  const heading = type === "all" ? "សេចក្ដីជូនដំណឹង" : getNotificationHeading(type);
+  const { t, locale } = useLanguage();
+  const heading =
+    type === "all" ? t("notificationPage.allNotifications") : getNotificationHeading(type);
 
   // A notification with no branch (personal — "your document was issued",
   // account activation, etc.) always shows regardless of branch. One WITH a
@@ -60,7 +63,7 @@ export default function NotificationPanel({ type = "all" }) {
 
       if (!response.ok || body?.success === false) {
         throw new Error(
-          body?.message || "មិនអាចទាញយកការជូនដំណឹងបានទេ។",
+          body?.message || t("notificationPage.loadFailed"),
         );
       }
 
@@ -100,16 +103,23 @@ export default function NotificationPanel({ type = "all" }) {
             id: row.id,
 
             title:
-              row.title ||
-              row.typeLabelKm ||
-              row.typeLabelEn ||
+              (locale === "en"
+                ? row.titleEn || row.title
+                : row.title || row.titleEn) ||
+              (locale === "en"
+                ? row.typeLabelEn || row.typeLabelKm
+                : row.typeLabelKm || row.typeLabelEn) ||
               heading,
 
-            description: row.body || "",
+            description:
+              (locale === "en"
+                ? row.bodyEn || row.body
+                : row.body || row.bodyEn) || "",
 
             badge:
-              row.typeLabelKm ||
-              row.typeLabelEn ||
+              (locale === "en"
+                ? row.typeLabelEn || row.typeLabelKm
+                : row.typeLabelKm || row.typeLabelEn) ||
               heading,
 
             variant:
@@ -119,6 +129,7 @@ export default function NotificationPanel({ type = "all" }) {
 
             date: formatNotificationDate(
               row.createdAt,
+              locale,
             ),
 
             read: Boolean(row.isRead),
@@ -147,12 +158,12 @@ export default function NotificationPanel({ type = "all" }) {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "មិនអាចទាញយកការជូនដំណឹងបានទេ។",
+          : t("notificationPage.loadFailed"),
       );
     } finally {
       setIsLoading(false);
     }
-  }, [heading, type, branchId]);
+  }, [heading, type, branchId, locale, t]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -219,7 +230,7 @@ export default function NotificationPanel({ type = "all" }) {
               className="font-semibold underline"
               onClick={loadNotifications}
             >
-              Retry
+              {t("notificationPage.retry")}
             </button>
           </div>
         ) : null}
@@ -227,11 +238,11 @@ export default function NotificationPanel({ type = "all" }) {
         <ul className="mt-[10px]">
           {isLoading ? (
             <li className="px-8 py-10 text-center text-sm text-text-secondary">
-              Loading...
+              {t("notificationPage.loading")}
             </li>
           ) : pagedNotifications.length === 0 ? (
             <li className="px-8 py-10 text-center text-sm text-text-secondary">
-              No notifications
+              {t("notificationPage.noNotifications")}
             </li>
           ) : (
             pagedNotifications.map(
@@ -270,7 +281,7 @@ function withBranchContext(actionUrl, branchId) {
   return `${actionUrl}${separator}branchId=${encodeURIComponent(branchId)}`;
 }
 
-function formatNotificationDate(value) {
+function formatNotificationDate(value, locale) {
   if (!value) {
     return "-";
   }
@@ -281,7 +292,7 @@ function formatNotificationDate(value) {
     return "-";
   }
 
-  return new Intl.DateTimeFormat("km-KH", {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "km-KH", {
     year: "numeric",
     month: "short",
     day: "numeric",
