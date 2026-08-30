@@ -1329,6 +1329,21 @@ export default function DocumentsPage() {
     );
   }
 
+  const memberJoinedOn =
+    member?.joined_on ||
+    member?.joinedOn ||
+    member?.joined_at ||
+    member?.joinedAt ||
+    "";
+
+  // Same "NAS-0026" identifier IdCard itself renders on the card face --
+  // reused here so the info row underneath matches instead of showing a
+  // fabricated document number.
+  const memberIdNumber =
+    member?.id != null
+      ? `NAS-${String(member.id).padStart(4, "0")}`
+      : "";
+
   /*
    * =======================================================
    * PAGE CONTENT
@@ -1359,6 +1374,8 @@ export default function DocumentsPage() {
           actionType="print"
           printText={t("memberPage.print")}
           previewClass="scale-[0.55]"
+          issuedAt={memberJoinedOn}
+          documentNumber={memberIdNumber}
         >
           <IdCard
             user={member}
@@ -1492,6 +1509,8 @@ export default function DocumentsPage() {
                   actionType="print"
                   printText={t("memberPage.print")}
                   previewClass="scale-[0.55]"
+                  issuedAt={memberJoinedOn}
+                  documentNumber={memberIdNumber}
                 >
                   <IdCard
                     user={
@@ -1528,6 +1547,8 @@ export default function DocumentsPage() {
               actionType="print"
               printText={t("memberPage.print")}
               previewClass="scale-[0.55]"
+              issuedAt={memberJoinedOn}
+              documentNumber={memberIdNumber}
             >
               <IdCard
                 user={member}
@@ -1647,6 +1668,7 @@ export default function DocumentsPage() {
                   )}
                   orientation="landscape"
                   previewClass="scale-[0.35]"
+                  issuedAt={customCertificate?.created_at}
                 >
                   <CertificateCard
                     recipientType={

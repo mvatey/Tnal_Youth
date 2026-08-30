@@ -272,7 +272,7 @@ function mapParticipation(item) {
 }
 
 export default function ParticipationPage() {
-  const { t } = useLanguage();
+  const { t, label } = useLanguage();
   const router = useRouter();
 
   const {
@@ -530,20 +530,14 @@ export default function ParticipationPage() {
               type?.value ??
               "";
 
-            const label =
-              type?.label_km ||
-              type?.labelKm ||
-              type?.name_km ||
-              type?.nameKm ||
-              type?.label_en ||
-              type?.labelEn ||
-              type?.name_en ||
-              type?.nameEn ||
-              type?.code ||
-              "";
+            const typeLabel =
+              label(
+                type,
+                type?.code || "",
+              );
 
             return {
-              label,
+              label: typeLabel,
               value:
                 id !== ""
                   ? String(id)
@@ -555,7 +549,7 @@ export default function ParticipationPage() {
               type.value !== "" &&
               type.label !== "",
           ),
-      [activityTypes],
+      [activityTypes, label],
     );
 
   const handleViewDetail =
@@ -771,6 +765,7 @@ export default function ParticipationPage() {
         searchPlaceholder={t("memberPage.search")}
         pageSize={10}
         minTableWidth={560}
+        emptyMessage={t("memberPage.noRecordsFound")}
         onDownload={() =>
           downloadTableAsExcel({
             data: participations,

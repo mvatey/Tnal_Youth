@@ -16,13 +16,14 @@ function FilterInput({
   options = [],
   placeholder = "ជ្រើសរើស",
   type = "select",
+  width,
 }) {
   const { locale } = useLanguage();
   const datePickerLocale = locale === "en" ? enUS : km;
 
   if (type === "date") {
     return (
-      <div className="date-filter-input relative w-full sm:w-[190px]">
+      <div className={`date-filter-input relative w-full ${width || "sm:w-[190px]"}`}>
         <DatePicker
           selected={value}
           onChange={(date) => onChange?.(date)}
@@ -50,7 +51,7 @@ function FilterInput({
     const [startDate, endDate] = value || [null, null];
 
     return (
-      <div className="date-filter-input relative w-full sm:w-[240px]">
+      <div className={`date-filter-input relative w-full ${width || "sm:w-[240px]"}`}>
         <DatePicker
           selectsRange
           startDate={startDate}
@@ -77,7 +78,7 @@ function FilterInput({
   return (
     <div className="relative w-full sm:w-auto">
 
-      <select value={value} onChange={(e) => onChange?.(e.target.value)} className="h-[34px] w-full min-w-0 appearance-none rounded-lg border border-border bg-bg-page-white px-3 pr-9 text-[12px] font-medium text-text-primary outline-none sm:w-auto sm:min-w-[130px]">
+      <select value={value} onChange={(e) => onChange?.(e.target.value)} className={`h-[34px] w-full min-w-0 appearance-none rounded-lg border border-border bg-bg-page-white px-3 pr-9 text-[12px] font-medium text-text-primary outline-none sm:w-auto ${width || "sm:min-w-[130px]"}`}>
 
         <option value="all" hidden={value !== "all"}>
           {placeholder}

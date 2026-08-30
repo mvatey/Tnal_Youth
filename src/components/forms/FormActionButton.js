@@ -1,6 +1,7 @@
 "use client";
 
 import { HiSaveAs } from "react-icons/hi";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function FormActionButtons({
   onCancel,
@@ -10,6 +11,8 @@ export default function FormActionButtons({
   saving = false,
   showSaveIcon = true,
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="mt-5 grid grid-cols-[168px_1fr] gap-5">
       <button
@@ -42,6 +45,7 @@ export default function FormActionButtons({
 
       <button
         type="submit"
+        disabled={!isValid || saving}
         aria-disabled={!isValid || saving}
         className={`
           flex
@@ -75,7 +79,7 @@ export default function FormActionButtons({
         {showSaveIcon && <HiSaveAs size={19} />}
 
         {saving
-          ? "កំពុងរក្សាទុក..."
+          ? t("common.saving")
           : saveText}
       </button>
     </div>

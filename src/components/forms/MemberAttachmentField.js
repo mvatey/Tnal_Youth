@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { FileText, Link2, X } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 function formatSize(bytes) {
   const size = Number(bytes);
@@ -11,9 +12,10 @@ function formatSize(bytes) {
 }
 
 export default function MemberAttachmentField({ value, onChange, readOnly = false }) {
+  const { t } = useLanguage();
   const inputRef = useRef(null);
   const selectedFile = value?.pendingFile;
-  const fileName = selectedFile?.name || value?.originalName || value?.original_name || "ឯកសារភ្ជាប់";
+  const fileName = selectedFile?.name || value?.originalName || value?.original_name || t("memberPage.attachedFileFallback");
   const fileSize = formatSize(selectedFile?.size || value?.sizeBytes || value?.size_bytes);
   const fileId = value?.id || value?.fileId;
   const href = fileId ? `/api/files/${fileId}/content` : value?.url || value?.filePath || value?.file_path;
@@ -62,10 +64,10 @@ export default function MemberAttachmentField({ value, onChange, readOnly = fals
           className="inline-flex h-[34px] items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white transition hover:opacity-90"
         >
           <Link2 size={17} />
-          ភ្ជាប់ឯកសារ
+          {t("memberPage.attachDocument")}
         </button>
       ) : (
-        <span className="text-sm text-text-mute">គ្មានឯកសារ</span>
+        <span className="text-sm text-text-mute">{t("memberPage.noDocumentYet")}</span>
       )}
     </div>
   );

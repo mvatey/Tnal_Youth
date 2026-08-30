@@ -17,11 +17,6 @@ function normalizeRole(value) {
  * Converts the authenticated backend user into the shape used by the V1 UI.
  * The database response remains the only source of identity and role data.
  */
-function lookupLabel(value) {
-  if (!value) return "-";
-  if (typeof value === "string") return value;
-  return value.label_km || value.labelKm || value.label_en || value.labelEn || value.code || "-";
-}
 
 function fileUrl(file, fallback) {
   const id = file?.id;
@@ -91,7 +86,13 @@ export function combineAuthUserWithMember(authUser, memberDetail = null) {
     profilePhotoId: profilePhoto?.id ?? null,
     cvFileId: cvFile?.id ?? null,
     cvFile,
-    status: detail.status ? lookupLabel(detail.status) : authUser.status || "ACTIVE",
+    /*
+     * These lookups are kept as the raw {code, label_km, label_en} objects
+     * from the backend (not flattened to a single hardcoded-language string)
+     * so consumers like MemberInfoCard can resolve the correct label for
+     * the currently active locale instead of always showing Khmer.
+     */
+    status: detail.status || authUser.status || "ACTIVE",
     statusId: detail.status?.id ?? null,
     branch:
       detail.branch?.nameKm ||
@@ -101,7 +102,7 @@ export function combineAuthUserWithMember(authUser, memberDetail = null) {
       "-",
     branchId: detail.branch_id ?? detail.branchId ?? detail.branch?.id ?? null,
     gender: detail.gender || authUser.gender || "-",
-    religion: lookupLabel(detail.religion),
+    religion: detail.religion || "-",
     religionId: detail.religion?.id ?? null,
     joinedAt: detail.joined_on || detail.joinedOn || authUser.joinedAt || "-",
     date_of_birth:
@@ -114,11 +115,11 @@ export function combineAuthUserWithMember(authUser, memberDetail = null) {
     currentAddress: detail.current_address || detail.currentAddress || "",
     permanentAddress: detail.permanent_address || detail.permanentAddress || "",
     bio: detail.bio || "",
-    nationality: lookupLabel(detail.nationality),
+    nationality: detail.nationality || "-",
     nationalityId: detail.nationality?.id ?? null,
-    ethnicity: lookupLabel(detail.ethnicity),
+    ethnicity: detail.ethnicity || "-",
     ethnicityId: detail.ethnicity?.id ?? null,
-    level: lookupLabel(detail.level),
+    level: detail.level || "-",
     levelId: detail.level?.id ?? null,
     shirtSize: detail.tshirtSize || detail.tshirt_size || "-",
     actualRole: backendRole.toLowerCase(),

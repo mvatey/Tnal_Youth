@@ -153,17 +153,13 @@ function getDefaultAvatar(
 function getDisplayName(
   member,
   user,
+  label,
+  fallback,
 ) {
   return (
-    member?.name_kh ||
-    member?.fullNameKm ||
-    member?.full_name_km ||
-    member?.name_en ||
-    member?.fullNameEn ||
-    member?.full_name_en ||
-    user?.fullNameKm ||
-    user?.fullNameEn ||
-    "អ្នកប្រើប្រាស់"
+    (member && label(member, null)) ||
+    (user && label(user, null)) ||
+    fallback
   );
 }
 
@@ -242,6 +238,8 @@ export default function Sidebar() {
     getDisplayName(
       currentMember,
       user,
+      localizedLabel,
+      t("common.user"),
     );
 
   const userTitle =

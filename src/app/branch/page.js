@@ -1590,6 +1590,9 @@ export default function BranchPage() {
 
       options:
         branchLevelOptions,
+
+      width:
+        "sm:min-w-[110px]",
     },
 
     {
@@ -1607,6 +1610,9 @@ export default function BranchPage() {
 
       options:
         provinceOptions,
+
+      width:
+        "sm:min-w-[100px]",
     },
 
     {
@@ -1624,6 +1630,9 @@ export default function BranchPage() {
 
       options:
         branchStatusOptions,
+
+      width:
+        "sm:min-w-[95px]",
     },
 
     {
@@ -1641,6 +1650,9 @@ export default function BranchPage() {
 
       type:
         "date",
+
+      width:
+        "sm:w-[165px]",
     },
   ];
 
@@ -1709,9 +1721,9 @@ export default function BranchPage() {
       />
 
       <section className="rounded-xl border border-border bg-bg-page-white p-4 transition-shadow duration-200 hover:shadow-sm">
-        <div className="mb-4 flex min-w-0 flex-wrap items-center gap-3">
+        <div className="mb-4 flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto">
           {/* Search */}
-          <div className="w-full sm:w-[265px]">
+          <div className="w-[140px] shrink-0">
             <SearchBar
               value={
                 searchQuery
@@ -1725,17 +1737,17 @@ export default function BranchPage() {
           </div>
 
           {/* Filters */}
-          <div className="min-w-0">
+          <div className="shrink-0">
             <FilterBar
               filters={
                 filters
               }
-              className="flex-wrap"
+              className="flex-nowrap"
             />
           </div>
 
           {/* Actions */}
-          <div className="flex min-w-0 flex-col gap-3 sm:ml-auto sm:flex-row sm:items-center [&>button]:w-full sm:[&>button]:w-auto">
+          <div className="flex shrink-0 items-center gap-3 sm:ml-auto [&>button]:w-auto">
             <Button
               type="button"
               variant="primary"

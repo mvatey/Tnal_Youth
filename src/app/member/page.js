@@ -1223,34 +1223,15 @@ export default function MembersPage() {
    * =========================================
    */
 
+  // CreateMemberModal already POSTs the new member itself (its own
+  // internal createMember() call) before calling onSave with the result --
+  // this callback only needs to react to that, not submit it a second
+  // time. A second POST here duplicated the create request with the
+  // already-created record as the payload, which the backend correctly
+  // rejected as a phone-number conflict (it was creating the same member
+  // twice).
   const handleCreateMember =
-    async (member) => {
-      const response = await fetch("/api/members", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(member),
-      });
-
-      const text = await response.text();
-      let body = null;
-      try {
-        body = text ? JSON.parse(text) : null;
-      } catch {
-        body = text;
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          (typeof body === "object" &&
-            (body?.message || body?.detail || body?.error)) ||
-            t("memberPage.createFailed"),
-        );
-      }
-
+    async () => {
       setIsCreateOpen(false);
 
       const controller =

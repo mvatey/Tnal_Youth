@@ -11,7 +11,6 @@ import { X } from "lucide-react";
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
-import MultiSelect from "@/components/forms/multiselect";
 import FormActionButton from "@/components/forms/FormActionButton";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -35,7 +34,6 @@ const EMPTY_FORM = {
   phone: "",
   email: "",
   branchId: "",
-  branchIds: [],
   levelId: "",
   positionId: "",
   role: "",
@@ -698,29 +696,6 @@ export default function CreateMemberModal({
       setSubmitError("");
     };
 
-  // A secretary can cover more than one branch; every other role (and a
-  // page locked to a single fixed branch) stays single-branch.
-  const isSecretaryRole =
-    form.role === "SECRETARY" &&
-    !lockBranch;
-
-  const updateBranchIds = (
-    nextValues,
-  ) => {
-    setForm(
-      (previousForm) => ({
-        ...previousForm,
-        branchIds: nextValues,
-      }),
-    );
-
-    setShowValidationError(
-      false,
-    );
-
-    setSubmitError("");
-  };
-
   const branchOptions =
   useMemo(() => {
     /*
@@ -856,6 +831,7 @@ export default function CreateMemberModal({
     "nationalityId",
     "dateOfBirth",
     "phone",
+    "branchId",
     "levelId",
     "role",
     "joinedOn",
@@ -870,12 +846,7 @@ export default function CreateMemberModal({
             "",
         ).trim() !==
         "",
-    ) &&
-    (isSecretaryRole
-      ? form.branchIds.length > 0
-      : String(
-          form.branchId ?? "",
-        ).trim() !== "");
+    );
 
   const submit =
     async (event) => {
@@ -928,21 +899,9 @@ export default function CreateMemberModal({
           null,
 
         branch_id:
-          isSecretaryRole
-            ? Number(
-                form.branchIds[0],
-              )
-            : Number(
-                form.branchId,
-              ),
-
-        branch_ids:
-          isSecretaryRole &&
-          form.branchIds.length > 1
-            ? form.branchIds.map(
-                Number,
-              )
-            : null,
+          Number(
+            form.branchId,
+          ),
 
         level_id:
           Number(
@@ -984,13 +943,19 @@ export default function CreateMemberModal({
 
         onClose?.();
       } catch (error) {
-        console.error(
+        // A validation/conflict error here (e.g. duplicate phone number)
+        // is expected, user-correctable input -- already surfaced through
+        // setSubmitError below, not a bug. console.error would trip
+        // Next.js's dev-mode error overlay on top of that friendly
+        // message, so this stays at warn.
+        console.warn(
           "Cannot create member:",
           error,
         );
 
         setSubmitError(
-          t("memberPage.createFailed"),
+          error?.message ||
+            t("memberPage.createFailed"),
         );
       } finally {
         setIsSubmitting(
@@ -1262,43 +1227,23 @@ export default function CreateMemberModal({
                   )}
                 />
 
-                {isSecretaryRole ? (
-                  <MultiSelect
-                    label={t("memberPage.branch")}
-                    name="branchIds"
-                    placeholder={t("memberPage.selectBranch")}
-                    options={
-                      branchOptions
-                    }
-                    value={
-                      form.branchIds
-                    }
-                    onChange={
-                      updateBranchIds
-                    }
-                    disabled={
-                      lockBranch
-                    }
-                  />
-                ) : (
-                  <FormSelect
-                    label={t("memberPage.branch")}
-                    name="branchId"
-                    placeholder={t("memberPage.selectBranch")}
-                    options={
-                      branchOptions
-                    }
-                    value={
-                      form.branchId
-                    }
-                    onChange={update(
-                      "branchId",
-                    )}
-                    disabled={
-                      lockBranch
-                    }
-                  />
-                )}
+                <FormSelect
+                  label={t("memberPage.branch")}
+                  name="branchId"
+                  placeholder={t("memberPage.selectBranch")}
+                  options={
+                    branchOptions
+                  }
+                  value={
+                    form.branchId
+                  }
+                  onChange={update(
+                    "branchId",
+                  )}
+                  disabled={
+                    lockBranch
+                  }
+                />
 
                 <BoxFill
                   label={t("memberPage.dateOfBirth")}

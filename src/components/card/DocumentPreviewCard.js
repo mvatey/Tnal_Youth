@@ -10,6 +10,38 @@ import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 import { useLanguage } from "@/context/LanguageContext";
 
+// Intl.DateTimeFormat("km-KH", ...) silently falls back to English
+// formatting in this environment instead of throwing, so it can't be
+// trusted for the Khmer locale -- hand-roll it instead, matching the
+// month names already used elsewhere in the app (e.g. member/page.js,
+// users/page.js).
+const MONTHS_KM = [
+  "មករា", "កុម្ភៈ", "មីនា", "មេសា", "ឧសភា", "មិថុនា",
+  "កក្កដា", "សីហា", "កញ្ញា", "តុលា", "វិច្ឆិកា", "ធ្នូ",
+];
+
+function formatDocumentDate(value, locale) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  if (locale === "en") {
+    return new Intl.DateTimeFormat("en-US", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(date);
+  }
+
+  return `${date.getDate()} ${MONTHS_KM[date.getMonth()]}, ${date.getFullYear()}`;
+}
+
 export default function DocumentPreviewCard({
   title,
   subtitle = "",
@@ -26,9 +58,20 @@ export default function DocumentPreviewCard({
   printText = "បោះពុម្ព",
 
   orientation = "landscape",
+
+  // Real per-document values -- each row is only shown when its value is
+  // actually provided, instead of the fabricated placeholder ("Document",
+  // "00009", a fixed fake expiry date) this card used to always display
+  // regardless of what document it was previewing.
+  issuedAt = null,
+  documentNumber = "",
+  expiresAt = null,
 }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const previewRef = useRef(null);
+
+  const issuedAtLabel = formatDocumentDate(issuedAt, locale);
+  const expiresAtLabel = formatDocumentDate(expiresAt, locale);
 
   const [downloading, setDownloading] =
     useState(false);
@@ -480,37 +523,45 @@ export default function DocumentPreviewCard({
         </div>
       </div>
 
-      <div className="mt-3 space-y-2 text-xs">
-        <div className="flex justify-between">
-          <span className="text-text-secondary">
-            {t("documentPage.issuedAt")}
-          </span>
+      {(issuedAtLabel || documentNumber || expiresAtLabel) && (
+        <div className="mt-3 space-y-2 text-xs">
+          {issuedAtLabel && (
+            <div className="flex justify-between">
+              <span className="text-text-secondary">
+                {t("documentPage.issuedAt")}
+              </span>
 
-          <span className="font-semibold">
-            {t("documentPage.document")}
-          </span>
+              <span className="font-semibold">
+                {issuedAtLabel}
+              </span>
+            </div>
+          )}
+
+          {documentNumber && (
+            <div className="flex justify-between">
+              <span className="text-text-secondary">
+                {t("documentPage.number")}
+              </span>
+
+              <span className="font-semibold">
+                {documentNumber}
+              </span>
+            </div>
+          )}
+
+          {expiresAtLabel && (
+            <div className="flex justify-between">
+              <span className="text-text-secondary">
+                {t("documentPage.expiresAt")}
+              </span>
+
+              <span className="font-semibold">
+                {expiresAtLabel}
+              </span>
+            </div>
+          )}
         </div>
-
-        <div className="flex justify-between">
-          <span className="text-text-secondary">
-            {t("documentPage.number")}
-          </span>
-
-          <span className="font-semibold">
-            00009
-          </span>
-        </div>
-
-        <div className="flex justify-between">
-          <span className="text-text-secondary">
-            {t("documentPage.expiresAt")}
-          </span>
-
-          <span className="font-semibold">
-            30 មិថុនា 2026
-          </span>
-        </div>
-      </div>
+      )}
 
       <button
         type="button"

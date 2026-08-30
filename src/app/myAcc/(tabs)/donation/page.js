@@ -150,6 +150,7 @@ export default function DonationRecordsPage() {
         searchPlaceholder={t("memberPage.search")}
         pageSize={10}
         minTableWidth={560}
+        emptyMessage={t("memberPage.noRecordsFound")}
         onDownload={() =>
           downloadTableAsExcel({
             data: filteredData,

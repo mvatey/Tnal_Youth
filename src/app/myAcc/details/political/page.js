@@ -13,6 +13,7 @@ import DeleteButton from "@/components/forms/DeleteButton";
 import { deleteMemberRecord, loadMemberRecords, saveMemberRecords } from "@/lib/myAccountRecords";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 import politicalData from "@/data/political.json";
+import { useLanguage } from "@/context/LanguageContext";
 
 function createEmptyPolitical() {
   return {
@@ -22,6 +23,7 @@ function createEmptyPolitical() {
 }
 
 export default function PoliticalPage() {
+  const { t, label } = useLanguage();
   const isReadOnly = false;
   const { member: currentMember } = useCurrentMember();
   const memberId = String(currentMember?.id ?? "self");
@@ -62,7 +64,7 @@ export default function PoliticalPage() {
         if (loadError.name !== "AbortError") {
           setMember({ id: memberId });
           setPoliticals([createEmptyPolitical()]);
-          setError(loadError.message || "មិនអាចទាញយកព័ត៌មាននយោបាយបានទេ។");
+          setError(loadError.message || t("memberPage.politicalLoadFailed"));
         }
       });
     return () => controller.abort();
@@ -81,17 +83,7 @@ export default function PoliticalPage() {
         const rows = Array.isArray(items) ? items : [];
         setParties(rows.map((item) => ({
           value: String(item.value ?? item.id ?? ""),
-          label:
-            item.labelKm ||
-            item.label_km ||
-            item.nameKm ||
-            item.name_km ||
-            item.labelEn ||
-            item.label_en ||
-            item.nameEn ||
-            item.name_en ||
-            item.code ||
-            String(item.value ?? item.id ?? ""),
+          label: label(item, String(item.value ?? item.id ?? "")),
         })));
       })
       .catch((lookupError) => {
@@ -99,7 +91,7 @@ export default function PoliticalPage() {
       });
 
     return () => controller.abort();
-  }, []);
+  }, [label]);
 
   function handlePoliticalChange(id, field, value) {
     setHasUnsavedChanges(true);
@@ -159,13 +151,13 @@ export default function PoliticalPage() {
         joinedDate: row.start_date || row.startDate || "",
         leftDate: row.end_date || row.endDate || "",
       })));
-      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+      alert(t("memberPage.saveSuccess"));
 
       setHasUnsavedChanges(false);
 
       return true;
     } catch (saveError) {
-      setError(saveError.message || "មិនអាចរក្សាទុកព័ត៌មាននយោបាយបានទេ។");
+      setError(saveError.message || t("memberPage.politicalSaveFailed"));
 
       return false;
     }
@@ -187,7 +179,7 @@ export default function PoliticalPage() {
   if (!member) {
     return (
       <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
-        <p className="text-sm text-error">រកមិនឃើញព័ត៌មានសមាជិក</p>
+        <p className="text-sm text-error">{t("memberPage.memberNotFound")}</p>
       </div>
     );
   }
@@ -201,7 +193,7 @@ export default function PoliticalPage() {
         </div>
       )}
       <div className="rounded-xl border border-border bg-bg-page-white p-5">
-        <h2 className="text-lg font-bold text-primary">កិច្ចការនយោបាយ</h2>
+        <h2 className="text-lg font-bold text-primary">{t("memberPage.detailPolitical")}</h2>
 
         <div className="mt-5 space-y-5">
           {politicals.map((item, index) => (
@@ -210,6 +202,7 @@ export default function PoliticalPage() {
               index={index}
               item={item}
               parties={parties}
+              t={t}
               canDelete={politicals.length > 1}
               onChange={(field, value) =>
                 handlePoliticalChange(item.id, field, value)
@@ -226,7 +219,7 @@ export default function PoliticalPage() {
             className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
           >
             <RiAddCircleLine size={17} />
-            បន្ថែម
+            {t("memberPage.add")}
           </button>
         </div>
       </div>
@@ -239,59 +232,59 @@ export default function PoliticalPage() {
   );
 }
 
-function PoliticalGroup({ index, item, parties, canDelete, onChange, onDelete }) {
+function PoliticalGroup({ index, item, parties, canDelete, onChange, onDelete, t }) {
   return (
     <div className="rounded-xl border border-border p-6">
       <h3 className="mb-5 text-sm font-semibold text-text-primary">
-        កិច្ចការនយោបាយ ទី {index + 1}
+        {t("memberPage.politicalItemTitle").replace("{index}", index + 1)}
       </h3>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
         <FormSelect
-          label="បក្ស"
-          placeholder="ជ្រើសរើសបក្ស"
+          label={t("memberPage.party")}
+          placeholder={t("memberPage.selectParty")}
           value={item.organization ?? ""}
           onChange={(event) => onChange("organization", event.target.value)}
           options={parties}
         />
 
         <BoxFill
-          label="ទីកន្លែងបំពេញការងារ"
-          placeholder="បញ្ចូលទីកន្លែងបំពេញការងារ"
+          label={t("memberPage.workplace")}
+          placeholder={t("memberPage.workplacePlaceholder")}
           value={item.workLocation ?? ""}
           onChange={(event) => onChange("workLocation", event.target.value)}
         />
 
         <BoxFill
-          label="ប្រទេស"
-          placeholder="បញ្ចូលឈ្មោះប្រទេស"
+          label={t("memberPage.country")}
+          placeholder={t("memberPage.countryPlaceholder")}
           value={item.country ?? ""}
           onChange={(event) => onChange("country", event.target.value)}
         />
 
         <BoxFill
-          label="តួនាទី"
-          placeholder="បញ្ចូលឈ្មោះតួនាទី"
+          label={t("memberPage.role")}
+          placeholder={t("memberPage.rolePlaceholder")}
           value={item.position ?? ""}
           onChange={(event) => onChange("position", event.target.value)}
         />
 
         <BoxFill
-          label="លេខកាត/លិខិតតែងតាំង"
-          placeholder="បញ្ចូលលេខកាត/លិខិតតែងតាំង"
+          label={t("memberPage.cardOrAppointmentNo")}
+          placeholder={t("memberPage.cardOrAppointmentNoPlaceholder")}
           value={item.cardNumber ?? ""}
           onChange={(event) => onChange("cardNumber", event.target.value)}
         />
 
         <FormDate
-          label="ថ្ងៃខែឆ្នាំ ចាប់ផ្ដើម"
+          label={t("memberPage.startDate")}
           name={`joinedDate-${item.id}`}
           value={item.joinedDate ?? ""}
           onChange={(event) => onChange("joinedDate", event.target.value)}
         />
 
         <FormDate
-          label="ថ្ងៃខែឆ្នាំ បញ្ចប់"
+          label={t("memberPage.endDate")}
           name={`leftDate-${item.id}`}
           value={item.leftDate ?? ""}
           onChange={(event) => onChange("leftDate", event.target.value)}

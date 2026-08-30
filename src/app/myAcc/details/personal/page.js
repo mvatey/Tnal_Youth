@@ -46,6 +46,7 @@ const EMPTY_FORM = {
   permanent_address: "",
 
   branch_name_km: "",
+  branch_name_en: "",
   assigned_branches: [],
   account_role: "",
   account_status: "",
@@ -64,29 +65,40 @@ const TSHIRT_SIZE_OPTIONS = [
   { value: "3XL", label: "3XL" },
 ];
 
-const ROLE_LABELS = {
-  ADMIN: "អ្នកគ្រប់គ្រង",
-  BRANCH_LEADER: "ប្រធានសាខា",
-  SECRETARY: "លេខាធិការ",
-  MEMBER: "សមាជិក",
-};
-
-const ACCOUNT_STATUS_LABELS = {
-  ACTIVE: "សកម្ម",
-  INACTIVE: "អសកម្ម",
-  PENDING: "កំពុងរង់ចាំសកម្មភាព",
-  SUSPENDED: "បានផ្អាក",
-  LOCKED: "បានចាក់សោ",
-};
-
-function getRoleLabel(role) {
+function getRoleLabel(role, t) {
   const normalized = String(role || "").trim().toUpperCase();
-  return ROLE_LABELS[normalized] || (role ? String(role) : "-");
+
+  const key =
+    normalized === "ADMIN"
+      ? "memberPage.roleAdmin"
+      : normalized === "BRANCH_LEADER"
+        ? "memberPage.roleBranchLeader"
+        : normalized === "SECRETARY"
+          ? "memberPage.roleSecretary"
+          : normalized === "MEMBER"
+            ? "memberPage.roleMember"
+            : null;
+
+  return key ? t(key) : role ? String(role) : "-";
 }
 
-function getStatusLabel(status) {
+function getStatusLabel(status, t) {
   const normalized = String(status || "").trim().toUpperCase();
-  return ACCOUNT_STATUS_LABELS[normalized] || (status ? String(status) : "-");
+
+  const key =
+    normalized === "ACTIVE"
+      ? "memberPage.active"
+      : normalized === "INACTIVE"
+        ? "memberPage.inactive"
+        : normalized === "SUSPENDED"
+          ? "memberPage.suspended"
+          : normalized === "LOCKED"
+            ? "memberPage.locked"
+            : normalized === "PENDING_ACTIVATION" || normalized === "PENDING"
+              ? "memberPage.pendingActivation"
+              : null;
+
+  return key ? t(key) : status ? String(status) : "-";
 }
 
 /* =========================================================
@@ -225,6 +237,7 @@ function normalizePersonalInfo(data, preserve = {}) {
       data?.permanent_address ?? preserve.permanentAddress ?? "",
 
     branch_name_km: data?.branch_name_km || data?.branchNameKm || "-",
+    branch_name_en: data?.branch_name_en || data?.branchNameEn || "",
 
     /*
      * Staff (mainly secretaries) can be assigned to more than one
@@ -254,7 +267,7 @@ function normalizePersonalInfo(data, preserve = {}) {
  * ========================================================= */
 
 export default function MyAccountPersonalPage() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const fileRef = useRef(null);
 
   /*
@@ -540,15 +553,22 @@ export default function MyAccountPersonalPage() {
    * any additional branch_staff coverage — deduped into one list of
    * names for the read-only chips below.
    */
+  const primaryBranchName =
+    locale === "en"
+      ? form.branch_name_en || form.branch_name_km
+      : form.branch_name_km || form.branch_name_en;
+
   const branchDisplayList = Array.from(
     new Set(
       [
-        form.branch_name_km && form.branch_name_km !== "-"
-          ? form.branch_name_km
+        primaryBranchName && primaryBranchName !== "-"
+          ? primaryBranchName
           : null,
         ...form.assigned_branches.map(
           (assignedBranch) =>
-            assignedBranch.name_km || assignedBranch.name_en || null,
+            (locale === "en"
+              ? assignedBranch.name_en || assignedBranch.name_km
+              : assignedBranch.name_km || assignedBranch.name_en) || null,
         ),
       ].filter(Boolean),
     ),
@@ -667,7 +687,7 @@ export default function MyAccountPersonalPage() {
             {/* ROLE — read-only; only staff can change an account's role */}
             <BoxFill
               label={t("memberPage.role")}
-              value={form.has_account ? getRoleLabel(form.account_role) : "-"}
+              value={form.has_account ? getRoleLabel(form.account_role, t) : "-"}
               readOnly
             />
 
@@ -690,7 +710,7 @@ export default function MyAccountPersonalPage() {
             {/* ACCOUNT STATUS — read-only; only staff can enable/disable an account */}
             <BoxFill
               label={t("memberPage.status")}
-              value={form.has_account ? getStatusLabel(form.account_status) : "-"}
+              value={form.has_account ? getStatusLabel(form.account_status, t) : "-"}
               readOnly
             />
           </div>

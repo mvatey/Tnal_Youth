@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -19,6 +20,7 @@ import MultiSelect from "@/components/forms/multiselect.js";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { MemberProfileRefreshContext } from "../../layout";
 
 /* =========================================================
  * EMPTY FORM
@@ -423,6 +425,9 @@ export default function PersonalPage() {
   const { branches: accessibleBranches } = useBranch();
   const { t } = useLanguage();
   const isReadOnly = !canEditMemberDetails;
+  const refetchMemberProfile = useContext(
+    MemberProfileRefreshContext,
+  );
   const params =
     useParams();
 
@@ -447,8 +452,10 @@ export default function PersonalPage() {
   ] = useState("");
 
   /*
-   * Internal login-account status is loaded for account lifecycle information only.
-   * It is NOT the visible Member status selector on this page.
+   * Internal login-account status (users.status) -- kept in sync with
+   * the visible Member status selector below (see the save handler's
+   * "Member status" step), since an admin setting a member Inactive
+   * expects that to also block their login, not just relabel them.
    */
   const [
     originalAccountStatus,
@@ -762,11 +769,12 @@ export default function PersonalPage() {
 
         // The shared lookup endpoint returns { value, label } options.
         // Reuse the same normalizer as the other profile lookups so this
-        // selector stays consistent with the Member list status filter.
-        setMemberStatusOptions(
-          normalizeLookup(statuses),
-        );
-
+        // selector stays consistent with the Member list status filter --
+        // which only ever offers Active/Inactive, since Suspended/Resigned
+        // have no supported workflow. A member already carrying one of
+        // those two from before this restriction still needs to see its
+        // own current status though, so it's kept as an option only when
+        // it's the one already assigned.
         const currentMemberStatusId =
           member?.status?.id ??
           member?.status_id ??
@@ -776,6 +784,20 @@ export default function PersonalPage() {
         const normalizedId = currentMemberStatusId === ""
           ? ""
           : String(currentMemberStatusId);
+
+        const allStatusOptions = normalizeLookup(statuses);
+
+        setMemberStatusOptions(
+          allStatusOptions.filter((option) => {
+            const code = String(option?.code || "").toUpperCase();
+
+            return (
+              code === "ACTIVE" ||
+              code === "INACTIVE" ||
+              option.value === normalizedId
+            );
+          }),
+        );
 
         setForm((previous) => ({
           ...previous,
@@ -1651,8 +1673,7 @@ export default function PersonalPage() {
          * 4. Member status
          *
          * This is the organizational Member status stored in
-         * members.status_id. It drives the Member list/filter and
-         * is intentionally separate from users.status below.
+         * members.status_id. It drives the Member list/filter.
          */
         if (form.member_status_id) {
           const updatedMember = await requestJson(
@@ -1670,13 +1691,69 @@ export default function PersonalPage() {
             form.member_status_id;
 
           setOriginalMemberStatusId(String(savedStatusId));
+
+          /*
+           * 5. Keep login access (users.status) in lockstep with the
+           * status just saved above -- an admin setting a member
+           * Inactive here expects that to also block their login, not
+           * just relabel them while they can still sign in.
+           */
+          if (
+            form.has_account &&
+            canManageSensitiveFields
+          ) {
+            const selectedStatusOption =
+              memberStatusOptions.find(
+                (option) =>
+                  option.value ===
+                  String(savedStatusId),
+              );
+
+            const statusCode = String(
+              selectedStatusOption?.code || "",
+            ).toUpperCase();
+
+            const accountAction =
+              statusCode === "ACTIVE"
+                ? "enable"
+                : statusCode === "INACTIVE"
+                  ? "disable"
+                  : null;
+
+            if (
+              accountAction &&
+              originalAccountStatus !==
+                "PENDING_ACTIVATION"
+            ) {
+              const account =
+                await requestJson(
+                  `/members/${memberId}/personal-info/account/${accountAction}`,
+                  {
+                    method: "PATCH",
+                  },
+                );
+
+              const nextAccountStatus =
+                account?.status ||
+                (accountAction === "enable"
+                  ? "ACTIVE"
+                  : "INACTIVE");
+
+              setOriginalAccountStatus(
+                nextAccountStatus,
+              );
+
+              setForm(
+                (previous) => ({
+                  ...previous,
+                  account_status:
+                    nextAccountStatus,
+                }),
+              );
+            }
+          }
         }
 
-        /*
-         * 5. Account lifecycle status is intentionally not edited here.
-         * Member Detail has one visible status only: members.status_id.
-         * users.status stays internal for activation / lock / login lifecycle.
-         */
         const latestAccountStatus = form.account_status;
 
         /*
@@ -1840,6 +1917,14 @@ export default function PersonalPage() {
         );
 
         setHasUnsavedChanges(false);
+
+        /*
+         * This page keeps its own local `form` state independent of the
+         * parent layout's profile header/stat cards, which fetch member
+         * data on their own. Without this, a saved change (name, role,
+         * status, branch) only shows up there after a manual reload.
+         */
+        refetchMemberProfile();
 
         return true;
       } catch (saveError) {

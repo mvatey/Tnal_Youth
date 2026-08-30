@@ -9,17 +9,17 @@
     "សញ្ញាបត្របច្ចេកទេស"
   ],
   "languages": [
-    "ភាសាខ្មែរ",
-    "ភាសាអង់គ្លេស",
-    "ភាសាចិន",
-    "ភាសាថៃ",
-    "ភាសាវៀតណាម",
-    "ភាសាបារាំង",
-    "ភាសាជប៉ុន",
-    "ភាសាកូរ៉េ",
-    "ភាសាអាល្លឺម៉ង់",
-    "ភាសាអេស្ប៉ាញ",
-    "ផ្សេងៗ"
+    { "value": "ភាសាខ្មែរ", "label_km": "ភាសាខ្មែរ", "label_en": "Khmer" },
+    { "value": "ភាសាអង់គ្លេស", "label_km": "ភាសាអង់គ្លេស", "label_en": "English" },
+    { "value": "ភាសាចិន", "label_km": "ភាសាចិន", "label_en": "Chinese" },
+    { "value": "ភាសាថៃ", "label_km": "ភាសាថៃ", "label_en": "Thai" },
+    { "value": "ភាសាវៀតណាម", "label_km": "ភាសាវៀតណាម", "label_en": "Vietnamese" },
+    { "value": "ភាសាបារាំង", "label_km": "ភាសាបារាំង", "label_en": "French" },
+    { "value": "ភាសាជប៉ុន", "label_km": "ភាសាជប៉ុន", "label_en": "Japanese" },
+    { "value": "ភាសាកូរ៉េ", "label_km": "ភាសាកូរ៉េ", "label_en": "Korean" },
+    { "value": "ភាសាអាល្លឺម៉ង់", "label_km": "ភាសាអាល្លឺម៉ង់", "label_en": "German" },
+    { "value": "ភាសាអេស្ប៉ាញ", "label_km": "ភាសាអេស្ប៉ាញ", "label_en": "Spanish" },
+    { "value": "ផ្សេងៗ", "label_km": "ផ្សេងៗ", "label_en": "Other" }
   ],
   "proficiencyLevels": [
     "ខ្សោយ",
@@ -57,18 +57,18 @@
     "ស្ទាត់ជំនាញ"
   ],
   "computerSkills": [
-    "Microsoft Word",
-    "Microsoft Excel",
-    "Microsoft PowerPoint",
-    "Google Docs",
-    "Google Sheets",
-    "Google Slides",
-    "Adobe Photoshop",
-    "Adobe Illustrator",
-    "Adobe Premiere Pro",
-    "AutoCAD",
-    "SketchUp",
-    "ផ្សេងៗ"
+    { "value": "Microsoft Word", "label_km": "Microsoft Word", "label_en": "Microsoft Word" },
+    { "value": "Microsoft Excel", "label_km": "Microsoft Excel", "label_en": "Microsoft Excel" },
+    { "value": "Microsoft PowerPoint", "label_km": "Microsoft PowerPoint", "label_en": "Microsoft PowerPoint" },
+    { "value": "Google Docs", "label_km": "Google Docs", "label_en": "Google Docs" },
+    { "value": "Google Sheets", "label_km": "Google Sheets", "label_en": "Google Sheets" },
+    { "value": "Google Slides", "label_km": "Google Slides", "label_en": "Google Slides" },
+    { "value": "Adobe Photoshop", "label_km": "Adobe Photoshop", "label_en": "Adobe Photoshop" },
+    { "value": "Adobe Illustrator", "label_km": "Adobe Illustrator", "label_en": "Adobe Illustrator" },
+    { "value": "Adobe Premiere Pro", "label_km": "Adobe Premiere Pro", "label_en": "Adobe Premiere Pro" },
+    { "value": "AutoCAD", "label_km": "AutoCAD", "label_en": "AutoCAD" },
+    { "value": "SketchUp", "label_km": "SketchUp", "label_en": "SketchUp" },
+    { "value": "ផ្សេងៗ", "label_km": "ផ្សេងៗ", "label_en": "Other" }
   ],
   "computerSkillLevels": [
     "មូលដ្ឋាន",

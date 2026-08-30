@@ -443,6 +443,12 @@ export default function DocumentsPage() {
           actionType="print"
           printText={t("memberPage.print")}
           previewClass="scale-[0.55]"
+          issuedAt={currentMember?.joinedAt}
+          documentNumber={
+            currentMember?.id != null
+              ? `NAS-${String(currentMember.id).padStart(4, "0")}`
+              : ""
+          }
         >
           <IdCard
             user={currentMember}

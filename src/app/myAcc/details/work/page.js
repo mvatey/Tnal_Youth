@@ -10,6 +10,7 @@ import FormSelect from "@/components/forms/FormSelect";
 import DeleteButton from "@/components/forms/DeleteButton";
 import { deleteMemberRecord, loadMemberRecords, saveMemberRecords } from "@/lib/myAccountRecords";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
+import { useLanguage } from "@/context/LanguageContext";
 
 function createEmptyWork() {
   return {
@@ -24,6 +25,7 @@ function createEmptyWork() {
 }
 
 export default function WorkPage() {
+  const { t } = useLanguage();
   const isReadOnly = false;
   const { member: currentMember } = useCurrentMember();
   const memberId = String(currentMember?.id ?? "self");
@@ -94,12 +96,12 @@ export default function WorkPage() {
         end_date: item.endDate || null,
       }));
       setWorks(rows.map((row) => ({ id: row.id, company: row.organization_name || "", address: row.address || "", position: row.position_title || "", appointment: row.role_title || "", startDate: row.start_date || "", endDate: row.end_date || "" })));
-      alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+      alert(t("memberPage.saveSuccess"));
       setHasUnsavedChanges(false);
       return true;
     } catch (error) {
       console.error("Cannot save work history:", error);
-      alert(error.message || "មិនអាចរក្សាទុកព័ត៌មានបានទេ");
+      alert(error.message || t("memberPage.saveFailed"));
       return false;
     }
   }
@@ -120,7 +122,7 @@ export default function WorkPage() {
   if (!member) {
     return (
       <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
-        <p className="text-sm text-error">រកមិនឃើញព័ត៌មានសមាជិក</p>
+        <p className="text-sm text-error">{t("memberPage.memberNotFound")}</p>
       </div>
     );
   }
@@ -129,25 +131,25 @@ export default function WorkPage() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <fieldset disabled={isReadOnly} className={isReadOnly ? "member-readonly contents [&_button]:hidden" : "contents"}>
       <div className="rounded-xl border border-border bg-bg-page-white p-6">
-        <h2 className="text-lg font-bold text-primary">ប្រវត្តិការងារ</h2>
+        <h2 className="text-lg font-bold text-primary">{t("memberPage.detailWork")}</h2>
 
         <div className="mt-6 space-y-6">
           {works.map((work, index) => (
             <div key={work.id} className="rounded-xl border border-border p-6">
-              <h3 className="mb-5 text-sm font-semibold text-text-primary">ប្រវត្តិការងារ ទី {index + 1}</h3>
+              <h3 className="mb-5 text-sm font-semibold text-text-primary">{t("memberPage.workItemTitle").replace("{index}", index + 1)}</h3>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                <BoxFill label="ឈ្មោះ ស្ថាប័ន" placeholder="បញ្ចូលឈ្មោះស្ថាប័ន" value={work.company} onChange={(event) => handleWorkChange(work.id, "company", event.target.value)} />
+                <BoxFill label={t("memberPage.organizationName")} placeholder={t("memberPage.organizationPlaceholder")} value={work.company} onChange={(event) => handleWorkChange(work.id, "company", event.target.value)} />
 
-                <BoxFill label="អាស័យដ្ឋាន" placeholder="បញ្ចូលអាស័យដ្ឋាន" value={work.address} onChange={(event) => handleWorkChange(work.id, "address", event.target.value)} />
+                <BoxFill label={t("memberPage.address")} placeholder={t("memberPage.addressPlaceholder")} value={work.address} onChange={(event) => handleWorkChange(work.id, "address", event.target.value)} />
 
-                <BoxFill label="តួនាទី" placeholder="តួនាទី" value={work.position} onChange={(event) => handleWorkChange(work.id, "position", event.target.value)}  />
+                <BoxFill label={t("memberPage.role")} placeholder={t("memberPage.role")} value={work.position} onChange={(event) => handleWorkChange(work.id, "position", event.target.value)}  />
 
-                <BoxFill label="មុខតំណែង" placeholder="មុខតំណែង" value={work.appointment} onChange={(event) => handleWorkChange(work.id, "appointment", event.target.value)}  />
+                <BoxFill label={t("memberPage.appointment")} placeholder={t("memberPage.appointment")} value={work.appointment} onChange={(event) => handleWorkChange(work.id, "appointment", event.target.value)}  />
 
-                <FormDate label="ថ្ងៃខែចាប់ផ្ដើម" name={`startDate-${work.id}`} value={work.startDate} onChange={(event) => handleWorkChange(work.id, "startDate", event.target.value)} />
+                <FormDate label={t("memberPage.startDate")} name={`startDate-${work.id}`} value={work.startDate} onChange={(event) => handleWorkChange(work.id, "startDate", event.target.value)} />
 
-                <FormDate label="ថ្ងៃខែបញ្ចប់" name={`endDate-${work.id}`} value={work.endDate} onChange={(event) => handleWorkChange(work.id, "endDate", event.target.value)} />
+                <FormDate label={t("memberPage.endDate")} name={`endDate-${work.id}`} value={work.endDate} onChange={(event) => handleWorkChange(work.id, "endDate", event.target.value)} />
               </div>
 
               <div className="mt-6 flex justify-end">
@@ -159,7 +161,7 @@ export default function WorkPage() {
           <div className="flex justify-center">
             <button type="button" onClick={addWork} className="flex items-center gap-2 rounded-lg bg-green-600 px-6 py-2 text-sm font-semibold text-white hover:bg-green-700">
               <RiAddCircleLine size={18} />
-              បន្ថែម
+              {t("memberPage.add")}
             </button>
           </div>
         </div>

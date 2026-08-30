@@ -24,6 +24,26 @@ const ROLE_LABELS = {
   សមាជិក: "សមាជិក",
 };
 
+// The printed ID card template is Khmer-only regardless of the app's
+// current language setting, same as ROLE_LABELS above -- so a raw
+// English gender code/label from the API still needs mapping here.
+const GENDER_LABELS = {
+  MALE: "ប្រុស",
+  FEMALE: "ស្រី",
+  MONK: "ព្រះសង្ឃ",
+  OTHER: "ផ្សេងៗ",
+
+  male: "ប្រុស",
+  female: "ស្រី",
+  monk: "ព្រះសង្ឃ",
+  other: "ផ្សេងៗ",
+
+  ប្រុស: "ប្រុស",
+  ស្រី: "ស្រី",
+  ព្រះសង្ឃ: "ព្រះសង្ឃ",
+  ផ្សេងៗ: "ផ្សេងៗ",
+};
+
 const DEFAULT_USER = {
   id: null,
   memberId: null,
@@ -198,16 +218,33 @@ function getGender(user) {
     gender &&
     typeof gender === "object"
   ) {
+    const code =
+      gender?.code ||
+      gender?.labelEn ||
+      "";
+
     return (
       gender?.labelKm ||
       gender?.label_km ||
-      gender?.labelEn ||
-      gender?.code ||
+      GENDER_LABELS[code] ||
+      GENDER_LABELS[
+        String(code).toLowerCase()
+      ] ||
+      code ||
       ""
     );
   }
 
-  return gender || "";
+  const normalized =
+    String(gender || "").trim();
+
+  return (
+    GENDER_LABELS[normalized] ||
+    GENDER_LABELS[
+      normalized.toLowerCase()
+    ] ||
+    normalized
+  );
 }
 
 function getBranch(user) {

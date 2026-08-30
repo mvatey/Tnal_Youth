@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import useCurrentMember from "@/hooks/useCurrentMember";
+import { useLanguage } from "@/context/LanguageContext";
 
 import SaveButton from "@/components/forms/SaveButton";
 import BoxFill from "@/components/forms/boxFill";
@@ -206,6 +207,7 @@ function personPayload(
 }
 
 export default function FamilyPage() {
+  const { t } = useLanguage();
   const isReadOnly = false;
   const { member: currentMember } = useCurrentMember();
   const memberId = currentMember?.id ?? "self";
@@ -292,7 +294,7 @@ export default function FamilyPage() {
         if (active) {
           setError(
             loadError.message ||
-              "មិនអាចទាញយកព័ត៌មានគ្រួសារបានទេ។",
+              t("memberPage.familyLoadFailed"),
           );
         }
       } finally {
@@ -307,7 +309,7 @@ export default function FamilyPage() {
     return () => {
       active = false;
     };
-  }, [memberId]);
+  }, [memberId, t]);
 
   /*
    * =========================================
@@ -385,7 +387,7 @@ export default function FamilyPage() {
   async function handleSave() {
     if (!memberId) {
       setError(
-        "រកមិនឃើញលេខសម្គាល់សមាជិក។",
+        t("memberPage.missingMemberId"),
       );
 
       return false;
@@ -395,7 +397,7 @@ export default function FamilyPage() {
       !family.marital_status
     ) {
       setError(
-        "សូមជ្រើសរើសស្ថានភាពគ្រួសារ។",
+        t("memberPage.familyStatusRequired"),
       );
 
       return false;
@@ -449,7 +451,7 @@ export default function FamilyPage() {
       );
 
       setSuccess(
-        "រក្សាទុកព័ត៌មានគ្រួសារបានជោគជ័យ។",
+        t("memberPage.familySaveSuccess"),
       );
 
       setHasUnsavedChanges(false);
@@ -463,7 +465,7 @@ export default function FamilyPage() {
 
       setError(
         saveError.message ||
-          "មិនអាចរក្សាទុកព័ត៌មានគ្រួសារបានទេ។",
+          t("memberPage.familySaveFailed"),
       );
 
       return false;
@@ -502,7 +504,7 @@ export default function FamilyPage() {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
         <p className="text-sm text-text-secondary">
-          កំពុងទាញយកព័ត៌មានគ្រួសារ...
+          {t("memberPage.loadingFamily")}
         </p>
       </div>
     );
@@ -528,14 +530,14 @@ export default function FamilyPage() {
         "
       >
         <h2 className="text-lg font-bold text-primary">
-          ព័ត៌មានគ្រួសារ
+          {t("memberPage.detailFamily")}
         </h2>
 
         {/* FAMILY STATUS */}
 
         <div className="mt-5">
           <RadioGroup
-            label="ស្ថានភាពគ្រួសារ"
+            label={t("memberPage.familyStatus")}
             name="familyStatus"
             value={
               family.marital_status
@@ -543,13 +545,13 @@ export default function FamilyPage() {
             options={[
               {
                 label:
-                  "នៅលីវ",
+                  t("memberPage.single"),
                 value:
                   "SINGLE",
               },
               {
                 label:
-                  "មានគ្រួសារ",
+                  t("memberPage.married"),
                 value:
                   "MARRIED",
               },
@@ -579,8 +581,8 @@ export default function FamilyPage() {
             "SINGLE" && (
             <>
               <BoxFill
-                label="ឈ្មោះ ប្ដី/ប្រពន្ធ (ខ្មែរ)"
-                placeholder="បញ្ចូលឈ្មោះប្ដីប្រពន្ធជាភាសាខ្មែរ"
+                label={t("memberPage.spouseNameKm")}
+                placeholder={t("memberPage.spouseNameKmPlaceholder")}
                 value={
                   family.spouse
                     .full_name_km
@@ -598,8 +600,8 @@ export default function FamilyPage() {
               />
 
               <BoxFill
-                label="ឈ្មោះ ប្ដី/ប្រពន្ធ (ឡាតាំង)"
-                placeholder="បញ្ចូលឈ្មោះជាភាសាឡាតាំង"
+                label={t("memberPage.spouseNameEn")}
+                placeholder={t("memberPage.latinNamePlaceholder")}
                 value={
                   family.spouse
                     .full_name_en
@@ -617,8 +619,8 @@ export default function FamilyPage() {
               />
 
               <BoxFill
-                label="មុខរបរ ប្ដី/ប្រពន្ធ"
-                placeholder="បញ្ចូលមុខរបរ ប្ដី/ប្រពន្ធ"
+                label={t("memberPage.spouseOccupation")}
+                placeholder={t("memberPage.spouseOccupationPlaceholder")}
                 value={
                   family.spouse
                     .occupation
@@ -636,7 +638,7 @@ export default function FamilyPage() {
               />
 
               <FormDate
-                label="ថ្ងៃខែឆ្នាំ កំណើត"
+                label={t("memberPage.dateOfBirth")}
                 name="spouseDateOfBirth"
                 value={
                   family.spouse
@@ -656,8 +658,8 @@ export default function FamilyPage() {
 
               <div className="xl:col-span-2">
                 <BoxFill
-                  label="ទីលំនៅប្ដី/ប្រពន្ធ"
-                  placeholder="បញ្ចូលទីលំនៅប្ដី/ប្រពន្ធ"
+                  label={t("memberPage.spouseAddress")}
+                  placeholder={t("memberPage.spouseAddressPlaceholder")}
                   value={
                     family.spouse
                       .address
@@ -683,8 +685,8 @@ export default function FamilyPage() {
           ================================= */}
 
           <BoxFill
-            label="ឈ្មោះ ឪពុក (ខ្មែរ)"
-            placeholder="បញ្ចូលឈ្មោះឪពុកជាភាសាខ្មែរ"
+            label={t("memberPage.fatherNameKm")}
+            placeholder={t("memberPage.fatherNameKmPlaceholder")}
             value={
               family.father
                 .full_name_km
@@ -702,8 +704,8 @@ export default function FamilyPage() {
           />
 
           <BoxFill
-            label="ឈ្មោះ ឪពុក (ឡាតាំង)"
-            placeholder="បញ្ចូលឈ្មោះឪពុកជាភាសាឡាតាំង"
+            label={t("memberPage.fatherNameEn")}
+            placeholder={t("memberPage.fatherNameEnPlaceholder")}
             value={
               family.father
                 .full_name_en
@@ -721,7 +723,7 @@ export default function FamilyPage() {
           />
 
           <RadioGroup
-            label="ស្ថានភាពឪពុក"
+            label={t("memberPage.fatherStatus")}
             name="fatherStatus"
             value={
               family.father
@@ -739,8 +741,8 @@ export default function FamilyPage() {
           />
 
           <BoxFill
-            label="មុខរបរឪពុក"
-            placeholder="បញ្ចូលមុខរបរឪពុក"
+            label={t("memberPage.fatherOccupation")}
+            placeholder={t("memberPage.fatherOccupationPlaceholder")}
             value={
               family.father
                 .occupation
@@ -759,8 +761,8 @@ export default function FamilyPage() {
 
           <div className="xl:col-span-2">
             <BoxFill
-              label="ទីលំនៅឪពុក"
-              placeholder="បញ្ចូលទីលំនៅឪពុក"
+              label={t("memberPage.fatherAddress")}
+              placeholder={t("memberPage.fatherAddressPlaceholder")}
               value={
                 family.father
                   .address
@@ -783,8 +785,8 @@ export default function FamilyPage() {
           ================================= */}
 
           <BoxFill
-            label="ឈ្មោះ ម្តាយ (ខ្មែរ)"
-            placeholder="បញ្ចូលឈ្មោះម្តាយជាភាសាខ្មែរ"
+            label={t("memberPage.motherNameKm")}
+            placeholder={t("memberPage.motherNameKmPlaceholder")}
             value={
               family.mother
                 .full_name_km
@@ -802,8 +804,8 @@ export default function FamilyPage() {
           />
 
           <BoxFill
-            label="ឈ្មោះ ម្តាយ (ឡាតាំង)"
-            placeholder="បញ្ចូលឈ្មោះម្តាយជាភាសាឡាតាំង"
+            label={t("memberPage.motherNameEn")}
+            placeholder={t("memberPage.motherNameEnPlaceholder")}
             value={
               family.mother
                 .full_name_en
@@ -821,7 +823,7 @@ export default function FamilyPage() {
           />
 
           <RadioGroup
-            label="ស្ថានភាពម្តាយ"
+            label={t("memberPage.motherStatus")}
             name="motherStatus"
             value={
               family.mother
@@ -839,8 +841,8 @@ export default function FamilyPage() {
           />
 
           <BoxFill
-            label="មុខរបរម្តាយ"
-            placeholder="បញ្ចូលមុខរបរម្តាយ"
+            label={t("memberPage.motherOccupation")}
+            placeholder={t("memberPage.motherOccupationPlaceholder")}
             value={
               family.mother
                 .occupation
@@ -859,8 +861,8 @@ export default function FamilyPage() {
 
           <div className="xl:col-span-2">
             <BoxFill
-              label="ទីលំនៅម្តាយ"
-              placeholder="បញ្ចូលទីលំនៅម្តាយ"
+              label={t("memberPage.motherAddress")}
+              placeholder={t("memberPage.motherAddressPlaceholder")}
               value={
                 family.mother
                   .address
@@ -912,8 +914,8 @@ export default function FamilyPage() {
           }
         >
           {saving
-            ? "កំពុងរក្សាទុក..."
-            : "រក្សាទុក"}
+            ? t("common.saving")
+            : t("memberPage.save")}
         </SaveButton>
       </div>}
     </form>
@@ -929,17 +931,20 @@ function RadioGroup({
   name,
   value,
   onChange,
-  options = [
+  options,
+}) {
+  const { t } = useLanguage();
+  const resolvedOptions = options ?? [
     {
-      label: "នៅរស់",
+      label: t("memberPage.alive"),
       value: "ALIVE",
     },
     {
-      label: "ស្លាប់",
+      label: t("memberPage.deceased"),
       value: "DECEASED",
     },
-  ],
-}) {
+  ];
+
   return (
     <div>
       <p className="mb-2 text-sm font-semibold text-text-primary">
@@ -947,7 +952,7 @@ function RadioGroup({
       </p>
 
       <div className="flex flex-wrap gap-x-8 gap-y-3 pt-2">
-        {options.map(
+        {resolvedOptions.map(
           (option) => (
             <Radio
               key={`${name}-${option.value}`}

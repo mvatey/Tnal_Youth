@@ -6,7 +6,9 @@ import {
 } from "next/navigation";
 
 import {
+  createContext,
   use,
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -31,6 +33,20 @@ import useMemberPermissions from "@/hooks/useMemberPermissions";
 import { UnsavedChangesProvider } from "@/context/UnsavedChangesContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { fetchAllDonationRecords, summarizeDonationRecords } from "@/lib/memberDonationRecords";
+import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
+
+/*
+ * This layout owns the profile header's own copy of `member` (for the
+ * name/photo/role/status card and the summary stat cards), fetched once
+ * on mount. A child tab page (e.g. details/personal) can mutate that same
+ * data server-side -- role, account status, branch -- through its own,
+ * independent save flow, but had no way to tell this layout to reload
+ * its copy, so the header only ever caught up on the next full page
+ * load/navigation. Exposing refetchMember() here lets a child call it
+ * right after a successful save instead.
+ */
+export const MemberProfileRefreshContext =
+  createContext(() => {});
 
 async function fetchJson(
   path,
@@ -78,27 +94,24 @@ async function fetchJson(
   return body;
 }
 
+// Converts everything to a single USD figure (matching the totals card
+// used on the sponsor/branch donation views -- see SponsorPanel.js) rather
+// than showing KHR and USD as two separate numbers. Falls back to a fixed
+// 4,000 KHR/USD rate while the live rate is still loading or unavailable.
 function formatDonationTotal(
   amountKhr,
   amountUsd,
+  exchangeRateKhrPerUsd,
 ) {
-  const parts = [];
+  const total =
+    Number(amountUsd || 0) +
+    Number(amountKhr || 0) /
+      (exchangeRateKhrPerUsd || 4000);
 
-  if (amountKhr) {
-    parts.push(
-      `${amountKhr.toLocaleString()} ៛`,
-    );
-  }
-
-  if (amountUsd) {
-    parts.push(
-      `$${amountUsd.toLocaleString()}`,
-    );
-  }
-
-  return parts.length > 0
-    ? parts.join(" / ")
-    : "0";
+  return `$${total.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 export default function MemberInfoLayout({
@@ -115,17 +128,19 @@ export default function MemberInfoLayout({
 
   /*
    * This is the logged-in account's own role (not the role of the
-   * member being viewed) — an admin managing a member's page should
-   * not be able to change that member's photo, but a secretary or
-   * branch leader managing a member on their behalf still can. A
-   * VIEWER-role account (any viewerScope) must never be able to,
-   * regardless of what it's scoped to view.
+   * member being viewed) — admin, secretary, and branch leader may all
+   * change a member's photo on their behalf. A VIEWER-role account (any
+   * viewerScope) must never be able to, regardless of what it's scoped
+   * to view.
    */
   const { role: loggedInRole } =
     useMemberPermissions();
 
   const canChangeProfilePhoto =
-    ["SECRETARY", "BRANCH_LEADER"].includes(loggedInRole);
+    ["ADMIN", "SECRETARY", "BRANCH_LEADER"].includes(loggedInRole);
+
+  const exchangeRateKhrPerUsd =
+    useUsdKhrExchangeRate();
 
   const [
     member,
@@ -203,19 +218,16 @@ export default function MemberInfoLayout({
     isParticipation ||
     isPassword;
 
-  useEffect(() => {
-    if (!id) {
-      setMember(null);
-      setAssignedBranches([]);
-      setLoading(false);
+  const loadMember = useCallback(
+    async (signal) => {
+      if (!id) {
+        setMember(null);
+        setAssignedBranches([]);
+        setLoading(false);
 
-      return undefined;
-    }
+        return;
+      }
 
-    const controller =
-      new AbortController();
-
-    async function loadMember() {
       try {
         setLoading(true);
         setError("");
@@ -223,13 +235,8 @@ export default function MemberInfoLayout({
         const data =
           await fetchJson(
             `/members/${id}`,
-            controller.signal,
+            signal,
           );
-
-        console.log(
-          "Member info response:",
-          data,
-        );
 
         setMember(
           data?.member || data,
@@ -245,7 +252,7 @@ export default function MemberInfoLayout({
           const personalInfo =
             await fetchJson(
               `/members/${id}/personal-info`,
-              controller.signal,
+              signal,
             );
 
           setAssignedBranches(
@@ -279,20 +286,32 @@ export default function MemberInfoLayout({
           );
         }
       } finally {
-        if (
-          !controller.signal.aborted
-        ) {
+        if (!signal?.aborted) {
           setLoading(false);
         }
       }
-    }
+    },
+    [id, t],
+  );
 
-    loadMember();
+  useEffect(() => {
+    const controller =
+      new AbortController();
+
+    loadMember(
+      controller.signal,
+    );
 
     return () => {
       controller.abort();
     };
-  }, [id, t]);
+  }, [loadMember]);
+
+  const refetchMember =
+    useCallback(
+      () => loadMember(),
+      [loadMember],
+    );
 
   useEffect(() => {
     if (
@@ -522,6 +541,7 @@ export default function MemberInfoLayout({
                   .totalDonationKhr,
                 activitySummary
                   .totalDonationUsd,
+                exchangeRateKhrPerUsd,
               )}
               iconColor="text-warning"
               iconBg="bg-warning-bg"
@@ -554,6 +574,7 @@ export default function MemberInfoLayout({
               value={formatDonationTotal(
                 monthlyDonationSummary.totalDonationKhr,
                 monthlyDonationSummary.totalDonationUsd,
+                exchangeRateKhrPerUsd,
               )}
               iconColor="text-error"
               iconBg="bg-error-bg"
@@ -602,6 +623,7 @@ export default function MemberInfoLayout({
               value={formatDonationTotal(
                 activityDonationSummary.totalDonationKhr,
                 activityDonationSummary.totalDonationUsd,
+                exchangeRateKhrPerUsd,
               )}
               iconColor="text-success"
               iconBg="bg-success-bg"
@@ -634,10 +656,10 @@ export default function MemberInfoLayout({
           `/api/backend/members/${member.id}/profile-photo`
         }
         /*
-         * An admin should not upload a photo on a member's
-         * behalf from here, but a secretary or branch leader
-         * managing that member still can. A VIEWER account can
-         * never upload, regardless of its viewerScope.
+         * See canChangeProfilePhoto above -- admin, secretary, and
+         * branch leader may upload a photo on this member's behalf.
+         * A VIEWER account can never upload, regardless of its
+         * viewerScope.
          */
         allowProfileChange={
           canChangeProfilePhoto
@@ -651,7 +673,11 @@ export default function MemberInfoLayout({
       )}
 
       <div>
-        {children}
+        <MemberProfileRefreshContext.Provider
+          value={refetchMember}
+        >
+          {children}
+        </MemberProfileRefreshContext.Provider>
       </div>
     </div>
     </UnsavedChangesProvider>

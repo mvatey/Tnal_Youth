@@ -5,7 +5,7 @@ import { useLanguage } from "@/context/LanguageContext";
 
 export default function MyAccountPage() {
   const { member, loading, error } = useCurrentMember();
-  const { t } = useLanguage();
+  const { t, label } = useLanguage();
 
   if (loading) {
     return (
@@ -83,14 +83,14 @@ export default function MyAccountPage() {
         <div>
           <p className="text-xs text-text-secondary">{t("memberPage.nationality")}</p>
           <p className="font-medium text-text-primary">
-            {member.nationality || "-"}
+            {label(member.nationality, "-")}
           </p>
         </div>
 
         <div>
           <p className="text-xs text-text-secondary">{t("memberPage.ethnicity")}</p>
           <p className="font-medium text-text-primary">
-            {member.ethnicity || "-"}
+            {label(member.ethnicity, "-")}
           </p>
         </div>
       </div>

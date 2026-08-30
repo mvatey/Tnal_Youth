@@ -96,6 +96,19 @@ export function filterOwnDonationType(items, typeCode) {
   return items.filter((item) => normalizeDonationTypeCode(item) === normalized);
 }
 
+// Mirrors the backend's own payment_methods.category column (see migration
+// V322__add_category_to_payment_methods.sql): CASH, {ABA, ACLEDA, WING,
+// TRUEMONEY} = BANK, everything else (including the literal "OTHER" code)
+// = OTHER. Previously anything with a non-empty code that wasn't CASH or
+// MATERIAL fell into "BANK" by default, which silently miscounted "Other"
+// -method donations into the Bank payments card.
+const BANK_PAYMENT_CODES = new Set([
+  "ABA",
+  "ACLEDA",
+  "WING",
+  "TRUEMONEY",
+]);
+
 function paymentMethodKind(item) {
   const code = String(
     item?.paymentMethodCode || item?.paymentMethod?.code || "",
@@ -111,7 +124,8 @@ function paymentMethodKind(item) {
 
   if (code === "CASH" || label === "CASH") return "CASH";
   if (code.includes("MATERIAL") || label.includes("MATERIAL")) return "MATERIAL";
-  return code ? "BANK" : "OTHER";
+  if (BANK_PAYMENT_CODES.has(code)) return "BANK";
+  return "OTHER";
 }
 
 export function summarizeDonationRecords(items, typeCode) {

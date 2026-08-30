@@ -86,6 +86,13 @@ function SummaryCard({
   const { t } =
     useLanguage();
 
+  // null means "no comparable baseline" (e.g. 0 last month, something
+  // now) -- keep that distinct from an actual 0% so the badge reads
+  // "New" instead of a misleading "0% growth".
+  const isNew =
+    changePercent === null ||
+    changePercent === undefined;
+
   const normalizedChange =
     Number(changePercent) || 0;
 
@@ -118,21 +125,28 @@ function SummaryCard({
 
           {showGrowth && (
             <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
-              <span
-                className={`flex items-center gap-1 text-xs font-semibold ${
-                  isUp
-                    ? "text-success"
-                    : "text-error"
-                }`}
-              >
-                <span>
-                  {isUp ? "↑" : "↓"}
+              {isNew ? (
+                <span className="flex items-center gap-1 text-xs font-semibold text-success">
+                  <span>↑</span>
+                  <span>{t("dashboard.newThisMonth")}</span>
                 </span>
+              ) : (
+                <span
+                  className={`flex items-center gap-1 text-xs font-semibold ${
+                    isUp
+                      ? "text-success"
+                      : "text-error"
+                  }`}
+                >
+                  <span>
+                    {isUp ? "↑" : "↓"}
+                  </span>
 
-                <span>
-                  {Math.abs(normalizedChange)}%
+                  <span>
+                    {Math.abs(normalizedChange)}%
+                  </span>
                 </span>
-              </span>
+              )}
 
               <span className="text-xs text-text-mute">
                 {t("dashboard.thisMonth")}
@@ -159,9 +173,18 @@ function formatCardValue(key, stat) {
 }
 
 function getChangePercent(key, stat) {
-  return (
-    Number(stat?.changePercent) || 0
-  );
+  // The backend sends null when a percentage change from a zero baseline
+  // is mathematically undefined (e.g. 0 branches last month -> 1 now) --
+  // that has to stay distinct from an actual "0%" (unchanged) so the card
+  // can show "New" instead of a misleading "0% growth".
+  if (
+    stat?.changePercent === null ||
+    stat?.changePercent === undefined
+  ) {
+    return null;
+  }
+
+  return Number(stat.changePercent) || 0;
 }
 
 export default function StatsGrid({

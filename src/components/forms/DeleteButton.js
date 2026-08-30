@@ -1,13 +1,16 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function DeleteButton({
   onClick,
   canDelete = true,
-  text = "លុប",
+  text,
   className = "",
 }) {
+  const { t } = useLanguage();
+  const label = text ?? t("memberPage.delete");
   /*
    * When there is only one entry left (canDelete === false), a lone
    * item in a repeatable list is not meant to be removable. Rendering
@@ -26,7 +29,7 @@ export default function DeleteButton({
       className={`inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-red-700 ${className}`}
     >
       <Trash2 size={17} />
-      {text}
+      {label}
     </button>
   );
 }

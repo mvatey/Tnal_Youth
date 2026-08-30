@@ -13,6 +13,7 @@ import SelectArrow from "@/components/forms/SelectArrow";
 import DeleteButton from "@/components/forms/DeleteButton";
 import MemberAttachmentField from "@/components/forms/MemberAttachmentField";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
+import { useLanguage } from "@/context/LanguageContext";
 
 import locationData from "@/data/location.json";
 import educationData from "@/data/education.json";
@@ -26,6 +27,7 @@ function createEmptyEducation() {
 }
 
 export default function EducationPage() {
+  const { t, label } = useLanguage();
   const isReadOnly = false;
   const { member: currentMember } = useCurrentMember();
   const memberId = String(currentMember?.id ?? "self");
@@ -63,13 +65,13 @@ export default function EducationPage() {
       .then((response) => response.ok ? response.json() : [])
       .then((items) => setDegreeOptions((Array.isArray(items) ? items : []).map((item) => ({
         value: String(item.value ?? item.id ?? ""),
-        label: item.labelKm || item.label_km || item.labelEn || item.label_en || item.code || "",
+        label: label(item, item.code || ""),
       }))))
       .catch((error) => {
         if (error.name !== "AbortError") setDegreeOptions([]);
       });
     return () => controller.abort();
-  }, []);
+  }, [label]);
 
   function handleEducationChange(id, field, value) {
     setHasUnsavedChanges(true);
@@ -156,7 +158,7 @@ export default function EducationPage() {
     return (
       <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
         <p className="text-sm text-error">
-          រកមិនឃើញព័ត៌មានសមាជិក
+          {t("memberPage.memberNotFound")}
         </p>
       </div>
     );
@@ -168,7 +170,7 @@ export default function EducationPage() {
       <div className="rounded-xl border border-border bg-bg-page-white p-5">
         <div>
           <h2 className="text-lg font-bold text-primary">
-            កម្រិតការបណ្ដុះបណ្ដាល
+            {t("memberPage.trainingLevel")}
           </h2>
         </div>
 
@@ -191,6 +193,7 @@ export default function EducationPage() {
                 removeEducation(education.id)
               }
               readOnly={isReadOnly}
+              t={t}
             />
           ))}
         </div>
@@ -202,7 +205,7 @@ export default function EducationPage() {
             className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
           >
             <RiAddCircleLine size={17} />
-            បន្ថែម
+            {t("memberPage.add")}
           </button>
         </div>
       </div>
@@ -223,6 +226,7 @@ function EducationGroup({
   onDelete,
   onChange,
   readOnly,
+  t,
 }) {
   const provinces = Array.isArray(locationData.provinces)
     ? locationData.provinces
@@ -235,13 +239,13 @@ function EducationGroup({
   return (
     <div className="rounded-xl border border-border p-6">
       <h3 className="mb-5 text-sm font-semibold text-text-primary">
-        ប្រវត្តិការសិក្សា ទី {index + 1}
+        {t("memberPage.educationItemTitle").replace("{index}", index + 1)}
       </h3>
 
       <div className="grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2 xl:grid-cols-3">
         <BoxFill
-          label="ស្ថាប័ន"
-          placeholder="បញ្ចូលឈ្មោះស្ថាប័ន"
+          label={t("memberPage.institution")}
+          placeholder={t("memberPage.organizationPlaceholder")}
           value={education.school ?? ""}
           onChange={(event) =>
             onChange("school", event.target.value)
@@ -249,8 +253,8 @@ function EducationGroup({
         />
 
         <FormSelect
-          label="រាជធានី/ខេត្ត/រដ្ឋ"
-          placeholder="ជ្រើសរើសរាជធានី/ខេត្ត/រដ្ឋ"
+          label={t("memberPage.provinceState")}
+          placeholder={t("memberPage.selectProvinceState")}
           value={education.province ?? ""}
           onChange={(event) =>
             onChange("province", event.target.value)
@@ -259,8 +263,8 @@ function EducationGroup({
         />
 
         <BoxFill
-            label="ប្រទេស"
-            placeholder="បំពេញឈ្មោះប្រទេស"
+            label={t("memberPage.country")}
+            placeholder={t("memberPage.countryFillPlaceholder")}
             value={education.country || ""}
             onChange={(event) =>
               onChange("country", event.target.value)
@@ -268,8 +272,8 @@ function EducationGroup({
           />
 
         <FormSelect
-          label="កម្រិតសញ្ញាប័ត្រ"
-          placeholder="ជ្រើសរើសកម្រិតសញ្ញាប័ត្រ"
+          label={t("memberPage.degreeLevel")}
+          placeholder={t("memberPage.selectDegreeLevel")}
           value={education.degree ?? ""}
           onChange={(event) =>
             onChange("degree", event.target.value)
@@ -278,7 +282,7 @@ function EducationGroup({
         />
 
         <FormDate
-          label="ថ្ងៃចាប់ផ្តើម"
+          label={t("memberPage.startDate")}
           name={`startDate-${education.id}`}
           value={education.startDate ?? ""}
           onChange={(event) =>
@@ -287,7 +291,7 @@ function EducationGroup({
         />
 
         <FormDate
-          label="ថ្ងៃបញ្ចប់"
+          label={t("memberPage.endDate")}
           name={`endDate-${education.id}`}
           value={education.endDate ?? ""}
           onChange={(event) =>
@@ -298,7 +302,7 @@ function EducationGroup({
 
       <div className="mt-5 border-t border-border pt-4">
         <label className="mb-2 block text-sm font-semibold text-text-primary">
-          ភ្ជាប់ឯកសារ
+          {t("memberPage.attachDocument")}
         </label>
         <MemberAttachmentField
           value={education.attachment}

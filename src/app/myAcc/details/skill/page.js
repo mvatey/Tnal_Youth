@@ -12,6 +12,7 @@ import MemberAttachmentField from "@/components/forms/MemberAttachmentField";
 import educationData from "@/data/education.json";
 import { deleteMemberRecord, loadMemberRecords, removeMemberRecordCertificate, saveMemberRecords, uploadMemberRecordCertificate } from "@/lib/myAccountRecords";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
+import { useLanguage } from "@/context/LanguageContext";
 
 function createId(prefix) {
   if (
@@ -68,6 +69,7 @@ function createComputerSkill() {
 }
 
 export default function SkillPage() {
+  const { t, label } = useLanguage();
   const isReadOnly = false;
   const { member: currentMember } = useCurrentMember();
   const memberId = String(currentMember?.id ?? "self");
@@ -114,13 +116,13 @@ export default function SkillPage() {
       .then((response) => response.ok ? response.json() : [])
       .then((items) => setProficiencyOptions((Array.isArray(items) ? items : []).map((item) => ({
         value: String(item.value ?? item.id ?? ""),
-        label: item.labelKm || item.label_km || item.labelEn || item.label_en || item.code || "",
+        label: label(item, item.code || ""),
       }))))
       .catch((error) => {
         if (error.name !== "AbortError") setProficiencyOptions([]);
       });
     return () => controller.abort();
-  }, []);
+  }, [label]);
 
   const updateLanguageSkill = (
     id,
@@ -228,7 +230,7 @@ export default function SkillPage() {
     setLanguageSkills(completedLanguages.map((row) => ({ id: row.id, language: row.language_name || "", listening: row.listening_level_id || "", speaking: row.speaking_level_id || "", reading: row.reading_level_id || "", writing: row.writing_level_id || "", attachment: row.certificate_file || null })));
     setComputerSkills(completedSkills.map((row) => ({ id: row.id, skill: row.skill_name || "", level: row.proficiency_level_id || "", attachment: row.certificate_file || null })));
 
-    alert("រក្សាទុកព័ត៌មានបានជោគជ័យ");
+    alert(t("memberPage.saveSuccess"));
 
     setHasUnsavedChanges(false);
 
@@ -261,7 +263,7 @@ export default function SkillPage() {
         "
       >
         <h2 className="text-lg font-bold text-primary">
-          ការប្រើប្រាស់ភាសាបរទេស
+          {t("memberPage.foreignLanguage")}
         </h2>
 
         <div className="mt-5 space-y-5">
@@ -283,11 +285,12 @@ export default function SkillPage() {
                 removeLanguageSkill(item.id)
               }
               readOnly={isReadOnly}
+              t={t}
             />
           ))}
         </div>
 
-        <AddButton onClick={addLanguageSkill} />
+        <AddButton onClick={addLanguageSkill} text={t("memberPage.add")} />
       </section>
 
       {/* =====================================
@@ -305,7 +308,7 @@ export default function SkillPage() {
         "
       >
         <h2 className="text-lg font-bold text-primary">
-          ការប្រើប្រាស់កម្មវិធីកុំព្យូទ័រ
+          {t("memberPage.computerUse")}
         </h2>
 
         <div className="mt-5 space-y-5">
@@ -327,11 +330,12 @@ export default function SkillPage() {
                 removeComputerSkill(item.id)
               }
               readOnly={isReadOnly}
+              t={t}
             />
           ))}
         </div>
 
-        <AddButton onClick={addComputerSkill} />
+        <AddButton onClick={addComputerSkill} text={t("memberPage.add")} />
       </section>
 
       <div className="flex justify-end">
@@ -350,6 +354,7 @@ function LanguageSkillGroup({
   onChange,
   onDelete,
   readOnly,
+  t,
 }) {
   return (
     <div
@@ -363,7 +368,7 @@ function LanguageSkillGroup({
       "
     >
       <h3 className="mb-5 text-sm font-semibold text-text-primary">
-        ភាសាបរទេស ទី {index + 1}
+        {t("memberPage.languageItemTitle").replace("{index}", index + 1)}
       </h3>
 
       <div
@@ -376,9 +381,9 @@ function LanguageSkillGroup({
         "
       >
         <FormSelect
-          label="ភាសា"
+          label={t("memberPage.language")}
           name={`language-${item.id}`}
-          placeholder="ជ្រើសរើសភាសា"
+          placeholder={t("memberPage.selectLanguage")}
           value={item.language || ""}
           onChange={(event) =>
             onChange(
@@ -390,9 +395,9 @@ function LanguageSkillGroup({
         />
 
         <FormSelect
-          label="ការស្ដាប់"
+          label={t("memberPage.listening")}
           name={`listening-${item.id}`}
-          placeholder="ជ្រើសរើសកម្រិតការស្ដាប់"
+          placeholder={t("memberPage.selectListeningLevel")}
           value={item.listening || ""}
           onChange={(event) =>
             onChange(
@@ -404,9 +409,9 @@ function LanguageSkillGroup({
         />
 
         <FormSelect
-          label="ការអាន"
+          label={t("memberPage.reading")}
           name={`reading-${item.id}`}
-          placeholder="ជ្រើសរើសកម្រិតការអាន"
+          placeholder={t("memberPage.selectReadingLevel")}
           value={item.reading || ""}
           onChange={(event) =>
             onChange(
@@ -418,9 +423,9 @@ function LanguageSkillGroup({
         />
 
         <FormSelect
-          label="ការនិយាយ"
+          label={t("memberPage.speaking")}
           name={`speaking-${item.id}`}
-          placeholder="ជ្រើសរើសកម្រិតការនិយាយ"
+          placeholder={t("memberPage.selectSpeakingLevel")}
           value={item.speaking || ""}
           onChange={(event) =>
             onChange(
@@ -432,9 +437,9 @@ function LanguageSkillGroup({
         />
 
         <FormSelect
-          label="ការសរសេរ"
+          label={t("memberPage.writing")}
           name={`writing-${item.id}`}
-          placeholder="ជ្រើសរើសកម្រិតការសរសេរ"
+          placeholder={t("memberPage.selectWritingLevel")}
           value={item.writing || ""}
           onChange={(event) =>
             onChange(
@@ -450,7 +455,7 @@ function LanguageSkillGroup({
 
       <div className="mt-5 border-t border-border pt-4">
         <label className="mb-2 block text-sm font-semibold text-text-primary">
-          ភ្ជាប់ឯកសារ
+          {t("memberPage.attachDocument")}
         </label>
 
         <MemberAttachmentField
@@ -483,6 +488,7 @@ function ComputerSkillGroup({
   onChange,
   onDelete,
   readOnly,
+  t,
 }) {
   return (
     <div
@@ -496,7 +502,7 @@ function ComputerSkillGroup({
       "
     >
       <h3 className="mb-5 text-sm font-semibold text-text-primary">
-        ជំនាញកុំព្យូទ័រ ទី {index + 1}
+        {t("memberPage.computerSkillItemTitle").replace("{index}", index + 1)}
       </h3>
 
       <div
@@ -508,9 +514,9 @@ function ComputerSkillGroup({
         "
       >
         <FormSelect
-          label="ជំនាញ"
+          label={t("memberPage.skill")}
           name={`computer-skill-${item.id}`}
-          placeholder="ជ្រើសរើសកម្មវិធី"
+          placeholder={t("memberPage.selectProgram")}
           value={item.skill || ""}
           onChange={(event) =>
             onChange(
@@ -524,9 +530,9 @@ function ComputerSkillGroup({
         />
 
         <FormSelect
-          label="កម្រិតជំនាញ"
+          label={t("memberPage.skillLevel")}
           name={`computer-level-${item.id}`}
-          placeholder="ជ្រើសរើសកម្រិតជំនាញ"
+          placeholder={t("memberPage.selectSkillLevel")}
           value={item.level || ""}
           onChange={(event) =>
             onChange(
@@ -542,7 +548,7 @@ function ComputerSkillGroup({
 
       <div className="mt-5 border-t border-border pt-4">
         <label className="mb-2 block text-sm font-semibold text-text-primary">
-          ភ្ជាប់ឯកសារ
+          {t("memberPage.attachDocument")}
         </label>
 
         <MemberAttachmentField
@@ -569,6 +575,7 @@ function ComputerSkillGroup({
 
 function AddButton({
   onClick,
+  text,
 }) {
   return (
     <div className="mt-6 flex justify-center">
@@ -594,7 +601,7 @@ function AddButton({
       >
         <RiAddCircleLine size={17} />
 
-        បន្ថែម
+        {text}
       </button>
     </div>
   );
