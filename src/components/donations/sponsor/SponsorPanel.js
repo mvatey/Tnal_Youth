@@ -503,6 +503,17 @@ export default function SponsorPanel({
                 )}
               </tr>
             ))}
+
+            {!loading && pagedRows.length === 0 && (
+              <tr>
+                <td
+                  colSpan={visibleHeaders.length}
+                  className="py-10 text-center text-sm text-text-secondary"
+                >
+                  {t("donationPage.noData")}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

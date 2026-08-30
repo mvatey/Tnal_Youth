@@ -31,7 +31,7 @@ export default function EventDonationTable({
     t("donationPage.days"),
     t("donationPage.amountKhrPlain"),
     t("donationPage.amountUsdPlain"),
-    t("common.actions", "សកម្មភាព"),
+    t("memberPage.actions"),
   ];
 
   return (

@@ -17,19 +17,26 @@ async function fetchJson(url) {
 }
 
 /**
- * Branch totals for one activity.
+ * Branch totals for one activity — every branch eligible to record a
+ * donation here (the organizer, plus every branch with an ACCEPTED
+ * co-hosting invitation), each with its own running total. Every
+ * authorized viewer (host or co-host) is meant to see the SAME full set
+ * of rows (see DonationBranchTotalResponse's own javadoc) — this used to
+ * additionally filter that list down to whichever single branch was
+ * picked in this page's own branch dropdown (meant for choosing which
+ * branch to record a NEW donation under), which meant the organizer could
+ * only ever see their own branch's row here and never an invited branch's
+ * actual contribution. Always show every row instead.
  *
  * IMPORTANT for a multi-branch SECRETARY:
  * do NOT fetch the generic /donations collection without branchId. That
  * request is intentionally rejected by the backend. Use the dedicated
- * activity branch-totals endpoint instead, then narrow it to the branch
- * selected in the global sidebar.
+ * activity branch-totals endpoint instead.
  */
 export default function EventDonationBranchTotals({
   activityId,
-  selectedBranchId = "all",
 }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [allRows, setAllRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -64,20 +71,14 @@ export default function EventDonationBranchTotals({
   }, [activityId]);
 
   const rows = useMemo(() => {
-    const scoped =
-      selectedBranchId && selectedBranchId !== "all"
-        ? allRows.filter(
-            (row) => String(row.branchId) === String(selectedBranchId),
-          )
-        : allRows;
-
-    return scoped.map((row) => {
+    return allRows.map((row) => {
       const role = String(row.role || "").toUpperCase();
       return {
         branchId: row.branchId,
         label:
-          row.branchNameKm ||
-          row.branchNameEn ||
+          (locale === "en"
+            ? row.branchNameEn || row.branchNameKm
+            : row.branchNameKm || row.branchNameEn) ||
           row.branchCode ||
           "-",
         roleLabel:
@@ -88,7 +89,7 @@ export default function EventDonationBranchTotals({
         totalAmountUsd: Number(row.totalAmountUsd || 0),
       };
     });
-  }, [allRows, selectedBranchId, t]);
+  }, [allRows, t, locale]);
 
   const headers = [
     t("donationPage.no"),

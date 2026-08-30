@@ -95,7 +95,7 @@ function getValue(
   );
 }
 
-function getLabel(value) {
+function getLabel(value, locale) {
   if (!value) {
     return "";
   }
@@ -107,14 +107,63 @@ function getLabel(value) {
     return value;
   }
 
+  const km = value.labelKm ?? value.label_km ?? value.nameKm ?? value.name_km;
+  const en = value.labelEn ?? value.label_en ?? value.nameEn ?? value.name_en;
+
   return (
-    value.labelKm ??
-    value.label_km ??
-    value.labelEn ??
-    value.label_en ??
+    (locale === "en" ? en ?? km : km ?? en) ??
     value.code ??
     ""
   );
+}
+
+/*
+ * /members' gender and account_role objects only ever carry
+ * {code, label_km} -- no label_en -- so getLabel() above has nothing
+ * English to fall back to for these two specifically. Translate by the
+ * stable `code` instead, same fix already applied to the activity
+ * member-invite pages.
+ */
+function resolveGenderLabel(gender, t) {
+  const code = String(gender?.code || "").toUpperCase();
+
+  if (code === "MALE") {
+    return t("memberPage.male");
+  }
+
+  if (code === "FEMALE") {
+    return t("memberPage.femaleGender");
+  }
+
+  return gender?.label_km || gender?.labelKm || "-";
+}
+
+function resolveRoleLabel(role, t) {
+  const code = String(role?.code || "").toUpperCase();
+
+  if (code === "ADMIN") {
+    return t("memberPage.roleAdmin");
+  }
+
+  if (code === "SECRETARY") {
+    return t("memberPage.roleSecretary");
+  }
+
+  if (code === "BRANCH_LEADER") {
+    return t("memberPage.roleBranchLeader");
+  }
+
+  if (code === "MEMBER") {
+    return t("memberPage.roleMember");
+  }
+
+  return role?.label_km || role?.labelKm || "-";
+}
+
+function pickLocalizedName(source, locale) {
+  const km = getValue(source, "fullNameKm", "full_name_km");
+  const en = getValue(source, "fullNameEn", "full_name_en");
+  return locale === "en" ? en || km : km || en;
 }
 
 function formatDate(value) {
@@ -636,26 +685,8 @@ export default function ActivityParticipantsPage({
             memberId,
 
             name:
-              getValue(
-                member,
-                "fullNameKm",
-                "full_name_km",
-              ) ||
-              getValue(
-                member,
-                "fullNameEn",
-                "full_name_en",
-              ) ||
-              getValue(
-                participant,
-                "fullNameKm",
-                "full_name_km",
-              ) ||
-              getValue(
-                participant,
-                "fullNameEn",
-                "full_name_en",
-              ) ||
+              pickLocalizedName(member, locale) ||
+              pickLocalizedName(participant, locale) ||
               "-",
 
             email:
@@ -664,36 +695,44 @@ export default function ActivityParticipantsPage({
               "",
 
             gender:
-              getLabel(
+              resolveGenderLabel(
                 member?.gender,
-              ) ||
-              "-",
+                t,
+              ),
 
             role:
-              getLabel(
-                member
-                  ?.account_role,
-              ) ||
-              getLabel(
-                member
-                  ?.accountRole,
-              ) ||
-              "-",
+              resolveRoleLabel(
+                member?.account_role ||
+                  member?.accountRole,
+                t,
+              ),
 
             branch:
               getLabel(
                 member?.branch,
+                locale,
               ) ||
-              getValue(
-                participant,
-                "branchNameKm",
-                "branch_name_km",
-              ) ||
-              getValue(
-                participant,
-                "branchNameEn",
-                "branch_name_en",
-              ) ||
+              (locale === "en"
+                ? getValue(
+                    participant,
+                    "branchNameEn",
+                    "branch_name_en",
+                  ) ||
+                  getValue(
+                    participant,
+                    "branchNameKm",
+                    "branch_name_km",
+                  )
+                : getValue(
+                    participant,
+                    "branchNameKm",
+                    "branch_name_km",
+                  ) ||
+                  getValue(
+                    participant,
+                    "branchNameEn",
+                    "branch_name_en",
+                  )) ||
               "-",
 
             branchId:
@@ -915,6 +954,8 @@ export default function ActivityParticipantsPage({
     globalSelectedBranch,
     id,
     isMember,
+    locale,
+    t,
   ]);
 
   const isHostBranch =
@@ -1562,7 +1603,7 @@ export default function ActivityParticipantsPage({
       () => [
         {
           key: "no",
-          label: "ល.រ",
+          label: t("memberPage.no"),
           width: "8%",
           align: "center",
           render: (_row, index) => index + 1,

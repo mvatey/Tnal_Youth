@@ -32,6 +32,50 @@ import {
 } from "@/lib/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 
+/*
+ * /members' gender and account_role objects only ever carry
+ * {code, label_km} -- there is no label_en on those two specific
+ * fields (unlike status/level/branch, which use the fuller
+ * {code, label_km, label_en} lookup shape) -- so label() has
+ * nothing English to fall back to and would keep showing Khmer
+ * even in English mode. Translate by the stable `code` instead.
+ */
+function resolveGenderLabel(gender, t) {
+  const code = String(gender?.code || "").toUpperCase();
+
+  if (code === "MALE") {
+    return t("memberPage.male");
+  }
+
+  if (code === "FEMALE") {
+    return t("memberPage.femaleGender");
+  }
+
+  return gender?.label_km || gender?.labelKm || "-";
+}
+
+function resolveRoleLabel(role, t) {
+  const code = String(role?.code || "").toUpperCase();
+
+  if (code === "ADMIN") {
+    return t("memberPage.roleAdmin");
+  }
+
+  if (code === "SECRETARY") {
+    return t("memberPage.roleSecretary");
+  }
+
+  if (code === "BRANCH_LEADER") {
+    return t("memberPage.roleBranchLeader");
+  }
+
+  if (code === "MEMBER") {
+    return t("memberPage.roleMember");
+  }
+
+  return role?.label_km || role?.labelKm || "-";
+}
+
 async function fetchApi(
   path,
   options = {},
@@ -103,32 +147,6 @@ function getValue(
   return (
     record?.[camelKey] ??
     record?.[snakeKey]
-  );
-}
-
-function getLabel(value) {
-  if (!value) {
-    return "";
-  }
-
-  if (
-    typeof value ===
-    "string"
-  ) {
-    return value;
-  }
-
-  return (
-    value.labelKm ||
-    value.label_km ||
-    value.labelEn ||
-    value.label_en ||
-    value.nameKm ||
-    value.name_km ||
-    value.nameEn ||
-    value.name_en ||
-    value.code ||
-    ""
   );
 }
 
@@ -236,7 +254,7 @@ function isCompletedActivity(
 export default function ActivityMembersPage({
   params,
 }) {
-  const { t } = useLanguage();
+  const { t, label, locale } = useLanguage();
   const { id } =
     use(params);
 
@@ -575,8 +593,9 @@ export default function ActivityMembersPage({
             );
 
           const resolvedBranchLabel =
-            getLabel(
+            label(
               branchOption,
+              "",
             );
 
           setBranchLabel(
@@ -615,25 +634,35 @@ export default function ActivityMembersPage({
                     ),
 
                   name:
-                    member
-                      .full_name_km ||
-                    member
-                      .fullNameKm ||
-                    member
-                      .full_name_en ||
-                    member
-                      .fullNameEn ||
-                    "-",
+                    locale === "en"
+                      ? member
+                          .full_name_en ||
+                        member
+                          .fullNameEn ||
+                        member
+                          .full_name_km ||
+                        member
+                          .fullNameKm ||
+                        "-"
+                      : member
+                          .full_name_km ||
+                        member
+                          .fullNameKm ||
+                        member
+                          .full_name_en ||
+                        member
+                          .fullNameEn ||
+                        "-",
 
                   email:
                     member.email ||
                     "",
 
                   gender:
-                    getLabel(
+                    resolveGenderLabel(
                       member.gender,
-                    ) ||
-                    "-",
+                      t,
+                    ),
 
                   /*
                    * Latest backend member
@@ -641,17 +670,18 @@ export default function ActivityMembersPage({
                    * account_role.
                    */
                   role:
-                    getLabel(
+                    resolveRoleLabel(
                       member
                         .account_role ||
                         member
                           .accountRole,
-                    ) ||
-                    "-",
+                      t,
+                    ),
 
                   branch:
-                    getLabel(
+                    label(
                       member.branch,
+                      "",
                     ) ||
                     resolvedBranchLabel ||
                     "-",
@@ -677,8 +707,9 @@ export default function ActivityMembersPage({
                     ),
 
                   status:
-                    getLabel(
+                    label(
                       member.status,
+                      "",
                     ) ||
                     "-",
                 };
@@ -727,6 +758,8 @@ export default function ActivityMembersPage({
     globalSelectedBranch,
     id,
     isMember,
+    label,
+    locale,
     router,
     t,
   ]);

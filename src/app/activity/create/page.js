@@ -31,6 +31,7 @@ import { useBranch } from "@/context/BranchContext";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import useMemberPermissions from "@/hooks/useMemberPermissions";
 import { useLanguage } from "@/context/LanguageContext";
+import { translate } from "@/lib/i18n";
 import { activityStatusLabel } from "@/lib/activityStatusLabels";
 
 const BRANCH_OPTIONS = [
@@ -216,6 +217,50 @@ function getOptionCode(option) {
   return String(option?.code || "").trim().toUpperCase();
 }
 
+/*
+ * /members' gender and account_role objects only ever carry
+ * {code, label_km} -- there is no label_en on those two specific
+ * fields (unlike status/level/branch, which use the fuller
+ * {code, label_km, label_en} lookup shape) -- so label() has
+ * nothing English to fall back to and would keep showing Khmer
+ * even in English mode. Translate by the stable `code` instead.
+ */
+function resolveGenderLabel(gender, t) {
+  const code = String(gender?.code || "").toUpperCase();
+
+  if (code === "MALE") {
+    return t("memberPage.male");
+  }
+
+  if (code === "FEMALE") {
+    return t("memberPage.femaleGender");
+  }
+
+  return gender?.label_km || gender?.labelKm || "-";
+}
+
+function resolveRoleLabel(role, t) {
+  const code = String(role?.code || "").toUpperCase();
+
+  if (code === "ADMIN") {
+    return t("memberPage.roleAdmin");
+  }
+
+  if (code === "SECRETARY") {
+    return t("memberPage.roleSecretary");
+  }
+
+  if (code === "BRANCH_LEADER") {
+    return t("memberPage.roleBranchLeader");
+  }
+
+  if (code === "MEMBER") {
+    return t("memberPage.roleMember");
+  }
+
+  return role?.label_km || role?.labelKm || "-";
+}
+
 function getMemberProfileImage(member) {
   const profilePhoto = member?.profile_photo || member?.profilePhoto;
   const fileId = profilePhoto?.id || member?.profile_photo_id || member?.profilePhotoId;
@@ -306,14 +351,14 @@ function normalizeInvitedBranches(activity) {
   return [];
 }
 
-function createInitialForm(activity) {
+function createInitialForm(activity, locale, t) {
   if (!activity) {
     return {
       name: "",
       branch: "",
       type: "",
       sector: "",
-      visibility: "សាធារណៈ",
+      visibility: t("activityPage.publicVisibility"),
       description: "",
       startDate: null,
       endDate: null,
@@ -329,12 +374,32 @@ function createInitialForm(activity) {
     };
   }
 
+  /*
+   * The type/sector <select>s are populated with locale-aware option
+   * labels (see localizedOptionLabel), so the value stored here has to
+   * match that same current-locale text -- getOptionLabel() always
+   * preferred Khmer regardless of locale, which meant editing an
+   * activity in English left Type/Sector/Visibility blank (nothing in
+   * the options list matched the Khmer value this stored). Same story
+   * for visibility: activity.visibility is a raw, possibly Khmer-only
+   * string, but publicActivity is a locale-independent boolean the
+   * backend always returns, so it's the reliable source of truth.
+   */
   return {
     name: activity.name || activity.titleKm || activity.titleEn || "",
     branch: activity.branch || activity.branchLabel || "",
-    type: typeof activity.type === "object" ? getOptionLabel(activity.type) : activity.type || "",
-    sector: typeof activity.sector === "object" ? getOptionLabel(activity.sector) : activity.sector || "",
-    visibility: activity.visibility || "សាធារណៈ",
+    type: typeof activity.type === "object" ? getLocalizedOptionLabel(activity.type, locale) : activity.type || "",
+    sector: typeof activity.sector === "object" ? getLocalizedOptionLabel(activity.sector, locale) : activity.sector || "",
+    visibility:
+      typeof activity.publicActivity === "boolean"
+        ? activity.publicActivity
+          ? t("activityPage.publicVisibility")
+          : t("activityPage.internalVisibility")
+        : typeof activity.isPublic === "boolean"
+          ? activity.isPublic
+            ? t("activityPage.publicVisibility")
+            : t("activityPage.internalVisibility")
+          : activity.visibility || t("activityPage.publicVisibility"),
     description: activity.descriptionDetail || activity.description || "",
     startDate: convertToDate(
       activity.startsAt ||
@@ -359,7 +424,7 @@ function createInitialForm(activity) {
     location: activity.locationName || getActivityLocation(activity.location),
     province:
       (typeof activity.province === "object"
-        ? getOptionLabel(activity.province)
+        ? getLocalizedOptionLabel(activity.province, locale)
         : activity.province) ||
       activity.provinceLabel ||
       "",
@@ -701,14 +766,14 @@ function MultipleFileUpload({
 }
 
 export default function CreateActivityPage() {
-  const { t, locale } = useLanguage();
+  const { t, locale, label } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const editId = searchParams.get("edit");
   const isEditMode = Boolean(editId);
   const [editingActivity, setEditingActivity] = useState(null);
-  const [form, setForm] = useState(() => createInitialForm(null));
+  const [form, setForm] = useState(() => createInitialForm(null, locale, t));
   // The activity's status is otherwise entirely auto-derived from its
   // dates (see computeEffectiveStatusCode below) -- CANCELLED is the one
   // state that can never be derived from a date, so it's the only thing
@@ -891,11 +956,11 @@ export default function CreateActivityPage() {
           const invitedBranches = (Array.isArray(invitations) ? invitations : [])
             .map((invitation) => invitableBranches.find((option) => getOptionValue(option) === Number(invitation.branchId ?? invitation.branch_id)))
             .filter(Boolean)
-            .map(getOptionLabel);
+            .map((option) => getLocalizedOptionLabel(option, locale));
           const normalized = {
             ...activity,
-            branchLabel: getOptionLabel(branch),
-            provinceLabel: getOptionLabel(province),
+            branchLabel: getLocalizedOptionLabel(branch, locale),
+            provinceLabel: getLocalizedOptionLabel(province, locale),
             invitedBranches,
           };
           const currentParticipantIds = (Array.isArray(participants) ? participants : [])
@@ -921,7 +986,7 @@ export default function CreateActivityPage() {
           }));
           if (!cancelled) {
             setEditingActivity(normalized);
-            setForm(createInitialForm(normalized));
+            setForm(createInitialForm(normalized, locale, t));
             setIsCancelled(getOptionCode(normalized.status) === "CANCELLED");
             setCancellationReason(normalized.cancellationReason || "");
             scheduleChangedRef.current = {
@@ -947,6 +1012,69 @@ export default function CreateActivityPage() {
       cancelled = true;
     };
   }, [editId]);
+
+  /*
+   * Type/Sector/Visibility are stored in `form` as the CURRENT locale's
+   * display text (see createInitialForm), not a stable id -- so toggling
+   * the language while the form is already open leaves them holding
+   * stale, now-mismatched text that no longer matches any option in the
+   * (freshly relocalized) dropdown, which then renders as blank even
+   * though the underlying selection was never actually lost. Whenever
+   * locale changes, re-resolve each one to the same underlying option's
+   * label in the new language instead of leaving it stale.
+   */
+  useEffect(() => {
+    setForm((current) => {
+      const remapOptionValue = (options, value) => {
+        if (!value) {
+          return value;
+        }
+
+        const match = options.find((option) => {
+          const labels = [
+            getOptionLabel(option),
+            option?.labelKm,
+            option?.label_km,
+            option?.labelEn,
+            option?.label_en,
+            option?.nameKm,
+            option?.nameEn,
+          ].filter(Boolean);
+
+          return labels.includes(value);
+        });
+
+        return match ? getLocalizedOptionLabel(match, locale) : value;
+      };
+
+      const isPublicText =
+        current.visibility === translate("km", "activityPage.publicVisibility") ||
+        current.visibility === translate("en", "activityPage.publicVisibility");
+
+      const isInternalText =
+        current.visibility === translate("km", "activityPage.internalVisibility") ||
+        current.visibility === translate("en", "activityPage.internalVisibility");
+
+      return {
+        ...current,
+        branch: remapOptionValue(lookupData.branches, current.branch),
+        type: remapOptionValue(lookupData.types, current.type),
+        sector: remapOptionValue(lookupData.sectors, current.sector),
+        province: remapOptionValue(lookupData.provinces, current.province),
+        invitedBranches: current.invitedBranches.map((branchLabel) =>
+          remapOptionValue(lookupData.invitableBranches, branchLabel),
+        ),
+        visibility: isPublicText
+          ? t("activityPage.publicVisibility")
+          : isInternalText
+            ? t("activityPage.internalVisibility")
+            : current.visibility,
+      };
+    });
+    // Only the language switch itself should trigger this remap --
+    // lookupData/t are read through the closure at that moment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale]);
 
   useEffect(() => {
     // A co-hosting (invited) branch's staff can only ever pick from their
@@ -975,9 +1103,12 @@ export default function CreateActivityPage() {
         if (!cancelled) {
           setMemberOptions(records.map((member) => ({
             id: member.id,
-            name: member.full_name_km || member.full_name_en || "-",
+            name:
+              locale === "en"
+                ? member.full_name_en || member.full_name_km || "-"
+                : member.full_name_km || member.full_name_en || "-",
             email: member.email || "",
-            gender: member.gender?.label_km || member.gender?.labelKm || member.gender?.code || "-",
+            gender: resolveGenderLabel(member.gender, t),
             /*
              * "តួនាទី" is the member's linked login account role
              * (admin/secretary/branch leader/member) — was reading
@@ -985,12 +1116,12 @@ export default function CreateActivityPage() {
              * only looked right by coincidence. "-" now legitimately
              * means this member has no linked user account.
              */
-            role: member.account_role?.label_km || member.account_role?.labelKm || member.account_role?.code || "-",
-            branch: member.branch?.label_km || member.branch?.labelKm || form.branch,
+            role: resolveRoleLabel(member.account_role, t),
+            branch: label(member.branch, form.branch),
             joinedDate: member.joined_on || "-",
             joinedDateValue: member.joined_on || "",
             profileImage: getMemberProfileImage(member),
-            status: member.status?.label_km || member.status?.labelKm || member.status?.code || "-",
+            status: label(member.status, "-"),
           })));
         }
       })
@@ -1008,7 +1139,7 @@ export default function CreateActivityPage() {
     return () => {
       cancelled = true;
     };
-  }, [form.branch, lookupData.branches, isInvitedBranchOnly, invitedBranchId]);
+  }, [form.branch, lookupData.branches, isInvitedBranchOnly, invitedBranchId, label, locale, t]);
 
   const invitedBranchOptions = useMemo(() => {
     return allInvitableBranchOptions.filter(
@@ -1848,8 +1979,19 @@ export default function CreateActivityPage() {
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
+              <MultipleFileUpload
+                label={t("activityPage.activityImages")}
+                files={activityImages}
+                onChange={setActivityImages}
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                uploadText={t("activityPage.uploadImage")}
+                helperText={t("activityPage.imageUploadHelp")}
+                maxSize={MAX_IMAGE_SIZE}
+                kind="image"
+              />
+
               {isEditMode && existingImages.length > 0 && (
-                <div className="mb-3 grid grid-cols-3 gap-2">
+                <div className="mt-3 grid grid-cols-3 gap-2">
                   {existingImages.map((photo) => (
                     <div
                       key={photo.id ?? photo.url}
@@ -1880,22 +2022,22 @@ export default function CreateActivityPage() {
                   ))}
                 </div>
               )}
-
-              <MultipleFileUpload
-                label={t("activityPage.activityImages")}
-                files={activityImages}
-                onChange={setActivityImages}
-                accept="image/png,image/jpeg,image/jpg,image/webp"
-                uploadText={t("activityPage.uploadImage")}
-                helperText={t("activityPage.imageUploadHelp")}
-                maxSize={MAX_IMAGE_SIZE}
-                kind="image"
-              />
             </div>
 
             <div>
+              <MultipleFileUpload
+                label={t("activityPage.otherDocuments")}
+                files={activityDocuments}
+                onChange={setActivityDocuments}
+                accept=".pdf,.doc,.docx,.xls,.xlsx"
+                uploadText={t("memberPage.uploadFile")}
+                helperText={t("activityPage.documentUploadHelp")}
+                maxSize={MAX_DOCUMENT_SIZE}
+                kind="file"
+              />
+
               {isEditMode && existingDocuments.length > 0 && (
-                <div className="mb-3 space-y-2">
+                <div className="mt-3 space-y-2">
                   {existingDocuments.map((document) => (
                     <div
                       key={document.id ?? document.url}
@@ -1944,17 +2086,6 @@ export default function CreateActivityPage() {
                   ))}
                 </div>
               )}
-
-              <MultipleFileUpload
-                label={t("activityPage.otherDocuments")}
-                files={activityDocuments}
-                onChange={setActivityDocuments}
-                accept=".pdf,.doc,.docx,.xls,.xlsx"
-                uploadText={t("memberPage.uploadFile")}
-                helperText={t("activityPage.documentUploadHelp")}
-                maxSize={MAX_DOCUMENT_SIZE}
-                kind="file"
-              />
             </div>
           </div>
         </section>

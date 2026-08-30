@@ -18,8 +18,13 @@ export default function EventDonationPanel({
   // donation/eventdonation/page.js) — a secretary/branch_leader has no
   // "all branches" or manual-pick option here.
   branchScoped = false,
+  // Reports this panel's cross-branch activity-donation total back up to
+  // the parent page whenever it changes, so the "activity donation total"
+  // summary card up there can show the same real (every-branch-combined)
+  // figure as this table, instead of its own separate own-branch-only sum.
+  onTotalsChange,
 }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [internalSelectedBranch, setInternalSelectedBranch] = useState("all");
   const [startDate, setStartDate] = useState("");
@@ -46,18 +51,14 @@ export default function EventDonationPanel({
 
   function toBranchOptions(values) {
     return (Array.isArray(values) ? values : [])
-      .map((branch) => ({
-        value: String(branch.value ?? branch.id ?? ""),
-        label:
-          branch.labelKm ??
-          branch.nameKm ??
-          branch.labelEn ??
-          branch.nameEn ??
-          branch.label ??
-          branch.name ??
-          branch.code ??
-          "",
-      }))
+      .map((branch) => {
+        const km = branch.labelKm ?? branch.nameKm ?? branch.label ?? branch.name;
+        const en = branch.labelEn ?? branch.nameEn;
+        return {
+          value: String(branch.value ?? branch.id ?? ""),
+          label: (locale === "en" ? en ?? km : km ?? en) ?? branch.code ?? "",
+        };
+      })
       .filter((branch) => branch.value && branch.label);
   }
 
@@ -101,13 +102,19 @@ export default function EventDonationPanel({
     }
     loadBranches();
     return () => { cancelled = true; };
-  }, []);
+  }, [locale]);
 
   // Rows are sourced from the SELECTED BRANCH's activities (own-hosted +
   // accepted co-hosting invitations), not from existing donation records —
   // an activity with zero donations recorded so far must still appear, with
-  // its amounts defaulting to 0. Donation totals are then left-joined in
-  // per activity. Re-runs whenever the chosen branch changes.
+  // its amounts defaulting to 0. Re-runs whenever the chosen branch changes.
+  //
+  // The amount/count per activity is the CROSS-BRANCH total (every eligible
+  // branch's contribution combined), fetched per activity from
+  // /donations/activity/{id}/branch-totals -- the same endpoint the
+  // activity's own "Branch" tab uses -- rather than left-joining only this
+  // branch's own donations. An organizer wants to see the activity's whole
+  // raised amount here, not just the slice their own branch recorded.
   useEffect(() => {
     if (!hasSelectedBranch) {
       setRows([]);
@@ -120,37 +127,50 @@ export default function EventDonationPanel({
     setError("");
     async function loadRows() {
       try {
-        const [activityResponse, donationResponse] = await Promise.all([
-          fetch(`/api/backend/activities?page=0&size=100&branchId=${encodeURIComponent(selectedBranch)}`, { cache: "no-store" }),
-          fetch(`/api/backend/donations?page=0&size=100&branchId=${encodeURIComponent(selectedBranch)}`, { cache: "no-store" }),
-        ]);
-        const [activityBody, donationBody] = await Promise.all([
-          activityResponse.json().catch(() => null),
-          donationResponse.json().catch(() => null),
-        ]);
+        const activityResponse = await fetch(`/api/backend/activities?page=0&size=100&branchId=${encodeURIComponent(selectedBranch)}`, { cache: "no-store" });
+        const activityBody = await activityResponse.json().catch(() => null);
         if (!activityResponse.ok || activityBody?.success === false) {
           throw new Error(activityBody?.message || t("donationPage.loadActivitiesFailed"));
-        }
-        if (!donationResponse.ok || donationBody?.success === false) {
-          throw new Error(donationBody?.message || t("donationPage.loadEventDonationsFailed"));
         }
         if (cancelled) return;
 
         const activityPage = activityBody?.data ?? activityBody;
-        const donationPage = donationBody?.data ?? donationBody;
         const activityItems = Array.isArray(activityPage?.content)
           ? activityPage.content
           : (Array.isArray(activityPage?.items) ? activityPage.items : []);
-        const donationItems = Array.isArray(donationPage?.items)
-          ? donationPage.items
-          : (Array.isArray(donationPage?.content) ? donationPage.content : []);
 
         // A cancelled activity is history-only. Its saved records are not
         // deleted, but it must not appear in the activity-donation feature.
         const donationEligibleActivities = activityItems.filter((activity) => String(
           activity?.statusCode ?? activity?.status?.code ?? activity?.status ?? "",
         ).toUpperCase() !== "CANCELLED");
-        setRows(buildActivityDonationRows(donationEligibleActivities, donationItems, selectedBranch, organizerBranchNames));
+
+        const branchTotalsByActivity = await Promise.all(
+          donationEligibleActivities.map(async (activity) => {
+            try {
+              const response = await fetch(
+                `/api/backend/donations/activity/${encodeURIComponent(activity.id)}/branch-totals`,
+                { cache: "no-store" },
+              );
+              const body = await response.json().catch(() => null);
+              if (!response.ok || body?.success === false) {
+                return [activity.id, []];
+              }
+              const rows = body?.data ?? body;
+              return [activity.id, Array.isArray(rows) ? rows : []];
+            } catch {
+              return [activity.id, []];
+            }
+          }),
+        );
+        if (cancelled) return;
+
+        setRows(buildActivityDonationRows(
+          donationEligibleActivities,
+          new Map(branchTotalsByActivity),
+          selectedBranch,
+          organizerBranchNames,
+        ));
       } catch (loadError) {
         if (!cancelled) {
           setRows([]);
@@ -163,6 +183,17 @@ export default function EventDonationPanel({
     loadRows();
     return () => { cancelled = true; };
   }, [hasSelectedBranch, organizerBranchNames, selectedBranch, refreshKey]);
+
+  useEffect(() => {
+    if (!onTotalsChange) return;
+    const totalDollar = rows.reduce((sum, row) => sum + (row.totalAmountUsdValue || 0), 0);
+    onTotalsChange({ totalDollar, activityCount: rows.length });
+    // onTotalsChange intentionally excluded: only `rows` actually changing
+    // should re-report totals, not the parent re-rendering with a new
+    // inline callback reference (which would otherwise loop: report ->
+    // parent setState -> re-render -> new callback -> report -> ...).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows]);
 
   const filteredRows = useMemo(() => rows.filter((row) => {
     const query = searchQuery.trim().toLowerCase();
@@ -246,24 +277,33 @@ function toDateValue(iso) {
   return iso ? String(iso).slice(0, 10) : "";
 }
 
-function sumDonationsByActivity(donations) {
-  const totals = new Map();
-  donations.forEach((donation) => {
-    if (!donation.activityId) return;
-    const key = String(donation.activityId);
-    const current = totals.get(key) || { amountKhr: 0, amountUsd: 0 };
-    current.amountKhr += Number(donation.amountKhr || 0);
-    current.amountUsd += Number(donation.amountUsd || 0);
-    totals.set(key, current);
-  });
-  return totals;
+// Sums a single activity's branch-totals rows (one per eligible branch —
+// see /donations/activity/{id}/branch-totals) into one combined figure
+// covering every branch that has contributed, not just one.
+//
+// amountKhr/amountUsd stay as the raw, un-converted per-currency subtotals
+// (what the table's own "Amount (KHR)"/"Amount (USD)" columns show — each
+// is just the total of donations actually recorded in that currency).
+// totalAmountUsd is the separate, exchange-rate-normalised grand total
+// (riel converted to its USD equivalent, added to direct-USD donations) —
+// used only for the summary card above the table, never for the table's
+// own USD column, which is meant to stay a plain currency subtotal.
+function sumBranchTotals(branchTotalRows) {
+  return (Array.isArray(branchTotalRows) ? branchTotalRows : []).reduce(
+    (sum, row) => ({
+      amountKhr: sum.amountKhr + Number(row.amountKhr || 0),
+      amountUsd: sum.amountUsd + Number(row.amountUsd || 0),
+      totalAmountUsd: sum.totalAmountUsd + Number(row.totalAmountUsd || 0),
+    }),
+    { amountKhr: 0, amountUsd: 0, totalAmountUsd: 0 },
+  );
 }
 
 // Builds one row per ACTIVITY the selected branch had or joined (own-hosted
 // or an accepted co-hosting invitation — see /api/backend/activities?
-// branchId=), left-joining that branch's recorded donation totals for the
-// activity. An activity with no donations yet still gets a row, defaulted
-// to 0.
+// branchId=), joined against that activity's CROSS-BRANCH donation total
+// (every eligible branch's contribution combined, not just this branch's
+// own). An activity with no donations yet still gets a row, defaulted to 0.
 //
 // `branchId` is the branch the staff member picked in the filter — it is
 // what "owns" this donation-recording context and is what the Detail button
@@ -276,11 +316,9 @@ function sumDonationsByActivity(donations) {
 // looking at the same shared activity both see who actually ran it, rather
 // than the table silently relabeling the same activity with whichever
 // branch happens to be selected.
-function buildActivityDonationRows(activities, donations, branchId, organizerBranchNames) {
-  const totalsByActivity = sumDonationsByActivity(donations);
-
+function buildActivityDonationRows(activities, branchTotalsByActivityId, branchId, organizerBranchNames) {
   return activities.map((activity) => {
-    const totals = totalsByActivity.get(String(activity.id)) || { amountKhr: 0, amountUsd: 0 };
+    const totals = sumBranchTotals(branchTotalsByActivityId.get(activity.id));
     const startDateValue = toDateValue(activity.startsAt);
     const endDateValue = toDateValue(activity.endsAt);
     const start = startDateValue ? new Date(`${startDateValue}T00:00:00`) : null;
@@ -307,6 +345,10 @@ function buildActivityDonationRows(activities, donations, branchId, organizerBra
       endDateValue,
       days,
       rielAmount: totals.amountKhr.toLocaleString("en-US"),
+      // Used only by the summary card above the table (see onTotalsChange)
+      // -- never rendered in the table's own "Amount (USD)" column, which
+      // stays a plain, un-converted currency subtotal below.
+      totalAmountUsdValue: totals.totalAmountUsd,
       dollarAmount: totals.amountUsd.toLocaleString("en-US", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,

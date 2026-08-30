@@ -17,6 +17,7 @@ import {
 
 import FilterBar from "@/components/table-items/FilterBar";
 import MemberPreviewModal from "@/components/activity/MemberPreviewModal";
+import { useLanguage } from "@/context/LanguageContext";
 
 function MemberAvatar({ member }) {
   return (
@@ -46,6 +47,8 @@ export default function MemberSelectModal({
   loading = false,
   error = "",
 }) {
+  const { t } = useLanguage();
+
   /*
    * TEMPORARY frontend selection.
    *
@@ -394,7 +397,7 @@ async function handleSave() {
                   event.target.value,
                 )
               }
-              placeholder="ស្វែងរកសមាជិក..."
+              placeholder={t("activityPage.memberSearchPlaceholder")}
               className="h-10 w-full rounded-lg border border-border bg-bg-page-white pl-4 pr-10 text-sm text-text-primary outline-none"
             />
 
@@ -416,7 +419,7 @@ async function handleSave() {
                   setSelectedRole,
 
                 placeholder:
-                  "តួនាទី",
+                  t("memberPage.role"),
 
                 options:
                   roles,
@@ -432,7 +435,7 @@ async function handleSave() {
                   setSelectedDate,
 
                 placeholder:
-                  "ថ្ងៃ/ខែ/ឆ្នាំ",
+                  t("common.datePlaceholder"),
 
                 type: "date",
               },
@@ -445,7 +448,7 @@ async function handleSave() {
            */}
           <span className="ml-auto whitespace-nowrap text-sm font-semibold text-text-primary">
             {selectedCount}/
-            {totalMemberCount} នាក់
+            {totalMemberCount} {t("activityPage.memberUnit")}
           </span>
         </div>
 
@@ -469,31 +472,31 @@ async function handleSave() {
                 </th>
 
                 <th className="w-[24%] text-left">
-                  ឈ្មោះអ្នកចូលរួម
+                  {t("activityPage.participantName")}
                 </th>
 
                 <th className="w-[10%] text-center">
-                  ភេទ
+                  {t("memberPage.gender")}
                 </th>
 
                 <th className="w-[13%] text-center">
-                  តួនាទី
+                  {t("memberPage.role")}
                 </th>
 
                 <th className="w-[15%] text-center">
-                  សាខា
+                  {t("memberPage.branch")}
                 </th>
 
                 <th className="w-[16%] text-center">
-                  ថ្ងៃ/ខែ/ឆ្នាំ
+                  {t("common.datePlaceholder")}
                 </th>
 
                 <th className="w-[13%] text-center">
-                  ស្ថានភាព
+                  {t("memberPage.status")}
                 </th>
 
                 <th className="w-[5%] text-center">
-                  សកម្មភាព
+                  {t("memberPage.actions")}
                 </th>
               </tr>
             </thead>
@@ -620,8 +623,8 @@ async function handleSave() {
                           }`}
                         >
                           {isSelected
-                            ? "បានអញ្ជើញ"
-                            : "មិនបានអញ្ជើញ"}
+                            ? t("activityPage.invited")
+                            : t("activityPage.notInvited")}
                         </span>
                       </td>
 
@@ -653,7 +656,7 @@ async function handleSave() {
                     colSpan={8}
                     className="py-10 text-center text-sm text-text-secondary"
                   >
-                    កំពុងទាញយកសមាជិក...
+                    {t("documentPage.loadingMembers")}
                   </td>
                 </tr>
               )}
@@ -681,8 +684,11 @@ async function handleSave() {
                       className="py-10 text-center text-sm text-text-secondary"
                     >
                       {branchName
-                        ? `មិនមានសមាជិកនៅក្នុងសាខា ${branchName} ទេ`
-                        : "មិនមានសមាជិកទេ"}
+                        ? t("activityPage.noMembersInBranchName").replace(
+                            "{branch}",
+                            branchName,
+                          )
+                        : t("activityPage.noMembers")}
                     </td>
                   </tr>
                 )}
@@ -705,7 +711,7 @@ async function handleSave() {
             disabled={saving}
             className="h-[34px] w-full rounded-lg border border-border bg-bg-page-white text-sm font-semibold text-text-secondary disabled:opacity-60 sm:w-[91px]"
           >
-            បោះបង់
+            {t("memberPage.cancel")}
           </button>
 
           {/*
@@ -733,8 +739,8 @@ async function handleSave() {
             />
 
             {saving
-              ? "កំពុងរក្សាទុក..."
-              : "រក្សាទុក"}
+              ? t("common.saving")
+              : t("memberPage.save")}
           </button>
         </div>
       </div>

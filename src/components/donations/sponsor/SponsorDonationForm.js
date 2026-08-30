@@ -50,6 +50,16 @@ function formatKhmerDate(value) {
   return `${toKhmerNumber(day)} ${monthName} ${toKhmerNumber(year)}`;
 }
 
+function formatEnglishDate(value) {
+  if (!value) return "dd/mm/yyyy";
+
+  const [year, month, day] = value.split("-");
+
+  if (!year || !month || !day) return "dd/mm/yyyy";
+
+  return `${day}/${month}/${year}`;
+}
+
 function RequiredMark() {
   return <span className="text-error"> *</span>;
 }
@@ -260,6 +270,7 @@ function MemberSelectField({
 }
 
 function DateField({ label, value, onChange, required = false, className = "" }) {
+  const { locale } = useLanguage();
   const inputRef = useRef(null);
   const hasSelectedDate = Boolean(value);
 
@@ -298,7 +309,7 @@ function DateField({ label, value, onChange, required = false, className = "" })
           hasSelectedDate ? "border-secondary" : "border-border"
         }`}
       >
-        <span>{formatKhmerDate(value)}</span>
+        <span>{locale === "en" ? formatEnglishDate(value) : formatKhmerDate(value)}</span>
         <CalendarDays
           size={18}
           strokeWidth={2.2}
@@ -454,7 +465,7 @@ function buildInitialForm(initialData = {}, prefill = {}) {
 }
 
 export default function SponsorDonationForm({ initialData = null }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -544,31 +555,43 @@ export default function SponsorDonationForm({ initialData = null }) {
     ])
       .then(([branchItems, activityPage, methodItems]) => {
         if (cancelled) return;
-        setBranchOptions((Array.isArray(branchItems) ? branchItems : []).map((branch) => ({
-          value: String(branch.value ?? branch.id),
-          label: branch.labelKm || branch.labelEn || branch.nameKm || branch.nameEn || branch.label || branch.code || "-",
-        })));
-        setActivityOptions((Array.isArray(activityPage?.content) ? activityPage.content : []).map((activity) => ({
-          value: String(activity.id),
-          label: activity.titleKm || activity.titleEn || `#${activity.id}`,
-          branchId: String(activity.branchId ?? ""),
-          managedInvitedBranchId: String(
-            activity.managedInvitedBranchId ??
-            activity.managed_invited_branch_id ??
-            "",
-          ),
-        })));
-        setBackendPaymentMethods((Array.isArray(methodItems) ? methodItems : []).map((method) => ({
-          value: String(method.id),
-          code: method.code,
-          label: method.label_km || method.labelKm || method.label_en || method.labelEn || method.code,
-        })));
+        setBranchOptions((Array.isArray(branchItems) ? branchItems : []).map((branch) => {
+          const km = branch.labelKm || branch.nameKm || branch.label;
+          const en = branch.labelEn || branch.nameEn;
+          return {
+            value: String(branch.value ?? branch.id),
+            label: (locale === "en" ? en || km : km || en) || branch.code || "-",
+          };
+        }));
+        setActivityOptions((Array.isArray(activityPage?.content) ? activityPage.content : []).map((activity) => {
+          const km = activity.titleKm;
+          const en = activity.titleEn;
+          return {
+            value: String(activity.id),
+            label: (locale === "en" ? en || km : km || en) || `#${activity.id}`,
+            branchId: String(activity.branchId ?? ""),
+            managedInvitedBranchId: String(
+              activity.managedInvitedBranchId ??
+              activity.managed_invited_branch_id ??
+              "",
+            ),
+          };
+        }));
+        setBackendPaymentMethods((Array.isArray(methodItems) ? methodItems : []).map((method) => {
+          const km = method.label_km || method.labelKm;
+          const en = method.label_en || method.labelEn;
+          return {
+            value: String(method.id),
+            code: method.code,
+            label: (locale === "en" ? en || km : km || en) || method.code,
+          };
+        }));
       })
       .catch((loadError) => {
         if (!cancelled) setError(loadError.message || t("donationPage.loadDonationOptionsFailed"));
       });
     return () => { cancelled = true; };
-  }, [isBranchScoped, scopedBranchId]);
+  }, [isBranchScoped, scopedBranchId, locale]);
 
   useEffect(() => {
     if (form.sponsorType !== sponsorTypes[2] || !form.branch) {

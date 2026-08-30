@@ -325,7 +325,7 @@ export default function ParticipationEditModal({
             onClick={onClose}
             className="flex h-10 w-full items-center justify-center rounded-lg border border-border bg-bg-page-white px-5 text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray sm:min-w-[110px] sm:w-auto"
           >
-            {t("common.cancel")}
+            {t("memberPage.cancel")}
           </button>
 
           <button

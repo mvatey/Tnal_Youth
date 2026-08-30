@@ -47,10 +47,39 @@ function paymentMethodLabelFromCode(value) {
   return PAYMENT_METHOD_LABELS[code] || value || "Cash";
 }
 
-function toOptions(items, labelKeys) {
+/*
+ * /members' gender objects only ever carry {code, label_km} -- no
+ * label_en -- so a plain locale-aware label() lookup has nothing English
+ * to fall back to. Translate by the stable `code` instead, same fix
+ * already applied to the activity member-invite pages.
+ */
+function resolveGenderLabel(gender, t) {
+  if (typeof gender === "string") {
+    return gender || "-";
+  }
+
+  const code = String(gender?.code || "").toUpperCase();
+
+  if (code === "MALE") {
+    return t("memberPage.male");
+  }
+
+  if (code === "FEMALE") {
+    return t("memberPage.femaleGender");
+  }
+
+  return gender?.label_km || gender?.labelKm || gender?.label_en || gender?.labelEn || "-";
+}
+
+function toOptions(items, kmKeys, enKeys, locale) {
+  const orderedKeys =
+    locale === "en"
+      ? [...enKeys, ...kmKeys]
+      : [...kmKeys, ...enKeys];
+
   return (Array.isArray(items) ? items : []).map((item) => ({
     value: String(item.id ?? item.value),
-    label: labelKeys.map((key) => item[key]).find(Boolean) || String(item.id ?? item.value),
+    label: orderedKeys.map((key) => item[key]).find(Boolean) || String(item.id ?? item.value),
     raw: item,
   }));
 }
@@ -121,7 +150,7 @@ function rowsDifferFromSaved(rows, savedRows) {
 }
 
 export default function EventDonationDetailForm({ initialQuery = {}, onCancel }) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
   const router = useRouter();
   const pathname = usePathname();
@@ -178,6 +207,31 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   const [activeTab, setActiveTab] = useState("members");
   const [searchQuery, setSearchQuery] = useState("");
   const [branches, setBranches] = useState([]);
+
+  /*
+   * `branches` is built once when the branch list is fetched, baking in
+   * whichever locale happened to be active at that moment (see the fetch
+   * effect below) -- if the language context finishes hydrating its
+   * persisted locale just after that fetch resolves, this can stay stuck
+   * on the wrong language even though everything else on the page has
+   * already caught up. Re-derive the label from each option's raw lookup
+   * item on every render instead, so it always matches the current
+   * locale.
+   */
+  const localizedBranches = useMemo(
+    () =>
+      branches.map((option) => {
+        const raw = option.raw || {};
+        const kmLabel = raw.nameKm || raw.labelKm || raw.name || raw.label;
+        const enLabel = raw.nameEn || raw.labelEn;
+        const resolvedLabel =
+          (locale === "en" ? enLabel || kmLabel : kmLabel || enLabel) || option.label;
+
+        return { ...option, label: resolvedLabel };
+      }),
+    [branches, locale],
+  );
+
   const [activities, setActivities] = useState([]);
   const [members, setMembers] = useState([]);
   const [paymentMethods, setPaymentMethods] = useState([]);
@@ -314,7 +368,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     ])
       .then(([branchItems, activityPage, methods, types]) => {
         if (cancelled) return;
-        setBranches(toOptions(branchItems, ["nameKm", "labelKm", "name", "label"]));
+        setBranches(toOptions(branchItems, ["nameKm", "labelKm", "name", "label"], ["nameEn", "labelEn"], locale));
         const activityItems = activityPage?.content ?? activityPage?.items ?? activityPage;
         // Cancelled activities remain in the Activity history screen only;
         // never offer them as a donation target.
@@ -322,7 +376,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           .filter((activity) => String(
             activity?.statusCode ?? activity?.status?.code ?? activity?.status ?? "",
           ).toUpperCase() !== "CANCELLED");
-        setActivities(toOptions(donationEligibleActivities, ["titleKm", "titleEn", "nameKm", "nameEn"]));
+        setActivities(toOptions(donationEligibleActivities, ["titleKm", "nameKm"], ["titleEn", "nameEn"], locale));
         setPaymentMethods(Array.isArray(methods) ? methods : []);
         const typeItems = Array.isArray(types) ? types : [];
         const eventType = typeItems.find((type) =>
@@ -361,7 +415,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
       return undefined;
     }
     let cancelled = false;
-    const branchLabel = branches.find((option) => option.value === selectedBranch)?.label || "-";
+    const branchLabel = localizedBranches.find((option) => option.value === selectedBranch)?.label || "-";
     setLoading(true);
     setError("");
     Promise.all([
@@ -378,14 +432,23 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           branchId: member.branch?.id ?? member.branch_id ?? member.branchId ?? Number(selectedBranch),
           branch: member.branch?.label_km ?? member.branch?.labelKm ?? branchLabel,
           name:
-            member.full_name_km ||
-            member.fullNameKm ||
-            member.nameKm ||
-            member.full_name_en ||
-            member.fullNameEn ||
-            member.member_no ||
-            member.memberNo ||
-            `#${member.id}`,
+            locale === "en"
+              ? member.full_name_en ||
+                member.fullNameEn ||
+                member.full_name_km ||
+                member.fullNameKm ||
+                member.nameKm ||
+                member.member_no ||
+                member.memberNo ||
+                `#${member.id}`
+              : member.full_name_km ||
+                member.fullNameKm ||
+                member.nameKm ||
+                member.full_name_en ||
+                member.fullNameEn ||
+                member.member_no ||
+                member.memberNo ||
+                `#${member.id}`,
           avatar: (() => {
             const profilePhoto = member.profile_photo || member.profilePhoto;
             return (
@@ -397,7 +460,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
                 : "")
             );
           })(),
-          gender: member.gender?.label_km || member.gender?.labelKm || member.gender?.code || member.gender || "-",
+          gender: resolveGenderLabel(member.gender, t),
           dob: member.date_of_birth || member.dateOfBirth || "-",
           realAmount: "0",
           dollarAmount: "0.00",
@@ -423,7 +486,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [branches, paymentMethods, selectedBranch, selectedEvent]);
+  }, [branches, localizedBranches, paymentMethods, selectedBranch, selectedEvent, locale, t]);
 
   useEffect(() => {
     if (!showSaveAlert) return undefined;
@@ -603,7 +666,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     const activityLabel = eventOptions.find(
       (option) => String(option.value) === String(selectedEvent),
     )?.label;
-    const branchLabel = branches.find(
+    const branchLabel = localizedBranches.find(
       (option) => String(option.value) === String(selectedBranch),
     )?.label;
 
@@ -673,7 +736,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
         {error ? <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
         <div className="mb-6 grid grid-cols-1 items-end gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:max-w-[360px]">
-            <DonationFilterSelect label={t("donationPage.branch")} value={selectedBranch} onChange={handleBranchChange} options={branches} allLabel={t("donationPage.selectBranch")} className="w-full" required disabled={isDetailPage || isBranchScoped} />
+            <DonationFilterSelect label={t("donationPage.branch")} value={selectedBranch} onChange={handleBranchChange} options={localizedBranches} allLabel={t("donationPage.selectBranch")} className="w-full" required disabled={isDetailPage || isBranchScoped} />
             <DonationFilterSelect label={t("donationPage.activity")} value={selectedEvent} onChange={handleEventChange} options={eventOptions} allLabel={t("donationPage.selectActivity")} className="w-full" required disabled={isDetailPage} />
           </div>
           {activeTab === "members" ? (
@@ -777,7 +840,6 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           <EventDonationBranchTotals
             activityId={selectedEvent}
             organizerBranchId={organizerBranchId}
-            selectedBranchId={selectedBranch}
           />
         ) : null}
         {hasBranchAndEvent && activeTab === "sponsor" && isBranchOrganizer ? (

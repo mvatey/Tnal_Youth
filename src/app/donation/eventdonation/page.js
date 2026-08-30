@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import DonationTabs from "@/components/donations/DonationTabs";
 import EventDonationSummaryCard from "@/components/donations/EventDonationSummaryCard";
 import DonorCard from "@/components/donations/DonorCard";
@@ -162,6 +162,25 @@ export default function EventDonationPage() {
   const [error, setError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
+  /*
+   * A branch-scoped viewer (secretary/branch_leader) can only ever fetch
+   * their OWN branch's donation rows below (the backend rejects an
+   * unscoped /donations request from them) -- so `totalDollar`, computed
+   * from those rows, would only ever total the money their own branch
+   * recorded, even for a shared activity another branch also contributed
+   * to. EventDonationPanel already fetches each of its activities'
+   * cross-branch total (see its own onTotalsChange), so for a
+   * branch-scoped viewer this reported figure is used for the summary
+   * card instead. An ADMIN/VIEWER isn't branch-scoped and can freely
+   * fetch the whole org's donations, so their `totalDollar` below is
+   * already correct as-is and is left alone.
+   */
+  const [panelTotalDollar, setPanelTotalDollar] = useState(0);
+  const handlePanelTotalsChange = useCallback(
+    (totals) => setPanelTotalDollar(totals.totalDollar),
+    [],
+  );
+
   useEffect(() => {
     const refresh = () => setRefreshKey((value) => value + 1);
     window.addEventListener("tnal-youth:donations-updated", refresh);
@@ -236,7 +255,8 @@ export default function EventDonationPage() {
     if (Number.isFinite(storedTotal)) return total + storedTotal;
     return total + Number(row.amountUsd || 0) + Number(row.amountKhr || 0) / Number(row.exchangeRateKhrPerUsd || 4000);
   }, 0);
-  const totalDollar = sumTotalDollar(activityDonationRows);
+  const ownBranchTotalDollar = sumTotalDollar(activityDonationRows);
+  const totalDollar = isBranchScoped ? panelTotalDollar : ownBranchTotalDollar;
   // Assurance figure only -- this money is already part of totalDollar
   // above (a sponsor-for-activity row is still one row, counted once).
   // Never add this on top of totalDollar; it exists so a tester can see
@@ -277,6 +297,12 @@ export default function EventDonationPage() {
       {error ? <div className="rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
       <div className="flex flex-wrap gap-3">
         <EventDonationSummaryCard label={t("donationPage.eventDonationTitle")} value={`$${totalDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="" note="" />
+        <NumberSponsorCard
+          label={t("donationPage.sponsorAmountInActivities")}
+          value={`$${sponsorInActivityDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+          growth=""
+          note=""
+        />
         <DonorCard label={t("donationPage.donorsTotal")} value={`${memberCount + sponsorCount} ${t("donationPage.personUnit")}`} growth="" note="" />
         <MemberCard
           label={t("donationPage.member")}
@@ -290,17 +316,12 @@ export default function EventDonationPage() {
           growth=""
           note=""
         />
-        <NumberSponsorCard
-          label={t("donationPage.sponsorAmountInActivities")}
-          value={`$${sponsorInActivityDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
-          growth=""
-          note=""
-        />
       </div>
       <EventDonationPanel
         selectedBranch={selectedBranch}
         onBranchChange={handleBranchChange}
         branchScoped={isBranchScoped}
+        onTotalsChange={isBranchScoped ? handlePanelTotalsChange : undefined}
       />
     </div>
   );
