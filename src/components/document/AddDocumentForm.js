@@ -59,6 +59,7 @@ export default function AddDocumentForm({
   branchOptions = FALLBACK_BRANCH_OPTIONS,
   documentTypeOptions = FALLBACK_DOCUMENT_TYPE_OPTIONS,
   saving = false,
+  isBranchLocked = false,
 }) {
   const { t } = useLanguage();
   const fileInputRef = useRef(null);
@@ -348,6 +349,7 @@ export default function AddDocumentForm({
               options={
                 branchOptions
               }
+              disabled={isBranchLocked}
             />
           </div>
 

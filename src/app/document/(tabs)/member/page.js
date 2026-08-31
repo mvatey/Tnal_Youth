@@ -79,12 +79,32 @@ export default function MemberDocumentPage() {
             ? "/api/backend/documents/member-documents/received-from-other-branches"
             : "/api/backend/documents";
 
+      // A multi-branch secretary's "received"/"issued" scope must follow
+      // whichever single branch is currently selected in the sidebar, not
+      // every branch they staff — otherwise an activity hosted by one of
+      // their OTHER branches looks like "their own" from both, and never
+      // shows up as cross-branch at all. The "own" tab has no such param
+      // (see exclude_cross_branch_issued_certificates below instead).
+      const branchParam =
+        (activeSubTab === "cross-branch" || activeSubTab === "received") &&
+        selectedBranch !== "all"
+          ? `&branchId=${encodeURIComponent(selectedBranch)}`
+          : "";
+
+      // The "own" tab must never mix in a certificate that was actually
+      // issued by a different branch's activity — that belongs in the
+      // "received" tab instead, regardless of which branch is selected.
+      const excludeCrossBranchParam =
+        activeSubTab === "own"
+          ? "&exclude_cross_branch_issued_certificates=true"
+          : "";
+
       const rows = [];
       let page = 0;
       let totalPages = 1;
       do {
         const response = await fetch(
-          `${endpoint}?page=${page}&size=100`,
+          `${endpoint}?page=${page}&size=100${branchParam}${excludeCrossBranchParam}`,
           { cache: "no-store" },
         );
         const body = await response.json().catch(() => null);
@@ -101,7 +121,7 @@ export default function MemberDocumentPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeSubTab, isEnglish, t]);
+  }, [activeSubTab, isEnglish, selectedBranch, t]);
 
   useEffect(() => { loadDocuments(); }, [loadDocuments]);
 

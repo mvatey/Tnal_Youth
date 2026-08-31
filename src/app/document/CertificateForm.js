@@ -19,6 +19,7 @@ import MultiSelect from "@/components/forms/multiselect";
 import CertificateCard from "@/components/card/certificate";
 import DocumentActionButton from "@/components/forms/documentActionbutton";
 import FileTooLargeModal from "@/components/popup/FileTooLargeModal";
+import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
 
 
@@ -232,6 +233,8 @@ export default function CertificateForm({
   saving = false,
 }) {
   const { t, label, isEnglish } = useLanguage();
+  const { selectedBranch } = useBranch();
+  const isBranchLocked = selectedBranch !== "all";
   const recipientType =
     form.recipientType ||
     "member";
@@ -256,6 +259,26 @@ export default function CertificateForm({
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [dataError, setDataError] = useState("");
 
+  // Creating a document is always scoped to whichever branch is currently
+  // selected in the sidebar (see BranchContext) -- there is no reason to
+  // let staff pick a different branch here than the one they're already
+  // operating in. "all" (admin/viewer with no specific branch picked)
+  // leaves the field open to a free choice, same as before.
+  useEffect(() => {
+    if (!isBranchLocked) return;
+    if (String(form.branch || "") === String(selectedBranch)) return;
+
+    setForm((previous) => ({
+      ...previous,
+      branch: String(selectedBranch),
+      memberId: "",
+      memberIds: [],
+      member: "",
+      members: [],
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBranchLocked, selectedBranch]);
+
   useEffect(() => {
     const controller = new AbortController();
     (async () => {
@@ -263,8 +286,12 @@ export default function CertificateForm({
         const rows = [];
         let page = 0;
         let totalPages = 1;
+        const branchParam =
+          recipientType === "activity" && form.branch
+            ? `&branchId=${encodeURIComponent(form.branch)}`
+            : "";
         do {
-          const response = await fetch(`/api/backend/activities?page=${page}&size=100`, {
+          const response = await fetch(`/api/backend/activities?page=${page}&size=100${branchParam}`, {
             cache: "no-store",
             signal: controller.signal,
           });
@@ -274,13 +301,34 @@ export default function CertificateForm({
           totalPages = Math.max(1, Number(body?.totalPages) || 1);
           page += 1;
         } while (page < totalPages);
-        setActivities(rows);
+
+        /*
+         * The backend's branchId param on this endpoint intentionally
+         * includes activities the branch was only INVITED to (accepted
+         * or still pending) alongside ones it actually hosts -- that's
+         * the right shape for the general Activities page (it needs to
+         * show pending invitations so staff can respond to them), but
+         * wrong here: only the HOST branch may issue a certificate for
+         * an activity (see MemberCredentialServiceImpl's host-branch
+         * check), so a co-hosting/invited branch has no business
+         * generating certificates through an activity it didn't
+         * organize. Narrow to strictly host-branch-owned activities.
+         */
+        const hostOnlyRows = form.branch
+          ? rows.filter((activity) =>
+              String(
+                activity.branchId ?? activity.branch_id ?? activity.branch ?? "",
+              ) === String(form.branch),
+            )
+          : rows;
+
+        setActivities(hostOnlyRows);
       } catch (error) {
         if (error.name !== "AbortError") setDataError(error.message || t("documentPage.loadActivitiesFailed"));
       }
     })();
     return () => controller.abort();
-  }, [t]);
+  }, [recipientType, form.branch, t]);
 
   useEffect(() => {
     if (!form.activityId) {
@@ -778,7 +826,17 @@ export default function CertificateForm({
           activityId: "",
           activity: "",
 
-          branch: "",
+          /*
+           * branch is intentionally NOT reset here -- it's locked to
+           * whichever branch is selected in the sidebar (see the
+           * isBranchLocked effect above) and has nothing to do with
+           * which recipient type is picked. Clearing it here used to
+           * fight that lock: it briefly emptied the field, and the lock
+           * effect only re-fires when the sidebar selection itself
+           * changes, not when something else clears form.branch — so
+           * an in-flight activity fetch could run once with no branch
+           * filter at all before the lock caught up.
+           */
         }),
       );
 
@@ -881,13 +939,20 @@ export default function CertificateForm({
 
             activityId: "",
             activity: "",
-            branch: "",
           }),
         );
 
         return;
       }
 
+      /*
+       * branch is intentionally left untouched here -- it's locked to
+       * whichever branch is selected in the sidebar (see the
+       * isBranchLocked effect above), not derived from the activity.
+       * The activity list itself is already scoped to that same locked
+       * branch (see the branchId param on the activities fetch), so
+       * every activity offered here is hosted by it anyway.
+       */
       setForm(
         (previous) => ({
           ...previous,
@@ -899,11 +964,6 @@ export default function CertificateForm({
 
           activity:
             activity.titleKm || activity.title_kh || activity.titleEn || activity.title_en ||
-            "",
-
-          branch:
-            activity.branchId || activity.branch_id || activity.branch ||
-            previous.branch ||
             "",
         }),
       );
@@ -1205,6 +1265,7 @@ export default function CertificateForm({
               branchOptions
             }
             loading={loadingBranches}
+            disabled={isBranchLocked}
             error={dataError && branchOptions.length === 0 ? dataError : ""}
           />
 

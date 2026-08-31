@@ -309,10 +309,23 @@ export default function CompanyDocumentPage() {
     },
   ];
 
+  const isBranchLocked = selectedBranch !== "all";
+
   const addButton = (
   <button
     type="button"
-    onClick={() => setShowAddForm(true)}
+    onClick={() => {
+      // Creating a document is always scoped to whichever branch is
+      // currently selected in the sidebar -- there is no reason to let
+      // staff pick a different branch here than the one they're already
+      // operating in. "all" (admin/viewer with no specific branch
+      // picked) leaves the field open to a free choice, same as before.
+      setForm((previous) => ({
+        ...previous,
+        branch: isBranchLocked ? String(selectedBranch) : previous.branch,
+      }));
+      setShowAddForm(true);
+    }}
     className="
       inline-flex
       items-center
@@ -442,6 +455,7 @@ export default function CompanyDocumentPage() {
           branchOptions={branchOptions}
           documentTypeOptions={documentTypeOptions}
           saving={saving}
+          isBranchLocked={isBranchLocked}
         />
       )}
 
