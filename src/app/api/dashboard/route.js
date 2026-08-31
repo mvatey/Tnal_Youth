@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 const BACKEND_URL =
+  process.env.BACKEND_API_URL ??
   process.env.BACKEND_URL ??
   "http://localhost:8081/api";
 
