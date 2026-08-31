@@ -1721,9 +1721,9 @@ export default function BranchPage() {
       />
 
       <section className="rounded-xl border border-border bg-bg-page-white p-4 transition-shadow duration-200 hover:shadow-sm">
-        <div className="mb-4 flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto">
+        <div className="mb-4 flex min-w-0 flex-col items-stretch gap-2 sm:flex-row sm:flex-nowrap sm:items-center sm:overflow-x-auto">
           {/* Search */}
-          <div className="w-[140px] shrink-0">
+          <div className="w-full shrink-0 sm:w-[140px]">
             <SearchBar
               value={
                 searchQuery
@@ -1737,17 +1737,17 @@ export default function BranchPage() {
           </div>
 
           {/* Filters */}
-          <div className="shrink-0">
+          <div className="w-full shrink-0 sm:w-auto">
             <FilterBar
               filters={
                 filters
               }
-              className="flex-nowrap"
+              className="flex-col items-stretch sm:flex-row sm:flex-nowrap sm:items-center"
             />
           </div>
 
           {/* Actions */}
-          <div className="flex shrink-0 items-center gap-3 sm:ml-auto [&>button]:w-auto">
+          <div className="flex shrink-0 flex-col items-stretch gap-3 sm:ml-auto sm:flex-row sm:items-center [&>button]:w-full sm:[&>button]:w-auto">
             <Button
               type="button"
               variant="primary"

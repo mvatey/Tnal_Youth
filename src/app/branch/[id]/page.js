@@ -515,25 +515,23 @@ function LeaderCard({
         </div>
 
         <div className="min-w-0 lg:border-l lg:border-border lg:pl-5">
-          <div className="flex items-start gap-2">
+          <div className="flex items-center gap-2">
             <CalendarDays
               size={15}
-              className="mt-0.5 shrink-0 text-text-secondary"
+              className="shrink-0 text-text-secondary"
             />
 
-            <div className="min-w-0">
-              <p className="text-xs text-text-secondary">
-                {t("branchPage.joinedAt")}
-              </p>
-
-              <p className="mt-1 truncate text-sm font-medium text-text-primary">
-                {formatDate(
-                  person.joinedAt,
-                  locale,
-                )}
-              </p>
-            </div>
+            <span className="text-xs text-text-secondary">
+              {t("branchPage.joinedAt")}
+            </span>
           </div>
+
+          <p className="mt-2 truncate text-sm font-medium text-text-primary">
+            {formatDate(
+              person.joinedAt,
+              locale,
+            )}
+          </p>
         </div>
 
         <div className="flex shrink-0 justify-start lg:justify-end">
