@@ -724,6 +724,7 @@ const en = {
     organizationDocuments: "Organization documents",
     memberDocuments: "Member personal documents",
     ownBranchDocumentsTab: "My branch's documents",
+    receivedFromOtherBranchesTab: "Certificates received from other branches",
     crossBranchCertificatesTab: "Certificates issued to other branches",
     no: "No.",
     document: "Document",

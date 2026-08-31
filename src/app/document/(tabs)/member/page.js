@@ -75,7 +75,9 @@ export default function MemberDocumentPage() {
       const endpoint =
         activeSubTab === "cross-branch"
           ? "/api/backend/documents/member-documents/cross-branch-certificates"
-          : "/api/backend/documents";
+          : activeSubTab === "received"
+            ? "/api/backend/documents/member-documents/received-from-other-branches"
+            : "/api/backend/documents";
 
       const rows = [];
       let page = 0;
@@ -117,7 +119,15 @@ export default function MemberDocumentPage() {
     // A document with no branch on record stays visible no matter which
     // branch is selected, rather than disappearing under every branch
     // filter — see the company-tab page for the same rule.
+    //
+    // The cross-branch tab's entire point is showing certificates whose
+    // RECIPIENT belongs to some branch other than the one selected in the
+    // sidebar (a co-hosting branch's member) — item.branchId there is
+    // always that recipient's own branch, never the viewer's, so this
+    // filter would exclude every row on that tab if applied. It only
+    // makes sense on the "own branch" tab.
     const matchBranch =
+      activeSubTab === "cross-branch" ||
       selectedBranch === "all" ||
       item.branchId == null ||
       String(item.branchId) === String(selectedBranch);
@@ -303,6 +313,17 @@ export default function MemberDocumentPage() {
           </button>
           <button
             type="button"
+            onClick={() => setActiveSubTab("received")}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+              activeSubTab === "received"
+                ? "bg-primary text-white"
+                : "bg-bg-page-white text-text-secondary hover:bg-bg-page-gray"
+            }`}
+          >
+            {t("documentPage.receivedFromOtherBranchesTab")}
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveSubTab("cross-branch")}
             className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
               activeSubTab === "cross-branch"
@@ -361,7 +382,9 @@ function mapMemberDocument(row, t, isEnglish) {
   return {
     id: row.id,
     title: row.title,
-    memberName: row.member?.fullNameKm || row.member?.full_name_km || row.member?.fullNameEn || row.member?.full_name_en || "-",
+    memberName: isEnglish
+      ? row.member?.fullNameEn || row.member?.full_name_en || row.member?.fullNameKm || row.member?.full_name_km || "-"
+      : row.member?.fullNameKm || row.member?.full_name_km || row.member?.fullNameEn || row.member?.full_name_en || "-",
     gender: isEnglish
       ? row.member?.genderLabelEn || row.member?.gender_label_en || genderLabels[genderCode] || row.member?.genderLabelKm || row.member?.gender_label_km || "-"
       : row.member?.genderLabelKm || row.member?.gender_label_km || genderLabels[genderCode] || row.member?.genderLabelEn || row.member?.gender_label_en || "-",

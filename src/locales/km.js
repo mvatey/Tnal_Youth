@@ -724,6 +724,7 @@ const km = {
     organizationDocuments: "ឯកសារស្ថាប័ន",
     memberDocuments: "ឯកសារផ្ទាល់ខ្លួនរបស់សមាជិក",
     ownBranchDocumentsTab: "ឯកសារសាខារបស់ខ្ញុំ",
+    receivedFromOtherBranchesTab: "វិញ្ញាបនបត្រដែលទទួលបានពីសាខាផ្សេង",
     crossBranchCertificatesTab: "វិញ្ញាបនបត្រដែលបានចេញឱ្យសាខាផ្សេង",
     no: "ល.រ",
     document: "ឯកសារ",
