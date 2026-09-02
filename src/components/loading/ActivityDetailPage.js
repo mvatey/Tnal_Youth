@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -39,12 +42,12 @@ function DetailHero({ activity }) {
       <Link
         href="/loading"
         aria-label="Back"
-        className="absolute left-10 top-8 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#17194d] shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#4b3192] hover:text-white hover:shadow-xl"
+        className="absolute left-4 top-8 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#17194d] shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#4b3192] hover:text-white hover:shadow-xl sm:left-10"
       >
         <ArrowLeft size={26} />
       </Link>
 
-      <div className="relative mx-auto -mt-[145px] max-w-5xl px-20">
+      <div className="relative mx-auto -mt-[145px] max-w-5xl px-4 sm:px-10 md:px-20">
         <div className="relative min-h-[123px] overflow-hidden rounded-xl border border-white/70 bg-white/80 px-5 py-4 shadow-[0_14px_35px_rgba(23,25,77,0.18)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-[#4b3192]/25 hover:shadow-[0_20px_45px_rgba(75,49,146,0.22)]">
           <span className="inline-flex rounded-full bg-green-700 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-white">
             Completed Workshop
@@ -77,7 +80,7 @@ function DetailHero({ activity }) {
 
 function DetailContent({ activity }) {
   return (
-    <section className="mx-auto max-w-6xl px-10 pt-8">
+    <section className="mx-auto max-w-6xl px-4 pt-8 sm:px-10">
       <div className="space-y-5 text-[15px] leading-8 text-gray-600">
         <p>{activity.description}</p>
         <p>
@@ -121,7 +124,7 @@ function DetailGallery({ activity }) {
   ];
 
   return (
-    <section className="mx-auto max-w-6xl px-10 pt-12">
+    <section className="mx-auto max-w-6xl px-4 pt-12 sm:px-10">
       <h2 className="text-2xl font-extrabold text-[#17194d]">វិចិត្រសាលរូបភាព</h2>
       <p className="mt-1 text-xs text-gray-500">រូបភាពពីកម្មវិធីនេះ</p>
 
@@ -155,7 +158,7 @@ function EventMap({ activity }) {
   const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(locationQuery)}&output=embed`;
 
   return (
-    <section className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_290px] gap-3 px-10 pt-12">
+    <section className="mx-auto grid max-w-6xl grid-cols-1 gap-3 px-4 pt-12 sm:px-10 md:grid-cols-[minmax(0,1fr)_290px]">
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#4b3192]/25 hover:shadow-xl hover:shadow-[#4b3192]/10">
         <h2 className="text-xl font-extrabold text-[#17194d]">ទីតាំងកម្មវិធី</h2>
         <div className="mt-5 h-[235px] overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
@@ -197,7 +200,7 @@ function EventMap({ activity }) {
             </span>
             <div>
               <p className="font-bold text-[#17194d]">អ៊ីមែល</p>
-              <p className="mt-1">info@cny.org.kh</p>
+              <p className="mt-1">thnalyouth@gmail.com</p>
             </div>
           </div>
         </div>
@@ -216,12 +219,27 @@ function EventMap({ activity }) {
   );
 }
 
+const ORGANIZATION_FACEBOOK_URL = "https://www.facebook.com/share/1Eq5F1Pv43/";
+
 function ShareEvent() {
+  const [copied, setCopied] = useState(false);
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard access can be blocked by the browser -- silently
+      // no-op rather than showing a broken error state.
+    }
+  };
+
   return (
-    <section className="mx-auto max-w-6xl px-10 pt-7">
-      <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-[#F8F9FB] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#4b3192]/25 hover:shadow-xl hover:shadow-[#4b3192]/10">
+    <section className="mx-auto max-w-6xl px-4 pt-7 sm:px-10">
+      <div className="flex flex-col items-start gap-4 rounded-2xl border border-gray-200 bg-[#F8F9FB] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#4b3192]/25 hover:shadow-xl hover:shadow-[#4b3192]/10 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-gray-100 bg-white text-[#4b3192] shadow-sm">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-100 bg-white text-[#4b3192] shadow-sm">
             <Share2 size={18} />
           </div>
           <div>
@@ -230,16 +248,25 @@ function ShareEvent() {
           </div>
         </div>
 
-        <div className="flex gap-3">
-          <button className="inline-flex items-center gap-2 rounded-lg bg-[#17194d] px-6 py-3 text-sm font-bold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#292f69] hover:shadow-lg hover:shadow-[#17194d]/25">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+          <a
+            href={ORGANIZATION_FACEBOOK_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#17194d] px-6 py-3 text-sm font-bold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#292f69] hover:shadow-lg hover:shadow-[#17194d]/25"
+          >
             <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white text-[#17194d]">
               <FaFacebookF size={10} />
             </span>
             ចែករំលែក Facebook
-          </button>
-          <button className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-bold text-[#17194d] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#4b3192] hover:bg-[#4b3192]/5 hover:shadow-md">
+          </a>
+          <button
+            type="button"
+            onClick={copyLink}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-bold text-[#17194d] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#4b3192] hover:bg-[#4b3192]/5 hover:shadow-md"
+          >
             <Link2 size={17} strokeWidth={2.2} />
-            ចម្លងតំណ (Copy Link)
+            {copied ? "បានចម្លង!" : "ចម្លងតំណ (Copy Link)"}
           </button>
         </div>
       </div>
@@ -251,11 +278,11 @@ function RelatedEvents({ activity }) {
   const related = activities.filter((item) => item.id !== activity.id).slice(0, 4);
 
   return (
-    <section className="mx-auto max-w-6xl px-10 py-12">
+    <section className="mx-auto max-w-6xl px-4 py-12 sm:px-10">
       <h2 className="text-3xl font-extrabold text-[#17194d]">កម្មវិធីផ្សេងៗ</h2>
       <p className="mt-2 text-sm text-gray-500">សកម្មភាពពាក់ព័ន្ធផ្សេងៗទៀត</p>
 
-      <div className="mt-6 grid grid-cols-4 gap-5">
+      <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {related.map((item) => (
           <div key={item.id} className="group overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-[#4b3192]/25 hover:shadow-xl hover:shadow-[#4b3192]/10">
             <Image
