@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Hero() {
   return (
@@ -209,12 +212,14 @@ sm:justify-center
 lg:justify-start
 "
         >
-          <button
+          <Link
+            href="/auth/login"
             className="
 rounded-lg
 bg-[#4b3192]
 px-8
 py-3
+text-center
 text-sm
 font-medium
 text-white
@@ -229,15 +234,23 @@ hover:shadow-purple-300/50
 "
           >
             ចូលរួមជាមួយ →
-          </button>
+          </Link>
 
-          <button
+          <a
+            href="#footer"
+            onClick={(event) => {
+              event.preventDefault();
+              document
+                .getElementById("footer")
+                ?.scrollIntoView({ behavior: "smooth" });
+            }}
             className="
 rounded-lg
 border
 border-gray-200
 px-8
 py-3
+text-center
 text-sm
 font-medium
 text-gray-600
@@ -251,7 +264,7 @@ hover:shadow-md
 "
           >
             ស្វែងយល់
-          </button>
+          </a>
         </div>
       </div>
 
