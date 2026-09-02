@@ -466,6 +466,8 @@ const km = {
     actions: "សកម្មភាព",
     viewerReadOnly: "គណនីមើលទិន្នន័យមិនអាចកែប្រែបានទេ",
     createFailed: "មិនអាចបង្កើតសមាជិកបានទេ",
+    dobInFuture: "ថ្ងៃខែឆ្នាំកំណើតមិនអាចនៅថ្ងៃអនាគតបានទេ",
+    dobTooRecent: "សមាជិកត្រូវមានអាយុយ៉ាងតិច១២ឆ្នាំ",
     membersFileName: "សមាជិក",
     loadingMember: "កំពុងទាញយកព័ត៌មានសមាជិក...",
     loadMemberFailed: "មិនអាចទាញយកព័ត៌មានសមាជិកបានទេ",

@@ -867,6 +867,46 @@ export default function CreateMemberModal({
         false,
       );
 
+      const todayIso =
+        new Date()
+          .toISOString()
+          .split("T")[0];
+
+      if (
+        form.dateOfBirth >
+        todayIso
+      ) {
+        setSubmitError(
+          t("memberPage.dobInFuture"),
+        );
+
+        return;
+      }
+
+      const minAgeDate =
+        new Date();
+
+      minAgeDate.setFullYear(
+        minAgeDate.getFullYear() -
+          12,
+      );
+
+      const minAgeIso =
+        minAgeDate
+          .toISOString()
+          .split("T")[0];
+
+      if (
+        form.dateOfBirth >
+        minAgeIso
+      ) {
+        setSubmitError(
+          t("memberPage.dobTooRecent"),
+        );
+
+        return;
+      }
+
       setSubmitError("");
 
       setIsSubmitting(

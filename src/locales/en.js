@@ -466,6 +466,8 @@ const en = {
     actions: "Actions",
     viewerReadOnly: "Viewer accounts are read-only.",
     createFailed: "Could not create member.",
+    dobInFuture: "Date of birth cannot be in the future.",
+    dobTooRecent: "Member must be at least 12 years old.",
     membersFileName: "members",
     loadingMember: "Loading member information...",
     loadMemberFailed: "Could not load member information.",
