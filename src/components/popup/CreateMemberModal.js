@@ -14,6 +14,7 @@ import FormSelect from "@/components/forms/FormSelect";
 import FormActionButton from "@/components/forms/FormActionButton";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useBranch } from "@/context/BranchContext";
 
 // Mirrors the backend's MemberServiceImpl#validateAssignableRole hierarchy:
 // a SECRETARY may only create MEMBER accounts, a BRANCH_LEADER may create
@@ -195,6 +196,31 @@ export default function CreateMemberModal({
   const { user } = useAuth();
   const { t, label } =
     useLanguage();
+  const { selectedBranch: sidebarSelectedBranch } =
+    useBranch();
+
+  // A secretary only ever manages the one branch currently active in
+  // their sidebar (see BranchContext's isBranchScopedRole) -- letting
+  // them freely pick a different branch here would create members the
+  // rest of their session can't even see. Follow that sidebar branch
+  // the same way the Branch Detail page's fixedBranchId/lockBranch
+  // props already lock the field for that entry point.
+  const isSecretaryCreator =
+    String(user?.role || "").toUpperCase() ===
+    "SECRETARY";
+
+  const effectiveLockBranch =
+    lockBranch ||
+    (isSecretaryCreator &&
+      sidebarSelectedBranch !== "all");
+
+  const effectiveFixedBranchId =
+    fixedBranchId != null
+      ? fixedBranchId
+      : isSecretaryCreator &&
+          sidebarSelectedBranch !== "all"
+        ? sidebarSelectedBranch
+        : null;
 
   const allowedRoles =
     useMemo(
@@ -282,8 +308,8 @@ export default function CreateMemberModal({
       ...EMPTY_FORM,
 
       branchId:
-        fixedBranchId != null
-          ? String(fixedBranchId)
+        effectiveFixedBranchId != null
+          ? String(effectiveFixedBranchId)
           : "",
     });
 
@@ -294,7 +320,7 @@ export default function CreateMemberModal({
     setSubmitError("");
   }, [
     open,
-    fixedBranchId,
+    effectiveFixedBranchId,
   ]);
 
   useEffect(() => {
@@ -699,22 +725,47 @@ export default function CreateMemberModal({
   const branchOptions =
   useMemo(() => {
     /*
-     * Branch Detail page:
-     * only the current branch is allowed.
+     * Branch Detail page (explicit fixedBranchId/lockBranch props), or
+     * a secretary creator (locked to their sidebar's active branch):
+     * only that one branch is allowed.
      */
     if (
-      lockBranch &&
-      fixedBranchId != null
+      effectiveLockBranch &&
+      effectiveFixedBranchId != null
     ) {
+      const matchedBranch =
+        branchLookups.find(
+          (branch) =>
+            String(
+              branch?.id ??
+                branch?.value ??
+                "",
+            ) ===
+            String(
+              effectiveFixedBranchId,
+            ),
+        );
+
+      const resolvedLabel =
+        matchedBranch
+          ? label(
+              matchedBranch,
+              matchedBranch?.branch_code ||
+                matchedBranch?.branchCode ||
+                "",
+            )
+          : "";
+
       return [
         {
           label:
             fixedBranchName ||
-            `${t("memberPage.branch")} ${fixedBranchId}`,
+            resolvedLabel ||
+            `${t("memberPage.branch")} ${effectiveFixedBranchId}`,
 
           value:
             String(
-              fixedBranchId
+              effectiveFixedBranchId
             ),
         },
       ];
@@ -758,9 +809,9 @@ export default function CreateMemberModal({
       );
   }, [
     branchLookups,
-    fixedBranchId,
+    effectiveFixedBranchId,
     fixedBranchName,
-    lockBranch,
+    effectiveLockBranch,
     label,
     t,
   ]);
@@ -1360,7 +1411,7 @@ export default function CreateMemberModal({
                     "branchId",
                   )}
                   disabled={
-                    lockBranch
+                    effectiveLockBranch
                   }
                 />
 
