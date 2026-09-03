@@ -15,6 +15,7 @@ import FormActionButton from "@/components/forms/FormActionButton";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useBranch } from "@/context/BranchContext";
+import { getLookup } from "@/lib/lookupCache";
 
 // Mirrors the backend's MemberServiceImpl#validateAssignableRole hierarchy:
 // a SECRETARY may only create MEMBER accounts, a BRANCH_LEADER may create
@@ -41,50 +42,6 @@ const EMPTY_FORM = {
   joinedOn: "",
   statusId: "",
 };
-
-async function fetchJson(path) {
-  const response = await fetch(
-    `/api${path}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-      cache: "no-store",
-    },
-  );
-
-  const text =
-    await response.text();
-
-  let body = null;
-
-  if (text) {
-    try {
-      body =
-        JSON.parse(text);
-    } catch {
-      body = text;
-    }
-  }
-
-  if (!response.ok) {
-    const message =
-      typeof body ===
-      "object"
-        ? body?.message ||
-          body?.detail ||
-          body?.error
-        : body;
-
-    throw new Error(
-      message ||
-        `Request failed with status ${response.status}`,
-    );
-  }
-
-  return body;
-}
 
 async function createMember(
   payload,
@@ -337,7 +294,7 @@ export default function CreateMemberModal({
     ) {
       try {
         const data =
-          await fetchJson(
+          await getLookup(
             path,
           );
 
