@@ -1,5 +1,11 @@
 import { cookies } from "next/headers";
 
+// Runs at the edge (near the visitor / near the ap-southeast-1 backend)
+// instead of Vercel's default iad1 (US East) Node function region --
+// removes cold starts and the extra Virginia<->Singapore round trip that
+// otherwise applies to every proxied backend call from this route.
+export const runtime = "edge";
+
 const BACKEND_URL =
   process.env.BACKEND_API_URL ||
   process.env.BACKEND_URL ||

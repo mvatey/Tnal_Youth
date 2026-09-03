@@ -1,6 +1,12 @@
 import { proxyBackend } from "@/lib/backendProxy";
 import { apiErrorResponse } from "@/lib/apiErrorResponse";
 
+// Runs at the edge (near the visitor / near the ap-southeast-1 backend)
+// instead of Vercel's default iad1 (US East) Node function region --
+// removes cold starts and the extra Virginia<->Singapore round trip that
+// otherwise applies to every proxied backend call from this route.
+export const runtime = "edge";
+
 const ALLOWED_ROOTS = new Set([
   "activities",
   "documents",
