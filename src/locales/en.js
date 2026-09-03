@@ -468,6 +468,10 @@ const en = {
     createFailed: "Could not create member.",
     dobInFuture: "Date of birth cannot be in the future.",
     dobTooRecent: "Member must be at least 12 years old.",
+    confirmReplaceLeaderPrefix:
+      "This branch already has an active leader: ",
+    confirmReplaceLeaderSuffix:
+      "\n\nMake this new person the branch leader instead? The current leader will become a regular member of this branch.",
     membersFileName: "members",
     loadingMember: "Loading member information...",
     loadMemberFailed: "Could not load member information.",

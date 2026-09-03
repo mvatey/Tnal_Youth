@@ -983,6 +983,79 @@ export default function CreateMemberModal({
 
         onClose?.();
       } catch (error) {
+        const leaderConflictMatch =
+          typeof error?.message ===
+            "string" &&
+          error.message.match(
+            /already has an active leader:\s*(.+?)\./,
+          );
+
+        if (leaderConflictMatch) {
+          const existingLeaderName =
+            leaderConflictMatch[1];
+
+          const wantsReplace =
+            window.confirm(
+              t(
+                "memberPage.confirmReplaceLeaderPrefix",
+              ) +
+                existingLeaderName +
+                t(
+                  "memberPage.confirmReplaceLeaderSuffix",
+                ),
+            );
+
+          if (wantsReplace) {
+            try {
+              const createdMember =
+                await createMember(
+                  {
+                    ...payload,
+                    confirm_replace_leader: true,
+                  },
+                );
+
+              await onSave?.(
+                createdMember,
+              );
+
+              setForm(
+                EMPTY_FORM,
+              );
+
+              onClose?.();
+            } catch (retryError) {
+              console.warn(
+                "Cannot create member:",
+                retryError,
+              );
+
+              setSubmitError(
+                retryError?.message ||
+                  t("memberPage.createFailed"),
+              );
+            } finally {
+              setIsSubmitting(
+                false,
+              );
+            }
+
+            return;
+          }
+
+          setSubmitError(
+            t(
+              "memberPage.confirmReplaceLeaderPrefix",
+            ) + existingLeaderName,
+          );
+
+          setIsSubmitting(
+            false,
+          );
+
+          return;
+        }
+
         // A validation/conflict error here (e.g. duplicate phone number)
         // is expected, user-correctable input -- already surfaced through
         // setSubmitError below, not a bug. console.error would trip
@@ -997,11 +1070,17 @@ export default function CreateMemberModal({
           error?.message ||
             t("memberPage.createFailed"),
         );
-      } finally {
+
         setIsSubmitting(
           false,
         );
+
+        return;
       }
+
+      setIsSubmitting(
+        false,
+      );
     };
 
   if (
