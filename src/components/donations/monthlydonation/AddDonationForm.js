@@ -2,11 +2,11 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { CreditCard, Users } from "lucide-react";
+import { HiCash } from "react-icons/hi";
 import AddDonationFilters from "./AddDonationFilters";
 import Table from "../../tables/table";
-import MemberCard from "../eventdonation/membercard";
-import CashCard from "./cashcard";
-import BankCard from "./bankcard";
+import StatCard from "@/components/dashboard/statCard";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch, useBranchChangeGuard } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -572,24 +572,27 @@ const paymentSummary = useMemo(() => {
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap gap-6 lg:gap-[50px]">
-        <MemberCard
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatCard
+          icon={Users}
           label={t("donationPage.member")}
           value={`${editableRows.length} ${t("donationPage.personUnit")}`}
-          growth="+15%"
-          note={t("dashboard.thisMonth")}
+          iconColor="text-primary"
+          iconBg="bg-secondary-light"
         />
-        <CashCard
+        <StatCard
+          icon={HiCash}
           label={t("donationPage.cashPayment")}
           value={`${paymentSummary.cash} ${t("donationPage.personUnit")}`}
-          growth="+15%"
-          note={t("dashboard.thisMonth")}
+          iconColor="text-warning"
+          iconBg="bg-warning-bg"
         />
-        <BankCard
+        <StatCard
+          icon={CreditCard}
           label={t("donationPage.bankPayment")}
           value={`${paymentSummary.bank} ${t("donationPage.personUnit")}`}
-          growth="+15%"
-          note={t("dashboard.thisMonth")}
+          iconColor="text-secondary"
+          iconBg="bg-secondary-light"
         />
       </div>
 

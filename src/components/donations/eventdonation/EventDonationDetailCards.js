@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import EventDonationSummaryCard from "@/components/donations/EventDonationSummaryCard";
-import DonorCard from "@/components/donations/DonorCard";
+import { CircleDollarSign, Users } from "lucide-react";
+import StatCard from "@/components/dashboard/statCard";
 import { useLanguage } from "@/context/LanguageContext";
 
 /**
@@ -83,20 +83,22 @@ export default function EventDonationDetailCards() {
   );
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row">
-      <EventDonationSummaryCard
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <StatCard
+        icon={CircleDollarSign}
         label={t("donationPage.eventDonationTitle")}
         value={`$${summary.overall.toLocaleString(undefined, {
           maximumFractionDigits: 2,
         })}`}
-        growth=""
-        note={`៛ ${summary.riel.toLocaleString()}`}
+        iconColor="text-success"
+        iconBg="bg-success-bg"
       />
-      <DonorCard
+      <StatCard
+        icon={Users}
         label={t("donationPage.donor")}
         value={`${summary.donorCount} ${t("donationPage.personUnit")}`}
-        growth=""
-        note=""
+        iconColor="text-primary"
+        iconBg="bg-secondary-light"
       />
     </div>
   );
