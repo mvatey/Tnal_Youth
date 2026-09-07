@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import DonationCard from "./DonationCard";
-import DonorCard from "./DonorCard";
+import { Banknote, Users } from "lucide-react";
+import StatCard from "@/components/dashboard/statCard";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 import { useBranch } from "@/context/BranchContext";
@@ -133,13 +133,20 @@ export default function DonationCards() {
   }, [currentMemberLoading, isBranchScoped, isMemberScoped, scopedBranchId, refreshKey]);
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row">
-      <DonationCard label={t("donationPage.totalDonation")} value={`$${summary.totalUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="" note="" />
-      <DonorCard
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <StatCard
+        icon={Banknote}
+        label={t("donationPage.totalDonation")}
+        value={`$${summary.totalUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+        iconColor="text-secondary"
+        iconBg="bg-secondary-light"
+      />
+      <StatCard
+        icon={Users}
         label={isMemberScoped ? t("donationPage.recordCount") : t("donationPage.donorsTotal")}
         value={`${summary.donors} ${isMemberScoped ? t("donationPage.timeUnit") : t("donationPage.personUnit")}`}
-        growth=""
-        note=""
+        iconColor="text-success"
+        iconBg="bg-success-bg"
       />
     </div>
   );

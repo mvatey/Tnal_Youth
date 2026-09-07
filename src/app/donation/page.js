@@ -7,8 +7,8 @@ import DonationTable from "@/components/donations/monthlydonation/DonationTable"
 export default function DonationPage() {
   return (
     <div className="space-y-4">
-      <DonationTabs />
       <DonationCards />
+      <DonationTabs />
       <DonationTable />
     </div>
   );
