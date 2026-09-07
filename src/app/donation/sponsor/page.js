@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { CircleDollarSign, Users } from "lucide-react";
 import DonationTabs from "@/components/donations/DonationTabs";
-import SponsorCard from "@/components/donations/SponsorCard";
-import DonorCard from "@/components/donations/DonorCard";
+import StatCard from "@/components/dashboard/statCard";
 import SponsorPanel from "@/components/donations/sponsor/SponsorPanel";
 import MyAccountSponsorPage from "@/app/myAcc/(tabs)/sponsor/page";
 import useCurrentMember from "@/hooks/useCurrentMember";
@@ -165,17 +165,20 @@ export default function SponsorPage() {
   return (
     <div className="space-y-4">
       <DonationTabs />
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <SponsorCard
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <StatCard
+          icon={CircleDollarSign}
+          label={t("donationPage.totalSponsorDonation")}
           value={`$${Number(summary.overallTotalUsd || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
-          growth=""
-          note=""
+          iconColor="text-success"
+          iconBg="bg-success-bg"
         />
-        <DonorCard
+        <StatCard
+          icon={Users}
           label={isPersonalMember ? t("donationPage.myRecordCount") : t("donationPage.sponsorsTotal")}
           value={`${summary.donorCount || 0} ${isPersonalMember ? t("donationPage.timeUnit") : t("donationPage.personUnit")}`}
-          growth=""
-          note=""
+          iconColor="text-primary"
+          iconBg="bg-secondary-light"
         />
       </div>
       {isPersonalMember ? (

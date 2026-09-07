@@ -1,12 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { CircleDollarSign, Gift, HandCoins, Users } from "lucide-react";
 import DonationTabs from "@/components/donations/DonationTabs";
-import EventDonationSummaryCard from "@/components/donations/EventDonationSummaryCard";
-import DonorCard from "@/components/donations/DonorCard";
+import StatCard from "@/components/dashboard/statCard";
 import EventDonationPanel from "@/components/donations/eventdonation/EventDonationPanel";
-import MemberCard from "@/components/donations/eventdonation/membercard";
-import NumberSponsorCard from "@/components/donations/eventdonation/sponsorcard";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 import { useBranch } from "@/context/BranchContext";
@@ -276,16 +274,23 @@ export default function EventDonationPage() {
     return (
       <div className="space-y-4">
         <DonationTabs />
-        {error ? <div className="rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <EventDonationSummaryCard
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <StatCard
+            icon={CircleDollarSign}
             label={t("donationPage.myEventDonations")}
             value={`$${myTotalDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
-            growth=""
-            note=""
+            iconColor="text-success"
+            iconBg="bg-success-bg"
           />
-          <DonorCard label={t("donationPage.recordCount")} value={`${myRows.length} ${t("donationPage.timeUnit")}`} growth="" note="" />
+          <StatCard
+            icon={Users}
+            label={t("donationPage.recordCount")}
+            value={`${myRows.length} ${t("donationPage.timeUnit")}`}
+            iconColor="text-primary"
+            iconBg="bg-secondary-light"
+          />
         </div>
+        {error ? <div className="rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
         <MyEventDonationsTable rows={myRows} />
       </div>
     );
@@ -294,29 +299,44 @@ export default function EventDonationPage() {
   return (
     <div className="space-y-4">
       <DonationTabs />
-      {error ? <div className="rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
-      <div className="flex flex-wrap gap-3">
-        <EventDonationSummaryCard label={t("donationPage.eventDonationTitle")} value={`$${totalDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} growth="" note="" />
-        <NumberSponsorCard
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <StatCard
+          icon={CircleDollarSign}
+          label={t("donationPage.eventDonationTitle")}
+          value={`$${totalDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+          iconColor="text-success"
+          iconBg="bg-success-bg"
+        />
+        <StatCard
+          icon={HandCoins}
           label={t("donationPage.sponsorAmountInActivities")}
           value={`$${sponsorInActivityDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
-          growth=""
-          note=""
+          iconColor="text-warning"
+          iconBg="bg-warning-bg"
         />
-        <DonorCard label={t("donationPage.donorsTotal")} value={`${memberCount + sponsorCount} ${t("donationPage.personUnit")}`} growth="" note="" />
-        <MemberCard
+        <StatCard
+          icon={Users}
+          label={t("donationPage.donorsTotal")}
+          value={`${memberCount + sponsorCount} ${t("donationPage.personUnit")}`}
+          iconColor="text-primary"
+          iconBg="bg-secondary-light"
+        />
+        <StatCard
+          icon={Users}
           label={t("donationPage.member")}
           value={`${memberCount} ${t("donationPage.personUnit")}`}
-          growth=""
-          note=""
+          iconColor="text-secondary"
+          iconBg="bg-secondary-light"
         />
-        <NumberSponsorCard
+        <StatCard
+          icon={Gift}
           label={t("memberPage.tabSponsor")}
           value={`${sponsorCount} ${t("donationPage.personUnit")}`}
-          growth=""
-          note=""
+          iconColor="text-error"
+          iconBg="bg-error-bg"
         />
       </div>
+      {error ? <div className="rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
       <EventDonationPanel
         selectedBranch={selectedBranch}
         onBranchChange={handleBranchChange}
