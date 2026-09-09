@@ -74,7 +74,7 @@ const STATUS_BADGE_STYLES = {
 };
 
 const MAX_PROFILE_IMAGE_SIZE =
-  5 * 1024 * 1024;
+  10 * 1024 * 1024;
 
 /*
  * =========================================
@@ -781,7 +781,7 @@ export default function MemberInfoCard({
         MAX_PROFILE_IMAGE_SIZE
       ) {
         setImageError(
-          t("memberPage.imageTooLarge", "ទំហំរូបភាពមិនត្រូវលើស 5MB។"),
+          t("memberPage.imageTooLarge", "ទំហំរូបភាពមិនត្រូវលើស 10MB។"),
         );
 
         event.target.value = "";

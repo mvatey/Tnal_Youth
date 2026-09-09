@@ -507,7 +507,7 @@ const km = {
     ethnicity: "ជនជាតិ",
     changeProfilePhoto: "ប្ដូររូបភាពប្រវត្តិរូប",
     imageOnly: "សូមជ្រើសរើសឯកសាររូបភាពប៉ុណ្ណោះ។",
-    imageTooLarge: "ទំហំរូបភាពមិនត្រូវលើស 5MB។",
+    imageTooLarge: "ទំហំរូបភាពមិនត្រូវលើស 10MB។",
     missingMemberId: "រកមិនឃើញលេខសម្គាល់សមាជិក។",
     uploadProfileFailed: "មិនអាចបញ្ចូលរូបភាពប្រវត្តិរូបបានទេ។",
     personalLoadFailed: "មិនអាចទាញយកព័ត៌មានផ្ទាល់ខ្លួនបានទេ។",

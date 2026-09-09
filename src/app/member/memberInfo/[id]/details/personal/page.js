@@ -693,6 +693,16 @@ export default function PersonalPage() {
             account_status:
               previous.account_status ||
               normalized.account_status,
+
+            // Member status is loaded by its own request too (see LOAD
+            // MEMBER STATUS below) -- normalizePersonalInfo never sets this
+            // field, so without this fallback, this setForm call blanks
+            // out a status that request already filled in whenever it
+            // resolves first (a real race: it's a smaller/faster request
+            // than this one, so in practice it usually does).
+            member_status_id:
+              previous.member_status_id ||
+              normalized.member_status_id,
           }),
         );
 
