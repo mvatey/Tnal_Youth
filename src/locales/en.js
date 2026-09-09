@@ -507,7 +507,7 @@ const en = {
     ethnicity: "Ethnicity",
     changeProfilePhoto: "Change profile photo",
     imageOnly: "Please choose an image file only.",
-    imageTooLarge: "Image size must not exceed 10MB.",
+    imageTooLarge: "Image size must not exceed 4MB.",
     missingMemberId: "Member ID was not found.",
     uploadProfileFailed: "Could not upload profile photo.",
     personalLoadFailed: "Could not load personal information.",

@@ -74,7 +74,7 @@ const STATUS_BADGE_STYLES = {
 };
 
 const MAX_PROFILE_IMAGE_SIZE =
-  10 * 1024 * 1024;
+  4 * 1024 * 1024;
 
 /*
  * =========================================
@@ -781,7 +781,7 @@ export default function MemberInfoCard({
         MAX_PROFILE_IMAGE_SIZE
       ) {
         setImageError(
-          t("memberPage.imageTooLarge", "ទំហំរូបភាពមិនត្រូវលើស 10MB។"),
+          t("memberPage.imageTooLarge", "ទំហំរូបភាពមិនត្រូវលើស 4MB។"),
         );
 
         event.target.value = "";
@@ -825,6 +825,17 @@ export default function MemberInfoCard({
             .catch(() => null);
 
         if (!response.ok) {
+          // A 413 can arrive as a bare, non-JSON error page from the proxy
+          // in front of the backend rather than the app's own JSON error
+          // (responseBody would be null then) -- either way it always
+          // means the same thing to the user, so show the specific "too
+          // large" message instead of the generic upload-failed fallback.
+          if (response.status === 413) {
+            throw new Error(
+              t("memberPage.imageTooLarge", "ទំហំរូបភាពមិនត្រូវលើស 4MB។"),
+            );
+          }
+
           throw new Error(
               responseBody?.message ||
               responseBody?.error ||
