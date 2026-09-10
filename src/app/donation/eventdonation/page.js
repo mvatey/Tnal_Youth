@@ -9,6 +9,7 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { formatDateDMY } from "@/lib/formatDate";
 
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
@@ -18,7 +19,7 @@ function mapMyEventRow(row) {
     activityId: row.activity?.id ?? null,
     eventName: row.activity?.titleKm || row.activity?.titleEn || "-",
     branch: row.branch?.nameKm || row.branch?.nameEn || "-",
-    date: row.paidAt ? new Date(row.paidAt).toLocaleDateString("en-GB") : "-",
+    date: formatDateDMY(row.paidAt),
     rielAmount: Number(row.amountKhr || 0).toLocaleString(),
     dollarAmount: Number(row.amountUsd || row.totalAmountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
   };

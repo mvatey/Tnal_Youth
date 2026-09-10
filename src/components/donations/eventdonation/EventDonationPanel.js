@@ -6,6 +6,7 @@ import EventDonationTable from "./EventDonationTable";
 import AddAlert from "@/components/forms/addalert";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import { useLanguage } from "@/context/LanguageContext";
+import { formatDateDMY } from "@/lib/formatDate";
 
 const rowsPerPage = 12;
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
@@ -344,8 +345,8 @@ function buildActivityDonationRows(activities, branchTotalsByActivityId, branchI
           ? activity.titleEn || activity.titleKm
           : activity.titleKm || activity.titleEn) || "-",
       branch: organizerBranchLabel,
-      startDate: startDateValue || "-",
-      endDate: endDateValue || "-",
+      startDate: formatDateDMY(startDateValue),
+      endDate: formatDateDMY(endDateValue),
       startDateValue,
       endDateValue,
       days,

@@ -6,6 +6,7 @@ import DataTable from "@/components/table/DataTable";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 import { useLanguage } from "@/context/LanguageContext";
+import { formatDateDMY } from "@/lib/formatDate";
 
 // Same shape/endpoint donation/eventdonation/page.js already uses for a
 // member-role viewer (GET /api/my-account/donations/events) -- this just
@@ -27,7 +28,7 @@ function mapMyEventRow(row, locale) {
     activityId: row.activity?.id ?? null,
     eventName: activityTitle || "-",
     branch: branchName || "-",
-    date: row.paidAt ? new Date(row.paidAt).toLocaleDateString("en-GB") : "-",
+    date: formatDateDMY(row.paidAt),
     dateValue: row.paidAt ? row.paidAt.slice(0, 10) : "",
     rielAmount: Number(row.amountKhr || 0).toLocaleString(),
     dollarAmount: Number(row.amountUsd || row.totalAmountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),

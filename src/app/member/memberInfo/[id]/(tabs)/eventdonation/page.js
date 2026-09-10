@@ -10,6 +10,7 @@ import {
   filterOwnDonationType,
 } from "@/lib/memberDonationRecords";
 import { useLanguage } from "@/context/LanguageContext";
+import { formatDateDMY } from "@/lib/formatDate";
 
 function mapEventDonationRow(row, locale) {
   const activityTitle =
@@ -26,7 +27,7 @@ function mapEventDonationRow(row, locale) {
     id: row.id,
     eventName: activityTitle || "-",
     branch: branchName || "-",
-    date: row.paidAt ? new Date(row.paidAt).toLocaleDateString("en-GB") : "-",
+    date: formatDateDMY(row.paidAt),
     rielAmount: Number(row.amountKhr || 0).toLocaleString(),
     dollarAmount: Number(row.amountUsd || row.totalAmountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
     paymentMethod:
