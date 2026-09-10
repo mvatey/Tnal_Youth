@@ -100,14 +100,14 @@ function SummaryCard({
     normalizedChange >= 0;
 
   return (
-    <div className="app-card relative min-w-0 overflow-hidden rounded-xl border border-border bg-bg-page-white">
+    <div className="app-card group relative min-w-0 overflow-hidden rounded-xl border border-border bg-bg-page-white transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md">
       <div
         className={`h-[3px] w-full ${accent}`}
       />
 
       <div className="flex min-w-0 items-center gap-3 p-4">
         <div
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBg}`}
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105 ${iconBg}`}
         >
           <Icon
             className={`h-5 w-5 ${iconColor}`}

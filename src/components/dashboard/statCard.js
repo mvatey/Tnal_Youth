@@ -49,13 +49,13 @@ export default function StatCard({
 
   return (
     <div
-      className="app-card relative w-full min-w-0 overflow-hidden rounded-xl border border-border bg-bg-page-white"
+      className="app-card group relative w-full min-w-0 overflow-hidden rounded-xl border border-border bg-bg-page-white transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md"
     >
       <div className={`h-[3px] w-full ${accentClass}`} />
 
       <div className="flex items-center gap-3 p-4">
         <div
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBg}`}
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105 ${iconBg}`}
         >
           <Icon className={`h-5 w-5 ${iconColor}`} />
         </div>
