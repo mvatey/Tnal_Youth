@@ -838,13 +838,42 @@ export default function CreateActivityPage() {
     ),
   );
 
+  const editingActivityStatusCode = String(
+    getOptionCode(editingActivity?.status) || "",
+  ).toUpperCase();
+
   const canInviteMoreMembers =
     isEditMode &&
     editingActivity != null &&
     (canManage || canManageAsInvitedBranch) &&
-    !["COMPLETED", "CANCELLED"].includes(
-      String(getOptionCode(editingActivity?.status) || "").toUpperCase(),
-    );
+    !["COMPLETED", "CANCELLED"].includes(editingActivityStatusCode);
+
+  // Income/expense management moves to the activity's own detail page
+  // once it's been saved -- but only while the activity isn't cancelled
+  // (a cancelled activity's finances are frozen) and the viewer actually
+  // has rights to it. Expense recording is host-only, same restriction
+  // as on the detail page itself; income is open to a co-hosting branch
+  // too, since they record their own members' donations.
+  const incomeExpenseBranchId = canManageAsInvitedBranch
+    ? invitedBranchId
+    : editingActivity?.branchId;
+  const activityIncomeHref =
+    editId &&
+    (incomeExpenseBranchId != null
+      ? `/donation/eventdonation/detail?event=${encodeURIComponent(editId)}&branch=${encodeURIComponent(incomeExpenseBranchId)}`
+      : `/donation/eventdonation/detail?event=${encodeURIComponent(editId)}`);
+  const activityExpenseHref =
+    editId && `/activity/create/expense?activityId=${encodeURIComponent(editId)}`;
+  const canManageIncome =
+    isEditMode &&
+    editingActivity != null &&
+    (canManage || canManageAsInvitedBranch) &&
+    editingActivityStatusCode !== "CANCELLED";
+  const canManageExpense =
+    isEditMode &&
+    editingActivity != null &&
+    canManage &&
+    editingActivityStatusCode !== "CANCELLED";
 
   // Same single-branch scoping used across the rest of the app (sidebar,
   // activity list, donations, dashboard, members) -- a secretary/
@@ -1868,7 +1897,7 @@ export default function CreateActivityPage() {
         </section>
         </fieldset>
 
-        <section className="rounded-xl border border-border bg-bg-page-white p-5">
+        <section className="mt-6 rounded-xl border border-border bg-bg-page-white p-5">
           <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-secondary">
             <PencilLine size={18} />
             {t("memberPage.detail")}
@@ -1945,36 +1974,58 @@ export default function CreateActivityPage() {
               </button>
             )}
 
-            {/* Income/expense are only ever clickable from the activity's
-                own detail page (/activity/[id]) — managing money for an
-                activity that's still being created, or that you're
-                mid-edit on (dates/status could still change), belongs to
-                a stable, already-saved view, not this form. */}
-            <button
-              type="button"
-              disabled
-              title={
-                isEditMode
-                  ? t("activityPage.manageIncomeExpenseFromDetail")
-                  : t("activityPage.saveActivityFirst")
-              }
-              className="flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white opacity-60"
-            >
-              {t("activityPage.income")}
-            </button>
+            {/* Income/expense route to the same pages the activity's own
+                detail page (/activity/[id]) links to. Only reachable once
+                the activity is saved (edit mode) and not cancelled --
+                a brand-new, still-unsaved activity has nowhere to record
+                money against yet. */}
+            {canManageIncome ? (
+              <Link
+                href={activityIncomeHref}
+                className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90"
+              >
+                {t("activityPage.income")}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                title={
+                  !isEditMode
+                    ? t("activityPage.saveActivityFirst")
+                    : editingActivityStatusCode === "CANCELLED"
+                      ? t("activityPage.incomeExpenseUnavailableCancelled")
+                      : t("activityPage.manageIncomeExpenseFromDetail")
+                }
+                className="flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white opacity-60"
+              >
+                {t("activityPage.income")}
+              </button>
+            )}
 
-            <button
-              type="button"
-              disabled
-              title={
-                isEditMode
-                  ? t("activityPage.manageIncomeExpenseFromDetail")
-                  : t("activityPage.saveActivityFirst")
-              }
-              className="flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white opacity-60"
-            >
-              {t("activityPage.expense")}
-            </button>
+            {canManageExpense ? (
+              <Link
+                href={activityExpenseHref}
+                className="flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white transition hover:opacity-90"
+              >
+                {t("activityPage.expense")}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                title={
+                  !isEditMode
+                    ? t("activityPage.saveActivityFirst")
+                    : editingActivityStatusCode === "CANCELLED"
+                      ? t("activityPage.incomeExpenseUnavailableCancelled")
+                      : t("activityPage.manageIncomeExpenseFromDetail")
+                }
+                className="flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-primary text-sm font-semibold text-white opacity-60"
+              >
+                {t("activityPage.expense")}
+              </button>
+            )}
           </div>
 
           {canInviteMoreMembers && (
