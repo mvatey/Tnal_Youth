@@ -33,6 +33,8 @@ import useMemberPermissions from "@/hooks/useMemberPermissions";
 import { useLanguage } from "@/context/LanguageContext";
 import { translate } from "@/lib/i18n";
 import { activityStatusLabel } from "@/lib/activityStatusLabels";
+import { describeUploadError } from "@/lib/uploadErrors";
+import { uploadFileDirect } from "@/lib/directUpload";
 
 const BRANCH_OPTIONS = [
   "ភ្នំពេញ",
@@ -65,13 +67,14 @@ const STATUS_OPTIONS = [
   "បានបញ្ចប់",
 ];
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-// The backend's own hard ceiling for activity attachments (see
-// FileServiceImpl.MAX_ATTACHMENT_SIZE) is 20MB -- this used to cap at 5MB
-// client-side, well below what the backend actually allows, so a
-// perfectly valid 6-19MB document was rejected here before it ever got a
-// chance to upload. Matched to the backend's real limit instead of an
-// arbitrary stricter one.
+// Gallery images still go through the Vercel proxy (/api/backend/...),
+// which caps every request body at ~4.5MB no matter what -- so this stays
+// at the verified-safe practical limit.
+const MAX_IMAGE_SIZE = 4 * 1024 * 1024;
+// Document attachments upload straight to the backend's own HTTPS origin
+// instead (see src/lib/directUpload.js), bypassing that ceiling -- the
+// backend's own real ceiling (FileServiceImpl.MAX_ATTACHMENT_SIZE) is 50MB,
+// this is a stricter, more reasonable limit for what's actually uploaded here.
 const MAX_DOCUMENT_SIZE = 20 * 1024 * 1024;
 
 function convertToDate(dateValue) {
@@ -314,7 +317,9 @@ async function fetchJson(path, options = {}) {
   const response = await fetch(path, { cache: "no-store", ...options });
   const body = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(body?.message || `Request failed (${response.status})`);
+    const error = new Error(body?.message || `Request failed (${response.status})`);
+    error.status = response.status;
+    throw error;
   }
   return body;
 }
@@ -1545,15 +1550,29 @@ export default function CreateActivityPage() {
       }
 
       await Promise.all(
-        activityDocuments.map((file, index) => {
+        activityDocuments.map(async (file, index) => {
           const documentData = new FormData();
           documentData.append("file", file);
           documentData.append("title", file.name);
           documentData.append("sortOrder", String(index));
-          return fetchJson(`/api/backend/activities/${savedId}/attachments`, {
-            method: "POST",
-            body: documentData,
-          });
+
+          const uploadResponse = await uploadFileDirect(
+            `/api/activities/${savedId}/attachments`,
+            documentData,
+          );
+          const body = await uploadResponse.json().catch(() => null);
+
+          if (!uploadResponse.ok) {
+            throw new Error(
+              describeUploadError(
+                uploadResponse,
+                t,
+                body?.message || t("activityPage.saveFailed"),
+              ),
+            );
+          }
+
+          return body;
         }),
       );
 
@@ -1568,8 +1587,9 @@ export default function CreateActivityPage() {
     } catch (error) {
       console.error("Save activity error:", error);
       alert(
-        error?.message ||
-          t("activityPage.saveFailed"),
+        error?.status === 413
+          ? t("common.fileTooLarge")
+          : error?.message || t("activityPage.saveFailed"),
       );
     } finally {
       setIsSaving(false);
