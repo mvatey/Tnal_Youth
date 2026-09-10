@@ -143,6 +143,7 @@ export default function Table({
       name: file.name,
       type: file.type,
       previewUrl,
+      file,
     };
 
     setRows((current) =>

@@ -130,7 +130,7 @@ export default function UploadReceiptModal({
               </p>
 
               <p className="text-center text-[10px] font-normal text-text-mute">
-                គាំទ្រ: PDF, Excel, JPG, Docx, PNG ... (អតិបរមា 5MB), ទំហំគឺ: 16:9
+                គាំទ្រ: PDF, Excel, JPG, Docx, PNG ... (អតិបរមា 4MB), ទំហំគឺ: 16:9
               </p>
             </>
           )}

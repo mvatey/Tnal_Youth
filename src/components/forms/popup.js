@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { FileText, X, UploadCloud } from "lucide-react";
 import { HiSaveAs } from "react-icons/hi";
 
+const MAX_FILE_SIZE = 4 * 1024 * 1024;
+
 export default function UploadPopup({
   onClose,
   onSave,
@@ -131,7 +133,7 @@ export default function UploadPopup({
               </p>
 
               <p className="text-center text-[10px] font-normal text-text-mute">
-                គាំទ្រ: PDF, Excel, JPG, Docx, PNG ... (អតិបរមា 5MB), ទំហំគឺ: 16:9
+                គាំទ្រ: PDF, Excel, JPG, Docx, PNG ... (អតិបរមា 4MB), ទំហំគឺ: 16:9
               </p>
             </>
           )}
@@ -141,7 +143,17 @@ export default function UploadPopup({
             type="file"
             className="hidden"
             accept="image/*,.pdf,.xls,.xlsx,.doc,.docx"
-            onChange={(event) => setReceiptFile(event.target.files?.[0] ?? null)}
+            onChange={(event) => {
+              const file = event.target.files?.[0] ?? null;
+
+              if (file && file.size > MAX_FILE_SIZE) {
+                window.alert("ឯកសារធំពេក។ សូមជ្រើសរើសឯកសារតូចជាង 4MB។");
+                event.target.value = "";
+                return;
+              }
+
+              setReceiptFile(file);
+            }}
           />
         </label>
 

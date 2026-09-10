@@ -33,6 +33,7 @@ function mapSponsor(record) {
     equipmentCount: record.materialQuantity,
     equipmentUnit: record.materialQuantityType,
     note: record.note,
+    receiptFileId: record.receiptFileId,
   };
 }
 

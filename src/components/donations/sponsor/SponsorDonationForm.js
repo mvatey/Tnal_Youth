@@ -10,6 +10,7 @@ import sponsorOptions from "@/data/donation/sponsorOptions.json";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch, useBranchChangeGuard } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { describeUploadError } from "@/lib/uploadErrors";
 
 const {
   equipmentTypes,
@@ -381,6 +382,7 @@ function ReceiptUpload({ value, onChange }) {
         name: file.name,
         type: file.type,
         dataUrl: reader.result,
+        file,
       });
     };
 
@@ -461,6 +463,7 @@ function buildInitialForm(initialData = {}, prefill = {}) {
     branch: String(data.branchId ?? data.branch ?? prefill.branch ?? ""),
     status: String(data.activityId ?? data.status ?? prefill.event ?? ""),
     receipt: data.receipt || null,
+    receiptFileId: data.receiptFileId ?? null,
   };
 }
 
@@ -624,6 +627,19 @@ export default function SponsorDonationForm({ initialData = null }) {
     }));
   };
 
+  // Clearing the receipt (the picker's X button) must also drop any
+  // already-uploaded receiptFileId -- otherwise removing the preview in the
+  // UI would still resave the old receipt because receiptFileId was left
+  // untouched.
+  const handleReceiptChange = (value) => {
+    setHasUnsavedEdits(true);
+    setForm((currentForm) => ({
+      ...currentForm,
+      receipt: value,
+      receiptFileId: value ? currentForm.receiptFileId : null,
+    }));
+  };
+
   const handleSponsorTypeChange = (event) => {
     setHasUnsavedEdits(true);
     setForm((currentForm) => ({
@@ -747,11 +763,16 @@ export default function SponsorDonationForm({ initialData = null }) {
       address: form.address.trim() || null,
       branchId: Number(form.branch),
       activityId: form.status ? Number(form.status) : null,
-      amountKhr: Number(form.amountRiel || 0),
-      amountUsd: Number(form.amountDollar || 0),
+      // These fields accept whatever the user types, including a
+      // thousands-separator comma ("100,000") -- Number() can't parse
+      // that (Number("100,000") is NaN, which JSON.stringify silently
+      // turns into null), so a perfectly valid amount was going out as
+      // no amount at all and getting rejected as "must be greater than
+      // zero" with no indication a comma was the actual problem.
+      amountKhr: Number(String(form.amountRiel || 0).replace(/,/g, "")) || 0,
+      amountUsd: Number(String(form.amountDollar || 0).replace(/,/g, "")) || 0,
       paymentMethodId: Number(method.value),
       paidAt: new Date(`${form.date}T12:00:00`).toISOString(),
-      receiptFileId: null,
       materialCategory: form.equipment ? form.equipmentType || null : null,
       materialQuantity: form.equipment ? Number(form.equipmentCount || 0) || null : null,
       materialQuantityType: form.equipment ? form.equipmentUnit || null : null,
@@ -762,6 +783,33 @@ export default function SponsorDonationForm({ initialData = null }) {
     setSaving(true);
     setError("");
     try {
+      let receiptFileId = form.receiptFileId || null;
+
+      if (form.receipt?.file) {
+        const upload = new FormData();
+        upload.append("file", form.receipt.file);
+
+        const uploadResponse = await fetch("/api/backend/files/attachments", {
+          method: "POST",
+          body: upload,
+        });
+        const uploadedFile = await uploadResponse.json().catch(() => null);
+
+        if (!uploadResponse.ok || !uploadedFile?.id) {
+          throw new Error(
+            describeUploadError(
+              uploadResponse,
+              t,
+              uploadedFile?.message || t("donationPage.receiptUploadFailed"),
+            ),
+          );
+        }
+
+        receiptFileId = uploadedFile.id;
+      }
+
+      payload.receiptFileId = receiptFileId;
+
       await fetchJson(
         form.id
           ? `/api/backend/donations/sponsor/${encodeURIComponent(form.id)}`
@@ -898,7 +946,7 @@ export default function SponsorDonationForm({ initialData = null }) {
               />
             <ReceiptUpload
               value={form.receipt}
-              onChange={updateField("receipt")}
+              onChange={handleReceiptChange}
             />
           </div>
 

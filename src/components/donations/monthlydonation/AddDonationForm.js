@@ -11,6 +11,7 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch, useBranchChangeGuard } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
 import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
+import { describeUploadError } from "@/lib/uploadErrors";
 
 const BANK_PAYMENT_METHODS = new Set([
   "Bank Transfer",
@@ -445,13 +446,46 @@ const paymentSummary = useMemo(() => {
       );
     };
 
-    const newRows = completed.filter((row) => !row.donationId);
-    const existingRows = completed.filter((row) => row.donationId);
-
     setSaving(true);
     setError("");
 
     try {
+      // Rows with a freshly-picked receipt (row.receipt.file) haven't been
+      // uploaded yet -- the popup only stages the raw File locally. Upload
+      // each here and resolve it to the id the backend actually stores.
+      // Rows with no new file keep whatever receiptFileId they already had.
+      const resolvedCompleted = await Promise.all(
+        completed.map(async (row) => {
+          if (!row.receipt?.file) {
+            return row;
+          }
+
+          const upload = new FormData();
+          upload.append("file", row.receipt.file);
+
+          const uploadResponse = await fetch("/api/backend/files/attachments", {
+            method: "POST",
+            body: upload,
+          });
+          const uploadedFile = await uploadResponse.json().catch(() => null);
+
+          if (!uploadResponse.ok || !uploadedFile?.id) {
+            throw new Error(
+              describeUploadError(
+                uploadResponse,
+                t,
+                uploadedFile?.message || t("donationPage.receiptUploadFailed"),
+              ),
+            );
+          }
+
+          return { ...row, receiptFileId: uploadedFile.id };
+        }),
+      );
+
+      const newRows = resolvedCompleted.filter((row) => !row.donationId);
+      const existingRows = resolvedCompleted.filter((row) => row.donationId);
+
       await Promise.all(
         removedRows.map((row) =>
           fetchJson(
@@ -560,7 +594,12 @@ const paymentSummary = useMemo(() => {
 
   const handleReceiptSave = (id, receipt) => {
     setEditableRows((currentRows) => currentRows.map((row) =>
-      row.id === id ? { ...row, receipt } : row,
+      row.id === id
+        // Clearing the receipt must also drop any already-uploaded
+        // receiptFileId, otherwise removing it here would still resave the
+        // old receipt at batch-save time since receiptFileId was untouched.
+        ? { ...row, receipt, receiptFileId: receipt ? row.receiptFileId : null }
+        : row,
     ));
 
     setSavedMessage(t("donationPage.receiptSaved"));
