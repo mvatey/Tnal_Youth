@@ -10,6 +10,8 @@ import {
 import {
   Check,
   ChevronDown,
+  Search,
+  X,
 } from "lucide-react";
 
 import { useLanguage } from "@/context/LanguageContext";
@@ -82,11 +84,18 @@ export default function MultiSelect({
 
   const wrapperRef =
     useRef(null);
+  const searchInputRef =
+    useRef(null);
 
   const [
     open,
     setOpen,
   ] = useState(false);
+
+  const [
+    query,
+    setQuery,
+  ] = useState("");
 
   const normalizedOptions =
     useMemo(() => {
@@ -96,6 +105,25 @@ export default function MultiSelect({
           )
         : [];
     }, [options]);
+
+  const visibleOptions =
+    useMemo(() => {
+      const normalizedQuery =
+        query.trim().toLowerCase();
+
+      if (!normalizedQuery) {
+        return normalizedOptions;
+      }
+
+      return normalizedOptions.filter(
+        (option) =>
+          option.label
+            .toLowerCase()
+            .includes(
+              normalizedQuery,
+            ),
+      );
+    }, [normalizedOptions, query]);
 
   const selectedValues =
     useMemo(() => {
@@ -157,6 +185,7 @@ export default function MultiSelect({
         )
       ) {
         setOpen(false);
+        setQuery("");
       }
     }
 
@@ -167,6 +196,7 @@ export default function MultiSelect({
         event.key === "Escape"
       ) {
         setOpen(false);
+        setQuery("");
       }
     }
 
@@ -192,6 +222,14 @@ export default function MultiSelect({
       );
     };
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    window.setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 0);
+  }, [open]);
 
   const toggleOption = (
     optionValue,
@@ -398,28 +436,55 @@ export default function MultiSelect({
 
       {open && !disabled && (
         <div
-          role="listbox"
-          aria-multiselectable="true"
           className="
             absolute
             left-0
             right-0
             z-[100]
             mt-1
-            max-h-72
-            overflow-y-auto
+            overflow-hidden
             rounded-lg
             border
             border-border
             bg-bg-page-white
-            py-1
             shadow-xl
           "
         >
+          <div className="border-b border-border p-2">
+            <div className="flex h-9 items-center gap-2 rounded-md border border-border px-3 focus-within:border-primary">
+              <Search size={15} className="shrink-0 text-text-secondary" />
+
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t("common.search")}
+                className="min-w-0 flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-secondary"
+              />
+
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  className="rounded p-0.5 text-text-secondary transition hover:bg-bg-page-gray hover:text-text-primary"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div
+            role="listbox"
+            aria-multiselectable="true"
+            className="max-h-60 overflow-y-auto py-1"
+          >
           {selectableOptions.length >
           0 ? (
             <>
-              {/* Select all */}
+              {/* Select all -- always targets the full option list, not
+                  just what the search currently filters to. */}
 
               <button
                 type="button"
@@ -461,7 +526,11 @@ export default function MultiSelect({
 
               {/* Options */}
 
-              {normalizedOptions.map(
+              {visibleOptions.length === 0 ? (
+                <p className="px-3 py-4 text-center text-sm text-text-mute">
+                  {t("common.noOptionsAvailable")}
+                </p>
+              ) : visibleOptions.map(
                 (option) => {
                   const checked =
                     selectedValues.includes(
@@ -524,6 +593,7 @@ export default function MultiSelect({
               {resolvedEmptyLabel}
             </p>
           )}
+          </div>
         </div>
       )}
 

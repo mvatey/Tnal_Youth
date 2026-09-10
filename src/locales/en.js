@@ -24,6 +24,7 @@ const en = {
     branchSwitchCancel: "Keep editing this branch",
     select: "Select",
     selectAll: "Select all",
+    search: "Search...",
     noOptionsAvailable: "No data available",
     fileTooLarge: "This file is too large. Please choose a smaller file.",
   },

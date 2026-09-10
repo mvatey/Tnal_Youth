@@ -15,6 +15,7 @@ import {
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
+import SearchableSelect from "@/components/forms/SearchableSelect";
 import MultiSelect from "@/components/forms/multiselect";
 import CertificateCard from "@/components/card/certificate";
 import DocumentActionButton from "@/components/forms/documentActionbutton";
@@ -549,6 +550,11 @@ export default function CertificateForm({
     );
 
   const activityOptions = activities
+    // A cancelled activity has nothing to certify -- excluded here so it
+    // can't be picked as the source of a certificate at all.
+    .filter((activity) =>
+      String(activity.status?.code || activity.status_code || "").toUpperCase() !== "CANCELLED",
+    )
     .map((activity) => ({
       label: label(activity, activity.titleKm || activity.title_km || activity.titleEn || activity.title_en),
       labelKm: activity.titleKm || activity.title_km,
@@ -1384,7 +1390,7 @@ export default function CertificateForm({
             />
           ) : (
             <div className="space-y-5">
-              <FormSelect
+              <SearchableSelect
                 label={t("documentPage.activity")}
                 name="activityId"
                 value={

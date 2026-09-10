@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { UploadCloud, X } from "lucide-react";
 
 import IdCard from "@/components/card/idCard";
-import FormSelect from "@/components/forms/FormSelect";
+import SearchableSelect from "@/components/forms/SearchableSelect";
 import BoxFill from "@/components/forms/boxFill";
 import DocumentActionButton from "@/components/forms/documentActionbutton";
 import FileTooLargeModal from "@/components/popup/FileTooLargeModal";
@@ -372,7 +372,7 @@ export default function IdCardForm({
         {/* Left form */}
 
         <div className="space-y-4">
-          <FormSelect
+          <SearchableSelect
             label={t("documentPage.memberName")}
             name="userId"
             value={form.userId || ""}
