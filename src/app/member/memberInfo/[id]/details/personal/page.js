@@ -190,10 +190,12 @@ async function requestJson(
           ? body
           : null;
 
-    throw new Error(
+    const requestError = new Error(
       message ||
         `Request failed with status ${response.status}`,
     );
+    requestError.status = response.status;
+    throw requestError;
   }
 
   return body;
@@ -1354,7 +1356,7 @@ export default function PersonalPage() {
 
       if (
         file.size >
-        5 *
+        4 *
           1024 *
           1024
       ) {
@@ -1944,8 +1946,10 @@ export default function PersonalPage() {
         );
 
         setError(
-          saveError.message ||
-            t("memberPage.saveFailed"),
+          saveError.status === 413
+            ? t("common.fileTooLarge")
+            : saveError.message ||
+                t("memberPage.saveFailed"),
         );
 
         return false;

@@ -80,7 +80,7 @@ function FilterInput({
 
       <select value={value} onChange={(e) => onChange?.(e.target.value)} className={`h-[34px] w-full min-w-0 appearance-none rounded-lg border border-border bg-bg-page-white px-3 pr-9 text-[12px] font-medium text-text-primary outline-none sm:w-auto ${width || "sm:min-w-[130px]"}`}>
 
-        <option value="all" hidden={value !== "all"}>
+        <option value="all">
           {placeholder}
         </option>
 

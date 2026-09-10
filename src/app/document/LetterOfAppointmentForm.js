@@ -8,7 +8,7 @@ import DocumentActionButton from "@/components/forms/documentActionbutton";
 import FileTooLargeModal from "@/components/popup/FileTooLargeModal";
 import { useLanguage } from "@/context/LanguageContext";
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
+const MAX_FILE_SIZE = 4 * 1024 * 1024;
 
 const ALLOWED_FILE_EXTENSIONS = ["jpg", "jpeg", "png", "pdf", "doc", "docx"];
 

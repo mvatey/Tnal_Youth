@@ -24,7 +24,7 @@ import { useLanguage } from "@/context/LanguageContext";
 
 
 const MAX_TEMPLATE_SIZE =
-  5 * 1024 * 1024;
+  4 * 1024 * 1024;
 
 const ALLOWED_TEMPLATE_TYPES = [
   "image/jpeg",

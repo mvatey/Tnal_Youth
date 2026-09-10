@@ -15,6 +15,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
+import { describeUploadError } from "@/lib/uploadErrors";
+import { uploadFileDirect } from "@/lib/directUpload";
 
 const EMPTY_FORM = {
   title: "",
@@ -355,9 +357,13 @@ export default function CompanyDocumentPage() {
       for (const item of newDocumentFromForm.files) {
         const upload = new FormData();
         upload.append("file", item.file);
-        const uploadResponse = await fetch("/api/backend/files/attachments", { method: "POST", body: upload });
+        const uploadResponse = await uploadFileDirect("/api/files/attachments", upload);
         const uploadedFile = await uploadResponse.json().catch(() => null);
-        if (!uploadResponse.ok) throw new Error(uploadedFile?.message || t("documentPage.uploadFailed"));
+        if (!uploadResponse.ok) {
+          throw new Error(
+            describeUploadError(uploadResponse, t, uploadedFile?.message || t("documentPage.uploadFailed")),
+          );
+        }
         const createResponse = await fetch("/api/backend/documents", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -388,10 +394,12 @@ export default function CompanyDocumentPage() {
     if (updatedDocument.replacementFile) {
       const upload = new FormData();
       upload.append("file", updatedDocument.replacementFile);
-      const uploadResponse = await fetch("/api/backend/files/attachments", { method: "POST", body: upload });
+      const uploadResponse = await uploadFileDirect("/api/files/attachments", upload);
       const uploadedFile = await uploadResponse.json().catch(() => null);
       if (!uploadResponse.ok || !uploadedFile?.id) {
-        throw new Error(uploadedFile?.message || t("documentPage.uploadFailed"));
+        throw new Error(
+          describeUploadError(uploadResponse, t, uploadedFile?.message || t("documentPage.uploadFailed")),
+        );
       }
       fileId = uploadedFile.id;
     }

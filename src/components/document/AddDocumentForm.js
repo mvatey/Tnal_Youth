@@ -48,8 +48,12 @@ const FALLBACK_DOCUMENT_TYPE_OPTIONS = [
   },
 ];
 
+// Document uploads go straight to the backend's own HTTPS origin (see
+// src/lib/directUpload.js), bypassing the Vercel proxy's ~4.5MB ceiling --
+// so this can be set to the backend's real limit instead of being capped
+// by the platform.
 const MAX_FILE_SIZE =
-  50 * 1024 * 1024;
+  20 * 1024 * 1024;
 
 export default function AddDocumentForm({
   form,

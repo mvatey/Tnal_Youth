@@ -151,7 +151,9 @@ async function requestJson(path, options = {}) {
           ? body
           : null;
 
-    throw new Error(message || `Request failed with status ${response.status}`);
+    const requestError = new Error(message || `Request failed with status ${response.status}`);
+    requestError.status = response.status;
+    throw requestError;
   }
 
   return body;
@@ -420,7 +422,7 @@ export default function MyAccountPersonalPage() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 4 * 1024 * 1024) {
       setError(t("memberPage.fileTooLarge"));
       event.target.value = "";
       return;
@@ -520,7 +522,11 @@ export default function MyAccountPersonalPage() {
       return true;
     } catch (saveError) {
       console.error("Cannot save my-account personal info:", saveError);
-      setError(saveError.message || t("memberPage.saveFailed"));
+      setError(
+        saveError.status === 413
+          ? t("common.fileTooLarge")
+          : saveError.message || t("memberPage.saveFailed"),
+      );
 
       return false;
     } finally {

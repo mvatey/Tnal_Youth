@@ -9,9 +9,10 @@ import SaveButton from "@/components/forms/SaveButton";
 import OrganizationProfileCard from "@/components/account/OrganizationProfileCard";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { describeUploadError } from "@/lib/uploadErrors";
 
 const DEFAULT_PROFILE_IMAGE = "/profiles/default-avatar.jpg";
-const MAX_PROFILE_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_PROFILE_IMAGE_SIZE = 4 * 1024 * 1024;
 
 const ROLE_LABELS = {
   ADMIN: "អ្នកគ្រប់គ្រង",
@@ -170,7 +171,13 @@ function ProfileCard({
       const body = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(body?.message || body?.error || t("memberPage.uploadProfileFailed"));
+        throw new Error(
+          describeUploadError(
+            response,
+            t,
+            body?.message || body?.error || t("memberPage.uploadProfileFailed"),
+          ),
+        );
       }
 
       setPreview(body?.profileImage || body?.profile_image || DEFAULT_PROFILE_IMAGE);

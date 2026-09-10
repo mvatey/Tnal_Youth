@@ -9,6 +9,7 @@ import LetterOfAppointmentForm from "@/app/document/LetterOfAppointmentForm";
 import Link from "next/link";
 import useMemberPermissions from "@/hooks/useMemberPermissions";
 import { useLanguage } from "@/context/LanguageContext";
+import { describeUploadError } from "@/lib/uploadErrors";
 
 const ID_CARD_DOCUMENT_MARKER = "[TNAL:ID_CARD]";
 
@@ -180,9 +181,13 @@ export default function CreateDocumentPage() {
 
     if (!uploadResponse.ok || !uploadedFile?.id) {
       throw new Error(
+        describeUploadError(
+          uploadResponse,
+          t,
           uploadedFile?.message ||
-          uploadedFile?.detail ||
-          t("documentPage.idCardTemplateUploadFailed"),
+            uploadedFile?.detail ||
+            t("documentPage.idCardTemplateUploadFailed"),
+        ),
       );
     }
 
@@ -341,7 +346,13 @@ export default function CreateDocumentPage() {
       const uploadedFile = await uploadResponse.json().catch(() => null);
 
       if (!uploadResponse.ok || !uploadedFile?.id) {
-        throw new Error(uploadedFile?.message || t("documentPage.certificateUploadFailed"));
+        throw new Error(
+          describeUploadError(
+            uploadResponse,
+            t,
+            uploadedFile?.message || t("documentPage.certificateUploadFailed"),
+          ),
+        );
       }
 
       const createResponse = await fetch("/api/backend/documents", {
@@ -464,10 +475,14 @@ export default function CreateDocumentPage() {
     const uploadedFile = await uploadResponse.json().catch(() => null);
     if (!uploadResponse.ok || !uploadedFile?.id) {
       throw new Error(
+        describeUploadError(
+          uploadResponse,
+          t,
           uploadedFile?.message ||
-          uploadedFile?.detail ||
-          uploadedFile?.error ||
-          t("documentPage.appointmentUploadFailed"),
+            uploadedFile?.detail ||
+            uploadedFile?.error ||
+            t("documentPage.appointmentUploadFailed"),
+        ),
       );
     }
 

@@ -21,7 +21,9 @@ const BRANCH_OPTIONS = [
   },
 ];
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
+// Document uploads go straight to the backend's own HTTPS origin (see
+// src/lib/directUpload.js), bypassing the Vercel proxy's ~4.5MB ceiling.
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
 export default function EditDocumentForm({
   form,
@@ -137,37 +139,45 @@ export default function EditDocumentForm({
     <PopupCard
       size="md"
       onClose={onClose}
-      className="scale-[0.85]"
     >
       <button
-  type="button"
-  onClick={onClose}
-  aria-label={t("documentPage.close")}
-  className="
-    absolute
-    right-4
-    top-4
-    z-20
-    flex
-    h-8
-    w-8
-    items-center
-    justify-center
-    rounded-full
-    text-text-secondary
-    transition
-    hover:bg-bg-page-gray
-    hover:text-text-primary
-  "
->
-  <X size={18} />
-</button>
+        type="button"
+        onClick={onClose}
+        aria-label={t("documentPage.close")}
+        className="
+          absolute
+          right-4
+          top-4
+          flex
+          h-8
+          w-8
+          items-center
+          justify-center
+          rounded-full
+          bg-transparent
+          transition-colors
+          hover:bg-bg-page-gray
+        "
+      >
+        <X
+          size={18}
+          className="text-text-secondary"
+        />
+      </button>
+
+      <h2
+        className="
+          mb-6
+          text-lg
+          font-bold
+          text-primary
+        "
+      >
+        {t("documentPage.editDocument")}
+      </h2>
+
       <form onSubmit={handleSubmit}>
         <div className="space-y-4">
-          <h2 className="mb-4 text-lg font-bold text-primary">
-            {t("documentPage.editDocument")}
-          </h2>
-
           {/* Title + Branch */}
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -376,7 +386,7 @@ export default function EditDocumentForm({
           <label
             className="
               flex
-              h-[110px]
+              h-[120px]
               cursor-pointer
               flex-col
               items-center
