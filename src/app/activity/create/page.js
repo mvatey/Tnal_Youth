@@ -619,7 +619,15 @@ function SearchableBranchMultiSelect({
                   >
                     <span>{option}</span>
 
-                    <span className={`flex h-5 w-5 items-center justify-center rounded border ${selected ? "border-secondary bg-secondary text-white" : "border-border bg-bg-page-white"}`}>
+                    <span
+                      className={`flex h-5 w-5 items-center justify-center rounded border ${
+                        locked
+                          ? "border-gray-400 bg-gray-400 text-white"
+                          : selected
+                            ? "border-secondary bg-secondary text-white"
+                            : "border-border bg-bg-page-white"
+                      }`}
+                    >
                       {selected && <Check size={13} />}
                     </span>
                   </button>
