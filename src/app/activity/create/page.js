@@ -535,7 +535,7 @@ function SearchableBranchMultiSelect({
         onClick={() => !disabled && setOpen((current) => !current)}
         className={`flex h-[34px] w-full items-center justify-between rounded-lg border bg-bg-page-white px-3 py-2 text-left text-sm outline-none transition ${
           disabled
-            ? "cursor-not-allowed bg-bg-page-gray opacity-70"
+            ? "cursor-not-allowed bg-bg-page-gray"
             : open
               ? "border-secondary ring-1 ring-secondary/20"
               : "border-border hover:border-secondary"
@@ -553,7 +553,7 @@ function SearchableBranchMultiSelect({
                   key={value}
                   title={locked ? "សាខានេះត្រូវបានអញ្ជើញរួចហើយ មិនអាចដកបានទេ" : undefined}
                   className={`inline-flex max-w-full items-center gap-1 rounded-md px-2 py-1 text-xs ${
-                    locked ? "bg-bg-page-gray text-text-mute" : "bg-secondary-light text-secondary"
+                    locked ? "bg-bg-page-gray text-text-secondary" : "bg-secondary-light text-secondary"
                   }`}
                 >
                   <span className="truncate">{value}</span>
@@ -581,7 +581,7 @@ function SearchableBranchMultiSelect({
       </button>
 
       {open && !disabled && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[260px] overflow-hidden rounded-lg border border-border bg-bg-page-white shadow-xl">
+        <div className="absolute left-0 top-full z-50 mt-0 w-full min-w-[260px] overflow-hidden rounded-lg border border-border bg-bg-page-white shadow-xl">
           <div className="border-b border-border p-2">
             <div className="flex h-9 items-center gap-2 rounded-md border border-border px-3 focus-within:border-secondary">
               <Search size={15} className="shrink-0 text-text-secondary" />
@@ -611,7 +611,7 @@ function SearchableBranchMultiSelect({
                     title={locked ? "សាខានេះត្រូវបានអញ្ជើញរួចហើយ មិនអាចដកបានទេ" : undefined}
                     className={`flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm transition ${
                       locked
-                        ? "cursor-not-allowed text-text-mute opacity-60"
+                        ? "cursor-not-allowed bg-secondary-light/60 text-text-secondary"
                         : selected
                           ? "bg-secondary-light text-secondary"
                           : "text-text-primary hover:bg-bg-page-gray"
