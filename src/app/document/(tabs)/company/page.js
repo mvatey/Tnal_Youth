@@ -17,6 +17,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
 import { describeUploadError } from "@/lib/uploadErrors";
 import { uploadFileDirect } from "@/lib/directUpload";
+import { formatDateWithMonth } from "@/lib/formatDate";
 
 const EMPTY_FORM = {
   title: "",
@@ -117,7 +118,7 @@ export default function CompanyDocumentPage() {
       setDocuments(
         documentRows
           .filter((row) => row.branch && !row.member)
-          .map(mapDocument),
+          .map((row) => mapDocument(row, locale)),
       );
       setBranches(Array.isArray(branchBody) ? branchBody : (branchBody?.data ?? []));
       setDocumentTypes(Array.isArray(typeBody) ? typeBody : (typeBody?.data ?? []));
@@ -126,7 +127,7 @@ export default function CompanyDocumentPage() {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [t, locale]);
 
   useEffect(() => { loadPage(); }, [loadPage]);
 
@@ -154,7 +155,7 @@ export default function CompanyDocumentPage() {
 
     const matchSearch = item.title?.toLowerCase().includes(searchValue);
     const matchType = !typeFilter || item.type === typeFilter;
-    const matchDate = !dateFilter || item.date === dateFilter;
+    const matchDate = !dateFilter || item.dateValue === dateFilter;
     // A document with no branch (an org-wide document, not tied to any one
     // branch) stays visible no matter which branch is selected, rather than
     // disappearing under every branch filter.
@@ -498,7 +499,7 @@ export default function CompanyDocumentPage() {
   );
 }
 
-function mapDocument(row) {
+function mapDocument(row, locale) {
   const extension = row.file?.originalName?.split(".").pop()?.toUpperCase();
   return {
     id: row.id,
@@ -508,7 +509,8 @@ function mapDocument(row) {
     branchNameKm: row.branch?.nameKm || row.branch?.name_km || "",
     branchNameEn: row.branch?.nameEn || row.branch?.name_en || "",
     branchId: row.branch?.id,
-    date: row.created_at ? row.created_at.slice(0, 10) : "-",
+    date: formatDateWithMonth(row.created_at, locale),
+    dateValue: row.created_at ? row.created_at.slice(0, 10) : "",
     size: formatSize(row.file?.sizeBytes),
     type: extension || row.type?.code || "FILE",
     typeId: row.type?.id,

@@ -1164,6 +1164,7 @@ const km = {
     expense: "ចំណាយ",
     manageIncomeExpenseFromDetail: "គ្រប់គ្រងចំណូល/ចំណាយពីទំព័រព័ត៌មានលម្អិតកម្មវិធី",
     saveActivityFirst: "សូមរក្សាទុកសកម្មភាពជាមុនសិន",
+    incomeExpenseUnavailableCancelled: "កម្មវិធីនេះបានលុបចោល មិនអាចកត់ត្រាចំណូល/ចំណាយបានទេ",
     imagesAndDocuments: "រូបភាព និងឯកសារ",
     activityImages: "រូបភាពកម្មវិធី",
     uploadImage: "បញ្ចូលរូបភាព",

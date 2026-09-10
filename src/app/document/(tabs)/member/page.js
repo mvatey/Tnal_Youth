@@ -12,6 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
+import { formatDateWithMonth } from "@/lib/formatDate";
 
 const DOCUMENT_TYPE_BADGE_STYLES = {
   PDF: "bg-error-bg text-error",
@@ -134,7 +135,7 @@ export default function MemberDocumentPage() {
 
     const matchType = !typeFilter || item.type === typeFilter;
 
-    const matchDate = !dateFilter || item.date === dateFilter;
+    const matchDate = !dateFilter || item.dateValue === dateFilter;
 
     // A document with no branch on record stays visible no matter which
     // branch is selected, rather than disappearing under every branch
@@ -412,7 +413,8 @@ function mapMemberDocument(row, t, isEnglish) {
       ? row.branch?.nameEn || row.branch?.name_en || row.branch?.nameKm || row.branch?.name_km || "-"
       : row.branch?.nameKm || row.branch?.name_km || row.branch?.nameEn || row.branch?.name_en || "-",
     branchId: row.branch?.id ?? row.branch?.branchId ?? row.branch?.branch_id ?? null,
-    date: row.created_at ? row.created_at.slice(0, 10) : "-",
+    date: formatDateWithMonth(row.created_at, isEnglish ? "en" : "km"),
+    dateValue: row.created_at ? row.created_at.slice(0, 10) : "",
     size: formatSize(row.file?.sizeBytes),
     type: normalizedType,
     isImage: ["PNG", "JPG", "JPEG", "WEBP", "GIF"].includes(normalizedType),

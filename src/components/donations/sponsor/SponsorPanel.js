@@ -22,7 +22,7 @@ import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 import { useLanguage } from "@/context/LanguageContext";
 import { localizedValue } from "@/lib/i18n";
-import { formatDateDMY } from "@/lib/formatDate";
+import { formatDateWithMonth } from "@/lib/formatDate";
 
 const { sponsorHeaders: fallbackHeaders } = tableHeaders;
 const rowsPerPage = 12;
@@ -570,7 +570,7 @@ function mapSponsorRow(row, locale = "km") {
     }, locale, "-"),
     branchId: row.branchId,
     activityId: row.activityId,
-    date: formatDateDMY(row.paidAt),
+    date: formatDateWithMonth(row.paidAt, locale),
     dateValue: row.paidAt ? row.paidAt.slice(0, 10) : "",
     rielAmount: Number(row.amountKhr || 0).toLocaleString(),
     dollarAmount: Number(row.amountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
@@ -613,7 +613,7 @@ function mapMySponsorRow(row, currentMember, locale = "km") {
     branch: localizedValue(row.branch, locale, "-"),
     branchId: row.branch?.id,
     activityId: row.activity?.id ?? row.activityId,
-    date: formatDateDMY(row.paidAt),
+    date: formatDateWithMonth(row.paidAt, locale),
     dateValue: row.paidAt ? row.paidAt.slice(0, 10) : "",
     rielAmount: Number(row.amountKhr || 0).toLocaleString(),
     dollarAmount: Number(row.amountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),

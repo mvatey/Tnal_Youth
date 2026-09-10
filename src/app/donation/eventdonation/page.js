@@ -9,17 +9,17 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
-import { formatDateDMY } from "@/lib/formatDate";
+import { formatDateWithMonth } from "@/lib/formatDate";
 
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
-function mapMyEventRow(row) {
+function mapMyEventRow(row, locale) {
   return {
     id: row.id,
     activityId: row.activity?.id ?? null,
     eventName: row.activity?.titleKm || row.activity?.titleEn || "-",
     branch: row.branch?.nameKm || row.branch?.nameEn || "-",
-    date: formatDateDMY(row.paidAt),
+    date: formatDateWithMonth(row.paidAt, locale),
     rielAmount: Number(row.amountKhr || 0).toLocaleString(),
     dollarAmount: Number(row.amountUsd || row.totalAmountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
   };
@@ -137,7 +137,7 @@ function MyEventDonationsTable({ rows }) {
 }
 
 export default function EventDonationPage() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
   const viewRole = currentMember?.effectiveRole || currentMember?.role;
   const isMemberScoped = viewRole === "member";
@@ -201,7 +201,7 @@ export default function EventDonationPage() {
           // ordered newest-first, therefore the first row wins.
           const oneRowPerActivity = new Map();
           for (const item of items) {
-            const mapped = mapMyEventRow(item);
+            const mapped = mapMyEventRow(item, locale);
             const key = mapped.activityId != null
               ? `activity:${mapped.activityId}`
               : `fallback:${mapped.eventName}|${mapped.branch}`;
@@ -240,6 +240,7 @@ export default function EventDonationPage() {
     isBranchScoped,
     effectiveBranchId,
     refreshKey,
+    locale,
   ]);
 
   const branchRows = useMemo(() => rows.filter((row) =>

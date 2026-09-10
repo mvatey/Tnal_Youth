@@ -1164,6 +1164,7 @@ const en = {
     expense: "Expense",
     manageIncomeExpenseFromDetail: "Manage income/expense from the activity's detail page",
     saveActivityFirst: "Please save the activity first",
+    incomeExpenseUnavailableCancelled: "This activity is cancelled and its income/expense can no longer be recorded",
     imagesAndDocuments: "Images and documents",
     activityImages: "Activity images",
     uploadImage: "Upload image",

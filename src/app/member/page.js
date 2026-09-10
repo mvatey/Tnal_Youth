@@ -27,6 +27,7 @@ import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { formatDateWithMonth } from "@/lib/formatDate";
 
 const EMPTY_SUMMARY = {
   total_members: 0,
@@ -68,36 +69,6 @@ const STATUS_BADGE_STYLES = {
   RESIGNED:
     "bg-bg-page-gray text-text-secondary",
 };
-
-const MONTHS_KM = [
-  "មករា",
-  "កុម្ភៈ",
-  "មីនា",
-  "មេសា",
-  "ឧសភា",
-  "មិថុនា",
-  "កក្កដា",
-  "សីហា",
-  "កញ្ញា",
-  "តុលា",
-  "វិច្ឆិកា",
-  "ធ្នូ",
-];
-
-const MONTHS_EN = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
 
 async function fetchJson(
   path,
@@ -174,45 +145,7 @@ function normalizeArray(data) {
   return [];
 }
 
-function formatJoinedDate(
-  value,
-  locale = "km",
-) {
-  if (!value) {
-    return "-";
-  }
-
-  const match =
-    String(value).match(
-      /^(\d{4})-(\d{2})-(\d{2})$/,
-    );
-
-  if (!match) {
-    return String(value);
-  }
-
-  const [
-    ,
-    year,
-    month,
-    day,
-  ] = match;
-
-  const monthName =
-    (locale === "en"
-      ? MONTHS_EN
-      : MONTHS_KM)[
-      Number(month) - 1
-    ];
-
-  if (!monthName) {
-    return String(value);
-  }
-
-  return `${Number(
-    day,
-  )} ${monthName}, ${year}`;
-}
+const formatJoinedDate = formatDateWithMonth;
 
 function getGenderLabel(
   gender,
