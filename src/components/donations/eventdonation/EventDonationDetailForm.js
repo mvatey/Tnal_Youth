@@ -451,13 +451,21 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
                 `#${member.id}`,
           avatar: (() => {
             const profilePhoto = member.profile_photo || member.profilePhoto;
+            const profilePhotoId = profilePhoto?.id ?? member.profile_photo_id ?? member.profilePhotoId;
+
+            // profilePhoto.url (aliased from the backend's files.file_path
+            // column) is a raw storage path, not a browser-usable URL --
+            // the id-based content route is the one that actually serves
+            // the image, so it must be tried first, not as a fallback.
+            if (profilePhotoId) {
+              return `/api/files/${encodeURIComponent(profilePhotoId)}/content`;
+            }
+
             return (
               profilePhoto?.url ||
               member.profile_photo_url ||
               member.profilePhotoUrl ||
-              (profilePhoto?.id
-                ? `/api/backend/files/${profilePhoto.id}/content`
-                : "")
+              ""
             );
           })(),
           gender: resolveGenderLabel(member.gender, t),
