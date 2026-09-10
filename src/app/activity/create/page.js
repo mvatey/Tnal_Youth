@@ -446,6 +446,16 @@ function SearchableBranchMultiSelect({
   values,
   onChange,
   placeholder = "ស្វែងរក និងជ្រើសរើសសាខា",
+  // Branches already invited before this edit session started -- shown
+  // pale and can't be removed (from the chip or the dropdown), since an
+  // invitation may already have been responded to. Anything NOT in this
+  // list -- including a branch picked just now, before saving -- stays
+  // freely selectable/removable as usual.
+  lockedValues = [],
+  // A completed activity can't gain new co-hosting branches -- nothing
+  // left to invite anyone to. Already-invited branches still show (as
+  // read-only chips via lockedValues), just nothing can be added.
+  disabled = false,
 }) {
   const wrapperRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -488,6 +498,10 @@ function SearchableBranchMultiSelect({
   }, [options, query]);
 
   const toggleOption = (option) => {
+    if (lockedValues.includes(option)) {
+      return;
+    }
+
     if (values.includes(option)) {
       onChange(values.filter((value) => value !== option));
       return;
@@ -498,12 +512,15 @@ function SearchableBranchMultiSelect({
 
   const removeOption = (event, option) => {
     event.stopPropagation();
+    if (lockedValues.includes(option)) {
+      return;
+    }
     onChange(values.filter((value) => value !== option));
   };
 
   const clearAll = (event) => {
     event.stopPropagation();
-    onChange([]);
+    onChange(values.filter((value) => lockedValues.includes(value)));
   };
 
   return (
@@ -512,25 +529,48 @@ function SearchableBranchMultiSelect({
         {label}
       </label>
 
-      <button type="button" onClick={() => setOpen((current) => !current)} className={`flex h-[34px] w-full items-center justify-between rounded-lg border bg-bg-page-white px-3 py-2 text-left text-sm outline-none transition ${open ? "border-secondary ring-1 ring-secondary/20" : "border-border hover:border-secondary"}`}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => !disabled && setOpen((current) => !current)}
+        className={`flex h-[34px] w-full items-center justify-between rounded-lg border bg-bg-page-white px-3 py-2 text-left text-sm outline-none transition ${
+          disabled
+            ? "cursor-not-allowed bg-bg-page-gray opacity-70"
+            : open
+              ? "border-secondary ring-1 ring-secondary/20"
+              : "border-border hover:border-secondary"
+        }`}
+      >
         <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
           {values.length === 0 ? (
             <span className="text-text-secondary">{placeholder}</span>
           ) : (
-            values.map((value) => (
-              <span key={value} className="inline-flex max-w-full items-center gap-1 rounded-md bg-secondary-light px-2 py-1 text-xs text-secondary">
-                <span className="truncate">{value}</span>
+            values.map((value) => {
+              const locked = disabled || lockedValues.includes(value);
 
-                <span role="button" tabIndex={0} onClick={(event) => removeOption(event, value)} onKeyDown={(event) => event.key === "Enter" && removeOption(event, value)} className="rounded-sm p-0.5 transition hover:bg-secondary/10">
-                  <X size={12} />
+              return (
+                <span
+                  key={value}
+                  title={locked ? "សាខានេះត្រូវបានអញ្ជើញរួចហើយ មិនអាចដកបានទេ" : undefined}
+                  className={`inline-flex max-w-full items-center gap-1 rounded-md px-2 py-1 text-xs ${
+                    locked ? "bg-bg-page-gray text-text-mute" : "bg-secondary-light text-secondary"
+                  }`}
+                >
+                  <span className="truncate">{value}</span>
+
+                  {!locked && (
+                    <span role="button" tabIndex={0} onClick={(event) => removeOption(event, value)} onKeyDown={(event) => event.key === "Enter" && removeOption(event, value)} className="rounded-sm p-0.5 transition hover:bg-secondary/10">
+                      <X size={12} />
+                    </span>
+                  )}
                 </span>
-              </span>
-            ))
+              );
+            })
           )}
         </div>
 
         <div className="ml-2 flex shrink-0 items-center gap-1">
-          {values.length > 0 && (
+          {!disabled && values.length > 0 && (
             <span role="button" tabIndex={0} onClick={clearAll} onKeyDown={(event) => event.key === "Enter" && clearAll(event)} className="rounded-md p-1 text-text-secondary transition hover:bg-bg-page-gray hover:text-error">
               <X size={14} />
             </span>
@@ -540,8 +580,8 @@ function SearchableBranchMultiSelect({
         </div>
       </button>
 
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-full min-w-[260px] overflow-hidden rounded-lg border border-border bg-bg-page-white shadow-xl">
+      {open && !disabled && (
+        <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[260px] overflow-hidden rounded-lg border border-border bg-bg-page-white shadow-xl">
           <div className="border-b border-border p-2">
             <div className="flex h-9 items-center gap-2 rounded-md border border-border px-3 focus-within:border-secondary">
               <Search size={15} className="shrink-0 text-text-secondary" />
@@ -560,9 +600,23 @@ function SearchableBranchMultiSelect({
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => {
                 const selected = values.includes(option);
+                const locked = lockedValues.includes(option);
 
                 return (
-                  <button key={option} type="button" onClick={() => toggleOption(option)} className={`flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm transition ${selected ? "bg-secondary-light text-secondary" : "text-text-primary hover:bg-bg-page-gray"}`}>
+                  <button
+                    key={option}
+                    type="button"
+                    disabled={locked}
+                    onClick={() => toggleOption(option)}
+                    title={locked ? "សាខានេះត្រូវបានអញ្ជើញរួចហើយ មិនអាចដកបានទេ" : undefined}
+                    className={`flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm transition ${
+                      locked
+                        ? "cursor-not-allowed text-text-mute opacity-60"
+                        : selected
+                          ? "bg-secondary-light text-secondary"
+                          : "text-text-primary hover:bg-bg-page-gray"
+                    }`}
+                  >
                     <span>{option}</span>
 
                     <span className={`flex h-5 w-5 items-center justify-center rounded border ${selected ? "border-secondary bg-secondary text-white" : "border-border bg-bg-page-white"}`}>
@@ -779,6 +833,14 @@ export default function CreateActivityPage() {
   const isEditMode = Boolean(editId);
   const [editingActivity, setEditingActivity] = useState(null);
   const [form, setForm] = useState(() => createInitialForm(null, locale, t));
+  // Snapshot of the branches that were ALREADY invited when this edit
+  // session started (as opposed to form.invitedBranches, which also
+  // includes branches the user is picking right now, in this same
+  // session, before saving). An already-invited branch may have already
+  // responded to that invitation, so it can't be un-invited from this
+  // form -- only added to. Stays empty in create mode, where nothing is
+  // "already invited" yet.
+  const [originalInvitedBranches, setOriginalInvitedBranches] = useState([]);
   // The activity's status is otherwise entirely auto-derived from its
   // dates (see computeEffectiveStatusCode below) -- CANCELLED is the one
   // state that can never be derived from a date, so it's the only thing
@@ -1021,6 +1083,7 @@ export default function CreateActivityPage() {
           if (!cancelled) {
             setEditingActivity(normalized);
             setForm(createInitialForm(normalized, locale, t));
+            setOriginalInvitedBranches(invitedBranches);
             setIsCancelled(getOptionCode(normalized.status) === "CANCELLED");
             setCancellationReason(normalized.cancellationReason || "");
             scheduleChangedRef.current = {
@@ -1546,8 +1609,18 @@ export default function CreateActivityPage() {
       );
       const savedId = savedActivity.id;
 
-      if (!isEditMode) {
-        const invitedBranchIds = form.invitedBranches
+      {
+        // Create: every picked branch is new. Edit: only branches picked
+        // in THIS session are new -- ones already invited before this
+        // edit started (originalInvitedBranches) were already sent and
+        // must never be re-POSTed or (via the locked chips above) removed.
+        const newlyInvitedLabels = isEditMode
+          ? form.invitedBranches.filter(
+              (branchLabel) => !originalInvitedBranches.includes(branchLabel),
+            )
+          : form.invitedBranches;
+
+        const invitedBranchIds = newlyInvitedLabels
           .map((label) => findOptionId(lookupData.invitableBranches, label))
           .filter(Boolean);
         await Promise.all(
@@ -1914,6 +1987,8 @@ export default function CreateActivityPage() {
               values={form.invitedBranches}
               onChange={(values) => setValue("invitedBranches", values)}
               placeholder={t("activityPage.selectBranchFirst")}
+              lockedValues={originalInvitedBranches}
+              disabled={autoStatusCode === "COMPLETED"}
             />
 
             <div>
@@ -1933,7 +2008,10 @@ export default function CreateActivityPage() {
                 {t("activityPage.statusAutoNote")}
               </p>
 
-              {isEditMode && (
+              {/* A completed activity already happened -- there's nothing
+                  left to cancel. Still shown if it's already cancelled
+                  (dates in the past too), so that can still be undone. */}
+              {isEditMode && (isCancelled || autoStatusCode !== "COMPLETED") && (
                 <label className="mt-2 flex items-center gap-2 text-sm text-text-secondary">
                   <input
                     type="checkbox"
