@@ -340,11 +340,16 @@ export default function Sidebar() {
 
     await logout();
 
+    // router.refresh() here used to fire while the replace() below was
+    // still in flight -- it re-fetched the CURRENT (still-authenticated
+    // layout) page's server data at the exact moment logout() had just
+    // cleared the session cookie, so that page briefly re-rendered
+    // broken/unauthenticated before the replace actually landed on
+    // /auth/login. Navigating to a fresh route already re-renders it
+    // from scratch, so no separate refresh is needed here.
     router.replace(
       "/auth/login",
     );
-
-    router.refresh();
   }
 
   if (!mounted || authLoading) {
