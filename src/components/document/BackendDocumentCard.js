@@ -103,10 +103,15 @@ export default function BackendDocumentCard({ document, onView, onDelete }) {
             className="h-full w-full object-contain"
           />
         ) : isPdf ? (
+          // The browser's built-in PDF viewer draws its own scrollbar/page
+          // controls along the iframe's right edge -- toolbar=0/navpanes=0
+          // hide the toolbar but not that. Rendering the iframe wider than
+          // its (overflow-hidden) container and centering it pushes that
+          // strip outside the visible area instead.
           <iframe
             src={`${previewDocument.fileUrl}#page=1&view=FitH&toolbar=0&navpanes=0`}
             title={previewDocument.fileName}
-            className="pointer-events-none h-full w-full border-0 bg-bg-page-white"
+            className="pointer-events-none h-full w-[calc(100%+34px)] border-0 bg-bg-page-white"
           />
         ) : (
           <div className="flex flex-col items-center justify-center gap-3 text-text-mute">
