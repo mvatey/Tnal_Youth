@@ -92,6 +92,21 @@ export default function PasswordPage() {
   const [success, setSuccess] =
     useState("");
 
+  const [
+    resettingActivation,
+    setResettingActivation,
+  ] = useState(false);
+
+  const [
+    resetActivationError,
+    setResetActivationError,
+  ] = useState("");
+
+  const [
+    resetActivationSuccess,
+    setResetActivationSuccess,
+  ] = useState("");
+
   const minimumLength =
     newPassword.length >= 6;
 
@@ -174,6 +189,53 @@ export default function PasswordPage() {
       );
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleResetActivation() {
+    if (!memberId) {
+      setResetActivationError(
+        t("memberPage.missingMemberId"),
+      );
+      return;
+    }
+
+    const confirmed = window.confirm(
+      t("memberPage.resetActivationConfirm"),
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setResetActivationError("");
+    setResetActivationSuccess("");
+
+    try {
+      setResettingActivation(true);
+
+      await requestJson(
+        `/members/${memberId}/account/reset-activation`,
+        {
+          method: "PATCH",
+        },
+      );
+
+      setResetActivationSuccess(
+        t("memberPage.resetActivationSuccess"),
+      );
+    } catch (resetError) {
+      console.error(
+        "Reset to pending activation error:",
+        resetError,
+      );
+
+      setResetActivationError(
+        resetError?.message ||
+          t("memberPage.resetActivationFailed"),
+      );
+    } finally {
+      setResettingActivation(false);
     }
   }
 
@@ -349,6 +411,39 @@ export default function PasswordPage() {
           </div>
         </div>
       </form>
+
+      <div className="rounded-xl border border-red-300 bg-white p-5">
+        <h3 className="text-base font-semibold text-text-primary">
+          {t("memberPage.resetActivationTitle")}
+        </h3>
+
+        <p className="mt-2 text-sm text-text-secondary">
+          {t("memberPage.resetActivationDescription")}
+        </p>
+
+        {resetActivationError && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {resetActivationError}
+          </div>
+        )}
+
+        {resetActivationSuccess && (
+          <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-600">
+            {resetActivationSuccess}
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={handleResetActivation}
+          disabled={resettingActivation}
+          className="mt-4 rounded-lg border border-red-400 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {resettingActivation
+            ? t("common.loading")
+            : t("memberPage.resetActivationButton")}
+        </button>
+      </div>
     </div>
   );
 }
