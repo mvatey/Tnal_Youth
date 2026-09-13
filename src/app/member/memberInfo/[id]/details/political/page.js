@@ -56,6 +56,7 @@ export default function PoliticalPage() {
   const [politicals, setPoliticals] = useState([]);
   const [parties, setParties] = useState([]);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   /*
    * True from the moment the user edits a political-involvement row
@@ -66,6 +67,15 @@ export default function PoliticalPage() {
    * confirm before navigating away mid-edit.
    */
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  /*
+   * Guards the Save button (disabled while true) so a double-click or
+   * a stray Enter-key submit can't fire a second save before the
+   * first one's response comes back and turns each still-local row
+   * into a persisted one -- without this, a second save would POST
+   * the same unsaved row again as a brand new record.
+   */
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -126,6 +136,7 @@ export default function PoliticalPage() {
   }, [label]);
 
   function handlePoliticalChange(id, field, value) {
+    setSuccess("");
     setHasUnsavedChanges(true);
 
     setPoliticals((previous) =>
@@ -141,6 +152,7 @@ export default function PoliticalPage() {
   }
 
   function addPolitical() {
+    setSuccess("");
     setHasUnsavedChanges(true);
     setPoliticals((previous) => [...previous, createEmptyPolitical()]);
   }
@@ -159,8 +171,12 @@ export default function PoliticalPage() {
   const handleSave = async () => {
     if (!member) return false;
 
+    if (saving) return false;
+
     try {
+      setSaving(true);
       setError("");
+      setSuccess("");
 
       /*
        * `politicals` always carries at least one row by default (see
@@ -204,15 +220,16 @@ export default function PoliticalPage() {
           leftDate: row.endDate || row.end_date || "",
         })),
       );
-      alert(t("memberPage.saveSuccess"));
-
       setHasUnsavedChanges(false);
+      setSuccess(t("memberPage.saveSuccess"));
 
       return true;
     } catch (saveError) {
       setError(saveError.message || t("memberPage.politicalSaveFailed"));
 
       return false;
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -240,11 +257,6 @@ export default function PoliticalPage() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <fieldset disabled={isReadOnly} className={isReadOnly ? "member-readonly contents [&_button]:hidden" : "contents"}>
-      {error && (
-        <div className="rounded-lg border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
-          {error}
-        </div>
-      )}
       <div className="rounded-xl border border-border bg-bg-page-white p-5">
         <h2 className="text-lg font-bold text-primary">{t("memberPage.detailPolitical")}</h2>
 
@@ -276,11 +288,27 @@ export default function PoliticalPage() {
           </button>
         </div>
       </div>
-
-      <div className="flex justify-end">
-        <SaveButton type="submit" />
-      </div>
       </fieldset>
+
+      {error && (
+        <div className="rounded-lg border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="rounded-lg bg-success-bg px-4 py-3">
+          <p className="text-sm font-medium text-success">{success}</p>
+        </div>
+      )}
+
+      {!isReadOnly && (
+        <div className="flex justify-end">
+          <SaveButton type="submit" disabled={saving}>
+            {saving ? t("common.saving") : t("memberPage.save")}
+          </SaveButton>
+        </div>
+      )}
     </form>
   );
 }

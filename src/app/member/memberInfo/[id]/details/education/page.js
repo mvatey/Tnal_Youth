@@ -70,6 +70,18 @@ export default function EducationPage() {
    */
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  /*
+   * Guards the Save button (disabled while true) so a double-click or
+   * a stray Enter-key submit can't fire a second save before the
+   * first one's response comes back and turns each still-local row
+   * into a persisted one -- without this, a second save would POST
+   * the same unsaved row again as a brand new record.
+   */
+  const [saving, setSaving] = useState(false);
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
   useEffect(() => {
     const controller = new AbortController();
     loadMemberRecords(memberId, "education", controller.signal)
@@ -99,6 +111,7 @@ export default function EducationPage() {
   }, [label]);
 
   function handleEducationChange(id, field, value) {
+    setSuccess("");
     setHasUnsavedChanges(true);
 
     setEducations((previous) =>
@@ -114,6 +127,7 @@ export default function EducationPage() {
   }
 
   function addEducation() {
+    setSuccess("");
     setHasUnsavedChanges(true);
 
     setEducations((previous) => [
@@ -144,7 +158,13 @@ export default function EducationPage() {
 
     if (!member) return false;
 
+    if (saving) return false;
+
     try {
+      setSaving(true);
+      setError("");
+      setSuccess("");
+
       /*
        * `educations` always carries at least one row by default (see
        * the load effect above) even when the member has no education
@@ -179,14 +199,17 @@ export default function EducationPage() {
       );
 
       setHasUnsavedChanges(false);
+      setSuccess(t("memberPage.saveSuccess"));
 
       return true;
     } catch (saveError) {
       console.error("Cannot save education records:", saveError);
 
-      alert(saveError.message || t("memberPage.saveFailed"));
+      setError(saveError.message || t("memberPage.saveFailed"));
 
       return false;
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -253,11 +276,27 @@ export default function EducationPage() {
           </button>
         </div>
       </div>
-
-      <div className="flex justify-end">
-        <SaveButton type="submit" />
-      </div>
       </fieldset>
+
+      {error && (
+        <div className="rounded-lg bg-error-bg px-4 py-3">
+          <p className="text-sm font-medium text-error">{error}</p>
+        </div>
+      )}
+
+      {success && (
+        <div className="rounded-lg bg-success-bg px-4 py-3">
+          <p className="text-sm font-medium text-success">{success}</p>
+        </div>
+      )}
+
+      {!isReadOnly && (
+        <div className="flex justify-end">
+          <SaveButton type="submit" disabled={saving}>
+            {saving ? t("common.saving") : t("memberPage.save")}
+          </SaveButton>
+        </div>
+      )}
     </form>
   );
 }

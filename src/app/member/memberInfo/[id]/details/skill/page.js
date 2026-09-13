@@ -118,6 +118,18 @@ export default function SkillPage() {
    */
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  /*
+   * Guards the Save button (disabled while true) so a double-click or
+   * a stray Enter-key submit can't fire a second save before the
+   * first one's response comes back and turns each still-local row
+   * into a persisted one -- without this, a second save would POST
+   * the same unsaved row again as a brand new record.
+   */
+  const [saving, setSaving] = useState(false);
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
   useEffect(() => {
     const controller = new AbortController();
     Promise.all([
@@ -152,6 +164,7 @@ export default function SkillPage() {
     field,
     value,
   ) => {
+    setSuccess("");
     setHasUnsavedChanges(true);
 
     setLanguageSkills((previousSkills) =>
@@ -167,6 +180,7 @@ export default function SkillPage() {
   };
 
   const addLanguageSkill = () => {
+    setSuccess("");
     setHasUnsavedChanges(true);
 
     setLanguageSkills((previousSkills) => [
@@ -193,6 +207,7 @@ export default function SkillPage() {
     field,
     value,
   ) => {
+    setSuccess("");
     setHasUnsavedChanges(true);
 
     setComputerSkills((previousSkills) =>
@@ -208,6 +223,7 @@ export default function SkillPage() {
   };
 
   const addComputerSkill = () => {
+    setSuccess("");
     setHasUnsavedChanges(true);
 
     setComputerSkills((previousSkills) => [
@@ -230,7 +246,13 @@ export default function SkillPage() {
   };
 
   const handleSave = async () => {
+    if (saving) return false;
+
     try {
+      setSaving(true);
+      setError("");
+      setSuccess("");
+
       /*
        * Both lists always carry at least one row by default (see the
        * useState initializers / load effect above) even when the
@@ -280,17 +302,18 @@ export default function SkillPage() {
         mergeSavedRecords(previous, computerRowsToSave, completedSkills, (row) => ({ id: row.id, skill: row.skill_name || "", level: row.proficiency_level_id || "", attachment: row.certificate_file || null })),
       );
 
-      alert(t("memberPage.saveSuccess"));
-
       setHasUnsavedChanges(false);
+      setSuccess(t("memberPage.saveSuccess"));
 
       return true;
     } catch (saveError) {
       console.error("Cannot save language/computer skills:", saveError);
 
-      alert(saveError.message || t("memberPage.saveFailed"));
+      setError(saveError.message || t("memberPage.saveFailed"));
 
       return false;
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -394,11 +417,27 @@ export default function SkillPage() {
 
         <AddButton onClick={addComputerSkill} text={t("memberPage.add")} />
       </section>
-
-      <div className="flex justify-end">
-        <SaveButton onClick={handleSave} />
-      </div>
       </fieldset>
+
+      {error && (
+        <div className="rounded-lg bg-error-bg px-4 py-3">
+          <p className="text-sm font-medium text-error">{error}</p>
+        </div>
+      )}
+
+      {success && (
+        <div className="rounded-lg bg-success-bg px-4 py-3">
+          <p className="text-sm font-medium text-success">{success}</p>
+        </div>
+      )}
+
+      {!isReadOnly && (
+        <div className="flex justify-end">
+          <SaveButton onClick={handleSave} disabled={saving}>
+            {saving ? t("common.saving") : t("memberPage.save")}
+          </SaveButton>
+        </div>
+      )}
     </div>
   );
 }

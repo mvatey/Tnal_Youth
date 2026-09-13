@@ -66,6 +66,18 @@ export default function WorkPage() {
    */
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  /*
+   * Guards the Save button (disabled while true) so a double-click or
+   * a stray Enter-key submit can't fire a second save before the
+   * first one's response comes back and turns each still-local row
+   * into a persisted one -- without this, a second save would POST
+   * the same unsaved row again as a brand new record.
+   */
+  const [saving, setSaving] = useState(false);
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
   useEffect(() => {
     const controller = new AbortController();
     loadMemberRecords(memberId, "work-history", controller.signal)
@@ -88,11 +100,13 @@ export default function WorkPage() {
   }, [memberId]);
 
   function handleWorkChange(id, field, value) {
+    setSuccess("");
     setHasUnsavedChanges(true);
     setWorks((previousWorks) => previousWorks.map((work) => work.id === id ? { ...work, [field]: value } : work));
   }
 
   function addWork() {
+    setSuccess("");
     setHasUnsavedChanges(true);
     setWorks((previousWorks) => [...previousWorks, createEmptyWork()]);
   }
@@ -109,7 +123,13 @@ export default function WorkPage() {
   }
 
   async function handleSave() {
+    if (saving) return false;
+
     try {
+      setSaving(true);
+      setError("");
+      setSuccess("");
+
       /*
        * `works` always carries at least one row by default (see the
        * load effect above) even when the member has no work history
@@ -142,13 +162,15 @@ export default function WorkPage() {
         mergeSavedRecords(previous, rowsToSave, rows, (row) => ({ id: row.id, company: row.organization_name || "", address: row.address || "", position: row.position_title || "", appointment: row.role_title || "", startDate: row.start_date || "", endDate: row.end_date || "" })),
       );
 
-      alert(t("memberPage.saveSuccess"));
       setHasUnsavedChanges(false);
+      setSuccess(t("memberPage.saveSuccess"));
       return true;
-    } catch (error) {
-      console.error("Cannot save work history:", error);
-      alert(error.message || t("memberPage.saveFailed"));
+    } catch (saveError) {
+      console.error("Cannot save work history:", saveError);
+      setError(saveError.message || t("memberPage.saveFailed"));
       return false;
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -212,11 +234,27 @@ export default function WorkPage() {
           </div>
         </div>
       </div>
-
-      <div className="flex justify-end">
-        <SaveButton />
-      </div>
       </fieldset>
+
+      {error && (
+        <div className="rounded-lg bg-error-bg px-4 py-3">
+          <p className="text-sm font-medium text-error">{error}</p>
+        </div>
+      )}
+
+      {success && (
+        <div className="rounded-lg bg-success-bg px-4 py-3">
+          <p className="text-sm font-medium text-success">{success}</p>
+        </div>
+      )}
+
+      {!isReadOnly && (
+        <div className="flex justify-end">
+          <SaveButton disabled={saving}>
+            {saving ? t("common.saving") : t("memberPage.save")}
+          </SaveButton>
+        </div>
+      )}
     </form>
   );
 }
