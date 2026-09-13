@@ -30,7 +30,7 @@ function DetailHero({ activity }) {
       <div className="relative h-[360px] overflow-hidden">
         <Image
           key={activity.id}
-          src={activity.image}
+          src={activity.detailImage || activity.image}
           alt={activity.title}
           fill
           priority
@@ -50,7 +50,7 @@ function DetailHero({ activity }) {
       <div className="relative mx-auto -mt-[145px] max-w-5xl px-4 sm:px-10 md:px-20">
         <div className="relative min-h-[123px] overflow-hidden rounded-xl border border-white/70 bg-white/80 px-5 py-4 shadow-[0_14px_35px_rgba(23,25,77,0.18)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-[#4b3192]/25 hover:shadow-[0_20px_45px_rgba(75,49,146,0.22)]">
           <span className="inline-flex rounded-full bg-green-700 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-white">
-            Completed Workshop
+            {activity.category || "កម្មវិធីបានបញ្ចប់"}
           </span>
 
           <h1 className="mt-3 text-[22px] font-extrabold leading-tight text-[#17194d]">
@@ -116,6 +116,7 @@ function DetailContent({ activity }) {
 function DetailGallery({ activity }) {
   const images = [
     activity.image,
+    ...(activity.detailImage ? [activity.detailImage] : []),
     ...gallery.map((item) => item.image),
     ...activities
       .filter((item) => item.id !== activity.id)
