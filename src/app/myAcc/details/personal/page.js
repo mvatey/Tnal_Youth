@@ -15,6 +15,7 @@ import FormSelect from "@/components/forms/FormSelect";
 import FormDate from "@/components/forms/FormDate.js";
 import SaveButton from "@/components/forms/SaveButton";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
+import TelegramConnectionCard from "@/components/account/TelegramConnectionCard";
 import { useLanguage } from "@/context/LanguageContext";
 
 /* =========================================================
@@ -772,6 +773,8 @@ export default function MyAccountPersonalPage() {
           </div>
         </div>
       </div>
+
+      <TelegramConnectionCard />
 
       {error && (
         <div className="rounded-lg bg-error-bg px-4 py-3">
