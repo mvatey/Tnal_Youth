@@ -1645,8 +1645,25 @@ export default function PersonalPage() {
          * success, remove C -> failure. The backend validates every branch
          * against the current actor's scope and then synchronizes branch_staff
          * plus members.branch_id atomically.
+         *
+         * Only fires when the selection actually changed AND the current
+         * actor is allowed to manage this target's sensitive fields --
+         * PUT /personal-info/branches is ADMIN/BRANCH_LEADER-only on the
+         * backend, so a SECRETARY editing a fellow SECRETARY's other,
+         * unrelated fields (name, phone, religion, ...) used to always hit
+         * this call regardless, and always got a flat 403 from it even
+         * though the branch multiselect was never touched (it's disabled
+         * for that actor/target pair in the first place).
          */
-        if (updatedRole === "SECRETARY") {
+        const branchSelectionChanged =
+          JSON.stringify([...branchSelectionIds].map(String).sort()) !==
+          JSON.stringify([...originalBranchIds].map(String).sort());
+
+        if (
+          updatedRole === "SECRETARY" &&
+          canManageSensitiveFields &&
+          branchSelectionChanged
+        ) {
           const selectedBranchIds = branchSelectionIds.map((id) => Number(id));
 
           const branchData = await requestJson(
