@@ -57,8 +57,6 @@
  * so any component built from these semantic classes (bg-bg-page-white,
  * text-text-primary, border-border, bg-secondary-light, ...) already
  * flips correctly when <html> gets the "dark" class — see ThemeProvider.
- * The sidebar's own colors (bg-primary-sidebar) are intentionally left
- * unchanged: it's already dark in both themes.
  */
 .dark {
   /* Primary */
@@ -67,6 +65,11 @@
   --color-primary-pressed: #3A47A0;
   --color-primary-light: #262E52;
   --color-primary-lighter: #1A2036;
+  /* Sits between --color-bg-page-gray (#12162B) and --color-bg-page-white
+     (#1B2140) so the sidebar still reads as its own surface instead of
+     the light-mode indigo (#2A336B) sitting unchanged against a now-dark
+     page. */
+  --color-primary-sidebar: #141833;
 
   /* Secondary */
   --color-secondary: #8A56D6;
