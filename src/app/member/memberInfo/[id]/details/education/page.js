@@ -162,7 +162,7 @@ export default function EducationPage() {
 
       const rows = await saveMemberRecords(memberId, "education", rowsToSave, (item) => ({
         school_name: item.school,
-        education_level_id: Number(item.degree),
+        education_level_id: Number(item.degree) || null,
         field_of_study: item.fieldOfStudy || null,
         country_name: item.country || null,
         province_name: item.province || null,
