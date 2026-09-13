@@ -554,7 +554,7 @@ export default function CreateDocumentPage() {
       }
 
       if (type === "certificate" && data.recipientType === "member") {
-        const { memberId, skippedCount } = await saveMemberCertificatesToBackend(data);
+        const { skippedCount } = await saveMemberCertificatesToBackend(data);
 
         const skippedNote =
           skippedCount > 0
@@ -563,7 +563,7 @@ export default function CreateDocumentPage() {
 
         alert(`${t("documentPage.certificateCreated")}${skippedNote}`);
 
-        openMemberDocuments(memberId);
+        router.push("/document/member");
 
         return;
       }
@@ -573,7 +573,7 @@ export default function CreateDocumentPage() {
         const generatedDocuments = normalizeArray(data.generatedDocuments);
 
         if (generatedDocuments.length > 0) {
-          const { memberId: firstMemberId, skippedCount } = await saveMemberCertificatesToBackend(data);
+          const { skippedCount } = await saveMemberCertificatesToBackend(data);
 
           const notifiedNote =
             notifyResult.notifiedBranchIds.length > 0
@@ -587,23 +587,7 @@ export default function CreateDocumentPage() {
 
           alert(`${t("documentPage.certificateCreated")}${notifiedNote}${skippedNote}`);
 
-          /*
-           * firstMemberId can belong to a co-hosting branch, whose full
-           * profile this staff member has no access to (only the
-           * certificate-issuing exception, not general viewing rights) --
-           * navigating there would just hit an access-denied page right
-           * after a successful save. Prefer an own-branch recipient
-           * (always viewable) and otherwise land on the member-documents
-           * list, where the new "Certificates issued to other branches"
-           * tab can show what was just created.
-           */
-          const ownBranchMember = normalizeArray(data.selectedActivityMembers)[0];
-
-          if (ownBranchMember?.id) {
-            openMemberDocuments(String(ownBranchMember.id));
-          } else {
-            router.push("/document/member");
-          }
+          router.push("/document/member");
 
           return;
         }
