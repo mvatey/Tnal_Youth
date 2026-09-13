@@ -49,6 +49,7 @@ export default function PopupCard({
             max-h-[calc(100vh-1.5rem)]
             sm:max-h-[90vh]
             overflow-y-auto
+            hide-scrollbar
             rounded-2xl
             bg-bg-page-white
             p-4
