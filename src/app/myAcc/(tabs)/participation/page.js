@@ -582,7 +582,7 @@ export default function ParticipationPage() {
       header:
         t("memberPage.activityName"),
 
-      width: "w-[32%]",
+      width: "w-[24%]",
       align: "left",
 
       render: (item) => (
@@ -686,7 +686,7 @@ export default function ParticipationPage() {
 
     {
       header: t("memberPage.actions"),
-      width: "w-[8%]",
+      width: "w-[16%]",
       align: "center",
 
       render: (item) => (
