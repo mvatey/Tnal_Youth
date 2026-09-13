@@ -53,6 +53,28 @@ function createLanguageSkill() {
   };
 }
 
+function isPersistedRecordId(id) {
+  return Number.isInteger(Number(id)) && !String(id).includes("-");
+}
+
+/*
+ * Puts saved rows back at their original position in the full list --
+ * `savedSourceRows`/`completedRows` only cover the subset that was
+ * actually sent to the server (see handleSave's blank-row filter), so
+ * rows matched by id get the fresh server data and every other row
+ * (still-blank placeholders, mainly) is kept exactly as it was.
+ */
+function mergeSavedRecords(originalRows, savedSourceRows, completedRows, mapRow) {
+  const completedById = new Map(
+    savedSourceRows.map((row, index) => [row.id, completedRows[index]]),
+  );
+
+  return originalRows.map((row) => {
+    const completed = completedById.get(row.id);
+    return completed ? mapRow(completed) : row;
+  });
+}
+
 function createComputerSkill() {
   return {
     id: createId("computer"),
@@ -208,34 +230,68 @@ export default function SkillPage() {
   };
 
   const handleSave = async () => {
-    const [languages, skills] = await Promise.all([
-      saveMemberRecords(memberId, "languages", languageSkills, (item) => ({ language_name: item.language, listening_level_id: Number(item.listening) || null, speaking_level_id: Number(item.speaking) || null, reading_level_id: Number(item.reading) || null, writing_level_id: Number(item.writing) || null })),
-      saveMemberRecords(memberId, "skills", computerSkills, (item) => ({ skill_name: item.skill, proficiency_level_id: Number(item.level) })),
-    ]);
-    const syncAttachments = (savedRows, sourceRows, resource) => Promise.all(
-      savedRows.map(async (row, index) => {
-        const attachment = sourceRows[index]?.attachment;
-        if (attachment?.pendingFile) {
-          return uploadMemberRecordCertificate(memberId, resource, row.id, attachment.pendingFile);
-        }
-        if (attachment?.removeExisting && attachment?.removedFileId) {
-          return removeMemberRecordCertificate(memberId, resource, row.id);
-        }
-        return row;
-      }),
-    );
-    const [completedLanguages, completedSkills] = await Promise.all([
-      syncAttachments(languages, languageSkills, "languages"),
-      syncAttachments(skills, computerSkills, "skills"),
-    ]);
-    setLanguageSkills(completedLanguages.map((row) => ({ id: row.id, language: row.language_name || "", listening: row.listening_level_id || "", speaking: row.speaking_level_id || "", reading: row.reading_level_id || "", writing: row.writing_level_id || "", attachment: row.certificate_file || null })));
-    setComputerSkills(completedSkills.map((row) => ({ id: row.id, skill: row.skill_name || "", level: row.proficiency_level_id || "", attachment: row.certificate_file || null })));
+    try {
+      /*
+       * Both lists always carry at least one row by default (see the
+       * useState initializers / load effect above) even when the
+       * member has no language or computer skills recorded yet. The
+       * backend requires language_name / skill_name on every row it's
+       * sent, so unconditionally saving that still-untouched default
+       * row used to make EVERY save fail -- including edits to other,
+       * fully-filled rows -- since it's one Promise.all. Only skip a
+       * row when it's both unsaved (no real server id yet) AND still
+       * blank; an already-persisted row is always sent so a genuine
+       * edit still gets validated and surfaced normally.
+       */
+      const languageRowsToSave = languageSkills.filter(
+        (item) => isPersistedRecordId(item.id) || (item.language || "").trim(),
+      );
 
-    alert(t("memberPage.saveSuccess"));
+      const computerRowsToSave = computerSkills.filter(
+        (item) => isPersistedRecordId(item.id) || (item.skill || "").trim(),
+      );
 
-    setHasUnsavedChanges(false);
+      const [languages, skills] = await Promise.all([
+        saveMemberRecords(memberId, "languages", languageRowsToSave, (item) => ({ language_name: item.language, listening_level_id: Number(item.listening) || null, speaking_level_id: Number(item.speaking) || null, reading_level_id: Number(item.reading) || null, writing_level_id: Number(item.writing) || null })),
+        saveMemberRecords(memberId, "skills", computerRowsToSave, (item) => ({ skill_name: item.skill, proficiency_level_id: Number(item.level) || null })),
+      ]);
+      const syncAttachments = (savedRows, sourceRows, resource) => Promise.all(
+        savedRows.map(async (row, index) => {
+          const attachment = sourceRows[index]?.attachment;
+          if (attachment?.pendingFile) {
+            return uploadMemberRecordCertificate(memberId, resource, row.id, attachment.pendingFile);
+          }
+          if (attachment?.removeExisting && attachment?.removedFileId) {
+            return removeMemberRecordCertificate(memberId, resource, row.id);
+          }
+          return row;
+        }),
+      );
+      const [completedLanguages, completedSkills] = await Promise.all([
+        syncAttachments(languages, languageRowsToSave, "languages"),
+        syncAttachments(skills, computerRowsToSave, "skills"),
+      ]);
 
-    return true;
+      setLanguageSkills((previous) =>
+        mergeSavedRecords(previous, languageRowsToSave, completedLanguages, (row) => ({ id: row.id, language: row.language_name || "", listening: row.listening_level_id || "", speaking: row.speaking_level_id || "", reading: row.reading_level_id || "", writing: row.writing_level_id || "", attachment: row.certificate_file || null })),
+      );
+
+      setComputerSkills((previous) =>
+        mergeSavedRecords(previous, computerRowsToSave, completedSkills, (row) => ({ id: row.id, skill: row.skill_name || "", level: row.proficiency_level_id || "", attachment: row.certificate_file || null })),
+      );
+
+      alert(t("memberPage.saveSuccess"));
+
+      setHasUnsavedChanges(false);
+
+      return true;
+    } catch (saveError) {
+      console.error("Cannot save language/computer skills:", saveError);
+
+      alert(saveError.message || t("memberPage.saveFailed"));
+
+      return false;
+    }
   };
 
   /*

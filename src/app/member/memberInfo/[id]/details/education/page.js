@@ -27,6 +27,28 @@ function createEmptyEducation() {
   };
 }
 
+function isPersistedRecordId(id) {
+  return Number.isInteger(Number(id)) && !String(id).includes("-");
+}
+
+/*
+ * Puts saved rows back at their original position in the full list --
+ * `savedSourceRows`/`completedRows` only cover the subset that was
+ * actually sent to the server (see handleSubmit's blank-row filter),
+ * so rows matched by id get the fresh server data and every other row
+ * (still-blank placeholders, mainly) is kept exactly as it was.
+ */
+function mergeSavedRecords(originalRows, savedSourceRows, completedRows, mapRow) {
+  const completedById = new Map(
+    savedSourceRows.map((row, index) => [row.id, completedRows[index]]),
+  );
+
+  return originalRows.map((row) => {
+    const completed = completedById.get(row.id);
+    return completed ? mapRow(completed) : row;
+  });
+}
+
 export default function EducationPage() {
   const { t, label } = useLanguage();
   const { canEditMemberDetails } = useMemberPermissions();
@@ -123,7 +145,22 @@ export default function EducationPage() {
     if (!member) return false;
 
     try {
-      const rows = await saveMemberRecords(memberId, "education", educations, (item) => ({
+      /*
+       * `educations` always carries at least one row by default (see
+       * the load effect above) even when the member has no education
+       * recorded yet. The backend requires school_name on every row
+       * it's sent, so unconditionally saving that still-untouched
+       * default row used to make the WHOLE save fail -- including
+       * edits to other, fully-filled rows -- since it's a loop over
+       * all of them. Only skip a row when it's both unsaved (no real
+       * server id yet) AND still blank; an already-persisted row is
+       * always sent so a genuine edit still gets validated normally.
+       */
+      const rowsToSave = educations.filter(
+        (item) => isPersistedRecordId(item.id) || (item.school || "").trim(),
+      );
+
+      const rows = await saveMemberRecords(memberId, "education", rowsToSave, (item) => ({
         school_name: item.school,
         education_level_id: Number(item.degree),
         field_of_study: item.fieldOfStudy || null,
@@ -133,16 +170,21 @@ export default function EducationPage() {
         end_date: item.endDate || null,
       }));
       const completedRows = await Promise.all(rows.map(async (row, index) => {
-        const file = educations[index]?.attachment?.pendingFile;
+        const file = rowsToSave[index]?.attachment?.pendingFile;
         return file ? uploadMemberRecordCertificate(memberId, "education", row.id, file) : row;
       }));
-      setEducations(completedRows.map((row) => ({ id: row.id, school: row.school_name || "", province: row.province_name || "", country: row.country_name || "", degree: row.education_level_id || "", fieldOfStudy: row.field_of_study || "", startDate: row.start_date || "", endDate: row.end_date || "", attachment: row.certificate_file || null })));
+
+      setEducations((previous) =>
+        mergeSavedRecords(previous, rowsToSave, completedRows, (row) => ({ id: row.id, school: row.school_name || "", province: row.province_name || "", country: row.country_name || "", degree: row.education_level_id || "", fieldOfStudy: row.field_of_study || "", startDate: row.start_date || "", endDate: row.end_date || "", attachment: row.certificate_file || null })),
+      );
 
       setHasUnsavedChanges(false);
 
       return true;
     } catch (saveError) {
       console.error("Cannot save education records:", saveError);
+
+      alert(saveError.message || t("memberPage.saveFailed"));
 
       return false;
     }

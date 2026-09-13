@@ -25,6 +25,28 @@ function createEmptyWork() {
   };
 }
 
+function isPersistedRecordId(id) {
+  return Number.isInteger(Number(id)) && !String(id).includes("-");
+}
+
+/*
+ * Puts saved rows back at their original position in the full list --
+ * `savedSourceRows`/`completedRows` only cover the subset that was
+ * actually sent to the server (see handleSave's blank-row filter), so
+ * rows matched by id get the fresh server data and every other row
+ * (still-blank placeholders, mainly) is kept exactly as it was.
+ */
+function mergeSavedRecords(originalRows, savedSourceRows, completedRows, mapRow) {
+  const completedById = new Map(
+    savedSourceRows.map((row, index) => [row.id, completedRows[index]]),
+  );
+
+  return originalRows.map((row) => {
+    const completed = completedById.get(row.id);
+    return completed ? mapRow(completed) : row;
+  });
+}
+
 export default function WorkPage() {
   const { t } = useLanguage();
   const { canEditMemberDetails } = useMemberPermissions();
@@ -88,7 +110,26 @@ export default function WorkPage() {
 
   async function handleSave() {
     try {
-      const rows = await saveMemberRecords(memberId, "work-history", works, (item) => ({
+      /*
+       * `works` always carries at least one row by default (see the
+       * load effect above) even when the member has no work history
+       * recorded yet. The backend requires organization_name and
+       * position_title on every row it's sent, so unconditionally
+       * saving that still-untouched default row used to make the
+       * WHOLE save fail -- including edits to other, fully-filled
+       * rows -- since it's a loop over all of them. Only skip a row
+       * when it's both unsaved (no real server id yet) AND still
+       * blank; an already-persisted row is always sent so a genuine
+       * edit still gets validated normally.
+       */
+      const rowsToSave = works.filter(
+        (item) =>
+          isPersistedRecordId(item.id) ||
+          (item.company || "").trim() ||
+          (item.position || "").trim(),
+      );
+
+      const rows = await saveMemberRecords(memberId, "work-history", rowsToSave, (item) => ({
         organization_name: item.company,
         position_title: item.position,
         role_title: item.appointment || null,
@@ -96,7 +137,11 @@ export default function WorkPage() {
         start_date: item.startDate || null,
         end_date: item.endDate || null,
       }));
-      setWorks(rows.map((row) => ({ id: row.id, company: row.organization_name || "", address: row.address || "", position: row.position_title || "", appointment: row.role_title || "", startDate: row.start_date || "", endDate: row.end_date || "" })));
+
+      setWorks((previous) =>
+        mergeSavedRecords(previous, rowsToSave, rows, (row) => ({ id: row.id, company: row.organization_name || "", address: row.address || "", position: row.position_title || "", appointment: row.role_title || "", startDate: row.start_date || "", endDate: row.end_date || "" })),
+      );
+
       alert(t("memberPage.saveSuccess"));
       setHasUnsavedChanges(false);
       return true;
