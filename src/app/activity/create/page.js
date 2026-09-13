@@ -2186,7 +2186,6 @@ export default function CreateActivityPage() {
                 label={t("activityPage.otherDocuments")}
                 files={activityDocuments}
                 onChange={setActivityDocuments}
-                accept=".pdf,.doc,.docx,.xls,.xlsx"
                 uploadText={t("memberPage.uploadFile")}
                 helperText={t("activityPage.documentUploadHelp")}
                 maxSize={MAX_DOCUMENT_SIZE}

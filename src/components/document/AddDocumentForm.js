@@ -428,7 +428,6 @@ export default function AddDocumentForm({
               }
               type="file"
               multiple
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
               onChange={
                 handleFileChange
               }

@@ -417,7 +417,6 @@ export default function EditDocumentForm({
             <input
               type="file"
               hidden
-              accept=".pdf,.xls,.xlsx,.jpg,.jpeg,.png"
               onChange={handleUpload}
             />
           </label>
