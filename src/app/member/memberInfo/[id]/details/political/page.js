@@ -23,6 +23,28 @@ function createEmptyPolitical() {
   };
 }
 
+function isPersistedRecordId(id) {
+  return Number.isInteger(Number(id)) && !String(id).includes("-");
+}
+
+/*
+ * Puts saved rows back at their original position in the full list --
+ * `savedSourceRows`/`completedRows` only cover the subset that was
+ * actually sent to the server (see handleSave's blank-row filter), so
+ * rows matched by id get the fresh server data and every other row
+ * (still-blank placeholders, mainly) is kept exactly as it was.
+ */
+function mergeSavedRecords(originalRows, savedSourceRows, completedRows, mapRow) {
+  const completedById = new Map(
+    savedSourceRows.map((row, index) => [row.id, completedRows[index]]),
+  );
+
+  return originalRows.map((row) => {
+    const completed = completedById.get(row.id);
+    return completed ? mapRow(completed) : row;
+  });
+}
+
 export default function PoliticalPage() {
   const { t, label } = useLanguage();
   const { canEditMemberDetails } = useMemberPermissions();
@@ -53,11 +75,16 @@ export default function PoliticalPage() {
         setMember({ id: memberId });
         setPoliticals(rows.length ? rows.map((row) => ({
           id: row.id,
-          organization: row.affiliationName || row.affiliation_name || "",
+          organization:
+            row.party_id != null
+              ? String(row.party_id)
+              : row.partyId != null
+                ? String(row.partyId)
+                : "",
           workLocation: row.location || "",
-          country: "",
+          country: row.country || "",
           position: row.positionTitle || row.position_title || "",
-          cardNumber: "",
+          cardNumber: row.card_no || row.cardNo || "",
           joinedDate: row.startDate || row.start_date || "",
           leftDate: row.endDate || row.end_date || "",
         })) : [createEmptyPolitical()]);
@@ -134,23 +161,49 @@ export default function PoliticalPage() {
 
     try {
       setError("");
-      const rows = await saveMemberRecords(memberId, "political-affiliations", politicals, (item) => ({
-        affiliation_name: item.organization,
+
+      /*
+       * `politicals` always carries at least one row by default (see
+       * the load effect above) even when the member has no political
+       * affiliation recorded yet. The backend requires party_id on
+       * every row it's sent, so unconditionally saving that still-
+       * untouched default row would make the WHOLE save fail -- since
+       * it's a loop over all of them. Only skip a row when it's both
+       * unsaved (no real server id yet) AND still has no party
+       * selected; an already-persisted row is always sent so a
+       * genuine edit still gets validated normally.
+       */
+      const rowsToSave = politicals.filter(
+        (item) => isPersistedRecordId(item.id) || (item.organization || "").trim(),
+      );
+
+      const rows = await saveMemberRecords(memberId, "political-affiliations", rowsToSave, (item) => ({
+        party_id: Number(item.organization) || null,
+        country: item.country || null,
         location: item.workLocation || null,
         position_title: item.position || null,
+        card_no: item.cardNumber || null,
         start_date: item.joinedDate || null,
         end_date: item.leftDate || null,
       }));
-      setPoliticals(rows.map((row) => ({
-        id: row.id,
-        organization: row.affiliationName || row.affiliation_name || "",
-        workLocation: row.location || "",
-        country: "",
-        position: row.positionTitle || row.position_title || "",
-        cardNumber: "",
-        joinedDate: row.startDate || row.start_date || "",
-        leftDate: row.endDate || row.end_date || "",
-      })));
+
+      setPoliticals((previous) =>
+        mergeSavedRecords(previous, rowsToSave, rows, (row) => ({
+          id: row.id,
+          organization:
+            row.party_id != null
+              ? String(row.party_id)
+              : row.partyId != null
+                ? String(row.partyId)
+                : "",
+          workLocation: row.location || "",
+          country: row.country || "",
+          position: row.positionTitle || row.position_title || "",
+          cardNumber: row.card_no || row.cardNo || "",
+          joinedDate: row.startDate || row.start_date || "",
+          leftDate: row.endDate || row.end_date || "",
+        })),
+      );
       alert(t("memberPage.saveSuccess"));
 
       setHasUnsavedChanges(false);
