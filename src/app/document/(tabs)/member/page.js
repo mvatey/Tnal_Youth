@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, FileText } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
@@ -56,10 +56,23 @@ export default function MemberDocumentPage() {
   const showCrossBranchTab =
     role === "secretary" || role === "branch_leader";
 
+  // Admin/viewer get a free-pick branch filter (their own local state
+  // below); secretary/branch_leader see the same dropdown but locked to
+  // whichever single branch is active in the sidebar -- it only changes
+  // when the sidebar's branch changes, same lock used on the company
+  // documents tab and the member list/activity-donation pages.
+  const isBranchScoped =
+    role === "secretary" || role === "branch_leader";
+
   const [activeSubTab, setActiveSubTab] = useState("own");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  // "" (not "all") to match FormSelect's own reset option, which always
+  // emits "". Ignored for secretary/branch_leader -- see
+  // effectiveSelectedBranch below.
+  const [localBranchFilter, setLocalBranchFilter] = useState("");
+  const [branches, setBranches] = useState([]);
   const [selectedCertificate, setSelectedCertificate] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -116,7 +129,7 @@ export default function MemberDocumentPage() {
         page += 1;
       } while (page < totalPages);
 
-      setDocuments(rows.filter((row) => row.member).map((row) => mapMemberDocument(row, t, isEnglish)));
+      setDocuments(rows.filter((row) => row.member).map((row) => mapMemberDocument(row, isEnglish)));
     } catch (loadError) {
       setError(loadError.message || t("documentPage.loadDocumentsFailed"));
     } finally {
@@ -125,6 +138,47 @@ export default function MemberDocumentPage() {
   }, [activeSubTab, isEnglish, selectedBranch, t]);
 
   useEffect(() => { loadDocuments(); }, [loadDocuments]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/lookups/branches", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : []))
+      .then((body) => {
+        if (!cancelled) setBranches(Array.isArray(body) ? body : (body?.data ?? []));
+      })
+      .catch(() => {
+        if (!cancelled) setBranches([]);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const branchOptions = useMemo(() => branches
+    .map((branch) => {
+      const value = branch.value ?? branch.id ?? branch.branchId ?? branch.branch_id;
+      const nameKm = branch.labelKm ?? branch.nameKm ?? branch.name_km;
+      const nameEn = branch.labelEn ?? branch.nameEn ?? branch.name_en;
+      return {
+        value: value == null ? "" : String(value),
+        label: (isEnglish ? nameEn ?? nameKm : nameKm ?? nameEn) ?? branch.code ?? "",
+      };
+    })
+    .filter((option) => option.value && option.label), [branches, isEnglish]);
+
+  // What the table's own branch filter actually uses -- a branch-scoped
+  // secretary/branch_leader always follows the sidebar's global branch;
+  // everyone else (admin/viewer) picks freely from their own local filter.
+  const effectiveSelectedBranch = isBranchScoped
+    ? selectedBranch
+    : localBranchFilter;
+
+  // The branch filter dropdown shown in the toolbar: the full list for a
+  // free pick, or just the one currently-active branch (and disabled) when
+  // branch-scoped -- same pattern as the company documents tab.
+  const branchFilterOptions = isBranchScoped
+    ? branchOptions.filter(
+        (option) => String(option.value) === String(selectedBranch),
+      )
+    : branchOptions;
 
   const filteredDocuments = documents.filter((item) => {
     const searchValue = search.trim().toLowerCase();
@@ -149,9 +203,10 @@ export default function MemberDocumentPage() {
     // makes sense on the "own branch" tab.
     const matchBranch =
       activeSubTab === "cross-branch" ||
-      selectedBranch === "all" ||
+      !effectiveSelectedBranch ||
+      effectiveSelectedBranch === "all" ||
       item.branchId == null ||
-      String(item.branchId) === String(selectedBranch);
+      String(item.branchId) === String(effectiveSelectedBranch);
 
     return matchSearch && matchType && matchDate && matchBranch;
   });
@@ -182,17 +237,12 @@ export default function MemberDocumentPage() {
     {
       header: t("documentPage.documentName"),
       accessor: "title",
-      width: "w-[19%]",
+      width: "w-[27%]",
     },
     {
       header: t("documentPage.member"),
       accessor: "memberName",
       width: "w-[15%]",
-    },
-    {
-      header: t("documentPage.gender"),
-      accessor: "gender",
-      width: "w-[8%]",
     },
     {
       header: t("documentPage.branch"),
@@ -270,6 +320,14 @@ export default function MemberDocumentPage() {
   ];
 
   const filters = [
+    {
+      name: "branch",
+      placeholder: t("documentPage.branch"),
+      value: isBranchScoped ? String(selectedBranch) : localBranchFilter,
+      options: branchFilterOptions,
+      onChange: isBranchScoped ? () => {} : setLocalBranchFilter,
+      disabled: isBranchScoped,
+    },
     {
       name: "type",
       placeholder: t("documentPage.documentType"),
@@ -391,14 +449,8 @@ export default function MemberDocumentPage() {
   );
 }
 
-function mapMemberDocument(row, t, isEnglish) {
+function mapMemberDocument(row, isEnglish) {
   const extension = row.file?.originalName?.split(".").pop()?.toUpperCase();
-  const genderCode = row.member?.gender;
-  const genderLabels = {
-    MALE: t("documentPage.male"),
-    FEMALE: t("documentPage.female"),
-    MONK: t("documentPage.monk"),
-  };
   const normalizedType = extension || row.type?.code || "FILE";
   return {
     id: row.id,
@@ -406,9 +458,6 @@ function mapMemberDocument(row, t, isEnglish) {
     memberName: isEnglish
       ? row.member?.fullNameEn || row.member?.full_name_en || row.member?.fullNameKm || row.member?.full_name_km || "-"
       : row.member?.fullNameKm || row.member?.full_name_km || row.member?.fullNameEn || row.member?.full_name_en || "-",
-    gender: isEnglish
-      ? row.member?.genderLabelEn || row.member?.gender_label_en || genderLabels[genderCode] || row.member?.genderLabelKm || row.member?.gender_label_km || "-"
-      : row.member?.genderLabelKm || row.member?.gender_label_km || genderLabels[genderCode] || row.member?.genderLabelEn || row.member?.gender_label_en || "-",
     branch: isEnglish
       ? row.branch?.nameEn || row.branch?.name_en || row.branch?.nameKm || row.branch?.name_km || "-"
       : row.branch?.nameKm || row.branch?.name_km || row.branch?.nameEn || row.branch?.name_en || "-",

@@ -55,6 +55,14 @@ export default function CompanyDocumentPage() {
   const canManageDocuments =
     role === "secretary" || role === "branch_leader";
 
+  // Admin/viewer get a free-pick branch filter (their own local state
+  // below); secretary/branch_leader see the same dropdown but locked to
+  // whichever single branch is active in the sidebar -- it only changes
+  // when the sidebar's branch changes, same lock used on the member list
+  // and activity/donation pages' branch dropdowns.
+  const isBranchScoped =
+    role === "secretary" || role === "branch_leader";
+
   /*
    * A MEMBER never has anything to see on this tab (the organizational
    * list is staff/admin/viewer-only — see DocumentServiceImpl.getDocuments),
@@ -76,6 +84,11 @@ export default function CompanyDocumentPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  // Admin/viewer's own branch filter pick -- ignored for secretary/
+  // branch_leader, who use the sidebar's global selectedBranch instead
+  // (see effectiveSelectedBranch below). "" (not "all") to match
+  // FormSelect's own reset option, which always emits "".
+  const [localBranchFilter, setLocalBranchFilter] = useState("");
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -150,6 +163,22 @@ export default function CompanyDocumentPage() {
     label: label(type, type.code),
   })), [documentTypes, label]);
 
+  // What the table's own branch filter actually uses -- a branch-scoped
+  // secretary/branch_leader always follows the sidebar's global branch;
+  // everyone else (admin/viewer) picks freely from their own local filter.
+  const effectiveSelectedBranch = isBranchScoped
+    ? selectedBranch
+    : localBranchFilter;
+
+  // The branch filter dropdown shown in the toolbar: the full list for a
+  // free pick, or just the one currently-active branch (and disabled) when
+  // branch-scoped -- same pattern as the member list page's branch filter.
+  const branchFilterOptions = isBranchScoped
+    ? branchOptions.filter(
+        (option) => String(option.value) === String(selectedBranch),
+      )
+    : branchOptions;
+
   const filteredDocuments = documents.filter((item) => {
     const searchValue = search.trim().toLowerCase();
 
@@ -160,9 +189,10 @@ export default function CompanyDocumentPage() {
     // branch) stays visible no matter which branch is selected, rather than
     // disappearing under every branch filter.
     const matchBranch =
-      selectedBranch === "all" ||
+      !effectiveSelectedBranch ||
+      effectiveSelectedBranch === "all" ||
       item.branchId == null ||
-      String(item.branchId) === String(selectedBranch);
+      String(item.branchId) === String(effectiveSelectedBranch);
 
     return matchSearch && matchType && matchDate && matchBranch;
   });
@@ -291,6 +321,14 @@ export default function CompanyDocumentPage() {
   ];
 
   const filters = [
+    {
+      name: "branch",
+      placeholder: t("documentPage.branch"),
+      value: isBranchScoped ? String(selectedBranch) : localBranchFilter,
+      options: branchFilterOptions,
+      onChange: isBranchScoped ? () => {} : setLocalBranchFilter,
+      disabled: isBranchScoped,
+    },
     {
       name: "type",
       placeholder: t("documentPage.documentType"),
