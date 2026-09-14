@@ -203,6 +203,7 @@ export default function ActivityPage() {
   const { t, label, locale } = useLanguage();
   const { user } = useAuth();
   const role = normalizeRole(user?.role);
+  const isAdmin = role === "admin";
   const searchParams = useSearchParams();
 
   const canCreateActivity =
@@ -215,8 +216,29 @@ export default function ActivityPage() {
     setSelectedBranch = () => {},
   } = useBranch();
 
+  // Admin sees every branch's activities regardless of which one is
+  // "selected" (there's no own/invited distinction to make for them, since
+  // they're not a co-host of anything), so they get their own page-local
+  // branch filter here instead of the sidebar's global one -- which they
+  // don't have anyway (see sidebar.js's canSelectBranch, secretary/
+  // branch_leader only). Same pattern as the member list page's admin
+  // branch filter. Stored as the branch's label, matching every other
+  // filter on this page (type/sector), and resolved back to an id below.
+  const [selectedBranchLabel, setSelectedBranchLabel] = useState("all");
+
   const [activityRecords, setActivityRecords] = useState([]);
   const [branchOptions, setBranchOptions] = useState([]);
+
+  const adminBranchId = useMemo(() => {
+    if (selectedBranchLabel === "all") return "all";
+    const match = branchOptions.find(
+      (option) => option.label === selectedBranchLabel,
+    );
+    return match ? String(match.value) : "all";
+  }, [selectedBranchLabel, branchOptions]);
+
+  // What actually scopes every fetch/filter below.
+  const effectiveSelectedBranch = isAdmin ? adminBranchId : selectedBranch;
   // From the backend's ActivityPageResponse.invitedActivityCount — the full
   // count of activities reached only via an accepted co-hosting invitation
   // (not capped by the page's size=1000 fetch). null for any role other
@@ -313,8 +335,8 @@ export default function ActivityPage() {
         size: "1000",
       });
 
-      if (selectedBranch !== "all") {
-        activityParams.set("branchId", String(selectedBranch));
+      if (effectiveSelectedBranch !== "all") {
+        activityParams.set("branchId", String(effectiveSelectedBranch));
       }
 
       const [activityResponse, branchResponse] = await Promise.all([
@@ -366,7 +388,7 @@ export default function ActivityPage() {
         setLoading(false);
       }
     }
-  }, [label, selectedBranch, t]);
+  }, [label, effectiveSelectedBranch, t]);
 
   useEffect(() => {
     setSelectedScope("all");
@@ -439,17 +461,17 @@ export default function ActivityPage() {
     () =>
       activities.filter(
         (item) =>
-          selectedBranch === "all" ||
-          String(item.branchId) === String(selectedBranch) ||
-          String(item.invitedBranchId) === String(selectedBranch) ||
-          item.branch === selectedBranch ||
+          effectiveSelectedBranch === "all" ||
+          String(item.branchId) === String(effectiveSelectedBranch) ||
+          String(item.invitedBranchId) === String(effectiveSelectedBranch) ||
+          item.branch === effectiveSelectedBranch ||
           contextBranches.some(
             (branch) =>
-              String(branch) === String(selectedBranch) &&
+              String(branch) === String(effectiveSelectedBranch) &&
               branch === item.branch,
           ),
       ),
-    [activities, selectedBranch, contextBranches],
+    [activities, effectiveSelectedBranch, contextBranches],
   );
 
   const types = useMemo(
@@ -462,15 +484,22 @@ export default function ActivityPage() {
     [branchScopedActivities],
   );
 
-  // Whether the own-branch/invited split is meaningful to show at all —
-  // the backend currently only computes ownBranch for a SECRETARY viewer,
-  // so admin/branch-leader activity lists never show these tabs.
+  // Whether the own-branch/invited split is meaningful to show at all.
+  // The backend actually computes ownBranch for ANY role once a specific
+  // branchId is requested (see ActivityServiceImpl#getActivities' explicit-
+  // branchId branch, which applies before the role check) -- so this alone
+  // isn't enough to keep the tabs off an admin's list once they've picked a
+  // branch. Admin isn't a co-host of anything and doesn't need the own/
+  // invited distinction at all (they already see every branch's activities
+  // unscoped), so isAdmin is excluded below regardless of what the backend
+  // returns.
   const hasOwnBranchData = useMemo(
     () =>
+      !isAdmin &&
       branchScopedActivities.some(
         (item) => item.ownBranch === true || item.ownBranch === false,
       ),
-    [branchScopedActivities],
+    [branchScopedActivities, isAdmin],
   );
 
   // How many invited activities are still waiting on an Accept/Decline —
@@ -697,7 +726,7 @@ export default function ActivityPage() {
 
         return (
           <Link
-            href={`/activity/${row.id}${selectedBranch !== "all" ? `?branchId=${encodeURIComponent(selectedBranch)}` : ""}`}
+            href={`/activity/${row.id}${effectiveSelectedBranch !== "all" ? `?branchId=${encodeURIComponent(effectiveSelectedBranch)}` : ""}`}
             className="mx-auto flex h-[22px] w-fit items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] bg-primary px-3 text-[10px] font-Regular text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-hover hover:shadow-sm active:translate-y-0"
           >
             <List size={14} />
@@ -709,6 +738,20 @@ export default function ActivityPage() {
   ];
 
   const filters = [
+    // Admin's own branch filter (see selectedBranchLabel above) -- everyone
+    // else already has the sidebar's global branch dropdown, so this would
+    // just be a confusing second control for them.
+    ...(isAdmin
+      ? [
+          {
+            key: "branch",
+            value: selectedBranchLabel,
+            onChange: setSelectedBranchLabel,
+            placeholder: t("memberPage.branch"),
+            options: branchOptions.map((option) => option.label),
+          },
+        ]
+      : []),
     {
       key: "type",
       value: selectedType,
@@ -754,8 +797,8 @@ export default function ActivityPage() {
     }));
 
     const branchLabel =
-      selectedBranch !== "all"
-        ? branchOptions.find((option) => String(option.value) === String(selectedBranch))?.label
+      effectiveSelectedBranch !== "all"
+        ? branchOptions.find((option) => String(option.value) === String(effectiveSelectedBranch))?.label
         : null;
 
     downloadTableAsExcel({
@@ -774,7 +817,7 @@ export default function ActivityPage() {
         // "all branches" scope; otherwise fall back to ActivityStats'
         // own count computed from branchScopedActivities so the card
         // matches whichever single branch is active.
-        invitedActivityCount={selectedBranch === "all" ? invitedActivityCount : null}
+        invitedActivityCount={effectiveSelectedBranch === "all" ? invitedActivityCount : null}
       />
 
       <TelegramConnectBanner />

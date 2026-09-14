@@ -140,9 +140,24 @@ export default function EventDonationPanel({
           ? activityPage.content
           : (Array.isArray(activityPage?.items) ? activityPage.items : []);
 
+        // The branchId-scoped /activities endpoint also returns activities
+        // this branch was only INVITED to, regardless of whether it ever
+        // responded (see ActivityServiceImpl#getActivities' explicit-
+        // branchId path) -- that's needed so the Activity list page can
+        // show Accept/Decline for a still-PENDING invitation. But a branch
+        // only actually co-hosts (and should only be credited with) an
+        // activity once it has ACCEPTED that invitation -- a PENDING
+        // (never responded) or DECLINED one must not count as "this
+        // branch's" activity here.
+        const acceptedActivities = activityItems.filter(
+          (activity) =>
+            activity?.ownBranch !== false ||
+            activity?.invitationStatus === "ACCEPTED",
+        );
+
         // A cancelled activity is history-only. Its saved records are not
         // deleted, but it must not appear in the activity-donation feature.
-        const donationEligibleActivities = activityItems.filter((activity) => String(
+        const donationEligibleActivities = acceptedActivities.filter((activity) => String(
           activity?.statusCode ?? activity?.status?.code ?? activity?.status ?? "",
         ).toUpperCase() !== "CANCELLED");
 
