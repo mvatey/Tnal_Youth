@@ -67,7 +67,7 @@ export default function MemberAttachmentField({ value, onChange, readOnly = fals
           {t("memberPage.attachDocument")}
         </button>
       ) : (
-        <span className="text-sm text-text-mute">{t("memberPage.noDocumentYet")}</span>
+        <span className="text-sm text-text-mute">{t("documentPage.noDocumentYet")}</span>
       )}
     </div>
   );

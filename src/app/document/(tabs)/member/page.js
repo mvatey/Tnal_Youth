@@ -11,7 +11,7 @@ import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview
 import { useAuth } from "@/context/AuthContext";
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
-import { normalizeRole } from "@/lib/navigation";
+import { getEffectiveRole, normalizeRole } from "@/lib/navigation";
 import { formatDateWithMonth } from "@/lib/formatDate";
 
 const DOCUMENT_TYPE_BADGE_STYLES = {
@@ -37,6 +37,11 @@ export default function MemberDocumentPage() {
   const { user } = useAuth();
   const { t, isEnglish } = useLanguage();
   const role = normalizeRole(user?.role);
+  // A viewer/secretary (a read-only account whose viewerScope impersonates
+  // a real secretary's branch) must be exactly as branch-locked as a real
+  // secretary — only the raw role (checked separately as `role` above)
+  // decides whether write actions are allowed, never this.
+  const effectiveRole = getEffectiveRole(user);
   const { selectedBranch } = useBranch();
 
   /*
@@ -51,18 +56,19 @@ export default function MemberDocumentPage() {
 
   // The cross-branch tab only ever has content for branch-scoped staff —
   // an activity's host branch certifying a co-hosting branch's member.
-  // Admin/viewer already see every branch in the main tab, so a second
-  // "cross-branch" view would just be an empty duplicate for them.
+  // Admin/viewer-admin already see every branch in the main tab, so a
+  // second "cross-branch" view would just be an empty duplicate for them.
   const showCrossBranchTab =
-    role === "secretary" || role === "branch_leader";
+    effectiveRole === "secretary" || effectiveRole === "branch_leader";
 
-  // Admin/viewer get a free-pick branch filter (their own local state
-  // below); secretary/branch_leader see the same dropdown but locked to
-  // whichever single branch is active in the sidebar -- it only changes
-  // when the sidebar's branch changes, same lock used on the company
-  // documents tab and the member list/activity-donation pages.
+  // A secretary/branch_leader responsible for only ONE branch (real or
+  // viewer-impersonated) is locked to it, same as everywhere else this
+  // pattern is used (member list, activity-donation). A secretary staffing
+  // MULTIPLE branches still free-picks among just their own via the
+  // sidebar's branch dropdown (see BranchContext) — never every branch in
+  // the org, which stays admin/viewer-admin only.
   const isBranchScoped =
-    role === "secretary" || role === "branch_leader";
+    effectiveRole === "secretary" || effectiveRole === "branch_leader";
 
   const [activeSubTab, setActiveSubTab] = useState("own");
   const [search, setSearch] = useState("");

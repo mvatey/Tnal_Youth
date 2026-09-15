@@ -14,7 +14,7 @@ import DeleteConfirmModal from "@/components/popup/Confirmdeletemodal";
 import { useAuth } from "@/context/AuthContext";
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
-import { normalizeRole } from "@/lib/navigation";
+import { getEffectiveRole, normalizeRole } from "@/lib/navigation";
 import { describeUploadError } from "@/lib/uploadErrors";
 import { uploadFileDirect } from "@/lib/directUpload";
 import { formatDateWithMonth } from "@/lib/formatDate";
@@ -44,6 +44,11 @@ export default function CompanyDocumentPage() {
   const { user } = useAuth();
   const { t, label, locale } = useLanguage();
   const role = normalizeRole(user?.role);
+  // A viewer/secretary (a read-only account whose viewerScope impersonates
+  // a real secretary's branch) must be exactly as branch-locked as a real
+  // secretary — only the raw role (checked separately as `role` above)
+  // decides whether write actions are allowed, never this.
+  const effectiveRole = getEffectiveRole(user);
   const { selectedBranch } = useBranch();
 
   /*
@@ -55,13 +60,14 @@ export default function CompanyDocumentPage() {
   const canManageDocuments =
     role === "secretary" || role === "branch_leader";
 
-  // Admin/viewer get a free-pick branch filter (their own local state
-  // below); secretary/branch_leader see the same dropdown but locked to
-  // whichever single branch is active in the sidebar -- it only changes
-  // when the sidebar's branch changes, same lock used on the member list
-  // and activity/donation pages' branch dropdowns.
+  // A secretary/branch_leader responsible for only ONE branch (real or
+  // viewer-impersonated) is locked to it, same as everywhere else this
+  // pattern is used (member list, activity-donation). A secretary staffing
+  // MULTIPLE branches still free-picks among just their own via the
+  // sidebar's branch dropdown (see BranchContext) — never every branch in
+  // the org, which stays admin/viewer-admin only.
   const isBranchScoped =
-    role === "secretary" || role === "branch_leader";
+    effectiveRole === "secretary" || effectiveRole === "branch_leader";
 
   /*
    * A MEMBER never has anything to see on this tab (the organizational
