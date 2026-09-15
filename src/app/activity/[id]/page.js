@@ -1225,7 +1225,7 @@ export default async function ActivityDetailPage({
               <Link
                 href={activityIncomeHref}
                 className={`flex h-10 items-center justify-center gap-2 rounded-lg bg-[#D3AF3C] text-sm font-semibold text-white transition-colors hover:bg-[#BF9C2D] ${
-                  !canManage
+                  !canViewExpense
                     ? "col-span-2"
                     : ""
                 }`}
