@@ -5,7 +5,6 @@ import Image from "next/image";
 
 import {
   usePathname,
-  useRouter,
 } from "next/navigation";
 
 import {
@@ -166,9 +165,6 @@ function getDisplayName(
 export default function Sidebar() {
   const pathname =
     usePathname();
-
-  const router =
-    useRouter();
 
   const {
     user,
@@ -340,16 +336,17 @@ export default function Sidebar() {
 
     await logout();
 
-    // router.refresh() here used to fire while the replace() below was
-    // still in flight -- it re-fetched the CURRENT (still-authenticated
-    // layout) page's server data at the exact moment logout() had just
-    // cleared the session cookie, so that page briefly re-rendered
-    // broken/unauthenticated before the replace actually landed on
-    // /auth/login. Navigating to a fresh route already re-renders it
-    // from scratch, so no separate refresh is needed here.
-    router.replace(
-      "/auth/login",
-    );
+    // A client-side router.replace() here left a glitchy window: logout()
+    // clears `user`, which this component (and the current page's own
+    // useAuth()/useCurrentMember() calls) immediately react to -- this
+    // sidebar unmounts (returns null just below) and the still-mounted
+    // page underneath re-renders unauthenticated/broken for a frame or two
+    // before the SPA navigation actually lands on /auth/login. A full
+    // browser navigation tears the whole page down at once instead, same
+    // fix already used for a branch switch (see BranchContext's
+    // persistAndReloadForBranch) for the same class of stale-client-state
+    // glitch.
+    window.location.assign("/auth/login");
   }
 
   if (!mounted || authLoading) {

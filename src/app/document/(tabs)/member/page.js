@@ -79,6 +79,13 @@ export default function MemberDocumentPage() {
   const [error, setError] = useState("");
 
   const loadDocuments = useCallback(async () => {
+    // A branch-scoped secretary/branch_leader's `selectedBranch` starts at
+    // the placeholder "all" for the brief window before BranchContext's own
+    // fetch resolves it to their real branch. Fetching then would go out,
+    // then get immediately superseded once it resolves -- showing up as
+    // the table flashing loading twice for no reason. Wait for it instead.
+    if (isBranchScoped && selectedBranch === "all") return;
+
     setLoading(true);
     setError("");
     try {
@@ -135,7 +142,7 @@ export default function MemberDocumentPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeSubTab, isEnglish, selectedBranch, t]);
+  }, [activeSubTab, isBranchScoped, isEnglish, selectedBranch, t]);
 
   useEffect(() => { loadDocuments(); }, [loadDocuments]);
 

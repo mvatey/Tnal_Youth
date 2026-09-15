@@ -852,6 +852,24 @@ export default function MembersPage() {
     const controller =
       new AbortController();
 
+    loadLookups(
+      controller.signal,
+    );
+
+    return () => {
+      controller.abort();
+    };
+  }, [loadLookups]);
+
+  useEffect(() => {
+    // Same reasoning as the LOAD MEMBERS effect below -- wait for a
+    // branch-scoped role's real branch before fetching the summary cards,
+    // instead of fetching once unscoped and again once it resolves.
+    if (isBranchScoped && !effectiveBranchFilter) return undefined;
+
+    const controller =
+      new AbortController();
+
     loadSummary(
       controller.signal,
     ).catch((error) => {
@@ -866,16 +884,13 @@ export default function MembersPage() {
       }
     });
 
-    loadLookups(
-      controller.signal,
-    );
-
     return () => {
       controller.abort();
     };
   }, [
-    loadLookups,
     loadSummary,
+    isBranchScoped,
+    effectiveBranchFilter,
   ]);
 
   /*
@@ -885,6 +900,15 @@ export default function MembersPage() {
    */
 
   useEffect(() => {
+    // A secretary/branch_leader's effectiveBranchFilter starts empty (see
+    // effectiveBranchId above) for the brief window before BranchContext's
+    // own fetch resolves. Fetching then would go out with no branchId at
+    // all -- briefly showing every branch's members to a branch-scoped
+    // viewer -- and get immediately superseded once the real branch
+    // resolves, showing up as the table flashing loading twice. Wait for
+    // it instead; membersLoading simply stays true until then.
+    if (isBranchScoped && !effectiveBranchFilter) return undefined;
+
     const controller =
       new AbortController();
 
@@ -911,7 +935,7 @@ export default function MembersPage() {
     return () => {
       controller.abort();
     };
-  }, [loadMembers]);
+  }, [loadMembers, isBranchScoped, effectiveBranchFilter]);
 
   /*
    * =========================================
