@@ -40,7 +40,7 @@ const CREATE_ACTIONS = [
     id: "member",
     label: "បង្កើតសមាជិក",
     labelKey: "dashboard.createMember",
-    href: "/member",
+    href: "/member?create=1",
     icon: CirclePlus,
     color: "text-primary",
     bg: "bg-bg-page-gray",

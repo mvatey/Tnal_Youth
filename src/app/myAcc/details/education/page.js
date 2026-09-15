@@ -32,7 +32,14 @@ export default function EducationPage() {
   const { member: currentMember } = useCurrentMember();
   const memberId = String(currentMember?.id ?? "self");
 
-  const [member, setMember] = useState(null);
+  // True until the initial education-records fetch settles (success or
+  // failure) -- gates the render below so this page never flashes the
+  // red "couldn't load" box during a normal load, only once loading has
+  // actually finished and genuinely failed. The account itself is
+  // already confirmed to exist by the shared layout before any tab
+  // renders at all, so this page has no separate need to track it.
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [educations, setEducations] = useState([]);
   const [degreeOptions, setDegreeOptions] = useState([]);
 
@@ -47,12 +54,14 @@ export default function EducationPage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    setLoading(true);
+    setLoadFailed(false);
     loadMemberRecords(memberId, "education", controller.signal)
       .then((rows) => {
-        setMember({ id: memberId });
         setEducations(rows.length ? rows.map((row) => ({ id: row.id, school: row.school_name || "", province: row.province_name || "", country: row.country_name || "", degree: row.education_level_id || "", startDate: row.start_date || "", endDate: row.end_date || "", attachment: row.certificate_file || null })) : [createEmptyEducation()]);
       })
-      .catch((error) => { if (error.name !== "AbortError") setMember(null); });
+      .catch((error) => { if (error.name !== "AbortError") setLoadFailed(true); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [memberId]);
 
@@ -117,7 +126,7 @@ export default function EducationPage() {
   async function handleSubmit(event) {
     event?.preventDefault();
 
-    if (!member) return false;
+    if (loading || loadFailed) return false;
 
     try {
       const current = educations.filter((item) => String(item.school || "").trim());
@@ -154,11 +163,21 @@ export default function EducationPage() {
    */
   useUnsavedFormGuard(hasUnsavedChanges, handleSubmit);
 
-  if (!member) {
+  if (loading) {
+    return (
+      <div className="flex min-h-[200px] items-center justify-center">
+        <p className="text-sm text-text-secondary">
+          {t("memberPage.loadingMember")}
+        </p>
+      </div>
+    );
+  }
+
+  if (loadFailed) {
     return (
       <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
         <p className="text-sm text-error">
-          {t("memberPage.memberNotFound")}
+          {t("memberPage.loadMemberFailed")}
         </p>
       </div>
     );

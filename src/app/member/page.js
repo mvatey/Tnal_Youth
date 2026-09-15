@@ -7,7 +7,7 @@ import {
   useState,
 } from "react";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import {
   Landmark,
@@ -322,6 +322,9 @@ export default function MembersPage() {
   const router =
     useRouter();
 
+  const searchParams =
+    useSearchParams();
+
   const [
     members,
     setMembers,
@@ -434,6 +437,23 @@ export default function MembersPage() {
     isCreateOpen,
     setIsCreateOpen,
   ] = useState(false);
+
+  /*
+   * Lets another page (the dashboard's "Add Member" quick action) link
+   * straight to /member?create=1 and land here with the create-member
+   * popup already open, instead of just the plain list. Viewer accounts
+   * never get this -- same gating as the button that normally opens it.
+   * The query param is stripped right after so it doesn't linger in the
+   * URL or reopen the popup on a later back/forward navigation.
+   */
+  useEffect(() => {
+    if (isViewer) return;
+    if (searchParams.get("create") !== "1") return;
+
+    setIsCreateOpen(true);
+    router.replace("/member");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, isViewer]);
 
   /*
    * =========================================
