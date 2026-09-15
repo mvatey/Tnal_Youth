@@ -41,16 +41,22 @@ function normalizeAvatarUrl(value) {
 // outlined instead of green. Now the border and the digits themselves also
 // pick up the success color when there's an amount, matching that
 // convention so the "green" state is unmistakable at a glance.
-const getAmountFieldClass = (value) =>
-  Number(value) > 0
-    ? "border-success/30 bg-success-bg/70"
-    : "border-border bg-bg-page-gray";
+// An inactive member's row is locked, not "filled in" -- so its amount
+// fields stay plain grey even when they hold a real (old, preserved)
+// amount, instead of picking up the same green "has value" look an
+// active member's freshly-entered amount gets.
+const getAmountFieldClass = (value, isInactive) =>
+  isInactive
+    ? "border-border bg-bg-page-gray"
+    : Number(value) > 0
+      ? "border-success/30 bg-success-bg/70"
+      : "border-border bg-bg-page-gray";
 
-const getAmountTextClass = (value) =>
-  Number(value) > 0 ? "text-success" : "text-text-primary";
+const getAmountTextClass = (value, isInactive) =>
+  isInactive ? "text-text-mute" : Number(value) > 0 ? "text-success" : "text-text-primary";
 
-const getAmountUnitClass = (value) =>
-  Number(value) > 0 ? "text-success" : "text-text-secondary";
+const getAmountUnitClass = (value, isInactive) =>
+  isInactive ? "text-text-mute" : Number(value) > 0 ? "text-success" : "text-text-secondary";
 
 export function ReceiptIcon({ size = 20 }) {
   return (
@@ -136,7 +142,7 @@ export default function AddDonationTableRow({
     <tr
       className={`h-[42px] border-b border-border text-center text-[12px] text-text-secondary transition-colors ${
         member.isInactive
-          ? "bg-bg-page-gray/60 opacity-60"
+          ? "bg-bg-page-gray grayscale opacity-70"
           : "bg-bg-page-white hover:bg-bg-page-gray"
       }`}
     >
@@ -178,6 +184,7 @@ export default function AddDonationTableRow({
         <div
           className={`mx-auto flex h-7 w-[112px] items-center gap-1 rounded-md border px-2 ${amountFieldDisabledClass} ${getAmountFieldClass(
             member.realAmount,
+            member.isInactive,
           )}`}
         >
           <input
@@ -195,9 +202,10 @@ export default function AddDonationTableRow({
             placeholder={focusedAmountField === "realAmount" ? "" : "0"}
             className={`w-full bg-transparent text-[13px] outline-none placeholder:text-text-mute disabled:cursor-not-allowed disabled:text-text-mute ${getAmountTextClass(
               member.realAmount,
+              member.isInactive,
             )}`}
           />
-          <span className={`text-[13px] ${getAmountUnitClass(member.realAmount)}`}>៛</span>
+          <span className={`text-[13px] ${getAmountUnitClass(member.realAmount, member.isInactive)}`}>៛</span>
         </div>
       </td>
 
@@ -206,6 +214,7 @@ export default function AddDonationTableRow({
         <div
           className={`mx-auto flex h-7 w-[112px] items-center gap-1 rounded-md border px-2 ${amountFieldDisabledClass} ${getAmountFieldClass(
             member.dollarAmount,
+            member.isInactive,
           )}`}
         >
           <input
@@ -223,9 +232,10 @@ export default function AddDonationTableRow({
             placeholder={focusedAmountField === "dollarAmount" ? "" : "0.00"}
             className={`w-full bg-transparent text-[13px] outline-none placeholder:text-text-mute disabled:cursor-not-allowed disabled:text-text-mute ${getAmountTextClass(
               member.dollarAmount,
+              member.isInactive,
             )}`}
           />
-          <span className={`text-[13px] ${getAmountUnitClass(member.dollarAmount)}`}>$</span>
+          <span className={`text-[13px] ${getAmountUnitClass(member.dollarAmount, member.isInactive)}`}>$</span>
         </div>
       </td>
 

@@ -477,6 +477,11 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           ),
           paymentMethodId: paymentMethods[0]?.id,
           paymentReference: "",
+          // /api/backend/members isn't status-filtered (unlike the monthly
+          // donation grid's own member query), so an inactive member's row
+          // still shows up here -- locked from further edits the same way,
+          // whether or not they already have a donation for this activity.
+          isInactive: Boolean(member.status?.code) && member.status.code !== "ACTIVE",
         }));
         const merged = mergeSavedDonations(
           memberItems,
@@ -840,6 +845,11 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
             onSave={saving ? undefined : handleSave}
             onReceiptSave={(id, receipt) => setMembers((rows) => rows.map((row) => row.id === id ? { ...row, receipt } : row))}
             hideDob
+            // An inactive member's row stays visible (with their existing
+            // amount, if any) but locked from further edits until the
+            // account is active again -- same rule as the monthly donation
+            // grid.
+            isRowLocked={(member) => Boolean(member.isInactive)}
           />
         ) : null}
         {!loading && hasBranchAndEvent && activeTab === "members" && members.length > 0 ? (
