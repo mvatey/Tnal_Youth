@@ -107,7 +107,15 @@ function isSponsorDonationForActivityRow(row) {
   );
 }
 
-function MyEventDonationsTable({ rows, t }) {
+function MyEventDonationsTable({ rows, loading, t }) {
+  if (loading) {
+    return (
+      <section className="min-h-[200px] rounded-md border border-border bg-bg-page-white px-7 py-8 text-center text-xs font-medium text-text-secondary shadow-sm">
+        {t("common.loading")}
+      </section>
+    );
+  }
+
   if (!rows.length) {
     return (
       <section className="min-h-[200px] rounded-md border border-border bg-bg-page-white px-7 py-8 text-center text-xs font-medium text-text-secondary shadow-sm">
@@ -170,6 +178,7 @@ export default function EventDonationPage() {
   const selectedBranch = isBranchScoped ? (effectiveBranchId ?? "all") : internalSelectedBranch;
   const [rows, setRows] = useState([]);
   const [myRows, setMyRows] = useState([]);
+  const [myRowsLoading, setMyRowsLoading] = useState(true);
   const [error, setError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
   const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
@@ -207,6 +216,7 @@ export default function EventDonationPage() {
     let cancelled = false;
 
     if (isMemberScoped) {
+      setMyRowsLoading(true);
       fetchMyAccountCollection("donations/events")
         .then((items) => {
           if (cancelled) return;
@@ -228,7 +238,8 @@ export default function EventDonationPage() {
 
           setMyRows(Array.from(oneRowPerActivity.values()));
         })
-        .catch((loadError) => { if (!cancelled) setError(loadError.message); });
+        .catch((loadError) => { if (!cancelled) setError(loadError.message); })
+        .finally(() => { if (!cancelled) setMyRowsLoading(false); });
       return () => { cancelled = true; };
     }
 
@@ -379,7 +390,7 @@ export default function EventDonationPage() {
           />
         </div>
         {error ? <div className="rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
-        <MyEventDonationsTable rows={filteredMyRows} t={t} />
+        <MyEventDonationsTable rows={filteredMyRows} loading={myRowsLoading} t={t} />
         {filteredMyRows.length > 0 && (
           <DonationTotalsCard
             title={t("donationPage.contributionTotal")}

@@ -433,7 +433,14 @@ export default function DonationTable() {
                 showDetailOnly={showDetailOnly}
               />
             ))}
-            {filteredRows.length === 0 && (
+            {loading && (
+              <tr>
+                <td colSpan={visibleHeaders.length} className="px-4 py-8 text-center text-xs font-medium text-text-secondary">
+                  {t("common.loading")}
+                </td>
+              </tr>
+            )}
+            {!loading && filteredRows.length === 0 && (
               <tr>
                 <td colSpan={visibleHeaders.length} className="px-4 py-8 text-center text-xs font-medium text-text-secondary">
                   {t("donationPage.noData")}
