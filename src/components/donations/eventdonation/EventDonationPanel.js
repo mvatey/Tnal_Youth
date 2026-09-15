@@ -316,6 +316,20 @@ function sumBranchTotals(branchTotalRows) {
   );
 }
 
+// Only that ONE branch's own slice of the activity's donations -- for a
+// branch that was merely INVITED (not the host), seeing every co-hosting
+// branch's combined total is the host's privilege, not theirs.
+function pickOwnBranchTotals(branchTotalRows, branchId) {
+  const ownRow = (Array.isArray(branchTotalRows) ? branchTotalRows : []).find(
+    (row) => String(row.branchId) === String(branchId),
+  );
+  return {
+    amountKhr: Number(ownRow?.amountKhr || 0),
+    amountUsd: Number(ownRow?.amountUsd || 0),
+    totalAmountUsd: Number(ownRow?.totalAmountUsd || 0),
+  };
+}
+
 // Builds one row per ACTIVITY the selected branch had or joined (own-hosted
 // or an accepted co-hosting invitation — see /api/backend/activities?
 // branchId=), joined against that activity's CROSS-BRANCH donation total
@@ -335,7 +349,16 @@ function sumBranchTotals(branchTotalRows) {
 // branch happens to be selected.
 function buildActivityDonationRows(activities, branchTotalsByActivityId, branchId, organizerBranchNames, locale) {
   return activities.map((activity) => {
-    const totals = sumBranchTotals(branchTotalsByActivityId.get(activity.id));
+    // ownBranch is only ever explicitly false for a branch that reached this
+    // activity through an ACCEPTED co-hosting invitation (see the
+    // explicit-branchId path in ActivityServiceImpl#getActivities) -- true,
+    // null, or undefined all mean the selected branch is the actual host
+    // (admin/viewer's activities fetch never sets this field at all, and
+    // every activity they see is host-only regardless).
+    const isHostBranch = activity.ownBranch !== false;
+    const totals = isHostBranch
+      ? sumBranchTotals(branchTotalsByActivityId.get(activity.id))
+      : pickOwnBranchTotals(branchTotalsByActivityId.get(activity.id), branchId);
     const startDateValue = toDateValue(activity.startsAt);
     const endDateValue = toDateValue(activity.endsAt);
     const start = startDateValue ? new Date(`${startDateValue}T00:00:00`) : null;
