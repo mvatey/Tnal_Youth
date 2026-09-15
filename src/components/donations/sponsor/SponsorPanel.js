@@ -234,6 +234,17 @@ export default function SponsorPanel({
   }, [branchScoped, currentMember, isMemberScoped, selectedBranch, locale, t]);
 
   useEffect(() => {
+    // The branch filter this populates is only ever rendered when
+    // !readOnly (see below) -- a readOnly viewer (a member looking at
+    // their own sponsor donations, or the activity-detail Sponsor tab)
+    // never shows it and never needs branchOptions at all. Skipping the
+    // fetch here isn't just an optimization: /api/lookups/branches is a
+    // staff-only endpoint a plain MEMBER account gets rejected from, so
+    // this used to surface a confusing "can't load branches" error on a
+    // page that was otherwise working fine and had nothing to do with
+    // branches in the first place.
+    if (readOnly) return undefined;
+
     let cancelled = false;
     fetch("/api/lookups/branches", { cache: "no-store" })
       .then(async (response) => {
@@ -246,7 +257,7 @@ export default function SponsorPanel({
       })
       .catch(() => { if (!cancelled) setError(t("donationPage.loadBranchesFailed")); });
     return () => { cancelled = true; };
-  }, [label, t]);
+  }, [label, readOnly, t]);
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();

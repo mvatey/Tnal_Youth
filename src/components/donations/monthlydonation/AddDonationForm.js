@@ -643,12 +643,15 @@ const paymentSummary = useMemo(() => {
         ) : null}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-base font-semibold text-secondary">{t("donationPage.monthlyDonationRecordTitle")}</h1>
-          {savedMessage && (
-            <p className="text-sm font-medium text-success" role="status">
+        </div>
+
+        {savedMessage && (
+          <div className="mb-4 rounded-lg bg-success-bg px-4 py-3" role="status">
+            <p className="text-sm font-medium text-success">
               {savedMessage}
             </p>
-          )}
-        </div>
+          </div>
+        )}
 
         <AddDonationFilters
           branches={branches}

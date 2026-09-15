@@ -437,11 +437,6 @@ const paymentSummary = useMemo(
         ) : null}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-base font-semibold text-secondary">{t("donationPage.sponsorDonationRecordTitle")}</h1>
-          {savedMessage && (
-            <p className="text-sm font-medium text-success" role="status">
-              {savedMessage}
-            </p>
-          )}
           {/*
             The whole list is directly editable at once now (see
             isRowLocked on <Table> below), and <Table>'s own bulk action bar
@@ -460,6 +455,14 @@ const paymentSummary = useMemo(
             />
           </div>
         </div>
+
+        {savedMessage && (
+          <div className="mb-4 rounded-lg bg-success-bg px-4 py-3" role="status">
+            <p className="text-sm font-medium text-success">
+              {savedMessage}
+            </p>
+          </div>
+        )}
 
         <AddDonationFilters
           branches={branches}
