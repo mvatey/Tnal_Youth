@@ -52,7 +52,13 @@ export default function PoliticalPage() {
   const params = useParams();
   const memberId = String(params?.id ?? "");
 
-  const [member, setMember] = useState(null);
+  // True until the initial political-affiliation fetch settles (success
+  // or failure) -- gates the render below so this page never flashes
+  // the red "couldn't load" box during a normal load, only once loading
+  // has actually finished and genuinely failed. The member itself is
+  // already confirmed to exist by the shared layout before any tab
+  // renders at all, so this page has no separate need to track it.
+  const [loading, setLoading] = useState(true);
   const [politicals, setPoliticals] = useState([]);
   const [parties, setParties] = useState([]);
   const [error, setError] = useState("");
@@ -79,10 +85,10 @@ export default function PoliticalPage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    setLoading(true);
     setError("");
     loadMemberRecords(memberId, "political-affiliations", controller.signal)
       .then((rows) => {
-        setMember({ id: memberId });
         setPoliticals(rows.length ? rows.map((row) => ({
           id: row.id,
           organization:
@@ -101,11 +107,11 @@ export default function PoliticalPage() {
       })
       .catch((loadError) => {
         if (loadError.name !== "AbortError") {
-          setMember({ id: memberId });
           setPoliticals([createEmptyPolitical()]);
           setError(loadError.message || t("memberPage.politicalLoadFailed"));
         }
-      });
+      })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [memberId]);
 
@@ -169,7 +175,7 @@ export default function PoliticalPage() {
   }
 
   const handleSave = async () => {
-    if (!member) return false;
+    if (loading) return false;
 
     if (saving) return false;
 
@@ -246,10 +252,10 @@ export default function PoliticalPage() {
    */
   useUnsavedFormGuard(hasUnsavedChanges, handleSave);
 
-  if (!member) {
+  if (loading) {
     return (
-      <div className="rounded-xl border border-error/30 bg-bg-page-white p-6">
-        <p className="text-sm text-error">{t("memberPage.memberNotFound")}</p>
+      <div className="flex min-h-[200px] items-center justify-center">
+        <p className="text-sm text-text-secondary">{t("memberPage.loadingMember")}</p>
       </div>
     );
   }
