@@ -475,7 +475,8 @@ export default function CompanyDocumentPage() {
     <>
       {error ? <div className="mb-3 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
       <DataTable
-        data={loading ? [] : filteredDocuments}
+        data={filteredDocuments}
+        loading={loading}
         columns={columns}
         filters={filters}
         searchQuery={search}

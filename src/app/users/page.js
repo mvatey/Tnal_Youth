@@ -183,6 +183,7 @@ export default function UsersPage() {
   const { t, locale } = useLanguage();
   const isViewer = normalizeRole(currentUser?.role) === "viewer";
   const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(true);
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
 
   const [query, setQuery] = useState("");
@@ -305,11 +306,14 @@ export default function UsersPage() {
   useEffect(() => {
     const controller = new AbortController();
 
+    setUsersLoading(true);
     loadUsers(controller.signal).catch((error) => {
       if (error.name !== "AbortError") {
         console.warn("Failed to load users:", error.message);
         setUsers([]);
       }
+    }).finally(() => {
+      if (!controller.signal.aborted) setUsersLoading(false);
     });
 
     return () => {
@@ -545,6 +549,7 @@ export default function UsersPage() {
         <DataTable
           title={t("usersPage.listTitle")}
           data={displayedUsers}
+          loading={usersLoading}
           columns={tableColumns}
           filters={filterConfig}
           searchQuery={query}

@@ -421,7 +421,8 @@ export default function MemberDocumentPage() {
         </div>
       ) : null}
       <DataTable
-        data={loading ? [] : filteredDocuments}
+        data={filteredDocuments}
+        loading={loading}
         columns={columns}
         filters={filters}
         searchQuery={search}

@@ -153,14 +153,9 @@ export default function MemberEventDonationPage() {
         </div>
       )}
 
-      {isLoading && (
-        <div className="rounded-lg border border-border bg-bg-page-white px-4 py-3 text-sm text-text-secondary">
-          {t("common.loading")}
-        </div>
-      )}
-
       <DataTable
         data={filteredData}
+        loading={isLoading}
         columns={columns}
         filters={filters}
         searchQuery={query}
@@ -169,6 +164,7 @@ export default function MemberEventDonationPage() {
         pageSize={10}
         minTableWidth={760}
         emptyMessage={t("memberPage.noRecordsFound")}
+        loadingMessage={t("common.loading")}
         onDownload={() =>
           downloadTableAsExcel({
             data: filteredData,

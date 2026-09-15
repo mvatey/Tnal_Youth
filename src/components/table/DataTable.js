@@ -24,6 +24,11 @@ export default function DataTable({
   actionButton,
   onDownload,
   emptyMessage = "មិនមានទិន្នន័យត្រូវនឹងលក្ខខណ្ឌស្វែងរកទេ",
+  loadingMessage = "កំពុងផ្ទុក...",
+  // The caller's own fetch is still in flight -- `data` is legitimately []
+  // at this point, but that's not the same thing as "confirmed no rows
+  // match," so a loading row is shown instead of emptyMessage.
+  loading = false,
   pageSize = 10,
   // Every table shares this 900px floor by default, but a table with
   // fewer/narrower columns (e.g. participation history) doesn't need
@@ -391,7 +396,25 @@ export default function DataTable({
             </thead>
 
             <tbody>
-              {paginatedData.length >
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={Math.max(
+                      columns.length,
+                      1,
+                    )}
+                    className="
+                      px-4
+                      py-10
+                      text-center
+                      text-sm
+                      text-text-mute
+                    "
+                  >
+                    {loadingMessage}
+                  </td>
+                </tr>
+              ) : paginatedData.length >
               0 ? (
                 paginatedData.map(
                   (item, itemIndex) => {

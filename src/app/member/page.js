@@ -331,6 +331,11 @@ export default function MembersPage() {
   ] = useState([]);
 
   const [
+    membersLoading,
+    setMembersLoading,
+  ] = useState(true);
+
+  const [
     summary,
     setSummary,
   ] = useState(
@@ -883,6 +888,8 @@ export default function MembersPage() {
     const controller =
       new AbortController();
 
+    setMembersLoading(true);
+
     loadMembers(
       controller.signal,
     ).catch((error) => {
@@ -897,6 +904,8 @@ export default function MembersPage() {
 
         setMembers([]);
       }
+    }).finally(() => {
+      if (!controller.signal.aborted) setMembersLoading(false);
     });
 
     return () => {
@@ -1527,6 +1536,7 @@ export default function MembersPage() {
         <DataTable
           title={t("memberPage.listTitle")}
           data={filteredMembers}
+          loading={membersLoading}
           columns={tableColumns}
           filters={filterConfig}
           searchQuery={query}
