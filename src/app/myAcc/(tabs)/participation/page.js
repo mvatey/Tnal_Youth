@@ -13,6 +13,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import DataTable from "@/components/table/DataTable.js";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail.js";
+import { formatDateWithMonth } from "@/lib/formatDate";
 
 const TYPE_BADGE_STYLES = {
   INTERNAL:
@@ -181,7 +182,7 @@ function getCode(value) {
   ).toUpperCase();
 }
 
-function mapParticipation(item) {
+function mapParticipation(item, locale) {
   const activity =
     item?.activity || {};
 
@@ -257,22 +258,32 @@ function mapParticipation(item) {
           item?.location,
       ) || "-",
 
-    date:
-      item?.attended_on ||
-      item?.attendedOn ||
-      item?.participation_date ||
-      item?.participationDate ||
-      item?.activity_date ||
-      item?.activityDate ||
-      activity?.starts_at ||
-      activity?.startsAt ||
-      activity?.date ||
-      "-",
+    // The backend's MemberParticipationResponse is flat (starts_at sits
+    // directly on the row, not nested under an "activity" object) --
+    // checking activity?.starts_at alone always missed it, which is why
+    // this column showed "-" for every row regardless of attendance.
+    // starts_at is the activity's first day, checked first since that's
+    // what this column is meant to show; the rest are defensive
+    // fallbacks for any other response shape this mapper might see.
+    date: formatDateWithMonth(
+      item?.starts_at ||
+        item?.startsAt ||
+        item?.attended_on ||
+        item?.attendedOn ||
+        item?.participation_date ||
+        item?.participationDate ||
+        item?.activity_date ||
+        item?.activityDate ||
+        activity?.starts_at ||
+        activity?.startsAt ||
+        activity?.date,
+      locale,
+    ),
   };
 }
 
 export default function ParticipationPage() {
-  const { t, label } = useLanguage();
+  const { t, label, locale } = useLanguage();
   const router = useRouter();
 
   const {
@@ -470,7 +481,7 @@ export default function ParticipationPage() {
 
         setParticipations(
           content.map(
-            mapParticipation,
+            (item) => mapParticipation(item, locale),
           ),
         );
       } catch (fetchError) {
@@ -512,6 +523,7 @@ export default function ParticipationPage() {
     memberId,
     debouncedQuery,
     typeFilter,
+    locale,
   ]);
 
   /*
