@@ -246,6 +246,15 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   // is currently filtered to). Drives both isBranchOrganizer below and the
   // "organizer" marker EventDonationBranchTotals shows in its own table.
   const [organizerBranchId, setOrganizerBranchId] = useState(null);
+  // How many branches are eligible to record a donation for the selected
+  // activity (the organizer, plus every ACCEPTED co-host) -- from the same
+  // branch-totals endpoint EventDonationBranchTotals itself uses. A solo
+  // activity (no co-hosting invitations, ever) only ever has one eligible
+  // branch, which makes a "សាខា" (Branch) tab pointless -- there is nothing
+  // cross-branch to summarize. Used below to drop that tab for a solo
+  // activity, leaving just Members + Sponsor (still summed together in the
+  // top-level cards either way, see EventDonationDetailCards).
+  const [eligibleBranchCount, setEligibleBranchCount] = useState(null);
   // True as soon as the user has typed an amount that hasn't been saved
   // yet -- see the Table's onRowsChange below. Drives the branch-switch
   // confirmation guard: switching branches mid-entry with nothing typed
@@ -325,6 +334,24 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     return () => { cancelled = true; };
   }, [selectedEvent]);
 
+  useEffect(() => {
+    if (selectedEvent === "all") {
+      setEligibleBranchCount(null);
+      return undefined;
+    }
+    let cancelled = false;
+    fetchJson(
+      `/api/backend/donations/activity/${encodeURIComponent(selectedEvent)}/branch-totals`,
+    )
+      .then((rows) => {
+        if (!cancelled) setEligibleBranchCount(Array.isArray(rows) ? rows.length : null);
+      })
+      .catch(() => {
+        if (!cancelled) setEligibleBranchCount(null);
+      });
+    return () => { cancelled = true; };
+  }, [selectedEvent]);
+
   // "Branch organizer" = this account is a secretary/branch_leader (or a
   // viewer whose viewerScope resolves to one — see effectiveRole above)
   // with access to the branch that actually hosts the selected activity —
@@ -360,6 +387,13 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     organizerBranchId != null &&
     selectedBranch !== "all" &&
     !isSelectedBranchOrganizer;
+
+  // True once we know this activity has at least one ACCEPTED co-hosting
+  // branch besides the organizer -- only then does the Branch tab have
+  // anything cross-branch to show. null while eligibleBranchCount hasn't
+  // loaded yet is treated as "no" (tab briefly hidden until it resolves),
+  // same as every other organizerBranchId-derived flag above.
+  const activityHasInvitedBranches = (eligibleBranchCount ?? 0) > 1;
 
   useEffect(() => {
     let cancelled = false;
@@ -523,7 +557,11 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     if (activeTab === "sponsor" && !isBranchOrganizer) {
       setActiveTab("members");
     }
-  }, [activeTab, isBranchOrganizer, isInvitedBranch]);
+
+    if (activeTab === "branches" && !activityHasInvitedBranches) {
+      setActiveTab("members");
+    }
+  }, [activeTab, isBranchOrganizer, isInvitedBranch, activityHasInvitedBranches]);
 
   const handleSave = async (rows) => {
     if (!canEdit) { setError(t("donationPage.noEditPermission")); return false; }
@@ -782,9 +820,12 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
           that there is nothing to show either tab's table for. "សាខា"
           is read-only for every viewer (including this branch's own
           entry staff): it's a cross-branch summary, not something any
-          single branch edits. "អ្នកឧបត្ថម្ភ" only appears for the branch
-          that actually organizes the selected activity (see
-          isBranchOrganizer above) — everyone else sees just these two.
+          single branch edits, and only shows up at all once the activity
+          actually has another ACCEPTED co-hosting branch to summarize
+          (activityHasInvitedBranches) — a solo activity just gets Members
+          + Sponsor. "អ្នកឧបត្ថម្ភ" only appears for the branch that
+          actually organizes the selected activity (see isBranchOrganizer
+          above) — everyone else sees just these.
         */}
         {hasBranchAndEvent && (
           <div className="mb-4 inline-flex w-fit shrink-0 rounded-lg border border-border bg-bg-page-gray p-1 text-xs font-medium">
@@ -792,7 +833,9 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
               ? [{ key: "members", label: t("donationPage.member") }]
               : [
                   { key: "members", label: t("donationPage.member") },
-                  { key: "branches", label: t("donationPage.branch") },
+                  ...(activityHasInvitedBranches
+                    ? [{ key: "branches", label: t("donationPage.branch") }]
+                    : []),
                   ...(isBranchOrganizer ? [{ key: "sponsor", label: t("memberPage.tabSponsor") }] : []),
                 ]
             ).map((tab) => (
@@ -863,7 +906,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
             total={memberTotals.total}
           />
         ) : null}
-        {hasBranchAndEvent && activeTab === "branches" && !isInvitedBranch ? (
+        {hasBranchAndEvent && activeTab === "branches" && !isInvitedBranch && activityHasInvitedBranches ? (
           <EventDonationBranchTotals
             activityId={selectedEvent}
             organizerBranchId={organizerBranchId}
