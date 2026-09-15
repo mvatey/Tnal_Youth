@@ -116,6 +116,25 @@ export default function MemberSelectModal({
     [lockedIds],
   );
 
+  /*
+   * Members who went inactive after this activity was already created stay
+   * fully normal (no restriction) -- only a member whose account was
+   * already inactive by the time THIS activity was created (see
+   * blockedForActivity, computed in the page above from the activity's own
+   * createdAt vs the member's statusChangedAt) is blocked from being newly
+   * invited here.
+   */
+  const blockedSet = useMemo(
+    () =>
+      new Set(
+        members
+          .filter((member) => member.blockedForActivity)
+          .map((member) => Number(member.id))
+          .filter(Number.isFinite),
+      ),
+    [members],
+  );
+
   const memberIdSet = useMemo(
     () =>
       new Set(
@@ -244,11 +263,15 @@ export default function MemberSelectModal({
           (member) =>
             !lockedSet.has(
               Number(member.id),
+            ) &&
+            !blockedSet.has(
+              Number(member.id),
             ),
         ),
       [
         filteredMembers,
         lockedSet,
+        blockedSet,
       ],
     );
 
@@ -283,6 +306,16 @@ export default function MemberSelectModal({
      */
     if (
       lockedSet.has(memberId)
+    ) {
+      return;
+    }
+
+    /*
+     * Inactive since before this activity existed: cannot be newly
+     * invited here at all.
+     */
+    if (
+      blockedSet.has(memberId)
     ) {
       return;
     }
@@ -536,10 +569,19 @@ async function handleSave() {
                       memberId,
                     );
 
+                  const isBlocked =
+                    blockedSet.has(
+                      memberId,
+                    );
+
                   return (
                     <tr
                       key={member.id}
-                      className="h-12 border-b border-border text-text-secondary"
+                      className={`h-12 border-b border-border text-text-secondary ${
+                        isBlocked
+                          ? "grayscale opacity-70"
+                          : ""
+                      }`}
                     >
 
                       <td className="text-center">
@@ -551,7 +593,8 @@ async function handleSave() {
                           }
 
                           disabled={
-                            alreadySaved
+                            alreadySaved ||
+                            isBlocked
                           }
 
                           onChange={() =>
@@ -610,22 +653,28 @@ async function handleSave() {
                       </td>
 
                       <td className="text-center">
-                        {/*
-                         * TEMPORARY selection
-                         * immediately changes
-                         * visible status.
-                         */}
-                        <span
-                          className={`rounded-full px-3 py-1 text-[11px] ${
-                            isSelected
-                              ? "bg-success-bg text-success"
-                              : "bg-error-bg text-error"
-                          }`}
-                        >
-                          {isSelected
-                            ? t("activityPage.invited")
-                            : t("activityPage.notInvited")}
-                        </span>
+                        {isBlocked ? (
+                          <span className="rounded-full bg-error-bg px-3 py-1 text-[11px] text-error">
+                            {t("donationPage.inactiveMember")}
+                          </span>
+                        ) : (
+                          /*
+                           * TEMPORARY selection
+                           * immediately changes
+                           * visible status.
+                           */
+                          <span
+                            className={`rounded-full px-3 py-1 text-[11px] ${
+                              isSelected
+                                ? "bg-success-bg text-success"
+                                : "bg-error-bg text-error"
+                            }`}
+                          >
+                            {isSelected
+                              ? t("activityPage.invited")
+                              : t("activityPage.notInvited")}
+                          </span>
+                        )}
                       </td>
 
                       <td className="text-center">

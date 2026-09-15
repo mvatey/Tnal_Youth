@@ -400,6 +400,19 @@ export default function ActivityMembersPage({
           );
 
         /*
+         * An inactive member is only blocked from being newly invited
+         * here when THIS activity was created after their account went
+         * inactive -- an activity that already existed before that
+         * treats them like any other member, no restriction at all.
+         */
+        const activityCreatedAt =
+          getValue(
+            activityRecord,
+            "createdAt",
+            "created_at",
+          );
+
+        /*
          * Only host staff or accepted
          * invited staff may invite.
          */
@@ -712,6 +725,28 @@ export default function ActivityMembersPage({
                       "",
                     ) ||
                     "-",
+
+                  blockedForActivity:
+                    (() => {
+                      const statusCode =
+                        member.status?.code ??
+                        member.status_code ??
+                        null;
+                      const isInactive =
+                        Boolean(statusCode) &&
+                        statusCode !== "ACTIVE";
+                      const statusChangedAt =
+                        member.status_changed_at ??
+                        member.statusChangedAt ??
+                        null;
+                      return Boolean(
+                        isInactive &&
+                          activityCreatedAt &&
+                          statusChangedAt &&
+                          new Date(activityCreatedAt) >
+                            new Date(statusChangedAt),
+                      );
+                    })(),
                 };
               },
             ),

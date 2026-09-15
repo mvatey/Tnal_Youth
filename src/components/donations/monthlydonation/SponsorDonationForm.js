@@ -234,25 +234,36 @@ function MemberSelectField({
           role="listbox"
           className="absolute left-0 top-full z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-border bg-bg-page-white py-1 shadow-lg"
         >
-          {options.map((option) => (
-            <button
-              key={optionValue(option)}
-              type="button"
-              role="option"
-              aria-selected={String(value) === optionValue(option)}
-              onClick={() => {
-                onChange(optionValue(option));
-                setIsOpen(false);
-              }}
-              className={`block w-full px-4 py-2 text-left text-[13px] transition hover:bg-secondary-light hover:text-secondary ${
-                String(value) === optionValue(option)
-                  ? "bg-secondary-light text-secondary"
-                  : "text-text-secondary"
-              }`}
-            >
-              {optionLabel(option)}
-            </button>
-          ))}
+          {options.map((option) => {
+            const isDisabled = Boolean(option && typeof option === "object" && option.disabled);
+            return (
+              <button
+                key={optionValue(option)}
+                type="button"
+                role="option"
+                aria-selected={String(value) === optionValue(option)}
+                disabled={isDisabled}
+                onClick={() => {
+                  if (isDisabled) return;
+                  onChange(optionValue(option));
+                  setIsOpen(false);
+                }}
+                className={`block w-full px-4 py-2 text-left text-[13px] transition ${
+                  isDisabled
+                    ? "cursor-not-allowed text-text-mute opacity-60"
+                    : "hover:bg-secondary-light hover:text-secondary"
+                } ${
+                  !isDisabled && String(value) === optionValue(option)
+                    ? "bg-secondary-light text-secondary"
+                    : !isDisabled
+                      ? "text-text-secondary"
+                      : ""
+                }`}
+              >
+                {optionLabel(option)}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -578,11 +589,16 @@ export default function SponsorDonationForm({ initialData = null }) {
     let cancelled = false;
     fetchJson(`/api/backend/donations/sponsor/lookup/members?branchId=${encodeURIComponent(form.branch)}`)
       .then((items) => {
-        if (!cancelled) setMemberOptions((Array.isArray(items) ? items : []).map((member) => ({
-          value: String(member.id),
-          label: member.name || member.nameEn || member.memberNo || `#${member.id}`,
-          ...member,
-        })));
+        if (!cancelled) setMemberOptions((Array.isArray(items) ? items : []).map((member) => {
+          const isInactive = Boolean(member.memberStatusCode) && member.memberStatusCode !== "ACTIVE";
+          const name = member.name || member.nameEn || member.memberNo || `#${member.id}`;
+          return {
+            value: String(member.id),
+            label: isInactive ? `${name} (${t("donationPage.inactiveMember")})` : name,
+            disabled: isInactive,
+            ...member,
+          };
+        }));
       })
       .catch((loadError) => {
         if (!cancelled) {

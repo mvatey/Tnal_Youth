@@ -323,17 +323,30 @@ export default function LetterOfAppointmentForm({
                   {members.map((member) => {
                     const memberId = String(member.id);
                     const checked = selectedMemberIds.includes(memberId);
+                    const statusCode = member.status?.code;
+                    const isInactive = Boolean(statusCode) && statusCode !== "ACTIVE";
+                    const name =
+                      (isEnglish ? getMemberNameEn(member) || getMemberNameKh(member) : getMemberNameKh(member) || getMemberNameEn(member)) || `#${memberId}`;
                     return (
-                      <label key={memberId} className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 hover:bg-primary/5">
+                      <label
+                        key={memberId}
+                        className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
+                          isInactive
+                            ? "grayscale opacity-70 cursor-not-allowed"
+                            : "cursor-pointer hover:bg-primary/5"
+                        }`}
+                      >
                         <input
                           type="radio"
                           name="appointmentMemberId"
                           checked={checked}
+                          disabled={isInactive}
                           onChange={() => selectMember(member)}
                           className="h-4 w-4 accent-primary"
                         />
                         <span className="min-w-0 truncate text-sm text-text-primary">
-                          {(isEnglish ? getMemberNameEn(member) || getMemberNameKh(member) : getMemberNameKh(member) || getMemberNameEn(member)) || `#${memberId}`}
+                          {name}
+                          {isInactive ? ` (${t("donationPage.inactiveMember")})` : ""}
                         </span>
                       </label>
                     );

@@ -70,13 +70,28 @@ export default function ParticipationEditModal({
     selectedBranch,
   ]);
 
+  // A participant whose account was already inactive by the time this
+  // activity was created (see blockedForActivity, computed on the parent
+  // page from the activity's own createdAt vs the member's
+  // statusChangedAt) is locked here entirely -- an activity that already
+  // existed before that treats them like any other member instead.
+  const selectableFilteredParticipants = useMemo(
+    () =>
+      filteredParticipants.filter(
+        (participant) => !participant.blockedForActivity,
+      ),
+    [filteredParticipants],
+  );
+
   const allFilteredSelected =
-    filteredParticipants.length > 0 &&
-    filteredParticipants.every((participant) =>
+    selectableFilteredParticipants.length > 0 &&
+    selectableFilteredParticipants.every((participant) =>
       selectedIds.includes(participant.id),
     );
 
-  const toggleParticipant = (participantId) => {
+  const toggleParticipant = (participantId, blocked) => {
+    if (blocked) return;
+
     setSelectedIds((current) =>
       current.includes(participantId)
         ? current.filter((id) => id !== participantId)
@@ -89,7 +104,7 @@ export default function ParticipationEditModal({
       setSelectedIds((current) =>
         current.filter(
           (id) =>
-            !filteredParticipants.some(
+            !selectableFilteredParticipants.some(
               (participant) => participant.id === id,
             ),
         ),
@@ -101,7 +116,7 @@ export default function ParticipationEditModal({
     setSelectedIds((current) => [
       ...new Set([
         ...current,
-        ...filteredParticipants.map(
+        ...selectableFilteredParticipants.map(
           (participant) => participant.id,
         ),
       ]),
@@ -242,18 +257,27 @@ export default function ParticipationEditModal({
                       participant.id,
                     );
 
+                  const isBlocked =
+                    Boolean(
+                      participant.blockedForActivity,
+                    );
+
                   return (
                     <tr
                       key={participant.id}
-                      className="h-14 border-b border-border"
+                      className={`h-14 border-b border-border ${
+                        isBlocked ? "grayscale opacity-70" : ""
+                      }`}
                     >
                       <td className="text-center">
                         <input
                           type="checkbox"
                           checked={isParticipated}
+                          disabled={isBlocked}
                           onChange={() =>
                             toggleParticipant(
                               participant.id,
+                              isBlocked,
                             )
                           }
                         />
@@ -282,17 +306,23 @@ export default function ParticipationEditModal({
                       </td>
 
                       <td className="text-center">
-                        <span
-                          className={`inline-flex min-w-[110px] items-center justify-center rounded-full px-3 py-1 text-[11px] font-medium ${
-                            isParticipated
-                              ? "bg-success-bg text-success"
-                              : "bg-error-bg text-error"
-                          }`}
-                        >
-                          {isParticipated
-                            ? t("activityPage.participated")
-                            : t("activityPage.notParticipated")}
-                        </span>
+                        {isBlocked ? (
+                          <span className="inline-flex min-w-[110px] items-center justify-center rounded-full bg-error-bg px-3 py-1 text-[11px] font-medium text-error">
+                            {t("donationPage.inactiveMember")}
+                          </span>
+                        ) : (
+                          <span
+                            className={`inline-flex min-w-[110px] items-center justify-center rounded-full px-3 py-1 text-[11px] font-medium ${
+                              isParticipated
+                                ? "bg-success-bg text-success"
+                                : "bg-error-bg text-error"
+                            }`}
+                          >
+                            {isParticipated
+                              ? t("activityPage.participated")
+                              : t("activityPage.notParticipated")}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   );

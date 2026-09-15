@@ -544,6 +544,19 @@ export default function ActivityParticipantsPage({
           );
 
         /*
+         * An inactive member is only blocked from being newly added to
+         * attendance here when THIS activity was created after their
+         * account went inactive -- an activity that already existed
+         * before that treats them like any other member.
+         */
+        const activityCreatedAt =
+          getValue(
+            activityRecord,
+            "createdAt",
+            "created_at",
+          );
+
+        /*
          * HOST:
          * current roster = host.
          *
@@ -777,6 +790,28 @@ export default function ActivityParticipantsPage({
                     participant
                       ?.checkedInAt,
                   ),
+
+            blockedForActivity:
+              (() => {
+                const statusCode =
+                  member?.status?.code ??
+                  member?.status_code ??
+                  null;
+                const isInactive =
+                  Boolean(statusCode) &&
+                  statusCode !== "ACTIVE";
+                const statusChangedAt =
+                  member?.status_changed_at ??
+                  member?.statusChangedAt ??
+                  null;
+                return Boolean(
+                  isInactive &&
+                    activityCreatedAt &&
+                    statusChangedAt &&
+                    new Date(activityCreatedAt) >
+                      new Date(statusChangedAt),
+                );
+              })(),
           };
         }
 

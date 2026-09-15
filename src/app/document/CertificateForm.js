@@ -672,12 +672,21 @@ export default function CertificateForm({
     selectedOtherBranchMemberIds.includes(String(member.id)),
   );
 
-  const memberOptions = members.map((member) => ({
-    label: label({ labelKm: member.name_kh, labelEn: member.name_en }, member.name_kh),
-    labelKm: member.name_kh,
-    labelEn: member.name_en,
-    value: String(member.id),
-  }));
+  const memberOptions = members.map((member) => {
+    const statusCode = member.status?.code;
+    const isInactive = Boolean(statusCode) && statusCode !== "ACTIVE";
+    const name = label({ labelKm: member.name_kh, labelEn: member.name_en }, member.name_kh);
+
+    return {
+      label: isInactive
+        ? `${name} (${t("donationPage.inactiveMember")})`
+        : name,
+      labelKm: member.name_kh,
+      labelEn: member.name_en,
+      value: String(member.id),
+      disabled: isInactive,
+    };
+  });
 
   const ownBranchMemberOptions = ownBranchMembers.map((member) => ({
     label: label({ labelKm: member.name_kh, labelEn: member.name_en }, member.name_kh),
