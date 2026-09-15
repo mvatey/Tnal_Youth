@@ -361,15 +361,12 @@ export default function EventDonationPage() {
     return total + Number(row.amountUsd || 0) + Number(row.amountKhr || 0) / Number(row.exchangeRateKhrPerUsd || 4000);
   }, 0);
   const ownBranchTotalDollar = sumTotalDollar(activityDonationRows);
-  // panelTotalDollar (branch-scoped) and ownBranchTotalDollar (admin) are
-  // both ACTIVITY_DONATION-only -- sponsor money earmarked for an activity
-  // is folded in here on top, so this card's total matches what each
-  // activity's own detail page shows (member/branch + sponsor combined).
-  // The card below breaks that same slice back out so it can still be read
-  // (and subtracted back off, if you only want the member/branch portion)
-  // on its own.
+  const totalDollar = isBranchScoped ? panelTotalDollar : ownBranchTotalDollar;
+  // Shown as its own card, deliberately not folded into totalDollar above --
+  // sponsor money earmarked for an activity stays a separate lane from the
+  // member/branch activity total, same as the table below and the activity
+  // detail page's own cards.
   const sponsorInActivityDollar = sumTotalDollar(sponsorInActivityRows);
-  const totalDollar = (isBranchScoped ? panelTotalDollar : ownBranchTotalDollar) + sponsorInActivityDollar;
   const myTotalDollar = filteredMyRows.reduce((total, row) => total + parseMoney(row.dollarAmount), 0);
 
   const handleBranchChange = (branch) => {
