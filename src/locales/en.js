@@ -174,6 +174,7 @@ const en = {
     totalDonationUsd: "Total donations ($)",
     noBranchMemberData: "No member data for this branch.",
     dateOfBirth: "Date of birth",
+    inactiveMember: "Inactive",
     editDonation: "Edit this donation",
     back: "Back",
     branchDatePaymentRequired: "Please select a branch, date, and payment method.",

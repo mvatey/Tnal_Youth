@@ -111,6 +111,11 @@ function mapMonthlyMember(member, branchLabel, month, year, locale, t) {
     receiptFileId: member.receiptFileId ?? null,
     donationId: member.existingDonationId ?? null,
     alreadyPaid: Boolean(member.alreadyPaid),
+    // The backend only still returns an inactive member here when they
+    // already have a donation on record for this exact period -- kept
+    // visible (and its old amount intact) so the record isn't lost, but
+    // locked from further edits until the account is active again.
+    isInactive: Boolean(member.memberStatusCode) && member.memberStatusCode !== "ACTIVE",
   };
 }
 export default function AddDonationForm() {
@@ -696,6 +701,9 @@ const paymentSummary = useMemo(() => {
               readOnly={!canManageMonthlyDonation}
               // Saved monthly donations remain editable for ADMIN/SECRETARY/
               // BRANCH_LEADER. VIEWER accounts can see the rows but cannot edit.
+              // An inactive member's row stays visible with its old amount
+              // but locked from further edits until reactivated.
+              isRowLocked={(member) => Boolean(member.isInactive)}
          />
 
     <div

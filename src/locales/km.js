@@ -174,6 +174,7 @@ const km = {
     totalDonationUsd: "សរុបវិភាគទាន ($)",
     noBranchMemberData: "មិនមានទិន្នន័យសមាជិកសម្រាប់សាខានេះទេ",
     dateOfBirth: "ថ្ងៃខែឆ្នាំកំណើត",
+    inactiveMember: "អសកម្ម",
     editDonation: "កែប្រែវិភាគទាននេះ",
     back: "ត្រឡប់ក្រោយ",
     branchDatePaymentRequired: "សូមជ្រើសរើសសាខា កាលបរិច្ឆេទ និងវិធីសាស្ត្រទូទាត់",

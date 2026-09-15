@@ -133,7 +133,13 @@ export default function AddDonationTableRow({
   };
 
   return (
-    <tr className="h-[42px] border-b border-border bg-bg-page-white text-center text-[12px] text-text-secondary transition-colors hover:bg-bg-page-gray">
+    <tr
+      className={`h-[42px] border-b border-border text-center text-[12px] text-text-secondary transition-colors ${
+        member.isInactive
+          ? "bg-bg-page-gray/60 opacity-60"
+          : "bg-bg-page-white hover:bg-bg-page-gray"
+      }`}
+    >
       {/* ល.រ */}
       <td className="px-3 font-medium">{index + 1}</td>
 
@@ -153,6 +159,11 @@ export default function AddDonationTableRow({
             />
           </div>
           <span className="whitespace-nowrap font-medium text-text-secondary">{member.name}</span>
+          {member.isInactive && (
+            <span className="whitespace-nowrap rounded-full bg-error-bg px-2 py-0.5 text-[10px] font-medium text-error">
+              {t("donationPage.inactiveMember")}
+            </span>
+          )}
         </div>
       </td>
 
