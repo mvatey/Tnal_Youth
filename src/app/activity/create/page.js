@@ -1227,6 +1227,19 @@ export default function CreateActivityPage() {
             joinedDateValue: member.joined_on || "",
             profileImage: getMemberProfileImage(member),
             status: label(member.status, "-"),
+            /*
+             * This activity doesn't exist yet -- it will be created just
+             * now (or later, whenever the form is submitted), so unlike
+             * the invite-more-members page for an ALREADY-existing
+             * activity (which only blocks when that activity is newer
+             * than the member's own inactivation), there's no "existing"
+             * case to exempt here: any member who is currently inactive
+             * is always inactive as of this brand-new activity's creation.
+             */
+            blockedForActivity: (() => {
+              const statusCode = member.status?.code ?? member.status_code ?? null;
+              return Boolean(statusCode) && statusCode !== "ACTIVE";
+            })(),
           })));
         }
       })
