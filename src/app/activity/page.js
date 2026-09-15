@@ -558,7 +558,12 @@ export default function ActivityPage() {
         (!rangeEndValue || item.dateValue <= rangeEndValue);
 
       const matchesScope =
-        selectedScope === "all" ||
+        // "All" means "activities that are actually theirs" -- host-created
+        // (ownBranch === true), or an invited branch's invitation they've
+        // ACCEPTED. A still-pending or declined invitation isn't theirs yet
+        // and belongs only in the "Invited branches" tab, not mixed in here.
+        (selectedScope === "all" &&
+          !(item.ownBranch === false && item.invitationStatus !== "ACCEPTED")) ||
         (selectedScope === "own" && item.ownBranch === true) ||
         (selectedScope === "invited" && item.ownBranch === false);
 
