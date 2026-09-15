@@ -9,17 +9,20 @@ import { useLanguage } from "@/context/LanguageContext";
 /**
  * Activity-level donation cards.
  *
- * These cards intentionally use the cross-branch aggregate endpoint rather
- * than the currently selected branch's itemised donation list. That keeps the
- * activity total shared between the organizer and every accepted invited
- * branch: when an invited branch records money, the organizer's cards update
- * too without exposing that branch's individual donor rows.
+ * These cards intentionally use a cross-branch, all-donation-type aggregate
+ * endpoint rather than the currently selected branch's itemised donation
+ * list: the total shown here is "how much this activity raised, period" —
+ * shared between the organizer and every accepted invited branch, AND
+ * including sponsor donations earmarked for this activity. That is
+ * deliberately broader than the Branch tab's own per-branch breakdown, which
+ * only counts member/branch donations (sponsor money has its own tab there
+ * so it isn't double-counted into any one branch's total).
  */
 export default function EventDonationDetailCards() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
   const activityId = searchParams.get("event");
-  const [branchTotals, setBranchTotals] = useState([]);
+  const [summaryData, setSummaryData] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -30,14 +33,14 @@ export default function EventDonationDetailCards() {
 
   useEffect(() => {
     if (!activityId) {
-      setBranchTotals([]);
+      setSummaryData(null);
       return undefined;
     }
 
     let cancelled = false;
 
     fetch(
-      `/api/backend/donations/activity/${encodeURIComponent(activityId)}/branch-totals`,
+      `/api/backend/donations/activity/${encodeURIComponent(activityId)}/total`,
       {
         cache: "no-store",
         credentials: "include",
@@ -50,13 +53,13 @@ export default function EventDonationDetailCards() {
         }
         return body?.data ?? body;
       })
-      .then((rows) => {
+      .then((data) => {
         if (!cancelled) {
-          setBranchTotals(Array.isArray(rows) ? rows : []);
+          setSummaryData(data ?? null);
         }
       })
       .catch(() => {
-        if (!cancelled) setBranchTotals([]);
+        if (!cancelled) setSummaryData(null);
       });
 
     return () => {
@@ -65,21 +68,11 @@ export default function EventDonationDetailCards() {
   }, [activityId, refreshKey]);
 
   const summary = useMemo(
-    () =>
-      branchTotals.reduce(
-        (totals, row) => ({
-          riel: totals.riel + Number(row?.amountKhr ?? row?.amount_khr ?? 0),
-          dollar: totals.dollar + Number(row?.amountUsd ?? row?.amount_usd ?? 0),
-          overall:
-            totals.overall +
-            Number(row?.totalAmountUsd ?? row?.total_amount_usd ?? 0),
-          donorCount:
-            totals.donorCount +
-            Number(row?.donationCount ?? row?.donation_count ?? 0),
-        }),
-        { riel: 0, dollar: 0, overall: 0, donorCount: 0 },
-      ),
-    [branchTotals],
+    () => ({
+      overall: Number(summaryData?.sumTotalUsd ?? summaryData?.sum_total_usd ?? 0),
+      donorCount: Number(summaryData?.count ?? 0),
+    }),
+    [summaryData],
   );
 
   return (
