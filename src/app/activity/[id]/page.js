@@ -410,6 +410,18 @@ export default async function ActivityDetailPage({
     );
 
   /*
+   * Expense is viewable (read-only) by any HOST branch account, viewer
+   * included -- canManage intentionally excludes viewers (they can never
+   * edit), but that's an editing rule, not a visibility one. An invited
+   * (non-host) branch still never sees expense, viewer or not.
+   */
+  const isHostBranchViewer =
+    role === "viewer" &&
+    currentUser?.branchId != null &&
+    String(currentUser.branchId) === String(record.branchId);
+  const canViewExpense = canManage || isHostBranchViewer;
+
+  /*
    * The income-entry branch is different for an accepted invited branch.
    * Host staff record under the activity host branch; invited staff record
    * under the accepted branch they manage.  Passing this branch explicitly
@@ -1226,9 +1238,11 @@ export default async function ActivityDetailPage({
               </Link>
 
               {/*
-               * Expense ACTION is HOST ONLY.
+               * Expense is HOST branch only -- an invited branch never
+               * sees it, but a host-branch viewer can (read-only; the
+               * expense page itself hides editing for them).
                */}
-              {canManage && (
+              {canViewExpense && (
                 <Link
                   href={`/activity/create/expense?activityId=${activity.id}`}
                   className="flex h-10 items-center justify-center gap-2 rounded-lg bg-[#D9534F] text-sm font-semibold text-white transition-colors hover:bg-[#C4413E]"

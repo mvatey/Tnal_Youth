@@ -18,7 +18,9 @@ import { RiDownloadCloud2Line } from "react-icons/ri";
 import { HiSaveAs } from "react-icons/hi";
 
 import QuantityInput from "@/components/forms/QuantityInput";
+import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { normalizeRole } from "@/lib/navigation";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
 
 const KHR_PER_USD = 4000;
@@ -151,6 +153,13 @@ function expenseToRow(expense) {
 
 export default function ExpensePage() {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  // A host-branch viewer can now reach this page (see the [id]/page.js
+  // canViewExpense change) but must never be able to add/edit/delete a
+  // real activity's expense records -- writes are already backend-
+  // enforced (SECRETARY/BRANCH_LEADER only), this just matches the UI to
+  // that, same isReadOnly pattern used by the income page.
+  const isReadOnly = normalizeRole(user?.role) === "viewer";
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("activityId");
@@ -184,6 +193,13 @@ export default function ExpensePage() {
         const savedRows = (Array.isArray(expenseItems) ? expenseItems : [])
           .map(expenseToRow);
 
+        if (isReadOnly) {
+          // Nothing to add here, so no blank rows to fill in either.
+          setRows(savedRows);
+          setDeletedExpenseIds([]);
+          return;
+        }
+
         // Keep the existing records editable and always leave enough blank
         // rows for adding more expenses without navigating away.
         const blankCount = Math.max(1, 3 - savedRows.length);
@@ -204,7 +220,7 @@ export default function ExpensePage() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, isReadOnly]);
 
   const updateRow = (
     rowId,
@@ -511,13 +527,15 @@ export default function ExpensePage() {
                   {t("donationPage.unitPriceUsd")}
                 </th>
 
-                <th className="w-[13%] text-center">
+                <th className={isReadOnly ? "w-[21%] text-center" : "w-[13%] text-center"}>
                   {t("donationPage.totalPriceUsd")}
                 </th>
 
-                <th className="w-[8%] text-center">
-                  {t("donationPage.action")}
-                </th>
+                {!isReadOnly && (
+                  <th className="w-[8%] text-center">
+                    {t("donationPage.action")}
+                  </th>
+                )}
               </tr>
             </thead>
 
@@ -534,78 +552,96 @@ export default function ExpensePage() {
 
                     {/* Name */}
                     <td className="px-1">
-                      <input
-                        type="text"
-                        value={row.name}
-                        onChange={(event) =>
-                          updateRow(
-                            row.id,
-                            "name",
-                            event.target.value
-                          )
-                        }
-                        placeholder={row.name ? "" : t("donationPage.enterName")}
-                        className="h-10 w-full rounded-md border border-border px-3 text-[12px] text-text-secondary outline-none transition placeholder:text-text-secondary focus:border-secondary"
-                      />
+                      {isReadOnly ? (
+                        <span className="block px-2 text-text-primary">{row.name || "-"}</span>
+                      ) : (
+                        <input
+                          type="text"
+                          value={row.name}
+                          onChange={(event) =>
+                            updateRow(
+                              row.id,
+                              "name",
+                              event.target.value
+                            )
+                          }
+                          placeholder={row.name ? "" : t("donationPage.enterName")}
+                          className="h-10 w-full rounded-md border border-border px-3 text-[12px] text-text-secondary outline-none transition placeholder:text-text-secondary focus:border-secondary"
+                        />
+                      )}
                     </td>
 
                     {/* Description */}
                     <td className="px-1">
-                      <input
-                        type="text"
-                        value={row.category}
-                        onChange={(event) =>
-                          updateRow(
-                            row.id,
-                            "category",
-                            event.target.value
-                          )
-                        }
-                        placeholder={row.category ? "" : t("donationPage.enterDescription")}
-                        className="h-10 w-full rounded-md border border-border px-3 text-[12px] text-text-secondary outline-none transition placeholder:text-text-secondary focus:border-secondary"
-                      />
-                    </td>
-
-                    {/* Quantity */}
-                    <td className="px-1">
-                      <QuantityInput
-                        value={row.quantity}
-                        min={1}
-                        onChange={(value) =>
-                          updateRow(
-                            row.id,
-                            "quantity",
-                            value
-                          )
-                        }
-                      />
-                    </td>
-
-                    {/* Editable riel */}
-                    <td className="px-3">
-                      <div className={`mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(row.unitPriceRiel)}`}>
+                      {isReadOnly ? (
+                        <span className="block px-2 text-text-primary">{row.category || "-"}</span>
+                      ) : (
                         <input
                           type="text"
-                          inputMode="numeric"
-                          value={
-                            row.unitPriceRiel
-                          }
+                          value={row.category}
                           onChange={(event) =>
                             updateRow(
                               row.id,
-                              "unitPriceRiel",
-                              sanitizeInteger(event.target.value)
+                              "category",
+                              event.target.value
                             )
                           }
-                          onFocus={() =>
-                            handleAmountFocus(row.id, "unitPriceRiel", row.unitPriceRiel)
-                          }
-                          onBlur={() =>
-                            handleAmountBlur(row.id, "unitPriceRiel", "0")
-                          }
-                          placeholder={row.unitPriceRiel ? "" : "0"}
-                          className="w-full bg-transparent text-[12px] text-text-secondary outline-none placeholder:text-text-secondary"
+                          placeholder={row.category ? "" : t("donationPage.enterDescription")}
+                          className="h-10 w-full rounded-md border border-border px-3 text-[12px] text-text-secondary outline-none transition placeholder:text-text-secondary focus:border-secondary"
                         />
+                      )}
+                    </td>
+
+                    {/* Quantity */}
+                    <td className="px-1 text-center">
+                      {isReadOnly ? (
+                        <span className="text-text-primary">{row.quantity}</span>
+                      ) : (
+                        <QuantityInput
+                          value={row.quantity}
+                          min={1}
+                          onChange={(value) =>
+                            updateRow(
+                              row.id,
+                              "quantity",
+                              value
+                            )
+                          }
+                        />
+                      )}
+                    </td>
+
+                    {/* Riel unit price */}
+                    <td className="px-3">
+                      <div className={`mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(row.unitPriceRiel)}`}>
+                        {isReadOnly ? (
+                          <span className="min-w-0 flex-1 text-left text-[12px] text-text-secondary">
+                            {row.unitPriceRiel}
+                          </span>
+                        ) : (
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={
+                              row.unitPriceRiel
+                            }
+                            onChange={(event) =>
+                              updateRow(
+                                row.id,
+                                "unitPriceRiel",
+                                sanitizeInteger(event.target.value)
+                              )
+                            }
+                            onFocus={() =>
+                              handleAmountFocus(row.id, "unitPriceRiel", row.unitPriceRiel)
+                            }
+                            onBlur={() =>
+                              handleAmountBlur(row.id, "unitPriceRiel", "0")
+                            }
+                            placeholder={row.unitPriceRiel ? "" : "0"}
+                            className="w-full bg-transparent text-[12px] text-text-secondary outline-none placeholder:text-text-secondary"
+                          />
+                        )}
 
                         <span className="text-[12px] text-text-secondary">
                           ៛
@@ -613,39 +649,45 @@ export default function ExpensePage() {
                       </div>
                     </td>
 
-                    {/* Editable dollar */}
+                    {/* Dollar unit price */}
                     <td className="px-3">
                       <div className={`mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(row.unitPriceDollar)}`}>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={
-                            row.unitPriceDollar
-                          }
-                          onChange={(
-                            event
-                          ) => {
-                            const value =
-                              sanitizeDollarInput(
-                                event.target
-                                  .value
-                              );
+                        {isReadOnly ? (
+                          <span className="min-w-0 flex-1 text-left text-[12px] text-text-secondary">
+                            {row.unitPriceDollar}
+                          </span>
+                        ) : (
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={
+                              row.unitPriceDollar
+                            }
+                            onChange={(
+                              event
+                            ) => {
+                              const value =
+                                sanitizeDollarInput(
+                                  event.target
+                                    .value
+                                );
 
-                            updateRow(
-                              row.id,
-                              "unitPriceDollar",
-                              value
-                            );
-                          }}
-                          onFocus={() =>
-                            handleAmountFocus(row.id, "unitPriceDollar", row.unitPriceDollar)
-                          }
-                          onBlur={() =>
-                            handleAmountBlur(row.id, "unitPriceDollar", "0.00")
-                          }
-                          placeholder={row.unitPriceDollar ? "" : "0.00"}
-                          className="w-full bg-transparent text-[12px] text-text-secondary outline-none placeholder:text-text-secondary"
-                        />
+                              updateRow(
+                                row.id,
+                                "unitPriceDollar",
+                                value
+                              );
+                            }}
+                            onFocus={() =>
+                              handleAmountFocus(row.id, "unitPriceDollar", row.unitPriceDollar)
+                            }
+                            onBlur={() =>
+                              handleAmountBlur(row.id, "unitPriceDollar", "0.00")
+                            }
+                            placeholder={row.unitPriceDollar ? "" : "0.00"}
+                            className="w-full bg-transparent text-[12px] text-text-secondary outline-none placeholder:text-text-secondary"
+                          />
+                        )}
 
                         <span className="text-[12px] text-text-secondary">
                           $
@@ -667,6 +709,7 @@ export default function ExpensePage() {
                     </td>
 
                     {/* Actions */}
+                    {!isReadOnly && (
                     <td className="text-center">
                       <div className="flex items-center justify-center gap-3">
                         <button
@@ -700,8 +743,17 @@ export default function ExpensePage() {
                         </button>
                       </div>
                     </td>
+                    )}
                   </tr>
                 )
+              )}
+
+              {isReadOnly && rows.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-10 text-center text-text-mute">
+                    {t("donationPage.noExpenseYet", "មិនទាន់មានចំណាយ")}
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -754,12 +806,17 @@ export default function ExpensePage() {
         {/* Actions */}
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-between">
           <Link
-            href={id ? `/activity/create?edit=${id}` : "/activity/create"}
+            href={
+              isReadOnly
+                ? (id ? `/activity/${id}` : "/activity")
+                : (id ? `/activity/create?edit=${id}` : "/activity/create")
+            }
             className="flex h-[34px] w-full items-center justify-center rounded-lg border border-border bg-bg-page-white text-sm font-semibold text-text-secondary sm:w-[91px]"
           >
-            {t("donationPage.cancel")}
+            {isReadOnly ? t("donationPage.back") : t("donationPage.cancel")}
           </Link>
 
+          {!isReadOnly && (
           <button
             type="button"
             onClick={handleSave}
@@ -770,6 +827,7 @@ export default function ExpensePage() {
 
             {t("donationPage.save")}
           </button>
+          )}
         </div>
       </div>
     </div>
