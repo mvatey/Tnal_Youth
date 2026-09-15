@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CircleDollarSign, Gift, Users } from "lucide-react";
+import { CircleDollarSign, Gift, HandCoins, Users } from "lucide-react";
 import DonationTabs from "@/components/donations/DonationTabs";
 import StatCard from "@/components/dashboard/statCard";
 import EventDonationPanel from "@/components/donations/eventdonation/EventDonationPanel";
@@ -95,6 +95,21 @@ function isActivityDonationRow(row) {
     // Compatibility fallback for older rows/API versions where typeCode
     // was not exposed yet. Activity donations always carry activityId.
     (!row?.typeCode && row?.activityId)
+  );
+}
+
+// A sponsor can also earmark their donation for a specific activity -- that
+// row is typed SPONSOR_DONATION (not ACTIVITY_DONATION), so it's excluded
+// from isActivityDonationRow() above and from the sponsor tab's own count
+// unless that tab separately filters for it. Folded into totalDollar below
+// (see the "activity's sponsor" card) so this page's grand total matches
+// each activity's own detail-page total, which combines the two the same
+// way -- the separate card here exists so that slice can still be read (and
+// subtracted back out) on its own, not because it sits outside the total.
+function isSponsorDonationForActivityRow(row) {
+  return (
+    String(row?.typeCode || "").toUpperCase() === "SPONSOR_DONATION" &&
+    Boolean(row?.activityId)
   );
 }
 
@@ -337,6 +352,7 @@ export default function EventDonationPage() {
     selectedBranch === "all" || String(row.branchId) === String(selectedBranch),
   ), [rows, selectedBranch]);
   const activityDonationRows = branchRows.filter(isActivityDonationRow);
+  const sponsorInActivityRows = branchRows.filter(isSponsorDonationForActivityRow);
   const memberCount = new Set(activityDonationRows.filter((row) => row.memberId).map((row) => row.memberId)).size;
   const sponsorCount = new Set(activityDonationRows.filter((row) => !row.memberId).map((row) => `${row.sponsorId || row.donorName || row.id}`)).size;
   const sumTotalDollar = (donationRows) => donationRows.reduce((total, row) => {
@@ -345,7 +361,15 @@ export default function EventDonationPage() {
     return total + Number(row.amountUsd || 0) + Number(row.amountKhr || 0) / Number(row.exchangeRateKhrPerUsd || 4000);
   }, 0);
   const ownBranchTotalDollar = sumTotalDollar(activityDonationRows);
-  const totalDollar = isBranchScoped ? panelTotalDollar : ownBranchTotalDollar;
+  // panelTotalDollar (branch-scoped) and ownBranchTotalDollar (admin) are
+  // both ACTIVITY_DONATION-only -- sponsor money earmarked for an activity
+  // is folded in here on top, so this card's total matches what each
+  // activity's own detail page shows (member/branch + sponsor combined).
+  // The card below breaks that same slice back out so it can still be read
+  // (and subtracted back off, if you only want the member/branch portion)
+  // on its own.
+  const sponsorInActivityDollar = sumTotalDollar(sponsorInActivityRows);
+  const totalDollar = (isBranchScoped ? panelTotalDollar : ownBranchTotalDollar) + sponsorInActivityDollar;
   const myTotalDollar = filteredMyRows.reduce((total, row) => total + parseMoney(row.dollarAmount), 0);
 
   const handleBranchChange = (branch) => {
@@ -416,13 +440,20 @@ export default function EventDonationPage() {
   return (
     <div className="space-y-4">
       <DonationTabs />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
           icon={CircleDollarSign}
           label={t("donationPage.eventDonationTitle")}
           value={`$${totalDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
           iconColor="text-success"
           iconBg="bg-success-bg"
+        />
+        <StatCard
+          icon={HandCoins}
+          label={t("donationPage.sponsorAmountInActivities")}
+          value={`$${sponsorInActivityDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+          iconColor="text-warning"
+          iconBg="bg-warning-bg"
         />
         <StatCard
           icon={Users}
