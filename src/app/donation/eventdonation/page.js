@@ -7,6 +7,7 @@ import StatCard from "@/components/dashboard/statCard";
 import EventDonationPanel from "@/components/donations/eventdonation/EventDonationPanel";
 import DonationFilterSelect from "@/components/donations/monthlydonation/DonationFilterSelect";
 import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
+import Pagination from "@/components/navigation/Pagination";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 import { useBranch } from "@/context/BranchContext";
@@ -112,7 +113,15 @@ function isSponsorDonationForActivityRow(row) {
   );
 }
 
+const MY_EVENT_ROWS_PER_PAGE = 10;
+
 function MyEventDonationsTable({ rows, loading, t }) {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [rows.length]);
+
   if (loading) {
     return (
       <section className="min-h-[200px] rounded-md border border-border bg-bg-page-white px-7 py-8 text-center text-xs font-medium text-text-secondary shadow-sm">
@@ -129,6 +138,13 @@ function MyEventDonationsTable({ rows, loading, t }) {
     );
   }
 
+  const totalPages = Math.max(1, Math.ceil(rows.length / MY_EVENT_ROWS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedRows = rows.slice(
+    (safePage - 1) * MY_EVENT_ROWS_PER_PAGE,
+    safePage * MY_EVENT_ROWS_PER_PAGE,
+  );
+
   return (
     <section className="overflow-x-auto rounded-md border border-border bg-bg-page-white px-7 py-4 shadow-sm">
       <table className="w-full min-w-[860px] border-collapse border border-border">
@@ -144,9 +160,9 @@ function MyEventDonationsTable({ rows, loading, t }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, index) => (
+          {pagedRows.map((row, index) => (
             <tr key={row.id} className="h-11 border-b border-border text-center text-sm text-text-secondary last:border-b-0">
-              <td className="px-4">{index + 1}</td>
+              <td className="px-4">{(safePage - 1) * MY_EVENT_ROWS_PER_PAGE + index + 1}</td>
               <td className="px-4">{row.eventName}</td>
               <td className="px-4">{row.branch}</td>
               <td className="whitespace-nowrap px-4">{row.date}</td>
@@ -157,6 +173,12 @@ function MyEventDonationsTable({ rows, loading, t }) {
           ))}
         </tbody>
       </table>
+
+      <Pagination
+        currentPage={safePage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </section>
   );
 }
