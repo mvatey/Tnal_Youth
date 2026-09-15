@@ -420,14 +420,15 @@ export default function SponsorPanel({
         </h1>
 
         {isMemberScoped && (
-          <div className="grid w-full grid-cols-1 gap-3 sm:max-w-xs">
+          <div className="flex w-full justify-end">
             <DonationFilterSelect
               label={t("donationPage.paymentMethod")}
               value={selectedMethod}
               onChange={updateFilter(setSelectedMethod)}
               options={methodOptions}
-              allLabel={`${t("donationPage.paymentMethod")} — ${locale === "en" ? "All" : "ទាំងអស់"}`}
+              allLabel={locale === "en" ? "All payment methods" : "វិធីសាស្រ្តទូទាត់ទាំងអស់"}
               showLabel={false}
+              className="w-full sm:w-[200px]"
             />
           </div>
         )}

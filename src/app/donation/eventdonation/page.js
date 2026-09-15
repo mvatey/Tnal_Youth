@@ -25,9 +25,14 @@ function mapMyEventRow(row, locale) {
     branch: row.branch?.nameKm || row.branch?.nameEn || "-",
     date: formatDateWithMonth(row.paidAt, locale),
     rielRaw: Number(row.amountKhr || 0),
-    dollarRaw: Number(row.amountUsd || row.totalAmountUsd || 0),
+    // The actual USD portion donated, not row.totalAmountUsd (the whole
+    // donation converted to USD for grand-total purposes) -- amountUsd is
+    // legitimately 0 for a donation paid entirely in Riel, and `||` was
+    // treating that 0 as "missing" and substituting the converted total,
+    // which also then double-counted once riel was added back in below.
+    dollarRaw: Number(row.amountUsd || 0),
     rielAmount: Number(row.amountKhr || 0).toLocaleString(),
-    dollarAmount: Number(row.amountUsd || row.totalAmountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
+    dollarAmount: Number(row.amountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
     paymentMethod:
       locale === "en"
         ? row.paymentMethod?.labelEn || row.paymentMethod?.labelKm
@@ -354,7 +359,6 @@ export default function EventDonationPage() {
     return (
       <div className="space-y-4">
         <DonationTabs />
-        <h2 className="text-lg font-semibold text-text-primary">{t("memberPage.eventDonationListTitle")}</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <StatCard
             icon={CircleDollarSign}
@@ -371,23 +375,28 @@ export default function EventDonationPage() {
             iconBg="bg-secondary-light"
           />
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <DonationFilterSelect
-            label={t("memberPage.activityName")}
-            value={myActivityFilter}
-            onChange={setMyActivityFilter}
-            options={myActivityOptions}
-            allLabel={`${t("memberPage.activityName")} — ${locale === "en" ? "All" : "ទាំងអស់"}`}
-            showLabel={false}
-          />
-          <DonationFilterSelect
-            label={t("memberPage.paymentMethod")}
-            value={myMethodFilter}
-            onChange={setMyMethodFilter}
-            options={myPaymentMethods}
-            allLabel={`${t("memberPage.paymentMethod")} — ${locale === "en" ? "All" : "ទាំងអស់"}`}
-            showLabel={false}
-          />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-lg font-semibold text-text-primary">{t("memberPage.eventDonationListTitle")}</h2>
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <DonationFilterSelect
+              label={t("memberPage.activityName")}
+              value={myActivityFilter}
+              onChange={setMyActivityFilter}
+              options={myActivityOptions}
+              allLabel={locale === "en" ? "All activities" : "កម្មវិធីទាំងអស់"}
+              showLabel={false}
+              className="w-full sm:w-[200px]"
+            />
+            <DonationFilterSelect
+              label={t("memberPage.paymentMethod")}
+              value={myMethodFilter}
+              onChange={setMyMethodFilter}
+              options={myPaymentMethods}
+              allLabel={locale === "en" ? "All payment methods" : "វិធីសាស្រ្តទូទាត់ទាំងអស់"}
+              showLabel={false}
+              className="w-full sm:w-[200px]"
+            />
+          </div>
         </div>
         {error ? <div className="rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
         <MyEventDonationsTable rows={filteredMyRows} loading={myRowsLoading} t={t} />
