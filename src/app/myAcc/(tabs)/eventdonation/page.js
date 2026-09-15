@@ -40,11 +40,13 @@ function mapMyEventRow(row, locale) {
 }
 
 export default function MyAccountEventDonationPage() {
-  const { t, locale } = useLanguage();
+  const { t, label, locale } = useLanguage();
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [methodFilter, setMethodFilter] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -87,6 +89,32 @@ export default function MyAccountEventDonationPage() {
     return () => { cancelled = true; };
   }, [locale, t]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/lookups/payment-methods?activeOnly=true&includeMaterial=true", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message || t("memberPage.loadPaymentMethodsFailed"));
+        const methods = Array.isArray(body) ? body : (body?.data || []);
+        setPaymentMethods(
+          methods
+            .map((method) => ({
+              label: label(method, method.code),
+              value: label(method, method.code),
+            }))
+            .filter((method) => method.value),
+        );
+      })
+      .catch((lookupError) => {
+        if (lookupError.name !== "AbortError") console.error("Cannot load payment methods:", lookupError);
+      });
+
+    return () => controller.abort();
+  }, [label, t]);
+
   const filteredData = useMemo(() => {
     const search = query.trim().toLowerCase();
 
@@ -100,9 +128,21 @@ export default function MyAccountEventDonationPage() {
         item.paymentMethod,
       ].map((value) => String(value ?? "").toLowerCase());
 
-      return !search || haystack.some((value) => value.includes(search));
+      const matchesQuery = !search || haystack.some((value) => value.includes(search));
+      const matchesMethod = !methodFilter || item.paymentMethod === methodFilter;
+      return matchesQuery && matchesMethod;
     });
-  }, [rows, query]);
+  }, [rows, query, methodFilter]);
+
+  const filters = [
+    {
+      name: "paymentMethod",
+      value: methodFilter,
+      onChange: setMethodFilter,
+      options: paymentMethods,
+      placeholder: t("memberPage.paymentMethod"),
+    },
+  ];
 
   const columns = [
     { header: t("memberPage.no"), width: "w-[6%]", align: "center", render: (_, index) => index },
@@ -133,6 +173,7 @@ export default function MyAccountEventDonationPage() {
       <DataTable
         data={filteredData}
         columns={columns}
+        filters={filters}
         searchQuery={query}
         onSearchChange={setQuery}
         searchPlaceholder={t("memberPage.search")}
