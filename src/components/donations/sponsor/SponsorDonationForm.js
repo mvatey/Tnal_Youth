@@ -11,6 +11,7 @@ import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch, useBranchChangeGuard } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { describeUploadError } from "@/lib/uploadErrors";
+import { getLookup } from "@/lib/lookupCache";
 
 const {
   equipmentTypes,
@@ -563,9 +564,9 @@ export default function SponsorDonationForm({ initialData = null }) {
     }
 
     Promise.all([
-      fetchJson("/api/lookups/branches"),
+      getLookup("/lookups/branches"),
       fetchJson(`/api/backend/activities?${activityParams.toString()}`),
-      fetchJson("/api/lookups/payment-methods?activeOnly=true&includeMaterial=true"),
+      getLookup("/lookups/payment-methods?activeOnly=true&includeMaterial=true"),
     ])
       .then(([branchItems, activityPage, methodItems]) => {
         if (cancelled) return;

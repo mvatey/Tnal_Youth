@@ -35,6 +35,7 @@ import { translate } from "@/lib/i18n";
 import { activityStatusLabel } from "@/lib/activityStatusLabels";
 import { describeUploadError } from "@/lib/uploadErrors";
 import { uploadFileDirect } from "@/lib/directUpload";
+import { getLookup } from "@/lib/lookupCache";
 
 const BRANCH_OPTIONS = [
   "ភ្នំពេញ",
@@ -1032,12 +1033,12 @@ export default function CreateActivityPage() {
     async function loadFormData() {
       try {
         const [branches, invitableBranches, provinces, types, sectors, statuses] = await Promise.all([
-          fetchJson("/api/lookups/branches"),
-          fetchJson("/api/lookups/activity-invitable-branches"),
-          fetchJson("/api/lookups/provinces"),
-          fetchJson("/api/lookups/activity-types"),
-          fetchJson("/api/lookups/activity-sectors"),
-          fetchJson("/api/lookups/activity-statuses"),
+          getLookup("/lookups/branches"),
+          getLookup("/lookups/activity-invitable-branches"),
+          getLookup("/lookups/provinces"),
+          getLookup("/lookups/activity-types"),
+          getLookup("/lookups/activity-sectors"),
+          getLookup("/lookups/activity-statuses"),
         ]);
         const nextLookups = { branches, invitableBranches, provinces, types, sectors, statuses };
         if (cancelled) return;

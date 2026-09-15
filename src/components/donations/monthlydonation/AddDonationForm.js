@@ -12,6 +12,7 @@ import { useBranch, useBranchChangeGuard } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
 import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 import { describeUploadError } from "@/lib/uploadErrors";
+import { getLookup } from "@/lib/lookupCache";
 
 const BANK_PAYMENT_METHODS = new Set([
   "Bank Transfer",
@@ -297,8 +298,8 @@ const paymentSummary = useMemo(() => {
 
     let cancelled = false;
     Promise.all([
-      fetchJson("/api/lookups/branches"),
-      fetchJson("/api/lookups/payment-methods?activeOnly=true&includeMaterial=false"),
+      getLookup("/lookups/branches"),
+      getLookup("/lookups/payment-methods?activeOnly=true&includeMaterial=false"),
     ])
       .then(([branchItems, methodItems]) => {
         if (cancelled) return;

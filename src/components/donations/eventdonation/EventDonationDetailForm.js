@@ -16,6 +16,7 @@ import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import { RiDownloadCloud2Line } from "react-icons/ri";
 import { useLanguage } from "@/context/LanguageContext";
+import { getLookup } from "@/lib/lookupCache";
 
 async function fetchJson(url, options) {
   const response = await fetch(url, { cache: "no-store", ...options });
@@ -398,9 +399,9 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      fetchJson("/api/lookups/branches"),
+      getLookup("/lookups/branches"),
       fetchJson("/api/backend/activities?page=0&size=100"),
-      fetchJson("/api/lookups/payment-methods?activeOnly=true&includeMaterial=true"),
+      getLookup("/lookups/payment-methods?activeOnly=true&includeMaterial=true"),
       fetchJson("/api/backend/donation-types?activeOnly=true"),
     ])
       .then(([branchItems, activityPage, methods, types]) => {

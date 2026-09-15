@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
+import { getLookup } from "@/lib/lookupCache";
 const ROWS_PER_PAGE = 10;
 const KHR_PER_USD = 4000;
 
@@ -182,7 +183,7 @@ export default function IncomePage() {
         const activityRecord = await fetchJson(`/api/backend/activities/${encodeURIComponent(activityId)}`);
         const [memberPage, methods, incomeDetailResponse] = await Promise.all([
           fetchJson(`/api/backend/members?branchId=${activityRecord.branchId}&page=0&size=100`),
-          fetchJson("/api/lookups/payment-methods?activeOnly=true&includeMaterial=true"),
+          getLookup("/lookups/payment-methods?activeOnly=true&includeMaterial=true"),
           fetchJson(`/api/backend/activities/${encodeURIComponent(activityId)}/incomes`),
         ]);
         const members = Array.isArray(memberPage) ? memberPage : memberPage?.content || [];
