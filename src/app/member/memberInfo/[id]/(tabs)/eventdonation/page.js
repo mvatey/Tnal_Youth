@@ -29,7 +29,11 @@ function mapEventDonationRow(row, locale) {
     branch: branchName || "-",
     date: formatDateWithMonth(row.paidAt, locale),
     rielAmount: Number(row.amountKhr || 0).toLocaleString(),
-    dollarAmount: Number(row.amountUsd || row.totalAmountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
+    // The actual USD portion donated -- amountUsd is legitimately 0 for a
+    // donation paid entirely in Riel; row.totalAmountUsd is the whole
+    // donation converted to USD for grand-total purposes and doesn't
+    // belong in this column.
+    dollarAmount: Number(row.amountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
     paymentMethod:
       locale === "en"
         ? row.paymentMethodLabelEn || row.paymentMethodLabelKm || row.paymentMethodCode
