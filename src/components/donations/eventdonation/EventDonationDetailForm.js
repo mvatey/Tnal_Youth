@@ -325,12 +325,15 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     return () => { cancelled = true; };
   }, [selectedEvent]);
 
-  // "Branch organizer" = this account is a secretary/branch_leader with
-  // access to the branch that actually hosts the selected activity —
+  // "Branch organizer" = this account is a secretary/branch_leader (or a
+  // viewer whose viewerScope resolves to one — see effectiveRole above)
+  // with access to the branch that actually hosts the selected activity —
   // mirrors the backend's own host-branch check (see
   // ActivityMediaServiceImpl#validateManagePermission). They (plus admin,
   // read-only — see isAdmin below) get the Sponsor tab; a co-hosting/invited
-  // branch or a viewer does not.
+  // branch does not. A viewer sees this tab exactly like the real role does
+  // (SponsorPanel below is hardcoded readOnly regardless of who's viewing,
+  // so this never grants any extra write capability).
   // This page is opened in the context of `selectedBranch`.  An account may
   // manage more than one branch, so checking whether the actor has access to
   // the organizer branch is not enough: while viewing an invited branch we
@@ -349,7 +352,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   const isAdmin = !isViewer && effectiveRole === "admin";
 
   const isBranchOrganizer =
-    (["secretary", "branch_leader"].includes(currentMember?.role) ||
+    (["secretary", "branch_leader"].includes(effectiveRole) ||
       isAdmin) &&
     isSelectedBranchOrganizer;
 
