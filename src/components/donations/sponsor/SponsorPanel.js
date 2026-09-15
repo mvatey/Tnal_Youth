@@ -170,21 +170,26 @@ export default function SponsorPanel({
   const selectedBranchLabel =
     branchOptions.find((option) => String(option.value) === String(selectedBranch))?.label ||
     "-";
+  // A member's own sponsor donation rows never carry a phone/email (those
+  // belong to an outside sponsor's contact info, not the member's own
+  // profile) -- these columns would just show "-" for every row, so they're
+  // dropped entirely from this view instead of rendered empty.
   const headers = useMemo(
     () => [
       t("donationPage.no"),
       t("donationPage.sponsorName"),
       t("donationPage.sponsorType"),
-      t("donationPage.phone"),
-      t("donationPage.email"),
+      ...(isMemberScoped ? [] : [t("donationPage.phone"), t("donationPage.email")]),
       t("documentPage.date"),
       t("donationPage.amountKhrPlain"),
       t("donationPage.amountUsdPlain"),
       t("donationPage.paymentMethod"),
       t("donationPage.action"),
     ],
-    [t],
+    [isMemberScoped, t],
   );
+  const rielColumnIndex = headers.indexOf(t("donationPage.amountKhrPlain"));
+  const dollarColumnIndex = headers.indexOf(t("donationPage.amountUsdPlain"));
 
   useEffect(() => {
     let cancelled = false;
@@ -354,8 +359,10 @@ export default function SponsorPanel({
       [t("donationPage.no")]: index + 1,
       [t("donationPage.sponsorName")]: row.name,
       [t("donationPage.sponsorType")]: row.type,
-      [t("donationPage.phone")]: row.phone,
-      [t("donationPage.email")]: row.email,
+      ...(isMemberScoped ? {} : {
+        [t("donationPage.phone")]: row.phone,
+        [t("donationPage.email")]: row.email,
+      }),
       [t("memberPage.branch")]: row.branch,
       [t("documentPage.date")]: row.date,
       [t("donationPage.amountKhrPlain")]: row.rielAmount,
@@ -495,11 +502,11 @@ export default function SponsorPanel({
                   key={header}
                   className={`px-4 ${header === "លេខទូរស័ព្ទ" ? "whitespace-nowrap" : ""}`}
                 >
-                  {index === 6 || index === 7 ? (
+                  {index === rielColumnIndex || index === dollarColumnIndex ? (
                     <button
                       type="button"
                       onClick={() => {
-                        const field = index === 6 ? "rielAmount" : "dollarAmount";
+                        const field = index === rielColumnIndex ? "rielAmount" : "dollarAmount";
                         setMoneySort((current) => ({
                           field,
                           direction: current?.field === field && current.direction === "asc" ? "desc" : "asc",
@@ -509,9 +516,9 @@ export default function SponsorPanel({
                       className="mx-auto inline-flex items-center justify-center gap-1.5 font-medium transition hover:text-primary"
                     >
                       {header}
-                      {moneySort?.field === (index === 6 ? "rielAmount" : "dollarAmount") && moneySort.direction === "asc" ? (
+                      {moneySort?.field === (index === rielColumnIndex ? "rielAmount" : "dollarAmount") && moneySort.direction === "asc" ? (
                         <ArrowUp size={14} />
-                      ) : moneySort?.field === (index === 6 ? "rielAmount" : "dollarAmount") && moneySort.direction === "desc" ? (
+                      ) : moneySort?.field === (index === rielColumnIndex ? "rielAmount" : "dollarAmount") && moneySort.direction === "desc" ? (
                         <ArrowDown size={14} />
                       ) : (
                         <ChevronsUpDown size={14} />
@@ -532,8 +539,12 @@ export default function SponsorPanel({
                 <td className="px-4">{(safePage - 1) * rowsPerPage + index + 1}</td>
                 <td className="px-4">{row.name}</td>
                 <td className="px-4">{row.type}</td>
-                <td className="whitespace-nowrap px-4">{row.phone}</td>
-                <td className="px-4">{row.email}</td>
+                {!isMemberScoped && (
+                  <>
+                    <td className="whitespace-nowrap px-4">{row.phone}</td>
+                    <td className="px-4">{row.email}</td>
+                  </>
+                )}
                 <td className="whitespace-nowrap px-4">{row.date}</td>
                 <td className="px-4">
                   {row.rielAmount || "0"}
