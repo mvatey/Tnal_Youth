@@ -5,23 +5,33 @@ import { CircleDollarSign, Gift, HandCoins, Users } from "lucide-react";
 import DonationTabs from "@/components/donations/DonationTabs";
 import StatCard from "@/components/dashboard/statCard";
 import EventDonationPanel from "@/components/donations/eventdonation/EventDonationPanel";
+import DonationFilterSelect from "@/components/donations/monthlydonation/DonationFilterSelect";
+import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { formatDateWithMonth } from "@/lib/formatDate";
+import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
 function mapMyEventRow(row, locale) {
+  const eventName = row.activity?.titleKm || row.activity?.titleEn || "-";
   return {
     id: row.id,
     activityId: row.activity?.id ?? null,
-    eventName: row.activity?.titleKm || row.activity?.titleEn || "-",
+    eventName,
     branch: row.branch?.nameKm || row.branch?.nameEn || "-",
     date: formatDateWithMonth(row.paidAt, locale),
+    rielRaw: Number(row.amountKhr || 0),
+    dollarRaw: Number(row.amountUsd || row.totalAmountUsd || 0),
     rielAmount: Number(row.amountKhr || 0).toLocaleString(),
     dollarAmount: Number(row.amountUsd || row.totalAmountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
+    paymentMethod:
+      locale === "en"
+        ? row.paymentMethod?.labelEn || row.paymentMethod?.labelKm
+        : row.paymentMethod?.labelKm || row.paymentMethod?.labelEn,
   };
 }
 
@@ -97,7 +107,7 @@ function isSponsorDonationForActivityRow(row) {
   );
 }
 
-function MyEventDonationsTable({ rows }) {
+function MyEventDonationsTable({ rows, t }) {
   if (!rows.length) {
     return (
       <section className="min-h-[200px] rounded-md border border-border bg-bg-page-white px-7 py-8 text-center text-xs font-medium text-text-secondary shadow-sm">
@@ -108,7 +118,7 @@ function MyEventDonationsTable({ rows }) {
 
   return (
     <section className="overflow-x-auto rounded-md border border-border bg-bg-page-white px-7 py-4 shadow-sm">
-      <table className="w-full min-w-[760px] border-collapse border border-border">
+      <table className="w-full min-w-[860px] border-collapse border border-border">
         <thead>
           <tr className="h-12 border-b border-border bg-bg-page-gray text-center text-xs font-medium text-text-secondary">
             <th className="px-4">ល.រ</th>
@@ -117,6 +127,7 @@ function MyEventDonationsTable({ rows }) {
             <th className="px-4">ថ្ងៃខែឆ្នាំ</th>
             <th className="px-4">ចំនួនប្រាក់រៀល</th>
             <th className="px-4">ចំនួនប្រាក់ដុល្លារ</th>
+            <th className="px-4">{t("memberPage.paymentMethod")}</th>
           </tr>
         </thead>
         <tbody>
@@ -128,6 +139,7 @@ function MyEventDonationsTable({ rows }) {
               <td className="whitespace-nowrap px-4">{row.date}</td>
               <td className="px-4">{row.rielAmount}</td>
               <td className="px-4">{row.dollarAmount}</td>
+              <td className="px-4">{row.paymentMethod || "-"}</td>
             </tr>
           ))}
         </tbody>
@@ -137,7 +149,7 @@ function MyEventDonationsTable({ rows }) {
 }
 
 export default function EventDonationPage() {
-  const { t, locale } = useLanguage();
+  const { t, label, locale } = useLanguage();
   const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
   const viewRole = currentMember?.effectiveRole || currentMember?.role;
   const isMemberScoped = viewRole === "member";
@@ -160,6 +172,10 @@ export default function EventDonationPage() {
   const [myRows, setMyRows] = useState([]);
   const [error, setError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+  const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
+  const [myActivityFilter, setMyActivityFilter] = useState("all");
+  const [myMethodFilter, setMyMethodFilter] = useState("all");
+  const [myPaymentMethods, setMyPaymentMethods] = useState([]);
 
   /*
    * A branch-scoped viewer (secretary/branch_leader) can only ever fetch
@@ -243,6 +259,57 @@ export default function EventDonationPage() {
     locale,
   ]);
 
+  useEffect(() => {
+    if (!isMemberScoped) return undefined;
+    const controller = new AbortController();
+    fetch("/api/lookups/payment-methods?activeOnly=true&includeMaterial=true", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message || t("memberPage.loadPaymentMethodsFailed"));
+        const methods = Array.isArray(body) ? body : (body?.data || []);
+        setMyPaymentMethods(
+          methods
+            .map((method) => ({
+              label: label(method, method.code),
+              value: label(method, method.code),
+            }))
+            .filter((method) => method.value),
+        );
+      })
+      .catch((lookupError) => {
+        if (lookupError.name !== "AbortError") console.error("Cannot load payment methods:", lookupError);
+      });
+    return () => controller.abort();
+  }, [isMemberScoped, label, t]);
+
+  const myActivityOptions = useMemo(
+    () =>
+      [...new Set(myRows.map((row) => row.eventName).filter(Boolean))].map((name) => ({
+        value: name,
+        label: name,
+      })),
+    [myRows],
+  );
+
+  const filteredMyRows = useMemo(
+    () =>
+      myRows.filter((row) => {
+        const matchesActivity = myActivityFilter === "all" || row.eventName === myActivityFilter;
+        const matchesMethod = myMethodFilter === "all" || row.paymentMethod === myMethodFilter;
+        return matchesActivity && matchesMethod;
+      }),
+    [myRows, myActivityFilter, myMethodFilter],
+  );
+
+  const myTotals = useMemo(() => {
+    const riel = filteredMyRows.reduce((sum, row) => sum + row.rielRaw, 0);
+    const dollar = filteredMyRows.reduce((sum, row) => sum + row.dollarRaw, 0);
+    return { riel, dollar, total: dollar + riel / (exchangeRateKhrPerUsd || 4000) };
+  }, [filteredMyRows, exchangeRateKhrPerUsd]);
+
   const branchRows = useMemo(() => rows.filter((row) =>
     selectedBranch === "all" || String(row.branchId) === String(selectedBranch),
   ), [rows, selectedBranch]);
@@ -262,7 +329,7 @@ export default function EventDonationPage() {
   // Never add this on top of totalDollar; it exists so a tester can see
   // which slice of it came specifically from sponsors.
   const sponsorInActivityDollar = sumTotalDollar(sponsorInActivityRows);
-  const myTotalDollar = myRows.reduce((total, row) => total + parseMoney(row.dollarAmount), 0);
+  const myTotalDollar = filteredMyRows.reduce((total, row) => total + parseMoney(row.dollarAmount), 0);
 
   const handleBranchChange = (branch) => {
     // A secretary/branch_leader has no branch to pick here anymore — the
@@ -276,6 +343,7 @@ export default function EventDonationPage() {
     return (
       <div className="space-y-4">
         <DonationTabs />
+        <h2 className="text-lg font-semibold text-text-primary">{t("memberPage.eventDonationListTitle")}</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <StatCard
             icon={CircleDollarSign}
@@ -287,13 +355,39 @@ export default function EventDonationPage() {
           <StatCard
             icon={Users}
             label={t("donationPage.recordCount")}
-            value={`${myRows.length} ${t("donationPage.timeUnit")}`}
+            value={`${filteredMyRows.length} ${t("donationPage.timeUnit")}`}
             iconColor="text-primary"
             iconBg="bg-secondary-light"
           />
         </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <DonationFilterSelect
+            label={t("memberPage.activityName")}
+            value={myActivityFilter}
+            onChange={setMyActivityFilter}
+            options={myActivityOptions}
+            allLabel={`${t("memberPage.activityName")} — ${locale === "en" ? "All" : "ទាំងអស់"}`}
+            showLabel={false}
+          />
+          <DonationFilterSelect
+            label={t("memberPage.paymentMethod")}
+            value={myMethodFilter}
+            onChange={setMyMethodFilter}
+            options={myPaymentMethods}
+            allLabel={`${t("memberPage.paymentMethod")} — ${locale === "en" ? "All" : "ទាំងអស់"}`}
+            showLabel={false}
+          />
+        </div>
         {error ? <div className="rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
-        <MyEventDonationsTable rows={myRows} />
+        <MyEventDonationsTable rows={filteredMyRows} t={t} />
+        {filteredMyRows.length > 0 && (
+          <DonationTotalsCard
+            title={t("donationPage.contributionTotal")}
+            riel={myTotals.riel}
+            dollar={myTotals.dollar}
+            total={myTotals.total}
+          />
+        )}
       </div>
     );
   }

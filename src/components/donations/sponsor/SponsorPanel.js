@@ -163,6 +163,8 @@ export default function SponsorPanel({
   const [error, setError] = useState("");
   const [internalSelectedBranch, setInternalSelectedBranch] = useState("all");
   const [branchOptions, setBranchOptions] = useState([]);
+  const [selectedMethod, setSelectedMethod] = useState("all");
+  const [methodOptions, setMethodOptions] = useState([]);
   const selectedBranch = controlledSelectedBranch ?? internalSelectedBranch;
   const setSelectedBranch = onBranchChange ?? setInternalSelectedBranch;
   const selectedBranchLabel =
@@ -259,6 +261,35 @@ export default function SponsorPanel({
     return () => { cancelled = true; };
   }, [label, readOnly, t]);
 
+  // Payment method filter -- only meaningful (and only shown) on a plain
+  // member's own read-only sponsor view; the branch-management filter row
+  // above stays the only filter UI for every other, staff-facing caller.
+  useEffect(() => {
+    if (!isMemberScoped) return undefined;
+    const controller = new AbortController();
+    fetch("/api/lookups/payment-methods?activeOnly=true&includeMaterial=true", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message);
+        const methods = Array.isArray(body) ? body : (body?.data || []);
+        setMethodOptions(
+          methods
+            .map((method) => ({
+              label: label(method, method.code),
+              value: label(method, method.code),
+            }))
+            .filter((method) => method.value),
+        );
+      })
+      .catch((lookupError) => {
+        if (lookupError.name !== "AbortError") console.error("Cannot load payment methods:", lookupError);
+      });
+    return () => controller.abort();
+  }, [isMemberScoped, label]);
+
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
@@ -278,10 +309,12 @@ export default function SponsorPanel({
       // filtered out of the count.
       const matchesActivity =
         !activityId || String(row.activityId) === String(activityId);
+      const matchesMethod =
+        !isMemberScoped || selectedMethod === "all" || row.method === selectedMethod;
 
-      return matchesSearch && matchesType && matchesDate && matchesBranch && matchesActivity;
+      return matchesSearch && matchesType && matchesDate && matchesBranch && matchesActivity && matchesMethod;
     });
-  }, [activityId, allRows, searchQuery, selectedBranch, selectedDate, selectedType]);
+  }, [activityId, allRows, isMemberScoped, searchQuery, selectedBranch, selectedDate, selectedMethod, selectedType]);
 
   const sortedRows = useMemo(() => {
     if (!moneySort) return filteredRows;
@@ -378,6 +411,19 @@ export default function SponsorPanel({
           {t("donationPage.sponsorDonationRecordTitle")}
           {selectedBranch !== "all" && ` — ${selectedBranchLabel}`}
         </h1>
+
+        {isMemberScoped && (
+          <div className="grid w-full grid-cols-1 gap-3 sm:max-w-xs">
+            <DonationFilterSelect
+              label={t("donationPage.paymentMethod")}
+              value={selectedMethod}
+              onChange={updateFilter(setSelectedMethod)}
+              options={methodOptions}
+              allLabel={`${t("donationPage.paymentMethod")} — ${locale === "en" ? "All" : "ទាំងអស់"}`}
+              showLabel={false}
+            />
+          </div>
+        )}
 
         {!readOnly && (
           <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-center">

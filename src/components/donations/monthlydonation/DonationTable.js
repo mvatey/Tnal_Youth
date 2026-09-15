@@ -12,6 +12,8 @@ import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch } from "@/context/BranchContext";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
+import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
+import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 import { useLanguage } from "@/context/LanguageContext";
 import { localizedValue } from "@/lib/i18n";
 
@@ -51,6 +53,7 @@ const getMonthLabel = (month, locale = "km") =>
 
 export default function DonationTable() {
   const { t, label, locale } = useLanguage();
+  const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
   const {
     member: currentMember,
     loading: currentMemberLoading,
@@ -205,6 +208,15 @@ export default function DonationTable() {
     (safePage - 1) * rowsPerPage,
     safePage * rowsPerPage,
   );
+
+  // Riel/USD breakdown card, same shape as the staff-side "Contribution
+  // Total" card — only meaningful on the member's own single-row-per-month
+  // view, where every visible row is already their own money.
+  const memberTotals = useMemo(() => {
+    const riel = sortedRows.reduce((sum, row) => sum + parseMoney(row.monthlyRiel), 0);
+    const dollar = sortedRows.reduce((sum, row) => sum + parseMoney(row.monthlyUsd), 0);
+    return { riel, dollar, total: dollar + riel / (exchangeRateKhrPerUsd || 4000) };
+  }, [sortedRows, exchangeRateKhrPerUsd]);
 
   const updateFilter = (setter) => (value) => {
     setter(value);
@@ -368,6 +380,7 @@ export default function DonationTable() {
          * happen to be staff of only one branch.
          */
         branchScoped={isBranchScoped}
+        showBranch={!isMemberScoped}
       />
 
       <div className="mt-[17px] overflow-x-auto">
@@ -430,6 +443,15 @@ export default function DonationTable() {
           </tbody>
         </table>
       </div>
+
+      {isMemberScoped && sortedRows.length > 0 && (
+        <DonationTotalsCard
+          title={t("donationPage.contributionTotal")}
+          riel={memberTotals.riel}
+          dollar={memberTotals.dollar}
+          total={memberTotals.total}
+        />
+      )}
 
       <Pagination
         currentPage={safePage}
