@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CircleDollarSign, Gift, HandCoins, Users } from "lucide-react";
+import { CircleDollarSign, Gift, Users } from "lucide-react";
 import DonationTabs from "@/components/donations/DonationTabs";
 import StatCard from "@/components/dashboard/statCard";
 import EventDonationPanel from "@/components/donations/eventdonation/EventDonationPanel";
@@ -95,21 +95,6 @@ function isActivityDonationRow(row) {
     // Compatibility fallback for older rows/API versions where typeCode
     // was not exposed yet. Activity donations always carry activityId.
     (!row?.typeCode && row?.activityId)
-  );
-}
-
-// A sponsor can also earmark their donation for a specific activity -- that
-// row is typed SPONSOR_DONATION (not ACTIVITY_DONATION), so it's excluded
-// from isActivityDonationRow() above and from the sponsor tab's own count
-// unless that tab separately filters for it. It's still just one row in the
-// donations table either way (see the dashboard-total explanation): this
-// helper exists only so the "sponsor funds in activities" assurance card
-// can show which slice of sponsor money already sits inside the activity
-// total above -- never to be added a second time on top of it.
-function isSponsorDonationForActivityRow(row) {
-  return (
-    String(row?.typeCode || "").toUpperCase() === "SPONSOR_DONATION" &&
-    Boolean(row?.activityId)
   );
 }
 
@@ -352,7 +337,6 @@ export default function EventDonationPage() {
     selectedBranch === "all" || String(row.branchId) === String(selectedBranch),
   ), [rows, selectedBranch]);
   const activityDonationRows = branchRows.filter(isActivityDonationRow);
-  const sponsorInActivityRows = branchRows.filter(isSponsorDonationForActivityRow);
   const memberCount = new Set(activityDonationRows.filter((row) => row.memberId).map((row) => row.memberId)).size;
   const sponsorCount = new Set(activityDonationRows.filter((row) => !row.memberId).map((row) => `${row.sponsorId || row.donorName || row.id}`)).size;
   const sumTotalDollar = (donationRows) => donationRows.reduce((total, row) => {
@@ -362,11 +346,6 @@ export default function EventDonationPage() {
   }, 0);
   const ownBranchTotalDollar = sumTotalDollar(activityDonationRows);
   const totalDollar = isBranchScoped ? panelTotalDollar : ownBranchTotalDollar;
-  // Assurance figure only -- this money is already part of totalDollar
-  // above (a sponsor-for-activity row is still one row, counted once).
-  // Never add this on top of totalDollar; it exists so a tester can see
-  // which slice of it came specifically from sponsors.
-  const sponsorInActivityDollar = sumTotalDollar(sponsorInActivityRows);
   const myTotalDollar = filteredMyRows.reduce((total, row) => total + parseMoney(row.dollarAmount), 0);
 
   const handleBranchChange = (branch) => {
@@ -437,20 +416,13 @@ export default function EventDonationPage() {
   return (
     <div className="space-y-4">
       <DonationTabs />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={CircleDollarSign}
           label={t("donationPage.eventDonationTitle")}
           value={`$${totalDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
           iconColor="text-success"
           iconBg="bg-success-bg"
-        />
-        <StatCard
-          icon={HandCoins}
-          label={t("donationPage.sponsorAmountInActivities")}
-          value={`$${sponsorInActivityDollar.toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
-          iconColor="text-warning"
-          iconBg="bg-warning-bg"
         />
         <StatCard
           icon={Users}
