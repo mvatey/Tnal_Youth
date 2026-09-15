@@ -45,3 +45,13 @@ export function formatDateWithMonth(value, locale = "km") {
 
   return `${Number(day)} ${monthName} ${year}`;
 }
+
+// Just the month name for a 1-12 month number ("មិថុនា" / "Jun"). Uses this
+// file's own fixed name lists rather than Date#toLocaleString(locale, ...),
+// since Khmer month names via Intl depend on the browser actually shipping
+// full ICU data for "km" -- unreliable enough in practice that it was
+// silently falling back to English ("June") even while the rest of the UI
+// was in Khmer.
+export function monthNameFromIndex(monthIndex1to12, locale = "km") {
+  return (locale === "en" ? MONTHS_EN : MONTHS_KM)[Number(monthIndex1to12) - 1] || "-";
+}

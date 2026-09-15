@@ -1,3 +1,5 @@
+import { formatDateWithMonth, monthNameFromIndex } from "@/lib/formatDate";
+
 export function unwrapDonationPage(payload) {
   const data = payload?.data ?? payload ?? {};
   return {
@@ -49,7 +51,7 @@ export function donationAmounts(item) {
   return parts.join(" / ") || "$0.00";
 }
 
-export function mapDonationRecord(item) {
+export function mapDonationRecord(item, locale = "km") {
   const period = item?.donationPeriod
     ? new Date(`${item.donationPeriod}T00:00:00`)
     : item?.paidAt
@@ -59,12 +61,12 @@ export function mapDonationRecord(item) {
   return {
     id: item?.id,
     month: period
-      ? period.toLocaleString("km-KH", { month: "long" })
+      ? monthNameFromIndex(period.getMonth() + 1, locale)
       : "-",
     year: period?.getFullYear() || "-",
     amount: donationAmounts(item),
     date: item?.paidAt
-      ? new Date(item.paidAt).toLocaleDateString("km-KH")
+      ? formatDateWithMonth(item.paidAt, locale)
       : "-",
     recordedBy:
       item?.recordedByName ||

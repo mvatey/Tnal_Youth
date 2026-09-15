@@ -12,7 +12,7 @@ import {
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function DonationRecordsPage() {
-  const { t, label } = useLanguage();
+  const { t, label, locale } = useLanguage();
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -40,7 +40,7 @@ export default function DonationRecordsPage() {
          */
         setRows(
           filterOwnDonationType(allItems, "MONTHLY_DONATION")
-            .map(mapDonationRecord),
+            .map((item) => mapDonationRecord(item, locale)),
         );
       } catch (loadError) {
         if (loadError.name !== "AbortError") {
@@ -54,7 +54,7 @@ export default function DonationRecordsPage() {
 
     loadDonations();
     return () => controller.abort();
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     const controller = new AbortController();
