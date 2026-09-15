@@ -286,9 +286,9 @@ function BoxFill({
           aria-label={show ? t("myAccount.hidePassword") : t("myAccount.showPassword")}
         >
           {show ? (
-            <EyeOff size={18} />
-          ) : (
             <Eye size={18} />
+          ) : (
+            <EyeOff size={18} />
           )}
         </button>
       </div>
