@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...except the no-secrets template itself, meant to be committed so a
+# future deployer has a documented list of what to set (see backend repo's
+# own .env.example for the same convention).
+!.env.example
 
 # vercel
 .vercel

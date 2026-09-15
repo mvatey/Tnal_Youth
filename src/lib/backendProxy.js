@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { apiErrorResponse } from "@/lib/apiErrorResponse";
 
+// BACKEND_URL is a legacy fallback for BACKEND_API_URL (same value/format,
+// only read when BACKEND_API_URL itself is unset) -- see .env.example.
 const BACKEND_URL =
   process.env.BACKEND_API_URL ||
   process.env.BACKEND_URL ||
