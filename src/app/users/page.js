@@ -442,7 +442,10 @@ export default function UsersPage() {
           <span className="block w-full whitespace-nowrap">{user.createdAt}</span>
         ),
       },
-      {
+      // A viewer never gets an edit action on any row -- the whole column
+      // is dropped for them instead of showing an empty header over
+      // nothing but blank cells.
+      !isViewer && {
         header: t("usersPage.actions"),
         width: "w-[6%]",
         align: "center",
@@ -452,7 +455,7 @@ export default function UsersPage() {
         // which rejects one anyway. Link straight there instead of
         // leaving the row with no action at all.
         render: (user) =>
-          isViewer ? null : user.memberId == null ? (
+          user.memberId == null ? (
             <button
               type="button"
               onClick={() => setEditingUser(user)}
@@ -472,7 +475,7 @@ export default function UsersPage() {
             </Link>
           ),
       },
-    ],
+    ].filter(Boolean),
     [isViewer, t],
   );
 
