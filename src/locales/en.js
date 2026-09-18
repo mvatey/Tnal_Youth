@@ -980,6 +980,9 @@ const en = {
     createFailed: "Could not create the user account.",
     updateFailed: "Could not update the user account.",
     loadBranchesFailed: "Could not load branches.",
+    confirmPassword: "Confirm new password",
+    selectStatus: "Select status",
+    loadMemberInfoFailed: "Could not load this member's information.",
   },
   variablePage: {
     title: "Variables",

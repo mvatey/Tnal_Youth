@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 
 import { SquarePen, Trash2, UserCheck, UserX, Users as UsersIcon } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
@@ -504,34 +503,23 @@ export default function UsersPage() {
         header: t("usersPage.actions"),
         width: "w-[10%]",
         align: "center",
-        // A member-linked account is edited through that member's own
-        // personal-info page instead of here — see CreateUserModal's
-        // editingUser note and UserManagementServiceImpl#updateUser,
-        // which rejects one anyway. Link straight there instead of
-        // leaving the row with no edit action at all. Delete works the
-        // same way for both account types though (see handleDeleteUser),
-        // so it's always the same button regardless of memberId.
+        // CreateUserModal handles both account types now -- a member-linked
+        // row's edit routes through the same member-scoped endpoints the
+        // Member Detail personal-info page itself uses (see the modal's own
+        // submitMemberLinked), rather than navigating away to that page.
+        // Delete already worked the same way for both types (see
+        // handleDeleteUser), so this is always the same pair of buttons
+        // regardless of memberId.
         render: (user) => (
           <div className="flex items-center justify-center gap-1">
-            {user.memberId == null ? (
-              <button
-                type="button"
-                onClick={() => setEditingUser(user)}
-                aria-label={t("usersPage.edit")}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-warning transition hover:bg-warning-bg"
-              >
-                <SquarePen size={16} strokeWidth={1.8} />
-              </button>
-            ) : (
-              <Link
-                href={`/member/memberInfo/${user.memberId}/details/personal`}
-                aria-label={t("usersPage.editViaMemberPage")}
-                title={t("usersPage.editViaMemberPage")}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-warning transition hover:bg-warning-bg"
-              >
-                <SquarePen size={16} strokeWidth={1.8} />
-              </Link>
-            )}
+            <button
+              type="button"
+              onClick={() => setEditingUser(user)}
+              aria-label={t("usersPage.edit")}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-warning transition hover:bg-warning-bg"
+            >
+              <SquarePen size={16} strokeWidth={1.8} />
+            </button>
             <button
               type="button"
               onClick={() => setDeletingUser(user)}

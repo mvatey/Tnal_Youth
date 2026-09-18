@@ -980,6 +980,9 @@ const km = {
     createFailed: "មិនអាចបង្កើតគណនីអ្នកប្រើប្រាស់បានទេ។",
     updateFailed: "មិនអាចកែប្រែគណនីអ្នកប្រើប្រាស់បានទេ។",
     loadBranchesFailed: "មិនអាចទាញយកសាខាបានទេ។",
+    confirmPassword: "បញ្ជាក់ពាក្យសម្ងាត់ថ្មី",
+    selectStatus: "ជ្រើសរើសស្ថានភាព",
+    loadMemberInfoFailed: "មិនអាចទាញយកព័ត៌មានសមាជិកបានទេ។",
   },
   variablePage: {
     title: "កំណត់អថេរ",
