@@ -14,6 +14,7 @@ import { UploadCloud } from "lucide-react";
 import SaveButton from "@/components/forms/SaveButton";
 import BoxFill from "@/components/forms/boxFill.js";
 import SelectArrow from "@/components/forms/SelectArrow";
+import CvFilePreview from "@/components/forms/CvFilePreview";
 import useMemberPermissions from "@/hooks/useMemberPermissions";
 import FormDate from "@/components/forms/FormDate.js";
 import MultiSelect from "@/components/forms/multiselect.js";
@@ -518,6 +519,10 @@ export default function PersonalPage() {
     setFileName,
   ] = useState("");
   const [cvPreviewUrl, setCvPreviewUrl] = useState("");
+  // Only ever trusted for deciding HOW to render the preview (image / pdf
+  // / generic-file) -- see CvFilePreview's own docblock for why the
+  // filename/extension alone isn't reliable for an already-saved file.
+  const [cvMimeType, setCvMimeType] = useState("");
 
   const [
     loading,
@@ -729,11 +734,31 @@ export default function PersonalPage() {
         if (
           normalized.cv_file_id
         ) {
+          // Placeholder until the real metadata fetch below resolves --
+          // better than nothing if that fetch is slow/fails, but never
+          // used to decide rendering (see cvMimeType).
           setFileName(
             `CV #${normalized.cv_file_id}`,
           );
+
+          fetch(`/api/files/${normalized.cv_file_id}`, {
+            credentials: "include",
+            cache: "no-store",
+          })
+            .then((response) => (response.ok ? response.json() : null))
+            .then((body) => {
+              if (!active) return;
+              const meta = body?.data ?? body;
+              if (meta?.originalName) setFileName(meta.originalName);
+              if (meta?.mimeType) setCvMimeType(meta.mimeType);
+            })
+            .catch(() => {
+              // Keep the "CV #id" placeholder name; CvFilePreview falls
+              // back to its generic-file card when mimeType is unknown.
+            });
         } else {
           setFileName("");
+          setCvMimeType("");
         }
       } catch (loadError) {
         console.error(
@@ -1384,6 +1409,8 @@ export default function PersonalPage() {
       setFileName(
         file.name,
       );
+
+      setCvMimeType(file.type);
     };
 
   /* =======================================================
@@ -1877,13 +1904,12 @@ export default function PersonalPage() {
           latestBranchSelection,
         );
 
-        if (
-          normalized.cv_file_id
-        ) {
-          setFileName(
-            `CV #${normalized.cv_file_id}`,
-          );
-        }
+        // fileName/cvMimeType are already correct at this point either
+        // way -- set from the real upload just above if a new CV was
+        // part of this save (handleFileChange already captured file.name/
+        // file.type), or already holding the real metadata fetched on
+        // initial load if this save didn't touch the CV at all. No need
+        // to reset them back to a placeholder here.
 
         /*
          * 7. Refresh account state
@@ -2335,21 +2361,11 @@ export default function PersonalPage() {
               />
 
               {fileName && (
-                <div className="h-[260px] w-full overflow-hidden rounded-lg border border-border bg-bg-page-white">
-                  {/\.(png|jpe?g)$/i.test(fileName) ? (
-                    <img
-                      src={cvPreviewUrl || `/api/files/${form.cv_file_id}/content`}
-                      alt={fileName}
-                      className="h-full w-full object-contain"
-                    />
-                  ) : (
-                    <iframe
-                      src={`${cvPreviewUrl || `/api/files/${form.cv_file_id}/content`}#toolbar=0&view=FitH`}
-                      title={fileName}
-                      className="h-full w-full border-0"
-                    />
-                  )}
-                </div>
+                <CvFilePreview
+                  fileUrl={cvPreviewUrl || `/api/files/${form.cv_file_id}/content`}
+                  fileName={fileName}
+                  mimeType={cvMimeType}
+                />
               )}
 
               {!fileName && <UploadCloud size={30} className="text-text-secondary" />}

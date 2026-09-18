@@ -14,6 +14,7 @@ import BoxFill from "@/components/forms/boxFill.js";
 import FormSelect from "@/components/forms/FormSelect";
 import FormDate from "@/components/forms/FormDate.js";
 import SaveButton from "@/components/forms/SaveButton";
+import CvFilePreview from "@/components/forms/CvFilePreview";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 import TelegramConnectionCard from "@/components/account/TelegramConnectionCard";
 import { useLanguage } from "@/context/LanguageContext";
@@ -297,6 +298,10 @@ export default function MyAccountPersonalPage() {
   const [cvFile, setCvFile] = useState(null);
   const [fileName, setFileName] = useState("");
   const [cvPreviewUrl, setCvPreviewUrl] = useState("");
+  // Only ever trusted for deciding HOW to render the preview (image / pdf
+  // / generic-file) -- see CvFilePreview's own docblock for why the
+  // filename/extension alone isn't reliable for an already-saved file.
+  const [cvMimeType, setCvMimeType] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -331,9 +336,28 @@ export default function MyAccountPersonalPage() {
       setForm(normalized);
 
       if (normalized.cv_file_id) {
+        // Placeholder until the real metadata fetch below resolves --
+        // better than nothing if that fetch is slow/fails, but never
+        // used to decide rendering (see cvMimeType).
         setFileName(`CV #${normalized.cv_file_id}`);
+
+        fetch(`/api/files/${normalized.cv_file_id}`, {
+          credentials: "include",
+          cache: "no-store",
+        })
+          .then((response) => (response.ok ? response.json() : null))
+          .then((body) => {
+            const meta = body?.data ?? body;
+            if (meta?.originalName) setFileName(meta.originalName);
+            if (meta?.mimeType) setCvMimeType(meta.mimeType);
+          })
+          .catch(() => {
+            // Keep the "CV #id" placeholder name; CvFilePreview falls
+            // back to its generic-file card when mimeType is unknown.
+          });
       } else {
         setFileName("");
+        setCvMimeType("");
       }
     } catch (loadError) {
       console.error("Cannot load my-account personal info:", loadError);
@@ -438,6 +462,7 @@ export default function MyAccountPersonalPage() {
     });
 
     setFileName(file.name);
+    setCvMimeType(file.type);
   };
 
   /* =======================================================
@@ -508,7 +533,9 @@ export default function MyAccountPersonalPage() {
           permanentAddress: member?.permanentAddress,
         });
         setForm(normalized);
-        if (normalized.cv_file_id) setFileName(`CV #${normalized.cv_file_id}`);
+        // fileName/cvMimeType are already correct -- handleFileChange set
+        // them from the real file.name/file.type of what was just
+        // uploaded, no need to reset to a placeholder here.
       } else {
         const normalized = normalizePersonalInfo(updated, {
           currentAddress: member?.currentAddress,
@@ -739,21 +766,11 @@ export default function MyAccountPersonalPage() {
               />
 
               {fileName && (
-                <div className="h-[260px] w-full overflow-hidden rounded-lg border border-border bg-bg-page-white">
-                  {/\.(png|jpe?g)$/i.test(fileName) ? (
-                    <img
-                      src={cvPreviewUrl || `/api/files/${form.cv_file_id}/content`}
-                      alt={fileName}
-                      className="h-full w-full object-contain"
-                    />
-                  ) : (
-                    <iframe
-                      src={`${cvPreviewUrl || `/api/files/${form.cv_file_id}/content`}#toolbar=0&view=FitH`}
-                      title={fileName}
-                      className="h-full w-full border-0"
-                    />
-                  )}
-                </div>
+                <CvFilePreview
+                  fileUrl={cvPreviewUrl || `/api/files/${form.cv_file_id}/content`}
+                  fileName={fileName}
+                  mimeType={cvMimeType}
+                />
               )}
 
               {!fileName && <UploadCloud size={30} className="text-text-secondary" />}
