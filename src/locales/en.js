@@ -948,6 +948,10 @@ const en = {
     standalone: "Standalone account",
     edit: "Edit",
     editViaMemberPage: "Edit through member page",
+    delete: "Delete",
+    deleteConfirmTitle: "Delete this account?",
+    deleteConfirmMessage:
+      "This account will disappear from the list and can no longer log in. Related history (member info, donations, activities, documents) stays intact.",
     searchPlaceholder: "Search by name, phone, or email...",
     createUser: "Create new user",
     usersFileName: "users",

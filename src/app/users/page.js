@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-import { SquarePen, UserCheck, UserX, Users as UsersIcon } from "lucide-react";
+import { SquarePen, Trash2, UserCheck, UserX, Users as UsersIcon } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
 import DataTable from "@/components/table/DataTable.js";
@@ -11,6 +11,7 @@ import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import { isWithinDateRange } from "@/utils/dateRangeFilter";
 import StatCard from "@/components/dashboard/statCard";
 import CreateUserModal from "@/components/popup/CreateUserModal.js";
+import DeleteConfirmModal from "@/components/popup/Confirmdeletemodal";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
@@ -208,10 +209,13 @@ export default function UsersPage() {
     PENDING_ACTIVATION: t("usersPage.pendingActivation"),
   }), [t]);
 
+  // No "Inactive" option here -- deleting an account (see handleDeleteUser)
+  // sets it to INACTIVE and the backend excludes that status from every
+  // response unconditionally, so filtering by it would always come back
+  // empty.
   const statusOptions = useMemo(() => [
     { label: t("usersPage.allStatuses"), value: "" },
     { label: t("usersPage.active"), value: "ACTIVE" },
-    { label: t("usersPage.inactive"), value: "INACTIVE" },
   ], [t]);
 
   const roleOptions = useMemo(() => [
@@ -225,6 +229,8 @@ export default function UsersPage() {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [deletingUser, setDeletingUser] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   /*
    * =========================================
@@ -359,6 +365,55 @@ export default function UsersPage() {
 
   /*
    * =========================================
+   * DELETE USER
+   * =========================================
+   * A soft delete on the backend (sets the account to INACTIVE rather
+   * than removing the row) -- works the same way whether the row is a
+   * standalone login or a member-linked one; the linked Member record
+   * and all their history are left untouched. Excluded from every
+   * listUsers/getSummary response from here on, so it simply disappears
+   * from this page for good.
+   */
+
+  const handleDeleteUser = async () => {
+    if (!deletingUser) return;
+
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch(`${USERS_BASE}/${deletingUser.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        let message = `Request failed with status ${response.status}`;
+        try {
+          const body = text ? JSON.parse(text) : null;
+          message = body?.message || body?.detail || body?.error || message;
+        } catch {
+          // response body wasn't JSON -- keep the generic message
+        }
+        throw new Error(message);
+      }
+
+      setDeletingUser(null);
+
+      const controller = new AbortController();
+      await Promise.all([
+        loadSummary(controller.signal),
+        loadUsers(controller.signal),
+      ]);
+    } catch (error) {
+      console.warn("Failed to delete user:", error.message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  /*
+   * =========================================
    * TABLE
    * =========================================
    */
@@ -442,38 +497,51 @@ export default function UsersPage() {
           <span className="block w-full whitespace-nowrap">{user.createdAt}</span>
         ),
       },
-      // A viewer never gets an edit action on any row -- the whole column
-      // is dropped for them instead of showing an empty header over
-      // nothing but blank cells.
+      // A viewer never gets an edit/delete action on any row -- the whole
+      // column is dropped for them instead of showing an empty header
+      // over nothing but blank cells.
       !isViewer && {
         header: t("usersPage.actions"),
-        width: "w-[6%]",
+        width: "w-[10%]",
         align: "center",
         // A member-linked account is edited through that member's own
         // personal-info page instead of here — see CreateUserModal's
         // editingUser note and UserManagementServiceImpl#updateUser,
         // which rejects one anyway. Link straight there instead of
-        // leaving the row with no action at all.
-        render: (user) =>
-          user.memberId == null ? (
+        // leaving the row with no edit action at all. Delete works the
+        // same way for both account types though (see handleDeleteUser),
+        // so it's always the same button regardless of memberId.
+        render: (user) => (
+          <div className="flex items-center justify-center gap-1">
+            {user.memberId == null ? (
+              <button
+                type="button"
+                onClick={() => setEditingUser(user)}
+                aria-label={t("usersPage.edit")}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-warning transition hover:bg-warning-bg"
+              >
+                <SquarePen size={16} strokeWidth={1.8} />
+              </button>
+            ) : (
+              <Link
+                href={`/member/memberInfo/${user.memberId}/details/personal`}
+                aria-label={t("usersPage.editViaMemberPage")}
+                title={t("usersPage.editViaMemberPage")}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-warning transition hover:bg-warning-bg"
+              >
+                <SquarePen size={16} strokeWidth={1.8} />
+              </Link>
+            )}
             <button
               type="button"
-              onClick={() => setEditingUser(user)}
-              aria-label={t("usersPage.edit")}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-warning transition hover:bg-warning-bg"
+              onClick={() => setDeletingUser(user)}
+              aria-label={t("usersPage.delete")}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-error transition hover:bg-error-bg"
             >
-              <SquarePen size={16} strokeWidth={1.8} />
+              <Trash2 size={16} strokeWidth={1.8} />
             </button>
-          ) : (
-            <Link
-              href={`/member/memberInfo/${user.memberId}/details/personal`}
-              aria-label={t("usersPage.editViaMemberPage")}
-              title={t("usersPage.editViaMemberPage")}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-warning transition hover:bg-warning-bg"
-            >
-              <SquarePen size={16} strokeWidth={1.8} />
-            </Link>
-          ),
+          </div>
+        ),
       },
     ].filter(Boolean),
     [isViewer, t],
@@ -615,6 +683,20 @@ export default function UsersPage() {
           editingUser={editingUser}
           onClose={() => setEditingUser(null)}
           onSave={handleUpdateUser}
+        />
+      )}
+
+      {/* DELETE CONFIRM MODAL */}
+
+      {!isViewer && (
+        <DeleteConfirmModal
+          open={Boolean(deletingUser)}
+          onClose={() => {
+            if (!isDeleting) setDeletingUser(null);
+          }}
+          onConfirm={handleDeleteUser}
+          title={t("usersPage.deleteConfirmTitle")}
+          message={t("usersPage.deleteConfirmMessage")}
         />
       )}
     </div>
