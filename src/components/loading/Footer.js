@@ -70,7 +70,7 @@ text-gray-400
 ជួយអភិវឌ្ឍសង្គម និងសហគមន៍
 តាមរយៈសកម្មភាពស្ម័គ្រចិត្ត
 </p>
-{/* Social */}
+{/* Social -- hrefs are placeholders until the org's real page URLs are known */}
 <div
 className="
 mt-5
@@ -78,7 +78,11 @@ flex
 gap-3
 "
 >
-<div
+<a
+href="#"
+target="_blank"
+rel="noopener noreferrer"
+aria-label="Facebook"
 className="
 flex
 h-8
@@ -88,11 +92,17 @@ justify-center
 rounded-md
 bg-white/10
 text-sm
+transition
+hover:bg-white/20
 "
 >
-<FaFacebookF aria-label="Facebook" />
-</div>
-<div
+<FaFacebookF />
+</a>
+<a
+href="#"
+target="_blank"
+rel="noopener noreferrer"
+aria-label="Telegram"
 className="
 flex
 h-8
@@ -102,11 +112,17 @@ justify-center
 rounded-md
 bg-white/10
 text-sm
+transition
+hover:bg-white/20
 "
 >
-<FaTelegram aria-label="Telegram" />
-</div>
-<div
+<FaTelegram />
+</a>
+<a
+href="#"
+target="_blank"
+rel="noopener noreferrer"
+aria-label="YouTube"
 className="
 flex
 h-8
@@ -116,10 +132,12 @@ justify-center
 rounded-md
 bg-white/10
 text-sm
+transition
+hover:bg-white/20
 "
 >
-<FaYoutube aria-label="YouTube" />
-</div>
+<FaYoutube />
+</a>
 </div>
 </div>
 {/* Menu */}
