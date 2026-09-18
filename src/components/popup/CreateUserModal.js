@@ -113,6 +113,16 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     { label: t("usersPage.member"), value: "MEMBER" },
     { label: t("usersPage.viewer"), value: "VIEWER" },
   ];
+  // A member-linked account can never be ADMIN or VIEWER -- the backend
+  // (MemberPasswordServiceImpl#validateRoleChange) rejects ADMIN outright
+  // ("cannot be assigned from the member page") and only lets an admin
+  // actor assign MEMBER/SECRETARY/BRANCH_LEADER through this path, so
+  // offering the other two here would just produce a save that fails.
+  const memberLinkedRoleOptions = [
+    { label: t("usersPage.branchLeader"), value: "BRANCH_LEADER" },
+    { label: t("usersPage.secretary"), value: "SECRETARY" },
+    { label: t("usersPage.member"), value: "MEMBER" },
+  ];
   const viewerScopeOptions = [
     { label: t("usersPage.admin"), value: "ADMIN" },
     { label: t("usersPage.branchLeader"), value: "BRANCH_LEADER" },
@@ -637,7 +647,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             label={t("usersPage.role")}
             name="role"
             placeholder={t("usersPage.selectRole")}
-            options={roleOptions}
+            options={isMemberLinked ? memberLinkedRoleOptions : roleOptions}
             value={form.role}
             onChange={update("role")}
             required
