@@ -362,11 +362,9 @@ export default function PerformanceSummary({
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(90px, 1fr))",
+          display: "flex",
+          flexDirection: "column",
           flex: 1,
-          alignItems: "stretch",
           gap: 8,
         }}
       >
