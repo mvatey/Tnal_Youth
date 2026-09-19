@@ -442,7 +442,7 @@ export function ActivityListCard({
         </div>
       ) : (
         activities
-          .slice(0, 5)
+          .slice(0, 7)
           .map((activity) => (
             <ActivityRow
               key={activity.id}
