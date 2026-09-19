@@ -390,7 +390,11 @@ export default function BranchPage() {
           items,
         ) {
           /*
-           * Load real member count for each branch.
+           * Load real member count for each branch. A multi-branch
+           * secretary (primary + branch_staff) legitimately counts in
+           * EVERY branch they're assigned to here -- that's per-branch
+           * truth, matches branch/[id]/detail's own card, and is why this
+           * must NOT be summed for the org-wide total below.
            */
           const counts =
             await Promise.all(
@@ -420,6 +424,33 @@ export default function BranchPage() {
                 },
               ),
             );
+
+          /*
+           * The org-wide "Total Members" card must be a unique headcount,
+           * not a sum of per-branch counts above -- summing double/triple
+           * counts anyone staffing more than one branch. /members/summary
+           * (no branchId) already returns the true unique total.
+           */
+          let orgWideTotalMembers =
+            counts.reduce(
+              (total, count) => total + count,
+              0,
+            );
+
+          try {
+            const memberSummary =
+              await fetchJson(
+                "/members/summary",
+                signal,
+              );
+
+            orgWideTotalMembers =
+              Number(
+                memberSummary?.total_members,
+              ) || 0;
+          } catch {
+            // Falls back to the (possibly inflated) summed count above.
+          }
 
           const enriched =
             items.map(
@@ -460,15 +491,7 @@ export default function BranchPage() {
               ).length,
 
             total_members:
-              counts.reduce(
-                (
-                  total,
-                  count,
-                ) =>
-                  total +
-                  count,
-                0,
-              ),
+              orgWideTotalMembers,
           });
         }
 
