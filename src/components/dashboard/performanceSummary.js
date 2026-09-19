@@ -105,6 +105,7 @@ function StatMiniCard({
   value,
   growth,
   loading,
+  fullWidth = false,
 }) {
   const growthNumber =
     Number(growth) || 0;
@@ -125,6 +126,9 @@ function StatMiniCard({
         borderRadius: 10,
         background: "var(--color-bg-page-gray, #F7F8FA)",
         padding: "12px 14px",
+        ...(fullWidth
+          ? { gridColumn: "1 / -1" }
+          : null),
       }}
     >
       <span
@@ -359,7 +363,7 @@ export default function PerformanceSummary({
         style={{
           display: "grid",
           gridTemplateColumns:
-            "repeat(3, minmax(0, 1fr))",
+            "repeat(auto-fit, minmax(120px, 1fr))",
           flex: 1,
           alignItems: "stretch",
           gap: 12,
@@ -372,6 +376,14 @@ export default function PerformanceSummary({
             value={item.value}
             growth={item.growth}
             loading={loading}
+            // Donations is a currency figure ($ + thousands separators +
+            // cents), predictably the widest of the three -- give it the
+            // whole row instead of squeezing into an auto-fit column with
+            // the others. If activities/members ever grow wide enough to
+            // no longer fit two-up, auto-fit above drops them to one
+            // column each on their own, with no further changes needed
+            // here.
+            fullWidth={item.key === "donations"}
           />
         ))}
       </div>
