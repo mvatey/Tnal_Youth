@@ -105,7 +105,6 @@ function StatMiniCard({
   value,
   growth,
   loading,
-  fullWidth = false,
 }) {
   const growthNumber =
     Number(growth) || 0;
@@ -119,7 +118,7 @@ function StatMiniCard({
       style={{
         display: "flex",
         height: "100%",
-        minHeight: 84,
+        minHeight: 60,
         minWidth: 0,
         flexDirection: "column",
         justifyContent: "space-between",
@@ -127,10 +126,8 @@ function StatMiniCard({
         border: "1px solid var(--color-border, #EEF0F3)",
         borderRadius: 10,
         background: "var(--color-bg-page-gray, #F7F8FA)",
-        padding: "12px 14px",
-        ...(fullWidth
-          ? { gridColumn: "1 / -1" }
-          : null),
+        padding: "8px 10px",
+        gap: 2,
       }}
     >
       <div
@@ -138,13 +135,13 @@ function StatMiniCard({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 8,
+          gap: 6,
         }}
       >
         <span
           style={{
             color: "var(--color-text-secondary, #6B7280)",
-            fontSize: 12,
+            fontSize: 11,
           }}
         >
           {label}
@@ -159,7 +156,7 @@ function StatMiniCard({
               color: isUp
                 ? "var(--color-success, #22A35A)"
                 : "var(--color-error, #D14343)",
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: 600,
               whiteSpace: "nowrap",
               flexShrink: 0,
@@ -171,27 +168,18 @@ function StatMiniCard({
         )}
       </div>
 
-      <div
+      <span
         style={{
-          display: "flex",
-          flex: 1,
+          color: "var(--color-text-primary, #1F2329)",
+          fontSize: 17,
+          fontWeight: 700,
           minWidth: 0,
-          alignItems: "center",
+          overflowWrap: "break-word",
+          wordBreak: "break-word",
         }}
       >
-        <span
-          style={{
-            color: "var(--color-text-primary, #1F2329)",
-            fontSize: 20,
-            fontWeight: 700,
-            minWidth: 0,
-            overflowWrap: "break-word",
-            wordBreak: "break-word",
-          }}
-        >
-          {loading ? "···" : value}
-        </span>
-      </div>
+        {loading ? "···" : value}
+      </span>
     </div>
   );
 }
@@ -315,7 +303,7 @@ export default function PerformanceSummary({
         border: "1px solid var(--color-border, #EEF0F3)",
         borderRadius: 14,
         background: "var(--color-bg-page-white, #FFFFFF)",
-        padding: "18px 20px",
+        padding: "14px 16px",
       }}
     >
       <div
@@ -325,7 +313,7 @@ export default function PerformanceSummary({
           justifyContent:
             "space-between",
           gap: 12,
-          marginBottom: 16,
+          marginBottom: 12,
         }}
       >
         <div>
@@ -338,10 +326,6 @@ export default function PerformanceSummary({
             }}
           >
             {t("dashboard.branchPerformance")}
-            {/* TEMP build marker -- remove once confirmed deployed */}
-            <span style={{ color: "#FF00FF", marginLeft: 6 }}>
-              [BUILD-CHECK-v2]
-            </span>
           </h3>
 
           {period && (
@@ -380,10 +364,10 @@ export default function PerformanceSummary({
         style={{
           display: "grid",
           gridTemplateColumns:
-            "repeat(auto-fit, minmax(120px, 1fr))",
+            "repeat(auto-fit, minmax(90px, 1fr))",
           flex: 1,
           alignItems: "stretch",
-          gap: 12,
+          gap: 8,
         }}
       >
         {stats.map((item) => (
@@ -393,14 +377,6 @@ export default function PerformanceSummary({
             value={item.value}
             growth={item.growth}
             loading={loading}
-            // Donations is a currency figure ($ + thousands separators +
-            // cents), predictably the widest of the three -- give it the
-            // whole row instead of squeezing into an auto-fit column with
-            // the others. If activities/members ever grow wide enough to
-            // no longer fit two-up, auto-fit above drops them to one
-            // column each on their own, with no further changes needed
-            // here.
-            fullWidth={item.key === "donations"}
           />
         ))}
       </div>
