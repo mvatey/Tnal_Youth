@@ -119,8 +119,10 @@ function StatMiniCard({
       style={{
         display: "flex",
         height: "100%",
+        minHeight: 84,
         minWidth: 0,
         flexDirection: "column",
+        justifyContent: "space-between",
         boxSizing: "border-box",
         border: "1px solid var(--color-border, #EEF0F3)",
         borderRadius: 10,
