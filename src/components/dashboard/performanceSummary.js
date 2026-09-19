@@ -118,6 +118,7 @@ function StatMiniCard({
       style={{
         display: "flex",
         height: "100%",
+        minWidth: 0,
         flexDirection: "column",
         boxSizing: "border-box",
         border: "1px solid var(--color-border, #EEF0F3)",
@@ -139,6 +140,7 @@ function StatMiniCard({
         style={{
           display: "flex",
           flex: 1,
+          minWidth: 0,
           flexDirection: "column",
           justifyContent: "center",
           gap: 4,
@@ -149,6 +151,9 @@ function StatMiniCard({
             color: "var(--color-text-primary, #1F2329)",
             fontSize: 20,
             fontWeight: 700,
+            minWidth: 0,
+            overflowWrap: "break-word",
+            wordBreak: "break-word",
           }}
         >
           {loading ? "···" : value}
