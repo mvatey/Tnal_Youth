@@ -338,6 +338,10 @@ export default function PerformanceSummary({
             }}
           >
             {t("dashboard.branchPerformance")}
+            {/* TEMP build marker -- remove once confirmed deployed */}
+            <span style={{ color: "#FF00FF", marginLeft: 6 }}>
+              [BUILD-CHECK-v2]
+            </span>
           </h3>
 
           {period && (
