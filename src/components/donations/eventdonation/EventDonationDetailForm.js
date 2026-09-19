@@ -99,9 +99,12 @@ function mergeSavedDonations(memberItems, donations, selectedBranch) {
     savedByMember.set(key, donation);
   });
 
-  return memberItems.map((member) => {
+  const matchedMemberIds = new Set();
+
+  const mergedMembers = memberItems.map((member) => {
     const saved = savedByMember.get(String(member.id));
     if (!saved) return member;
+    matchedMemberIds.add(String(member.id));
     return {
       ...member,
       donationId: saved.id,
@@ -118,6 +121,41 @@ function mergeSavedDonations(memberItems, donations, selectedBranch) {
       expectedUpdatedAt: saved.updatedAt,
     };
   });
+
+  // A donation whose member no longer appears in memberItems (their login
+  // account was deleted, which now hides them from /api/backend/members --
+  // see the member-visibility fixes earlier this session) must still show
+  // its own row here. The donation itself was never deleted, only the
+  // member's eligibility to be picked for a NEW entry -- so synthesize a
+  // locked row from the donation's own denormalized donor name instead of
+  // silently dropping their past donation from the table.
+  const orphanRows = [];
+  savedByMember.forEach((saved, key) => {
+    if (matchedMemberIds.has(key)) return;
+    orphanRows.push({
+      id: saved.memberId,
+      memberId: saved.memberId,
+      branchId: saved.branchId,
+      branch: saved.branchName || "",
+      name: saved.memberName || saved.donorDisplay || `#${saved.memberId}`,
+      avatar: "",
+      gender: "-",
+      dob: "-",
+      realAmount: String(Number(saved.amountKhr || 0)),
+      dollarAmount: Number(saved.amountUsd || 0).toFixed(2),
+      paymentMethodId: saved.paymentMethodId,
+      paymentMethod: paymentMethodLabelFromCode(saved.paymentMethodCode),
+      paymentReference: saved.paymentReference,
+      donationId: saved.id,
+      paidAt: saved.paidAt,
+      receiptFileId: saved.receiptFileId,
+      note: saved.note,
+      expectedUpdatedAt: saved.updatedAt,
+      isInactive: true,
+    });
+  });
+
+  return [...mergedMembers, ...orphanRows];
 }
 
 // True only when at least one row's actual amount/payment details differ
