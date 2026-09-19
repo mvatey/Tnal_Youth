@@ -131,23 +131,50 @@ function StatMiniCard({
           : null),
       }}
     >
-      <span
+      <div
         style={{
-          color: "var(--color-text-secondary, #6B7280)",
-          fontSize: 12,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
         }}
       >
-        {label}
-      </span>
+        <span
+          style={{
+            color: "var(--color-text-secondary, #6B7280)",
+            fontSize: 12,
+          }}
+        >
+          {label}
+        </span>
+
+        {!loading && (
+          <span
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              color: isUp
+                ? "var(--color-success, #22A35A)"
+                : "var(--color-error, #D14343)",
+              fontSize: 11,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            {isUp ? "↑" : "↓"}{" "}
+            {Math.abs(growthNumber)}%
+          </span>
+        )}
+      </div>
 
       <div
         style={{
           display: "flex",
           flex: 1,
           minWidth: 0,
-          flexDirection: "column",
-          justifyContent: "center",
-          gap: 4,
+          alignItems: "center",
         }}
       >
         <span
@@ -162,22 +189,6 @@ function StatMiniCard({
         >
           {loading ? "···" : value}
         </span>
-
-        {!loading && (
-          <span
-            style={{
-              color: isUp
-                ? "var(--color-success, #22A35A)"
-                : "var(--color-error, #D14343)",
-              fontSize: 11,
-              fontWeight: 600,
-              whiteSpace: "nowrap",
-            }}
-          >
-            {isUp ? "↑" : "↓"}{" "}
-            {Math.abs(growthNumber)}%
-          </span>
-        )}
       </div>
     </div>
   );
