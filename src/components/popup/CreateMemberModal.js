@@ -33,6 +33,7 @@ const EMPTY_FORM = {
   gender: "",
   nationalityId: "",
   dateOfBirth: "",
+  username: "",
   phone: "",
   email: "",
   branchId: "",
@@ -838,7 +839,9 @@ export default function CreateMemberModal({
     "gender",
     "nationalityId",
     "dateOfBirth",
+    "username",
     "phone",
+    "email",
     "branchId",
     "levelId",
     "role",
@@ -938,6 +941,9 @@ export default function CreateMemberModal({
 
         date_of_birth:
           form.dateOfBirth,
+
+        username:
+          form.username.trim(),
 
         phone:
           form.phone.trim(),
@@ -1293,6 +1299,19 @@ export default function CreateMemberModal({
                   onChange={update(
                     "statusId",
                   )}
+                />
+
+                <BoxFill
+                  label={t("memberPage.username")}
+                  name="username"
+                  placeholder={t("memberPage.usernamePlaceholder")}
+                  value={
+                    form.username
+                  }
+                  onChange={update(
+                    "username",
+                  )}
+                  autoComplete="off"
                 />
 
                 <BoxFill

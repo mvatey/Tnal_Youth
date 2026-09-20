@@ -141,6 +141,7 @@ function mapUser(user, labels, locale) {
     // instead of needing a separate GET-by-id call.
     fullNameKmRaw: user?.fullNameKm || "",
     fullNameEnRaw: user?.fullNameEn || "",
+    usernameRaw: user?.username || "",
     phoneRaw: user?.phone || "",
     emailRaw: user?.email || "",
     viewerScopeRaw: user?.viewerScope || "",

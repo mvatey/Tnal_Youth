@@ -595,8 +595,8 @@ function LoginContent() {
         )}
 
         <TextInput
-          label={t("auth.phoneOrEmail", "លេខទូរស័ព្ទ ឬអ៊ីមែល")}
-          placeholder={t("auth.phoneOrEmailPlaceholder", "បញ្ចូលលេខទូរស័ព្ទ ឬអ៊ីមែល")}
+          label={t("auth.phoneOrEmail", "ឈ្មោះគណនី លេខទូរស័ព្ទ ឬអ៊ីមែល")}
+          placeholder={t("auth.phoneOrEmailUsernamePlaceholder", "បញ្ចូលឈ្មោះគណនី លេខទូរស័ព្ទ ឬអ៊ីមែល")}
           value={phoneOrEmail}
           onChange={(event) => {
             setPhoneOrEmail(

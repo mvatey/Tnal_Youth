@@ -35,6 +35,11 @@ export async function POST(request) {
       );
     }
 
+    const deliveryChannel =
+      body.deliveryChannel === "SMS"
+        ? "SMS"
+        : undefined;
+
     const backendResponse = await fetch(
       `${BACKEND_URL}/auth/activation/send-otp`,
       {
@@ -45,6 +50,7 @@ export async function POST(request) {
         },
         body: JSON.stringify({
           phoneOrEmail,
+          deliveryChannel,
         }),
         cache: "no-store",
       }

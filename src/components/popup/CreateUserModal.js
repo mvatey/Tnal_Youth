@@ -26,6 +26,7 @@ const BRANCH_SCOPED_ROLES = new Set(["BRANCH_LEADER", "SECRETARY", "MEMBER"]);
 const EMPTY_FORM = {
   fullNameKm: "",
   fullNameEn: "",
+  username: "",
   phone: "",
   email: "",
   role: "",
@@ -172,6 +173,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       setForm({
         fullNameKm: editingUser.fullNameKmRaw || "",
         fullNameEn: editingUser.fullNameEnRaw || "",
+        username: editingUser.usernameRaw || "",
         phone: editingUser.phoneRaw || "",
         email: editingUser.emailRaw || "",
         role: editingUser.roleCode || "VIEWER",
@@ -356,10 +358,17 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     : isEditing
       ? form.password.trim() === "" || form.password.trim().length >= 6
       : form.password.trim().length >= 6;
+  // Username only exists on the standalone-account form -- a member-linked
+  // account has no username field at all (out of scope for that path), so
+  // this is checked separately rather than added to REQUIRED_FIELDS, which
+  // both forms share.
+  const usernameRequirementMet =
+    isMemberLinked || form.username.trim() !== "";
   const isFormValid =
     REQUIRED_FIELDS.every(
       (field) => String(form[field] ?? "").trim() !== "",
     ) &&
+    usernameRequirementMet &&
     (!isViewer || isMemberLinked || String(form.viewerScope).trim() !== "") &&
     branchRequirementMet &&
     passwordValid &&
@@ -477,6 +486,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       const payload = {
         fullNameKm: form.fullNameKm.trim(),
         fullNameEn: form.fullNameEn.trim() || null,
+        username: form.username.trim(),
         phone: form.phone.trim(),
         email: form.email.trim(),
         role: form.role,
@@ -566,6 +576,17 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
         </div>
 
         <div className="space-y-4">
+          {!isMemberLinked && (
+            <BoxFill
+              label={t("usersPage.username")}
+              name="username"
+              placeholder={t("usersPage.usernamePlaceholder")}
+              value={form.username}
+              onChange={update("username")}
+              autoComplete="off"
+            />
+          )}
+
           <BoxFill
             label={t("usersPage.phone")}
             name="phone"

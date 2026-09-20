@@ -162,7 +162,7 @@ function VerifyActivationOtpContent() {
     }
   }
 
-  async function handleResendOtp() {
+  async function handleResendOtp(deliveryChannel) {
     if (loading) {
       return;
     }
@@ -193,6 +193,10 @@ function VerifyActivationOtpContent() {
           body: JSON.stringify({
             phoneOrEmail:
               normalizedIdentifier,
+            deliveryChannel:
+              deliveryChannel === "SMS"
+                ? "SMS"
+                : undefined,
           }),
         }
       );
@@ -269,11 +273,22 @@ function VerifyActivationOtpContent() {
 
           <button
             type="button"
-            onClick={handleResendOtp}
+            onClick={() => handleResendOtp()}
             disabled={loading}
             className="text-blue-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
           >
             {t("auth.resend", "ផ្ញើម្តងទៀត")}
+          </button>
+
+          {" · "}
+
+          <button
+            type="button"
+            onClick={() => handleResendOtp("SMS")}
+            disabled={loading}
+            className="text-blue-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {t("auth.resendBySms", "ផ្ញើតាមទូរស័ព្ទវិញ")}
           </button>
 
           <br />
