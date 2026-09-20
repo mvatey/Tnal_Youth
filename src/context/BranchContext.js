@@ -22,6 +22,13 @@ export function BranchProvider({ children, branches = [] }) {
   const [accessibleBranches, setAccessibleBranches] = useState(() =>
     normalizeBranches(branches),
   );
+  // False until selectedBranch has settled on its real value (the saved
+  // preference, or a secretary/branch-leader's own branch) instead of the
+  // "all" it starts as. A page reading selectedBranch before this flips can
+  // fetch once against that placeholder and again moments later against
+  // the real value -- a visible flash of the wrong numbers, worst for a
+  // secretary/branch-leader since their real value is never "all".
+  const [branchesReady, setBranchesReady] = useState(false);
 
   // The currently-mounted page/form registers itself here (see
   // registerBranchChangeGuard below) to report whether it has unsaved
@@ -58,6 +65,7 @@ export function BranchProvider({ children, branches = [] }) {
     if (!isLoggedIn) {
       setAccessibleBranches(normalizeBranches(branches));
       setSelectedBranchState("all");
+      setBranchesReady(true);
       return undefined;
     }
 
@@ -128,6 +136,10 @@ export function BranchProvider({ children, branches = [] }) {
       } catch {
         // Authentication pages can render before a user is logged in.
         // Keep the provider empty there instead of showing a global error.
+      } finally {
+        if (!cancelled) {
+          setBranchesReady(true);
+        }
       }
     }
 
@@ -240,10 +252,17 @@ export function BranchProvider({ children, branches = [] }) {
     () => ({
       branches: accessibleBranches,
       selectedBranch,
+      branchesReady,
       setSelectedBranch: requestBranchChange,
       registerBranchChangeGuard,
     }),
-    [accessibleBranches, selectedBranch, requestBranchChange, registerBranchChangeGuard],
+    [
+      accessibleBranches,
+      selectedBranch,
+      branchesReady,
+      requestBranchChange,
+      registerBranchChangeGuard,
+    ],
   );
 
   return (
@@ -335,6 +354,7 @@ export function useBranch() {
     return {
       branches: [],
       selectedBranch: "all",
+      branchesReady: true,
       setSelectedBranch: () => {},
       registerBranchChangeGuard: () => () => {},
     };

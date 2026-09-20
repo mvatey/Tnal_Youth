@@ -54,6 +54,7 @@ export default function DashboardPage() {
   const {
     branches,
     selectedBranch,
+    branchesReady,
   } = useBranch();
 
   const { member: currentMember } = useCurrentMember();
@@ -143,6 +144,16 @@ export default function DashboardPage() {
    */
   const loadDashboard =
     useCallback(async () => {
+      // selectedBranch starts as "all" and is replaced moments later by
+      // BranchContext's own async resolution (the saved preference, or a
+      // secretary/branch-leader's real branch, which is never "all") --
+      // fetching before that settles shows the wrong numbers for an
+      // instant, then immediately refetches and replaces them. Waiting
+      // for branchesReady skips that first, throwaway fetch entirely.
+      if (!branchesReady) {
+        return;
+      }
+
       try {
         setLoading(true);
         setError("");
@@ -232,6 +243,7 @@ export default function DashboardPage() {
       selectedYear,
       selectedBranch,
       effectivePerformanceBranch,
+      branchesReady,
       t,
     ]);
 
