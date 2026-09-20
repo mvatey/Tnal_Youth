@@ -90,12 +90,21 @@ function resolveGenderLabel(gender, t) {
   return gender || "-";
 }
 
-function mapMonthlyMember(member, branchLabel, month, year, locale, t) {
+function mapMonthlyMember(member, branchLabel, month, year, locale, t, requestedBranchId) {
   return {
     id: member.memberId,
     memberId: member.memberId,
     branch: branchLabel,
-    branchId: member.branchId,
+    // The backend already scoped this row to the requested branch (via
+    // the member's primary branch_id OR an active branch_staff
+    // assignment -- see MonthlyDonationRepository#listMembers), but it
+    // returns the member's own PRIMARY branch_id here regardless of
+    // which one actually matched. Table.js re-filters rows client-side
+    // by branchId === the selected branch, so a branch_staff-only match
+    // (a secretary staffing a second branch) would get silently dropped
+    // by that redundant filter if left as member.branchId. Tag the row
+    // with the branch it was actually fetched for instead.
+    branchId: requestedBranchId ?? member.branchId,
     month,
     year,
     name:
@@ -359,7 +368,7 @@ const paymentSummary = useMemo(() => {
         if (cancelled) return;
         const branchLabel = branchOptions.find((option) => option.value === selectedBranch)?.label || selectedBranch;
         setEditableRows((Array.isArray(page?.items) ? page.items : []).map((member) =>
-          mapMonthlyMember(member, branchLabel, selectedMonth, selectedYear, locale, t),
+          mapMonthlyMember(member, branchLabel, selectedMonth, selectedYear, locale, t, selectedBranch),
         ));
         setHasUnsavedEdits(false);
       })
@@ -570,7 +579,7 @@ const paymentSummary = useMemo(() => {
 
       setEditableRows(
         (Array.isArray(page?.items) ? page.items : []).map((member) =>
-          mapMonthlyMember(member, branchLabel, selectedMonth, selectedYear, locale, t),
+          mapMonthlyMember(member, branchLabel, selectedMonth, selectedYear, locale, t, selectedBranch),
         ),
       );
 

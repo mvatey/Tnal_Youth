@@ -585,7 +585,13 @@ export default function SponsorDonationForm({ initialData = null }) {
             value: String(activity.id),
             label: (locale === "en" ? en || km : km || en) || `#${activity.id}`,
             branchId: String(activity.branchId ?? ""),
+            // This list endpoint (ActivityListItemResponse) exposes
+            // invitedBranchId, not managedInvitedBranchId (that field only
+            // exists on the single-activity detail response) -- checking
+            // only the latter always misses an accepted co-hosting branch.
             managedInvitedBranchId: String(
+              activity.invitedBranchId ??
+              activity.invited_branch_id ??
               activity.managedInvitedBranchId ??
               activity.managed_invited_branch_id ??
               "",

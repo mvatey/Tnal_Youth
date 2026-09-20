@@ -45,12 +45,17 @@ function normalizeOptions(items, label) {
   }));
 }
 
-function mapMonthlyMember(member, branchLabel, month, year) {
+function mapMonthlyMember(member, branchLabel, month, year, requestedBranchId) {
   return {
     id: member.memberId,
     memberId: member.memberId,
     branch: branchLabel,
-    branchId: member.branchId,
+    // See the same-named function in monthlydonation/AddDonationForm.js --
+    // the backend returns the member's PRIMARY branch_id even when this
+    // row matched via a branch_staff assignment, so Table.js's client-side
+    // branchId filter must be given the branch this row was fetched for,
+    // not the member's own unrelated primary branch.
+    branchId: requestedBranchId ?? member.branchId,
     month,
     year,
     name: member.fullNameKm || member.fullNameEn || member.memberNo || `#${member.memberId}`,
@@ -274,7 +279,7 @@ const paymentSummary = useMemo(
         if (cancelled) return;
         const branchLabel = branchOptions.find((option) => option.value === selectedBranch)?.label || selectedBranch;
         setEditableRows((Array.isArray(page?.items) ? page.items : []).map((member) =>
-          mapMonthlyMember(member, branchLabel, selectedMonth, selectedYear),
+          mapMonthlyMember(member, branchLabel, selectedMonth, selectedYear, selectedBranch),
         ));
         setHasUnsavedEdits(false);
       })

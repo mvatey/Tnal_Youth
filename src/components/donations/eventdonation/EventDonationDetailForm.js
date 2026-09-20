@@ -471,16 +471,25 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
 
     // For an accepted invited/co-hosting activity, activity.branchId is the
     // ORGANIZER branch. The branch this Secretary is managing is returned
-    // separately as managedInvitedBranchId, so include either relationship.
+    // separately -- as invitedBranchId on the LIST endpoint this dropdown's
+    // options come from (ActivityListItemResponse), vs managedInvitedBranchId
+    // on the single-activity detail endpoint (ActivityResponse). Checking
+    // only managedInvitedBranchId here always misses, since these options
+    // never carry that field -- so an activity organized by another branch
+    // but merely accepted by the current (invited) branch never matched,
+    // which is exactly why navigating straight to that activity's donation
+    // detail landed on the unselected placeholder instead.
     const hostBranchId = option.raw?.branchId ?? option.raw?.branch?.id;
-    const managedInvitedBranchId =
+    const invitedBranchId =
+      option.raw?.invitedBranchId ??
+      option.raw?.invited_branch_id ??
       option.raw?.managedInvitedBranchId ??
       option.raw?.managed_invited_branch_id ??
       null;
 
     return (
       String(hostBranchId ?? "") === String(selectedBranch) ||
-      String(managedInvitedBranchId ?? "") === String(selectedBranch)
+      String(invitedBranchId ?? "") === String(selectedBranch)
     );
   }), [activities, selectedBranch]);
 
@@ -505,7 +514,14 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
         const memberItems = (Array.isArray(items) ? items : []).map((member) => ({
           id: member.id,
           memberId: member.id,
-          branchId: member.branch?.id ?? member.branch_id ?? member.branchId ?? Number(selectedBranch),
+          // Number(selectedBranch) takes priority over the member's own
+          // branch fields (not just a fallback) -- Table.js re-filters
+          // rows client-side by branchId === the selected branch, and the
+          // backend always returns the member's PRIMARY branch here even
+          // when this row matched via a branch_staff assignment to the
+          // branch actually being viewed. Tagging the row with anything
+          // else silently drops a multi-branch secretary from this grid.
+          branchId: Number(selectedBranch) || member.branch?.id || member.branch_id || member.branchId,
           branch: member.branch?.label_km ?? member.branch?.labelKm ?? branchLabel,
           name:
             locale === "en"
