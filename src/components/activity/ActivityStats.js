@@ -25,20 +25,20 @@ function getStats(activities, invitedActivityCount, t) {
     iconColor: "text-primary",
   },
   {
+    label: t("activityPage.otherBranchActivities"),
+    value: invitedCount,
+    icon: Handshake,
+    accent: "bg-warning",
+    iconBg: "bg-warning-bg",
+    iconColor: "text-warning",
+  },
+  {
     label: t("activityPage.upcomingActivities"),
     value: activities.filter((item) => item.status === "upcoming").length,
     icon: CalendarDays,
     accent: "bg-secondary-hover",
     iconBg: "bg-secondary-light",
     iconColor: "text-secondary-hover",
-  },
-  {
-    label: t("activityPage.invitedBranches"),
-    value: invitedCount,
-    icon: Handshake,
-    accent: "bg-warning",
-    iconBg: "bg-warning-bg",
-    iconColor: "text-warning",
   },
   {
     label: t("activityPage.completed"),

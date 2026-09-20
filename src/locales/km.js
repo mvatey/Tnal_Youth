@@ -1070,6 +1070,7 @@ const km = {
     totalActivities: "កម្មវិធីសរុប",
     upcomingActivities: "កម្មវិធីបន្ទាប់",
     invitedBranches: "សាខាដែលបានអញ្ជើញ",
+    otherBranchActivities: "កម្មវិធីពីសាខាដទៃ",
     completed: "បានបញ្ចប់",
     activityName: "ឈ្មោះកម្មវិធី",
     sector: "វិស័យ",
