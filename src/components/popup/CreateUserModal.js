@@ -9,6 +9,7 @@ import FormSelect from "@/components/forms/FormSelect";
 import MultiSelect from "@/components/forms/multiselect";
 import FormActionButton from "@/components/forms/FormActionButton";
 import { useLanguage } from "@/context/LanguageContext";
+import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 
 async function fetchJson(path, options) {
   const response = await fetch(path, { cache: "no-store", credentials: "include", ...options });
@@ -227,6 +228,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
         setForm({
           fullNameKm: personalInfo?.full_name_km || personalInfo?.fullNameKm || "",
           fullNameEn: personalInfo?.full_name_en || personalInfo?.fullNameEn || "",
+          username: personalInfo?.username || "",
           phone: personalInfo?.phone || "",
           email: personalInfo?.email || "",
           role,
@@ -358,12 +360,12 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     : isEditing
       ? form.password.trim() === "" || form.password.trim().length >= 6
       : form.password.trim().length >= 6;
-  // Username only exists on the standalone-account form -- a member-linked
-  // account has no username field at all (out of scope for that path), so
-  // this is checked separately rather than added to REQUIRED_FIELDS, which
-  // both forms share.
+  // Required on both the standalone and member-linked forms -- checked
+  // separately rather than added to REQUIRED_FIELDS since it's still
+  // loading (personalInfoBase not ready yet) when the member-linked path
+  // first mounts.
   const usernameRequirementMet =
-    isMemberLinked || form.username.trim() !== "";
+    form.username.trim() !== "";
   const isFormValid =
     REQUIRED_FIELDS.every(
       (field) => String(form[field] ?? "").trim() !== "",
@@ -387,6 +389,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       full_name_en: form.fullNameEn.trim() || null,
       gender: personalInfoBase?.gender || null,
       date_of_birth: personalInfoBase?.date_of_birth || personalInfoBase?.dateOfBirth || null,
+      username: form.username.trim() || null,
       email: form.email.trim() || null,
       phone: form.phone.trim() || null,
       religion_id: personalInfoBase?.religion_id ?? personalInfoBase?.religionId ?? null,
@@ -512,10 +515,12 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       );
 
       setSubmitError(
-        error.message ||
-          (isEditing
+        khmerErrorMessage(
+          error.message,
+          isEditing
             ? t("usersPage.updateFailed")
-            : t("usersPage.createFailed")),
+            : t("usersPage.createFailed"),
+        ),
       );
     } finally {
       setIsSubmitting(false);
@@ -576,16 +581,14 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
         </div>
 
         <div className="space-y-4">
-          {!isMemberLinked && (
-            <BoxFill
-              label={t("usersPage.username")}
-              name="username"
-              placeholder={t("usersPage.usernamePlaceholder")}
-              value={form.username}
-              onChange={update("username")}
-              autoComplete="off"
-            />
-          )}
+          <BoxFill
+            label={t("usersPage.username")}
+            name="username"
+            placeholder={t("usersPage.usernamePlaceholder")}
+            value={form.username}
+            onChange={update("username")}
+            autoComplete="off"
+          />
 
           <BoxFill
             label={t("usersPage.phone")}

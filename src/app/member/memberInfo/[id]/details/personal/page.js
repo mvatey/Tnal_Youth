@@ -21,6 +21,7 @@ import MultiSelect from "@/components/forms/multiselect.js";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 import { MemberProfileRefreshContext } from "../../layout";
 
 /* =========================================================
@@ -33,6 +34,7 @@ const EMPTY_FORM = {
   gender: "",
   date_of_birth: "",
 
+  username: "",
   email: "",
   phone: "",
 
@@ -300,6 +302,9 @@ function normalizePersonalInfo(
       data?.date_of_birth ||
       data?.dateOfBirth ||
       "",
+
+    username:
+      data?.username || "",
 
     email:
       data?.email || "",
@@ -1534,6 +1539,10 @@ export default function PersonalPage() {
             form.date_of_birth ||
             null,
 
+          username:
+            form.username.trim() ||
+            null,
+
           email:
             form.email.trim() ||
             null,
@@ -1991,8 +2000,10 @@ export default function PersonalPage() {
         setError(
           saveError.status === 413
             ? t("common.fileTooLarge")
-            : saveError.message ||
+            : khmerErrorMessage(
+                saveError.message,
                 t("memberPage.saveFailed"),
+              ),
         );
 
         return false;
@@ -2120,6 +2131,20 @@ export default function PersonalPage() {
                   "date_of_birth",
                 )
               }
+            />
+
+            <BoxFill
+              label={t("memberPage.username")}
+              value={
+                form.username
+              }
+              onChange={
+                handleChange(
+                  "username",
+                )
+              }
+              placeholder={t("memberPage.usernamePlaceholder")}
+              autoComplete="off"
             />
 
             <BoxFill

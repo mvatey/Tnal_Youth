@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Camera, Eye, EyeOff, Info, Lock, Mail } from "lucide-react";
+import { AtSign, Camera, Eye, EyeOff, Info, Lock, Mail } from "lucide-react";
 
 import SaveButton from "@/components/forms/SaveButton";
 import OrganizationProfileCard from "@/components/account/OrganizationProfileCard";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { describeUploadError } from "@/lib/uploadErrors";
+import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 
 const DEFAULT_PROFILE_IMAGE = "/profiles/default-avatar.jpg";
 const MAX_PROFILE_IMAGE_SIZE = 4 * 1024 * 1024;
@@ -81,6 +82,8 @@ async function submitJson(path, body) {
 export default function StandaloneAccountSettings({
   currentEmail,
   onEmailChanged,
+  currentUsername,
+  onUsernameChanged,
   profile,
   onProfileChanged,
 }) {
@@ -102,6 +105,10 @@ export default function StandaloneAccountSettings({
 
       <div className="grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-2">
         <div className="min-w-0 divide-y divide-border rounded-xl border border-border bg-bg-page-white">
+          <UsernameSection
+            currentUsername={currentUsername}
+            onUsernameChanged={onUsernameChanged}
+          />
           <EmailSection currentEmail={currentEmail} onEmailChanged={onEmailChanged} />
           <PasswordSection />
         </div>
@@ -425,6 +432,123 @@ function PasswordSection() {
   );
 }
 
+/*
+ * Unlike EmailSection below, changing username does NOT need a forced
+ * re-login -- the session token is bound to phone (see
+ * CustomUserDetailsService), never to username, so an existing session
+ * stays valid right through this change.
+ */
+function UsernameSection({ currentUsername, onUsernameChanged }) {
+  const { t } = useLanguage();
+  const [newUsername, setNewUsername] = useState(currentUsername || "");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    setNewUsername(currentUsername || "");
+  }, [currentUsername]);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    setError("");
+    setSuccess("");
+
+    const trimmed = newUsername.trim();
+
+    if (!trimmed) {
+      setError(t("myAccount.usernameRequired"));
+      return;
+    }
+
+    if (trimmed === currentUsername) {
+      setError(t("myAccount.sameUsername"));
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      await submitJson("/api/backend/my-account/username", {
+        new_username: trimmed,
+      });
+
+      setSuccess(t("myAccount.usernameChanged"));
+
+      await onUsernameChanged?.();
+    } catch (submitError) {
+      console.error("Cannot change my username:", submitError);
+      setError(
+        khmerErrorMessage(submitError.message, t("myAccount.usernameChangeFailed")),
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-w-0 space-y-5 p-5">
+      <div>
+        <h2 className="text-base font-semibold text-text-primary">
+          {t("myAccount.changeUsername")}
+        </h2>
+
+        <p className="mt-1 text-sm text-text-secondary">
+          {t("myAccount.usernameDescription")}
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="mb-2 block text-sm font-medium text-text-primary">
+            {t("usersPage.username")}
+          </label>
+
+          <div className="relative">
+            <AtSign
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
+              size={18}
+            />
+
+            <input
+              type="text"
+              value={newUsername}
+              onChange={(event) => setNewUsername(event.target.value)}
+              placeholder={t("usersPage.usernamePlaceholder")}
+              autoComplete="off"
+              className="
+                h-[34px]
+                w-full
+                rounded-lg
+                border
+                border-border
+                bg-bg-page-white
+                pl-11
+                pr-4
+                text-sm
+                text-text-primary
+                outline-none
+                transition
+                focus:border-primary
+              "
+            />
+          </div>
+        </div>
+
+        {error && <p className="text-sm font-medium text-error">{error}</p>}
+        {success && <p className="text-sm font-medium text-success">{success}</p>}
+
+        <div className="flex justify-end pt-2">
+          <SaveButton type="submit" disabled={submitting}>
+            {submitting ? t("common.saving") : t("common.save")}
+          </SaveButton>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function EmailSection({ currentEmail, onEmailChanged }) {
   const { t } = useLanguage();
   const router = useRouter();
@@ -494,7 +618,7 @@ function EmailSection({ currentEmail, onEmailChanged }) {
       }, 1500);
     } catch (submitError) {
       console.error("Cannot change my email:", submitError);
-      setError(submitError.message || t("myAccount.emailChangeFailed"));
+      setError(khmerErrorMessage(submitError.message, t("myAccount.emailChangeFailed")));
       setSubmitting(false);
     }
   };

@@ -147,6 +147,8 @@ export default function MyAccountLayout({ children }) {
               <StandaloneAccountSettings
                 currentEmail={member.email !== "-" ? member.email : ""}
                 onEmailChanged={refetch}
+                currentUsername={member.username || ""}
+                onUsernameChanged={refetch}
                 profile={{
                   nameKm: member.name_kh,
                   nameEn: member.name_en,

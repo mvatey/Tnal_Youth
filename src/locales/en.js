@@ -740,6 +740,12 @@ const en = {
     sameEmail: "This email is already your current email.",
     emailChangedLoginAgain: "Email changed successfully. Please sign in again with the new email.",
     emailChangeFailed: "Could not change email.",
+    changeUsername: "Change username",
+    usernameDescription: "Edit the username below, then save when you are ready.",
+    usernameRequired: "Please enter a username.",
+    sameUsername: "This username is already your current username.",
+    usernameChanged: "Username changed successfully.",
+    usernameChangeFailed: "Could not change username.",
     accountNotFound: "Account information was not found.",
   },
   documentPage: {

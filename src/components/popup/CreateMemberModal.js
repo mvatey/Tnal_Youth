@@ -16,6 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useBranch } from "@/context/BranchContext";
 import { getLookup } from "@/lib/lookupCache";
+import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 
 // Mirrors the backend's MemberServiceImpl#validateAssignableRole hierarchy:
 // a SECRETARY may only create MEMBER accounts, a BRANCH_LEADER may create
@@ -1045,8 +1046,10 @@ export default function CreateMemberModal({
               );
 
               setSubmitError(
-                retryError?.message ||
+                khmerErrorMessage(
+                  retryError?.message,
                   t("memberPage.createFailed"),
+                ),
               );
             } finally {
               setIsSubmitting(
@@ -1081,8 +1084,10 @@ export default function CreateMemberModal({
         );
 
         setSubmitError(
-          error?.message ||
+          khmerErrorMessage(
+            error?.message,
             t("memberPage.createFailed"),
+          ),
         );
 
         setIsSubmitting(

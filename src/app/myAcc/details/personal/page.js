@@ -18,6 +18,7 @@ import CvFilePreview from "@/components/forms/CvFilePreview";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 import TelegramConnectionCard from "@/components/account/TelegramConnectionCard";
 import { useLanguage } from "@/context/LanguageContext";
+import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 
 /* =========================================================
  * EMPTY FORM
@@ -34,6 +35,7 @@ const EMPTY_FORM = {
   gender: "",
   date_of_birth: "",
 
+  username: "",
   email: "",
   phone: "",
 
@@ -217,6 +219,7 @@ function normalizePersonalInfo(data, preserve = {}) {
 
     date_of_birth: data?.date_of_birth || data?.dateOfBirth || "",
 
+    username: data?.username || "",
     email: data?.email || "",
     phone: data?.phone || "",
 
@@ -490,6 +493,7 @@ export default function MyAccountPersonalPage() {
         full_name_en: form.full_name_en.trim() || null,
         gender: form.gender,
         date_of_birth: form.date_of_birth || null,
+        username: form.username.trim() || null,
         email: form.email.trim() || null,
         phone: form.phone.trim() || null,
         religion_id: form.religion_id ? Number(form.religion_id) : null,
@@ -553,7 +557,7 @@ export default function MyAccountPersonalPage() {
       setError(
         saveError.status === 413
           ? t("common.fileTooLarge")
-          : saveError.message || t("memberPage.saveFailed"),
+          : khmerErrorMessage(saveError.message, t("memberPage.saveFailed")),
       );
 
       return false;
@@ -648,6 +652,14 @@ export default function MyAccountPersonalPage() {
               name="date_of_birth"
               value={form.date_of_birth}
               onChange={handleChange("date_of_birth")}
+            />
+
+            <BoxFill
+              label={t("memberPage.username")}
+              value={form.username}
+              onChange={handleChange("username")}
+              placeholder={t("memberPage.usernamePlaceholder")}
+              autoComplete="off"
             />
 
             <BoxFill
