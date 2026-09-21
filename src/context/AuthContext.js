@@ -98,17 +98,23 @@ export function AuthProvider({ children }) {
     // to at that point.
     const loggedOutUserId = user?.id;
 
-    try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-    } catch (error) {
+    // Fired with keepalive and not awaited -- sidebar's handleLogout does
+    // a full-page navigate right after calling this, and awaiting the
+    // round trip first used to mean sitting on the current page (with no
+    // sidebar, since setUser(null) below already fired) for however long
+    // that request took, which could be a couple of visible seconds on a
+    // slow backend. keepalive lets the request finish in the background
+    // even though the page that started it is about to be torn down.
+    fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+      keepalive: true,
+    }).catch((error) => {
       console.error("Logout failed:", error);
-    } finally {
-      setUser(null);
-      clearTelegramBannerDismissal(loggedOutUserId);
-    }
+    });
+
+    setUser(null);
+    clearTelegramBannerDismissal(loggedOutUserId);
   }, [user]);
 
   useEffect(() => {
