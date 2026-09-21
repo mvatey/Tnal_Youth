@@ -37,6 +37,14 @@ export default function DataTable({
   // just to reach it. Lower this per-table instead of changing the
   // shared default, which other tables' columns do actually need.
   minTableWidth = 900,
+  // Keeps the last column pinned to the right edge of the table's own
+  // horizontal scroll area, instead of requiring a swipe to reach it. Off
+  // by default since most tables' last column is just another data field
+  // -- turn it on for tables whose last column is the row's primary
+  // action (e.g. a "view details" button), where making someone discover
+  // a horizontal swipe just to click it is a real usability problem on a
+  // narrow phone screen.
+  stickyLastColumn = false,
 }) {
   const [currentPage, setCurrentPage] =
     useState(1);
@@ -386,6 +394,12 @@ export default function DataTable({
                         ${getAlignment(
                           column.align,
                         )}
+                        ${
+                          stickyLastColumn &&
+                          index === columns.length - 1
+                            ? "sticky right-0 z-10 bg-bg-page-gray shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.15)]"
+                            : ""
+                        }
                       `}
                     >
                       {column.header}
@@ -456,6 +470,12 @@ export default function DataTable({
                                 ${getAlignment(
                                   column.align,
                                 )}
+                                ${
+                                  stickyLastColumn &&
+                                  columnIndex === columns.length - 1
+                                    ? "sticky right-0 z-10 bg-bg-page-white shadow-[-4px_0_6px_-4px_rgba(0,0,0,0.15)]"
+                                    : ""
+                                }
                               `}
                             >
                               <div className="min-w-0 truncate">

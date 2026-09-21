@@ -1,7 +1,7 @@
 "use client";
 
 import { Save } from "lucide-react";
-import PopupCard from "@/components/modals/PopupCard";
+import PopupCard from "@/components/popup/PopupCard";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function UnsavedChangesModal({

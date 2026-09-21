@@ -475,7 +475,8 @@ export default function DocumentPreviewCard({
     <div
       ref={previewRef}
       className="
-        w-[380px]
+        w-full
+        max-w-[380px]
         rounded-xl
         border
         border-border
