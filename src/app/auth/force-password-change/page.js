@@ -7,7 +7,7 @@ import PasswordInput from "@/components/ui/passwordInput";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
-import { isPasswordValid } from "@/lib/validatePassword";
+import { getPasswordRules } from "@/lib/validatePassword";
 import { getRoleHomePath } from "@/lib/navigation";
 
 // Mirrors the backend's PasswordPolicy.DEFAULT_MEMBER_PASSWORD -- this
@@ -30,6 +30,7 @@ export default function ForcePasswordChangePage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const passwordRules = getPasswordRules(newPassword);
   const passwordsMatch =
     newPassword !== "" && newPassword === confirmPassword;
 
@@ -42,8 +43,13 @@ export default function ForcePasswordChangePage() {
 
     setError("");
 
-    if (!isPasswordValid(newPassword)) {
-      setError(t("memberPage.passwordRequirementsNotMet"));
+    if (!passwordRules.minimumLength) {
+      setError(t("memberPage.passwordMinLength"));
+      return;
+    }
+
+    if (!passwordRules.hasNumber || !passwordRules.hasSymbol) {
+      setError(t("memberPage.passwordRequiresNumberAndSymbol"));
       return;
     }
 

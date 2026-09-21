@@ -13,7 +13,7 @@ import {
 import SaveButton from "@/components/forms/SaveButton";
 import { useLanguage } from "@/context/LanguageContext";
 import useCurrentMember from "@/hooks/useCurrentMember";
-import { getPasswordRules, isPasswordValid } from "@/lib/validatePassword";
+import { getPasswordRules } from "@/lib/validatePassword";
 
 async function requestJson(path, options = {}) {
   const response = await fetch(`/api${path}`, {
@@ -116,9 +116,16 @@ export default function PasswordPage() {
       return;
     }
 
-    if (!isPasswordValid(newPassword)) {
+    if (!passwordRules.minimumLength) {
       setError(
-        t("memberPage.passwordRequirementsNotMet"),
+        t("memberPage.passwordMinLength"),
+      );
+      return;
+    }
+
+    if (!passwordRules.hasNumber || !passwordRules.hasSymbol) {
+      setError(
+        t("memberPage.passwordRequiresNumberAndSymbol"),
       );
       return;
     }

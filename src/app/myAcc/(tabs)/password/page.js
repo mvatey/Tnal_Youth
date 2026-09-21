@@ -12,7 +12,7 @@ import {
 import SaveButton from "@/components/forms/SaveButton";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 import { useLanguage } from "@/context/LanguageContext";
-import { getPasswordRules, isPasswordValid } from "@/lib/validatePassword";
+import { getPasswordRules } from "@/lib/validatePassword";
 
 export default function PasswordPage() {
   const { t } = useLanguage();
@@ -49,8 +49,13 @@ export default function PasswordPage() {
       return;
     }
 
-    if (!isPasswordValid(newPassword)) {
-      setError(t("memberPage.passwordRequirementsNotMet"));
+    if (!rules.minimumLength) {
+      setError(t("memberPage.passwordMinLength"));
+      return;
+    }
+
+    if (!rules.hasNumber || !rules.hasSymbol) {
+      setError(t("memberPage.passwordRequiresNumberAndSymbol"));
       return;
     }
 

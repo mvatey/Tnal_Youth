@@ -649,6 +649,7 @@ const en = {
     passwordRuleSymbol: "Password must include at least one symbol",
     passwordRuleMatch: "Confirmation must match the new password",
     passwordRequirementsNotMet: "Password must be at least 6 characters and include at least one number and one symbol.",
+    passwordRequiresNumberAndSymbol: "Password must include at least one number and one symbol.",
     saveSuccess: "Information saved successfully.",
     saveFailed: "Could not save information.",
     add: "Add",
