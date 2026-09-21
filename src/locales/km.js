@@ -1244,6 +1244,7 @@ const km = {
     startDateRequired: "សូមជ្រើសរើសកាលបរិច្ឆេទចាប់ផ្តើម",
     endDateRequired: "សូមជ្រើសរើសកាលបរិច្ឆេទបញ្ចប់",
     provinceRequired: "សូមជ្រើសរើសខេត្ត/រាជធានី",
+    mapLinkRequired: "សូមបញ្ចូលតំណភ្ជាប់ផែនទី",
     endBeforeStart: "កាលបរិច្ឆេទបញ្ចប់មិនអាចមុនកាលបរិច្ឆេទចាប់ផ្តើមបានទេ",
     missingFields: "សូមបំពេញព័ត៌មានដែលខ្វះខាតៈ {fields}",
     saveFailed: "មិនអាចរក្សាទុកកម្មវិធីបានទេ",

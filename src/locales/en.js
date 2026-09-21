@@ -1244,6 +1244,7 @@ const en = {
     startDateRequired: "Please select the start date.",
     endDateRequired: "Please select the end date.",
     provinceRequired: "Please select a province / capital.",
+    mapLinkRequired: "Please enter a map link.",
     endBeforeStart: "End date cannot be before start date.",
     missingFields: "Please complete the missing information: {fields}",
     saveFailed: "Could not save the activity.",
