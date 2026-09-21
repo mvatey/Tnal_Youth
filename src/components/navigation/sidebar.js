@@ -623,6 +623,7 @@ export default function Sidebar() {
                 <Link
                   key={item.id}
                   href={item.href}
+                  prefetch={false}
                   className={`
                     flex
                     items-center
