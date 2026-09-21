@@ -60,18 +60,17 @@ export default function FormActionButtons({
           text-white
           shadow-[0_1px_2px_rgba(0,0,0,0.12)]
           transition
+          bg-secondary
           ${
             isValid && !saving
               ? `
                 cursor-pointer
-                bg-secondary
                 hover:bg-secondary-hover
                 active:scale-[0.99]
               `
               : `
                 cursor-not-allowed
-                bg-secondary
-                hover:bg-secondary-hover
+                opacity-60
               `
           }
         `}
