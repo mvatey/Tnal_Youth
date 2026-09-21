@@ -21,6 +21,7 @@ export default function BoxFill({
   suggestions = [],
   className = "",
   autoComplete,
+  required = false,
 }) {
   const [focused, setFocused] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -83,6 +84,10 @@ export default function BoxFill({
           "
         >
           {label}
+
+          {required && (
+            <span className="ml-1 text-error">*</span>
+          )}
         </label>
       )}
 

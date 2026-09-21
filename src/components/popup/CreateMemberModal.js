@@ -834,20 +834,19 @@ export default function CreateMemberModal({
       [statusLookups, label],
     );
 
+  // Only info that's needed to create a usable member/login record at all
+  // is required here -- nationality, date of birth, member level, join
+  // date, status, and the English name are all editable any time later
+  // from the member's own personal-info page, so none of them block
+  // creation.
   const requiredFields = [
     "fullNameKm",
-    "fullNameEn",
     "gender",
-    "nationalityId",
-    "dateOfBirth",
     "username",
     "phone",
     "email",
     "branchId",
-    "levelId",
     "role",
-    "joinedOn",
-    "statusId",
   ];
 
   const isFormValid =
@@ -864,20 +863,46 @@ export default function CreateMemberModal({
     async (event) => {
       event.preventDefault();
 
-      if (
-        !isFormValid ||
-        isSubmitting
-      ) {
-        setShowValidationError(
-          true,
-        );
-
+      if (isSubmitting) {
         return;
       }
 
-      setShowValidationError(
-        false,
-      );
+      if (!form.fullNameKm.trim()) {
+        setSubmitError(t("memberPage.requiredNameKm"));
+        return;
+      }
+
+      if (!form.gender.trim()) {
+        setSubmitError(t("memberPage.requiredGender"));
+        return;
+      }
+
+      if (!form.username.trim()) {
+        setSubmitError(t("memberPage.requiredUsername"));
+        return;
+      }
+
+      if (!form.phone.trim()) {
+        setSubmitError(t("memberPage.requiredPhone"));
+        return;
+      }
+
+      if (!form.email.trim()) {
+        setSubmitError(t("memberPage.requiredEmail"));
+        return;
+      }
+
+      if (!String(form.branchId).trim()) {
+        setSubmitError(t("memberPage.requiredBranch"));
+        return;
+      }
+
+      if (!form.role.trim()) {
+        setSubmitError(t("memberPage.requiredRole"));
+        return;
+      }
+
+      setSubmitError("");
 
       const todayIso =
         new Date()
@@ -930,18 +955,21 @@ export default function CreateMemberModal({
           form.fullNameKm.trim(),
 
         full_name_en:
-          form.fullNameEn.trim(),
+          form.fullNameEn.trim() ||
+          null,
 
         gender:
           form.gender,
 
         nationality_id:
-          Number(
-            form.nationalityId,
-          ),
+          form.nationalityId
+            ? Number(
+                form.nationalityId,
+              )
+            : null,
 
         date_of_birth:
-          form.dateOfBirth,
+          form.dateOfBirth || null,
 
         username:
           form.username.trim(),
@@ -959,9 +987,11 @@ export default function CreateMemberModal({
           ),
 
         level_id:
-          Number(
-            form.levelId,
-          ),
+          form.levelId
+            ? Number(
+                form.levelId,
+              )
+            : null,
 
         position_id:
           form.positionId
@@ -974,12 +1004,14 @@ export default function CreateMemberModal({
           form.role,
 
         joined_on:
-          form.joinedOn,
+          form.joinedOn || null,
 
         status_id:
-          Number(
-            form.statusId,
-          ),
+          form.statusId
+            ? Number(
+                form.statusId,
+              )
+            : null,
       };
 
       try {
@@ -1262,6 +1294,7 @@ export default function CreateMemberModal({
                   onChange={update(
                     "fullNameKm",
                   )}
+                  required
                 />
 
                 <BoxFill
@@ -1289,6 +1322,7 @@ export default function CreateMemberModal({
                   onChange={update(
                     "gender",
                   )}
+                  required
                 />
 
                 <FormSelect
@@ -1317,6 +1351,7 @@ export default function CreateMemberModal({
                     "username",
                   )}
                   autoComplete="off"
+                  required
                 />
 
                 <BoxFill
@@ -1330,6 +1365,7 @@ export default function CreateMemberModal({
                   onChange={update(
                     "phone",
                   )}
+                  required
                 />
 
                 <BoxFill
@@ -1343,6 +1379,7 @@ export default function CreateMemberModal({
                   onChange={update(
                     "email",
                   )}
+                  required
                 />
 
                 <FormSelect
@@ -1376,6 +1413,7 @@ export default function CreateMemberModal({
                   disabled={Boolean(
                     form.positionId,
                   )}
+                  required
                 />
 
                 <FormSelect
@@ -1394,6 +1432,7 @@ export default function CreateMemberModal({
                   disabled={
                     effectiveLockBranch
                   }
+                  required
                 />
 
                 <BoxFill
@@ -1450,20 +1489,6 @@ export default function CreateMemberModal({
                   )}
                 />
               </div>
-
-              {showValidationError &&
-                !isFormValid && (
-                  <p
-                    className="
-                      mt-4
-                      text-xs
-                      font-medium
-                      text-error
-                    "
-                  >
-                    {t("memberPage.requiredFields")}
-                  </p>
-                )}
 
               {submitError && (
                 <p

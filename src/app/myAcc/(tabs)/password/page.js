@@ -12,12 +12,7 @@ import {
 import SaveButton from "@/components/forms/SaveButton";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 import { useLanguage } from "@/context/LanguageContext";
-
-function validatePassword(password) {
-  return {
-    minimumLength: password.length >= 6,
-  };
-}
+import { getPasswordRules, isPasswordValid } from "@/lib/validatePassword";
 
 export default function PasswordPage() {
   const { t } = useLanguage();
@@ -33,7 +28,7 @@ export default function PasswordPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const rules = validatePassword(newPassword);
+  const rules = getPasswordRules(newPassword);
   const passwordsMatch =
     newPassword !== "" &&
     newPassword === confirmPassword;
@@ -54,8 +49,8 @@ export default function PasswordPage() {
       return;
     }
 
-    if (!rules.minimumLength) {
-      setError(t("memberPage.passwordMinLength"));
+    if (!isPasswordValid(newPassword)) {
+      setError(t("memberPage.passwordRequirementsNotMet"));
       return;
     }
 
@@ -223,6 +218,14 @@ export default function PasswordPage() {
 
           <div className="space-y-4">
             <Rule valid={rules.minimumLength} />
+            <Rule
+              valid={rules.hasNumber}
+              text={t("memberPage.passwordRuleNumber")}
+            />
+            <Rule
+              valid={rules.hasSymbol}
+              text={t("memberPage.passwordRuleSymbol")}
+            />
             <Rule
               valid={passwordsMatch}
               text={t("memberPage.passwordRuleMatch")}

@@ -1032,6 +1032,7 @@ try {
                 leadingIcon={
                   <Building2 size={16} />
                 }
+                required
               />
 
               <BoxFill
@@ -1060,6 +1061,7 @@ try {
                 )}
                 placeholder={t("branchPage.selectLevel")}
                 options={levelOptions}
+                required
               />
 
               <FormSelect
@@ -1078,6 +1080,7 @@ try {
                 disabled={
                   isLoadingLookups
                 }
+                required
               />
 
               {showDistrict && (
@@ -1102,6 +1105,7 @@ try {
                     !form.provinceId ||
                     isLoadingDistricts
                   }
+                  required
                 />
               )}
 
@@ -1127,6 +1131,7 @@ try {
                     !form.districtId ||
                     isLoadingCommunes
                   }
+                  required
                 />
               )}
             </div>
@@ -1230,6 +1235,7 @@ try {
               placeholder={t("branchPage.selectStatus")}
               options={statusOptions}
               disabled={isLoadingLookups}
+              required
             />
 
             {isEditMode && (

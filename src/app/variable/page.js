@@ -1040,6 +1040,7 @@ export default function VariablePage() {
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-text-primary">
                     {t("variablePage.nameKmFull")}
+                    <span className="ml-1 text-error">*</span>
                   </label>
 
                   <input
@@ -1184,6 +1185,7 @@ export default function VariablePage() {
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-text-primary">
                     {t("variablePage.rateInputLabel")}
+                    <span className="ml-1 text-error">*</span>
                   </label>
 
                   <input
@@ -1200,6 +1202,7 @@ export default function VariablePage() {
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-text-primary">
                     {t("variablePage.effectiveFromFull")}
+                    <span className="ml-1 text-error">*</span>
                   </label>
 
                   {/*

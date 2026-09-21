@@ -10,6 +10,7 @@ import MultiSelect from "@/components/forms/multiselect";
 import FormActionButton from "@/components/forms/FormActionButton";
 import { useLanguage } from "@/context/LanguageContext";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
+import { isPasswordValid } from "@/lib/validatePassword";
 
 async function fetchJson(path, options) {
   const response = await fetch(path, { cache: "no-store", credentials: "include", ...options });
@@ -357,10 +358,10 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       : String(form.branchId).trim() !== "");
   const passwordValid = isMemberLinked
     ? form.password.trim() === ""
-      || (form.password.trim().length >= 6 && form.password.trim() === confirmPassword.trim())
+      || (isPasswordValid(form.password.trim()) && form.password.trim() === confirmPassword.trim())
     : isEditing
-      ? form.password.trim() === "" || form.password.trim().length >= 6
-      : form.password.trim().length >= 6;
+      ? form.password.trim() === "" || isPasswordValid(form.password.trim())
+      : isPasswordValid(form.password.trim());
   // Required on both the standalone and member-linked forms -- checked
   // separately rather than added to REQUIRED_FIELDS since it's still
   // loading (personalInfoBase not ready yet) when the member-linked path
@@ -478,7 +479,46 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
   const submit = async (event) => {
     event.preventDefault();
 
-    if (!isFormValid || isSubmitting) {
+    if (isSubmitting) {
+      return;
+    }
+
+    if (!form.fullNameKm.trim()) {
+      setSubmitError(t("usersPage.requiredNameKm"));
+      return;
+    }
+
+    if (!usernameRequirementMet) {
+      setSubmitError(t("usersPage.requiredUsername"));
+      return;
+    }
+
+    if (!form.role.trim()) {
+      setSubmitError(t("usersPage.requiredRole"));
+      return;
+    }
+
+    if (!phoneOrEmailRequirementMet) {
+      setSubmitError(t("usersPage.requiredPhoneOrEmail"));
+      return;
+    }
+
+    if (!passwordValid) {
+      setSubmitError(t("usersPage.requiredPassword"));
+      return;
+    }
+
+    if (!branchRequirementMet) {
+      setSubmitError(t("usersPage.requiredBranch"));
+      return;
+    }
+
+    if (isViewer && !isMemberLinked && !String(form.viewerScope).trim()) {
+      setSubmitError(t("usersPage.requiredViewAs"));
+      return;
+    }
+
+    if (!isFormValid) {
       setShowValidationError(true);
       return;
     }
@@ -578,6 +618,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             placeholder={t("usersPage.enterName")}
             value={form.fullNameKm}
             onChange={update("fullNameKm")}
+            required
           />
 
           <BoxFill
@@ -597,7 +638,14 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             value={form.username}
             onChange={update("username")}
             autoComplete="off"
+            required
           />
+
+          {!isMemberLinked && (
+            <p className="-mb-2 text-xs text-text-secondary">
+              {t("usersPage.phoneOrEmailHint")}
+            </p>
+          )}
 
           <BoxFill
             label={t("usersPage.phone")}
@@ -605,6 +653,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             placeholder="0XXXXXXXX"
             value={form.phone}
             onChange={update("phone")}
+            required={isMemberLinked}
           />
 
           <BoxFill
@@ -615,6 +664,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             value={form.email}
             onChange={update("email")}
             autoComplete="off"
+            required={isMemberLinked}
           />
 
           <BoxFill
@@ -625,7 +675,14 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             value={form.password}
             onChange={update("password")}
             autoComplete="new-password"
+            required={!isEditing && !isMemberLinked}
           />
+
+          {form.password.trim() !== "" && !isPasswordValid(form.password.trim()) && (
+            <p className="-mt-2 text-xs font-medium text-error">
+              {t("memberPage.passwordRequirementsNotMet")}
+            </p>
+          )}
 
           {isMemberLinked && form.password && (
             <BoxFill

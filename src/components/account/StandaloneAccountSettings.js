@@ -11,6 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { describeUploadError } from "@/lib/uploadErrors";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
+import { isPasswordValid } from "@/lib/validatePassword";
 
 const DEFAULT_PROFILE_IMAGE = "/profiles/default-avatar.jpg";
 const MAX_PROFILE_IMAGE_SIZE = 4 * 1024 * 1024;
@@ -293,6 +294,8 @@ function PasswordRulesCard() {
   const { t } = useLanguage();
   const rules = [
     t("memberPage.passwordRuleLength"),
+    t("memberPage.passwordRuleNumber"),
+    t("memberPage.passwordRuleSymbol"),
     t("myAccount.passwordRuleDifferent"),
     t("myAccount.passwordRuleSame"),
   ];
@@ -343,8 +346,8 @@ function PasswordSection() {
       return;
     }
 
-    if (!newPassword || newPassword.length < 6) {
-      setError(t("memberPage.passwordMinLength"));
+    if (!isPasswordValid(newPassword)) {
+      setError(t("memberPage.passwordRequirementsNotMet"));
       return;
     }
 

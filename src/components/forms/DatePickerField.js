@@ -34,6 +34,7 @@ export default function DatePickerField({
   variant = "default",
   min,
   max,
+  required = false,
 }) {
   const isStart = variant === "start";
   const isEnd = variant === "end";
@@ -42,6 +43,10 @@ export default function DatePickerField({
     <div>
       <label className="mb-2 block text-sm font-semibold text-text-primary">
         {label}
+
+        {required && (
+          <span className="ml-1 text-error">*</span>
+        )}
       </label>
 
       <div className="relative">

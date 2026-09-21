@@ -884,6 +884,7 @@ export default function CreateActivityPage() {
   const [deletingExistingId, setDeletingExistingId] = useState(null);
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [formError, setFormError] = useState("");
   const [memberOptions, setMemberOptions] = useState([]);
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
   const [membersLoading, setMembersLoading] = useState(false);
@@ -1455,37 +1456,37 @@ export default function CreateActivityPage() {
 
   const validateForm = () => {
     if (!form.name.trim()) {
-      alert(t("activityPage.nameRequired"));
+      setFormError(t("activityPage.nameRequired"));
       return false;
     }
 
     if (!form.branch) {
-      alert(t("activityPage.hostBranchRequired"));
+      setFormError(t("activityPage.hostBranchRequired"));
       return false;
     }
 
     if (!form.type) {
-      alert(t("activityPage.typeRequired"));
+      setFormError(t("activityPage.typeRequired"));
       return false;
     }
 
     if (!form.sector) {
-      alert(t("activityPage.sectorRequired"));
+      setFormError(t("activityPage.sectorRequired"));
       return false;
     }
 
     if (!form.startDate) {
-      alert(t("activityPage.startDateRequired"));
+      setFormError(t("activityPage.startDateRequired"));
       return false;
     }
 
     if (!form.endDate) {
-      alert(t("activityPage.endDateRequired"));
+      setFormError(t("activityPage.endDateRequired"));
       return false;
     }
 
     if (!form.province) {
-      alert(t("activityPage.provinceRequired"));
+      setFormError(t("activityPage.provinceRequired"));
       return false;
     }
 
@@ -1497,15 +1498,18 @@ export default function CreateActivityPage() {
       endsAt &&
       new Date(endsAt).getTime() <= new Date(startsAt).getTime()
     ) {
-      alert(t("activityPage.endBeforeStart"));
+      setFormError(t("activityPage.endBeforeStart"));
       return false;
     }
 
+    setFormError("");
     return true;
   };
 
   const handleSave = async (event) => {
     event.preventDefault();
+
+    setFormError("");
 
     if (!validateForm()) {
       return;
@@ -1710,7 +1714,7 @@ export default function CreateActivityPage() {
       router.push(`/activity/${savedId}`);
     } catch (error) {
       console.error("Save activity error:", error);
-      alert(
+      setFormError(
         error?.status === 413
           ? t("common.fileTooLarge")
           : error?.message || t("activityPage.saveFailed"),
@@ -1816,6 +1820,7 @@ export default function CreateActivityPage() {
                 value={form.name}
                 onChange={(event) => setValue("name", event.target.value)}
                 placeholder="កម្មវិធីដាំដើមឈើ"
+                required
               />
 
               <FormSelect
@@ -1831,6 +1836,7 @@ export default function CreateActivityPage() {
                     : branchOptions
                 }
                 disabled={isBranchScoped}
+                required
               />
 
               <FormSelect
@@ -1839,6 +1845,7 @@ export default function CreateActivityPage() {
                 onChange={(event) => setValue("type", event.target.value)}
                 placeholder={t("activityPage.selectType")}
                 options={typeOptions}
+                required
               />
             </div>
 
@@ -1849,6 +1856,7 @@ export default function CreateActivityPage() {
                 onChange={(event) => setValue("sector", event.target.value)}
                 placeholder={t("activityPage.selectSector")}
                 options={sectorOptions}
+                required
               />
 
               <FormSelect
@@ -1901,6 +1909,7 @@ export default function CreateActivityPage() {
                 value={form.startDate}
                 onChange={(date) => setScheduleValue("startDate", date)}
                 variant="start"
+                required
               />
 
               <DatePickerField
@@ -1909,6 +1918,7 @@ export default function CreateActivityPage() {
                 min={formatDate(form.startDate)}
                 onChange={(date) => setScheduleValue("endDate", date)}
                 variant="end"
+                required
               />
 
               <FormControl
@@ -2259,6 +2269,10 @@ export default function CreateActivityPage() {
             </div>
           </div>
         </section>
+        )}
+
+        {formError && (
+          <p className="text-sm font-medium text-error">{formError}</p>
         )}
 
         <div className="flex items-center justify-between gap-3">

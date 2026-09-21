@@ -16,6 +16,7 @@ export default function FormControl({
   readOnly = false,
   disabled = false,
   leadingIcon,
+  required = false,
 }) {
   const [focused, setFocused] = useState(false);
 
@@ -51,6 +52,10 @@ export default function FormControl({
           className="mb-2 block text-sm font-semibold leading-6 text-text-primary"
         >
           {label}
+
+          {required && (
+            <span className="ml-1 text-error">*</span>
+          )}
         </label>
       )}
 
