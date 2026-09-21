@@ -34,6 +34,7 @@ export default function DonationTabs() {
           <Link
             key={href}
             href={href}
+            prefetch={false}
             className={`flex h-[58px] min-w-[180px] flex-1 items-center justify-center rounded-sm px-3 text-14 font-medium transition sm:min-w-0 ${
               active
                 ? "border-t-4 border-secondary bg-secondary-light text-secondary"
