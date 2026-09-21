@@ -390,50 +390,27 @@ export default function BranchPage() {
           items,
         ) {
           /*
-           * Load real member count for each branch. A multi-branch
-           * secretary (primary + branch_staff) legitimately counts in
-           * EVERY branch they're assigned to here -- that's per-branch
-           * truth, matches branch/[id]/detail's own card, and is why this
-           * must NOT be summed for the org-wide total below.
-           */
-          const counts =
-            await Promise.all(
-              items.map(
-                async (
-                  branch,
-                ) => {
-                  try {
-                    const members =
-                      await fetchJson(
-                        `/members?page=0&size=1&branchId=${encodeURIComponent(
-                          branch.id,
-                        )}`,
-                        signal,
-                      );
-
-                    return (
-                      Number(
-                        members?.total_elements ??
-                          members?.totalElements ??
-                          0,
-                      ) || 0
-                    );
-                  } catch {
-                    return 0;
-                  }
-                },
-              ),
-            );
-
-          /*
-           * The org-wide "Total Members" card must be a unique headcount,
-           * not a sum of per-branch counts above -- summing double/triple
-           * counts anyone staffing more than one branch. /members/summary
-           * (no branchId) already returns the true unique total.
+           * Each branch row from /branches already carries its own
+           * member_count (BranchTableItemResponse#memberCount) -- no need
+           * to re-derive it with a separate /members?...branchId=X call
+           * per branch, which used to mean 20-30 extra parallel requests
+           * on every single page load just to get numbers already on the
+           * response.
+           *
+           * The org-wide "Total Members" card is still a separate call:
+           * it must be a unique headcount, not a sum of the per-branch
+           * counts above -- summing would double/triple count anyone
+           * staffing more than one branch. /members/summary (no
+           * branchId) already returns the true unique total.
            */
           let orgWideTotalMembers =
-            counts.reduce(
-              (total, count) => total + count,
+            items.reduce(
+              (total, branch) =>
+                total +
+                (Number(
+                  branch.member_count ??
+                    branch.memberCount,
+                ) || 0),
               0,
             );
 
@@ -452,23 +429,8 @@ export default function BranchPage() {
             // Falls back to the (possibly inflated) summed count above.
           }
 
-          const enriched =
-            items.map(
-              (
-                branch,
-                index,
-              ) => ({
-                ...branch,
-
-                member_count:
-                  counts[
-                    index
-                  ],
-              }),
-            );
-
           setBranches(
-            enriched,
+            items,
           );
 
           /*
@@ -477,10 +439,10 @@ export default function BranchPage() {
            */
           setSummary({
             total_branches:
-              enriched.length,
+              items.length,
 
             active_branches:
-              enriched.filter(
+              items.filter(
                 (
                   branch,
                 ) =>
