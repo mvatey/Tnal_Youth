@@ -42,7 +42,6 @@ const EMPTY_FORM = {
   positionId: "",
   role: "",
   joinedOn: "",
-  statusId: "",
 };
 
 async function createMember(
@@ -775,65 +774,6 @@ export default function CreateMemberModal({
     t,
   ]);
 
-  // A new member can only ever be created Active or Inactive -- there's no
-  // workflow that suspends or marks someone resigned before they even
-  // exist as a member, so those two lookup rows don't belong in this list.
-  const statusOptions =
-    useMemo(
-      () =>
-        statusLookups
-          .filter(
-            (status) => {
-              const code =
-                String(
-                  status?.code ||
-                    "",
-                ).toUpperCase();
-
-              return (
-                code === "ACTIVE" ||
-                code === "INACTIVE"
-              );
-            },
-          )
-          .map(
-            (status) => {
-              const id =
-                status?.id ??
-                status?.value ??
-                "";
-
-              const statusLabel =
-                label(
-                  status,
-                  status?.code || "",
-                );
-
-              return {
-                label: statusLabel,
-
-                value:
-                  id !==
-                    null &&
-                  id !==
-                    undefined
-                    ? String(
-                        id,
-                      )
-                    : "",
-              };
-            },
-          )
-          .filter(
-            (option) =>
-              option.value !==
-                "" &&
-              option.label !==
-                "",
-          ),
-      [statusLookups, label],
-    );
-
   // Only info that's needed to create a usable member/login record at all
   // is required here -- nationality, date of birth, member level, join
   // date, status, and the English name are all editable any time later
@@ -1006,12 +946,10 @@ export default function CreateMemberModal({
         joined_on:
           form.joinedOn || null,
 
-        status_id:
-          form.statusId
-            ? Number(
-                form.statusId,
-              )
-            : null,
+        // Not user-selectable here anymore -- omitted so the backend
+        // always defaults a new member to the seeded ACTIVE status (see
+        // MemberServiceImpl.defaultMemberStatus).
+        status_id: null,
       };
 
       try {
@@ -1323,21 +1261,6 @@ export default function CreateMemberModal({
                     "gender",
                   )}
                   required
-                />
-
-                <FormSelect
-                  label={t("memberPage.status")}
-                  name="statusId"
-                  placeholder={t("memberPage.selectStatus")}
-                  options={
-                    statusOptions
-                  }
-                  value={
-                    form.statusId
-                  }
-                  onChange={update(
-                    "statusId",
-                  )}
                 />
 
                 <BoxFill
