@@ -49,7 +49,7 @@ export default function CompanyDocumentPage() {
   // secretary — only the raw role (checked separately as `role` above)
   // decides whether write actions are allowed, never this.
   const effectiveRole = getEffectiveRole(user);
-  const { selectedBranch } = useBranch();
+  const { selectedBranch, branches } = useBranch();
 
   /*
    * SECRETARY and BRANCH_LEADER may add, edit, or delete documents
@@ -82,7 +82,6 @@ export default function CompanyDocumentPage() {
   }, [role, router]);
 
   const [documents, setDocuments] = useState([]);
-  const [branches, setBranches] = useState([]);
   const [documentTypes, setDocumentTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -110,36 +109,40 @@ export default function CompanyDocumentPage() {
       // DataTable paginates client-side over whatever array it's given,
       // so this needs every organizational document, not just the
       // backend's default first page of 10 — loop through every page
-      // the same way CertificateForm.js does for activities.
-      const documentRows = [];
-      let page = 0;
-      let totalPages = 1;
-      do {
-        const response = await fetch(
-          `/api/backend/documents?page=${page}&size=100`,
-          { cache: "no-store" },
-        );
-        const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.message || t("documentPage.loadDocumentsFailed"));
-        const rows = body?.data?.content ?? body?.content ?? body?.data ?? body;
-        documentRows.push(...(Array.isArray(rows) ? rows : []));
-        totalPages = Math.max(1, Number(body?.data?.total_pages ?? body?.total_pages ?? body?.totalPages) || 1);
-        page += 1;
-      } while (page < totalPages);
+      // the same way CertificateForm.js does for activities. Kicked off
+      // alongside (not after) the document-types fetch below, since the
+      // two don't depend on each other.
+      async function loadAllDocuments() {
+        const documentRows = [];
+        let page = 0;
+        let totalPages = 1;
+        do {
+          const response = await fetch(
+            `/api/backend/documents?page=${page}&size=100`,
+            { cache: "no-store" },
+          );
+          const body = await response.json().catch(() => null);
+          if (!response.ok) throw new Error(body?.message || t("documentPage.loadDocumentsFailed"));
+          const rows = body?.data?.content ?? body?.content ?? body?.data ?? body;
+          documentRows.push(...(Array.isArray(rows) ? rows : []));
+          totalPages = Math.max(1, Number(body?.data?.total_pages ?? body?.total_pages ?? body?.totalPages) || 1);
+          page += 1;
+        } while (page < totalPages);
+        return documentRows;
+      }
 
-      const [branchResponse, typeResponse] = await Promise.all([
-        fetch("/api/lookups/branches", { cache: "no-store" }),
+      const [documentRows, typeResponse] = await Promise.all([
+        loadAllDocuments(),
         fetch("/api/backend/document-types", { cache: "no-store" }),
       ]);
-      if (!branchResponse.ok || !typeResponse.ok) throw new Error(t("documentPage.loadDocumentsFailed"));
-      const [branchBody, typeBody] = await Promise.all([branchResponse.json(), typeResponse.json()]);
+      if (!typeResponse.ok) throw new Error(t("documentPage.loadDocumentsFailed"));
+      const typeBody = await typeResponse.json();
 
       setDocuments(
         documentRows
           .filter((row) => row.branch && !row.member)
           .map((row) => mapDocument(row, locale)),
       );
-      setBranches(Array.isArray(branchBody) ? branchBody : (branchBody?.data ?? []));
       setDocumentTypes(Array.isArray(typeBody) ? typeBody : (typeBody?.data ?? []));
     } catch (loadError) {
       setError(loadError.message || t("documentPage.loadDocumentsFailed"));

@@ -32,6 +32,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { BranchProvider } from "@/context/BranchContext";
 import { CurrentMemberProvider } from "@/context/CurrentMemberContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { OrganizationProfileProvider } from "@/context/OrganizationProfileContext";
 import MustChangePasswordGate from "@/components/auth/MustChangePasswordGate";
 
 import "./globals.css";
@@ -48,12 +49,14 @@ export default function RootLayout({ children }) {
       <body>
         <LanguageProvider>
           <ThemeProvider>
-            <AuthProvider>
-              <MustChangePasswordGate />
-              <BranchProvider>
-                <CurrentMemberProvider>{children}</CurrentMemberProvider>
-              </BranchProvider>
-            </AuthProvider>
+            <OrganizationProfileProvider>
+              <AuthProvider>
+                <MustChangePasswordGate />
+                <BranchProvider>
+                  <CurrentMemberProvider>{children}</CurrentMemberProvider>
+                </BranchProvider>
+              </AuthProvider>
+            </OrganizationProfileProvider>
           </ThemeProvider>
         </LanguageProvider>
       </body>
