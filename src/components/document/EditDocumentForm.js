@@ -48,8 +48,8 @@ export default function EditDocumentForm({
   const [fileError, setFileError] = useState("");
 
   const [saving, setSaving] = useState(false);
-  const [showValidationError, setShowValidationError] =
-    useState(false);
+  const [validationMessage, setValidationMessage] =
+    useState("");
 
   const updateField = (field) => (event) => {
     const value = event.target.value;
@@ -59,14 +59,14 @@ export default function EditDocumentForm({
       [field]: value,
     }));
 
-    setShowValidationError(false);
+    setValidationMessage("");
   };
 
   const handleUpload = (event) => {
     const selectedFile = event.target.files?.[0];
 
     setFileError("");
-    setShowValidationError(false);
+    setValidationMessage("");
 
     if (!selectedFile) {
       return;
@@ -107,13 +107,37 @@ export default function EditDocumentForm({
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!isFormValid || saving) {
-      setShowValidationError(true);
+    if (saving) {
+      return;
+    }
+
+    if (!form.title?.trim()) {
+      setValidationMessage(t("documentPage.documentNameRequired"));
+      return;
+    }
+
+    if (!form.branch) {
+      setValidationMessage(t("documentPage.branchRequired"));
+      return;
+    }
+
+    if (!form.description?.trim()) {
+      setValidationMessage(t("documentPage.descriptionRequired"));
+      return;
+    }
+
+    if (!form.date) {
+      setValidationMessage(t("documentPage.dateRequired"));
+      return;
+    }
+
+    if (!currentFile && !replacementFile) {
+      setValidationMessage(t("documentPage.fileRequired"));
       return;
     }
 
     setSaving(true);
-    setShowValidationError(false);
+    setValidationMessage("");
 
     const updatedForm = {
       ...form,
@@ -187,6 +211,7 @@ export default function EditDocumentForm({
               placeholder={t("documentPage.enterDocumentName")}
               value={form.title || ""}
               onChange={updateField("title")}
+              required
             />
 
             <BoxFill
@@ -197,6 +222,7 @@ export default function EditDocumentForm({
               value={form.branch || ""}
               onChange={updateField("branch")}
               options={branchOptions}
+              required
             />
           </div>
 
@@ -221,6 +247,7 @@ export default function EditDocumentForm({
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
               {t("documentPage.identifier")}
+              <span className="ml-1 text-error">*</span>
             </label>
 
             <textarea
@@ -252,6 +279,7 @@ export default function EditDocumentForm({
             name="date"
             value={form.date || ""}
             onChange={updateField("date")}
+            required
           />
 
           {/* File — a document has exactly one; uploading a new one
@@ -422,9 +450,9 @@ export default function EditDocumentForm({
           </label>
         </div>
 
-        {showValidationError && !isFormValid && (
+        {validationMessage && (
           <p className="mt-4 text-xs font-medium text-error">
-            {t("documentPage.allFieldsAndFileRequired")}
+            {validationMessage}
           </p>
         )}
 

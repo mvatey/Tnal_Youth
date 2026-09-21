@@ -251,6 +251,8 @@ export default function CertificateForm({
     setShowValidationError,
   ] = useState(false);
 
+  const [validationMessage, setValidationMessage] = useState("");
+
   const [fileTooLargeMessage, setFileTooLargeMessage] = useState("");
   const [branchOptions, setBranchOptions] = useState([]);
   const [members, setMembers] = useState([]);
@@ -1105,14 +1107,41 @@ export default function CertificateForm({
    */
   const handleSave =
     async () => {
-      if (!isFormValid) {
-        setShowValidationError(
-          true,
+      if (!hasTitle) {
+        setValidationMessage(
+          t("documentPage.documentNameRequired"),
         );
-
+        setShowValidationError(true);
         return;
       }
 
+      if (!hasDocumentType) {
+        setValidationMessage(
+          t("documentPage.documentTypeRequired"),
+        );
+        setShowValidationError(true);
+        return;
+      }
+
+      if (!hasRecipient) {
+        setValidationMessage(
+          recipientType === "member"
+            ? t("documentPage.selectMemberRequired")
+            : t("documentPage.selectActivityMemberRequired"),
+        );
+        setShowValidationError(true);
+        return;
+      }
+
+      if (needsTemplate && !form.templatePreview) {
+        setValidationMessage(
+          t("documentPage.certificateTemplateRequired"),
+        );
+        setShowValidationError(true);
+        return;
+      }
+
+      setValidationMessage("");
       setShowValidationError(
         false,
       );
@@ -1266,6 +1295,7 @@ export default function CertificateForm({
               "title",
             )}
             placeholder={t("documentPage.enterDocumentName")}
+            required
           />
 
           <FormSelect
@@ -1298,6 +1328,7 @@ export default function CertificateForm({
             options={
               DOCUMENT_TYPE_OPTIONS
             }
+            required
           />
 
           {/* Recipient type */}
@@ -1396,6 +1427,7 @@ export default function CertificateForm({
                     ? t("documentPage.loadingMembers")
                     : t("documentPage.noMembersInBranch")
               }
+              required
             />
           ) : (
             <div className="space-y-5">
@@ -1413,6 +1445,7 @@ export default function CertificateForm({
                 options={
                   activityOptions
                 }
+                required
               />
 
               {form.activityId ? (
@@ -1500,6 +1533,7 @@ export default function CertificateForm({
               "
             >
               {t("documentPage.certificateTemplateImage")}
+              <span className="ml-1 text-error">*</span>
             </label>
 
             {form.templatePreview ? (
@@ -1890,7 +1924,7 @@ export default function CertificateForm({
           {showValidationError &&
             !isFormValid && (
               <p className="mt-4 text-xs font-medium text-error">
-                {t("documentPage.completeRequiredInfo")}
+                {validationMessage || t("documentPage.completeRequiredInfo")}
               </p>
             )}
 

@@ -31,6 +31,8 @@ export default function IdCardForm({
   const [fileTooLargeMessage, setFileTooLargeMessage] = useState("");
   const [showValidationError, setShowValidationError] =
     useState(false);
+  const [validationMessage, setValidationMessage] =
+    useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -287,11 +289,19 @@ export default function IdCardForm({
    * Save the ID card.
    */
   const handleSave = async () => {
-    if (!isFormValid) {
+    if (!form.userId) {
+      setValidationMessage(t("documentPage.selectMemberRequired"));
       setShowValidationError(true);
       return;
     }
 
+    if (!form.idCardTemplatePreview) {
+      setValidationMessage(t("documentPage.idCardTemplateRequired"));
+      setShowValidationError(true);
+      return;
+    }
+
+    setValidationMessage("");
     setShowValidationError(false);
 
     try {
@@ -379,6 +389,7 @@ export default function IdCardForm({
             onChange={handleUserChange}
             placeholder={t("documentPage.selectMember")}
             options={userOptions}
+            required
           />
 
           {membersError && (
@@ -435,6 +446,7 @@ export default function IdCardForm({
           <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
               {t("documentPage.idCardTemplateImage")}
+              <span className="ml-1 text-error">*</span>
             </label>
 
             {form.idCardTemplatePreview ? (
@@ -607,7 +619,7 @@ export default function IdCardForm({
           {showValidationError &&
             !isFormValid && (
               <p className="mt-4 text-xs font-medium text-error">
-                {t("documentPage.completeRequiredInfo")}
+                {validationMessage || t("documentPage.completeRequiredInfo")}
               </p>
             )}
 

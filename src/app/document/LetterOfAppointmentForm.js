@@ -51,6 +51,7 @@ export default function LetterOfAppointmentForm({
   const fileInputRef = useRef(null);
 
   const [showValidationError, setShowValidationError] = useState(false);
+  const [validationMessage, setValidationMessage] = useState("");
 
   const [fileError, setFileError] = useState("");
   const [fileTooLargeMessage, setFileTooLargeMessage] = useState("");
@@ -247,11 +248,25 @@ export default function LetterOfAppointmentForm({
     Boolean(form.templateFile);
 
   const handleSave = async () => {
-    if (!isFormValid) {
+    if (!form.branchId) {
+      setValidationMessage(t("documentPage.branchRequired"));
       setShowValidationError(true);
       return;
     }
 
+    if (selectedMemberIds.length === 0) {
+      setValidationMessage(t("documentPage.selectOneMemberRequired"));
+      setShowValidationError(true);
+      return;
+    }
+
+    if (!form.templateFile) {
+      setValidationMessage(t("documentPage.appointmentFileRequired"));
+      setShowValidationError(true);
+      return;
+    }
+
+    setValidationMessage("");
     setShowValidationError(false);
 
     try {
@@ -304,11 +319,12 @@ export default function LetterOfAppointmentForm({
             onChange={handleBranchChange}
             placeholder={t("documentPage.selectBranch")}
             options={branchOptions}
+            required
           />
 
           <div>
             <div className="mb-2 flex items-center justify-between text-sm font-semibold text-text-primary">
-              <span>{t("documentPage.selectBranchMember")}</span>
+              <span>{t("documentPage.selectBranchMember")}<span className="ml-1 text-error">*</span></span>
               <span>{selectedMemberIds.length > 0 ? t("documentPage.onePerson") : t("documentPage.zeroPeople")}</span>
             </div>
             <div className="h-[255px] overflow-y-auto rounded-xl border border-border bg-bg-page-white p-3">
@@ -370,6 +386,7 @@ export default function LetterOfAppointmentForm({
             "
           >
             {t("documentPage.uploadAppointmentLetter")}
+            <span className="ml-1 text-error">*</span>
           </label>
 
           <input
@@ -542,7 +559,7 @@ export default function LetterOfAppointmentForm({
                   text-error
                 "
             >
-              {t("documentPage.appointmentRequiredInfo")}
+              {validationMessage || t("documentPage.appointmentRequiredInfo")}
             </p>
           )}
           <div className="mt-12">

@@ -69,9 +69,9 @@ export default function AddDocumentForm({
   const fileInputRef = useRef(null);
 
   const [
-    showValidationError,
-    setShowValidationError,
-  ] = useState(false);
+    validationMessage,
+    setValidationMessage,
+  ] = useState("");
 
   const [fileError, setFileError] =
     useState("");
@@ -92,7 +92,7 @@ export default function AddDocumentForm({
         [field]: value,
       }));
 
-      setShowValidationError(false);
+      setValidationMessage("");
     };
 
   const handleFileChange = (
@@ -104,7 +104,7 @@ export default function AddDocumentForm({
       );
 
     setFileError("");
-    setShowValidationError(false);
+    setValidationMessage("");
 
     if (
       selectedFiles.length === 0
@@ -202,7 +202,7 @@ export default function AddDocumentForm({
     );
 
     setFileError("");
-    setShowValidationError(false);
+    setValidationMessage("");
   };
 
   const isFormValid =
@@ -219,12 +219,32 @@ export default function AddDocumentForm({
   const handleSave = (event) => {
   event.preventDefault();
 
-  if (!isFormValid) {
-    setShowValidationError(true);
+  if (!form.title?.trim()) {
+    setValidationMessage(t("documentPage.documentNameRequired"));
     return;
   }
 
-  setShowValidationError(false);
+  if (!form.branch) {
+    setValidationMessage(t("documentPage.branchRequired"));
+    return;
+  }
+
+  if (!form.type) {
+    setValidationMessage(t("documentPage.documentTypeRequired"));
+    return;
+  }
+
+  if (!form.description?.trim()) {
+    setValidationMessage(t("documentPage.descriptionRequired"));
+    return;
+  }
+
+  if (files.length === 0) {
+    setValidationMessage(t("documentPage.fileRequired"));
+    return;
+  }
+
+  setValidationMessage("");
 
   const totalSize = files.reduce(
     (total, currentFile) =>
@@ -336,6 +356,7 @@ export default function AddDocumentForm({
   placeholder={t("documentPage.enterDocumentName")}
   value={form.title || ""}
   onChange={updateField("title")}
+  required
 />
 
             <FormSelect
@@ -354,6 +375,7 @@ export default function AddDocumentForm({
                 branchOptions
               }
               disabled={isBranchLocked}
+              required
             />
           </div>
 
@@ -379,6 +401,7 @@ export default function AddDocumentForm({
               options={
                 documentTypeOptions
               }
+              required
             />
           </div>
 
@@ -392,6 +415,7 @@ export default function AddDocumentForm({
               "
             >
               {t("documentPage.identifier")}
+              <span className="ml-1 text-error">*</span>
             </label>
 
             <textarea
@@ -586,8 +610,7 @@ export default function AddDocumentForm({
           onClose={() => setFileError("")}
         />
 
-        {showValidationError &&
-          !isFormValid && (
+        {validationMessage && (
             <p
               className="
                 mt-4
@@ -596,7 +619,7 @@ export default function AddDocumentForm({
                 text-error
               "
             >
-              {t("documentPage.allFieldsRequired")}
+              {validationMessage}
             </p>
           )}
 
