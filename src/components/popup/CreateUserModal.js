@@ -45,11 +45,12 @@ const EMPTY_FORM = {
  * — leave it blank to keep the account's current password unchanged.)
  * Member-linked accounts still go through OTP-based first activation;
  * that path isn't this modal.
+ *
+ * phone/email aren't in this list — see phoneOrEmailRequirementMet
+ * below, since the rule differs between standalone and member-linked.
  */
 const REQUIRED_FIELDS = [
   "fullNameKm",
-  "phone",
-  "email",
   "role",
 ];
 
@@ -366,11 +367,19 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
   // first mounts.
   const usernameRequirementMet =
     form.username.trim() !== "";
+  // Standalone accounts are created ACTIVE with a password set directly —
+  // no OTP delivery depends on phone/email at creation time, so only one
+  // of the two needs to be present. Member-linked accounts still go
+  // through OTP-based activation, so both stay required there.
+  const phoneOrEmailRequirementMet = isMemberLinked
+    ? form.phone.trim() !== "" && form.email.trim() !== ""
+    : form.phone.trim() !== "" || form.email.trim() !== "";
   const isFormValid =
     REQUIRED_FIELDS.every(
       (field) => String(form[field] ?? "").trim() !== "",
     ) &&
     usernameRequirementMet &&
+    phoneOrEmailRequirementMet &&
     (!isViewer || isMemberLinked || String(form.viewerScope).trim() !== "") &&
     branchRequirementMet &&
     passwordValid &&
@@ -490,8 +499,8 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
         fullNameKm: form.fullNameKm.trim(),
         fullNameEn: form.fullNameEn.trim() || null,
         username: form.username.trim(),
-        phone: form.phone.trim(),
-        email: form.email.trim(),
+        phone: form.phone.trim() || null,
+        email: form.email.trim() || null,
         role: form.role,
         viewerScope: isViewer ? form.viewerScope : null,
         branchId: requiresBranch ? Number(form.branchId) : null,
