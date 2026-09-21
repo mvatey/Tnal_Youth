@@ -783,11 +783,16 @@ export default function CreateMemberModal({
     "fullNameKm",
     "gender",
     "username",
-    "phone",
-    "email",
     "branchId",
     "role",
   ];
+
+  // At least one of phone/email is required, not both -- member-linked
+  // accounts no longer go through OTP-based activation (see
+  // MemberServiceImpl.createActiveUserAccount), so nothing here actually
+  // needs email specifically anymore.
+  const phoneOrEmailRequirementMet =
+    form.phone.trim() !== "" || form.email.trim() !== "";
 
   const isFormValid =
     requiredFields.every(
@@ -797,7 +802,7 @@ export default function CreateMemberModal({
             "",
         ).trim() !==
         "",
-    );
+    ) && phoneOrEmailRequirementMet;
 
   const submit =
     async (event) => {
@@ -822,13 +827,8 @@ export default function CreateMemberModal({
         return;
       }
 
-      if (!form.phone.trim()) {
-        setSubmitError(t("memberPage.requiredPhone"));
-        return;
-      }
-
-      if (!form.email.trim()) {
-        setSubmitError(t("memberPage.requiredEmail"));
+      if (!phoneOrEmailRequirementMet) {
+        setSubmitError(t("memberPage.requiredPhoneOrEmail"));
         return;
       }
 
@@ -1288,7 +1288,6 @@ export default function CreateMemberModal({
                   onChange={update(
                     "phone",
                   )}
-                  required
                 />
 
                 <BoxFill
@@ -1302,8 +1301,11 @@ export default function CreateMemberModal({
                   onChange={update(
                     "email",
                   )}
-                  required
                 />
+
+                <p className="text-xs text-text-secondary sm:col-span-2">
+                  {t("memberPage.phoneOrEmailHint")}
+                </p>
 
                 <FormSelect
                   label={t("memberPage.position")}
