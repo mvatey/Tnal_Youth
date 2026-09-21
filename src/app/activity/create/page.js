@@ -27,6 +27,7 @@ import FormSelect from "@/components/forms/FormSelect";
 import DatePickerField from "@/components/forms/DatePickerField";
 import FormActionButton from "@/components/ui/actions/FormActionButton";
 import MemberSelectModal from "@/components/activity/MemberSelectModal";
+import DeleteConfirmModal from "@/components/popup/Confirmdeletemodal";
 import { useBranch } from "@/context/BranchContext";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import useMemberPermissions from "@/hooks/useMemberPermissions";
@@ -885,6 +886,8 @@ export default function CreateActivityPage() {
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [memberOptions, setMemberOptions] = useState([]);
   const [selectedMemberIds, setSelectedMemberIds] = useState([]);
   const [membersLoading, setMembersLoading] = useState(false);
@@ -1452,6 +1455,35 @@ export default function CreateActivityPage() {
     }
 
     router.push("/activity");
+  };
+
+  const handleDeleteActivity = async () => {
+    if (!editId || deleting) {
+      return;
+    }
+
+    setFormError("");
+    setDeleting(true);
+
+    try {
+      const response = await fetch(
+        `/api/backend/activities/${encodeURIComponent(editId)}`,
+        { method: "DELETE" },
+      );
+
+      if (!response.ok && response.status !== 204) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.message || t("activityPage.deleteFailed"));
+      }
+
+      router.push("/activity");
+    } catch (error) {
+      console.error("Delete activity error:", error);
+      setShowDeleteConfirm(false);
+      setFormError(error?.message || t("activityPage.deleteFailed"));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const validateForm = () => {
@@ -2282,12 +2314,28 @@ export default function CreateActivityPage() {
         )}
 
         <div className="flex items-center justify-between gap-3">
-          <FormActionButton
-            action="cancel"
-            onClick={handleCancel}
-            disabled={isSaving}
-            label={isInvitedBranchOnly ? t("activityPage.back") : undefined}
-          />
+          <div className="flex items-center gap-3">
+            <FormActionButton
+              action="cancel"
+              onClick={handleCancel}
+              disabled={isSaving}
+              label={isInvitedBranchOnly ? t("activityPage.back") : undefined}
+            />
+
+            {/* Only the host branch's own Secretary/Branch Leader can
+                delete (canManage) -- an invited branch never sees this,
+                since it's placed on the edit form itself. */}
+            {isEditMode && canManage && (
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isSaving || deleting}
+                className="inline-flex h-[34px] items-center justify-center gap-2 rounded-lg border border-error px-3 text-sm font-medium text-error transition hover:bg-error-bg disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {t("activityPage.deleteActivity")}
+              </button>
+            )}
+          </div>
 
           {/* Nothing on the main form is editable in invited-branch-only
               mode, so there is nothing to save here — member invite /
@@ -2308,6 +2356,14 @@ export default function CreateActivityPage() {
           )}
         </div>
       </form>
+
+      <DeleteConfirmModal
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteActivity}
+        title={t("activityPage.deleteActivityConfirmTitle")}
+        message={t("activityPage.deleteActivityConfirmMessage")}
+      />
 
       {showMemberModal && (
         <MemberSelectModal
