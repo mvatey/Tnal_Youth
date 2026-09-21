@@ -203,6 +203,26 @@ export default function CreateMemberModal({
     EMPTY_FORM,
   );
 
+  // Which of phone/email to collect -- a radio choice instead of showing
+  // both fields plus a small "at least one is required" hint underneath,
+  // which was easy to miss and, on a narrow screen, ended up cramped
+  // right against the field above it. Defaults to phone, the more common
+  // choice for a new member.
+  const [
+    contactMethod,
+    setContactMethod,
+  ] = useState("phone");
+
+  const handleContactMethodChange = (method) => {
+    setContactMethod(method);
+
+    setForm((previousForm) => ({
+      ...previousForm,
+      phone: method === "email" ? "" : previousForm.phone,
+      email: method === "phone" ? "" : previousForm.email,
+    }));
+  };
+
   const [
     branchLookups,
     setBranchLookups,
@@ -787,12 +807,17 @@ export default function CreateMemberModal({
     "role",
   ];
 
-  // At least one of phone/email is required, not both -- member-linked
-  // accounts no longer go through OTP-based activation (see
+  // Whichever contact method is selected must actually be filled in --
+  // member-linked accounts no longer go through OTP-based activation (see
   // MemberServiceImpl.createActiveUserAccount), so nothing here actually
-  // needs email specifically anymore.
+  // needs email specifically anymore; the choice is purely which field(s)
+  // this member wants to provide.
   const phoneOrEmailRequirementMet =
-    form.phone.trim() !== "" || form.email.trim() !== "";
+    contactMethod === "phone"
+      ? form.phone.trim() !== ""
+      : contactMethod === "email"
+        ? form.email.trim() !== ""
+        : form.phone.trim() !== "" && form.email.trim() !== "";
 
   const isFormValid =
     requiredFields.every(
@@ -828,7 +853,13 @@ export default function CreateMemberModal({
       }
 
       if (!phoneOrEmailRequirementMet) {
-        setSubmitError(t("memberPage.requiredPhoneOrEmail"));
+        setSubmitError(
+          contactMethod === "phone"
+            ? t("memberPage.requiredPhone")
+            : contactMethod === "email"
+              ? t("memberPage.requiredEmail")
+              : t("memberPage.requiredBothPhoneAndEmail"),
+        );
         return;
       }
 
@@ -1277,35 +1308,67 @@ export default function CreateMemberModal({
                   required
                 />
 
-                <BoxFill
-                  label={t("memberPage.phone")}
-                  name="phone"
-                  type="tel"
-                  placeholder={t("memberPage.phonePlaceholder")}
-                  value={
-                    form.phone
-                  }
-                  onChange={update(
-                    "phone",
-                  )}
-                />
+                <div className="sm:col-span-2">
+                  <label className="mb-2 block text-sm font-semibold text-text-primary">
+                    {t("memberPage.contactMethodLabel")}
+                    <span className="ml-1 text-error">*</span>
+                  </label>
 
-                <BoxFill
-                  label={t("memberPage.email")}
-                  name="email"
-                  type="email"
-                  placeholder={t("memberPage.emailPlaceholder")}
-                  value={
-                    form.email
-                  }
-                  onChange={update(
-                    "email",
-                  )}
-                />
+                  <div className="flex flex-wrap gap-x-6 gap-y-2">
+                    {[
+                      ["phone", t("memberPage.contactMethodPhone")],
+                      ["email", t("memberPage.contactMethodEmail")],
+                      ["both", t("memberPage.contactMethodBoth")],
+                    ].map(([method, methodLabel]) => (
+                      <label
+                        key={method}
+                        className="flex cursor-pointer items-center gap-2 text-sm text-text-primary"
+                      >
+                        <input
+                          type="radio"
+                          name="contactMethod"
+                          value={method}
+                          checked={contactMethod === method}
+                          onChange={() => handleContactMethodChange(method)}
+                          className="h-4 w-4 accent-primary"
+                        />
+                        {methodLabel}
+                      </label>
+                    ))}
+                  </div>
+                </div>
 
-                <p className="text-xs text-text-secondary sm:col-span-2">
-                  {t("memberPage.phoneOrEmailHint")}
-                </p>
+                {(contactMethod === "phone" || contactMethod === "both") && (
+                  <BoxFill
+                    label={t("memberPage.phone")}
+                    name="phone"
+                    type="tel"
+                    placeholder={t("memberPage.phonePlaceholder")}
+                    value={
+                      form.phone
+                    }
+                    onChange={update(
+                      "phone",
+                    )}
+                    required
+                  />
+                )}
+
+                {(contactMethod === "email" || contactMethod === "both") && (
+                  <BoxFill
+                    label={t("memberPage.email")}
+                    name="email"
+                    type="email"
+                    placeholder={t("memberPage.emailPlaceholder")}
+                    value={
+                      form.email
+                    }
+                    onChange={update(
+                      "email",
+                    )}
+                    required
+                  />
+                )}
 
                 <FormSelect
                   label={t("memberPage.position")}

@@ -138,6 +138,13 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
   ];
 
   const [form, setForm] = useState(EMPTY_FORM);
+  // Which of phone/email to collect for a standalone account -- a radio
+  // choice instead of showing both fields plus a small "at least one is
+  // required" hint underneath, which was easy to miss and cramped on a
+  // narrow screen. Not used for a member-linked account, which always
+  // requires both. Defaults to phone; re-derived from the existing record
+  // when editing (see the load effect below).
+  const [contactMethod, setContactMethod] = useState("phone");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [branches, setBranches] = useState([]);
   const [showValidationError, setShowValidationError] = useState(false);
@@ -167,18 +174,22 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       setForm(EMPTY_FORM);
       setPersonalInfoBase(null);
       setConfirmPassword("");
+      setContactMethod("phone");
       setShowValidationError(false);
       setSubmitError("");
       return;
     }
 
     if (!isMemberLinked) {
+      const phoneRaw = editingUser.phoneRaw || "";
+      const emailRaw = editingUser.emailRaw || "";
+
       setForm({
         fullNameKm: editingUser.fullNameKmRaw || "",
         fullNameEn: editingUser.fullNameEnRaw || "",
         username: editingUser.usernameRaw || "",
-        phone: editingUser.phoneRaw || "",
-        email: editingUser.emailRaw || "",
+        phone: phoneRaw,
+        email: emailRaw,
         role: editingUser.roleCode || "VIEWER",
         viewerScope: editingUser.viewerScopeRaw || "ADMIN",
         branchId: editingUser.branchId != null ? String(editingUser.branchId) : "",
@@ -187,6 +198,9 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
           ? editingUser.statusCode
           : "",
       });
+      setContactMethod(
+        phoneRaw && emailRaw ? "both" : emailRaw ? "email" : "phone",
+      );
       setShowValidationError(false);
       setSubmitError("");
       return;
@@ -344,6 +358,19 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     setSubmitError("");
   };
 
+  const handleContactMethodChange = (method) => {
+    setContactMethod(method);
+
+    setForm((previousForm) => ({
+      ...previousForm,
+      phone: method === "email" ? "" : previousForm.phone,
+      email: method === "phone" ? "" : previousForm.email,
+    }));
+
+    setShowValidationError(false);
+    setSubmitError("");
+  };
+
   const isViewer = form.role === "VIEWER";
   const isSecretary = form.role === "SECRETARY";
   const requiresBranch =
@@ -374,7 +401,11 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
   // through OTP-based activation, so both stay required there.
   const phoneOrEmailRequirementMet = isMemberLinked
     ? form.phone.trim() !== "" && form.email.trim() !== ""
-    : form.phone.trim() !== "" || form.email.trim() !== "";
+    : contactMethod === "phone"
+      ? form.phone.trim() !== ""
+      : contactMethod === "email"
+        ? form.email.trim() !== ""
+        : form.phone.trim() !== "" && form.email.trim() !== "";
   const isFormValid =
     REQUIRED_FIELDS.every(
       (field) => String(form[field] ?? "").trim() !== "",
@@ -499,7 +530,13 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     }
 
     if (!phoneOrEmailRequirementMet) {
-      setSubmitError(t("usersPage.requiredPhoneOrEmail"));
+      setSubmitError(
+        isMemberLinked || contactMethod === "both"
+          ? t("usersPage.requiredBothPhoneAndEmail")
+          : contactMethod === "phone"
+            ? t("usersPage.requiredPhone")
+            : t("usersPage.requiredEmail"),
+      );
       return;
     }
 
@@ -641,30 +678,60 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             required
           />
 
-          <BoxFill
-            label={t("usersPage.phone")}
-            name="phone"
-            placeholder="0XXXXXXXX"
-            value={form.phone}
-            onChange={update("phone")}
-            required={isMemberLinked}
-          />
-
-          <BoxFill
-            label={t("usersPage.email")}
-            name="email"
-            type="email"
-            placeholder="example@email.com"
-            value={form.email}
-            onChange={update("email")}
-            autoComplete="off"
-            required={isMemberLinked}
-          />
-
           {!isMemberLinked && (
-            <p className="text-xs text-text-secondary">
-              {t("usersPage.phoneOrEmailHint")}
-            </p>
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-text-primary">
+                {t("usersPage.contactMethodLabel")}
+                <span className="ml-1 text-error">*</span>
+              </label>
+
+              <div className="flex flex-wrap gap-x-6 gap-y-2">
+                {[
+                  ["phone", t("usersPage.contactMethodPhone")],
+                  ["email", t("usersPage.contactMethodEmail")],
+                  ["both", t("usersPage.contactMethodBoth")],
+                ].map(([method, methodLabel]) => (
+                  <label
+                    key={method}
+                    className="flex cursor-pointer items-center gap-2 text-sm text-text-primary"
+                  >
+                    <input
+                      type="radio"
+                      name="contactMethod"
+                      value={method}
+                      checked={contactMethod === method}
+                      onChange={() => handleContactMethodChange(method)}
+                      className="h-4 w-4 accent-primary"
+                    />
+                    {methodLabel}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(isMemberLinked || contactMethod === "phone" || contactMethod === "both") && (
+            <BoxFill
+              label={t("usersPage.phone")}
+              name="phone"
+              placeholder="0XXXXXXXX"
+              value={form.phone}
+              onChange={update("phone")}
+              required
+            />
+          )}
+
+          {(isMemberLinked || contactMethod === "email" || contactMethod === "both") && (
+            <BoxFill
+              label={t("usersPage.email")}
+              name="email"
+              type="email"
+              placeholder="example@email.com"
+              value={form.email}
+              onChange={update("email")}
+              autoComplete="off"
+              required
+            />
           )}
 
           <BoxFill
