@@ -48,9 +48,9 @@ export default function RootLayout({ children }) {
         <LanguageProvider>
           <ThemeProvider>
             <AuthProvider>
-              <CurrentMemberProvider>
-                <BranchProvider>{children}</BranchProvider>
-              </CurrentMemberProvider>
+              <BranchProvider>
+                <CurrentMemberProvider>{children}</CurrentMemberProvider>
+              </BranchProvider>
             </AuthProvider>
           </ThemeProvider>
         </LanguageProvider>

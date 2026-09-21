@@ -25,8 +25,10 @@ import DataTable from "@/components/table/DataTable.js";
 import StatCard from "@/components/dashboard/statCard";
 import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail";
 import useCurrentMember from "@/hooks/useCurrentMember";
+import { useAuth } from "@/context/AuthContext";
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { getEffectiveRole } from "@/lib/navigation";
 import { formatDateWithMonth } from "@/lib/formatDate";
 
 const EMPTY_SUMMARY = {
@@ -375,6 +377,13 @@ export default function MembersPage() {
   const { member: currentMember } =
     useCurrentMember();
 
+  // Role comes from the auth session directly (available as soon as login
+  // resolves), not the slower member-detail fetch behind useCurrentMember()
+  // -- avoids racing that fetch against BranchContext's own resolution just
+  // to know whether this account is branch-scoped.
+  const { user: authUser } = useAuth();
+  const effectiveRole = getEffectiveRole(authUser);
+
   const isViewer = currentMember?.isViewer === true;
 
   // Same single-branch scoping as the activity/donation pages -- a
@@ -388,8 +397,7 @@ export default function MembersPage() {
   } = useBranch();
 
   const isBranchScoped =
-    (currentMember?.effectiveRole || currentMember?.role) === "secretary" ||
-    (currentMember?.effectiveRole || currentMember?.role) === "branch_leader";
+    effectiveRole === "secretary" || effectiveRole === "branch_leader";
 
   const effectiveBranchId = useMemo(() => {
     if (!isBranchScoped) return null;

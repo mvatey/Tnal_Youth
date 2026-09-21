@@ -214,6 +214,7 @@ export default function ActivityPage() {
     branches: contextBranches = [],
     selectedBranch = "all",
     setSelectedBranch = () => {},
+    branchesReady = true,
   } = useBranch();
 
   // Admin sees every branch's activities regardless of which one is
@@ -391,13 +392,22 @@ export default function ActivityPage() {
   }, [label, effectiveSelectedBranch, t]);
 
   useEffect(() => {
+    // Admin uses its own page-local branch filter (adminBranchId), never
+    // BranchContext's sidebar selection, so "all" is already its correct,
+    // final value -- no wait needed. secretary/branch_leader/member read
+    // BranchContext's selectedBranch directly though, which starts at "all"
+    // for one tick before resolving to the real branch; waiting here avoids
+    // firing once for the placeholder "all" and again for the real branch
+    // (see loadActivities' requestIdRef comment above).
+    if (!isAdmin && !branchesReady) return;
+
     setSelectedScope("all");
     setSelectedSector("all");
     setSelectedType("all");
     setSelectedDateRange([null, null]);
     setSearchQuery("");
     loadActivities();
-  }, [loadActivities]);
+  }, [loadActivities, isAdmin, branchesReady]);
 
   // Which activity's invitation is currently being accepted/declined —
   // disables that row's buttons and nothing else while the request is in

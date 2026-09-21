@@ -10,8 +10,10 @@ import Pagination from "../../navigation/Pagination";
 import TableRow from "./TableRow";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import useCurrentMember from "@/hooks/useCurrentMember";
+import { useAuth } from "@/context/AuthContext";
 import { useBranch } from "@/context/BranchContext";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
+import { getEffectiveRole } from "@/lib/navigation";
 import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
 import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 import { useLanguage } from "@/context/LanguageContext";
@@ -56,9 +58,13 @@ export default function DonationTable() {
   const exchangeRateKhrPerUsd = useUsdKhrExchangeRate();
   const {
     member: currentMember,
-    loading: currentMemberLoading,
     error: currentMemberError,
   } = useCurrentMember();
+  // Role/viewer-status come straight from the auth session (available as
+  // soon as login resolves), not the slower member-detail fetch behind
+  // useCurrentMember() -- combineAuthUserWithMember derives both the same
+  // way from just user.role/viewerScope, so this needs no second wait.
+  const { user: authUser } = useAuth();
   // useCurrentMember() only ever carries ONE branchId (the member profile's
   // home branch). A secretary/branch_leader can be assigned to more than
   // one branch though, so the authoritative list of branches this viewer
@@ -70,12 +76,13 @@ export default function DonationTable() {
     branches: accessibleBranches = [],
     selectedBranch: globalSelectedBranch = "all",
   } = useBranch();
-  const effectiveRole = currentMember?.effectiveRole || currentMember?.role;
+  const effectiveRole = getEffectiveRole(authUser);
   const isBranchScoped = ["secretary", "branch_leader"].includes(
     effectiveRole,
   );
   const isMemberScoped = effectiveRole === "member";
-  const isReadOnlyViewer = Boolean(currentMember?.isViewer);
+  const isReadOnlyViewer =
+    String(authUser?.role || "").toUpperCase() === "VIEWER";
   // A secretary/branch_leader is always scoped to exactly ONE branch — the
   // one currently active in the sidebar's global branch dropdown (see
   // BranchContext, which never lets this role's selection settle on the
@@ -272,17 +279,18 @@ export default function DonationTable() {
   }, [isBranchScoped, effectiveBranchId]);
 
   useEffect(() => {
-    if (currentMemberLoading) return undefined;
+    // effectiveRole/isBranchScoped are known immediately from the auth
+    // session (see above), so an admin/viewer fetch can fire right away.
+    // A branch-scoped user still waits here, but only on effectiveBranchId
+    // settling (from BranchContext, or its currentMember.branchId
+    // fallback) instead of the slower full member-detail fetch.
+    if (isBranchScoped && !effectiveBranchId) return undefined;
 
     let cancelled = false;
     async function loadRows() {
       setLoading(true);
       setError("");
       try {
-        if (isBranchScoped && !effectiveBranchId) {
-          throw new Error(t("donationPage.accountBranchNotSet"));
-        }
-
         if (isMemberScoped) {
           const myRows = await fetchMyAccountCollection("donations/monthly");
           if (!cancelled) setRows(myRows.map((row) => mapMyMonthlyRow(row, locale)));
@@ -333,7 +341,7 @@ export default function DonationTable() {
     }
     loadRows();
     return () => { cancelled = true; };
-  }, [currentMemberLoading, isBranchScoped, isMemberScoped, effectiveBranchId, locale, t, refreshKey]);
+  }, [isBranchScoped, isMemberScoped, effectiveBranchId, locale, t, refreshKey]);
 
   useEffect(() => {
     if (!showDownloadAlert && !showSaveAlert) return undefined;

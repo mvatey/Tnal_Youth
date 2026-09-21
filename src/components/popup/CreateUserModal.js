@@ -641,12 +641,6 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             required
           />
 
-          {!isMemberLinked && (
-            <p className="-mb-2 text-xs text-text-secondary">
-              {t("usersPage.phoneOrEmailHint")}
-            </p>
-          )}
-
           <BoxFill
             label={t("usersPage.phone")}
             name="phone"
@@ -666,6 +660,12 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             autoComplete="off"
             required={isMemberLinked}
           />
+
+          {!isMemberLinked && (
+            <p className="text-xs text-text-secondary">
+              {t("usersPage.phoneOrEmailHint")}
+            </p>
+          )}
 
           <BoxFill
             label={t("usersPage.password")}

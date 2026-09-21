@@ -5,11 +5,13 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 
 import { useAuth } from "@/context/AuthContext";
+import { useBranch } from "@/context/BranchContext";
 import { combineAuthUserWithMember } from "@/lib/currentMember";
 
 const CurrentMemberContext = createContext(null);
@@ -26,8 +28,14 @@ const CurrentMemberContext = createContext(null);
  */
 export function CurrentMemberProvider({ children }) {
   const { user, authLoading } = useAuth();
+  const { branches } = useBranch();
 
-  const [member, setMember] = useState(null);
+  // Raw member detail from the backend, WITHOUT branch enrichment -- the
+  // branch name is looked up from BranchContext's own already-fetched
+  // list below instead of a second independent `/api/lookups/branches`
+  // call. BranchContext and this context used to each fetch that same
+  // endpoint on every page load, racing each other for bandwidth.
+  const [memberDetail, setMemberDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -43,7 +51,7 @@ export function CurrentMemberProvider({ children }) {
   const loadCurrentMember = useCallback(async () => {
     if (!user) {
       if (isMountedRef.current) {
-        setMember(null);
+        setMemberDetail(null);
         setLoading(false);
       }
       return;
@@ -69,37 +77,15 @@ export function CurrentMemberProvider({ children }) {
 
         const memberBody = await memberResponse.json();
         memberData = memberBody.data || memberBody;
-
-        const branchId = memberData.branch_id ?? memberData.branchId;
-        if (branchId) {
-          const branchResponse = await fetch("/api/lookups/branches", {
-            credentials: "include",
-            cache: "no-store",
-          });
-          if (branchResponse.ok) {
-            const branchBody = await branchResponse.json();
-            const branches = Array.isArray(branchBody) ? branchBody : [];
-            const branch = branches.find(
-              (option) => Number(option.value ?? option.id) === Number(branchId),
-            );
-            if (branch) {
-              memberData.branch = {
-                id: branchId,
-                nameKm:
-                  branch.labelKm || branch.label_km || branch.label || branch.code,
-              };
-            }
-          }
-        }
       }
 
       if (isMountedRef.current) {
-        setMember(combineAuthUserWithMember(user, memberData));
+        setMemberDetail(memberData);
       }
     } catch (loadError) {
       if (isMountedRef.current) {
         setError(loadError.message);
-        setMember(null);
+        setMemberDetail(null);
       }
     } finally {
       if (isMountedRef.current) {
@@ -113,6 +99,32 @@ export function CurrentMemberProvider({ children }) {
     loadCurrentMember();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user?.id, user?.memberId]);
+
+  // Recomputes whenever BranchContext's list changes -- no extra network
+  // call, and it self-updates the moment that shared fetch resolves even
+  // if it lands after the member fetch above.
+  const member = useMemo(() => {
+    if (!user) return null;
+
+    const branchId = memberDetail?.branch_id ?? memberDetail?.branchId;
+
+    let enrichedDetail = memberDetail;
+
+    if (branchId && Array.isArray(branches) && branches.length > 0) {
+      const branch = branches.find(
+        (option) => String(option.id) === String(branchId),
+      );
+
+      if (branch) {
+        enrichedDetail = {
+          ...memberDetail,
+          branch: { id: branchId, nameKm: branch.nameKm },
+        };
+      }
+    }
+
+    return combineAuthUserWithMember(user, enrichedDetail);
+  }, [user, memberDetail, branches]);
 
   const value = {
     member,

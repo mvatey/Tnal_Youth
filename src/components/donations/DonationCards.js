@@ -5,8 +5,10 @@ import { Banknote, Users } from "lucide-react";
 import StatCard from "@/components/dashboard/statCard";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
+import { useAuth } from "@/context/AuthContext";
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { getEffectiveRole } from "@/lib/navigation";
 
 const toNumber = (value) => {
   const parsed = Number(value ?? 0);
@@ -32,8 +34,13 @@ const summarizeMonthlyGroups = (rows) =>
 
 export default function DonationCards() {
   const { t } = useLanguage();
-  const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
-  const effectiveRole = currentMember?.effectiveRole || currentMember?.role;
+  const { member: currentMember } = useCurrentMember();
+  // Role comes straight from the auth session (available as soon as login
+  // resolves) instead of waiting on the slower member-detail fetch behind
+  // useCurrentMember() -- both derive the same effective role, but this one
+  // doesn't need a second network round trip first.
+  const { user: authUser } = useAuth();
+  const effectiveRole = getEffectiveRole(authUser);
   const isBranchScoped = ["secretary", "branch_leader"].includes(effectiveRole);
   const isMemberScoped = effectiveRole === "member";
   const {
@@ -73,10 +80,11 @@ export default function DonationCards() {
   }, []);
 
   useEffect(() => {
-    // Wait for the current member to resolve so a branch-scoped user
-    // (secretary/branch_leader) doesn't briefly fetch org-wide totals
-    // before their branch is known.
-    if (currentMemberLoading) return undefined;
+    // effectiveRole is already known from the auth session (see above), so
+    // an admin/viewer's fetch can fire immediately. A branch-scoped user
+    // still waits here, but only on scopedBranchId settling (from
+    // BranchContext, or its currentMember.branchId fallback) -- not on the
+    // slower full member-detail fetch finishing.
     if (isBranchScoped && !scopedBranchId) return undefined;
 
     let cancelled = false;
@@ -130,7 +138,7 @@ export default function DonationCards() {
       });
 
     return () => { cancelled = true; };
-  }, [currentMemberLoading, isBranchScoped, isMemberScoped, scopedBranchId, refreshKey]);
+  }, [isBranchScoped, isMemberScoped, scopedBranchId, refreshKey]);
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
