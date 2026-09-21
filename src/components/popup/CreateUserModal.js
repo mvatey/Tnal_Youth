@@ -241,18 +241,24 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
         const primaryBranchId =
           personalInfo?.branch_id ?? personalInfo?.branchId ?? editingUser.branchId ?? "";
 
+        const memberPhone = personalInfo?.phone || "";
+        const memberEmail = personalInfo?.email || "";
+
         setForm({
           fullNameKm: personalInfo?.full_name_km || personalInfo?.fullNameKm || "",
           fullNameEn: personalInfo?.full_name_en || personalInfo?.fullNameEn || "",
           username: personalInfo?.username || "",
-          phone: personalInfo?.phone || "",
-          email: personalInfo?.email || "",
+          phone: memberPhone,
+          email: memberEmail,
           role,
           viewerScope: "",
           branchId: primaryBranchId != null ? String(primaryBranchId) : "",
           password: "",
           status: "",
         });
+        setContactMethod(
+          memberPhone && memberEmail ? "both" : memberEmail ? "email" : "phone",
+        );
 
         setOriginalRole(role);
 
@@ -395,13 +401,12 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
   // first mounts.
   const usernameRequirementMet =
     form.username.trim() !== "";
-  // Standalone accounts are created ACTIVE with a password set directly —
-  // no OTP delivery depends on phone/email at creation time, so only one
-  // of the two needs to be present. Member-linked accounts still go
-  // through OTP-based activation, so both stay required there.
-  const phoneOrEmailRequirementMet = isMemberLinked
-    ? form.phone.trim() !== "" && form.email.trim() !== ""
-    : contactMethod === "phone"
+  // Neither a standalone nor a member-linked account goes through
+  // OTP-based activation anymore, so both paths follow the same
+  // contactMethod choice -- whichever field(s) it names just need to
+  // actually be filled in.
+  const phoneOrEmailRequirementMet =
+    contactMethod === "phone"
       ? form.phone.trim() !== ""
       : contactMethod === "email"
         ? form.email.trim() !== ""
@@ -531,7 +536,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
 
     if (!phoneOrEmailRequirementMet) {
       setSubmitError(
-        isMemberLinked || contactMethod === "both"
+        contactMethod === "both"
           ? t("usersPage.requiredBothPhoneAndEmail")
           : contactMethod === "phone"
             ? t("usersPage.requiredPhone")
@@ -687,39 +692,37 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             required
           />
 
-          {!isMemberLinked && (
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-text-primary">
-                {t("usersPage.contactMethodLabel")}
-                <span className="ml-1 text-error">*</span>
-              </label>
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-text-primary">
+              {t("usersPage.contactMethodLabel")}
+              <span className="ml-1 text-error">*</span>
+            </label>
 
-              <div className="flex flex-wrap gap-x-6 gap-y-2">
-                {[
-                  ["phone", t("usersPage.contactMethodPhone")],
-                  ["email", t("usersPage.contactMethodEmail")],
-                  ["both", t("usersPage.contactMethodBoth")],
-                ].map(([method, methodLabel]) => (
-                  <label
-                    key={method}
-                    className="flex cursor-pointer items-center gap-2 text-sm text-text-primary"
-                  >
-                    <input
-                      type="radio"
-                      name="contactMethod"
-                      value={method}
-                      checked={contactMethod === method}
-                      onChange={() => handleContactMethodChange(method)}
-                      className="h-4 w-4 accent-primary"
-                    />
-                    {methodLabel}
-                  </label>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              {[
+                ["phone", t("usersPage.contactMethodPhone")],
+                ["email", t("usersPage.contactMethodEmail")],
+                ["both", t("usersPage.contactMethodBoth")],
+              ].map(([method, methodLabel]) => (
+                <label
+                  key={method}
+                  className="flex cursor-pointer items-center gap-2 text-sm text-text-primary"
+                >
+                  <input
+                    type="radio"
+                    name="contactMethod"
+                    value={method}
+                    checked={contactMethod === method}
+                    onChange={() => handleContactMethodChange(method)}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  {methodLabel}
+                </label>
+              ))}
             </div>
-          )}
+          </div>
 
-          {(isMemberLinked || contactMethod === "phone" || contactMethod === "both") && (
+          {(contactMethod === "phone" || contactMethod === "both") && (
             <BoxFill
               label={t("usersPage.phone")}
               name="phone"
@@ -730,7 +733,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             />
           )}
 
-          {(isMemberLinked || contactMethod === "email" || contactMethod === "both") && (
+          {(contactMethod === "email" || contactMethod === "both") && (
             <BoxFill
               label={t("usersPage.email")}
               name="email"
