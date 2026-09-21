@@ -698,7 +698,15 @@ export default function ParticipationPage() {
 
     {
       header: t("memberPage.actions"),
-      width: "w-[16%]",
+      // Fixed, not a %: at the table's narrow (mobile) width, a
+      // percentage-sized column measured out to less than the "details"
+      // button's own Khmer label needs (~98px, verified against the
+      // real rendered classes), so the button got silently clipped
+      // inside its own cell -- sticky positioning correctly kept the
+      // column reachable, but there wasn't enough room in it. A fixed
+      // width guarantees enough room regardless of how much the rest of
+      // the table shrinks.
+      width: "w-[130px]",
       align: "center",
 
       render: (item) => (
