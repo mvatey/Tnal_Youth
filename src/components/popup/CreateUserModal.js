@@ -541,7 +541,16 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     }
 
     if (!passwordValid) {
-      setSubmitError(t("usersPage.requiredPassword"));
+      const passwordEntered = form.password.trim() !== "";
+
+      if (!passwordEntered) {
+        setSubmitError(t("usersPage.requiredPassword"));
+      } else if (!isPasswordValid(form.password.trim())) {
+        setSubmitError(t("memberPage.passwordRequirementsNotMet"));
+      } else {
+        setSubmitError(t("memberPage.passwordMismatch"));
+      }
+
       return;
     }
 
@@ -745,13 +754,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             required={!isEditing && !isMemberLinked}
           />
 
-          {form.password.trim() !== "" && !isPasswordValid(form.password.trim()) && (
-            <p className="-mt-2 text-xs font-medium text-error">
-              {t("memberPage.passwordRequirementsNotMet")}
-            </p>
-          )}
-
-          {isMemberLinked && form.password && (
+          {isMemberLinked && (
             <BoxFill
               label={t("usersPage.confirmPassword")}
               name="confirmPassword"
