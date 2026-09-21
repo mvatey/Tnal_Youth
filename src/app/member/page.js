@@ -327,9 +327,17 @@ export default function MembersPage() {
   const searchParams =
     useSearchParams();
 
+  // Raw, unmapped API rows. Kept separate from the labeled/mapped
+  // `members` derived below so loadMembers' own dependency array doesn't
+  // need branchLookups/genderLookups/label/locale/t -- those only affect
+  // how a row is displayed, not what the fetch actually requests. Without
+  // this split, each of those lookups populating asynchronously after
+  // mount (its own separate fetch, at its own separate time) recreated
+  // loadMembers and re-fired the whole /members fetch again -- three
+  // network round trips for what should be one.
   const [
-    members,
-    setMembers,
+    rawMembers,
+    setRawMembers,
   ] = useState([]);
 
   const [
@@ -358,6 +366,27 @@ export default function MembersPage() {
     genderLookups,
     setGenderLookups,
   ] = useState([]);
+
+  const members = useMemo(
+    () =>
+      rawMembers.map((member) =>
+        mapMember(member, {
+          label,
+          locale,
+          t,
+          branchLookups,
+          genderLookups,
+        }),
+      ),
+    [
+      rawMembers,
+      label,
+      locale,
+      t,
+      branchLookups,
+      genderLookups,
+    ],
+  );
 
   const [
     query,
@@ -759,17 +788,8 @@ export default function MembersPage() {
         if (
           totalPages === 1
         ) {
-          setMembers(
-            firstContent.map(
-              (member) =>
-                mapMember(member, {
-                  label,
-                  locale,
-                  t,
-                  branchLookups,
-                  genderLookups,
-                }),
-            ),
+          setRawMembers(
+            firstContent,
           );
 
           return;
@@ -824,29 +844,15 @@ export default function MembersPage() {
           ),
         ];
 
-        setMembers(
-          allMembers.map(
-            (member) =>
-              mapMember(member, {
-                  label,
-                  locale,
-                  t,
-                  branchLookups,
-                  genderLookups,
-              }),
-          ),
+        setRawMembers(
+          allMembers,
         );
       },
       [
         effectiveBranchFilter,
-        branchLookups,
         debouncedQuery,
         genderFilter,
-        genderLookups,
-        label,
-        locale,
         statusFilter,
-        t,
       ],
     );
 
@@ -934,7 +940,7 @@ export default function MembersPage() {
           error.message,
         );
 
-        setMembers([]);
+        setRawMembers([]);
       }
     }).finally(() => {
       if (!controller.signal.aborted) setMembersLoading(false);
