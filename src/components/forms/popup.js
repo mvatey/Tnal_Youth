@@ -11,6 +11,7 @@ export default function UploadPopup({
   onSave,
   onRemoveReceipt,
   initialReceipt,
+  readOnly = false,
 }) {
   const [receiptFile, setReceiptFile] = useState(null);
   const [receiptPreview, setReceiptPreview] = useState("");
@@ -94,9 +95,11 @@ export default function UploadPopup({
 
         <label
           htmlFor="file-upload"
-          className="relative flex h-[116px] w-full cursor-pointer flex-col items-center justify-center rounded-[16px] border-2 border-dashed border-border bg-bg-page-gray px-4"
+          className={`relative flex h-[116px] w-full flex-col items-center justify-center rounded-[16px] border-2 border-dashed border-border bg-bg-page-gray px-4 ${
+            readOnly ? "cursor-default" : "cursor-pointer"
+          }`}
         >
-          {hasActiveReceipt && (
+          {hasActiveReceipt && !readOnly && (
             <button
               type="button"
               onClick={clearReceipt}
@@ -138,41 +141,47 @@ export default function UploadPopup({
             </>
           )}
 
-          <input
-            id="file-upload"
-            type="file"
-            className="hidden"
-            accept="image/*,.pdf,.xls,.xlsx,.doc,.docx"
-            onChange={(event) => {
-              const file = event.target.files?.[0] ?? null;
+          {!readOnly && (
+            <input
+              id="file-upload"
+              type="file"
+              className="hidden"
+              accept="image/*,.pdf,.xls,.xlsx,.doc,.docx"
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
 
-              if (file && file.size > MAX_FILE_SIZE) {
-                window.alert("ឯកសារធំពេក។ សូមជ្រើសរើសឯកសារតូចជាង 4MB។");
-                event.target.value = "";
-                return;
-              }
+                if (file && file.size > MAX_FILE_SIZE) {
+                  window.alert("ឯកសារធំពេក។ សូមជ្រើសរើសឯកសារតូចជាង 4MB។");
+                  event.target.value = "";
+                  return;
+                }
 
-              setReceiptFile(file);
-            }}
-          />
+                setReceiptFile(file);
+              }}
+            />
+          )}
         </label>
 
         <div className="mt-7 flex items-center gap-4">
           <button
             onClick={handleClose}
-            className="h-[34px] w-[96px] rounded-[8px] border border-border bg-bg-page-gray text-center text-[14px] font-semibold text-text-primary shadow-md transition hover:bg-bg-page-gray/70"
+            className={`h-[34px] rounded-[8px] border border-border bg-bg-page-gray text-center text-[14px] font-semibold text-text-primary shadow-md transition hover:bg-bg-page-gray/70 ${
+              readOnly ? "flex-1" : "w-[96px]"
+            }`}
           >
-            បោះបង់
+            {readOnly ? "បិទ" : "បោះបង់"}
           </button>
 
-          <button
-            type="button"
-            onClick={handleSave}
-            className="flex h-[34px] flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#4B3391] text-[14px] font-semibold text-white shadow-md transition hover:bg-[#3f2b7d]"
-          >
-            <HiSaveAs size={18} />
-            រក្សាទុក
-          </button>
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={handleSave}
+              className="flex h-[34px] flex-1 items-center justify-center gap-2 rounded-[8px] bg-[#4B3391] text-[14px] font-semibold text-white shadow-md transition hover:bg-[#3f2b7d]"
+            >
+              <HiSaveAs size={18} />
+              រក្សាទុក
+            </button>
+          )}
         </div>
       </div>
     </div>

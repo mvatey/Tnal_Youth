@@ -119,6 +119,18 @@ function mapMonthlyMember(member, branchLabel, month, year, locale, t, requested
     paymentMethodId: member.paymentMethodId ?? "",
     paymentMethod: paymentMethodLabelFromCode(member.paymentMethodCode),
     receiptFileId: member.receiptFileId ?? null,
+    // UploadReceiptModal only ever knew how to preview a freshly-picked
+    // local file (via a blob: previewUrl) -- an already-saved row loaded
+    // from the backend had receiptFileId but no matching receipt object,
+    // so reopening the modal for it showed the empty "upload" state even
+    // though a receipt genuinely existed. previewUrl works the same way
+    // for a real backend URL as it does for a blob: one.
+    receipt: member.receiptFileId
+      ? {
+          name: member.receiptFileName || "Receipt",
+          previewUrl: `/api/backend/files/${member.receiptFileId}/content`,
+        }
+      : null,
     donationId: member.existingDonationId ?? null,
     alreadyPaid: Boolean(member.alreadyPaid),
     // The backend only still returns an inactive member here when they

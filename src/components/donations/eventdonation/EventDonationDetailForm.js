@@ -116,6 +116,17 @@ function mergeSavedDonations(memberItems, donations, selectedBranch) {
       ),
       paidAt: saved.paidAt,
       receiptFileId: saved.receiptFileId,
+      // UploadPopup (via Table's shared receipt icon/modal) only ever
+      // knew how to preview a freshly-picked local file -- an
+      // already-saved row had receiptFileId but no matching receipt
+      // object, so reopening the modal for it showed the empty
+      // "upload" state even though a receipt genuinely existed.
+      receipt: saved.receiptFileId
+        ? {
+            name: saved.receiptFileName || "Receipt",
+            previewUrl: `/api/backend/files/${saved.receiptFileId}/content`,
+          }
+        : null,
       paymentReference: saved.paymentReference,
       note: saved.note,
       expectedUpdatedAt: saved.updatedAt,
@@ -149,6 +160,12 @@ function mergeSavedDonations(memberItems, donations, selectedBranch) {
       donationId: saved.id,
       paidAt: saved.paidAt,
       receiptFileId: saved.receiptFileId,
+      receipt: saved.receiptFileId
+        ? {
+            name: saved.receiptFileName || "Receipt",
+            previewUrl: `/api/backend/files/${saved.receiptFileId}/content`,
+          }
+        : null,
       note: saved.note,
       expectedUpdatedAt: saved.updatedAt,
       isInactive: true,

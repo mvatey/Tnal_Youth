@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, CalendarDays, ChevronsUpDown, FileText, PencilLineIcon, PencilRulerIcon, PenSquareIcon, PlusCircle, Search, SquarePen, SquarePenIcon, X } from "lucide-react";
+import { ArrowDown, ArrowUp, CalendarDays, ChevronsUpDown, PencilLineIcon, PencilRulerIcon, PenSquareIcon, PlusCircle, Search, SquarePen, SquarePenIcon, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import ReceiptButton from "@/components/donations/ReceiptButton";
 import SponsorTypeSelect from "@/components/forms/sponsorTypeSelect";
 import Pagination from "@/components/navigation/Pagination";
 import SaveButton from "@/components/forms/save";
@@ -28,29 +29,6 @@ const { sponsorHeaders: fallbackHeaders } = tableHeaders;
 const rowsPerPage = 12;
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
 
-
-function SponsorReceiptPreview({ receipt }) {
-  if (!receipt) {
-    return null;
-  }
-
-  return (
-    <span
-      className="inline-flex h-8 w-11 items-center justify-center overflow-hidden rounded-md border border-secondary/20 bg-bg-page-white text-secondary shadow-sm"
-      title={receipt.name || "Receipt"}
-    >
-      {receipt.type?.startsWith("image/") ? (
-        <img
-          src={receipt.dataUrl}
-          alt={receipt.name || "Receipt"}
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <FileText size={17} strokeWidth={2.2} />
-      )}
-    </span>
-  );
-}
 
 function DateFilter({ value, onChange }) {
   const { t, locale } = useLanguage();
@@ -339,7 +317,7 @@ export default function SponsorPanel({
     return { riel, dollar, total: dollar + riel / (exchangeRateKhrPerUsd || 4000) };
   }, [sortedRows]);
 
-  const showActionColumn = canManage || sortedRows.some((row) => Boolean(row.receipt));
+  const showActionColumn = canManage || sortedRows.some((row) => Boolean(row.receiptFileId));
   const visibleHeaders = showActionColumn ? headers : headers.slice(0, -1);
 
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / rowsPerPage));
@@ -567,7 +545,7 @@ export default function SponsorPanel({
                           <BsPencilSquare size={16} />
                         </button>
                       )}
-                      <SponsorReceiptPreview receipt={row.receipt} />
+                      <ReceiptButton receiptFileId={row.receiptFileId} />
                     </div>
                   </td>
                 )}
@@ -648,11 +626,7 @@ function mapSponsorRow(row, locale = "km") {
       labelEn: row.paymentMethodLabelEn,
       code: row.paymentMethodCode,
     }, locale, "-"),
-    receipt: row.receiptFileId ? {
-      name: "Receipt",
-      dataUrl: `/api/backend/files/${row.receiptFileId}/content`,
-      type: "image/unknown",
-    } : null,
+    receiptFileId: row.receiptFileId || null,
   };
 }
 
@@ -687,10 +661,6 @@ function mapMySponsorRow(row, currentMember, locale = "km") {
     rielAmount: Number(row.amountKhr || 0).toLocaleString(),
     dollarAmount: Number(row.amountUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 }),
     method: localizedValue(row.paymentMethod, locale, "-"),
-    receipt: row.receipt?.id ? {
-      name: row.receipt.originalName || "Receipt",
-      dataUrl: `/api/backend/files/${row.receipt.id}/content`,
-      type: row.receipt.mimeType || "image/unknown",
-    } : null,
+    receiptFileId: row.receipt?.id || null,
   };
 }

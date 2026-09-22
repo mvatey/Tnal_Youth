@@ -313,6 +313,7 @@ export default function Table({
           initialReceipt={
             rows.find((member) => member.id === selectedReceiptMember.id)?.receipt
           }
+          readOnly={readOnly}
         />
       )}
     </div>

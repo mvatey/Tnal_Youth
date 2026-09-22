@@ -263,7 +263,11 @@ export default function AddDonationTableRow({
           <button
             key={receipt?.previewUrl || "receipt-icon"}
             type="button"
-            disabled={readOnly}
+            // Viewing an existing receipt is never destructive, so it
+            // should stay available even in read-only mode -- readOnly
+            // only disables this when there's nothing to view (nothing
+            // to upload either, since editing is locked).
+            disabled={readOnly && !receipt}
             onClick={() => onShowInfo(member)}
             className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-md text-secondary transition hover:bg-secondary-light/10 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label={t("donationPage.receipt")}
