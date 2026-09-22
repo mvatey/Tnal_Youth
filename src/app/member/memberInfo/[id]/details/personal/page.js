@@ -1155,28 +1155,56 @@ export default function PersonalPage() {
   }, [roles, form.account_role]);
 
   /*
-   * Excludes any position mapped to BRANCH_LEADER -- becoming a branch
-   * leader goes through the dedicated leader-assignment flow (see the
-   * branch detail page), never as a side effect of picking a position
-   * here, and the backend rejects it anyway (see MemberPersonalInfo
-   * ServiceImpl#updatePosition). Same "inject the current value if
-   * missing" pattern as roleOptions.
+   * Same "inject the current value if missing" pattern as roleOptions.
+   * A position mapped to BRANCH_LEADER is a valid pick here (see
+   * handlePositionChange) -- selecting one just auto-fills the Role field
+   * below the same way it does at creation, and Save routes the actual
+   * promotion through the account/role endpoint (with the same confirm/
+   * replace-existing-leader prompt as creating a member straight into a
+   * leader position) rather than the plain position field, since only
+   * that endpoint knows how to demote whoever currently holds it.
    */
   const positionOptions = useMemo(() => {
-    const assignable = positions.filter(
-      (option) => option.mappedRole !== "BRANCH_LEADER",
-    );
-
     const current = form.positionId;
 
-    if (!current || assignable.some((option) => option.value === current)) {
-      return assignable;
+    if (!current || positions.some((option) => option.value === current)) {
+      return positions;
     }
 
     const currentOption = positions.find((option) => option.value === current);
 
-    return currentOption ? [...assignable, currentOption] : assignable;
+    return currentOption ? [...positions, currentOption] : positions;
   }, [positions, form.positionId]);
+
+  /*
+   * Mirrors CreateMemberModal's updatePosition: picking a position whose
+   * mappedRole is set also updates the Role field to match, so admins see
+   * the same "position implies role" behavior when editing as when
+   * creating. Only auto-fills when a mapping exists -- most positions
+   * have none, and leave Role exactly as the admin already set it.
+   */
+  const handlePositionChange = (event) => {
+    if (isReadOnly && !canManageSensitiveFields) {
+      return;
+    }
+
+    const value = event.target.value;
+
+    const selectedPosition = positions.find(
+      (option) => option.value === value,
+    );
+
+    setError("");
+    setSuccess("");
+    setHasUnsavedChanges(true);
+
+    setForm((previousForm) => ({
+      ...previousForm,
+      positionId: value,
+      account_role:
+        selectedPosition?.mappedRole || previousForm.account_role,
+    }));
+  };
 
   /*
    * The branch field shows every branch this member is tied to as
@@ -1637,8 +1665,17 @@ export default function PersonalPage() {
                     : null)
               : Number(form.branch_id),
 
+          // A branch-leader-mapped position is never sent through this
+          // generic slot -- the backend rejects it outright (see
+          // MemberPersonalInfoServiceImpl#updatePosition), since becoming
+          // leader has to go through the account/role call below instead
+          // (step 2), the only path that knows how to demote whoever
+          // currently holds it.
           position_id:
-            form.positionId
+            form.positionId &&
+            positions.find(
+              (option) => option.value === form.positionId,
+            )?.mappedRole !== "BRANCH_LEADER"
               ? Number(
                   form.positionId,
                 )
@@ -1700,8 +1737,8 @@ export default function PersonalPage() {
           selectedRole !==
             savedRole
         ) {
-          const accountResponse =
-            await requestJson(
+          const updateRole = (confirmReplaceLeader) =>
+            requestJson(
               `/members/${memberId}/account/role`,
               {
                 method:
@@ -1711,9 +1748,56 @@ export default function PersonalPage() {
                   JSON.stringify({
                     role:
                       selectedRole,
+                    ...(confirmReplaceLeader
+                      ? { confirm_replace_leader: true }
+                      : {}),
                   }),
               },
             );
+
+          let accountResponse;
+
+          try {
+            accountResponse =
+              await updateRole(false);
+          } catch (roleError) {
+            // Same confirm/replace-existing-leader prompt as creating a
+            // member straight into a leader position (see
+            // CreateMemberModal) -- promoting to BRANCH_LEADER when the
+            // branch already has one active fails with this exact
+            // message, naming who currently holds it, instead of
+            // silently demoting them.
+            const leaderConflictMatch =
+              typeof roleError?.message === "string" &&
+              roleError.message.match(
+                /already has an active leader:\s*(.+?)\./,
+              );
+
+            if (!leaderConflictMatch) {
+              throw roleError;
+            }
+
+            const existingLeaderName =
+              leaderConflictMatch[1];
+
+            const wantsReplace = window.confirm(
+              t("memberPage.confirmReplaceLeaderPrefix") +
+                existingLeaderName +
+                t("memberPage.confirmReplaceLeaderSuffix"),
+            );
+
+            if (!wantsReplace) {
+              setError(
+                t("memberPage.confirmReplaceLeaderPrefix") +
+                  existingLeaderName,
+              );
+
+              return false;
+            }
+
+            accountResponse =
+              await updateRole(true);
+          }
 
           updatedRole =
             accountResponse?.role ||
@@ -2335,9 +2419,7 @@ export default function PersonalPage() {
                 form.positionId
               }
               onChange={
-                handleChange(
-                  "positionId",
-                )
+                handlePositionChange
               }
               placeholder={t("memberPage.selectPosition")}
               options={
