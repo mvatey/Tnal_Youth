@@ -777,7 +777,12 @@ const en = {
     hide: "Hide",
     edit: "Edit",
     newDefaultPassword: "New default password",
+    confirmNewDefaultPassword: "Confirm new default password",
     defaultPasswordUpdated: "Default password updated successfully.",
+    confirmIdentityTitle: "Confirm your identity",
+    confirmIdentitySubtitle: "Enter your current password to continue.",
+    setNewDefaultPasswordTitle: "Set a new default password",
+    back: "Back",
   },
   documentPage: {
     title: "Documents",

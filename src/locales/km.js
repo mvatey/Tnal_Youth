@@ -777,7 +777,12 @@ const km = {
     hide: "លាក់",
     edit: "កែប្រែ",
     newDefaultPassword: "ពាក្យសម្ងាត់លំនាំដើមថ្មី",
+    confirmNewDefaultPassword: "បញ្ជាក់ពាក្យសម្ងាត់លំនាំដើមថ្មី",
     defaultPasswordUpdated: "បានផ្លាស់ប្ដូរពាក្យសម្ងាត់លំនាំដើមដោយជោគជ័យ។",
+    confirmIdentityTitle: "បញ្ជាក់អត្តសញ្ញាណ",
+    confirmIdentitySubtitle: "សូមបញ្ចូលពាក្យសម្ងាត់បច្ចុប្បន្នរបស់អ្នក ដើម្បីបន្ត។",
+    setNewDefaultPasswordTitle: "កំណត់ពាក្យសម្ងាត់លំនាំដើមថ្មី",
+    back: "ត្រឡប់ក្រោយ",
   },
   documentPage: {
     title: "ឯកសារ",
