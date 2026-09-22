@@ -1126,6 +1126,7 @@ const en = {
     upcomingActivities: "Upcoming activities",
     invitedBranches: "Invited branches",
     otherBranchActivities: "Other branches' activities",
+    ongoingActivities: "Ongoing activities",
     completed: "Completed",
     activityName: "Activity name",
     sector: "Sector",

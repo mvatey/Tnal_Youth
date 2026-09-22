@@ -833,6 +833,13 @@ export default function ActivityPage() {
         // own count computed from branchScopedActivities so the card
         // matches whichever single branch is active.
         invitedActivityCount={effectiveSelectedBranch === "all" ? invitedActivityCount : null}
+        // ADMIN has no "own branch" to compare against, so ownBranch is
+        // always null for them (see ActivityListItemResponse) and the
+        // "other branch activities" card is structurally meaningless --
+        // always 0. Swap it for an "ongoing" count instead, which is a
+        // real, already-computed status (see getEffectiveActivityStatus
+        // above) just not previously surfaced as its own card.
+        secondCardMode={isAdmin ? "ongoing" : "otherBranch"}
       />
 
       <TelegramConnectBanner />

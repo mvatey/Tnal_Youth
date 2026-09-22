@@ -3,10 +3,11 @@ import {
   CheckCircle,
   Activity,
   Handshake,
+  Radio,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
-function getStats(activities, invitedActivityCount, t) {
+function getStats(activities, invitedActivityCount, secondCardMode, t) {
   // Prefer the backend's own count (ActivityPageResponse.invitedActivityCount
   // — the full count, not capped by this page's size=1000 fetch); fall back
   // to counting the already-loaded rows when that isn't available yet.
@@ -14,6 +15,29 @@ function getStats(activities, invitedActivityCount, t) {
     typeof invitedActivityCount === "number"
       ? invitedActivityCount
       : activities.filter((item) => item.ownBranch === false).length;
+
+  // ADMIN has no "own branch" to compare against (ownBranch is always
+  // null for them server-side), so the "other branch activities" card is
+  // structurally meaningless -- always 0. They get an "ongoing" count
+  // instead, same activity-status concept the list itself already uses.
+  const secondCard =
+    secondCardMode === "ongoing"
+      ? {
+          label: t("activityPage.ongoingActivities"),
+          value: activities.filter((item) => item.status === "ongoing").length,
+          icon: Radio,
+          accent: "bg-warning",
+          iconBg: "bg-warning-bg",
+          iconColor: "text-warning",
+        }
+      : {
+          label: t("activityPage.otherBranchActivities"),
+          value: invitedCount,
+          icon: Handshake,
+          accent: "bg-warning",
+          iconBg: "bg-warning-bg",
+          iconColor: "text-warning",
+        };
 
   return [
   {
@@ -24,14 +48,7 @@ function getStats(activities, invitedActivityCount, t) {
     iconBg: "bg-primary-light",
     iconColor: "text-primary",
   },
-  {
-    label: t("activityPage.otherBranchActivities"),
-    value: invitedCount,
-    icon: Handshake,
-    accent: "bg-warning",
-    iconBg: "bg-warning-bg",
-    iconColor: "text-warning",
-  },
+  secondCard,
   {
     label: t("activityPage.upcomingActivities"),
     value: activities.filter((item) => item.status === "upcoming").length,
@@ -112,9 +129,10 @@ function StatCard({
 export default function ActivityStats({
   activities = [],
   invitedActivityCount = null,
+  secondCardMode = "otherBranch",
 }) {
   const { t } = useLanguage();
-  const stats = getStats(activities, invitedActivityCount, t);
+  const stats = getStats(activities, invitedActivityCount, secondCardMode, t);
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
