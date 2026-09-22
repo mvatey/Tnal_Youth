@@ -402,6 +402,8 @@ export default function CompanyDocumentPage() {
     setSaving(true);
     setError("");
     try {
+      const createdDocuments = [];
+
       for (const item of newDocumentFromForm.files) {
         const upload = new FormData();
         upload.append("file", item.file);
@@ -425,10 +427,23 @@ export default function CompanyDocumentPage() {
         });
         const created = await createResponse.json().catch(() => null);
         if (!createResponse.ok) throw new Error(created?.message || t("documentPage.saveFailed"));
+        createdDocuments.push(created);
       }
+
       setForm(EMPTY_FORM);
       setShowAddForm(false);
-      await loadPage();
+
+      // The create response already carries everything mapDocument
+      // needs (nested branch/file/type, same shape as a list row) --
+      // prepend it locally instead of re-fetching every page of
+      // documents from scratch just to show the one new row, which was
+      // most of what made "save" feel slow.
+      setDocuments((previous) => [
+        ...createdDocuments
+          .filter((row) => row?.branch && !row?.member)
+          .map((row) => mapDocument(row, locale)),
+        ...previous,
+      ]);
     } catch (saveError) {
       setError(saveError.message || t("documentPage.saveFailed"));
     } finally {
@@ -466,7 +481,16 @@ export default function CompanyDocumentPage() {
     const body = await response.json().catch(() => null);
     if (!response.ok) throw new Error(body?.message || t("documentPage.updateFailed"));
     setEditDocument(null);
-    await loadPage();
+
+    // Same reasoning as handleAddSave -- the update response already has
+    // everything mapDocument needs, so replace the one row locally
+    // instead of re-fetching the whole list.
+    if (body?.branch && !body?.member) {
+      const updatedRow = mapDocument(body, locale);
+      setDocuments((previous) =>
+        previous.map((row) => (row.id === updatedRow.id ? updatedRow : row)),
+      );
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -476,8 +500,12 @@ export default function CompanyDocumentPage() {
       setError(body?.message || t("documentPage.deleteFailed"));
       return;
     }
+    const deletedId = deleteDocument.id;
     setDeleteDocument(null);
-    await loadPage();
+
+    // Same reasoning as handleAddSave -- just drop the one row locally
+    // instead of re-fetching the whole list.
+    setDocuments((previous) => previous.filter((row) => row.id !== deletedId));
   };
 
   return (

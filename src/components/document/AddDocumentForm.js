@@ -219,6 +219,15 @@ export default function AddDocumentForm({
   const handleSave = (event) => {
   event.preventDefault();
 
+  // The parent's upload+create round trip can take a moment; without
+  // this, a second click (or a second Enter) while still waiting fires
+  // onSave again and ends up creating two documents from one submit --
+  // the save button being disabled below covers the click case, this
+  // covers the same handler being invoked any other way.
+  if (saving) {
+    return;
+  }
+
   if (!form.title?.trim()) {
     setValidationMessage(t("documentPage.documentNameRequired"));
     return;
@@ -628,6 +637,7 @@ export default function AddDocumentForm({
           isValid={
             isFormValid
           }
+          saving={saving}
           saveText={t("documentPage.save")}
           cancelText={t("documentPage.cancel")}
         />
