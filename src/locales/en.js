@@ -767,6 +767,13 @@ const en = {
     usernameChanged: "Username changed successfully.",
     usernameChangeFailed: "Could not change username.",
     accountNotFound: "Account information was not found.",
+    defaultPasswordTitle: "Default password for members",
+    defaultPasswordDescription: "The password every newly-created member account starts with. They'll be required to set a real password before using the account for the first time.",
+    reveal: "Reveal",
+    hide: "Hide",
+    edit: "Edit",
+    newDefaultPassword: "New default password",
+    defaultPasswordUpdated: "Default password updated successfully.",
   },
   documentPage: {
     title: "Documents",

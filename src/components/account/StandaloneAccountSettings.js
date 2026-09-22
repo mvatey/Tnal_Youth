@@ -7,6 +7,7 @@ import { AtSign, Camera, Eye, EyeOff, Info, Lock, Mail } from "lucide-react";
 
 import SaveButton from "@/components/forms/SaveButton";
 import OrganizationProfileCard from "@/components/account/OrganizationProfileCard";
+import DefaultPasswordCard from "@/components/account/DefaultPasswordCard";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { describeUploadError } from "@/lib/uploadErrors";
@@ -93,6 +94,7 @@ export default function StandaloneAccountSettings({
   return (
     <div className="min-w-0 space-y-4">
       {isAdmin && <OrganizationProfileCard canEdit />}
+      {isAdmin && <DefaultPasswordCard />}
 
       <ProfileCard
         nameKm={profile?.nameKm}

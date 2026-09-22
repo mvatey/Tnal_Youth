@@ -15,6 +15,11 @@ const ERROR_TRANSLATIONS = [
   // misleading (it might not even be a real account) and less secure
   // (it implies the account does exist).
   ["or password", "លេខទូរស័ព្ទ អ៊ីមែល ឬលេខសម្ងាត់មិនត្រឹមត្រូវ។"],
+  // Same reasoning: the raw backend message contains "password" too, so
+  // without this ahead of the generic rule below it rendered as if the
+  // password format itself were wrong, when the real issue is just that
+  // it matches the current one.
+  ["must be different from the current password", "ពាក្យសម្ងាត់ថ្មីត្រូវខុសពីពាក្យសម្ងាត់បច្ចុប្បន្ន។"],
   ["account not found", "រកមិនឃើញគណនីនេះទេ។"],
   ["user not found", "រកមិនឃើញគណនីនេះទេ។"],
   ["member not found", "រកមិនឃើញសមាជិកនេះទេ។"],

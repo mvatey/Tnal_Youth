@@ -10,17 +10,13 @@ import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 import { getPasswordRules } from "@/lib/validatePassword";
 import { getRoleHomePath } from "@/lib/navigation";
 
-// Mirrors the backend's PasswordPolicy.DEFAULT_MEMBER_PASSWORD -- this
-// page is only ever reached (via MustChangePasswordGate) while a
-// member-linked account is still on that shared default, so there's no
-// need to make them re-type the password they just logged in with; it's
-// sent as the "old password" half of the normal self-service
-// change-password endpoint automatically.
-const DEFAULT_MEMBER_PASSWORD = "Tnal@123";
-
 // Reached only via MustChangePasswordGate, for a member-linked account
-// still on the shared default password. The account is already fully
-// logged in, just gated everywhere else until this is done.
+// still on the shared default password (now admin-editable, see
+// myAcc's DefaultPasswordCard) -- so this deliberately doesn't need to
+// know what that current value actually is. It calls a dedicated
+// backend endpoint (my-account/first-login-password) that's gated on
+// the account's own mustChangePassword flag instead of an old-password
+// check, unlike the normal self-service change-password endpoint.
 export default function ForcePasswordChangePage() {
   const { t } = useLanguage();
   const { user, refreshUser } = useAuth();
@@ -58,20 +54,14 @@ export default function ForcePasswordChangePage() {
       return;
     }
 
-    if (newPassword === DEFAULT_MEMBER_PASSWORD) {
-      setError(t("myAccount.passwordMustBeDifferent"));
-      return;
-    }
-
     try {
       setSubmitting(true);
 
-      const response = await fetch("/api/backend/my-account/password", {
+      const response = await fetch("/api/backend/my-account/first-login-password", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
         body: JSON.stringify({
-          old_password: DEFAULT_MEMBER_PASSWORD,
           new_password: newPassword,
           confirm_password: confirmPassword,
         }),
