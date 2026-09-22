@@ -100,15 +100,38 @@ export default function SearchableSelect({
    * screens, and CSS canonicalizes that to overflow-y:auto too, which would
    * clip/scroll this panel instead of letting it float over the page.
    * Closing on scroll (rather than repositioning) keeps this simple.
+   *
+   * Opening downward is only safe when there's room for it below the
+   * trigger in the actual browser viewport -- a trigger sitting low in a
+   * tall popup (e.g. the branch field near the bottom of create/edit user)
+   * otherwise pushes the panel past the bottom edge, and since it's fixed
+   * (not flowing content) no amount of scrolling the page brings it back
+   * into view. Flip upward instead whenever there's more room above.
    */
   useEffect(() => {
     if (!open) return;
 
+    const PREFERRED_HEIGHT = 300;
+    const MARGIN = 8;
+
     const updateRect = () => {
       const rect = triggerRef.current?.getBoundingClientRect();
-      if (rect) {
-        setDropdownRect({ top: rect.bottom, left: rect.left, width: rect.width });
-      }
+      if (!rect) return;
+
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const openUpward = spaceBelow < PREFERRED_HEIGHT && spaceAbove > spaceBelow;
+
+      setDropdownRect({
+        left: rect.left,
+        width: rect.width,
+        top: openUpward ? null : rect.bottom,
+        bottom: openUpward ? window.innerHeight - rect.top : null,
+        maxHeight: Math.max(
+          160,
+          (openUpward ? spaceAbove : spaceBelow) - MARGIN,
+        ),
+      });
     };
 
     updateRect();
@@ -165,10 +188,17 @@ export default function SearchableSelect({
 
       {open && !isDisabled && dropdownRect && (
         <div
-          className="fixed z-[100] mt-1 overflow-hidden rounded-lg border border-border bg-bg-page-white shadow-xl"
-          style={{ top: dropdownRect.top, left: dropdownRect.left, width: dropdownRect.width }}
+          className="fixed z-[100] flex flex-col overflow-hidden rounded-lg border border-border bg-bg-page-white shadow-xl"
+          style={{
+            top: dropdownRect.top ?? undefined,
+            bottom: dropdownRect.bottom ?? undefined,
+            left: dropdownRect.left,
+            width: dropdownRect.width,
+            marginTop: dropdownRect.top != null ? 4 : undefined,
+            marginBottom: dropdownRect.bottom != null ? 4 : undefined,
+          }}
         >
-          <div className="border-b border-border p-2">
+          <div className="shrink-0 border-b border-border p-2">
             <div className="flex h-9 items-center gap-2 rounded-md border border-border px-3 focus-within:border-primary">
               <Search size={15} className="shrink-0 text-text-secondary" />
 
@@ -193,7 +223,10 @@ export default function SearchableSelect({
             </div>
           </div>
 
-          <div className="max-h-60 overflow-y-auto p-1">
+          <div
+            className="overflow-y-auto p-1"
+            style={{ maxHeight: Math.max(dropdownRect.maxHeight - 56, 104) }}
+          >
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => {
                 const selected = option.value === selectedOption?.value;
