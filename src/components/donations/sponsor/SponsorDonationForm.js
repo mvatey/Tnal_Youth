@@ -7,6 +7,7 @@ import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import SaveAlert from "@/components/forms/savealert";
 import SearchableSelect from "@/components/forms/SearchableSelect";
+import DeleteConfirmModal from "@/components/popup/Confirmdeletemodal";
 import sponsorOptions from "@/data/donation/sponsorOptions.json";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch, useBranchChangeGuard } from "@/context/BranchContext";
@@ -513,6 +514,8 @@ export default function SponsorDonationForm({ initialData = null }) {
   const [backendPaymentMethods, setBackendPaymentMethods] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   // True as soon as the user has actually touched a field -- the automatic
   // branch-sync effect just below does NOT set this, since that's the app
   // following the sidebar, not the user entering data. Drives the
@@ -845,6 +848,39 @@ export default function SponsorDonationForm({ initialData = null }) {
     }
   };
 
+  // DELETE /api/donations/sponsor/{id} is already restricted to
+  // SECRETARY/BRANCH_LEADER and branch-scoped server-side (see
+  // SponsorDonationServiceImpl#required -> enforceStaffBranchAccess) --
+  // this button is only ever shown to that same audience, matching what
+  // the backend would actually allow.
+  const handleDelete = async () => {
+    if (!form.id || deleting) {
+      return;
+    }
+
+    setDeleting(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        `/api/backend/donations/sponsor/${encodeURIComponent(form.id)}`,
+        { method: "DELETE" },
+      );
+
+      if (!response.ok && response.status !== 204) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.message || t("donationPage.sponsorDeleteFailed"));
+      }
+
+      router.push(listPath);
+    } catch (deleteError) {
+      setShowDeleteConfirm(false);
+      setError(deleteError.message || t("donationPage.sponsorDeleteFailed"));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const sponsorNamePlaceholder =
     form.sponsorType === sponsorTypes[0]
       ? t("donationPage.enterIndividualName")
@@ -1104,13 +1140,27 @@ export default function SponsorDonationForm({ initialData = null }) {
         </div>
 
         <div className="mt-28 flex items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={() => router.push(listPath)}
-            className="inline-flex h-[34px] w-[196px] items-center justify-center rounded-lg border border-border bg-bg-page-gray px-3 text-[14px] font-semibold text-text-primary shadow-sm transition hover:bg-bg-page-gray"
-          >
-            {t("donationPage.cancel")}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => router.push(listPath)}
+              className="inline-flex h-[34px] w-[196px] items-center justify-center rounded-lg border border-border bg-bg-page-gray px-3 text-[14px] font-semibold text-text-primary shadow-sm transition hover:bg-bg-page-gray"
+            >
+              {t("donationPage.cancel")}
+            </button>
+
+            {form.id && isBranchScoped && (
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={saving || deleting}
+                className="inline-flex h-[34px] items-center justify-center rounded-lg border border-error px-4 text-[14px] font-semibold text-error shadow-sm transition hover:bg-error-bg disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {t("donationPage.deleteSponsor")}
+              </button>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={handleSave}
@@ -1122,6 +1172,14 @@ export default function SponsorDonationForm({ initialData = null }) {
           </button>
         </div>
       </section>
+
+      <DeleteConfirmModal
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title={t("donationPage.deleteSponsorConfirmTitle")}
+        message={t("donationPage.deleteSponsorConfirmMessage")}
+      />
     </>
   );
 }
