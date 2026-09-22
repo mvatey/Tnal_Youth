@@ -9,13 +9,17 @@ export default function ButtonSeeDetail({
   className = "",
 }) {
   const { t } = useLanguage();
+  const label = children || t("memberPage.detail");
+
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-1 rounded-lg bg-primary px-1 py-1 text-[10px] font-medium text-white transition hover:bg-primary-hover ${className}`}
+      aria-label={label}
+      title={label}
+      className={`inline-flex items-center justify-center gap-1 rounded-lg bg-primary p-1.5 text-[10px] font-medium text-white transition hover:bg-primary-hover sm:px-2 sm:py-1 ${className}`}
     >
-      <List className="h-3.5 w-5 shrink-0" />
-      <span className="truncate">{children || t("memberPage.detail")}</span>
+      <List className="h-3.5 w-3.5 shrink-0 sm:w-5" />
+      <span className="hidden truncate sm:inline">{label}</span>
     </button>
   );
 }

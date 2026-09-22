@@ -678,15 +678,14 @@ export default function ParticipationPage() {
 
     {
       header: t("memberPage.actions"),
-      // Fixed, not a %: at the table's narrow (mobile) width, a
-      // percentage-sized column measured out to less than the "details"
-      // button's own Khmer label needs (~98px, verified against the
-      // real rendered classes), so the button got silently clipped
-      // inside its own cell -- sticky positioning correctly kept the
-      // column reachable, but there wasn't enough room in it. A fixed
-      // width guarantees enough room regardless of how much the rest of
-      // the table shrinks.
-      width: "w-[130px]",
+      // A percentage, not a fixed px width -- ButtonSeeDetail now drops
+      // its text label below sm: (icon-only), so a modest share is
+      // always enough room, and the table can shrink to fit the actual
+      // screen instead of forcing horizontal scroll just to reach it. A
+      // fixed-px column was tried first, but table-layout:fixed doesn't
+      // let the rest of the columns shrink to fit around a mixed-in
+      // fixed column -- verified empirically, not just assumed.
+      width: "w-[19%]",
       align: "center",
 
       render: (item) => (
@@ -764,7 +763,7 @@ export default function ParticipationPage() {
         }
         searchPlaceholder={t("memberPage.search")}
         pageSize={10}
-        minTableWidth={560}
+        minTableWidth={0}
         stickyLastColumn
         emptyMessage={t("memberPage.noRecordsFound")}
         onDownload={() =>
