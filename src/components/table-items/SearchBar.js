@@ -18,15 +18,15 @@ export default function SearchBar({
         </span>
       )}
 
-      <span className="flex h-[34px] items-center rounded-lg border border-border bg-bg-page-white px-3">
+      <span className="flex h-[34px] items-center gap-2 rounded-lg border border-border bg-bg-page-white px-3">
+        <Search size={16} className="shrink-0 text-text-secondary" />
+
         <input
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
           placeholder={value ? "" : placeholder}
-          className="w-full flex-1 bg-transparent pr-2 text-[12px] font-medium outline-none"
+          className="w-full min-w-0 flex-1 bg-transparent text-[12px] font-medium outline-none"
         />
-
-        <Search size={16} className="text-text-secondary" />
       </span>
     </label>
   );

@@ -53,14 +53,14 @@ export default function EventDonationFilters({
   return (
     <div className="flex w-full flex-col items-stretch justify-end gap-2 pb-1 sm:flex-row sm:flex-nowrap sm:items-center sm:overflow-x-auto">
       <label className="block h-[34px] w-full sm:w-[260px] sm:shrink-0">
-        <span className="flex h-full items-center rounded-lg border border-border bg-bg-page-white px-3 shadow-sm">
+        <span className="flex h-full items-center gap-2 rounded-lg border border-border bg-bg-page-white px-3 shadow-sm">
+          <Search size={16} className="shrink-0 text-text-secondary" />
           <input
-            className="w-full flex-1 bg-transparent pr-2 text-[12px] font-medium text-text-secondary outline-none placeholder:text-text-secondary focus:placeholder-transparent"
+            className="w-full min-w-0 flex-1 bg-transparent text-[12px] font-medium text-text-secondary outline-none placeholder:text-text-secondary focus:placeholder-transparent"
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={t("donationPage.searchActivityPlaceholder")}
           />
-          <Search size={16} className="text-text-secondary" />
         </span>
       </label>
 

@@ -1703,7 +1703,7 @@ export default function BranchPage() {
       <section className="rounded-xl border border-border bg-bg-page-white p-4 transition-shadow duration-200 hover:shadow-sm">
         <div className="mb-4 flex min-w-0 flex-col items-stretch gap-2 sm:flex-row sm:flex-nowrap sm:items-center sm:overflow-x-auto">
           {/* Search */}
-          <div className="w-full shrink-0 sm:w-[140px]">
+          <div className="w-full shrink-0 sm:w-[260px]">
             <SearchBar
               value={
                 searchQuery
