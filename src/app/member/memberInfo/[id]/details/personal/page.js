@@ -18,6 +18,7 @@ import CvFilePreview from "@/components/forms/CvFilePreview";
 import useMemberPermissions from "@/hooks/useMemberPermissions";
 import FormDate from "@/components/forms/FormDate.js";
 import MultiSelect from "@/components/forms/multiselect.js";
+import SearchableSelect from "@/components/forms/SearchableSelect.js";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -2253,7 +2254,7 @@ export default function PersonalPage() {
                 }
               />
             ) : (
-              <FormSelect
+              <SearchableSelect
                 label={t("memberPage.branch")}
                 value={
                   form.branch_id
@@ -2268,8 +2269,6 @@ export default function PersonalPage() {
                 disabled={
                   !canManageSensitiveFields
                 }
-                selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
-                adminEditable={isAdmin}
               />
             )}
 
