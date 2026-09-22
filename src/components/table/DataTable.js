@@ -153,8 +153,8 @@ export default function DataTable({
                     relative
                     w-full
                     min-w-0
-                    md:min-w-[140px]
-                    md:max-w-[220px]
+                    md:min-w-[220px]
+                    md:max-w-[340px]
                     md:flex-1
                   "
                 >
