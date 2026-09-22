@@ -553,49 +553,11 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
 
     let updatedRole = originalRole;
     if (form.role && form.role !== originalRole) {
-      const updateRole = (confirmReplaceLeader) =>
-        fetchJson(`/api/backend/members/${memberId}/account/role`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            role: form.role,
-            ...(confirmReplaceLeader ? { confirm_replace_leader: true } : {}),
-          }),
-        });
-
-      let roleResponse;
-
-      try {
-        roleResponse = await updateRole(false);
-      } catch (roleError) {
-        // Same confirm/replace-existing-leader prompt as CreateMemberModal
-        // and the personal-info page: promoting to BRANCH_LEADER when the
-        // branch already has one active fails with this exact message,
-        // naming who currently holds it, instead of silently demoting them.
-        const leaderConflictMatch =
-          typeof roleError?.message === "string" &&
-          roleError.message.match(/already has an active leader:\s*(.+?)\./);
-
-        if (!leaderConflictMatch) {
-          throw roleError;
-        }
-
-        const existingLeaderName = leaderConflictMatch[1];
-
-        const wantsReplace = window.confirm(
-          t("memberPage.confirmReplaceLeaderPrefix") +
-            existingLeaderName +
-            t("memberPage.confirmReplaceLeaderSuffix"),
-        );
-
-        if (!wantsReplace) {
-          throw new Error(
-            t("memberPage.confirmReplaceLeaderPrefix") + existingLeaderName,
-          );
-        }
-
-        roleResponse = await updateRole(true);
-      }
+      const roleResponse = await fetchJson(`/api/backend/members/${memberId}/account/role`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: form.role }),
+      });
 
       updatedRole = roleResponse?.role || form.role;
     }

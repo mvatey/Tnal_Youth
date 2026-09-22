@@ -963,13 +963,13 @@ const loadBranchDetails =
     [branchDetails, label, t],
   );
 
-  const branchLeader = useMemo(
+  const branchLeaders = useMemo(
     () =>
-      mappedLeaders.find(
+      mappedLeaders.filter(
         (person) =>
           person.role ===
           "BRANCH_LEADER",
-      ) || null,
+      ),
     [mappedLeaders],
   );
 
@@ -1509,13 +1509,28 @@ const loadBranchDetails =
           </h2>
         </div>
 
-        <LeaderCard
-          person={branchLeader}
-          title={t("branchPage.branchLeader")}
-          onAdd={isViewer ? undefined : () =>
-            setIsEditModalOpen(true)
-          }
-        />
+        {branchLeaders.length > 0 ? (
+          <div className="space-y-3">
+            {branchLeaders.map((person) => (
+              <LeaderCard
+                key={person.id}
+                person={person}
+                title={t("branchPage.branchLeader")}
+                onAdd={isViewer ? undefined : () =>
+                  setIsEditModalOpen(true)
+                }
+              />
+            ))}
+          </div>
+        ) : (
+          <LeaderCard
+            person={null}
+            title={t("branchPage.branchLeader")}
+            onAdd={isViewer ? undefined : () =>
+              setIsEditModalOpen(true)
+            }
+          />
+        )}
       </section>
 
       <section>
@@ -1602,23 +1617,9 @@ const loadBranchDetails =
         initialData={{
           ...branch,
 
-          branchLeaderId:
-            branchLeader?.id ??
-            branchDetails?.leaders?.find(
-              (person) =>
-                String(
-                  person?.role ?? "",
-                ).toUpperCase() ===
-                "BRANCH_LEADER",
-            )?.member_id ??
-            branchDetails?.leaders?.find(
-              (person) =>
-                String(
-                  person?.role ?? "",
-                ).toUpperCase() ===
-                "BRANCH_LEADER",
-            )?.id ??
-            "",
+          branchLeaderIds: branchLeaders.map(
+            (person) => person.id,
+          ),
 
           leaders:
             branchDetails?.leaders ??

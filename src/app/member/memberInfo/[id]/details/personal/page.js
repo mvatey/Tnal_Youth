@@ -1737,8 +1737,8 @@ export default function PersonalPage() {
           selectedRole !==
             savedRole
         ) {
-          const updateRole = (confirmReplaceLeader) =>
-            requestJson(
+          const accountResponse =
+            await requestJson(
               `/members/${memberId}/account/role`,
               {
                 method:
@@ -1748,56 +1748,9 @@ export default function PersonalPage() {
                   JSON.stringify({
                     role:
                       selectedRole,
-                    ...(confirmReplaceLeader
-                      ? { confirm_replace_leader: true }
-                      : {}),
                   }),
               },
             );
-
-          let accountResponse;
-
-          try {
-            accountResponse =
-              await updateRole(false);
-          } catch (roleError) {
-            // Same confirm/replace-existing-leader prompt as creating a
-            // member straight into a leader position (see
-            // CreateMemberModal) -- promoting to BRANCH_LEADER when the
-            // branch already has one active fails with this exact
-            // message, naming who currently holds it, instead of
-            // silently demoting them.
-            const leaderConflictMatch =
-              typeof roleError?.message === "string" &&
-              roleError.message.match(
-                /already has an active leader:\s*(.+?)\./,
-              );
-
-            if (!leaderConflictMatch) {
-              throw roleError;
-            }
-
-            const existingLeaderName =
-              leaderConflictMatch[1];
-
-            const wantsReplace = window.confirm(
-              t("memberPage.confirmReplaceLeaderPrefix") +
-                existingLeaderName +
-                t("memberPage.confirmReplaceLeaderSuffix"),
-            );
-
-            if (!wantsReplace) {
-              setError(
-                t("memberPage.confirmReplaceLeaderPrefix") +
-                  existingLeaderName,
-              );
-
-              return false;
-            }
-
-            accountResponse =
-              await updateRole(true);
-          }
 
           updatedRole =
             accountResponse?.role ||

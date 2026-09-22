@@ -305,3 +305,120 @@ export async function PUT(
     );
   }
 }
+
+
+/*
+ * ==========================================================
+ * REMOVE ONE BRANCH LEADER
+ * ==========================================================
+ *
+ * A branch can have more than one active leader now, so this always
+ * needs memberId to say which one -- there's no longer a single
+ * implicit "the leader" to remove.
+ */
+
+export async function DELETE(
+  request,
+  context,
+) {
+  const { branchId } =
+    await context.params;
+
+  const accessToken =
+    await getAccessToken();
+
+  if (!accessToken) {
+    return Response.json(
+      {
+        message:
+          "Unauthorized",
+      },
+      {
+        status: 401,
+      },
+    );
+  }
+
+  if (!branchId) {
+    return Response.json(
+      {
+        message:
+          "សូមបញ្ជាក់លេខសម្គាល់សាខា",
+      },
+      {
+        status: 400,
+      },
+    );
+  }
+
+  const { searchParams } =
+    new URL(request.url);
+
+  const memberId =
+    searchParams.get(
+      "memberId",
+    );
+
+  const normalizedMemberId =
+    Number(memberId);
+
+  if (
+    !memberId ||
+    !Number.isFinite(
+      normalizedMemberId,
+    ) ||
+    normalizedMemberId <= 0
+  ) {
+    return Response.json(
+      {
+        message:
+          "សូមបញ្ជាក់លេខសម្គាល់សមាជិកដែលត្រូវដកចេញ",
+      },
+      {
+        status: 400,
+      },
+    );
+  }
+
+  try {
+    const backendResponse =
+      await fetch(
+        `${BACKEND_URL}/branches/${branchId}/leader?memberId=${normalizedMemberId}`,
+        {
+          method: "DELETE",
+
+          headers: {
+            Accept:
+              "application/json",
+
+            Authorization:
+              `Bearer ${accessToken}`,
+          },
+
+          cache:
+            "no-store",
+        },
+      );
+
+    return forwardResponse(
+      backendResponse,
+    );
+
+  } catch (error) {
+    console.error(
+      "Remove branch leader proxy error:",
+      error,
+    );
+
+    return Response.json(
+      {
+        message:
+          error?.message ||
+          "មិនអាចដកប្រធានសាខាចេញបានទេ",
+      },
+      {
+        status: 502,
+      },
+    );
+  }
+}
