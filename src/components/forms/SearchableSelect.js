@@ -47,10 +47,12 @@ export default function SearchableSelect({
 }) {
   const { locale, t } = useLanguage();
   const wrapperRef = useRef(null);
+  const triggerRef = useRef(null);
   const searchInputRef = useRef(null);
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [dropdownRect, setDropdownRect] = useState(null);
 
   const normalizedOptions = useMemo(
     () =>
@@ -91,6 +93,39 @@ export default function SearchableSelect({
     window.setTimeout(() => searchInputRef.current?.focus(), 0);
   }, [open]);
 
+  /*
+   * Positioned fixed to the viewport (via a measured rect) rather than
+   * absolute within its own wrapper -- an ancestor filter row commonly sets
+   * overflow-x-auto to let a wide filter bar scroll horizontally on narrow
+   * screens, and CSS canonicalizes that to overflow-y:auto too, which would
+   * clip/scroll this panel instead of letting it float over the page.
+   * Closing on scroll (rather than repositioning) keeps this simple.
+   */
+  useEffect(() => {
+    if (!open) return;
+
+    const updateRect = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (rect) {
+        setDropdownRect({ top: rect.bottom, left: rect.left, width: rect.width });
+      }
+    };
+
+    updateRect();
+
+    const closeOnScroll = () => {
+      setOpen(false);
+      setQuery("");
+    };
+
+    window.addEventListener("scroll", closeOnScroll, true);
+    window.addEventListener("resize", updateRect);
+    return () => {
+      window.removeEventListener("scroll", closeOnScroll, true);
+      window.removeEventListener("resize", updateRect);
+    };
+  }, [open]);
+
   const selectOption = (option) => {
     onChange?.({ target: { name, value: option.value } });
     setOpen(false);
@@ -107,6 +142,7 @@ export default function SearchableSelect({
       )}
 
       <button
+        ref={triggerRef}
         id={name}
         type="button"
         disabled={isDisabled}
@@ -127,8 +163,11 @@ export default function SearchableSelect({
         />
       </button>
 
-      {open && !isDisabled && (
-        <div className="absolute left-0 right-0 z-[100] mt-1 overflow-hidden rounded-lg border border-border bg-bg-page-white shadow-xl">
+      {open && !isDisabled && dropdownRect && (
+        <div
+          className="fixed z-[100] mt-1 overflow-hidden rounded-lg border border-border bg-bg-page-white shadow-xl"
+          style={{ top: dropdownRect.top, left: dropdownRect.left, width: dropdownRect.width }}
+        >
           <div className="border-b border-border p-2">
             <div className="flex h-9 items-center gap-2 rounded-md border border-border px-3 focus-within:border-primary">
               <Search size={15} className="shrink-0 text-text-secondary" />

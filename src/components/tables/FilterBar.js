@@ -7,11 +7,13 @@ import { CalendarDays } from "lucide-react";
 
 import { useLanguage } from "@/context/LanguageContext";
 import SearchableSelect from "@/components/forms/SearchableSelect.js";
+import FormSelect from "@/components/forms/FormSelect.js";
 
 import "react-datepicker/dist/react-datepicker.css";
 
 
 function FilterInput({
+  filterKey,
   value,
   onChange,
   options = [],
@@ -75,16 +77,34 @@ function FilterInput({
   }
 
 
+  const mergedOptions = [
+    { value: "all", label: placeholder },
+    ...options.map((item) => ({ value: item, label: item })),
+  ];
+
+  // Only the branch select realistically grows long enough (many branches)
+  // to need a search box -- other filters (type, status, ...) are short,
+  // fixed lists where a search box is just an extra click for no benefit.
+  if (filterKey === "branch") {
+    return (
+      <div className="relative w-full sm:w-auto sm:min-w-[150px]">
+        <SearchableSelect
+          value={value}
+          onChange={(event) => onChange?.(event.target.value)}
+          placeholder={placeholder}
+          options={mergedOptions}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full sm:w-auto sm:min-w-[150px]">
-      <SearchableSelect
+      <FormSelect
         value={value}
         onChange={(event) => onChange?.(event.target.value)}
         placeholder={placeholder}
-        options={[
-          { value: "all", label: placeholder },
-          ...options.map((item) => ({ value: item, label: item })),
-        ]}
+        options={mergedOptions}
       />
     </div>
   );
@@ -98,6 +118,7 @@ export default function FilterBar({ filters = [], className = "" }) {
       {filters.map(({ key, ...filter }) => (
         <FilterInput
           key={key}
+          filterKey={key}
           {...filter}
         />
       ))}

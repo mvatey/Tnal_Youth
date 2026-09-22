@@ -1,4 +1,5 @@
 import SearchableSelect from "@/components/forms/SearchableSelect";
+import FormSelect from "@/components/forms/FormSelect";
 
 export default function DonationFilterSelect({
   label,
@@ -11,14 +12,20 @@ export default function DonationFilterSelect({
   required = false,
   disabled = false,
   includeAllOption = true,
+  // Only the branch picker realistically grows long enough (many branches)
+  // to need a search box -- month/year/activity/status/etc. lists are
+  // short and fixed, so a search box there is just an extra click.
+  searchable = false,
 }) {
   const mergedOptions = includeAllOption
     ? [{ value: "all", label: allLabel }, ...options]
     : options;
 
+  const Select = searchable ? SearchableSelect : FormSelect;
+
   return (
     <div className={className}>
-      <SearchableSelect
+      <Select
         label={showLabel ? label : undefined}
         value={value}
         onChange={(event) => onChange(event.target.value)}

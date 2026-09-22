@@ -2125,6 +2125,7 @@ export default function ActivityParticipantsPage({
               allLabel={t("activityPage.allBranchesFilterAll")}
               showLabel={false}
               className="w-full sm:w-[220px]"
+              searchable
             />
           </div>
 

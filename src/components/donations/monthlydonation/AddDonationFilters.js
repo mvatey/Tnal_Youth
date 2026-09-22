@@ -30,6 +30,7 @@ export default function AddDonationFilters({
         required
         disabled={branchScoped}
         includeAllOption={!branchScoped}
+        searchable
       />
       {/*
         Year before month — the month list depends on which year is

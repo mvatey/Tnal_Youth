@@ -73,6 +73,7 @@ export default function EventDonationFilters({
         showLabel={false}
         disabled={branchScoped}
         includeAllOption={!branchScoped}
+        searchable
       />
 
       <EventDateInput

@@ -868,7 +868,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
         {error ? <div className="mb-4 rounded-md border border-error/30 bg-error-bg px-4 py-3 text-sm text-error">{error}</div> : null}
         <div className="mb-6 grid grid-cols-1 items-end gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:max-w-[360px]">
-            <DonationFilterSelect label={t("donationPage.branch")} value={selectedBranch} onChange={handleBranchChange} options={localizedBranches} allLabel={t("donationPage.selectBranch")} className="w-full" required disabled={isDetailPage || isBranchScoped} />
+            <DonationFilterSelect label={t("donationPage.branch")} value={selectedBranch} onChange={handleBranchChange} options={localizedBranches} allLabel={t("donationPage.selectBranch")} className="w-full" required disabled={isDetailPage || isBranchScoped} searchable />
             <DonationFilterSelect label={t("donationPage.activity")} value={selectedEvent} onChange={handleEventChange} options={eventOptions} allLabel={t("donationPage.selectActivity")} className="w-full" required disabled={isDetailPage} />
           </div>
           {activeTab === "members" ? (

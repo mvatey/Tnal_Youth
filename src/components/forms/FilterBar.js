@@ -39,6 +39,7 @@ export default function FilterBar({
             showLabel={false}
             disabled={branchScoped}
             includeAllOption={!branchScoped}
+            searchable
           />
         )}
         <DonationFilterSelect

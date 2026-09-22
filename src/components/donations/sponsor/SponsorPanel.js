@@ -444,6 +444,7 @@ export default function SponsorPanel({
               className="w-full"
               disabled={branchScoped}
               includeAllOption={!branchScoped}
+              searchable
             />
 
             <DateFilter

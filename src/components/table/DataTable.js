@@ -8,6 +8,7 @@ import {
 import { Search } from "lucide-react";
 
 import SearchableSelect from "@/components/forms/SearchableSelect.js";
+import FormSelect from "@/components/forms/FormSelect.js";
 import FormDate from "@/components/forms/FormDate.js";
 import DateRangePicker from "@/components/forms/DateRangePicker.js";
 import Pagination from "@/components/navigation/Pagination";
@@ -264,8 +265,36 @@ export default function DataTable({
                                 )
                               }
                             />
-                          ) : (
+                          ) : filterName === "branch" ? (
                             <SearchableSelect
+                              name={
+                                filterName
+                              }
+                              value={
+                                filter.value
+                              }
+                              onChange={(
+                                event,
+                              ) =>
+                                filter.onChange(
+                                  event.target
+                                    .value,
+                                )
+                              }
+                              placeholder={
+                                filter.placeholder
+                              }
+                              options={
+                                filter.options ||
+                                []
+                              }
+                              disabled={
+                                filter.disabled ||
+                                false
+                              }
+                            />
+                          ) : (
+                            <FormSelect
                               name={
                                 filterName
                               }
