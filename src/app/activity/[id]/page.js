@@ -414,12 +414,19 @@ export default async function ActivityDetailPage({
    * included -- canManage intentionally excludes viewers (they can never
    * edit), but that's an editing rule, not a visibility one. An invited
    * (non-host) branch still never sees expense, viewer or not.
+   *
+   * ADMIN gets the same read-only visibility regardless of branch --
+   * computeCanManage (backend) deliberately excludes ADMIN too, since
+   * they can never edit, but ADMIN has org-wide oversight everywhere
+   * else in this app and the backend's own GET endpoints already permit
+   * any authenticated role with no branch scoping, so there was no
+   * actual reason the button itself was hidden from them.
    */
   const isHostBranchViewer =
     role === "viewer" &&
     currentUser?.branchId != null &&
     String(currentUser.branchId) === String(record.branchId);
-  const canViewExpense = canManage || isHostBranchViewer;
+  const canViewExpense = canManage || isHostBranchViewer || role === "admin";
 
   /*
    * The income-entry branch is different for an accepted invited branch.

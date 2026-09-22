@@ -154,12 +154,14 @@ function expenseToRow(expense) {
 export default function ExpensePage() {
   const { t } = useLanguage();
   const { user } = useAuth();
-  // A host-branch viewer can now reach this page (see the [id]/page.js
-  // canViewExpense change) but must never be able to add/edit/delete a
-  // real activity's expense records -- writes are already backend-
-  // enforced (SECRETARY/BRANCH_LEADER only), this just matches the UI to
-  // that, same isReadOnly pattern used by the income page.
-  const isReadOnly = normalizeRole(user?.role) === "viewer";
+  // A host-branch viewer, and now admin too, can reach this page (see
+  // the [id]/page.js canViewExpense change) but must never be able to
+  // add/edit/delete a real activity's expense records -- writes are
+  // already backend-enforced (SECRETARY/BRANCH_LEADER only), this just
+  // matches the UI to that, same isReadOnly pattern used by the income
+  // page.
+  const normalizedRole = normalizeRole(user?.role);
+  const isReadOnly = normalizedRole === "viewer" || normalizedRole === "admin";
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get("activityId");
