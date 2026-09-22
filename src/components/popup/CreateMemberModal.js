@@ -11,6 +11,7 @@ import { X } from "lucide-react";
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
+import SearchableSelect from "@/components/forms/SearchableSelect";
 import FormActionButton from "@/components/forms/FormActionButton";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -1404,7 +1405,7 @@ export default function CreateMemberModal({
                   required
                 />
 
-                <FormSelect
+                <SearchableSelect
                   label={t("memberPage.branch")}
                   name="branchId"
                   placeholder={t("memberPage.selectBranch")}

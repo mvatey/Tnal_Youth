@@ -7,7 +7,7 @@ import {
 } from "react";
 import { Search } from "lucide-react";
 
-import FormSelect from "@/components/forms/FormSelect.js";
+import SearchableSelect from "@/components/forms/SearchableSelect.js";
 import FormDate from "@/components/forms/FormDate.js";
 import DateRangePicker from "@/components/forms/DateRangePicker.js";
 import Pagination from "@/components/navigation/Pagination";
@@ -265,7 +265,7 @@ export default function DataTable({
                               }
                             />
                           ) : (
-                            <FormSelect
+                            <SearchableSelect
                               name={
                                 filterName
                               }

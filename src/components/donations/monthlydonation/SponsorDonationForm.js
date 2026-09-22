@@ -6,6 +6,7 @@ import { HiSaveAs } from "react-icons/hi";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import SaveAlert from "@/components/forms/savealert";
+import SearchableSelect from "@/components/forms/SearchableSelect";
 import sponsorOptions from "@/data/donation/sponsorOptions.json";
 import useCurrentMember from "@/hooks/useCurrentMember";
 import { useBranch, useBranchChangeGuard } from "@/context/BranchContext";
@@ -148,32 +149,17 @@ function SelectField({
   disabled = false,
 }) {
   return (
-    <label className={`block ${className}`}>
-      <span className="mb-2 block truncate whitespace-nowrap text-[13px] font-semibold leading-5 text-text-secondary">
-        {label}
-        {required && <RequiredMark />}
-      </span>
-      <span className="relative block">
-        <select
-          value={value}
-          disabled={disabled}
-          onChange={(event) => onChange(event.target.value)}
-          className="h-[34px] w-full appearance-none rounded-xl border border-border bg-bg-page-white px-4 pr-10 text-[13px] font-medium text-text-secondary outline-none transition focus:border-secondary disabled:cursor-not-allowed disabled:bg-bg-page-gray disabled:opacity-60"
-        >
-          <option value="">{placeholder}</option>
-          {options.map((option) => (
-            <option key={optionValue(option)} value={optionValue(option)}>
-              {optionLabel(option)}
-            </option>
-          ))}
-        </select>
-        <ChevronDown
-          size={16}
-          strokeWidth={2.4}
-          className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-primary"
-        />
-      </span>
-    </label>
+    <div className={className}>
+      <SearchableSelect
+        label={label}
+        required={required}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        options={options}
+        placeholder={placeholder}
+        disabled={disabled}
+      />
+    </div>
   );
 }
 

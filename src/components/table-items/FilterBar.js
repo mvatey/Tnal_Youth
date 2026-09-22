@@ -3,9 +3,10 @@
 import { useState } from "react";
 import DatePicker from "react-datepicker";
 import { km, enUS } from "date-fns/locale";
-import { CalendarDays, ChevronDown } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 
 import { useLanguage } from "@/context/LanguageContext";
+import SearchableSelect from "@/components/forms/SearchableSelect.js";
 
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -76,32 +77,16 @@ function FilterInput({
 
 
   return (
-    <div className="relative w-full sm:w-auto">
-
-      <select value={value} onChange={(e) => onChange?.(e.target.value)} className={`h-[34px] w-full min-w-0 appearance-none rounded-lg border border-border bg-bg-page-white px-3 pr-9 text-[12px] font-medium text-text-primary outline-none sm:w-auto ${width || "sm:min-w-[130px]"}`}>
-
-        <option value="all">
-          {placeholder}
-        </option>
-
-
-        {options.map((item)=>(
-          <option 
-            key={item}
-            value={item}
-          >
-            {item}
-          </option>
-        ))}
-
-      </select>
-
-
-      <ChevronDown
-          size={15}
-          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary"
-        />
-
+    <div className={`relative w-full sm:w-auto ${width || "sm:min-w-[130px]"}`}>
+      <SearchableSelect
+        value={value}
+        onChange={(event) => onChange?.(event.target.value)}
+        placeholder={placeholder}
+        options={[
+          { value: "all", label: placeholder },
+          ...options.map((item) => ({ value: item, label: item })),
+        ]}
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import PopupCard from "@/components/popup/PopupCard";
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
+import SearchableSelect from "@/components/forms/SearchableSelect";
 import MultiSelect from "@/components/forms/multiselect";
 import FormActionButton from "@/components/forms/FormActionButton";
 import { useLanguage } from "@/context/LanguageContext";
@@ -844,7 +845,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             />
           ) : (
             requiresBranch && (
-              <FormSelect
+              <SearchableSelect
                 label={t("usersPage.branch")}
                 name="branchId"
                 placeholder={t("usersPage.selectBranch")}
