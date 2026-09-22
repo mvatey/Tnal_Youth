@@ -412,6 +412,7 @@ const km = {
     noAssigned: "មិនទាន់មាន{title}",
     chooseMemberForRole: "សូមជ្រើសរើសសមាជិកម្នាក់ ដើម្បីកំណត់ជា{title}",
     addRole: "បន្ថែម{title}",
+    manageFromMemberProfile: "កែប្រែពីទំព័រព័ត៌មានលម្អិតរបស់សមាជិក",
     gender: "ភេទ",
     role: "តួនាទី",
     dateOfBirth: "ថ្ងៃខែឆ្នាំកំណើត",

@@ -21,7 +21,6 @@ import { HiSaveAs } from "react-icons/hi";
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
-import MultiSelect from "@/components/forms/multiselect";
 import { useLanguage } from "@/context/LanguageContext";
 
 const EMPTY_FORM = {
@@ -36,7 +35,6 @@ const EMPTY_FORM = {
   phone: "",
   email: "",
   statusId: "",
-  branchLeaderIds: [],
 };
 
 const LEVEL_OPTIONS = [
@@ -247,25 +245,6 @@ function getInitialForm(branch) {
         branch?.status_id ??
         "",
     ),
-
-    branchLeaderIds: Array.isArray(
-      branch?.branchLeaderIds,
-    )
-      ? branch.branchLeaderIds.map(String)
-      : (
-          branch?.leaders?.filter(
-            (person) =>
-              String(
-                person?.role ?? "",
-              ).toUpperCase() ===
-              "BRANCH_LEADER",
-          ) ?? []
-        ).map((person) =>
-          String(
-            person?.member_id ??
-              person?.id,
-          ),
-        ),
   };
 }
 
@@ -275,7 +254,6 @@ export default function CreateBranchModal({
   onClose,
   onSave,
   initialData = null,
-  leaderOptions = [],
 }) {
   const { t, label } =
     useLanguage();
@@ -285,24 +263,6 @@ export default function CreateBranchModal({
 
   const [form, setForm] =
     useState(EMPTY_FORM);
-
-    const currentLeaders =
-  useMemo(() => {
-    const leaders =
-      Array.isArray(
-        initialData?.leaders,
-      )
-        ? initialData.leaders
-        : [];
-
-    return leaders.filter(
-      (person) =>
-        String(
-          person?.role ?? "",
-        ).toUpperCase() ===
-        "BRANCH_LEADER",
-    );
-  }, [initialData]);
 
   const [provinceOptions, setProvinceOptions] =
     useState([]);
@@ -358,59 +318,6 @@ export default function CreateBranchModal({
         })),
       [t],
     );
-
-  const branchLeaderOptions =
-    useMemo(() => {
-      const options = [];
-
-      for (const currentLeader of currentLeaders) {
-        const currentLeaderId =
-          currentLeader?.member_id ??
-          currentLeader?.id;
-
-        const currentLeaderName =
-          currentLeader?.full_name_km ||
-          currentLeader?.fullNameKm ||
-          currentLeader?.full_name_en ||
-          currentLeader?.fullNameEn ||
-          t("branchPage.currentBranchLeader");
-
-        options.push({
-          label: currentLeaderName,
-          value: String(
-            currentLeaderId,
-          ),
-        });
-      }
-
-      for (
-        const option
-        of leaderOptions
-      ) {
-        const alreadyExists =
-          options.some(
-            (existing) =>
-              String(
-                existing.value,
-              ) ===
-              String(
-                option.value,
-              ),
-          );
-
-        if (!alreadyExists) {
-          options.push(
-            option,
-          );
-        }
-      }
-
-      return options;
-    }, [
-      currentLeaders,
-      leaderOptions,
-      t,
-    ]);
 
   useEffect(() => {
     setMounted(true);
@@ -908,48 +815,6 @@ try {
         },
       );
 
-    /*
-     * A branch can have several leaders now, so this diffs the working
-     * selection against who was already leading it -- one PUT per newly
-     * added leader, one DELETE per one removed, rather than a single
-     * "set the leader" call.
-     */
-        const originalLeaderIds = new Set(
-          currentLeaders.map((person) =>
-            String(
-              person?.member_id ?? person?.id,
-            ),
-          ),
-        );
-
-        const selectedLeaderIds = new Set(
-          form.branchLeaderIds,
-        );
-
-        for (const memberId of selectedLeaderIds) {
-          if (!originalLeaderIds.has(memberId)) {
-            await requestJson(
-              `/branches/${initialData.id}/leader`,
-              {
-                method: "PUT",
-                body: {
-                  member_id: Number(memberId),
-                },
-              },
-            );
-          }
-        }
-
-        for (const memberId of originalLeaderIds) {
-          if (!selectedLeaderIds.has(memberId)) {
-            await requestJson(
-              `/branches/${initialData.id}/leader?memberId=${memberId}`,
-              {
-                method: "DELETE",
-              },
-            );
-          }
-        }
       } else {
         savedBranch =
           await requestJson(
@@ -1253,36 +1118,6 @@ try {
               disabled={isLoadingLookups}
               required
             />
-
-            {isEditMode && (
-              <div className="space-y-2 rounded-xl border border-border bg-bg-page-gray p-4">
-                <MultiSelect
-                  label={t("branchPage.branchLeader")}
-                  name="branchLeaderIds"
-                  value={
-                    form.branchLeaderIds
-                  }
-                  onChange={updateField(
-                    "branchLeaderIds",
-                  )}
-                  placeholder={t("branchPage.selectBranchLeader")}
-                  options={
-                    branchLeaderOptions
-                  }
-                />
-
-                <p className="text-xs text-text-secondary">
-                  {t("branchPage.leaderHint")}
-                </p>
-
-                {leaderOptions.length ===
-                  0 && (
-                  <p className="text-xs font-medium text-warning">
-                    {t("branchPage.noLeaderCandidates")}
-                  </p>
-                )}
-              </div>
-            )}
 
             {error && (
               <p className="text-sm text-error">

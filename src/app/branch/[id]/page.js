@@ -382,7 +382,9 @@ function LeaderCard({
       </p>
 
       <p className="mt-1 text-xs text-text-secondary">
-        {t("branchPage.chooseMemberForRole").replace("{title}", title)}
+        {onAdd
+          ? t("branchPage.chooseMemberForRole").replace("{title}", title)
+          : t("branchPage.manageFromMemberProfile")}
       </p>
 
       {onAdd && <button
@@ -566,11 +568,6 @@ export default function BranchDetailPage() {
     setBranchDetails,
   ] = useState(null);
 
-  const [
-    leaderCandidates,
-    setLeaderCandidates,
-  ] = useState([]);
-
   const [members, setMembers] =
     useState([]);
 
@@ -643,14 +640,6 @@ const loadBranchDetails =
     [branchId],
   );
 
-  const loadLeaderCandidates =
-    useCallback(
-      async () => {
-        // Candidates are derived from the real branch-member response.
-      },
-      [],
-    );
-
   const loadMembers = useCallback(
     async (signal) => {
       try {
@@ -682,7 +671,6 @@ const loadBranchDetails =
 
         if (totalPages <= 1) {
           setMembers(firstContent);
-          setLeaderCandidates(firstContent);
           return;
         }
 
@@ -716,7 +704,6 @@ const loadBranchDetails =
         ];
 
         setMembers(allMembers);
-        setLeaderCandidates(allMembers);
       } catch (error) {
         if (
           error.name !== "AbortError"
@@ -745,7 +732,6 @@ const loadBranchDetails =
       try {
         await Promise.all([
           loadBranchDetails(signal),
-          loadLeaderCandidates(signal),
           loadMembers(signal),
         ]);
       } catch (error) {
@@ -770,7 +756,6 @@ const loadBranchDetails =
     [
       branchId,
       loadBranchDetails,
-      loadLeaderCandidates,
       loadMembers,
       t,
     ],
@@ -1041,84 +1026,6 @@ const loadBranchDetails =
         };
       }),
     [members, label, locale, t],
-  );
-
-  const leaderOptions = useMemo(
-    () =>
-      leaderCandidates.map(
-        (candidate) => ({
-          label:
-            (locale === "en"
-              ? candidate?.full_name_en || candidate?.fullNameEn
-              : candidate?.full_name_km || candidate?.fullNameKm) ||
-            candidate?.full_name_km ||
-            candidate?.fullNameKm ||
-            candidate?.full_name_en ||
-            candidate?.fullNameEn ||
-            t("branchPage.memberFallback").replace(
-              "{id}",
-              String(
-                candidate?.member_id ??
-                  candidate?.memberId ??
-                  candidate?.id ??
-                  "",
-              ),
-            ),
-
-          value: String(
-            candidate?.member_id ??
-              candidate?.memberId ??
-              candidate?.id ??
-              "",
-          ),
-
-          member: {
-            id:
-              candidate?.member_id ??
-              candidate?.memberId ??
-              candidate?.id,
-
-            nameKm:
-              candidate?.full_name_km ||
-              candidate?.fullNameKm ||
-              "-",
-
-            nameEn:
-              candidate?.full_name_en ||
-              candidate?.fullNameEn ||
-              "-",
-
-            phone:
-              candidate?.phone || "-",
-
-            email:
-              candidate?.email || "-",
-
-            gender:
-              getGenderLabel(
-                candidate?.gender,
-                label,
-                t,
-              ),
-
-            role:
-              getRoleLabel(
-                candidate?.current_role ||
-                  candidate?.currentRole,
-                label,
-                t,
-              ),
-
-            profilePhotoId:
-              candidate
-                ?.profile_photo_id ??
-              candidate
-                ?.profilePhotoId ??
-              null,
-          },
-        }),
-      ),
-    [leaderCandidates, label, t, locale],
   );
 
   const filteredMembers = useMemo(() => {
@@ -1516,9 +1423,6 @@ const loadBranchDetails =
                 key={person.id}
                 person={person}
                 title={t("branchPage.branchLeader")}
-                onAdd={isViewer ? undefined : () =>
-                  setIsEditModalOpen(true)
-                }
               />
             ))}
           </div>
@@ -1526,9 +1430,6 @@ const loadBranchDetails =
           <LeaderCard
             person={null}
             title={t("branchPage.branchLeader")}
-            onAdd={isViewer ? undefined : () =>
-              setIsEditModalOpen(true)
-            }
           />
         )}
       </section>
@@ -1614,18 +1515,7 @@ const loadBranchDetails =
         onClose={() =>
           setIsEditModalOpen(false)
         }
-        initialData={{
-          ...branch,
-
-          branchLeaderIds: branchLeaders.map(
-            (person) => person.id,
-          ),
-
-          leaders:
-            branchDetails?.leaders ??
-            [],
-        }}
-        leaderOptions={leaderOptions}
+        initialData={branch}
         onSave={handleBranchSaved}
       />}
 

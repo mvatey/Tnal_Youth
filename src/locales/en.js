@@ -412,6 +412,7 @@ const en = {
     noAssigned: "No {title} yet",
     chooseMemberForRole: "Choose one member to assign as {title}.",
     addRole: "Add {title}",
+    manageFromMemberProfile: "Manage this from the member's own profile page.",
     gender: "Gender",
     role: "Role",
     dateOfBirth: "Date of birth",
