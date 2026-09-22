@@ -4,6 +4,17 @@ const ERROR_TRANSLATIONS = [
   ["invalid request data", "ទិន្នន័យស្នើសុំមិនត្រឹមត្រូវ។"],
   ["bad credentials", "លេខទូរស័ព្ទ អ៊ីមែល ឬលេខសម្ងាត់មិនត្រឹមត្រូវ។"],
   ["invalid credentials", "លេខទូរស័ព្ទ អ៊ីមែល ឬលេខសម្ងាត់មិនត្រឹមត្រូវ។"],
+  // Login's own failure message (AuthServiceImpl#login) is deliberately
+  // the same generic wording whether the account doesn't exist or the
+  // password is wrong -- telling them apart would let the login form be
+  // used to discover which emails/phones/usernames are registered. Both
+  // of those raw messages ("Invalid username/phone/email or password" /
+  // "Invalid phone/email or password") contain "password", so without
+  // this more specific rule ahead of the generic "password" one below,
+  // both cases rendered as if the password specifically were wrong --
+  // misleading (it might not even be a real account) and less secure
+  // (it implies the account does exist).
+  ["or password", "លេខទូរស័ព្ទ អ៊ីមែល ឬលេខសម្ងាត់មិនត្រឹមត្រូវ។"],
   ["account not found", "រកមិនឃើញគណនីនេះទេ។"],
   ["user not found", "រកមិនឃើញគណនីនេះទេ។"],
   ["member not found", "រកមិនឃើញសមាជិកនេះទេ។"],
