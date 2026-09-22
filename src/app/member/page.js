@@ -286,6 +286,14 @@ function mapMember(
       member?.branch_id ??
       "",
 
+    positionLabel:
+      member?.position
+        ? getBranchLabel(
+            member.position,
+            label,
+          )
+        : "-",
+
     statusLabel:
       getStatusLabel(
         member?.status,
@@ -1341,13 +1349,27 @@ export default function MembersPage() {
 
     {
       header: t("memberPage.branch"),
-      width: "w-[18%]",
+      width: "w-[14%]",
       align: "left",
 
       render: (member) => (
         <span className="block w-full truncate">
           {
             member.branchLabel
+          }
+        </span>
+      ),
+    },
+
+    {
+      header: t("memberPage.position"),
+      width: "w-[14%]",
+      align: "left",
+
+      render: (member) => (
+        <span className="block w-full truncate">
+          {
+            member.positionLabel
           }
         </span>
       ),

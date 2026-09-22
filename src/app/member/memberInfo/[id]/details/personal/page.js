@@ -46,6 +46,7 @@ const EMPTY_FORM = {
   branch_id: "",
   assigned_branches: [],
   account_role: "",
+  positionId: "",
 
   member_level_id: "",
   tshirt_size: "",
@@ -348,6 +349,13 @@ function normalizePersonalInfo(
           )
         : "",
 
+    positionId:
+      data?.position_id != null
+        ? String(
+            data.position_id,
+          )
+        : "",
+
     /*
      * Staff (mainly secretaries) can be assigned to more than one
      * branch via branch_staff — this carries the full list so it
@@ -606,6 +614,11 @@ export default function PersonalPage() {
   const [
     roles,
     setRoles,
+  ] = useState([]);
+
+  const [
+    positions,
+    setPositions,
   ] = useState([]);
 
   const [
@@ -1076,6 +1089,17 @@ export default function PersonalPage() {
     );
 
     /*
+     * Positions
+     */
+    loadLookup(
+      "/lookups/positions",
+      setPositions,
+      {
+        valueMode: "id",
+      },
+    );
+
+    /*
      * Member levels
      */
     loadLookup(
@@ -1129,6 +1153,30 @@ export default function PersonalPage() {
       },
     ];
   }, [roles, form.account_role]);
+
+  /*
+   * Excludes any position mapped to BRANCH_LEADER -- becoming a branch
+   * leader goes through the dedicated leader-assignment flow (see the
+   * branch detail page), never as a side effect of picking a position
+   * here, and the backend rejects it anyway (see MemberPersonalInfo
+   * ServiceImpl#updatePosition). Same "inject the current value if
+   * missing" pattern as roleOptions.
+   */
+  const positionOptions = useMemo(() => {
+    const assignable = positions.filter(
+      (option) => option.mappedRole !== "BRANCH_LEADER",
+    );
+
+    const current = form.positionId;
+
+    if (!current || assignable.some((option) => option.value === current)) {
+      return assignable;
+    }
+
+    const currentOption = positions.find((option) => option.value === current);
+
+    return currentOption ? [...assignable, currentOption] : assignable;
+  }, [positions, form.positionId]);
 
   /*
    * The branch field shows every branch this member is tied to as
@@ -1315,7 +1363,7 @@ export default function PersonalPage() {
     (event) => {
       if (isReadOnly && !(
         canManageSensitiveFields &&
-        ["branch_id", "account_role", "member_status_id"].includes(field)
+        ["branch_id", "account_role", "member_status_id", "positionId"].includes(field)
       )) {
         return;
       }
@@ -1588,6 +1636,13 @@ export default function PersonalPage() {
                     ? Number(selectedSecretaryBranches[0])
                     : null)
               : Number(form.branch_id),
+
+          position_id:
+            form.positionId
+              ? Number(
+                  form.positionId,
+                )
+              : null,
 
           tshirt_size:
             form.tshirt_size ||
@@ -2271,6 +2326,29 @@ export default function PersonalPage() {
                 }
               />
             )}
+
+            {/* POSITION */}
+
+            <FormSelect
+              label={t("memberPage.position")}
+              value={
+                form.positionId
+              }
+              onChange={
+                handleChange(
+                  "positionId",
+                )
+              }
+              placeholder={t("memberPage.selectPosition")}
+              options={
+                positionOptions
+              }
+              disabled={
+                !canManageSensitiveFields
+              }
+              selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
+              adminEditable={isAdmin}
+            />
 
             {/* ROLE */}
 
