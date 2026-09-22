@@ -136,7 +136,11 @@ export default function SearchableSelect({
 
     updateRect();
 
-    const closeOnScroll = () => {
+    const closeOnScroll = (event) => {
+      // Scrolling the options list itself dispatches a scroll event too --
+      // without this check every attempt to scroll through a long list
+      // closed the dropdown before the list could move at all.
+      if (wrapperRef.current?.contains(event.target)) return;
       setOpen(false);
       setQuery("");
     };
