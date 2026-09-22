@@ -84,6 +84,10 @@ function TextField({
       <span className="relative block">
         {leadingIcon}
         <input
+          // Browsers default type="email" inputs to suppressing
+          // auto-capitalization -- explicitly turning it back on makes
+          // typing feel like any other text field.
+          autoCapitalize={props.type === "email" ? "sentences" : undefined}
           {...props}
           className={`${heightClass} w-full rounded-xl border border-border bg-bg-page-white px-4 text-[13px] font-medium text-text-secondary outline-none transition placeholder:text-text-mute focus:border-secondary focus:placeholder:text-transparent disabled:cursor-not-allowed disabled:bg-bg-page-gray disabled:opacity-60 ${
             leadingIcon ? "pl-10" : ""

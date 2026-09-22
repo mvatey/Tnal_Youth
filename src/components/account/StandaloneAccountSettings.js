@@ -652,6 +652,10 @@ function EmailSection({ currentEmail, onEmailChanged }) {
 
             <input
               type="email"
+              // Browsers default type="email" inputs to suppressing
+              // auto-capitalization -- explicitly turning it back on
+              // makes typing feel like any other text field.
+              autoCapitalize="sentences"
               value={newEmail}
               onChange={(event) => setNewEmail(event.target.value)}
               placeholder="example@email.com"

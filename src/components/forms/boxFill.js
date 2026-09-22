@@ -191,6 +191,12 @@ export default function BoxFill({
             name={name}
             list={list}
             autoComplete={autoComplete}
+            // Browsers default type="email" inputs to suppressing
+            // auto-capitalization (treating it like a username/password
+            // field) -- explicitly turning it back on here makes typing
+            // feel like any other text field, so a capital letter isn't
+            // fighting the keyboard's own default behavior.
+            autoCapitalize={type === "email" ? "sentences" : undefined}
             {...sharedValueProps}
             readOnly={readOnly}
             disabled={disabled}
