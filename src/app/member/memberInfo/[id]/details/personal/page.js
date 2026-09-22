@@ -2453,7 +2453,7 @@ export default function PersonalPage() {
                 roleOptions
               }
               disabled={
-                !canManageSensitiveFields || !form.has_account
+                !canManageSensitiveFields || !form.has_account || Boolean(form.positionId)
               }
               selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
               adminEditable={isAdmin}

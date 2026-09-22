@@ -33,6 +33,7 @@ const EMPTY_FORM = {
   phone: "",
   email: "",
   role: "",
+  positionId: "",
   viewerScope: "",
   branchId: "",
   password: "",
@@ -161,6 +162,8 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
   const [memberStatusId, setMemberStatusId] = useState("");
   const [originalMemberStatusId, setOriginalMemberStatusId] = useState("");
   const [originalRole, setOriginalRole] = useState("");
+  const [positions, setPositions] = useState([]);
+  const [originalPositionId, setOriginalPositionId] = useState("");
   const [branchSelectionIds, setBranchSelectionIds] = useState([]);
   const [originalBranchIds, setOriginalBranchIds] = useState([]);
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -245,6 +248,11 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
         const memberPhone = personalInfo?.phone || "";
         const memberEmail = personalInfo?.email || "";
 
+        const positionId =
+          personalInfo?.position_id != null
+            ? String(personalInfo.position_id)
+            : "";
+
         setForm({
           fullNameKm: personalInfo?.full_name_km || personalInfo?.fullNameKm || "",
           fullNameEn: personalInfo?.full_name_en || personalInfo?.fullNameEn || "",
@@ -252,6 +260,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
           phone: memberPhone,
           email: memberEmail,
           role,
+          positionId,
           viewerScope: "",
           branchId: primaryBranchId != null ? String(primaryBranchId) : "",
           password: "",
@@ -262,6 +271,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
         );
 
         setOriginalRole(role);
+        setOriginalPositionId(positionId);
 
         const branchSelection =
           role === "SECRETARY"
@@ -348,6 +358,80 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
 
     return () => controller.abort();
   }, [locale, open, t]);
+
+  useEffect(() => {
+    if (!open || !isMemberLinked) return;
+
+    const controller = new AbortController();
+
+    fetch("/api/lookups/positions", {
+      credentials: "include",
+      cache: "no-store",
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message || t("usersPage.loadPositionsFailed", "Cannot load positions"));
+        const rows = Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
+        setPositions(
+          rows
+            .map((position) => ({
+              value: String(position?.id ?? position?.value ?? ""),
+              label:
+                (locale === "en"
+                  ? position?.labelEn || position?.label_en || position?.labelKm || position?.label_km
+                  : position?.labelKm || position?.label_km || position?.labelEn || position?.label_en) ||
+                position?.label ||
+                String(position?.id ?? ""),
+              mappedRole: String(
+                position?.mappedRole || position?.mapped_role || "",
+              ).toUpperCase(),
+            }))
+            .filter((position) => position.value),
+        );
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") setPositions([]);
+      });
+
+    return () => controller.abort();
+  }, [locale, open, isMemberLinked, t]);
+
+  const positionOptions = (() => {
+    const current = form.positionId;
+
+    if (!current || positions.some((option) => option.value === current)) {
+      return positions;
+    }
+
+    const currentOption = positions.find((option) => option.value === current);
+
+    return currentOption ? [...positions, currentOption] : positions;
+  })();
+
+  /*
+   * Mirrors CreateMemberModal's updatePosition and the personal-info
+   * page's handlePositionChange: picking a position whose mappedRole is
+   * set also updates Role to match, locking Role (see the FormSelect
+   * below) so it can't independently disagree with the position.
+   */
+  const handlePositionChange = (event) => {
+    const value = event.target.value;
+
+    const selectedPosition = positions.find(
+      (option) => option.value === value,
+    );
+
+    setForm((previousForm) => ({
+      ...previousForm,
+      positionId: value,
+      role: selectedPosition?.mappedRole || previousForm.role,
+    }));
+
+    setShowValidationError(false);
+    setSubmitError("");
+  };
 
   if (!open) {
     return null;
@@ -446,6 +530,16 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       branch_id: isSecretary
         ? (form.branchId ? Number(form.branchId) : branchSelectionIds[0] ? Number(branchSelectionIds[0]) : null)
         : (form.branchId ? Number(form.branchId) : null),
+      // A branch-leader-mapped position is never sent through this
+      // generic slot -- the backend rejects it outright, since becoming
+      // leader has to go through the account/role call below instead,
+      // the only path that knows how to demote whoever currently holds
+      // it (see MemberPersonalInfoServiceImpl#updatePosition).
+      position_id:
+        form.positionId &&
+        positions.find((option) => option.value === form.positionId)?.mappedRole !== "BRANCH_LEADER"
+          ? Number(form.positionId)
+          : null,
       tshirt_size: personalInfoBase?.tshirt_size || personalInfoBase?.tshirtSize || null,
       current_address: personalInfoBase?.current_address || personalInfoBase?.currentAddress || null,
       permanent_address: personalInfoBase?.permanent_address || personalInfoBase?.permanentAddress || null,
@@ -459,11 +553,50 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
 
     let updatedRole = originalRole;
     if (form.role && form.role !== originalRole) {
-      const roleResponse = await fetchJson(`/api/backend/members/${memberId}/account/role`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: form.role }),
-      });
+      const updateRole = (confirmReplaceLeader) =>
+        fetchJson(`/api/backend/members/${memberId}/account/role`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            role: form.role,
+            ...(confirmReplaceLeader ? { confirm_replace_leader: true } : {}),
+          }),
+        });
+
+      let roleResponse;
+
+      try {
+        roleResponse = await updateRole(false);
+      } catch (roleError) {
+        // Same confirm/replace-existing-leader prompt as CreateMemberModal
+        // and the personal-info page: promoting to BRANCH_LEADER when the
+        // branch already has one active fails with this exact message,
+        // naming who currently holds it, instead of silently demoting them.
+        const leaderConflictMatch =
+          typeof roleError?.message === "string" &&
+          roleError.message.match(/already has an active leader:\s*(.+?)\./);
+
+        if (!leaderConflictMatch) {
+          throw roleError;
+        }
+
+        const existingLeaderName = leaderConflictMatch[1];
+
+        const wantsReplace = window.confirm(
+          t("memberPage.confirmReplaceLeaderPrefix") +
+            existingLeaderName +
+            t("memberPage.confirmReplaceLeaderSuffix"),
+        );
+
+        if (!wantsReplace) {
+          throw new Error(
+            t("memberPage.confirmReplaceLeaderPrefix") + existingLeaderName,
+          );
+        }
+
+        roleResponse = await updateRole(true);
+      }
+
       updatedRole = roleResponse?.role || form.role;
     }
 
@@ -807,6 +940,17 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
           below it.
         */}
         <div className="space-y-4 rounded-xl border border-border bg-bg-page-gray/40 p-4">
+          {isMemberLinked && (
+            <FormSelect
+              label={t("memberPage.position")}
+              name="positionId"
+              placeholder={t("memberPage.selectPosition")}
+              options={positionOptions}
+              value={form.positionId}
+              onChange={handlePositionChange}
+            />
+          )}
+
           <FormSelect
             label={t("usersPage.role")}
             name="role"
@@ -814,6 +958,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             options={isMemberLinked ? memberLinkedRoleOptions : roleOptions}
             value={form.role}
             onChange={update("role")}
+            disabled={isMemberLinked && Boolean(form.positionId)}
             required
           />
 
