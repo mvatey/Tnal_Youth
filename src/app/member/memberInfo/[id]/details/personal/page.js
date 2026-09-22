@@ -1748,6 +1748,19 @@ export default function PersonalPage() {
                   JSON.stringify({
                     role:
                       selectedRole,
+
+                    // Only meaningful for BRANCH_LEADER -- which
+                    // specific leader-mapped position (e.g. "deputy")
+                    // this promotion should be recorded under, instead
+                    // of silently normalizing to the canonical one.
+                    position_id:
+                      selectedRole ===
+                        "BRANCH_LEADER" &&
+                      form.positionId
+                        ? Number(
+                            form.positionId,
+                          )
+                        : null,
                   }),
               },
             );

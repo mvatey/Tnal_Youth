@@ -556,7 +556,17 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       const roleResponse = await fetchJson(`/api/backend/members/${memberId}/account/role`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: form.role }),
+        body: JSON.stringify({
+          role: form.role,
+          // Only meaningful for BRANCH_LEADER -- which specific
+          // leader-mapped position (e.g. "deputy") this promotion
+          // should be recorded under, instead of silently
+          // normalizing to the canonical one.
+          position_id:
+            form.role === "BRANCH_LEADER" && form.positionId
+              ? Number(form.positionId)
+              : null,
+        }),
       });
 
       updatedRole = roleResponse?.role || form.role;
