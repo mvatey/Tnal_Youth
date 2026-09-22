@@ -99,12 +99,18 @@ function FilterInput({
     );
   }
 
+  // placeholder explicitly cleared -- FormSelect's own default ("ជ្រើសរើស")
+  // otherwise still adds an extra blank "reset" option whenever none of
+  // its options has value:"" already, and mergedOptions' own value:"all"
+  // entry (built from this filter's real placeholder text) already fills
+  // that role, so leaving it unset produced two differently-labeled
+  // "reset" options instead of one.
   return (
     <div className={`relative w-full sm:w-auto ${width || "sm:min-w-[130px]"}`}>
       <FormSelect
         value={value}
         onChange={(event) => onChange?.(event.target.value)}
-        placeholder={placeholder}
+        placeholder=""
         options={mergedOptions}
       />
     </div>

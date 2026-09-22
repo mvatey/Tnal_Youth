@@ -1204,8 +1204,6 @@ export default function BranchPage() {
   const branchLevelOptions =
     useMemo(
       () => [
-        t("branchPage.allLevels"),
-
         t("branchPage.province"),
         t("branchPage.district"),
         t("branchPage.commune"),
@@ -1215,10 +1213,8 @@ export default function BranchPage() {
 
   const provinceOptions =
     useMemo(
-      () => [
-        t("branchPage.allProvinces"),
-
-        ...provinceLookups
+      () =>
+        provinceLookups
           .map(
             (province) =>
               getProvinceLabel(
@@ -1229,7 +1225,6 @@ export default function BranchPage() {
           .filter(
             Boolean,
           ),
-      ],
       [
         provinceLookups,
         label,
@@ -1239,10 +1234,8 @@ export default function BranchPage() {
 
   const branchStatusOptions =
     useMemo(
-      () => [
-        t("branchPage.allStatuses"),
-
-        ...statusLookups
+      () =>
+        statusLookups
           .map(
             (status) =>
               getStatusLabel(
@@ -1253,7 +1246,6 @@ export default function BranchPage() {
           .filter(
             Boolean,
           ),
-      ],
       [
         statusLookups,
         label,
@@ -1317,6 +1309,7 @@ export default function BranchPage() {
              */
             const matchesLevel =
               !selectedLevel ||
+              selectedLevel === "all" ||
               selectedLevel ===
                 ALL_LEVELS_LABEL ||
               selectedLevel ===
@@ -1329,6 +1322,7 @@ export default function BranchPage() {
              */
             const matchesProvince =
               !selectedProvince ||
+              selectedProvince === "all" ||
               selectedProvince ===
                 ALL_PROVINCES_LABEL ||
               selectedProvince ===
@@ -1341,6 +1335,7 @@ export default function BranchPage() {
              */
             const matchesStatus =
               !selectedStatus ||
+              selectedStatus === "all" ||
               selectedStatus ===
                 ALL_STATUSES_LABEL ||
               selectedStatus ===
