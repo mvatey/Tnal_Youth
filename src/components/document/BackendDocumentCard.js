@@ -103,22 +103,33 @@ export default function BackendDocumentCard({ document, onView, onDelete }) {
             className="h-full w-full object-contain"
           />
         ) : isPdf ? (
-          // The browser's built-in PDF viewer draws its own scrollbar/page
-          // controls along the iframe's right edge -- toolbar=0/navpanes=0
-          // hide the toolbar but not that. Rendering the iframe wider than
-          // its container and centering it pushes that strip outside the
-          // visible area -- but the clip boundary has to be THIS inner
-          // wrapper's own edge, not the button's: the button's overflow-
-          // hidden clips at its padding box, so part of the extra width
-          // was landing in the button's own p-2 padding (still visible)
-          // instead of actually being clipped.
-          <div className="flex h-full w-full items-center justify-center overflow-hidden">
-            <iframe
-              src={`${previewDocument.fileUrl}#page=1&view=FitH&toolbar=0&navpanes=0`}
-              title={previewDocument.fileName}
-              className="pointer-events-none h-full w-[calc(100%+40px)] shrink-0 border-0 bg-bg-page-white"
-            />
-          </div>
+          <>
+            {/* Desktop only -- mobile browsers don't render an iframed
+                PDF inline at all, they fall back to their own generic
+                native "Open" prompt, which looked broken crammed into
+                this small a tile. The browser's built-in PDF viewer
+                draws its own scrollbar/page controls along the iframe's
+                right edge -- toolbar=0/navpanes=0 hide the toolbar but
+                not that. Rendering the iframe wider than its container
+                and centering it pushes that strip outside the visible
+                area -- but the clip boundary has to be THIS inner
+                wrapper's own edge, not the button's: the button's
+                overflow-hidden clips at its padding box, so part of the
+                extra width was landing in the button's own p-2 padding
+                (still visible) instead of actually being clipped. */}
+            <div className="hidden h-full w-full items-center justify-center overflow-hidden sm:flex">
+              <iframe
+                src={`${previewDocument.fileUrl}#page=1&view=FitH&toolbar=0&navpanes=0`}
+                title={previewDocument.fileName}
+                className="pointer-events-none h-full w-[calc(100%+40px)] shrink-0 border-0 bg-bg-page-white"
+              />
+            </div>
+
+            <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-text-mute sm:hidden">
+              <FileText size={52} strokeWidth={1.5} />
+              <span className="text-sm">ចុចដើម្បីមើលឯកសារ</span>
+            </div>
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center gap-3 text-text-mute">
             <FileText size={52} strokeWidth={1.5} />

@@ -842,6 +842,8 @@ const en = {
     cannotPreview: "This document cannot be previewed.",
     downloadToOpenExpanded: "Download this document type to open it.",
     downloadToOpen: "Click download to open this document.",
+    openPdfOnMobile: "Your phone can't show a PDF inline here.",
+    openDocument: "Open document",
     closePreview: "Close document preview",
     closeFullView: "Close full document view",
     fullScreenHint: "Click to view full screen",

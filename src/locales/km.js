@@ -842,6 +842,8 @@ const km = {
     cannotPreview: "មិនអាចបង្ហាញឯកសារនេះបាន",
     downloadToOpenExpanded: "ប្រភេទឯកសារនេះត្រូវទាញយកដើម្បីបើកមើល",
     downloadToOpen: "ចុចទាញយកដើម្បីបើកឯកសារនេះ",
+    openPdfOnMobile: "ទូរសព្ទដៃមិនអាចបង្ហាញ PDF ដោយផ្ទាល់នៅទីនេះបានទេ",
+    openDocument: "បើកឯកសារ",
     closePreview: "បិទការមើលឯកសារ",
     closeFullView: "បិទការមើលឯកសារពេញអេក្រង់",
     fullScreenHint: "ចុចដើម្បីមើលពេញអេក្រង់",

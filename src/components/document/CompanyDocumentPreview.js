@@ -155,11 +155,30 @@ export default function CompanyDocumentPreview({ document, onClose }) {
 
     if (isPdf) {
       return (
-        <iframe
-          src={`${fileUrl}#view=FitH`}
-          title={fileName}
-          className="h-full w-full border-0 bg-bg-page-white"
-        />
+        <>
+          {/* Desktop only -- mobile browsers don't render an iframed PDF
+              inline at all, they fall back to their own generic native
+              "Open" prompt inside this frame instead. */}
+          <iframe
+            src={`${fileUrl}#view=FitH`}
+            title={fileName}
+            className="hidden h-full w-full border-0 bg-bg-page-white sm:block"
+          />
+
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-text-mute sm:hidden">
+            <FileText size={50} />
+            <span className="px-4 text-center text-sm">
+              {t("documentPage.openPdfOnMobile")}
+            </span>
+            <button
+              type="button"
+              onClick={() => window.open(fileUrl, "_blank", "noopener,noreferrer")}
+              className="flex h-[34px] items-center gap-2 rounded-lg bg-secondary px-4 text-sm font-semibold text-white transition hover:bg-secondary-hover"
+            >
+              {t("documentPage.openDocument")}
+            </button>
+          </div>
+        </>
       );
     }
 
