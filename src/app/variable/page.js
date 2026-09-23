@@ -1053,7 +1053,7 @@ export default function VariablePage() {
             }
           }}
         >
-          <div className="w-full max-w-[580px] rounded-xl bg-bg-page-white shadow-2xl">
+          <div className="max-h-[calc(100vh-1.5rem)] w-full max-w-[580px] overflow-y-auto rounded-xl bg-bg-page-white shadow-2xl sm:max-h-[90vh]">
             <form onSubmit={handleSubmit}>
               {/* Header */}
               <div className="flex items-start justify-between px-7 pb-3 pt-6">
@@ -1210,7 +1210,7 @@ export default function VariablePage() {
             }
           }}
         >
-          <div className="w-full max-w-[480px] rounded-xl bg-bg-page-white shadow-2xl">
+          <div className="max-h-[calc(100vh-1.5rem)] w-full max-w-[480px] overflow-y-auto rounded-xl bg-bg-page-white shadow-2xl sm:max-h-[90vh]">
             <form onSubmit={handleRateSubmit}>
               <div className="flex items-start justify-between px-7 pb-3 pt-6">
                 <h2 className="text-xl font-bold text-text-secondary">
