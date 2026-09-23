@@ -589,16 +589,16 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       // leader has to go through the account/role call below instead,
       // the only path that knows how to demote whoever currently holds
       // it (see MemberPersonalInfoServiceImpl#updatePosition). A
-      // viewer-mapped position is excluded the same way, for a
-      // different reason: a VIEWER holds no branch_staff row at all
-      // (see updateAccountRole's VIEWER branch) -- the position only
-      // ever serves to auto-fill role=VIEWER here, never to record a
-      // staff position label.
+      // viewer-mapped position IS sent through here, though (unlike
+      // BRANCH_LEADER) -- it's the only place that ever records which
+      // specific VIEWER-mapped position was chosen, as a non-primary
+      // row the same way a plain MEMBER's custom position would be.
+      // updateAccountRole's VIEWER branch specifically preserves this
+      // row when it runs afterward (endAllActiveAssignmentsExceptViewerPositions)
+      // instead of wiping it like a normal demotion would.
       position_id:
         form.positionId &&
-        !["BRANCH_LEADER", "VIEWER"].includes(
-          positions.find((option) => option.value === form.positionId)?.mappedRole,
-        )
+        positions.find((option) => option.value === form.positionId)?.mappedRole !== "BRANCH_LEADER"
           ? Number(form.positionId)
           : null,
       tshirt_size: personalInfoBase?.tshirt_size || personalInfoBase?.tshirtSize || null,
