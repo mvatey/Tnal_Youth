@@ -33,7 +33,11 @@ const POSITION_PATH = "positions";
 
 // The role a member holding this position is auto-assigned when created —
 // see CreateMemberModal's position picker. Every position maps to one of
-// these three; positions like "Support" simply map to MEMBER.
+// these four; positions like "Support" simply map to MEMBER.
+// mappedViewerScope is only meaningful when mappedRole is VIEWER -- which
+// branch-scoped level (BRANCH_LEADER or SECRETARY) the resulting
+// member-linked viewer is assigned, e.g. two distinct positions "Viewer
+// (as Branch Leader)" and "Viewer (as Secretary)".
 const EMPTY_FORM = {
   nameKm: "",
   nameEn: "",
@@ -41,6 +45,7 @@ const EMPTY_FORM = {
   status: "ACTIVE",
   category: "OTHER",
   mappedRole: "MEMBER",
+  mappedViewerScope: "",
 };
 
 // Fixed currency pair — this app tracks donations in USD/KHR, so the
@@ -146,6 +151,10 @@ export default function VariablePage() {
     { label: t("variablePage.secretary"), value: "SECRETARY" },
     { label: t("variablePage.member"), value: "MEMBER" },
     { label: t("variablePage.viewer"), value: "VIEWER" },
+  ], [t]);
+  const positionViewerScopeOptions = useMemo(() => [
+    { label: t("variablePage.branchLeader"), value: "BRANCH_LEADER" },
+    { label: t("variablePage.secretary"), value: "SECRETARY" },
   ], [t]);
   const statusFilterOptions = useMemo(() => [
     { label: t("variablePage.allStatuses"), value: ALL_STATUS },
@@ -452,6 +461,7 @@ export default function VariablePage() {
       status: item.active ? "ACTIVE" : "INACTIVE",
       category: item.category || "OTHER",
       mappedRole: item.mappedRole || "MEMBER",
+      mappedViewerScope: item.mappedViewerScope || "",
     });
 
     setFormError("");
@@ -484,6 +494,11 @@ export default function VariablePage() {
       return;
     }
 
+    if (isPosition && form.mappedRole === "VIEWER" && !form.mappedViewerScope) {
+      setFormError(t("variablePage.mappedViewerScopeRequired"));
+      return;
+    }
+
     try {
       setSaving(true);
       setFormError("");
@@ -497,7 +512,13 @@ export default function VariablePage() {
             description: form.description.trim() || null,
             sortOrder: editingItem.sortOrder ?? null,
             ...(isPaymentMethod ? { category: form.category } : {}),
-            ...(isPosition ? { mappedRole: form.mappedRole } : {}),
+            ...(isPosition
+              ? {
+                  mappedRole: form.mappedRole,
+                  mappedViewerScope:
+                    form.mappedRole === "VIEWER" ? form.mappedViewerScope : null,
+                }
+              : {}),
           }),
         });
 
@@ -522,7 +543,13 @@ export default function VariablePage() {
             description: form.description.trim() || null,
             active: form.status === "ACTIVE",
             ...(isPaymentMethod ? { category: form.category } : {}),
-            ...(isPosition ? { mappedRole: form.mappedRole } : {}),
+            ...(isPosition
+              ? {
+                  mappedRole: form.mappedRole,
+                  mappedViewerScope:
+                    form.mappedRole === "VIEWER" ? form.mappedViewerScope : null,
+                }
+              : {}),
           }),
         });
       }
@@ -960,6 +987,16 @@ export default function VariablePage() {
                             {positionRoleOptions.find(
                               (option) => option.value === item.mappedRole,
                             )?.label || item.mappedRole || "-"}
+                            {item.mappedRole === "VIEWER" && item.mappedViewerScope && (
+                              <>
+                                {" "}
+                                (
+                                {positionViewerScopeOptions.find(
+                                  (option) => option.value === item.mappedViewerScope,
+                                )?.label || item.mappedViewerScope}
+                                )
+                              </>
+                            )}
                           </td>
                         )}
 
@@ -1086,6 +1123,18 @@ export default function VariablePage() {
                     onChange={updateField("mappedRole")}
                     placeholder=""
                     options={positionRoleOptions}
+                  />
+                )}
+
+                {isPosition && form.mappedRole === "VIEWER" && (
+                  <FormSelect
+                    label={t("variablePage.mappedViewerScope")}
+                    name="variable-position-viewer-scope"
+                    value={form.mappedViewerScope}
+                    onChange={updateField("mappedViewerScope")}
+                    placeholder={t("variablePage.selectMappedViewerScope")}
+                    options={positionViewerScopeOptions}
+                    required
                   />
                 )}
 

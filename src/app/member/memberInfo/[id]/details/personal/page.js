@@ -1221,7 +1221,10 @@ export default function PersonalPage() {
    * mappedRole is set also updates the Role field to match, so admins see
    * the same "position implies role" behavior when editing as when
    * creating. Only auto-fills when a mapping exists -- most positions
-   * have none, and leave Role exactly as the admin already set it.
+   * have none, and leave Role exactly as the admin already set it. A
+   * VIEWER-mapped position can also carry its own mappedViewerScope
+   * (e.g. "Viewer (as Branch Leader)" vs "Viewer (as Secretary)") --
+   * when it does, that auto-fills viewer_scope the same way.
    */
   const handlePositionChange = (event) => {
     if (isReadOnly && !canManageSensitiveFields) {
@@ -1234,6 +1237,9 @@ export default function PersonalPage() {
       (option) => option.value === value,
     );
 
+    const nextRole =
+      selectedPosition?.mappedRole || form.account_role;
+
     setError("");
     setSuccess("");
     setHasUnsavedChanges(true);
@@ -1241,8 +1247,11 @@ export default function PersonalPage() {
     setForm((previousForm) => ({
       ...previousForm,
       positionId: value,
-      account_role:
-        selectedPosition?.mappedRole || previousForm.account_role,
+      account_role: nextRole,
+      viewer_scope:
+        nextRole === "VIEWER"
+          ? selectedPosition?.mappedViewerScope || previousForm.viewer_scope
+          : "",
     }));
   };
 
@@ -2548,9 +2557,10 @@ export default function PersonalPage() {
               options={
                 roleOptions
               }
-              disabled={
-                !canManageSensitiveFields || !form.has_account || Boolean(form.positionId)
-              }
+              // Role is always driven by Position (see
+              // handlePositionChange) -- never editable directly here,
+              // position selected or not.
+              disabled
               selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
               adminEditable={isAdmin}
             />

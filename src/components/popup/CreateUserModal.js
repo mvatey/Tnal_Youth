@@ -428,6 +428,9 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
               mappedRole: String(
                 position?.mappedRole || position?.mapped_role || "",
               ).toUpperCase(),
+              mappedViewerScope: String(
+                position?.mappedViewerScope || position?.mapped_viewer_scope || "",
+              ).toUpperCase(),
             }))
             .filter((position) => position.value),
         );
@@ -455,7 +458,11 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
    * Mirrors CreateMemberModal's updatePosition and the personal-info
    * page's handlePositionChange: picking a position whose mappedRole is
    * set also updates Role to match, locking Role (see the FormSelect
-   * below) so it can't independently disagree with the position.
+   * below) so it can't independently disagree with the position. A
+   * VIEWER-mapped position can also carry its own mappedViewerScope
+   * (e.g. "Viewer (as Branch Leader)" vs "Viewer (as Secretary)") --
+   * when it does, that auto-fills viewerScope the same way, so picking
+   * that position alone is enough without a separate manual scope pick.
    */
   const handlePositionChange = (event) => {
     const value = event.target.value;
@@ -464,10 +471,16 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       (option) => option.value === value,
     );
 
+    const nextRole = selectedPosition?.mappedRole || form.role;
+
     setForm((previousForm) => ({
       ...previousForm,
       positionId: value,
-      role: selectedPosition?.mappedRole || previousForm.role,
+      role: nextRole,
+      viewerScope:
+        nextRole === "VIEWER"
+          ? selectedPosition?.mappedViewerScope || previousForm.viewerScope
+          : "",
     }));
 
     setShowValidationError(false);
@@ -1003,7 +1016,10 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             options={isMemberLinked ? memberLinkedRoleOptions : roleOptions}
             value={form.role}
             onChange={update("role")}
-            disabled={isMemberLinked && Boolean(form.positionId)}
+            // Member-linked role is always driven by Position (see
+            // handlePositionChange) -- never editable directly here,
+            // position selected or not.
+            disabled={isMemberLinked}
             required
           />
 
