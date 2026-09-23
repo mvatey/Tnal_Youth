@@ -691,6 +691,12 @@ export default function ActivityMembersPage({
                       t,
                     ),
 
+                  position:
+                    label(
+                      member.position,
+                      "-",
+                    ),
+
                   branch:
                     label(
                       member.branch,

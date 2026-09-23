@@ -406,6 +406,11 @@ export default function ActivityParticipantsPage({
   ] = useState("all");
 
   const [
+    selectedPosition,
+    setSelectedPosition,
+  ] = useState("all");
+
+  const [
     selectedBranch,
     setSelectedBranch,
   ] = useState("all");
@@ -719,6 +724,12 @@ export default function ActivityParticipantsPage({
                   member?.accountRole,
                 t,
               ),
+
+            position:
+              getLabel(
+                member?.position,
+                locale,
+              ) || "-",
 
             branch:
               getLabel(
@@ -1307,6 +1318,27 @@ export default function ActivityParticipantsPage({
       ],
     );
 
+  const positions =
+    useMemo(
+      () => [
+        ...new Set(
+          activityParticipants
+            .map(
+              (item) =>
+                item.position,
+            )
+            .filter(
+              (value) =>
+                value &&
+                value !== "-",
+            ),
+        ),
+      ],
+      [
+        activityParticipants,
+      ],
+    );
+
   const branches =
     useMemo(
       () => [
@@ -1374,6 +1406,13 @@ export default function ActivityParticipantsPage({
               .role ===
               selectedRole;
 
+          const matchesPosition =
+            selectedPosition ===
+              "all" ||
+            participant
+              .position ===
+              selectedPosition;
+
           const matchesBranch =
             selectedBranch ===
               "all" ||
@@ -1390,6 +1429,7 @@ export default function ActivityParticipantsPage({
           return (
             matchesSearch &&
             matchesRole &&
+            matchesPosition &&
             matchesBranch &&
             matchesDate
           );
@@ -1399,6 +1439,7 @@ export default function ActivityParticipantsPage({
       activityParticipants,
       searchQuery,
       selectedRole,
+      selectedPosition,
       selectedBranch,
       selectedDate,
     ]);
@@ -1409,6 +1450,7 @@ export default function ActivityParticipantsPage({
       { header: t("activityPage.participantName"), accessor: "name" },
       { header: t("memberPage.email"), accessor: "email" },
       { header: t("memberPage.gender"), accessor: "gender" },
+      { header: t("memberPage.position"), accessor: "position" },
       { header: t("memberPage.role"), accessor: "role" },
       { header: t("memberPage.branch"), accessor: "branch" },
       { header: t("activityPage.joinedDate"), accessor: "joinedDate" },
@@ -1488,7 +1530,7 @@ export default function ActivityParticipantsPage({
 
           label: t("memberPage.gender"),
 
-          width: "10%",
+          width: "8%",
 
           align:
             "center",
@@ -1500,12 +1542,29 @@ export default function ActivityParticipantsPage({
         },
 
         {
+          key: "position",
+
+          label:
+            t("memberPage.position"),
+
+          width: "10%",
+
+          align:
+            "center",
+
+          render:
+            (row) =>
+              row.position ||
+              "-",
+        },
+
+        {
           key: "role",
 
           label:
             t("memberPage.role"),
 
-          width: "10%",
+          width: "8%",
 
           align:
             "center",
@@ -1999,6 +2058,22 @@ export default function ActivityParticipantsPage({
 
           <FilterBar
             filters={[
+              {
+                key: "position",
+
+                value:
+                  selectedPosition,
+
+                onChange:
+                  setSelectedPosition,
+
+                placeholder:
+                  t("memberPage.position"),
+
+                options:
+                  positions,
+              },
+
               {
                 key: "role",
 

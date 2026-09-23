@@ -591,18 +591,6 @@ export default function CreateMemberModal({
       user?.role || "",
     ).toUpperCase();
 
-  // Display-only -- viewerScope is always driven by the chosen Position's
-  // own mappedViewerScope (see updatePosition below), never picked here
-  // directly, same lock CreateUserModal.js/personal/page.js already apply
-  // for a member-linked account.
-  const memberViewerScopeOptions =
-    actorRole === "BRANCH_LEADER"
-      ? [{ label: t("usersPage.secretary"), value: "SECRETARY" }]
-      : [
-          { label: t("usersPage.branchLeader"), value: "BRANCH_LEADER" },
-          { label: t("usersPage.secretary"), value: "SECRETARY" },
-        ];
-
   const positionOptions =
     useMemo(
       () =>
@@ -1327,20 +1315,16 @@ export default function CreateMemberModal({
                   required
                 />
 
-                {form.role === "VIEWER" && (
-                  <FormSelect
-                    label={t("usersPage.viewAs")}
-                    name="viewerScope"
-                    placeholder={t("usersPage.selectViewAs")}
-                    options={memberViewerScopeOptions}
-                    value={form.viewerScope}
-                    onChange={() => {}}
-                    // Always driven by the chosen Position's own
-                    // mappedViewerScope -- see updatePosition above.
-                    disabled
-                    required
-                  />
-                )}
+                {/*
+                  viewerScope itself is not shown as its own field here --
+                  same as Role above, the chosen Position's own
+                  mappedViewerScope already drives it internally (see
+                  updatePosition) and is sent in the create payload. Kept
+                  as working hidden state rather than a visible-but-
+                  disabled field, since a brand-new member has no prior
+                  value worth surfacing for confirmation the way an edit
+                  screen's locked field would.
+                */}
 
                 <SearchableSelect
                   label={t("memberPage.branch")}

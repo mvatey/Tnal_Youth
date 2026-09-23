@@ -52,6 +52,7 @@ const EMPTY_FORM = {
   branch_name_km: "",
   branch_name_en: "",
   assigned_branches: [],
+  position_id: "",
   account_role: "",
   account_status: "",
   has_account: false,
@@ -68,23 +69,6 @@ const TSHIRT_SIZE_OPTIONS = [
   { value: "2XL", label: "2XL" },
   { value: "3XL", label: "3XL" },
 ];
-
-function getRoleLabel(role, t) {
-  const normalized = String(role || "").trim().toUpperCase();
-
-  const key =
-    normalized === "ADMIN"
-      ? "memberPage.roleAdmin"
-      : normalized === "BRANCH_LEADER"
-        ? "memberPage.roleBranchLeader"
-        : normalized === "SECRETARY"
-          ? "memberPage.roleSecretary"
-          : normalized === "MEMBER"
-            ? "memberPage.roleMember"
-            : null;
-
-  return key ? t(key) : role ? String(role) : "-";
-}
 
 function getStatusLabel(status, t) {
   const normalized = String(status || "").trim().toUpperCase();
@@ -255,6 +239,9 @@ function normalizePersonalInfo(data, preserve = {}) {
       ? data.assigned_branches
       : [],
 
+    position_id:
+      data?.position_id != null ? String(data.position_id) : "",
+
     account_role: data?.account_role
       ? String(data.account_role)
       : "",
@@ -274,7 +261,7 @@ function normalizePersonalInfo(data, preserve = {}) {
  * ========================================================= */
 
 export default function MyAccountPersonalPage() {
-  const { t, locale } = useLanguage();
+  const { t, locale, label } = useLanguage();
   const fileRef = useRef(null);
 
   /*
@@ -316,6 +303,7 @@ export default function MyAccountPersonalPage() {
   const [ethnicities, setEthnicities] = useState([]);
   const [religions, setReligions] = useState([]);
   const [levels, setLevels] = useState([]);
+  const [positions, setPositions] = useState([]);
   const [tshirtSizes, setTshirtSizes] = useState(TSHIRT_SIZE_OPTIONS);
 
   /* =======================================================
@@ -403,6 +391,7 @@ export default function MyAccountPersonalPage() {
     loadLookup("/lookups/ethnicities", setEthnicities, { valueMode: "id" });
     loadLookup("/lookups/religions", setReligions, { valueMode: "id" });
     loadLookup("/lookups/member-levels", setLevels, { valueMode: "id" });
+    loadLookup("/lookups/positions", setPositions, { valueMode: "id" });
     loadLookup("/lookups/tshirt-sizes", setTshirtSizes, {
       valueMode: "value",
       fallback: TSHIRT_SIZE_OPTIONS,
@@ -587,6 +576,22 @@ export default function MyAccountPersonalPage() {
   }
 
   /*
+   * Read-only, like Branch/Status -- only staff can change it. Shown
+   * instead of a plain Role field: with positions now doing most of the
+   * work of distinguishing accounts, a bare Role label (almost always
+   * just "Member") tells the account holder less than their actual
+   * position does.
+   */
+  const positionLabel = form.position_id
+    ? label(
+        positions.find(
+          (option) => option.value === form.position_id,
+        ),
+        "-",
+      )
+    : "-";
+
+  /*
    * Every branch this account is tied to — the primary branch plus
    * any additional branch_staff coverage — deduped into one list of
    * names for the read-only chips below.
@@ -730,10 +735,10 @@ export default function MyAccountPersonalPage() {
               </div>
             </div>
 
-            {/* ROLE — read-only; only staff can change an account's role */}
+            {/* POSITION — read-only; only staff can change an account's position */}
             <BoxFill
-              label={t("memberPage.role")}
-              value={form.has_account ? getRoleLabel(form.account_role, t) : "-"}
+              label={t("memberPage.position")}
+              value={form.has_account ? positionLabel : "-"}
               readOnly
             />
 

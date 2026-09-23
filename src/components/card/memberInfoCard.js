@@ -664,6 +664,12 @@ export default function MemberInfoCard({
               ? t("usersPage.memberViewer")
               : getRoleLabel(role);
 
+  // Shown alongside (above) roleLabel, not instead of it -- see
+  // sidebar.js's userPosition for the same reasoning.
+  const positionLabel = member?.position
+    ? label(member.position, "")
+    : "";
+
   /*
    * Personal info returns:
    *
@@ -1054,6 +1060,22 @@ export default function MemberInfoCard({
             >
               {englishName}
             </p>
+
+            {positionLabel && (
+              <p
+                className="
+                  mt-1
+                  truncate
+                  text-xs
+                  font-medium
+                  text-white
+                  sm:text-sm
+                "
+                title={positionLabel}
+              >
+                {positionLabel}
+              </p>
+            )}
 
             <div
               className="

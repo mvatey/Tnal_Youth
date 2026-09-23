@@ -243,6 +243,13 @@ export default function Sidebar() {
       ? `អ្នកមើល · ${ROLE_LABELS[String(user?.viewerScope || "ADMIN").toUpperCase()] || user?.viewerScope || "Admin"}`
       : t(`roles.${String(currentMember?.role || user?.role || role || "").toUpperCase()}`, ROLE_LABELS[currentMember?.role] || ROLE_LABELS[user?.role] || ROLE_LABELS[role] || role || "");
 
+  // The member's own job title within their branch -- shown alongside
+  // (not instead of) the role/scope line above, so positions can keep
+  // multiplying past the 4-5 system roles without losing that role line.
+  const userPosition = currentMember?.position
+    ? localizedLabel(currentMember.position, "")
+    : "";
+
   const defaultUserAvatar =
     getDefaultAvatar(
       currentMember,
@@ -791,6 +798,19 @@ export default function Sidebar() {
               >
                 {userName}
               </div>
+
+              {userPosition && (
+                <div
+                  className="
+                    truncate
+                    text-xs
+                    text-white/70
+                  "
+                  title={userPosition}
+                >
+                  {userPosition}
+                </div>
+              )}
 
               <div
                 className="

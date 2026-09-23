@@ -463,6 +463,21 @@ function LeaderCard({
             />
 
             <span className="text-[11px] text-text-secondary">
+              {t("memberPage.position")}
+            </span>
+
+            <span className="truncate text-[13px] font-normal text-text-primary">
+              {person.positionLabel || "-"}
+            </span>
+          </div>
+
+          <div className="mt-4 flex items-center gap-2">
+            <Building2
+              size={15}
+              className="shrink-0 text-text-secondary"
+            />
+
+            <span className="text-[11px] text-text-secondary">
               {t("branchPage.role")}
             </span>
 
@@ -939,6 +954,12 @@ const loadBranchDetails =
           roleLabel:
             getRoleLabel(roleCode, label, t),
 
+          positionLabel:
+            label(
+              person?.position,
+              "-",
+            ),
+
           status: "ACTIVE",
 
           profileImage:
@@ -1014,6 +1035,12 @@ const loadBranchDetails =
 
           role:
             getRoleLabel(role, label, t),
+
+          position:
+            label(
+              member?.position,
+              "-",
+            ),
 
           status,
 
@@ -1170,19 +1197,25 @@ const loadBranchDetails =
     {
       key: "gender",
       label: t("branchPage.gender"),
-      width: "11%",
+      width: "9%",
+      align: "center",
+    },
+    {
+      key: "position",
+      label: t("memberPage.position"),
+      width: "16%",
       align: "center",
     },
     {
       key: "role",
       label: t("branchPage.role"),
-      width: "20%",
+      width: "16%",
       align: "center",
     },
     {
       key: "status",
       label: t("branchPage.status"),
-      width: "13%",
+      width: "12%",
       align: "center",
 
       render: (row) => (
@@ -1194,13 +1227,13 @@ const loadBranchDetails =
     {
       key: "joinedAt",
       label: t("branchPage.joinedAt"),
-      width: "15%",
+      width: "13%",
       align: "center",
     },
     {
       key: "actions",
       label: t("branchPage.actions"),
-      width: "12%",
+      width: "10%",
       align: "center",
 
       render: (row) => (

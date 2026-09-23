@@ -67,6 +67,11 @@ export default function MemberSelectModal({
   ] = useState("all");
 
   const [
+    selectedPosition,
+    setSelectedPosition,
+  ] = useState("all");
+
+  const [
     selectedDate,
     setSelectedDate,
   ] = useState(null);
@@ -193,6 +198,24 @@ export default function MemberSelectModal({
     [members],
   );
 
+  const positions = useMemo(
+    () => [
+      ...new Set(
+        members
+          .map(
+            (member) =>
+              member.position,
+          )
+          .filter(
+            (value) =>
+              value &&
+              value !== "-",
+          ),
+      ),
+    ],
+    [members],
+  );
+
   const filteredMembers =
     useMemo(() => {
       const normalizedQuery =
@@ -233,6 +256,11 @@ export default function MemberSelectModal({
             member.role ===
               selectedRole;
 
+          const matchesPosition =
+            selectedPosition === "all" ||
+            member.position ===
+              selectedPosition;
+
           const matchesDate =
             !selectedDateValue ||
             member.joinedDateValue ===
@@ -241,6 +269,7 @@ export default function MemberSelectModal({
           return (
             matchesSearch &&
             matchesRole &&
+            matchesPosition &&
             matchesDate
           );
         },
@@ -249,6 +278,7 @@ export default function MemberSelectModal({
       members,
       query,
       selectedRole,
+      selectedPosition,
       selectedDate,
     ]);
 
@@ -443,6 +473,22 @@ async function handleSave() {
           <FilterBar
             filters={[
               {
+                key: "position",
+
+                value:
+                  selectedPosition,
+
+                onChange:
+                  setSelectedPosition,
+
+                placeholder:
+                  t("memberPage.position"),
+
+                options:
+                  positions,
+              },
+
+              {
                 key: "role",
 
                 value:
@@ -504,27 +550,31 @@ async function handleSave() {
                   />
                 </th>
 
-                <th className="w-[24%] text-left">
+                <th className="w-[20%] text-left">
                   {t("activityPage.participantName")}
                 </th>
 
-                <th className="w-[10%] text-center">
+                <th className="w-[9%] text-center">
                   {t("memberPage.gender")}
                 </th>
 
-                <th className="w-[13%] text-center">
+                <th className="w-[12%] text-center">
+                  {t("memberPage.position")}
+                </th>
+
+                <th className="w-[11%] text-center">
                   {t("memberPage.role")}
                 </th>
 
-                <th className="w-[15%] text-center">
+                <th className="w-[13%] text-center">
                   {t("memberPage.branch")}
                 </th>
 
-                <th className="w-[16%] text-center">
+                <th className="w-[14%] text-center">
                   {t("common.datePlaceholder")}
                 </th>
 
-                <th className="w-[13%] text-center">
+                <th className="w-[12%] text-center">
                   {t("memberPage.status")}
                 </th>
 
@@ -634,6 +684,11 @@ async function handleSave() {
 
                       <td className="text-center">
                         {member.gender ||
+                          "-"}
+                      </td>
+
+                      <td className="text-center">
+                        {member.position ||
                           "-"}
                       </td>
 
