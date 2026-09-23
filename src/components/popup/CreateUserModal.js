@@ -423,11 +423,29 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       (option) => option.value === value,
     );
 
+    const nextRole = selectedPosition?.mappedRole || form.role;
+    const enteringSecretary = nextRole === "SECRETARY" && form.role !== "SECRETARY";
+    const leavingSecretary = nextRole !== "SECRETARY" && form.role === "SECRETARY";
+
+    // Position picking can flip the branch field between the single
+    // SearchableSelect (branchId) and the multi-branch selector
+    // (branchSelectionIds) used for SECRETARY -- carry whatever branch
+    // was already chosen across that switch instead of showing an
+    // apparently-cleared field (the other field's state was simply
+    // never touched by this position change).
     setForm((previousForm) => ({
       ...previousForm,
       positionId: value,
-      role: selectedPosition?.mappedRole || previousForm.role,
+      role: nextRole,
+      branchId:
+        leavingSecretary && !previousForm.branchId && branchSelectionIds[0]
+          ? branchSelectionIds[0]
+          : previousForm.branchId,
     }));
+
+    if (enteringSecretary && branchSelectionIds.length === 0 && form.branchId) {
+      setBranchSelectionIds([form.branchId]);
+    }
 
     setShowValidationError(false);
     setSubmitError("");
