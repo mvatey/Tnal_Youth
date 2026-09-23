@@ -273,10 +273,30 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
         setOriginalRole(role);
         setOriginalPositionId(positionId);
 
-        const branchSelection =
-          role === "SECRETARY"
-            ? (secretaryBranchIds.length ? secretaryBranchIds : primaryBranchId != null ? [String(primaryBranchId)] : [])
-            : [];
+        // Role-agnostic on purpose, unlike the old "only when role is
+        // currently SECRETARY" gate this replaced -- mirrors the Member
+        // Detail personal-info page's own computeBranchIds, which always
+        // seeds from the primary branch plus any assigned_branches
+        // regardless of role. Gating this by role meant a member loaded
+        // as e.g. BRANCH_LEADER got an empty originalBranchIds/
+        // branchSelectionIds snapshot; picking a SECRETARY-mapped
+        // position later (still in the same edit) then made
+        // branchSelectionChanged look true purely because of that empty
+        // snapshot, firing the /personal-info/branches save step even
+        // though the branch itself never actually changed -- that step
+        // always writes branch_staff rows under the canonical SECRETARY
+        // position, silently overwriting whatever specific position the
+        // personal-info step had just set.
+        const branchSelection = Array.from(
+          new Set(
+            [
+              primaryBranchId != null && primaryBranchId !== ""
+                ? String(primaryBranchId)
+                : null,
+              ...secretaryBranchIds,
+            ].filter(Boolean),
+          ),
+        );
 
         setBranchSelectionIds(branchSelection);
         setOriginalBranchIds(branchSelection);
@@ -423,29 +443,11 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       (option) => option.value === value,
     );
 
-    const nextRole = selectedPosition?.mappedRole || form.role;
-    const enteringSecretary = nextRole === "SECRETARY" && form.role !== "SECRETARY";
-    const leavingSecretary = nextRole !== "SECRETARY" && form.role === "SECRETARY";
-
-    // Position picking can flip the branch field between the single
-    // SearchableSelect (branchId) and the multi-branch selector
-    // (branchSelectionIds) used for SECRETARY -- carry whatever branch
-    // was already chosen across that switch instead of showing an
-    // apparently-cleared field (the other field's state was simply
-    // never touched by this position change).
     setForm((previousForm) => ({
       ...previousForm,
       positionId: value,
-      role: nextRole,
-      branchId:
-        leavingSecretary && !previousForm.branchId && branchSelectionIds[0]
-          ? branchSelectionIds[0]
-          : previousForm.branchId,
+      role: selectedPosition?.mappedRole || previousForm.role,
     }));
-
-    if (enteringSecretary && branchSelectionIds.length === 0 && form.branchId) {
-      setBranchSelectionIds([form.branchId]);
-    }
 
     setShowValidationError(false);
     setSubmitError("");
