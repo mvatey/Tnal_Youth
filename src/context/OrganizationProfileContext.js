@@ -76,10 +76,35 @@ export function OrganizationProfileProvider({ children }) {
       setError("");
 
       try {
-        const response = await fetch("/api/backend/organization-profile", {
+        let response = await fetch("/api/backend/organization-profile", {
           credentials: "include",
           signal: controller.signal,
         });
+
+        // This provider mounts on every full page load and fires its
+        // fetch immediately, racing AuthContext's own startup refresh
+        // (see AuthContext#refreshUser) -- on a fresh load the access
+        // token cookie is very often already expired at that instant,
+        // and this used to surface as a permanent "session expired"
+        // error even though the session itself was fine (AuthContext's
+        // own retry-after-refresh always succeeded right after). Retry
+        // once through the same refresh endpoint before giving up, so
+        // this fetch doesn't lose that race.
+        if (response.status === 401) {
+          const refreshResponse = await fetch("/api/auth/refresh", {
+            method: "POST",
+            credentials: "include",
+            cache: "no-store",
+            signal: controller.signal,
+          });
+
+          if (refreshResponse.ok) {
+            response = await fetch("/api/backend/organization-profile", {
+              credentials: "include",
+              signal: controller.signal,
+            });
+          }
+        }
 
         const data = await response.json().catch(() => null);
 
