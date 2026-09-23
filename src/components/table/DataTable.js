@@ -232,7 +232,11 @@ export default function DataTable({
                           ? "w-full xl:w-[240px]"
                           : filter.type === "date"
                             ? "w-full xl:w-[280px]"
-                            : "w-full xl:w-[210px]";
+                            : filterName === "status"
+                              ? "w-full xl:w-[240px]"
+                              : filterName === "gender"
+                                ? "w-full xl:w-[160px]"
+                                : "w-full xl:w-[210px]";
 
                       return (
                         <div
