@@ -1514,6 +1514,22 @@ export default function MembersPage() {
     },
 
     {
+      name: "position",
+
+      value:
+        positionFilter,
+
+      onChange:
+        setPositionFilter,
+
+      options:
+        positionFilterOptions,
+
+      placeholder:
+        t("memberPage.position"),
+    },
+
+    {
       name: "status",
 
       value:
@@ -1558,22 +1574,6 @@ export default function MembersPage() {
 
       placeholder:
         t("memberPage.joinedAt"),
-    },
-
-    {
-      name: "position",
-
-      value:
-        positionFilter,
-
-      onChange:
-        setPositionFilter,
-
-      options:
-        positionFilterOptions,
-
-      placeholder:
-        t("memberPage.position"),
     },
   ];
 
