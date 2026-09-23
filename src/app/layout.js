@@ -38,9 +38,9 @@ import MustChangePasswordGate from "@/components/auth/MustChangePasswordGate";
 import "./globals.css";
 
 export const metadata = {
-  title: "សមាគមយុវជនកម្ពុជា",
+  title: "សមាគមថ្នាលយុវជនកម្ពុជា",
   description:
-    "កម្មវិធីគ្រប់គ្រងសមាគមយុវជនកម្ពុជា",
+    "កម្មវិធីគ្រប់គ្រងសមាគមថ្នាលយុវជនកម្ពុជា",
 };
 
 export default function RootLayout({ children }) {
