@@ -2586,7 +2586,12 @@ export default function PersonalPage() {
                       )
                     : VIEWER_SCOPE_OPTIONS
                 }
-                disabled={!canManageSensitiveFields || !form.has_account}
+                // Always driven by Position (every VIEWER-mapped
+                // position requires its own mappedViewerScope on the
+                // backend -- see
+                // AdminLookupServiceImpl#normalizeMappedViewerScope) --
+                // never editable directly here, same as Role above.
+                disabled
               />
             )}
 

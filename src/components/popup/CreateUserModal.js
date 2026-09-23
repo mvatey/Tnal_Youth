@@ -632,7 +632,15 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       form.role &&
       (form.role !== originalRole || leaderPositionChanged || viewerScopeChanged)
     ) {
-      const roleResponse = await fetchJson(`/api/backend/members/${memberId}/account/role`, {
+      // Deliberately NOT /api/backend/members/.../account/role -- that
+      // generic catch-all proxy does a dumb 1:1 path passthrough, but
+      // this endpoint lives under MemberPersonalInfoController's
+      // /personal-info base path (PATCH /personal-info/account/role),
+      // not directly under /members/{id}/account/role. This dedicated
+      // route rewrites the path correctly (see
+      // src/app/api/members/[memberId]/account/role/route.js) the same
+      // way member/personalinfo's own save already reaches it.
+      const roleResponse = await fetchJson(`/api/members/${memberId}/account/role`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1031,6 +1039,14 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
               options={isMemberLinked ? memberLinkedViewerScopeOptions : viewerScopeOptions}
               value={form.viewerScope}
               onChange={update("viewerScope")}
+              // Member-linked viewer scope is always driven by Position
+              // (every VIEWER-mapped position requires its own
+              // mappedViewerScope on the backend -- see
+              // AdminLookupServiceImpl#normalizeMappedViewerScope) --
+              // never editable directly, same as Role above. A
+              // standalone viewer (no position at all) still picks it
+              // manually.
+              disabled={isMemberLinked}
               required
             />
           )}
