@@ -583,55 +583,6 @@ export default function CreateMemberModal({
       [levelLookups, label],
     );
 
-  const roleOptions =
-    useMemo(
-      () =>
-        roleLookups
-          .map(
-            (role) => {
-              const code =
-                String(
-                  role?.code ??
-                    role?.value ??
-                    "",
-                ).toUpperCase();
-
-              const roleLabel =
-                String(role?.code || role?.value || "").toUpperCase() === "ADMIN"
-                  ? t("memberPage.roleAdmin")
-                  : String(role?.code || role?.value || "").toUpperCase() === "SECRETARY"
-                    ? t("memberPage.roleSecretary")
-                    : String(role?.code || role?.value || "").toUpperCase() === "BRANCH_LEADER"
-                      ? t("memberPage.roleBranchLeader")
-                      : String(role?.code || role?.value || "").toUpperCase() === "MEMBER"
-                        ? t("memberPage.roleMember")
-                        : label(role, role?.code || "");
-
-              return {
-                label: roleLabel,
-                value:
-                  code,
-              };
-            },
-          )
-          .filter(
-            (option) =>
-              option.value !==
-                "" &&
-              option.label !==
-                "" &&
-              allowedRoles.includes(
-                option.value,
-              ),
-          ),
-      [
-        roleLookups,
-        allowedRoles,
-        label,
-        t,
-      ],
-    );
-
   const positionOptions =
     useMemo(
       () =>
@@ -684,13 +635,19 @@ export default function CreateMemberModal({
             ) === value,
         );
 
+      // Role is no longer a field the admin sets directly here (see the
+      // Role FormSelect removed below) -- position alone drives it now,
+      // so every position needs a resolvable role, same fallback
+      // positionOptions above already uses to decide which positions
+      // are even selectable for the actor's allowedRoles.
       setForm(
         (previousForm) => ({
           ...previousForm,
           positionId: value,
-          role:
+          role: String(
             selectedPosition?.mappedRole ||
-            previousForm.role,
+              "MEMBER",
+          ).toUpperCase(),
         }),
       );
 
@@ -805,7 +762,7 @@ export default function CreateMemberModal({
     "gender",
     "username",
     "branchId",
-    "role",
+    "positionId",
   ];
 
   // Whichever contact method is selected must actually be filled in --
@@ -869,8 +826,8 @@ export default function CreateMemberModal({
         return;
       }
 
-      if (!form.role.trim()) {
-        setSubmitError(t("memberPage.requiredRole"));
+      if (!form.positionId.trim()) {
+        setSubmitError(t("memberPage.requiredPosition"));
         return;
       }
 
@@ -1296,6 +1253,15 @@ export default function CreateMemberModal({
                   />
                 )}
 
+                {/*
+                  Role itself is not shown as its own field -- position
+                  alone drives it (see updatePosition above), same as it
+                  already visually implied by locking Role once a
+                  position was picked. Kept as a fully working hidden
+                  field rather than removed outright: every place that
+                  reads form.role (validation, the create payload)
+                  still works unchanged.
+                */}
                 <FormSelect
                   label={t("memberPage.position")}
                   name="positionId"
@@ -1309,24 +1275,6 @@ export default function CreateMemberModal({
                   onChange={
                     updatePosition
                   }
-                />
-
-                <FormSelect
-                  label={t("memberPage.role")}
-                  name="role"
-                  placeholder={t("memberPage.selectRole")}
-                  options={
-                    roleOptions
-                  }
-                  value={
-                    form.role
-                  }
-                  onChange={update(
-                    "role",
-                  )}
-                  disabled={Boolean(
-                    form.positionId,
-                  )}
                   required
                 />
 

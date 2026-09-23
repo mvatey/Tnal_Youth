@@ -493,6 +493,7 @@ const km = {
     contactMethodBoth: "ទាំងពីរ",
     requiredBranch: "សូមជ្រើសរើសសាខា",
     requiredRole: "សូមជ្រើសរើសតួនាទី",
+    requiredPosition: "សូមជ្រើសរើសតំណែង",
     dobInFuture: "ថ្ងៃខែឆ្នាំកំណើតមិនអាចនៅថ្ងៃអនាគតបានទេ",
     dobTooRecent: "សមាជិកត្រូវមានអាយុយ៉ាងតិច១២ឆ្នាំ",
     confirmReplaceLeaderPrefix:

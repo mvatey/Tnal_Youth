@@ -286,6 +286,11 @@ function mapMember(
       member?.branch_id ??
       "",
 
+    positionId:
+      member?.position?.id ??
+      member?.position_id ??
+      "",
+
     positionLabel:
       member?.position
         ? getBranchLabel(
@@ -481,6 +486,11 @@ export default function MembersPage() {
   const [
     dateFilter,
     setDateFilter,
+  ] = useState("");
+
+  const [
+    positionFilter,
+    setPositionFilter,
   ] = useState("");
 
   const [
@@ -1036,20 +1046,52 @@ export default function MembersPage() {
    * Applied client-side over the already-fetched
    * member list (branch/status/gender/search are
    * server-driven, but the backend has no joined-date
-   * param).
+   * or position param).
    * =========================================
    */
 
   const filteredMembers = useMemo(
     () =>
-      dateFilter
-        ? members.filter(
-            (member) =>
-              member.joinedOnRaw === dateFilter,
-          )
-        : members,
-    [members, dateFilter],
+      members
+        .filter((member) =>
+          dateFilter
+            ? member.joinedOnRaw === dateFilter
+            : true,
+        )
+        .filter((member) =>
+          positionFilter
+            ? String(member.positionId) === positionFilter
+            : true,
+        ),
+    [members, dateFilter, positionFilter],
   );
+
+  const positionFilterOptions = useMemo(() => {
+    const seen = new Map();
+
+    members.forEach((member) => {
+      if (
+        member.positionId &&
+        member.positionLabel &&
+        member.positionLabel !== "-" &&
+        !seen.has(String(member.positionId))
+      ) {
+        seen.set(String(member.positionId), member.positionLabel);
+      }
+    });
+
+    return [
+      {
+        label: t("memberPage.position"),
+        value: "",
+      },
+
+      ...Array.from(seen, ([value, label]) => ({
+        label,
+        value,
+      })),
+    ];
+  }, [members, t]);
 
   /*
    * =========================================
@@ -1516,6 +1558,22 @@ export default function MembersPage() {
 
       placeholder:
         t("memberPage.joinedAt"),
+    },
+
+    {
+      name: "position",
+
+      value:
+        positionFilter,
+
+      onChange:
+        setPositionFilter,
+
+      options:
+        positionFilterOptions,
+
+      placeholder:
+        t("memberPage.position"),
     },
   ];
 

@@ -493,6 +493,7 @@ const en = {
     contactMethodBoth: "Both",
     requiredBranch: "Please select a branch.",
     requiredRole: "Please select a role.",
+    requiredPosition: "Please select a position.",
     dobInFuture: "Date of birth cannot be in the future.",
     dobTooRecent: "Member must be at least 12 years old.",
     confirmReplaceLeaderPrefix:
