@@ -552,7 +552,17 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     });
 
     let updatedRole = originalRole;
-    if (form.role && form.role !== originalRole) {
+    // A role change to/from BRANCH_LEADER always needs the account/role
+    // call, but so does staying BRANCH_LEADER while switching which
+    // leader-mapped position (e.g. canonical <-> deputy) is held --
+    // that's a position_id change with no role change, and the generic
+    // personal-info PUT above never sends a BRANCH_LEADER-mapped
+    // position_id (see the comment above), so without this second
+    // condition the position switch would never reach the backend.
+    const leaderPositionChanged =
+      form.role === "BRANCH_LEADER" &&
+      String(form.positionId || "") !== String(originalPositionId || "");
+    if (form.role && (form.role !== originalRole || leaderPositionChanged)) {
       const roleResponse = await fetchJson(`/api/backend/members/${memberId}/account/role`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

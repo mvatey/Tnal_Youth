@@ -468,6 +468,11 @@ export default function PersonalPage() {
     setOriginalRole,
   ] = useState("");
 
+  const [
+    originalPositionId,
+    setOriginalPositionId,
+  ] = useState("");
+
   /*
    * Internal login-account status (users.status) -- kept in sync with
    * the visible Member status selector below (see the save handler's
@@ -736,6 +741,12 @@ export default function PersonalPage() {
           (previous) =>
             previous ||
             normalized.account_role,
+        );
+
+        setOriginalPositionId(
+          (previous) =>
+            previous ||
+            normalized.positionId,
         );
 
         setOriginalAccountStatus(
@@ -1731,11 +1742,28 @@ export default function PersonalPage() {
         let updatedRole =
           selectedRole;
 
+        // Staying BRANCH_LEADER while switching which leader-mapped
+        // position (e.g. canonical <-> deputy) is held is a
+        // position_id change with no role change -- the generic
+        // personal-info PUT above never sends a BRANCH_LEADER-mapped
+        // position_id (see the comment on that payload), so without
+        // this the position switch would never reach the backend.
+        const leaderPositionChanged =
+          selectedRole ===
+            "BRANCH_LEADER" &&
+          String(
+            form.positionId || "",
+          ) !==
+            String(
+              originalPositionId || "",
+            );
+
         if (
           form.has_account &&
           selectedRole &&
-          selectedRole !==
-            savedRole
+          (selectedRole !==
+            savedRole ||
+            leaderPositionChanged)
         ) {
           const accountResponse =
             await requestJson(
@@ -1771,6 +1799,13 @@ export default function PersonalPage() {
 
           setOriginalRole(
             updatedRole,
+          );
+
+          setOriginalPositionId(
+            updatedRole ===
+              "BRANCH_LEADER"
+              ? form.positionId
+              : "",
           );
         }
 
