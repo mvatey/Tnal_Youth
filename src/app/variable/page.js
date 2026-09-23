@@ -145,6 +145,7 @@ export default function VariablePage() {
     { label: t("variablePage.branchLeader"), value: "BRANCH_LEADER" },
     { label: t("variablePage.secretary"), value: "SECRETARY" },
     { label: t("variablePage.member"), value: "MEMBER" },
+    { label: t("variablePage.viewer"), value: "VIEWER" },
   ], [t]);
   const statusFilterOptions = useMemo(() => [
     { label: t("variablePage.allStatuses"), value: ALL_STATUS },

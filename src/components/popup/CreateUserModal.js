@@ -9,6 +9,7 @@ import FormSelect from "@/components/forms/FormSelect";
 import SearchableSelect from "@/components/forms/SearchableSelect";
 import MultiSelect from "@/components/forms/multiselect";
 import FormActionButton from "@/components/forms/FormActionButton";
+import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 import { isPasswordValid } from "@/lib/validatePassword";
@@ -110,6 +111,8 @@ async function submitUser(payload, userId) {
 // member-linked accounts intact rather than bypassing it.
 export default function CreateUserModal({ open, onClose, onSave, editingUser = null }) {
   const { t, locale } = useLanguage();
+  const { user: actingUser } = useAuth();
+  const actingRole = String(actingUser?.role || "").toUpperCase();
   const isEditing = Boolean(editingUser);
   const isMemberLinked = Boolean(editingUser?.memberId);
   const roleOptions = [
@@ -119,21 +122,37 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     { label: t("usersPage.member"), value: "MEMBER" },
     { label: t("usersPage.viewer"), value: "VIEWER" },
   ];
-  // A member-linked account can never be ADMIN or VIEWER -- the backend
-  // (MemberPasswordServiceImpl#validateRoleChange) rejects ADMIN outright
-  // ("cannot be assigned from the member page") and only lets an admin
-  // actor assign MEMBER/SECRETARY/BRANCH_LEADER through this path, so
-  // offering the other two here would just produce a save that fails.
+  // A member-linked account can never be ADMIN -- the backend
+  // (MemberPasswordServiceImpl#validateRoleChange) rejects it outright
+  // ("cannot be assigned from the member page"). VIEWER, unlike ADMIN,
+  // IS assignable here now -- a "Member Viewer": a real member who also
+  // sees their own branch at BRANCH_LEADER/SECRETARY level, same as a
+  // standalone viewer would, except their own contribution data stays
+  // hidden on their own myAcc (see MyDonationServiceImpl/
+  // MyActivityServiceImpl's viewer gating on the backend).
   const memberLinkedRoleOptions = [
     { label: t("usersPage.branchLeader"), value: "BRANCH_LEADER" },
     { label: t("usersPage.secretary"), value: "SECRETARY" },
     { label: t("usersPage.member"), value: "MEMBER" },
+    { label: t("usersPage.memberViewer"), value: "VIEWER" },
   ];
   const viewerScopeOptions = [
     { label: t("usersPage.admin"), value: "ADMIN" },
     { label: t("usersPage.branchLeader"), value: "BRANCH_LEADER" },
     { label: t("usersPage.secretary"), value: "SECRETARY" },
   ];
+  // A member-linked viewer is always scoped to their own branch, never
+  // organization-wide -- ADMIN scope is never offered here. A branch
+  // leader acting on this modal can only ever grant SECRETARY-level
+  // viewer access, mirroring the same "can't manage another branch
+  // leader" rule already enforced for the role itself.
+  const memberLinkedViewerScopeOptions =
+    actingRole === "BRANCH_LEADER"
+      ? [{ label: t("usersPage.secretary"), value: "SECRETARY" }]
+      : [
+          { label: t("usersPage.branchLeader"), value: "BRANCH_LEADER" },
+          { label: t("usersPage.secretary"), value: "SECRETARY" },
+        ];
   const statusOptions = [
     { label: t("usersPage.active"), value: "ACTIVE" },
     { label: t("usersPage.inactive"), value: "INACTIVE" },
@@ -162,6 +181,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
   const [memberStatusId, setMemberStatusId] = useState("");
   const [originalMemberStatusId, setOriginalMemberStatusId] = useState("");
   const [originalRole, setOriginalRole] = useState("");
+  const [originalViewerScope, setOriginalViewerScope] = useState("");
   const [positions, setPositions] = useState([]);
   const [originalPositionId, setOriginalPositionId] = useState("");
   const [branchSelectionIds, setBranchSelectionIds] = useState([]);
@@ -261,7 +281,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
           email: memberEmail,
           role,
           positionId,
-          viewerScope: "",
+          viewerScope: editingUser.viewerScopeRaw || "",
           branchId: primaryBranchId != null ? String(primaryBranchId) : "",
           password: "",
           status: "",
@@ -272,6 +292,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
 
         setOriginalRole(role);
         setOriginalPositionId(positionId);
+        setOriginalViewerScope(editingUser.viewerScopeRaw || "");
 
         // Role-agnostic on purpose, unlike the old "only when role is
         // currently SECRETARY" gate this replaced -- mirrors the Member
@@ -522,7 +543,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     ) &&
     usernameRequirementMet &&
     phoneOrEmailRequirementMet &&
-    (!isViewer || isMemberLinked || String(form.viewerScope).trim() !== "") &&
+    (!isViewer || String(form.viewerScope).trim() !== "") &&
     branchRequirementMet &&
     passwordValid &&
     !loadingMemberInfo;
@@ -554,10 +575,17 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       // generic slot -- the backend rejects it outright, since becoming
       // leader has to go through the account/role call below instead,
       // the only path that knows how to demote whoever currently holds
-      // it (see MemberPersonalInfoServiceImpl#updatePosition).
+      // it (see MemberPersonalInfoServiceImpl#updatePosition). A
+      // viewer-mapped position is excluded the same way, for a
+      // different reason: a VIEWER holds no branch_staff row at all
+      // (see updateAccountRole's VIEWER branch) -- the position only
+      // ever serves to auto-fill role=VIEWER here, never to record a
+      // staff position label.
       position_id:
         form.positionId &&
-        positions.find((option) => option.value === form.positionId)?.mappedRole !== "BRANCH_LEADER"
+        !["BRANCH_LEADER", "VIEWER"].includes(
+          positions.find((option) => option.value === form.positionId)?.mappedRole,
+        )
           ? Number(form.positionId)
           : null,
       tshirt_size: personalInfoBase?.tshirt_size || personalInfoBase?.tshirtSize || null,
@@ -578,11 +606,19 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     // that's a position_id change with no role change, and the generic
     // personal-info PUT above never sends a BRANCH_LEADER-mapped
     // position_id (see the comment above), so without this second
-    // condition the position switch would never reach the backend.
+    // condition the position switch would never reach the backend. Same
+    // reasoning for staying VIEWER while switching which viewerScope
+    // (BRANCH_LEADER-level <-> SECRETARY-level) is held.
     const leaderPositionChanged =
       form.role === "BRANCH_LEADER" &&
       String(form.positionId || "") !== String(originalPositionId || "");
-    if (form.role && (form.role !== originalRole || leaderPositionChanged)) {
+    const viewerScopeChanged =
+      form.role === "VIEWER" &&
+      String(form.viewerScope || "") !== String(originalViewerScope || "");
+    if (
+      form.role &&
+      (form.role !== originalRole || leaderPositionChanged || viewerScopeChanged)
+    ) {
       const roleResponse = await fetchJson(`/api/backend/members/${memberId}/account/role`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -595,6 +631,13 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
           position_id:
             form.role === "BRANCH_LEADER" && form.positionId
               ? Number(form.positionId)
+              : null,
+          // Only meaningful for VIEWER -- which branch-scoped level
+          // (BRANCH_LEADER or SECRETARY) this member-linked viewer
+          // sees their own branch at.
+          viewer_scope:
+            form.role === "VIEWER" && form.viewerScope
+              ? form.viewerScope
               : null,
         }),
       });
@@ -700,7 +743,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       return;
     }
 
-    if (isViewer && !isMemberLinked && !String(form.viewerScope).trim()) {
+    if (isViewer && !String(form.viewerScope).trim()) {
       setSubmitError(t("usersPage.requiredViewAs"));
       return;
     }
@@ -964,12 +1007,12 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             required
           />
 
-          {isViewer && !isMemberLinked && (
+          {isViewer && (
             <FormSelect
               label={t("usersPage.viewAs")}
               name="viewerScope"
               placeholder={t("usersPage.selectViewAs")}
-              options={viewerScopeOptions}
+              options={isMemberLinked ? memberLinkedViewerScopeOptions : viewerScopeOptions}
               value={form.viewerScope}
               onChange={update("viewerScope")}
               required

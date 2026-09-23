@@ -72,14 +72,15 @@ async function submitJson(path, body) {
 
 /*
  * The entire self-service page for an account with no member profile to
- * show a card or a details page for — either it has no linked member
- * record at all (ADMIN, or a standalone secretary/branch-leader/member
- * account), or it's a VIEWER, who only ever gets this same restricted
- * view regardless of whether their account happens to be linked to a
- * member. A small profile card (name/role/photo — the same few fields
- * captured when the account was created) sits above the account
- * settings; password and email live in one merged card on the left of
- * that, with the password's own rules on the right.
+ * show a card or a details page for — ADMIN, or a standalone
+ * secretary/branch-leader/member/viewer account with no linked member
+ * record. A member-linked VIEWER ("Member Viewer") is NOT routed here
+ * (see myAcc/layout.js) — it gets the full member myAcc experience like
+ * any other member-linked account. A small profile card (name/role/
+ * photo — the same few fields captured when the account was created)
+ * sits above the account settings; password and email live in one
+ * merged card on the left of that, with the password's own rules on
+ * the right.
  */
 export default function StandaloneAccountSettings({
   currentEmail,

@@ -148,7 +148,11 @@ function mapUser(user, labels, locale) {
     roleCode,
     roleLabel:
       (roleCode === "VIEWER" && user?.viewerScope
-        ? `${labels.roles.VIEWER || "Viewer"} (${labels.roles[viewerScope] || user.viewerScope})`
+        ? `${
+            user?.memberId != null
+              ? labels.roles.MEMBER_VIEWER || labels.roles.VIEWER || "Member Viewer"
+              : labels.roles.VIEWER || "Viewer"
+          } (${labels.roles[viewerScope] || user.viewerScope})`
         : labels.roles[roleCode]) ||
       user?.role ||
       "-",
@@ -195,6 +199,7 @@ export default function UsersPage() {
   const roleLabels = useMemo(() => ({
     ADMIN: t("usersPage.admin"),
     VIEWER: t("usersPage.viewer"),
+    MEMBER_VIEWER: t("usersPage.memberViewer"),
     BRANCH_LEADER: t("usersPage.branchLeader"),
     SECRETARY: t("usersPage.secretary"),
     MEMBER: t("usersPage.member"),

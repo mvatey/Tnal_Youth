@@ -656,7 +656,13 @@ export default function MemberInfoCard({
           ? t("memberPage.roleBranchLeader")
           : getRoleCode(role) === "MEMBER"
             ? t("memberPage.roleMember")
-            : getRoleLabel(role);
+            : getRoleCode(role) === "VIEWER"
+              // This card only ever renders for a member-linked account
+              // (see MyAccountProfileLayout/myAcc/layout.js) -- a
+              // standalone VIEWER never reaches it, so VIEWER here
+              // always means a "Member Viewer".
+              ? t("usersPage.memberViewer")
+              : getRoleLabel(role);
 
   /*
    * Personal info returns:

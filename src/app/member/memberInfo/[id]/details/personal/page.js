@@ -46,6 +46,7 @@ const EMPTY_FORM = {
   branch_id: "",
   assigned_branches: [],
   account_role: "",
+  viewer_scope: "",
   positionId: "",
 
   member_level_id: "",
@@ -114,7 +115,13 @@ const ROLE_LABELS = {
   BRANCH_LEADER: "ប្រធានសាខា",
   SECRETARY: "លេខាធិការ",
   MEMBER: "សមាជិក",
+  VIEWER: "សមាជិកអ្នកមើល",
 };
+
+const VIEWER_SCOPE_OPTIONS = [
+  { label: "ប្រធានសាខា", value: "BRANCH_LEADER" },
+  { label: "លេខាធិការ", value: "SECRETARY" },
+];
 
 /* =========================================================
  * REQUEST HELPER
@@ -469,6 +476,11 @@ export default function PersonalPage() {
   ] = useState("");
 
   const [
+    originalViewerScope,
+    setOriginalViewerScope,
+  ] = useState("");
+
+  const [
     originalPositionId,
     setOriginalPositionId,
   ] = useState("");
@@ -721,6 +733,10 @@ export default function PersonalPage() {
               previous.account_role ||
               normalized.account_role,
 
+            viewer_scope:
+              previous.viewer_scope ||
+              normalized.viewer_scope,
+
             account_status:
               previous.account_status ||
               normalized.account_status,
@@ -932,6 +948,11 @@ export default function PersonalPage() {
               account?.role ||
               previous.account_role,
 
+            viewer_scope:
+              account?.viewer_scope ??
+              account?.viewerScope ??
+              previous.viewer_scope,
+
             account_status:
               account?.status ||
               previous.account_status,
@@ -944,6 +965,14 @@ export default function PersonalPage() {
           setOriginalRole(
             String(
               account.role,
+            ),
+          );
+
+          setOriginalViewerScope(
+            String(
+              account?.viewer_scope ??
+                account?.viewerScope ??
+                "",
             ),
           );
         }
@@ -1402,7 +1431,7 @@ export default function PersonalPage() {
     (event) => {
       if (isReadOnly && !(
         canManageSensitiveFields &&
-        ["branch_id", "account_role", "member_status_id", "positionId"].includes(field)
+        ["branch_id", "account_role", "viewer_scope", "member_status_id", "positionId"].includes(field)
       )) {
         return;
       }
@@ -1607,6 +1636,17 @@ export default function PersonalPage() {
         return false;
       }
 
+      if (
+        form.account_role === "VIEWER" &&
+        !form.viewer_scope
+      ) {
+        setError(
+          t("memberPage.selectViewerScope"),
+        );
+
+        return false;
+      }
+
       try {
         setSaving(true);
         setError("");
@@ -1681,12 +1721,18 @@ export default function PersonalPage() {
           // MemberPersonalInfoServiceImpl#updatePosition), since becoming
           // leader has to go through the account/role call below instead
           // (step 2), the only path that knows how to demote whoever
-          // currently holds it.
+          // currently holds it. A viewer-mapped position is excluded the
+          // same way, for a different reason: a VIEWER holds no
+          // branch_staff row at all (see updateAccountRole's VIEWER
+          // branch) -- the position only ever serves to auto-fill
+          // role=VIEWER here, never to record a staff position label.
           position_id:
             form.positionId &&
-            positions.find(
-              (option) => option.value === form.positionId,
-            )?.mappedRole !== "BRANCH_LEADER"
+            !["BRANCH_LEADER", "VIEWER"].includes(
+              positions.find(
+                (option) => option.value === form.positionId,
+              )?.mappedRole,
+            )
               ? Number(
                   form.positionId,
                 )
@@ -1758,12 +1804,26 @@ export default function PersonalPage() {
               originalPositionId || "",
             );
 
+        // Same reasoning as leaderPositionChanged, for a VIEWER
+        // ("Member Viewer") switching which viewerScope
+        // (BRANCH_LEADER-level <-> SECRETARY-level) they hold.
+        const viewerScopeChanged =
+          selectedRole ===
+            "VIEWER" &&
+          String(
+            form.viewer_scope || "",
+          ) !==
+            String(
+              originalViewerScope || "",
+            );
+
         if (
           form.has_account &&
           selectedRole &&
           (selectedRole !==
             savedRole ||
-            leaderPositionChanged)
+            leaderPositionChanged ||
+            viewerScopeChanged)
         ) {
           const accountResponse =
             await requestJson(
@@ -1789,6 +1849,16 @@ export default function PersonalPage() {
                             form.positionId,
                           )
                         : null,
+
+                    // Only meaningful for VIEWER -- which
+                    // branch-scoped level this member-linked viewer
+                    // sees their own branch at.
+                    viewer_scope:
+                      selectedRole ===
+                        "VIEWER" &&
+                      form.viewer_scope
+                        ? form.viewer_scope
+                        : null,
                   }),
               },
             );
@@ -1805,6 +1875,13 @@ export default function PersonalPage() {
             updatedRole ===
               "BRANCH_LEADER"
               ? form.positionId
+              : "",
+          );
+
+          setOriginalViewerScope(
+            updatedRole ===
+              "VIEWER"
+              ? form.viewer_scope
               : "",
           );
         }
@@ -2021,6 +2098,11 @@ export default function PersonalPage() {
             account_role:
               updatedRole,
 
+            viewer_scope:
+              updatedRole === "VIEWER"
+                ? form.viewer_scope
+                : "",
+
             account_status:
               latestAccountStatus ||
               normalized.account_status ||
@@ -2081,6 +2163,11 @@ export default function PersonalPage() {
                   account?.role ||
                   previous.account_role,
 
+                viewer_scope:
+                  account?.viewer_scope ??
+                  account?.viewerScope ??
+                  previous.viewer_scope,
+
                 account_status:
                   account?.status ||
                   previous.account_status,
@@ -2097,6 +2184,14 @@ export default function PersonalPage() {
             ) {
               setOriginalRole(
                 account.role,
+              );
+
+              setOriginalViewerScope(
+                String(
+                  account?.viewer_scope ??
+                    account?.viewerScope ??
+                    "",
+                ),
               );
             }
 
@@ -2459,6 +2554,31 @@ export default function PersonalPage() {
               selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
               adminEditable={isAdmin}
             />
+
+            {/*
+              VIEWER SCOPE -- only meaningful for a member-linked
+              VIEWER ("Member Viewer"): which branch-scoped level
+              (BRANCH_LEADER or SECRETARY) they see their own branch
+              at. A branch leader actor can only ever grant
+              SECRETARY-level, mirroring the same restriction already
+              enforced on the backend for the role itself.
+            */}
+            {form.account_role === "VIEWER" && (
+              <FormSelect
+                label={t("memberPage.viewerScope")}
+                value={form.viewer_scope}
+                onChange={handleChange("viewer_scope")}
+                placeholder={t("memberPage.selectViewerScope")}
+                options={
+                  role === "BRANCH_LEADER"
+                    ? VIEWER_SCOPE_OPTIONS.filter(
+                        (option) => option.value === "SECRETARY",
+                      )
+                    : VIEWER_SCOPE_OPTIONS
+                }
+                disabled={!canManageSensitiveFields || !form.has_account}
+              />
+            )}
 
             <FormSelect
               label={t("memberPage.memberLevel")}

@@ -137,12 +137,15 @@ export default function MyAccountLayout({ children }) {
             </div>
           )}
 
-          {!loading && !error && member && (!member.isLinkedMember || member.isViewer) && (
+          {!loading && !error && member && !member.isLinkedMember && (
             // No member record to show a profile card or a details page
-            // for (ADMIN, or a standalone secretary/branch-leader/member
-            // account) — or the account is a VIEWER, who stays read-only
-            // everywhere else and gets the same password/email-only
-            // treatment here even if it happens to be member-linked.
+            // for -- ADMIN, a standalone secretary/branch-leader/member
+            // account, or a standalone VIEWER. A member-linked VIEWER
+            // ("Member Viewer") DOES have a member record and gets the
+            // full myAcc experience below like any other member-linked
+            // account -- the one difference (their own contribution
+            // data staying hidden) is enforced on the backend, not by
+            // routing them here.
             <UnsavedChangesProvider>
               <StandaloneAccountSettings
                 currentEmail={member.email !== "-" ? member.email : ""}
@@ -162,7 +165,7 @@ export default function MyAccountLayout({ children }) {
             </UnsavedChangesProvider>
           )}
 
-          {!loading && !error && member && member.isLinkedMember && !member.isViewer && (
+          {!loading && !error && member && member.isLinkedMember && (
             <UnsavedChangesProvider>
             <div className="min-w-0 space-y-4">
               <HeaderMemberInfo
