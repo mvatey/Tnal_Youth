@@ -21,12 +21,14 @@ import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 
 // Mirrors the backend's MemberServiceImpl#validateAssignableRole hierarchy:
 // a SECRETARY may only create MEMBER accounts, a BRANCH_LEADER may create
-// MEMBER or SECRETARY, and ADMIN may create any of the three. Anyone else
-// (e.g. VIEWER) gets no assignable roles, since they can't create members.
+// MEMBER, SECRETARY, or a VIEWER (SECRETARY-scope only -- see the
+// mappedViewerScope filtering below), and ADMIN may create any role
+// including a BRANCH_LEADER-scope VIEWER. Anyone else gets no assignable
+// roles, since they can't create members.
 const ASSIGNABLE_ROLES_BY_ACTOR = {
   SECRETARY: ["MEMBER"],
-  BRANCH_LEADER: ["MEMBER", "SECRETARY"],
-  ADMIN: ["MEMBER", "SECRETARY", "BRANCH_LEADER"],
+  BRANCH_LEADER: ["MEMBER", "SECRETARY", "VIEWER"],
+  ADMIN: ["MEMBER", "SECRETARY", "BRANCH_LEADER", "VIEWER"],
 };
 
 const EMPTY_FORM = {
@@ -42,6 +44,7 @@ const EMPTY_FORM = {
   levelId: "",
   positionId: "",
   role: "",
+  viewerScope: "",
   joinedOn: "",
 };
 
@@ -583,6 +586,23 @@ export default function CreateMemberModal({
       [levelLookups, label],
     );
 
+  const actorRole =
+    String(
+      user?.role || "",
+    ).toUpperCase();
+
+  // Display-only -- viewerScope is always driven by the chosen Position's
+  // own mappedViewerScope (see updatePosition below), never picked here
+  // directly, same lock CreateUserModal.js/personal/page.js already apply
+  // for a member-linked account.
+  const memberViewerScopeOptions =
+    actorRole === "BRANCH_LEADER"
+      ? [{ label: t("usersPage.secretary"), value: "SECRETARY" }]
+      : [
+          { label: t("usersPage.branchLeader"), value: "BRANCH_LEADER" },
+          { label: t("usersPage.secretary"), value: "SECRETARY" },
+        ];
+
   const positionOptions =
     useMemo(
       () =>
@@ -603,6 +623,10 @@ export default function CreateMemberModal({
                   position?.mappedRole ||
                     "MEMBER",
                 ).toUpperCase(),
+              mappedViewerScope:
+                String(
+                  position?.mappedViewerScope || "",
+                ).toUpperCase(),
             }),
           )
           .filter(
@@ -613,11 +637,20 @@ export default function CreateMemberModal({
                 "" &&
               allowedRoles.includes(
                 option.mappedRole,
-              ),
+              ) &&
+              // A branch leader can only ever grant SECRETARY-level
+              // viewer access -- never BRANCH_LEADER-level, mirroring
+              // the same restriction already enforced on the backend
+              // (MemberServiceImpl#validateAssignableRole) and on
+              // user/edit's viewerScope picker.
+              (option.mappedRole !== "VIEWER" ||
+                actorRole !== "BRANCH_LEADER" ||
+                option.mappedViewerScope === "SECRETARY"),
           ),
       [
         positionLookups,
         allowedRoles,
+        actorRole,
         label,
       ],
     );
@@ -639,15 +672,26 @@ export default function CreateMemberModal({
       // Role FormSelect removed below) -- position alone drives it now,
       // so every position needs a resolvable role, same fallback
       // positionOptions above already uses to decide which positions
-      // are even selectable for the actor's allowedRoles.
+      // are even selectable for the actor's allowedRoles. Same for
+      // viewerScope when the resolved role is VIEWER -- it comes from
+      // the position's own mappedViewerScope, never chosen directly.
+      const resolvedRole =
+        String(
+          selectedPosition?.mappedRole ||
+            "MEMBER",
+        ).toUpperCase();
+
       setForm(
         (previousForm) => ({
           ...previousForm,
           positionId: value,
-          role: String(
-            selectedPosition?.mappedRole ||
-              "MEMBER",
-          ).toUpperCase(),
+          role: resolvedRole,
+          viewerScope:
+            resolvedRole === "VIEWER"
+              ? String(
+                  selectedPosition?.mappedViewerScope || "",
+                ).toUpperCase()
+              : "",
         }),
       );
 
@@ -931,6 +975,11 @@ export default function CreateMemberModal({
 
         role:
           form.role,
+
+        viewer_scope:
+          form.role === "VIEWER"
+            ? form.viewerScope || null
+            : null,
 
         joined_on:
           form.joinedOn || null,
@@ -1277,6 +1326,21 @@ export default function CreateMemberModal({
                   }
                   required
                 />
+
+                {form.role === "VIEWER" && (
+                  <FormSelect
+                    label={t("usersPage.viewAs")}
+                    name="viewerScope"
+                    placeholder={t("usersPage.selectViewAs")}
+                    options={memberViewerScopeOptions}
+                    value={form.viewerScope}
+                    onChange={() => {}}
+                    // Always driven by the chosen Position's own
+                    // mappedViewerScope -- see updatePosition above.
+                    disabled
+                    required
+                  />
+                )}
 
                 <SearchableSelect
                   label={t("memberPage.branch")}
