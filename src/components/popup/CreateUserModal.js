@@ -1016,7 +1016,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
         */}
         <div className="space-y-4 rounded-xl border border-border bg-bg-page-gray/40 p-4">
           {isMemberLinked && (
-            <FormSelect
+            <SearchableSelect
               label={t("memberPage.position")}
               name="positionId"
               placeholder={t("memberPage.selectPosition")}

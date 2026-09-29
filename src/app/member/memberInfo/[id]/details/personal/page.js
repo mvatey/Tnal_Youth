@@ -2519,7 +2519,7 @@ export default function PersonalPage() {
 
             {/* POSITION */}
 
-            <FormSelect
+            <SearchableSelect
               label={t("memberPage.position")}
               value={
                 form.positionId
@@ -2534,8 +2534,6 @@ export default function PersonalPage() {
               disabled={
                 !canManageSensitiveFields
               }
-              selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
-              adminEditable={isAdmin}
             />
 
             {/* ROLE */}

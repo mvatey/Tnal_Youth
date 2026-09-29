@@ -1310,7 +1310,7 @@ export default function CreateMemberModal({
                   reads form.role (validation, the create payload)
                   still works unchanged.
                 */}
-                <FormSelect
+                <SearchableSelect
                   label={t("memberPage.position")}
                   name="positionId"
                   placeholder={t("memberPage.selectPosition")}
