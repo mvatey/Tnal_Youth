@@ -222,8 +222,14 @@ export default function CreateMemberModal({
 
     setForm((previousForm) => ({
       ...previousForm,
-      phone: method === "email" ? "" : previousForm.phone,
-      email: method === "phone" ? "" : previousForm.email,
+      phone:
+        method === "email" || method === "none"
+          ? ""
+          : previousForm.phone,
+      email:
+        method === "phone" || method === "none"
+          ? ""
+          : previousForm.email,
     }));
   };
 
@@ -801,13 +807,17 @@ export default function CreateMemberModal({
   // member-linked accounts no longer go through OTP-based activation (see
   // MemberServiceImpl.createActiveUserAccount), so nothing here actually
   // needs email specifically anymore; the choice is purely which field(s)
-  // this member wants to provide.
+  // this member wants to provide. "none" is a real, deliberate choice --
+  // a username/password-only account -- not just an unfinished form, so
+  // it has nothing left to require here.
   const phoneOrEmailRequirementMet =
     contactMethod === "phone"
       ? form.phone.trim() !== ""
       : contactMethod === "email"
         ? form.email.trim() !== ""
-        : form.phone.trim() !== "" && form.email.trim() !== "";
+        : contactMethod === "none"
+          ? true
+          : form.phone.trim() !== "" && form.email.trim() !== "";
 
   const isFormValid =
     requiredFields.every(
@@ -1239,6 +1249,7 @@ export default function CreateMemberModal({
                       ["phone", t("memberPage.contactMethodPhone")],
                       ["email", t("memberPage.contactMethodEmail")],
                       ["both", t("memberPage.contactMethodBoth")],
+                      ["none", t("memberPage.contactMethodNone")],
                     ].map(([method, methodLabel]) => (
                       <label
                         key={method}

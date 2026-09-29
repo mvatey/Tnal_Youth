@@ -508,8 +508,14 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
 
     setForm((previousForm) => ({
       ...previousForm,
-      phone: method === "email" ? "" : previousForm.phone,
-      email: method === "phone" ? "" : previousForm.email,
+      phone:
+        method === "email" || method === "none"
+          ? ""
+          : previousForm.phone,
+      email:
+        method === "phone" || method === "none"
+          ? ""
+          : previousForm.email,
     }));
 
     setShowValidationError(false);
@@ -549,7 +555,9 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       ? form.phone.trim() !== ""
       : contactMethod === "email"
         ? form.email.trim() !== ""
-        : form.phone.trim() !== "" && form.email.trim() !== "";
+        : contactMethod === "none"
+          ? true
+          : form.phone.trim() !== "" && form.email.trim() !== "";
   const isFormValid =
     REQUIRED_FIELDS.every(
       (field) => String(form[field] ?? "").trim() !== "",
@@ -903,6 +911,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
                 ["phone", t("usersPage.contactMethodPhone")],
                 ["email", t("usersPage.contactMethodEmail")],
                 ["both", t("usersPage.contactMethodBoth")],
+                ["none", t("usersPage.contactMethodNone")],
               ].map(([method, methodLabel]) => (
                 <label
                   key={method}
