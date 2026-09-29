@@ -224,7 +224,13 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
           : "",
       });
       setContactMethod(
-        phoneRaw && emailRaw ? "both" : emailRaw ? "email" : "phone",
+        phoneRaw && emailRaw
+          ? "both"
+          : emailRaw
+            ? "email"
+            : phoneRaw
+              ? "phone"
+              : "none",
       );
       // A standalone SECRETARY's full covered-branch list -- falls back
       // to just the single home branch for an account that predates this
@@ -298,7 +304,13 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
           status: "",
         });
         setContactMethod(
-          memberPhone && memberEmail ? "both" : memberEmail ? "email" : "phone",
+          memberPhone && memberEmail
+            ? "both"
+            : memberEmail
+              ? "email"
+              : memberPhone
+                ? "phone"
+                : "none",
         );
 
         setOriginalRole(role);
