@@ -196,6 +196,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
 
     if (!editingUser) {
       setForm(EMPTY_FORM);
+      setBranchSelectionIds([]);
       setPersonalInfoBase(null);
       setConfirmPassword("");
       setContactMethod("phone");
@@ -224,6 +225,16 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       });
       setContactMethod(
         phoneRaw && emailRaw ? "both" : emailRaw ? "email" : "phone",
+      );
+      // A standalone SECRETARY's full covered-branch list -- falls back
+      // to just the single home branch for an account that predates this
+      // table (branchIds comes back empty from the backend for those).
+      setBranchSelectionIds(
+        Array.isArray(editingUser.branchIds) && editingUser.branchIds.length > 0
+          ? editingUser.branchIds
+          : editingUser.branchId != null
+            ? [String(editingUser.branchId)]
+            : [],
       );
       setShowValidationError(false);
       setSubmitError("");
@@ -527,11 +538,12 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
   const requiresBranch =
     BRANCH_SCOPED_ROLES.has(form.role) ||
     (isViewer && form.viewerScope !== "ADMIN");
-  // Member-linked SECRETARY uses the multi-branch selector instead of the
-  // single branchId field -- everyone else (including a member-linked
-  // BRANCH_LEADER/MEMBER) still just needs the one branchId.
+  // Any SECRETARY (member-linked or standalone) uses the multi-branch
+  // selector instead of the single branchId field -- everyone else
+  // (including a BRANCH_LEADER/MEMBER, member-linked or not) still just
+  // needs the one branchId.
   const branchRequirementMet = !requiresBranch
-    || (isMemberLinked && isSecretary
+    || (isSecretary
       ? branchSelectionIds.length > 0
       : String(form.branchId).trim() !== "");
   const passwordValid = isMemberLinked
@@ -802,7 +814,17 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
         email: form.email.trim() || null,
         role: form.role,
         viewerScope: isViewer ? form.viewerScope : null,
-        branchId: requiresBranch ? Number(form.branchId) : null,
+        branchId: !requiresBranch
+          ? null
+          : isSecretary
+            ? Number(branchSelectionIds[0])
+            : Number(form.branchId),
+        // Only meaningful for SECRETARY -- every branch this account
+        // covers, not just the home one. See
+        // UserManagementServiceImpl#resolveSecretaryBranchIds.
+        branchIds: isSecretary
+          ? branchSelectionIds.map((id) => Number(id))
+          : null,
         password: form.password.trim() || null,
         status: isEditing && form.status ? form.status : null,
       };
@@ -1060,7 +1082,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             />
           )}
 
-          {requiresBranch && isMemberLinked && isSecretary ? (
+          {requiresBranch && isSecretary ? (
             <MultiSelect
               label={t("usersPage.branch")}
               name="branchSelectionIds"

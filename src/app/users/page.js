@@ -166,6 +166,11 @@ function mapUser(user, labels, locale) {
           : "STANDALONE",
     memberId: user?.memberId ?? null,
     branchId: user?.branchId ?? null,
+    // Only ever populated for a standalone SECRETARY -- see
+    // UserBranchAssignment/UserListItemResponse.branchIds.
+    branchIds: Array.isArray(user?.branchIds)
+      ? user.branchIds.map(String)
+      : [],
     statusCode,
     statusLabel:
       user?.memberId != null
