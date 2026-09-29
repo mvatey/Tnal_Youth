@@ -20,6 +20,10 @@ const ERROR_TRANSLATIONS = [
   // password format itself were wrong, when the real issue is just that
   // it matches the current one.
   ["must be different from the current password", "ពាក្យសម្ងាត់ថ្មីត្រូវខុសពីពាក្យសម្ងាត់បច្ចុប្បន្ន។"],
+  [
+    "generated code collided",
+    "កូដដែលបង្កើតដោយស្វ័យប្រវត្តិប៉ះទង្គិចគ្នា។ សូមព្យាយាមរក្សាទុកម្ដងទៀត។",
+  ],
   ["account not found", "រកមិនឃើញគណនីនេះទេ។"],
   ["user not found", "រកមិនឃើញគណនីនេះទេ។"],
   ["member not found", "រកមិនឃើញសមាជិកនេះទេ។"],
