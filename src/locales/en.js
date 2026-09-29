@@ -1103,6 +1103,7 @@ const en = {
     loadCategoriesFailed: "Could not load variable categories.",
     loadItemsFailed: "Could not load variable data.",
     nameKmRequired: "Please enter the Khmer label.",
+    nameEnRequired: "Please enter the English label too.",
     saveFailed: "Could not save the data.",
     paymentCategory: "Payment category",
     cash: "Cash",

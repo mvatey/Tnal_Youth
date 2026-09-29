@@ -494,6 +494,15 @@ export default function VariablePage() {
       return;
     }
 
+    // English label now doubles as the source for the item's internal
+    // generated code (see the backend's generateCode) -- requiring it
+    // keeps that code human-readable instead of falling back to a
+    // random tag for every Khmer-only entry.
+    if (!form.nameEn.trim()) {
+      setFormError(t("variablePage.nameEnRequired"));
+      return;
+    }
+
     if (isPosition && form.mappedRole === "VIEWER" && !form.mappedViewerScope) {
       setFormError(t("variablePage.mappedViewerScopeRequired"));
       return;
@@ -1093,6 +1102,7 @@ export default function VariablePage() {
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-text-primary">
                     {t("variablePage.nameEnFull")}
+                    <span className="ml-1 text-error">*</span>
                   </label>
 
                   <input
