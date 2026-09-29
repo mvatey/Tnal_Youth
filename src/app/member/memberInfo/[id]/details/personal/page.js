@@ -2803,16 +2803,18 @@ function FormSelect({
             disabled
           }
           className={`
-            h-11
+            box-border
+            h-[34px]
             w-full
             appearance-none
             rounded-lg
             border
             border-border
             bg-bg-page-white
-            px-4
+            pl-3
             pr-10
             text-sm
+            leading-none
             text-text-secondary
             outline-none
             transition
