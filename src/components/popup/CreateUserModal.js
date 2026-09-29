@@ -1123,9 +1123,18 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
           </p>
         )}
 
+        {/*
+          Not gated on isFormValid -- a hard-disabled button blocks the
+          click event entirely, which meant submit()'s own granular
+          per-field checks (requiredPassword, passwordRequirementsNotMet,
+          requiredBranch, ...) never got a chance to run, so an invalid
+          form just sat there with no explanation at all. Only saving
+          (an in-flight request) should actually block the click; every
+          other case should reach submit() and show the specific reason.
+        */}
         <FormActionButton
           onCancel={onClose}
-          isValid={isFormValid && !isSubmitting}
+          isValid={!isSubmitting}
           saving={isSubmitting}
           saveText={isEditing ? t("usersPage.update") : t("usersPage.save")}
           cancelText={t("usersPage.cancel")}
