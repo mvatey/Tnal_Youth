@@ -145,6 +145,11 @@ function mapUser(user, labels, locale) {
     phoneRaw: user?.phone || "",
     emailRaw: user?.email || "",
     viewerScopeRaw: user?.viewerScope || "",
+    // Only ever true for a standalone SECRETARY -- see
+    // User.isRegionalSecretary/UserListItemResponse.isRegionalSecretary.
+    // Lets the Edit modal re-select "Secretary (Regional)" instead of
+    // plain "Secretary", since the account's real role is always SECRETARY.
+    isRegionalSecretaryRaw: Boolean(user?.isRegionalSecretary),
     roleCode,
     roleLabel:
       (roleCode === "VIEWER" && user?.viewerScope
@@ -153,7 +158,9 @@ function mapUser(user, labels, locale) {
               ? labels.roles.MEMBER_VIEWER || labels.roles.VIEWER || "Member Viewer"
               : labels.roles.VIEWER || "Viewer"
           } (${labels.roles[viewerScope] || user.viewerScope})`
-        : labels.roles[roleCode]) ||
+        : roleCode === "SECRETARY" && user?.isRegionalSecretary
+          ? labels.roles.SECRETARY_REGIONAL || labels.roles.SECRETARY
+          : labels.roles[roleCode]) ||
       user?.role ||
       "-",
     accountType:
@@ -207,6 +214,7 @@ export default function UsersPage() {
     MEMBER_VIEWER: t("usersPage.memberViewer"),
     BRANCH_LEADER: t("usersPage.branchLeader"),
     SECRETARY: t("usersPage.secretary"),
+    SECRETARY_REGIONAL: t("usersPage.secretaryRegional"),
     MEMBER: t("usersPage.member"),
   }), [t]);
 

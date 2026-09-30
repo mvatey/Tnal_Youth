@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 
 import PopupCard from "@/components/popup/PopupCard";
@@ -25,7 +25,7 @@ async function fetchJson(path, options) {
 
 const USERS_BASE = "/api/backend/admin/users";
 
-const BRANCH_SCOPED_ROLES = new Set(["BRANCH_LEADER", "SECRETARY", "MEMBER"]);
+const BRANCH_SCOPED_ROLES = new Set(["BRANCH_LEADER", "SECRETARY", "SECRETARY_REGIONAL", "MEMBER"]);
 
 const EMPTY_FORM = {
   fullNameKm: "",
@@ -115,10 +115,18 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
   const actingRole = String(actingUser?.role || "").toUpperCase();
   const isEditing = Boolean(editingUser);
   const isMemberLinked = Boolean(editingUser?.memberId);
+  // SECRETARY_REGIONAL isn't a real UserRole -- same convention the
+  // member/create Position mappedRole uses (see UserManagementServiceImpl
+  // #parseRole). Only offered here (standalone), not in
+  // memberLinkedRoleOptions below -- a member-linked regional secretary
+  // goes through a Position mapped to SECRETARY_REGIONAL instead (see
+  // CreateMemberModal), since a standalone account has no Position to
+  // carry that marker on.
   const roleOptions = [
     { label: t("usersPage.admin"), value: "ADMIN" },
     { label: t("usersPage.branchLeader"), value: "BRANCH_LEADER" },
     { label: t("usersPage.secretary"), value: "SECRETARY" },
+    { label: t("usersPage.secretaryRegional"), value: "SECRETARY_REGIONAL" },
     { label: t("usersPage.member"), value: "MEMBER" },
     { label: t("usersPage.viewer"), value: "VIEWER" },
   ];
@@ -168,6 +176,18 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
   const [contactMethod, setContactMethod] = useState("phone");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [branches, setBranches] = useState([]);
+  // Cross-referenced against each branch's own branchLevelId to tell a
+  // province/district/commune branch apart -- used to filter the anchor
+  // branch picker down to province+district once SECRETARY_REGIONAL is
+  // chosen (see regionalBranchOptions below). Same pattern as
+  // CreateMemberModal's own branchLevelLookups.
+  const [branchLevelLookups, setBranchLevelLookups] = useState([]);
+  // The live-computed branch list a SECRETARY_REGIONAL anchor branch
+  // would cover -- fetched from the backend (see the effect below)
+  // rather than computed here, so this preview can never drift from
+  // what StaffBranchScopeService actually grants.
+  const [regionalCoverageOptions, setRegionalCoverageOptions] = useState([]);
+  const [loadingRegionalCoverage, setLoadingRegionalCoverage] = useState(false);
   const [showValidationError, setShowValidationError] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
@@ -215,7 +235,10 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
         username: editingUser.usernameRaw || "",
         phone: phoneRaw,
         email: emailRaw,
-        role: editingUser.roleCode || "VIEWER",
+        role:
+          editingUser.roleCode === "SECRETARY" && editingUser.isRegionalSecretaryRaw
+            ? "SECRETARY_REGIONAL"
+            : editingUser.roleCode || "VIEWER",
         viewerScope: editingUser.viewerScopeRaw || "ADMIN",
         branchId: editingUser.branchId != null ? String(editingUser.branchId) : "",
         password: "",
@@ -412,6 +435,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
                   : branch?.nameKm || branch?.name_km || branch?.labelKm || branch?.label_km || branch?.nameEn || branch?.name_en || branch?.labelEn || branch?.label_en) ||
                 branch?.label ||
                 String(branch?.id ?? ""),
+              branchLevelId: branch?.branchLevelId ?? branch?.branch_level_id ?? null,
             }))
             .filter((branch) => branch.value),
         );
@@ -422,6 +446,35 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
 
     return () => controller.abort();
   }, [locale, open, t]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const controller = new AbortController();
+
+    fetch("/api/lookups/branch-levels", {
+      credentials: "include",
+      cache: "no-store",
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message);
+        const rows = Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
+        setBranchLevelLookups(
+          rows.map((level) => ({
+            value: String(level?.id ?? level?.value ?? ""),
+            code: String(level?.code || "").toUpperCase(),
+          })),
+        );
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") setBranchLevelLookups([]);
+      });
+
+    return () => controller.abort();
+  }, [open]);
 
   useEffect(() => {
     if (!open || !isMemberLinked) return;
@@ -509,6 +562,87 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     setShowValidationError(false);
     setSubmitError("");
   };
+
+  // Only ever reachable on the standalone path -- SECRETARY_REGIONAL
+  // isn't offered in memberLinkedRoleOptions (see roleOptions above).
+  const isRegionalSecretary = form.role === "SECRETARY_REGIONAL";
+
+  // Province/district branch-level ids, resolved by code once the
+  // lookup loads -- a commune anchor would trivially cover just itself
+  // (identical to picking plain SECRETARY instead), so it's excluded as
+  // a choice entirely once SECRETARY_REGIONAL is picked. Mirrors
+  // CreateMemberModal's own regionalBranchOptions.
+  const regionalBranchOptions = useMemo(() => {
+    if (!isRegionalSecretary) {
+      return branches;
+    }
+
+    const allowedLevelIds = branchLevelLookups
+      .filter((level) => ["PROVINCE", "DISTRICT"].includes(level.code))
+      .map((level) => level.value);
+
+    return branches.filter((option) =>
+      allowedLevelIds.includes(String(option?.branchLevelId ?? "")),
+    );
+  }, [isRegionalSecretary, branches, branchLevelLookups]);
+
+  // Refetches the live coverage preview whenever the anchor branch
+  // changes -- this is a preview call only (see the route's own
+  // docblock), nothing is saved here; the actual grant is computed the
+  // same way, again, at read time by StaffBranchScopeService.
+  useEffect(() => {
+    if (!open || !isRegionalSecretary || !form.branchId) {
+      setRegionalCoverageOptions([]);
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    async function loadRegionalCoverage() {
+      try {
+        setLoadingRegionalCoverage(true);
+
+        const response = await fetch(
+          `/api/branches/${form.branchId}/regional-coverage`,
+          { cache: "no-store" },
+        );
+
+        const body = await response.json().catch(() => null);
+
+        if (cancelled) return;
+
+        if (!response.ok) {
+          setRegionalCoverageOptions([]);
+          return;
+        }
+
+        const rows = Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
+
+        setRegionalCoverageOptions(
+          rows
+            .map((branch) => ({
+              value: String(branch?.id ?? ""),
+              label:
+                (locale === "en"
+                  ? branch?.nameEn || branch?.name_en || branch?.nameKm || branch?.name_km
+                  : branch?.nameKm || branch?.name_km || branch?.nameEn || branch?.name_en) ||
+                String(branch?.id ?? ""),
+            }))
+            .filter((option) => option.value !== ""),
+        );
+      } catch (error) {
+        if (!cancelled) setRegionalCoverageOptions([]);
+      } finally {
+        if (!cancelled) setLoadingRegionalCoverage(false);
+      }
+    }
+
+    loadRegionalCoverage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, isRegionalSecretary, form.branchId, locale]);
 
   if (!open) {
     return null;
@@ -1110,15 +1244,40 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             />
           ) : (
             requiresBranch && (
-              <SearchableSelect
-                label={t("usersPage.branch")}
-                name="branchId"
-                placeholder={t("usersPage.selectBranch")}
-                options={branches}
-                value={form.branchId}
-                onChange={update("branchId")}
-                required
-              />
+              <>
+                <SearchableSelect
+                  label={
+                    isRegionalSecretary
+                      ? t("usersPage.regionalAnchorBranch")
+                      : t("usersPage.branch")
+                  }
+                  name="branchId"
+                  placeholder={
+                    isRegionalSecretary
+                      ? t("usersPage.selectRegionalAnchorBranch")
+                      : t("usersPage.selectBranch")
+                  }
+                  options={isRegionalSecretary ? regionalBranchOptions : branches}
+                  value={form.branchId}
+                  onChange={update("branchId")}
+                  required
+                />
+
+                {isRegionalSecretary && (
+                  <MultiSelect
+                    label={t("usersPage.regionalCoverage")}
+                    placeholder={
+                      loadingRegionalCoverage
+                        ? t("common.loading")
+                        : t("usersPage.regionalCoveragePlaceholder")
+                    }
+                    options={regionalCoverageOptions}
+                    value={regionalCoverageOptions.map((option) => option.value)}
+                    onChange={() => {}}
+                    disabled
+                  />
+                )}
+              </>
             )
           )}
         </div>
