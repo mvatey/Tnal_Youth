@@ -22,6 +22,7 @@ import DharmaWheel from "@/components/icons/DharmaWheel";
 
 import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
 import DataTable from "@/components/table/DataTable.js";
+import BranchAreaFilter from "@/components/forms/BranchAreaFilter.js";
 import StatCard from "@/components/dashboard/statCard";
 import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail";
 import useCurrentMember from "@/hooks/useCurrentMember";
@@ -1145,87 +1146,25 @@ export default function MembersPage() {
     [members, dateFilter, positionFilter, areaCoverageIds],
   );
 
-  const areaLevelLabels = useMemo(
-    () => ({
-      PROVINCE: t("memberPage.areaLevelProvince"),
-      DISTRICT: t("memberPage.areaLevelDistrict"),
-      COMMUNE: t("memberPage.areaLevelCommune"),
-    }),
-    [t],
-  );
-
-  const areaModeOptions = useMemo(
-    () => [
-      { label: t("memberPage.areaMode"), value: "" },
-      { label: t("memberPage.areaModeBranch"), value: "branch" },
-      { label: t("memberPage.areaModeLevel"), value: "level" },
-    ],
-    [t],
-  );
-
-  const areaLevelOptions = useMemo(
-    () => [
-      { label: t("memberPage.areaLevel"), value: "" },
-      { label: areaLevelLabels.PROVINCE, value: "PROVINCE" },
-      { label: areaLevelLabels.DISTRICT, value: "DISTRICT" },
-      { label: areaLevelLabels.COMMUNE, value: "COMMUNE" },
-    ],
-    [t, areaLevelLabels],
-  );
-
-  // The last of the three filters: every branch (provinces first, then
-  // districts, then communes) when filtering by branch, or only the
-  // branches of the chosen level when filtering by level.
-  const areaBranchOptions = useMemo(() => {
-    const levelOrder = { PROVINCE: 0, DISTRICT: 1, COMMUNE: 2 };
-
-    const blankLabel =
-      areaMode === "level" && areaLevel
-        ? areaLevelLabels[areaLevel]
-        : t("memberPage.branch");
-
-    const rows = branchAreas
-      .map((area) => ({
+  const areaChoices = useMemo(
+    () =>
+      branchAreas.map((area) => ({
+        id: String(area.id),
         level: String(area.levelCode || "").toUpperCase(),
         name: label(area, area.branchCode || ""),
-        value: String(area.id),
-      }))
-      .filter((area) => areaMode !== "level" || area.level === areaLevel)
-      .sort(
-        (a, b) =>
-          (levelOrder[a.level] ?? 9) - (levelOrder[b.level] ?? 9) ||
-          a.name.localeCompare(b.name),
-      );
-
-    return [
-      { label: blankLabel, value: "" },
-
-      ...rows.map((area) => ({
-        label:
-          areaMode === "branch" && areaLevelLabels[area.level]
-            ? `${areaLevelLabels[area.level]} \u00b7 ${area.name}`
-            : area.name,
-        value: area.value,
       })),
-    ];
-  }, [branchAreas, areaMode, areaLevel, areaLevelLabels, label, t]);
+    [branchAreas, label],
+  );
 
-  const handleAreaModeChange = (value) => {
-    setAreaMode(value);
-    setAreaLevel("");
-    setAreaBranch("");
-    setBranchFilter("");
-  };
-
-  const handleAreaLevelChange = (value) => {
-    setAreaLevel(value);
-    setAreaBranch("");
-    setBranchFilter("");
-  };
-
-  const handleAreaBranchChange = (value) => {
-    setAreaBranch(value);
-    setBranchFilter(areaMode === "branch" ? value : "");
+  // One control reports all three picks together. An exact branch goes to
+  // the server as the existing branchId filter (so the summary cards follow
+  // it); a level pick is expanded to its sub-branches client-side instead
+  // (see areaCoverageIds).
+  const handleAreaChange = ({ mode, level, branchId }) => {
+    setAreaMode(mode);
+    setAreaLevel(level);
+    setAreaBranch(branchId);
+    setBranchFilter(mode === "branch" ? branchId : "");
   };
 
   const positionFilterOptions = useMemo(() => {
@@ -1661,38 +1600,20 @@ export default function MembersPage() {
     !isBranchScoped && branchAreas.length > 1
       ? [
           {
-            name: "areaMode",
-            value: areaMode,
-            onChange: handleAreaModeChange,
-            options: areaModeOptions,
-            placeholder: t("memberPage.areaMode"),
+            name: "area",
+            render: () => (
+              <BranchAreaFilter
+                areas={areaChoices}
+                value={{
+                  mode: areaMode,
+                  level: areaLevel,
+                  branchId: areaBranch,
+                }}
+                onChange={handleAreaChange}
+                placeholder={t("memberPage.branch")}
+              />
+            ),
           },
-
-          ...(areaMode === "level"
-            ? [
-                {
-                  name: "areaLevel",
-                  value: areaLevel,
-                  onChange: handleAreaLevelChange,
-                  options: areaLevelOptions,
-                  placeholder: t("memberPage.areaLevel"),
-                },
-              ]
-            : []),
-
-          ...(areaMode
-            ? [
-                {
-                  name: "areaBranch",
-                  value: areaBranch,
-                  onChange: handleAreaBranchChange,
-                  options: areaBranchOptions,
-                  placeholder: t("memberPage.branch"),
-                  searchable: true,
-                  disabled: areaMode === "level" && !areaLevel,
-                },
-              ]
-            : []),
         ]
       : [];
 

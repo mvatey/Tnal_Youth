@@ -243,7 +243,9 @@ export default function DataTable({
                           key={filterName}
                           className={`min-w-0 ${widthClass}`}
                         >
-                          {filter.type === "daterange" ? (
+                          {filter.render ? (
+                            filter.render()
+                          ) : filter.type === "daterange" ? (
                             <DateRangePicker
                               name={filterName}
                               value={filter.value}
