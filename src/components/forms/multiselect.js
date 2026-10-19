@@ -589,6 +589,7 @@ export default function MultiSelect({
                         checked={
                           checked
                         }
+                        muted={readOnly}
                       />
                     </button>
                   );
@@ -616,6 +617,8 @@ export default function MultiSelect({
 function CheckboxIndicator({
   checked,
   indeterminate = false,
+  // Paled out so a locked (readOnly) list reads as unclickable.
+  muted = false,
 }) {
   return (
     <span
@@ -630,6 +633,7 @@ function CheckboxIndicator({
         rounded
         border
         transition
+        ${muted ? "opacity-40" : ""}
         ${
           checked ||
           indeterminate
