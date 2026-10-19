@@ -594,7 +594,7 @@ const km = {
     regionalCoveragePlaceholder: "គណនាដោយស្វ័យប្រវត្តិពីសាខាគោលយោង",
     areaModeBranch: "សាខា",
     areaModeLevel: "កម្រិតសាខា",
-    areaClear: "សម្អាតតម្រង",
+    areaClear: "សម្អាត",
     areaFilterPlaceholder: "សាខា/កម្រិតសាខា",
     registeredVoter: "មានឈ្មោះបោះឆ្នោត",
     lifeStatus: "ស្ថានភាពជីវិត",

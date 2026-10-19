@@ -594,7 +594,7 @@ const en = {
     regionalCoveragePlaceholder: "Automatically computed from the anchor branch",
     areaModeBranch: "Branch",
     areaModeLevel: "Branch level",
-    areaClear: "Clear filter",
+    areaClear: "Clear",
     areaFilterPlaceholder: "Branch/Branch level",
     registeredVoter: "Registered voter",
     lifeStatus: "Life status",

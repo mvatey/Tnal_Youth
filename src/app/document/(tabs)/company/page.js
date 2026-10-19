@@ -6,6 +6,8 @@ import { Eye, FileText, Pencil, Trash2 } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
 import DataTable from "@/components/table/DataTable";
+import BranchAreaFilter from "@/components/forms/BranchAreaFilter";
+import useBranchAreaFilter from "@/hooks/useBranchAreaFilter";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import AddDocumentForm from "@/components/document/AddDocumentForm";
 import EditDocumentForm from "@/components/document/EditDocumentForm";
@@ -93,7 +95,7 @@ export default function CompanyDocumentPage() {
   // branch_leader, who use the sidebar's global selectedBranch instead
   // (see effectiveSelectedBranch below). "" (not "all") to match
   // FormSelect's own reset option, which always emits "".
-  const [localBranchFilter, setLocalBranchFilter] = useState("");
+  const areaFilter = useBranchAreaFilter({ enabled: !isBranchScoped });
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -175,9 +177,7 @@ export default function CompanyDocumentPage() {
   // What the table's own branch filter actually uses -- a branch-scoped
   // secretary/branch_leader always follows the sidebar's global branch;
   // everyone else (admin/viewer) picks freely from their own local filter.
-  const effectiveSelectedBranch = isBranchScoped
-    ? selectedBranch
-    : localBranchFilter;
+  const effectiveSelectedBranch = isBranchScoped ? selectedBranch : "";
 
   // The branch filter dropdown shown in the toolbar: the full list for a
   // free pick, or just the one currently-active branch (and disabled) when
@@ -198,10 +198,13 @@ export default function CompanyDocumentPage() {
     // branch) stays visible no matter which branch is selected, rather than
     // disappearing under every branch filter.
     const matchBranch =
-      !effectiveSelectedBranch ||
-      effectiveSelectedBranch === "all" ||
       item.branchId == null ||
-      String(item.branchId) === String(effectiveSelectedBranch);
+      (isBranchScoped
+        ? !effectiveSelectedBranch ||
+          effectiveSelectedBranch === "all" ||
+          String(item.branchId) === String(effectiveSelectedBranch)
+        : !areaFilter.coverageIds ||
+          areaFilter.coverageIds.has(String(item.branchId)));
 
     return matchSearch && matchType && matchDate && matchBranch;
   });
@@ -330,14 +333,26 @@ export default function CompanyDocumentPage() {
   ];
 
   const filters = [
-    {
-      name: "branch",
-      placeholder: t("documentPage.branch"),
-      value: isBranchScoped ? String(selectedBranch) : localBranchFilter,
-      options: branchFilterOptions,
-      onChange: isBranchScoped ? () => {} : setLocalBranchFilter,
-      disabled: isBranchScoped,
-    },
+    isBranchScoped
+      ? {
+          name: "branch",
+          placeholder: t("documentPage.branch"),
+          value: String(selectedBranch),
+          options: branchFilterOptions,
+          onChange: () => {},
+          disabled: true,
+        }
+      : {
+          name: "area",
+          render: () => (
+            <BranchAreaFilter
+              areas={areaFilter.choices}
+              value={areaFilter.value}
+              onChange={areaFilter.setValue}
+              placeholder={t("memberPage.areaFilterPlaceholder")}
+            />
+          ),
+        },
     {
       name: "type",
       placeholder: t("documentPage.documentType"),

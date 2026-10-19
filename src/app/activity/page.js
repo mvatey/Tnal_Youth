@@ -12,6 +12,8 @@ import ActivityStats from "@/components/activity/ActivityStats";
 import TelegramConnectBanner from "@/components/activity/TelegramConnectBanner";
 import Button from "@/components/ui/Button";
 import PrimaryActionButton from "@/components/ui/actions/PrimaryActionButton";
+import BranchAreaFilter from "@/components/forms/BranchAreaFilter";
+import useBranchAreaFilter from "@/hooks/useBranchAreaFilter";
 
 import { useBranch } from "@/context/BranchContext";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
@@ -222,24 +224,19 @@ export default function ActivityPage() {
   // they're not a co-host of anything), so they get their own page-local
   // branch filter here instead of the sidebar's global one -- which they
   // don't have anyway (see sidebar.js's canSelectBranch, secretary/
-  // branch_leader only). Same pattern as the member list page's admin
-  // branch filter. Stored as the branch's label, matching every other
-  // filter on this page (type/sector), and resolved back to an id below.
-  const [selectedBranchLabel, setSelectedBranchLabel] = useState("all");
+  // branch_leader only). It's the same one-box "branch / branch level"
+  // picker as the member list: a plain branch goes to the server as the
+  // branchId filter, a level pick (a branch plus everything under it) is
+  // applied to the fetched rows instead -- see areaFilter.coverageIds.
+  const areaFilter = useBranchAreaFilter({ enabled: isAdmin });
 
   const [activityRecords, setActivityRecords] = useState([]);
   const [branchOptions, setBranchOptions] = useState([]);
 
-  const adminBranchId = useMemo(() => {
-    if (selectedBranchLabel === "all") return "all";
-    const match = branchOptions.find(
-      (option) => option.label === selectedBranchLabel,
-    );
-    return match ? String(match.value) : "all";
-  }, [selectedBranchLabel, branchOptions]);
-
   // What actually scopes every fetch/filter below.
-  const effectiveSelectedBranch = isAdmin ? adminBranchId : selectedBranch;
+  const effectiveSelectedBranch = isAdmin
+    ? areaFilter.exactBranchId || "all"
+    : selectedBranch;
   // From the backend's ActivityPageResponse.invitedActivityCount — the full
   // count of activities reached only via an accepted co-hosting invitation
   // (not capped by the page's size=1000 fetch). null for any role other
@@ -392,7 +389,7 @@ export default function ActivityPage() {
   }, [label, effectiveSelectedBranch, t]);
 
   useEffect(() => {
-    // Admin uses its own page-local branch filter (adminBranchId), never
+    // Admin uses its own page-local branch filter (areaFilter), never
     // BranchContext's sidebar selection, so "all" is already its correct,
     // final value -- no wait needed. secretary/branch_leader/member read
     // BranchContext's selectedBranch directly though, which starts at "all"
@@ -469,7 +466,14 @@ export default function ActivityPage() {
   // would also affect the donation module's own use of this endpoint).
   const branchScopedActivities = useMemo(
     () =>
-      activities.filter(
+      activities
+        .filter(
+          (item) =>
+            !isAdmin ||
+            !areaFilter.coverageIds ||
+            areaFilter.coverageIds.has(String(item.branchId)),
+        )
+        .filter(
         (item) =>
           effectiveSelectedBranch === "all" ||
           String(item.branchId) === String(effectiveSelectedBranch) ||
@@ -481,7 +485,7 @@ export default function ActivityPage() {
               branch === item.branch,
           ),
       ),
-    [activities, effectiveSelectedBranch, contextBranches],
+    [activities, effectiveSelectedBranch, contextBranches, isAdmin, areaFilter.coverageIds],
   );
 
   const types = useMemo(
@@ -753,17 +757,21 @@ export default function ActivityPage() {
   ];
 
   const filters = [
-    // Admin's own branch filter (see selectedBranchLabel above) -- everyone
+    // Admin's own branch filter (see areaFilter above) -- everyone
     // else already has the sidebar's global branch dropdown, so this would
     // just be a confusing second control for them.
-    ...(isAdmin
+    ...(isAdmin && areaFilter.available
       ? [
           {
-            key: "branch",
-            value: selectedBranchLabel,
-            onChange: setSelectedBranchLabel,
-            placeholder: t("memberPage.branch"),
-            options: branchOptions.map((option) => option.label),
+            key: "area",
+            render: () => (
+              <BranchAreaFilter
+                areas={areaFilter.choices}
+                value={areaFilter.value}
+                onChange={areaFilter.setValue}
+                placeholder={t("memberPage.areaFilterPlaceholder")}
+              />
+            ),
           },
         ]
       : []),

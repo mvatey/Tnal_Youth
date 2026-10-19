@@ -19,9 +19,20 @@ function FilterInput({
   options = [],
   placeholder = "ជ្រើសរើស",
   type = "select",
+  render,
 }) {
   const { locale } = useLanguage();
   const datePickerLocale = locale === "en" ? enUS : km;
+
+  // A filter that brings its own control (e.g. the one-box branch/level
+  // picker) -- just given a slot in the row.
+  if (render) {
+    return (
+      <div className="relative w-full sm:w-[200px]">
+        {render()}
+      </div>
+    );
+  }
 
   if (type === "date") {
     return (

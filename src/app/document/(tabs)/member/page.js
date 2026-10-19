@@ -6,6 +6,8 @@ import { Eye, FileText } from "lucide-react";
 import { RiAddCircleLine } from "react-icons/ri";
 
 import DataTable from "@/components/table/DataTable";
+import BranchAreaFilter from "@/components/forms/BranchAreaFilter";
+import useBranchAreaFilter from "@/hooks/useBranchAreaFilter";
 import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import CompanyDocumentPreview from "@/components/document/CompanyDocumentPreview";
 import { useAuth } from "@/context/AuthContext";
@@ -77,7 +79,10 @@ export default function MemberDocumentPage() {
   // "" (not "all") to match FormSelect's own reset option, which always
   // emits "". Ignored for secretary/branch_leader -- see
   // effectiveSelectedBranch below.
-  const [localBranchFilter, setLocalBranchFilter] = useState("");
+  // Admin/viewer pick with the one-box "branch / branch level" filter (a
+  // level pick matches that branch plus everything under it); secretary/
+  // branch_leader never see it, they follow the sidebar's branch instead.
+  const areaFilter = useBranchAreaFilter({ enabled: !isBranchScoped });
   const [branches, setBranches] = useState([]);
   const [selectedCertificate, setSelectedCertificate] = useState(null);
   const [documents, setDocuments] = useState([]);
@@ -180,9 +185,7 @@ export default function MemberDocumentPage() {
   // What the table's own branch filter actually uses -- a branch-scoped
   // secretary/branch_leader always follows the sidebar's global branch;
   // everyone else (admin/viewer) picks freely from their own local filter.
-  const effectiveSelectedBranch = isBranchScoped
-    ? selectedBranch
-    : localBranchFilter;
+  const effectiveSelectedBranch = isBranchScoped ? selectedBranch : "";
 
   // The branch filter dropdown shown in the toolbar: the full list for a
   // free pick, or just the one currently-active branch (and disabled) when
@@ -216,10 +219,13 @@ export default function MemberDocumentPage() {
     // makes sense on the "own branch" tab.
     const matchBranch =
       activeSubTab === "cross-branch" ||
-      !effectiveSelectedBranch ||
-      effectiveSelectedBranch === "all" ||
       item.branchId == null ||
-      String(item.branchId) === String(effectiveSelectedBranch);
+      (isBranchScoped
+        ? !effectiveSelectedBranch ||
+          effectiveSelectedBranch === "all" ||
+          String(item.branchId) === String(effectiveSelectedBranch)
+        : !areaFilter.coverageIds ||
+          areaFilter.coverageIds.has(String(item.branchId)));
 
     return matchSearch && matchType && matchDate && matchBranch;
   });
@@ -333,14 +339,26 @@ export default function MemberDocumentPage() {
   ];
 
   const filters = [
-    {
-      name: "branch",
-      placeholder: t("documentPage.branch"),
-      value: isBranchScoped ? String(selectedBranch) : localBranchFilter,
-      options: branchFilterOptions,
-      onChange: isBranchScoped ? () => {} : setLocalBranchFilter,
-      disabled: isBranchScoped,
-    },
+    isBranchScoped
+      ? {
+          name: "branch",
+          placeholder: t("documentPage.branch"),
+          value: String(selectedBranch),
+          options: branchFilterOptions,
+          onChange: () => {},
+          disabled: true,
+        }
+      : {
+          name: "area",
+          render: () => (
+            <BranchAreaFilter
+              areas={areaFilter.choices}
+              value={areaFilter.value}
+              onChange={areaFilter.setValue}
+              placeholder={t("memberPage.areaFilterPlaceholder")}
+            />
+          ),
+        },
     {
       name: "type",
       placeholder: t("documentPage.documentType"),

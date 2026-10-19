@@ -1576,18 +1576,6 @@ export default function CreateMemberModal({
                   />
                 )}
 
-                <CheckboxField
-                  label={t("memberPage.registeredVoter")}
-                  name="registeredVoter"
-                  checked={form.registeredVoter}
-                  onChange={(checked) =>
-                    setForm((previousForm) => ({
-                      ...previousForm,
-                      registeredVoter: checked,
-                    }))
-                  }
-                />
-
                 <BoxFill
                   label={t("memberPage.dateOfBirth")}
                   name="dateOfBirth"
@@ -1640,6 +1628,19 @@ export default function CreateMemberModal({
                   onChange={update(
                     "nationalityId",
                   )}
+                />
+
+                <CheckboxField
+                  label={t("memberPage.registeredVoter")}
+                  name="registeredVoter"
+                  checked={form.registeredVoter}
+                  onChange={(checked) =>
+                    setForm((previousForm) => ({
+                      ...previousForm,
+                      registeredVoter: checked,
+                    }))
+                  }
+                  alignWithInput
                 />
               </div>
 
