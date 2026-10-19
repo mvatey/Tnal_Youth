@@ -107,6 +107,7 @@ function normalizeActivity(item, branchOptions, locale = "km") {
     name: (locale === "en" ? item.titleEn : item.titleKm) || (locale === "en" ? item.titleKm : item.titleEn) || "-",
     type: getLookupLabel(item.type, locale),
     typeId: item.type?.id,
+    typeCode: item.type?.code,
     sector: getLookupLabel(item.sector, locale),
     sectorId: item.sector?.id,
     branch:
@@ -153,9 +154,13 @@ function normalizeActivity(item, branchOptions, locale = "km") {
   };
 }
 
-function TypeBadge({ type }) {
+function TypeBadge({ type, code }) {
   const normalizedType = String(type || "").trim().toLowerCase();
-  const isExternal = normalizedType === "កម្មវិធីខាងក្រៅ" || normalizedType.includes("external");
+  // By the type's code when known -- the label is editable on the variable
+  // page, so matching its wording would stop colouring a renamed type.
+  const isExternal = code
+    ? String(code).toUpperCase() === "EXTERNAL"
+    : normalizedType === "កម្មវិធីខាងក្រៅ" || normalizedType.includes("external");
   const style =
     isExternal
       ? "bg-success-bg text-success"
@@ -627,7 +632,7 @@ export default function ActivityPage() {
       width: "10%",
       align: "center",
       render: (row) => (
-        <TypeBadge type={row.type} />
+        <TypeBadge type={row.type} code={row.typeCode} />
       ),
     },
     {

@@ -24,7 +24,7 @@ function normalizeType(type) {
     .toUpperCase();
 }
 
-function TypeBadge({ type }) {
+function TypeBadge({ type, label: lookupLabel }) {
   const { t } =
     useLanguage();
 
@@ -38,12 +38,15 @@ function TypeBadge({ type }) {
       tint: "var(--color-bg-page-gray, #F1F2F5)",
     };
 
+  // The lookup's current label (from the backend) wins so a rename on the
+  // variable page shows here; the built-in wording is only a fallback.
   const displayLabel =
-    normalizedType === "INTERNAL"
+    lookupLabel ||
+    (normalizedType === "INTERNAL"
       ? t("dashboard.internalActivity")
       : normalizedType === "EXTERNAL"
         ? t("dashboard.externalActivity")
-        : config.label;
+        : config.label);
 
   return (
     <span
@@ -249,7 +252,14 @@ function ActivityRow({
             {title}
           </span>
 
-          <TypeBadge type={type} />
+          <TypeBadge
+            type={type}
+            label={
+              locale === "en"
+                ? activity?.typeLabelEn || activity?.typeLabelKm
+                : activity?.typeLabelKm || activity?.typeLabelEn
+            }
+          />
         </div>
 
         <div

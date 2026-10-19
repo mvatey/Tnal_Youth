@@ -295,12 +295,16 @@ export default function ActivitySummaryChart({
 
     return {
       key: code,
+      // The lookup's own label wins, so a rename on the variable page
+      // shows here. The built-in wording is only a fallback for an older
+      // backend that sends no labels.
       name:
-        code === "INTERNAL"
+        lookupLabel ||
+        (code === "INTERNAL"
           ? t("dashboard.internalActivity")
           : code === "EXTERNAL"
             ? t("dashboard.externalActivity")
-            : lookupLabel || code,
+            : code),
       value: Number(type.count) || 0,
       colors,
     };
