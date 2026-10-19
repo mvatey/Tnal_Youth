@@ -14,6 +14,8 @@ import BoxFill from "@/components/forms/boxFill.js";
 import FormSelect from "@/components/forms/FormSelect";
 import FormDate from "@/components/forms/FormDate.js";
 import SaveButton from "@/components/forms/SaveButton";
+import CheckboxField from "@/components/forms/CheckboxField";
+import LifeStatusRadio from "@/components/forms/LifeStatusRadio";
 import CvFilePreview from "@/components/forms/CvFilePreview";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 import TelegramConnectionCard from "@/components/account/TelegramConnectionCard";
@@ -45,6 +47,9 @@ const EMPTY_FORM = {
 
   member_level_id: "",
   tshirt_size: "",
+
+  registered_voter: false,
+  life_status: "ALIVE",
 
   current_address: "",
   permanent_address: "",
@@ -220,6 +225,10 @@ function normalizePersonalInfo(data, preserve = {}) {
       data?.member_level_id != null ? String(data.member_level_id) : "",
 
     tshirt_size: data?.tshirt_size || "",
+
+    registered_voter: Boolean(data?.registered_voter),
+
+    life_status: data?.life_status || "ALIVE",
 
     current_address:
       data?.current_address ?? preserve.currentAddress ?? "",
@@ -419,6 +428,17 @@ export default function MyAccountPersonalPage() {
     }));
   };
 
+  const handleCheckboxChange = (field) => (value) => {
+    setError("");
+    setSuccess("");
+    setHasUnsavedChanges(true);
+
+    setForm((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+  };
+
   /* =======================================================
    * CV FILE
    * ======================================================= */
@@ -492,6 +512,7 @@ export default function MyAccountPersonalPage() {
         tshirt_size: form.tshirt_size || null,
         current_address: form.current_address.trim() || null,
         permanent_address: form.permanent_address.trim() || null,
+        registered_voter: Boolean(form.registered_voter),
 
         /*
          * Not shown as a field on this tab (the Member module's own
@@ -758,6 +779,13 @@ export default function MyAccountPersonalPage() {
               options={tshirtSizes}
             />
 
+            <CheckboxField
+              label={t("memberPage.registeredVoter")}
+              name="registered_voter"
+              checked={form.registered_voter}
+              onChange={handleCheckboxChange("registered_voter")}
+            />
+
             {/* ACCOUNT STATUS — read-only; only staff can enable/disable an account */}
             <BoxFill
               label={t("memberPage.status")}
@@ -805,6 +833,15 @@ export default function MyAccountPersonalPage() {
               </p>
             </div>
           </div>
+
+          {/* LIFE STATUS -- bottom of the form. Read-only here: a member
+              can't mark themselves deceased; only staff can, from the
+              member's own personal-info page. */}
+          <LifeStatusRadio
+            label={t("memberPage.lifeStatus")}
+            value={form.life_status}
+            disabled
+          />
         </div>
       </div>
 

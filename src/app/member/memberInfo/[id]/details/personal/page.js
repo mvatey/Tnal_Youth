@@ -12,6 +12,8 @@ import { useParams } from "next/navigation";
 import { UploadCloud } from "lucide-react";
 
 import SaveButton from "@/components/forms/SaveButton";
+import CheckboxField from "@/components/forms/CheckboxField";
+import LifeStatusRadio from "@/components/forms/LifeStatusRadio";
 import BoxFill from "@/components/forms/boxFill.js";
 import SelectArrow from "@/components/forms/SelectArrow";
 import CvFilePreview from "@/components/forms/CvFilePreview";
@@ -51,6 +53,9 @@ const EMPTY_FORM = {
 
   member_level_id: "",
   tshirt_size: "",
+
+  registered_voter: false,
+  life_status: "ALIVE",
 
   current_address: "",
   permanent_address: "",
@@ -376,6 +381,12 @@ function normalizePersonalInfo(
 
     tshirt_size:
       data?.tshirt_size || "",
+
+    registered_voter:
+      Boolean(data?.registered_voter),
+
+    life_status:
+      data?.life_status || "ALIVE",
 
     current_address:
       data?.current_address ||
@@ -1583,6 +1594,26 @@ export default function PersonalPage() {
       );
     };
 
+  // Yes/no and choice fields hand over their new value directly instead
+  // of an event. Voter registration follows normal profile editing; life
+  // status is additionally gated at the field (canManageSensitiveFields).
+  const handleValueChange =
+    (field) =>
+    (value) => {
+      if (isReadOnly) {
+        return;
+      }
+
+      setError("");
+      setSuccess("");
+      setHasUnsavedChanges(true);
+
+      setForm((previous) => ({
+        ...previous,
+        [field]: value,
+      }));
+    };
+
   /* =======================================================
    * CV FILE
    * ======================================================= */
@@ -1899,6 +1930,17 @@ export default function PersonalPage() {
           permanent_address:
             form.permanent_address.trim() ||
             null,
+
+          registered_voter:
+            Boolean(form.registered_voter),
+
+          // Only sent when staff are allowed to change it (the backend
+          // would otherwise reject the save for a role that can edit the
+          // profile but not this).
+          life_status:
+            canManageSensitiveFields
+              ? form.life_status
+              : null,
         };
 
         /*
@@ -2795,6 +2837,14 @@ export default function PersonalPage() {
               }
             />
 
+            <CheckboxField
+              label={t("memberPage.registeredVoter")}
+              name="registered_voter"
+              checked={form.registered_voter}
+              onChange={handleValueChange("registered_voter")}
+              disabled={isReadOnly}
+            />
+
             {/* ONE VISIBLE STATUS
                 Keep one status selector in Member Detail.
                 It is backed by members.status_id and is the same
@@ -2869,6 +2919,15 @@ export default function PersonalPage() {
               </p>
             </div>
           </div>
+
+          {/* LIFE STATUS -- bottom of the form */}
+
+          <LifeStatusRadio
+            label={t("memberPage.lifeStatus")}
+            value={form.life_status}
+            onChange={handleValueChange("life_status")}
+            disabled={isReadOnly || !canManageSensitiveFields}
+          />
         </div>
       </div>
 

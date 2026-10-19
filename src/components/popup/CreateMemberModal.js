@@ -1,5 +1,7 @@
 "use client";
 
+import CheckboxField from "@/components/forms/CheckboxField";
+import LifeStatusRadio from "@/components/forms/LifeStatusRadio";
 import {
   useEffect,
   useMemo,
@@ -51,6 +53,7 @@ const EMPTY_FORM = {
   role: "",
   viewerScope: "",
   joinedOn: "",
+  registeredVoter: false,
 };
 
 async function createMember(
@@ -1169,6 +1172,9 @@ export default function CreateMemberModal({
         joined_on:
           form.joinedOn || null,
 
+        registered_voter:
+          Boolean(form.registeredVoter),
+
         // Not user-selectable here anymore -- omitted so the backend
         // always defaults a new member to the seeded ACTIVE status (see
         // MemberServiceImpl.defaultMemberStatus).
@@ -1567,6 +1573,19 @@ export default function CreateMemberModal({
                     readOnly
                   />
                 )}
+
+                <CheckboxField
+                  label={t("memberPage.registeredVoter")}
+                  name="registeredVoter"
+                  checked={form.registeredVoter}
+                  onChange={(checked) =>
+                    setForm((previousForm) => ({
+                      ...previousForm,
+                      registeredVoter: checked,
+                    }))
+                  }
+                  required
+                />
 
                 <BoxFill
                   label={t("memberPage.dateOfBirth")}
