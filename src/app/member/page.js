@@ -1639,7 +1639,7 @@ export default function MembersPage() {
 
       // The one filter allowed to shrink when the toolbar runs out of room
       // (see the status and area filters, which never do).
-      widthClass: "w-full xl:w-[170px] xl:min-w-[130px]",
+      widthClass: "w-full xl:w-[150px] xl:min-w-[100px]",
     },
 
     {
@@ -1659,7 +1659,7 @@ export default function MembersPage() {
 
       // Never squeezed below this, so the label isn't clipped; position
       // is the filter that gives way instead.
-      widthClass: "w-full xl:w-[170px] xl:shrink-0",
+      widthClass: "w-full xl:w-[120px] xl:shrink-0",
     },
 
     {
@@ -1676,6 +1676,8 @@ export default function MembersPage() {
 
       placeholder:
         t("memberPage.gender"),
+
+      widthClass: "w-full xl:w-[110px] xl:min-w-[90px]",
     },
 
     {
@@ -1691,6 +1693,8 @@ export default function MembersPage() {
 
       placeholder:
         t("memberPage.joinedAt"),
+
+      widthClass: "w-full xl:w-[170px] xl:min-w-[140px]",
     },
   ];
 

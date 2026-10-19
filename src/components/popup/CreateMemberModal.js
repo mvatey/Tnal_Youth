@@ -53,7 +53,9 @@ const EMPTY_FORM = {
   role: "",
   viewerScope: "",
   joinedOn: "",
-  registeredVoter: false,
+  // Checked by default -- most members are on the voter list, so the form
+  // only asks for a change when someone is not.
+  registeredVoter: true,
 };
 
 async function createMember(
@@ -1584,7 +1586,6 @@ export default function CreateMemberModal({
                       registeredVoter: checked,
                     }))
                   }
-                  required
                 />
 
                 <BoxFill

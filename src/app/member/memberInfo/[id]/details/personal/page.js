@@ -1934,13 +1934,10 @@ export default function PersonalPage() {
           registered_voter:
             Boolean(form.registered_voter),
 
-          // Only sent when staff are allowed to change it (the backend
-          // would otherwise reject the save for a role that can edit the
-          // profile but not this).
+          // Any admin, branch leader or secretary who can edit this member
+          // may change it (no sensitive-fields permission needed).
           life_status:
-            canManageSensitiveFields
-              ? form.life_status
-              : null,
+            form.life_status,
         };
 
         /*
@@ -2837,18 +2834,12 @@ export default function PersonalPage() {
               }
             />
 
-            <CheckboxField
-              label={t("memberPage.registeredVoter")}
-              name="registered_voter"
-              checked={form.registered_voter}
-              onChange={handleValueChange("registered_voter")}
-              disabled={isReadOnly}
-            />
-
             {/* ONE VISIBLE STATUS
                 Keep one status selector in Member Detail.
                 It is backed by members.status_id and is the same
                 status used by Member list and linked Users rows. */}
+            {/* Status and voter registration always share one row. */}
+            <div className="grid grid-cols-1 gap-5 md:col-span-2 md:grid-cols-2">
             <FormSelect
               label={t("memberPage.status")}
               value={form.member_status_id}
@@ -2859,6 +2850,16 @@ export default function PersonalPage() {
               selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
               adminEditable={isAdmin}
             />
+
+            <CheckboxField
+              label={t("memberPage.registeredVoter")}
+              name="registered_voter"
+              checked={form.registered_voter}
+              onChange={handleValueChange("registered_voter")}
+              disabled={isReadOnly}
+              alignWithInput
+            />
+            </div>
 
           </div>
 
@@ -2926,7 +2927,7 @@ export default function PersonalPage() {
             label={t("memberPage.lifeStatus")}
             value={form.life_status}
             onChange={handleValueChange("life_status")}
-            disabled={isReadOnly || !canManageSensitiveFields}
+            disabled={isReadOnly}
           />
         </div>
       </div>

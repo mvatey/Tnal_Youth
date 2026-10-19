@@ -239,7 +239,7 @@ export default function DataTable({
                               : filterName === "gender"
                                 ? "w-full xl:w-[160px] xl:min-w-[110px]"
                                 : filterName === "area"
-                                  ? "w-full xl:w-[250px] xl:shrink-0"
+                                  ? "w-full xl:w-[168px] xl:shrink-0"
                                   : "w-full xl:w-[210px]";
 
                       return (

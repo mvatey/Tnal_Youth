@@ -12,14 +12,18 @@ export default function CheckboxField({
   onChange,
   disabled = false,
   required = false,
+  // Sit at the bottom of the grid cell at the height of a 34px input, so
+  // the checkbox lines up with the input box of the field beside it (whose
+  // label sits above its box) instead of floating at the label's height.
+  alignWithInput = false,
 }) {
   return (
-    <div>
+    <div className={alignWithInput ? "flex h-full items-end" : undefined}>
       <label
         htmlFor={name}
         className={`flex items-center gap-3 text-sm font-semibold text-text-primary ${
-          disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
-        }`}
+          alignWithInput ? "h-[34px]" : ""
+        } ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
       >
         <input
           id={name}

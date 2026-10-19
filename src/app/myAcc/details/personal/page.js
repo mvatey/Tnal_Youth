@@ -780,19 +780,23 @@ export default function MyAccountPersonalPage() {
               options={tshirtSizes}
             />
 
-            <CheckboxField
-              label={t("memberPage.registeredVoter")}
-              name="registered_voter"
-              checked={form.registered_voter}
-              onChange={handleCheckboxChange("registered_voter")}
-            />
-
             {/* ACCOUNT STATUS — read-only; only staff can enable/disable an account */}
+            {/* Status and voter registration always share one row. */}
+            <div className="grid grid-cols-1 gap-5 md:col-span-2 md:grid-cols-2">
             <BoxFill
               label={t("memberPage.status")}
               value={form.has_account ? getStatusLabel(form.account_status, t) : "-"}
               readOnly
             />
+
+            <CheckboxField
+              label={t("memberPage.registeredVoter")}
+              name="registered_voter"
+              checked={form.registered_voter}
+              onChange={handleCheckboxChange("registered_voter")}
+              alignWithInput
+            />
+            </div>
           </div>
 
           {/* CV */}
