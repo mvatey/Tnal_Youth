@@ -487,17 +487,15 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     return () => controller.abort();
   }, [locale, open, isMemberLinked, t]);
 
-  const positionOptions = (() => {
-    const current = form.positionId;
-
-    if (!current || positions.some((option) => option.value === current)) {
-      return positions;
-    }
-
-    const currentOption = positions.find((option) => option.value === current);
-
-    return currentOption ? [...positions, currentOption] : positions;
-  })();
+  // A regional-secretary position can span a whole province, so only an
+  // admin may pick it (the backend enforces the same rule) -- hidden
+  // for everyone else unless it's already this member's current one.
+  const positionOptions = positions.filter(
+    (option) =>
+      option.mappedRole !== "SECRETARY_REGIONAL" ||
+      actingRole === "ADMIN" ||
+      option.value === form.positionId,
+  );
 
   /*
    * Mirrors CreateMemberModal's updatePosition and the personal-info
@@ -516,7 +514,11 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       (option) => option.value === value,
     );
 
-    const nextRole = selectedPosition?.mappedRole || form.role;
+    // SECRETARY_REGIONAL is a position-level marker, not a real account
+    // role -- the account itself is always plain SECRETARY (see
+    // isRegionalSecretary below for what actually changes).
+    const mappedRole = selectedPosition?.mappedRole || form.role;
+    const nextRole = mappedRole === "SECRETARY_REGIONAL" ? "SECRETARY" : mappedRole;
 
     setForm((previousForm) => ({
       ...previousForm,
@@ -534,7 +536,14 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
 
   // Only ever reachable on the standalone path -- SECRETARY_REGIONAL
   // isn't offered in memberLinkedRoleOptions (see roleOptions above).
-  const isRegionalSecretary = form.role === "SECRETARY_REGIONAL";
+  // Standalone: the role itself. Member-linked: derived from the chosen
+  // position, same as CreateMemberModal -- one source of truth, no
+  // separate state.
+  const isRegionalSecretary =
+    form.role === "SECRETARY_REGIONAL" ||
+    (isMemberLinked &&
+      positions.find((option) => option.value === form.positionId)
+        ?.mappedRole === "SECRETARY_REGIONAL");
 
   // A commune anchor would trivially cover just itself (identical to
   // picking plain SECRETARY instead), so only province + district
@@ -684,10 +693,18 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
   // selector instead of the single branchId field -- everyone else
   // (including a BRANCH_LEADER/MEMBER, member-linked or not) still just
   // needs the one branchId.
+  // A regional secretary is the exception: one key branch (which must be
+  // a province/district, since coverage follows it), never a list.
   const branchRequirementMet = !requiresBranch
-    || (isSecretary
-      ? branchSelectionIds.length > 0
-      : String(form.branchId).trim() !== "");
+    || (isRegionalSecretary
+      ? String(form.branchId).trim() !== "" &&
+        (regionalAnchorLookups.length === 0 ||
+          regionalAnchorLookups.some(
+            (branch) => String(branch?.value) === String(form.branchId),
+          ))
+      : isSecretary
+        ? branchSelectionIds.length > 0
+        : String(form.branchId).trim() !== "");
   const passwordValid = isMemberLinked
     ? form.password.trim() === ""
       || (isPasswordValid(form.password.trim()) && form.password.trim() === confirmPassword.trim())
@@ -832,7 +849,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       JSON.stringify([...branchSelectionIds].map(String).sort()) !==
       JSON.stringify([...originalBranchIds].map(String).sort());
 
-    if (updatedRole === "SECRETARY" && branchSelectionChanged) {
+    if (updatedRole === "SECRETARY" && !isRegionalSecretary && branchSelectionChanged) {
       await fetchJson(`/api/backend/members/${memberId}/personal-info/branches`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -922,7 +939,11 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
     }
 
     if (!branchRequirementMet) {
-      setSubmitError(t("usersPage.requiredBranch"));
+      setSubmitError(
+        isRegionalSecretary
+          ? t("usersPage.selectRegionalAnchorBranch")
+          : t("usersPage.requiredBranch"),
+      );
       return;
     }
 
@@ -1224,7 +1245,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             />
           )}
 
-          {requiresBranch && isSecretary ? (
+          {requiresBranch && isSecretary && !isRegionalSecretary ? (
             <MultiSelect
               label={t("usersPage.branch")}
               name="branchSelectionIds"

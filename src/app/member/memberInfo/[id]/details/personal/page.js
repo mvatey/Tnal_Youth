@@ -447,7 +447,7 @@ function computeBranchIds(source) {
 export default function PersonalPage() {
   const { role, isAdmin, canEditMemberDetails, canManageMemberAccount } = useMemberPermissions();
   const { branches: accessibleBranches } = useBranch();
-  const { t } = useLanguage();
+  const { t, label } = useLanguage();
   const isReadOnly = !canEditMemberDetails;
   const refetchMemberProfile = useContext(
     MemberProfileRefreshContext,
@@ -1204,17 +1204,99 @@ export default function PersonalPage() {
    * leader position) rather than the plain position field, since only
    * that endpoint knows how to demote whoever currently holds it.
    */
-  const positionOptions = useMemo(() => {
-    const current = form.positionId;
+  // A regional-secretary position can span a whole province, so only an
+  // admin may pick it (the backend enforces the same rule) -- hidden for
+  // everyone else unless it's already this member's current one.
+  const positionOptions = useMemo(
+    () =>
+      positions.filter(
+        (option) =>
+          option.mappedRole !== "SECRETARY_REGIONAL" ||
+          isAdmin ||
+          option.value === form.positionId,
+      ),
+    [positions, form.positionId, isAdmin],
+  );
 
-    if (!current || positions.some((option) => option.value === current)) {
-      return positions;
+  // Derived from the chosen position rather than tracked as separate
+  // state (same as CreateMemberModal) -- one source of truth. While true,
+  // the branch field is one key branch plus a locked list of what it
+  // covers, never the editable multi-branch list a plain secretary gets.
+  const isRegionalSecretary =
+    positions.find((option) => option.value === form.positionId)
+      ?.mappedRole === "SECRETARY_REGIONAL";
+
+  // Province + district branches only (filtered server-side) -- the key
+  // branch choices for a regional secretary. Admin-only endpoint, so
+  // it's simply empty for anyone else (they can't change it anyway).
+  const [regionalAnchorLookups, setRegionalAnchorLookups] = useState([]);
+  const [regionalCoverageOptions, setRegionalCoverageOptions] = useState([]);
+  const [loadingRegionalCoverage, setLoadingRegionalCoverage] = useState(false);
+
+  useEffect(() => {
+    if (!isRegionalSecretary || !isAdmin) {
+      return undefined;
     }
 
-    const currentOption = positions.find((option) => option.value === current);
+    const controller = new AbortController();
 
-    return currentOption ? [...positions, currentOption] : positions;
-  }, [positions, form.positionId]);
+    fetch("/api/lookups/regional-anchor-branches", {
+      credentials: "include",
+      cache: "no-store",
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message);
+        setRegionalAnchorLookups(
+          Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [],
+        );
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") setRegionalAnchorLookups([]);
+      });
+
+    return () => controller.abort();
+  }, [isRegionalSecretary, isAdmin]);
+
+  // Live preview of what the key branch covers -- the same backend
+  // computation real authorization uses, so it can't drift from it.
+  useEffect(() => {
+    if (!isRegionalSecretary || !isAdmin || !form.branch_id) {
+      setRegionalCoverageOptions([]);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    setLoadingRegionalCoverage(true);
+
+    fetch(`/api/branches/${form.branch_id}/regional-coverage`, {
+      credentials: "include",
+      cache: "no-store",
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.message);
+        const rows = Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
+        setRegionalCoverageOptions(
+          rows
+            .map((branch) => ({
+              value: String(branch?.id ?? ""),
+              label: label(branch, branch?.branchCode || ""),
+            }))
+            .filter((option) => option.value !== ""),
+        );
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") setRegionalCoverageOptions([]);
+      })
+      .finally(() => setLoadingRegionalCoverage(false));
+
+    return () => controller.abort();
+  }, [isRegionalSecretary, isAdmin, form.branch_id, label]);
 
   /*
    * Mirrors CreateMemberModal's updatePosition: picking a position whose
@@ -1237,8 +1319,12 @@ export default function PersonalPage() {
       (option) => option.value === value,
     );
 
-    const nextRole =
+    // SECRETARY_REGIONAL is a position-level marker, not a real account
+    // role -- the account itself is always plain SECRETARY.
+    const mappedRole =
       selectedPosition?.mappedRole || form.account_role;
+    const nextRole =
+      mappedRole === "SECRETARY_REGIONAL" ? "SECRETARY" : mappedRole;
 
     setError("");
     setSuccess("");
@@ -1264,7 +1350,7 @@ export default function PersonalPage() {
    * anyone else, it's simply the single primary branch.
    */
   const branchMultiValue =
-    form.account_role === "SECRETARY"
+    form.account_role === "SECRETARY" && !isRegionalSecretary
       ? branchSelectionIds
       : form.branch_id
         ? [String(form.branch_id)]
@@ -1368,6 +1454,36 @@ export default function PersonalPage() {
     form.branch_id,
     form.branch_name_km,
   ]);
+
+  // Key-branch choices for a regional secretary: province/district only.
+  // The current branch is always kept in the list so it never shows blank
+  // (e.g. for a non-admin viewing the page, who can't load the full list).
+  const regionalBranchOptions = useMemo(() => {
+    if (!isRegionalSecretary) {
+      return branchOptions;
+    }
+
+    const anchors = regionalAnchorLookups
+      .map((branch) => ({
+        value: String(branch?.value ?? ""),
+        label: label(branch, branch?.code || ""),
+      }))
+      .filter((option) => option.value !== "");
+
+    const current = String(form.branch_id || "");
+
+    if (current && !anchors.some((option) => option.value === current)) {
+      const currentOption = branchOptions.find(
+        (option) => option.value === current,
+      );
+
+      if (currentOption) {
+        return [currentOption, ...anchors];
+      }
+    }
+
+    return anchors;
+  }, [isRegionalSecretary, branchOptions, regionalAnchorLookups, form.branch_id, label]);
 
   /*
    * Branch changes are local-state-only, same as every other field
@@ -1628,18 +1744,35 @@ export default function PersonalPage() {
         return false;
       }
 
+      const usesBranchList =
+        form.account_role === "SECRETARY" && !isRegionalSecretary;
+
       const selectedSecretaryBranches =
-        form.account_role === "SECRETARY"
+        usesBranchList
           ? branchSelectionIds
           : [];
 
       if (
-        form.account_role === "SECRETARY"
+        usesBranchList
           ? selectedSecretaryBranches.length === 0
           : !form.branch_id
       ) {
         setError(
           t("memberPage.branchRequired"),
+        );
+
+        return false;
+      }
+
+      if (
+        isRegionalSecretary &&
+        regionalAnchorLookups.length > 0 &&
+        !regionalAnchorLookups.some(
+          (branch) => String(branch?.value) === String(form.branch_id),
+        )
+      ) {
+        setError(
+          t("memberPage.selectRegionalAnchorBranch"),
         );
 
         return false;
@@ -1925,6 +2058,7 @@ export default function PersonalPage() {
 
         if (
           updatedRole === "SECRETARY" &&
+          !isRegionalSecretary &&
           canManageSensitiveFields &&
           branchSelectionChanged
         ) {
@@ -2479,8 +2613,7 @@ export default function PersonalPage() {
               have more than one branch checked.
             */}
 
-            {form.account_role ===
-            "SECRETARY" ? (
+            {form.account_role === "SECRETARY" && !isRegionalSecretary ? (
               <MultiSelect
                 label={t("memberPage.branch")}
                 placeholder={t("memberPage.selectBranch")}
@@ -2499,22 +2632,49 @@ export default function PersonalPage() {
                 }
               />
             ) : (
-              <SearchableSelect
-                label={t("memberPage.branch")}
-                value={
-                  form.branch_id
-                }
-                onChange={handleChange(
-                  "branch_id",
+              <>
+                <SearchableSelect
+                  label={
+                    isRegionalSecretary
+                      ? t("memberPage.regionalAnchorBranch")
+                      : t("memberPage.branch")
+                  }
+                  value={
+                    form.branch_id
+                  }
+                  onChange={handleChange(
+                    "branch_id",
+                  )}
+                  placeholder={
+                    isRegionalSecretary
+                      ? t("memberPage.selectRegionalAnchorBranch")
+                      : t("memberPage.selectBranch")
+                  }
+                  options={
+                    regionalBranchOptions
+                  }
+                  disabled={
+                    !canManageSensitiveFields
+                  }
+                />
+
+                {isRegionalSecretary && (
+                  <MultiSelect
+                    label={t("memberPage.regionalCoverage")}
+                    placeholder={
+                      loadingRegionalCoverage
+                        ? t("common.loading")
+                        : t("memberPage.regionalCoveragePlaceholder")
+                    }
+                    options={regionalCoverageOptions}
+                    value={regionalCoverageOptions.map(
+                      (option) => option.value,
+                    )}
+                    onChange={() => {}}
+                    readOnly
+                  />
                 )}
-                placeholder={t("memberPage.selectBranch")}
-                options={
-                  branchOptions
-                }
-                disabled={
-                  !canManageSensitiveFields
-                }
-              />
+              </>
             )}
 
             {/* POSITION */}
