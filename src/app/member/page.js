@@ -1652,6 +1652,10 @@ export default function MembersPage() {
 
       placeholder:
         t("memberPage.status"),
+
+      // The member list's status labels are short, and the toolbar needs the
+      // room for the branch/level filter's longer label.
+      widthClass: "w-full xl:w-[160px]",
     },
 
     {
