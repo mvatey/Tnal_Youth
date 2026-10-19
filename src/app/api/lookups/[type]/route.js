@@ -13,6 +13,7 @@ const BACKEND_URL =
 const ALLOWED_LOOKUPS =
   new Set([
     "branches",
+    "regional-anchor-branches",
 
     "branch-statuses",
     "member-statuses",

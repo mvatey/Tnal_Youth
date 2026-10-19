@@ -71,6 +71,10 @@ export default function MultiSelect({
   value = [],
   onChange,
   disabled = false,
+  // Like disabled, except the list can still be opened and scrolled/searched
+  // -- selection just can't be changed. For a value computed elsewhere that
+  // the user should be able to inspect (e.g. a regional secretary's branches).
+  readOnly = false,
   required = false,
   error = "",
   selectAllLabel,
@@ -234,7 +238,7 @@ export default function MultiSelect({
   const toggleOption = (
     optionValue,
   ) => {
-    if (disabled) {
+    if (disabled || readOnly) {
       return;
     }
 
@@ -264,7 +268,7 @@ export default function MultiSelect({
   };
 
   const toggleSelectAll = () => {
-    if (disabled) {
+    if (disabled || readOnly) {
       return;
     }
 
@@ -398,6 +402,7 @@ export default function MultiSelect({
               ? "border-error"
               : "border-border focus:border-primary"
           }
+          ${readOnly ? "bg-bg-page-gray" : ""}
           disabled:cursor-not-allowed
           disabled:bg-bg-page-gray
           disabled:opacity-60
@@ -486,6 +491,7 @@ export default function MultiSelect({
               {/* Select all -- always targets the full option list, not
                   just what the search currently filters to. */}
 
+              {!readOnly && (
               <button
                 type="button"
                 onClick={
@@ -523,6 +529,7 @@ export default function MultiSelect({
                   }
                 />
               </button>
+              )}
 
               {/* Options */}
 
@@ -555,7 +562,7 @@ export default function MultiSelect({
                       aria-selected={
                         checked
                       }
-                      className="
+                      className={`
                         flex
                         w-full
                         items-center
@@ -567,10 +574,10 @@ export default function MultiSelect({
                         text-sm
                         text-text-primary
                         transition
-                        hover:bg-bg-page-gray
                         disabled:cursor-not-allowed
                         disabled:opacity-50
-                      "
+                        ${readOnly ? "cursor-default" : "hover:bg-bg-page-gray"}
+                      `}
                     >
                       <span className="min-w-0 flex-1 truncate">
                         {

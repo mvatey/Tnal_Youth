@@ -243,13 +243,12 @@ export default function CreateMemberModal({
     setBranchLookups,
   ] = useState([]);
 
-  // Cross-referenced against each branch's own branchLevelId to tell a
-  // province/district/commune branch apart -- used to filter the branch
-  // picker down to province+district once a SECRETARY_REGIONAL position
-  // is chosen (see isRegionalSecretary/regionalBranchOptions below).
+  // Province + district branches only (filtered server-side) -- the
+  // anchor choices once a SECRETARY_REGIONAL position is chosen. Fetched
+  // lazily, see the effect below the coverage-preview one.
   const [
-    branchLevelLookups,
-    setBranchLevelLookups,
+    regionalAnchorLookups,
+    setRegionalAnchorLookups,
   ] = useState([]);
 
   const [
@@ -384,11 +383,6 @@ export default function CreateMemberModal({
     );
 
     loadLookup(
-      "/lookups/branch-levels",
-      setBranchLevelLookups,
-    );
-
-    loadLookup(
       "/lookups/member-statuses",
       setStatusLookups,
     );
@@ -501,6 +495,40 @@ export default function CreateMemberModal({
     form.branchId,
     label,
   ]);
+
+  useEffect(() => {
+    if (!open || !isRegionalSecretary) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const data = await getLookup(
+          "/lookups/regional-anchor-branches",
+        );
+
+        if (!cancelled) {
+          setRegionalAnchorLookups(
+            normalizeArray(data),
+          );
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error(
+            "Cannot load regional anchor branches:",
+            error,
+          );
+          setRegionalAnchorLookups([]);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, isRegionalSecretary]);
 
   useEffect(() => {
     if (!open) {
@@ -901,11 +929,6 @@ export default function CreateMemberModal({
               id !== undefined
                 ? String(id)
                 : "",
-
-            branchLevelId:
-              branch?.branchLevelId ??
-              branch?.branch_level_id ??
-              null,
           };
         },
       )
@@ -923,34 +946,35 @@ export default function CreateMemberModal({
     t,
   ]);
 
-  // Province/district branch-level ids, resolved by code once the
-  // lookup loads -- a commune anchor would trivially cover just itself
-  // (identical to picking the plain SECRETARY position instead), so
-  // it's excluded as a choice entirely once a position resolves to
-  // SECRETARY_REGIONAL.
+  // A commune anchor would trivially cover just itself (identical to
+  // picking the plain SECRETARY position instead), so only province +
+  // district branches are offered once a position resolves to
+  // SECRETARY_REGIONAL -- the backend already filters them (see
+  // LookupController#getRegionalAnchorBranchOptions).
   const regionalBranchOptions =
     useMemo(() => {
       if (!isRegionalSecretary) {
         return branchOptions;
       }
 
-      const allowedLevelIds = branchLevelLookups
-        .filter((level) =>
-          ["PROVINCE", "DISTRICT"].includes(
-            String(level?.code || "").toUpperCase(),
-          ),
-        )
-        .map((level) => String(level?.value ?? ""));
-
-      return branchOptions.filter((option) =>
-        allowedLevelIds.includes(
-          String(option?.branchLevelId ?? ""),
-        ),
-      );
+      return regionalAnchorLookups
+        .map((branch) => ({
+          label: label(branch, branch?.code || ""),
+          value:
+            branch?.value != null
+              ? String(branch.value)
+              : "",
+        }))
+        .filter(
+          (option) =>
+            option.value !== "" &&
+            option.label !== "",
+        );
     }, [
       isRegionalSecretary,
       branchOptions,
-      branchLevelLookups,
+      regionalAnchorLookups,
+      label,
     ]);
 
   // Only info that's needed to create a usable member/login record at all
@@ -1540,7 +1564,7 @@ export default function CreateMemberModal({
                       (option) => option.value,
                     )}
                     onChange={() => {}}
-                    disabled
+                    readOnly
                   />
                 )}
 

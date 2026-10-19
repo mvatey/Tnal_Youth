@@ -250,6 +250,14 @@ export default function Sidebar() {
     ? localizedLabel(currentMember.position, "")
     : "";
 
+  // Second line of the profile card: "position • role". The two are shown
+  // once when they're identical (e.g. a branch leader whose position is
+  // also called "Branch leader") instead of repeating the same words.
+  const userSubtitle = [userPosition, userTitle]
+    .filter(Boolean)
+    .filter((part, index, parts) => parts.indexOf(part) === index)
+    .join(" • ");
+
   const defaultUserAvatar =
     getDefaultAvatar(
       currentMember,
@@ -799,28 +807,15 @@ export default function Sidebar() {
                 {userName}
               </div>
 
-              {userPosition && (
-                <div
-                  className="
-                    truncate
-                    text-xs
-                    text-white/70
-                  "
-                  title={userPosition}
-                >
-                  {userPosition}
-                </div>
-              )}
-
               <div
                 className="
                   truncate
                   text-xs
-                  text-white/50
+                  text-white/60
                 "
-                title={userTitle}
+                title={userSubtitle}
               >
-                {userTitle}
+                {userSubtitle}
               </div>
             </div>
           </div>
