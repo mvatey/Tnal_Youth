@@ -493,13 +493,25 @@ export default function MembersPage() {
     setPositionFilter,
   ] = useState("");
 
-  // "Area" filter: one province, district or commune, matching that branch
-  // plus everything under it -- same rule as a regional secretary's
-  // coverage (province -> all its districts and communes, district -> its
-  // communes, commune -> just itself). Applied client-side like position.
+  // Three chained filters (see filterConfig): first pick HOW to filter --
+  // by one specific branch, or by branch level -- then (level only) which
+  // level, then the branch itself. A level pick matches that branch plus
+  // everything under it, same rule as a regional secretary's coverage
+  // (province -> all its districts and communes, district -> its
+  // communes, commune -> just itself). A plain branch pick is exact.
   const [
-    areaFilter,
-    setAreaFilter,
+    areaMode,
+    setAreaMode,
+  ] = useState("");
+
+  const [
+    areaLevel,
+    setAreaLevel,
+  ] = useState("");
+
+  const [
+    areaBranch,
+    setAreaBranch,
   ] = useState("");
 
   const [
@@ -1060,21 +1072,6 @@ export default function MembersPage() {
       [branchLookups, label, t],
     );
 
-  // The branch filter shown in the table toolbar is locked to whichever
-  // single branch is currently active for a secretary/branch_leader (see
-  // effectiveBranchFilter above) -- only that one branch is offered, and
-  // the select is disabled (see filterConfig below), same lock used on
-  // the activity/donation pages' branch dropdowns.
-  const branchFilterOptions = useMemo(() => {
-    if (!isBranchScoped) return branches;
-
-    const match = branches.find(
-      (option) => option.value === effectiveBranchFilter,
-    );
-
-    return match ? [match] : [];
-  }, [isBranchScoped, branches, effectiveBranchFilter]);
-
   /*
    * =========================================
    * DATE FILTER
@@ -1086,13 +1083,16 @@ export default function MembersPage() {
    * =========================================
    */
 
+  // Only a "branch level" pick expands to descendants; a plain branch pick
+  // goes to the server as the existing branchId filter instead (so the
+  // summary cards follow it too), see handleAreaBranchChange.
   const areaCoverageIds = useMemo(() => {
-    if (!areaFilter) {
+    if (areaMode !== "level" || !areaBranch) {
       return null;
     }
 
     const selected = branchAreas.find(
-      (area) => String(area.id) === areaFilter,
+      (area) => String(area.id) === areaBranch,
     );
 
     if (!selected) {
@@ -1122,7 +1122,7 @@ export default function MembersPage() {
         })
         .map((area) => String(area.id)),
     );
-  }, [areaFilter, branchAreas]);
+  }, [areaMode, areaBranch, branchAreas]);
 
   const filteredMembers = useMemo(
     () =>
@@ -1145,44 +1145,88 @@ export default function MembersPage() {
     [members, dateFilter, positionFilter, areaCoverageIds],
   );
 
-  const areaFilterOptions = useMemo(() => {
-    const levelOrder = { PROVINCE: 0, DISTRICT: 1, COMMUNE: 2 };
-
-    const levelLabel = {
+  const areaLevelLabels = useMemo(
+    () => ({
       PROVINCE: t("memberPage.areaLevelProvince"),
       DISTRICT: t("memberPage.areaLevelDistrict"),
       COMMUNE: t("memberPage.areaLevelCommune"),
-    };
+    }),
+    [t],
+  );
+
+  const areaModeOptions = useMemo(
+    () => [
+      { label: t("memberPage.areaMode"), value: "" },
+      { label: t("memberPage.areaModeBranch"), value: "branch" },
+      { label: t("memberPage.areaModeLevel"), value: "level" },
+    ],
+    [t],
+  );
+
+  const areaLevelOptions = useMemo(
+    () => [
+      { label: t("memberPage.areaLevel"), value: "" },
+      { label: areaLevelLabels.PROVINCE, value: "PROVINCE" },
+      { label: areaLevelLabels.DISTRICT, value: "DISTRICT" },
+      { label: areaLevelLabels.COMMUNE, value: "COMMUNE" },
+    ],
+    [t, areaLevelLabels],
+  );
+
+  // The last of the three filters: every branch (provinces first, then
+  // districts, then communes) when filtering by branch, or only the
+  // branches of the chosen level when filtering by level.
+  const areaBranchOptions = useMemo(() => {
+    const levelOrder = { PROVINCE: 0, DISTRICT: 1, COMMUNE: 2 };
+
+    const blankLabel =
+      areaMode === "level" && areaLevel
+        ? areaLevelLabels[areaLevel]
+        : t("memberPage.branch");
+
+    const rows = branchAreas
+      .map((area) => ({
+        level: String(area.levelCode || "").toUpperCase(),
+        name: label(area, area.branchCode || ""),
+        value: String(area.id),
+      }))
+      .filter((area) => areaMode !== "level" || area.level === areaLevel)
+      .sort(
+        (a, b) =>
+          (levelOrder[a.level] ?? 9) - (levelOrder[b.level] ?? 9) ||
+          a.name.localeCompare(b.name),
+      );
 
     return [
-      {
-        label: t("memberPage.areaFilter"),
-        value: "",
-      },
+      { label: blankLabel, value: "" },
 
-      ...branchAreas
-        .map((area) => {
-          const level = String(area.levelCode || "").toUpperCase();
-
-          return {
-            level,
-            name: label(area, area.branchCode || ""),
-            value: String(area.id),
-          };
-        })
-        .sort(
-          (a, b) =>
-            (levelOrder[a.level] ?? 9) - (levelOrder[b.level] ?? 9) ||
-            a.name.localeCompare(b.name),
-        )
-        .map((area) => ({
-          label: levelLabel[area.level]
-            ? `${levelLabel[area.level]} \u00b7 ${area.name}`
+      ...rows.map((area) => ({
+        label:
+          areaMode === "branch" && areaLevelLabels[area.level]
+            ? `${areaLevelLabels[area.level]} \u00b7 ${area.name}`
             : area.name,
-          value: area.value,
-        })),
+        value: area.value,
+      })),
     ];
-  }, [branchAreas, label, t]);
+  }, [branchAreas, areaMode, areaLevel, areaLevelLabels, label, t]);
+
+  const handleAreaModeChange = (value) => {
+    setAreaMode(value);
+    setAreaLevel("");
+    setAreaBranch("");
+    setBranchFilter("");
+  };
+
+  const handleAreaLevelChange = (value) => {
+    setAreaLevel(value);
+    setAreaBranch("");
+    setBranchFilter("");
+  };
+
+  const handleAreaBranchChange = (value) => {
+    setAreaBranch(value);
+    setBranchFilter(areaMode === "branch" ? value : "");
+  };
 
   const positionFilterOptions = useMemo(() => {
     const seen = new Map();
@@ -1282,7 +1326,7 @@ export default function MembersPage() {
       () => [
         {
           label:
-            t("memberPage.allStatuses"),
+            t("memberPage.status"),
 
           value: "",
         },
@@ -1610,26 +1654,50 @@ export default function MembersPage() {
    * =========================================
    */
 
+  // Not offered to a secretary/branch leader: their list is already
+  // limited to the one branch picked in the sidebar (see
+  // effectiveBranchFilter), so there is nothing to narrow by area.
+  const areaFilterConfig =
+    !isBranchScoped && branchAreas.length > 1
+      ? [
+          {
+            name: "areaMode",
+            value: areaMode,
+            onChange: handleAreaModeChange,
+            options: areaModeOptions,
+            placeholder: t("memberPage.areaMode"),
+          },
+
+          ...(areaMode === "level"
+            ? [
+                {
+                  name: "areaLevel",
+                  value: areaLevel,
+                  onChange: handleAreaLevelChange,
+                  options: areaLevelOptions,
+                  placeholder: t("memberPage.areaLevel"),
+                },
+              ]
+            : []),
+
+          ...(areaMode
+            ? [
+                {
+                  name: "areaBranch",
+                  value: areaBranch,
+                  onChange: handleAreaBranchChange,
+                  options: areaBranchOptions,
+                  placeholder: t("memberPage.branch"),
+                  searchable: true,
+                  disabled: areaMode === "level" && !areaLevel,
+                },
+              ]
+            : []),
+        ]
+      : [];
+
   const filterConfig = [
-    {
-      name: "branch",
-
-      value:
-        effectiveBranchFilter,
-
-      onChange: isBranchScoped
-        ? () => {}
-        : setBranchFilter,
-
-      options:
-        branchFilterOptions,
-
-      placeholder:
-        t("memberPage.branch"),
-
-      disabled:
-        isBranchScoped,
-    },
+    ...areaFilterConfig,
 
     {
       name: "position",
@@ -1648,28 +1716,6 @@ export default function MembersPage() {
 
       searchable: true,
     },
-
-    ...(branchAreas.length > 1
-      ? [
-          {
-            name: "area",
-
-            value:
-              areaFilter,
-
-            onChange:
-              setAreaFilter,
-
-            options:
-              areaFilterOptions,
-
-            placeholder:
-              t("memberPage.areaFilter"),
-
-            searchable: true,
-          },
-        ]
-      : []),
 
     {
       name: "status",

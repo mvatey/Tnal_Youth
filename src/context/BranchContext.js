@@ -71,10 +71,21 @@ export function BranchProvider({ children, branches = [] }) {
 
     async function loadAccessibleBranches() {
       try {
-        const response = await fetch("/api/lookups/branches", {
+        // branch-areas is the same accessible-branch list plus each
+        // branch's level, which lets the sidebar list provinces before
+        // districts before communes. Falls back to the plain list so a
+        // failure there never leaves the switcher empty.
+        let response = await fetch("/api/lookups/branch-areas", {
           credentials: "include",
           cache: "no-store",
         });
+
+        if (!response.ok) {
+          response = await fetch("/api/lookups/branches", {
+            credentials: "include",
+            cache: "no-store",
+          });
+        }
 
         if (!response.ok) return;
 
@@ -328,6 +339,7 @@ function normalizeBranches(value) {
 
       return {
         id: String(id),
+        levelCode: String(branch.levelCode || "").toUpperCase(),
         nameKm:
           branch.labelKm ??
           branch.nameKm ??
@@ -344,7 +356,18 @@ function normalizeBranches(value) {
           `Branch ${id}`,
       };
     })
-    .filter(Boolean);
+    .filter(Boolean)
+    .sort(
+      (a, b) =>
+        branchLevelRank(a.levelCode) - branchLevelRank(b.levelCode) ||
+        a.nameKm.localeCompare(b.nameKm),
+    );
+}
+
+// Provinces first, then districts, then communes; anything without a
+// known level keeps its place after them.
+function branchLevelRank(levelCode) {
+  return { PROVINCE: 0, DISTRICT: 1, COMMUNE: 2 }[levelCode] ?? 3;
 }
 
 export function useBranch() {
