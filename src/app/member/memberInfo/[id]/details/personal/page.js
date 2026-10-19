@@ -1226,6 +1226,13 @@ export default function PersonalPage() {
     positions.find((option) => option.value === form.positionId)
       ?.mappedRole === "SECRETARY_REGIONAL";
 
+  // Only an admin may change where a regional secretary is anchored --
+  // their key branch or the position itself (the backend enforces it, see
+  // MemberAccessValidator#requireAdminForRegionalSecretaryBranchChange).
+  // Deliberately just those two fields: every other detail on this page
+  // stays editable by whoever could edit it before.
+  const branchLockedToAdmin = isRegionalSecretary && !isAdmin;
+
   // Province + district branches only (filtered server-side) -- the key
   // branch choices for a regional secretary. Admin-only endpoint, so
   // it's simply empty for anyone else (they can't change it anyway).
@@ -2654,7 +2661,8 @@ export default function PersonalPage() {
                     regionalBranchOptions
                   }
                   disabled={
-                    !canManageSensitiveFields
+                    !canManageSensitiveFields ||
+                    branchLockedToAdmin
                   }
                 />
 
@@ -2692,7 +2700,8 @@ export default function PersonalPage() {
                 positionOptions
               }
               disabled={
-                !canManageSensitiveFields
+                !canManageSensitiveFields ||
+                branchLockedToAdmin
               }
             />
 

@@ -545,6 +545,12 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       positions.find((option) => option.value === form.positionId)
         ?.mappedRole === "SECRETARY_REGIONAL");
 
+  // Only an admin may change where a regional secretary is anchored --
+  // their key branch or the position itself (the backend enforces it).
+  // Just those two fields; everything else stays editable as before.
+  const branchLockedToAdmin =
+    isMemberLinked && isRegionalSecretary && actingRole !== "ADMIN";
+
   // A commune anchor would trivially cover just itself (identical to
   // picking plain SECRETARY instead), so only province + district
   // branches are offered once SECRETARY_REGIONAL is picked.
@@ -1208,6 +1214,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
               options={positionOptions}
               value={form.positionId}
               onChange={handlePositionChange}
+              disabled={branchLockedToAdmin}
             />
           )}
 
@@ -1277,6 +1284,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
                   options={isRegionalSecretary ? regionalBranchOptions : branches}
                   value={form.branchId}
                   onChange={update("branchId")}
+                  disabled={branchLockedToAdmin}
                   required
                 />
 
