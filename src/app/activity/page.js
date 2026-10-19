@@ -908,8 +908,6 @@ export default function ActivityPage() {
   </div>
 
   <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center xl:ml-auto">
-    <PrimaryActionButton onClick={handleDownload} />
-
     {canCreateActivity && (
         <Link href="/activity/create">
           <Button
@@ -936,6 +934,14 @@ export default function ActivityPage() {
               : t("activityPage.noData")
           }
         />
+
+        {/* Under the pager, right-aligned -- same spot the member list
+            puts its download button. */}
+        {filteredActivities.length > 0 && (
+          <div className="mt-3 flex w-full justify-center sm:justify-end">
+            <PrimaryActionButton onClick={handleDownload} />
+          </div>
+        )}
       </section>
     </div>
   );
