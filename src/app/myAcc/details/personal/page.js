@@ -513,6 +513,7 @@ export default function MyAccountPersonalPage() {
         current_address: form.current_address.trim() || null,
         permanent_address: form.permanent_address.trim() || null,
         registered_voter: Boolean(form.registered_voter),
+        life_status: form.life_status,
 
         /*
          * Not shown as a field on this tab (the Member module's own
@@ -834,13 +835,13 @@ export default function MyAccountPersonalPage() {
             </div>
           </div>
 
-          {/* LIFE STATUS -- bottom of the form. Read-only here: a member
-              can't mark themselves deceased; only staff can, from the
-              member's own personal-info page. */}
+          {/* LIFE STATUS -- bottom of the form. The account owner can
+              change their own, just in case; staff can too, from the
+              member's personal-info page. */}
           <LifeStatusRadio
             label={t("memberPage.lifeStatus")}
             value={form.life_status}
-            disabled
+            onChange={handleCheckboxChange("life_status")}
           />
         </div>
       </div>
