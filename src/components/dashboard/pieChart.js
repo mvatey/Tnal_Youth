@@ -40,26 +40,51 @@ const MONTHS_EN = [
   { value: "12", label: "December" },
 ];
 
-const COLORS = {
-  internal: "#4B5FD9",
-  external: "#22C55E",
+// Internal and external keep the colours they have always had. Every other
+// activity type -- including ones added later on the variable page -- takes
+// the next colour from this palette, by its position among the other types
+// in the lookup's own order, so a type keeps its colour from month to month.
+const FIXED_TYPE_COLORS = {
+  INTERNAL: { from: "#3B4FC7", to: "#A5B4E8", solid: "#4B5FD9" },
+  EXTERNAL: { from: "#22C55E", to: "#6EE0A0", solid: "#22C55E" },
 };
 
-const GRADIENT_IDS = {
-  internal: "activityInternalGradient",
-  external: "activityExternalGradient",
-};
+const EXTRA_TYPE_COLORS = [
+  "#F59E0B",
+  "#8B5CF6",
+  "#EC4899",
+  "#06B6D4",
+  "#EF4444",
+  "#14B8A6",
+  "#F97316",
+  "#84CC16",
+  "#0EA5E9",
+  "#A855F7",
+];
 
-const GRADIENT_STOPS = {
-  internal: {
-    from: "#3B4FC7",
-    to: "#A5B4E8",
-  },
-  external: {
-    from: "#22C55E",
-    to: "#6EE0A0",
-  },
-};
+// A lighter shade of the same colour for the bottom of each slice's
+// gradient, matching how the two fixed colours are drawn.
+function lighten(hex, ratio = 0.5) {
+  const value = hex.replace("#", "");
+  const channel = (offset) => {
+    const base = parseInt(value.slice(offset, offset + 2), 16);
+    return Math.round(base + (255 - base) * ratio)
+      .toString(16)
+      .padStart(2, "0");
+  };
+
+  return `#${channel(0)}${channel(2)}${channel(4)}`;
+}
+
+function colorForType(code, extraIndex) {
+  if (FIXED_TYPE_COLORS[code]) {
+    return FIXED_TYPE_COLORS[code];
+  }
+
+  const solid = EXTRA_TYPE_COLORS[extraIndex % EXTRA_TYPE_COLORS.length];
+
+  return { from: solid, to: lighten(solid), solid };
+}
 
 const DONUT_SIZE = 190;
 const DONUT_INNER_RADIUS = 60;
@@ -239,68 +264,66 @@ export default function ActivitySummaryChart({
   onMonthChange,
   loading = false,
 }) {
-  const { t } =
+  const { t, locale } =
     useLanguage();
 
-  const internalCount =
-    Number(
-      data?.internal
-    ) || 0;
+  // Every active activity type with its count. An older backend only sent
+  // internal/external, so fall back to just those two.
+  const rawTypes =
+    Array.isArray(data?.types) && data.types.length > 0
+      ? data.types
+      : [
+          { code: "INTERNAL", count: Number(data?.internal) || 0 },
+          { code: "EXTERNAL", count: Number(data?.external) || 0 },
+        ];
 
-  const externalCount =
-    Number(
-      data?.external
-    ) || 0;
+  let extraIndex = 0;
 
-  const calculatedTotal =
-    internalCount +
-    externalCount;
+  const types = rawTypes.map((type) => {
+    const code = String(type.code || "").toUpperCase();
+    const isFixed = Boolean(FIXED_TYPE_COLORS[code]);
+    const colors = colorForType(code, extraIndex);
+
+    if (!isFixed) {
+      extraIndex += 1;
+    }
+
+    const lookupLabel =
+      locale === "en"
+        ? type.labelEn || type.labelKm
+        : type.labelKm || type.labelEn;
+
+    return {
+      key: code,
+      name:
+        code === "INTERNAL"
+          ? t("dashboard.internalActivity")
+          : code === "EXTERNAL"
+            ? t("dashboard.externalActivity")
+            : lookupLabel || code,
+      value: Number(type.count) || 0,
+      colors,
+    };
+  });
+
+  const calculatedTotal = types.reduce(
+    (sum, type) => sum + type.value,
+    0,
+  );
 
   const total =
-    Number(
-      data?.total
-    ) ||
+    Number(data?.total) ||
     calculatedTotal;
 
   const hasData =
     total > 0;
 
+  // Only types that actually have activities get a slice; with none at all
+  // the ring is drawn as a single grey placeholder.
   const chartData =
     hasData
-      ? [
-          {
-            name:
-              t("dashboard.internalActivity"),
-            value:
-              internalCount,
-            key:
-              "internal",
-          },
-          {
-            name:
-              t("dashboard.externalActivity"),
-            value:
-              externalCount,
-            key:
-              "external",
-          },
-        ]
-      : [
-          {
-            name:
-              t("dashboard.internalActivity"),
-            value: 1,
-            key:
-              "internal",
-          },
-          {
-            name:
-              t("dashboard.externalActivity"),
-            value: 1,
-            key:
-              "external",
-          },
-        ];
+      ? types.filter((type) => type.value > 0)
+      : [{ key: "empty", name: "", value: 1, colors: null }];
 
   return (
     <section
@@ -353,61 +376,26 @@ export default function ActivitySummaryChart({
             >
               <PieChart>
                 <defs>
-                  <linearGradient
-                    id={
-                      GRADIENT_IDS.internal
-                    }
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="0%"
-                      stopColor={
-                        GRADIENT_STOPS
-                          .internal
-                          .from
-                      }
-                    />
+                  {types.map((type) => (
+                    <linearGradient
+                      key={type.key}
+                      id={`activityTypeGradient-${type.key}`}
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="0%"
+                        stopColor={type.colors.from}
+                      />
 
-                    <stop
-                      offset="100%"
-                      stopColor={
-                        GRADIENT_STOPS
-                          .internal
-                          .to
-                      }
-                    />
-                  </linearGradient>
-
-                  <linearGradient
-                    id={
-                      GRADIENT_IDS.external
-                    }
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="0%"
-                      stopColor={
-                        GRADIENT_STOPS
-                          .external
-                          .from
-                      }
-                    />
-
-                    <stop
-                      offset="100%"
-                      stopColor={
-                        GRADIENT_STOPS
-                          .external
-                          .to
-                      }
-                    />
-                  </linearGradient>
+                      <stop
+                        offset="100%"
+                        stopColor={type.colors.to}
+                      />
+                    </linearGradient>
+                  ))}
                 </defs>
 
                 <Pie
@@ -438,11 +426,7 @@ export default function ActivitySummaryChart({
                         }
                         fill={
                           hasData
-                            ? `url(#${
-                                GRADIENT_IDS[
-                                  entry.key
-                                ]
-                              })`
+                            ? `url(#activityTypeGradient-${entry.key})`
                             : "var(--color-bg-page-gray, #EDEEF2)"
                         }
                         opacity={
@@ -478,31 +462,15 @@ export default function ActivitySummaryChart({
           </div>
 
           <div>
-            <LegendRow
-              color={
-                COLORS.internal
-              }
-              label={t("dashboard.internalActivity")}
-              count={
-                internalCount
-              }
-              loading={
-                loading
-              }
-            />
-
-            <LegendRow
-              color={
-                COLORS.external
-              }
-              label={t("dashboard.externalActivity")}
-              count={
-                externalCount
-              }
-              loading={
-                loading
-              }
-            />
+            {types.map((type) => (
+              <LegendRow
+                key={type.key}
+                color={type.colors.solid}
+                label={type.name}
+                count={type.value}
+                loading={loading}
+              />
+            ))}
           </div>
         </div>
       )}
