@@ -1,5 +1,6 @@
 "use client";
 
+import SidebarBranchSelect from "@/components/navigation/SidebarBranchSelect";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -504,7 +505,17 @@ export default function Sidebar() {
                 "
               />
 
-              {branches.length > 1 ? (
+              {branches.length > 5 ? (
+                <SidebarBranchSelect
+                  branches={branches}
+                  value={selectedBranch}
+                  onChange={setSelectedBranch}
+                  getValue={getBranchOptionValue}
+                  getLabel={(branch) =>
+                    localizedLabel(branch, getBranchOptionLabel(branch))
+                  }
+                />
+              ) : branches.length > 1 ? (
                 <>
                                 <select
                 value={selectedBranch}

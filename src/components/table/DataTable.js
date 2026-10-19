@@ -269,7 +269,7 @@ export default function DataTable({
                                 )
                               }
                             />
-                          ) : filterName === "branch" ? (
+                          ) : filterName === "branch" || filter.searchable ? (
                             <SearchableSelect
                               name={
                                 filterName

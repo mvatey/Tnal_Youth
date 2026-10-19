@@ -493,6 +493,20 @@ export default function MembersPage() {
     setPositionFilter,
   ] = useState("");
 
+  // "Area" filter: one province, district or commune, matching that branch
+  // plus everything under it -- same rule as a regional secretary's
+  // coverage (province -> all its districts and communes, district -> its
+  // communes, commune -> just itself). Applied client-side like position.
+  const [
+    areaFilter,
+    setAreaFilter,
+  ] = useState("");
+
+  const [
+    branchAreas,
+    setBranchAreas,
+  ] = useState([]);
+
   const [
     isCreateOpen,
     setIsCreateOpen,
@@ -653,6 +667,28 @@ export default function MembersPage() {
             );
 
             setBranchLookups([]);
+          }
+        }
+
+        /*
+         * BRANCH AREAS (level + parent ids, for the area filter)
+         */
+        try {
+          const data =
+            await fetchJson(
+              "/lookups/branch-areas",
+              signal,
+            );
+
+          setBranchAreas(
+            normalizeArray(data),
+          );
+        } catch (error) {
+          if (
+            error.name !==
+            "AbortError"
+          ) {
+            setBranchAreas([]);
           }
         }
 
@@ -1050,6 +1086,44 @@ export default function MembersPage() {
    * =========================================
    */
 
+  const areaCoverageIds = useMemo(() => {
+    if (!areaFilter) {
+      return null;
+    }
+
+    const selected = branchAreas.find(
+      (area) => String(area.id) === areaFilter,
+    );
+
+    if (!selected) {
+      return null;
+    }
+
+    const level = String(selected.levelCode || "").toUpperCase();
+
+    return new Set(
+      branchAreas
+        .filter((area) => {
+          if (level === "PROVINCE") {
+            return (
+              area.provinceId != null &&
+              area.provinceId === selected.provinceId
+            );
+          }
+
+          if (level === "DISTRICT") {
+            return (
+              area.districtId != null &&
+              area.districtId === selected.districtId
+            );
+          }
+
+          return area.id === selected.id;
+        })
+        .map((area) => String(area.id)),
+    );
+  }, [areaFilter, branchAreas]);
+
   const filteredMembers = useMemo(
     () =>
       members
@@ -1062,9 +1136,53 @@ export default function MembersPage() {
           positionFilter
             ? String(member.positionId) === positionFilter
             : true,
+        )
+        .filter((member) =>
+          areaCoverageIds
+            ? areaCoverageIds.has(String(member.branchId))
+            : true,
         ),
-    [members, dateFilter, positionFilter],
+    [members, dateFilter, positionFilter, areaCoverageIds],
   );
+
+  const areaFilterOptions = useMemo(() => {
+    const levelOrder = { PROVINCE: 0, DISTRICT: 1, COMMUNE: 2 };
+
+    const levelLabel = {
+      PROVINCE: t("memberPage.areaLevelProvince"),
+      DISTRICT: t("memberPage.areaLevelDistrict"),
+      COMMUNE: t("memberPage.areaLevelCommune"),
+    };
+
+    return [
+      {
+        label: t("memberPage.areaFilter"),
+        value: "",
+      },
+
+      ...branchAreas
+        .map((area) => {
+          const level = String(area.levelCode || "").toUpperCase();
+
+          return {
+            level,
+            name: label(area, area.branchCode || ""),
+            value: String(area.id),
+          };
+        })
+        .sort(
+          (a, b) =>
+            (levelOrder[a.level] ?? 9) - (levelOrder[b.level] ?? 9) ||
+            a.name.localeCompare(b.name),
+        )
+        .map((area) => ({
+          label: levelLabel[area.level]
+            ? `${levelLabel[area.level]} \u00b7 ${area.name}`
+            : area.name,
+          value: area.value,
+        })),
+    ];
+  }, [branchAreas, label, t]);
 
   const positionFilterOptions = useMemo(() => {
     const seen = new Map();
@@ -1527,7 +1645,31 @@ export default function MembersPage() {
 
       placeholder:
         t("memberPage.position"),
+
+      searchable: true,
     },
+
+    ...(branchAreas.length > 1
+      ? [
+          {
+            name: "area",
+
+            value:
+              areaFilter,
+
+            onChange:
+              setAreaFilter,
+
+            options:
+              areaFilterOptions,
+
+            placeholder:
+              t("memberPage.areaFilter"),
+
+            searchable: true,
+          },
+        ]
+      : []),
 
     {
       name: "status",

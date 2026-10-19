@@ -14,6 +14,7 @@ const ALLOWED_LOOKUPS =
   new Set([
     "branches",
     "regional-anchor-branches",
+    "branch-areas",
 
     "branch-statuses",
     "member-statuses",
