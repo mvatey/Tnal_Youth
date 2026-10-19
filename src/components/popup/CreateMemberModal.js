@@ -423,6 +423,19 @@ export default function CreateMemberModal({
     };
   }, [open]);
 
+  // Drives the branch picker's own filtering (province/district only)
+  // and the locked coverage-preview multiselect -- derived from the
+  // chosen position rather than tracked as separate form state, so
+  // there's exactly one source of truth for it. Must stay ABOVE the
+  // effect below: that effect lists it in its dependency array, which is
+  // evaluated on every render (declaring it later throws a
+  // "before initialization" ReferenceError and crashes the whole page).
+  const isRegionalSecretary =
+    positionLookups.find(
+      (position) =>
+        String(position?.id) === form.positionId,
+    )?.mappedRole === "SECRETARY_REGIONAL";
+
   // Refetches the live coverage preview whenever the anchor branch
   // changes -- this is a preview call only (see the route's own
   // docblock), nothing is saved here; the actual grant is computed the
@@ -747,16 +760,6 @@ export default function CreateMemberModal({
         label,
       ],
     );
-
-  // Drives the branch picker's own filtering (province/district only)
-  // and the locked coverage-preview multiselect below -- derived from
-  // the chosen position rather than tracked as separate form state, so
-  // there's exactly one source of truth for it.
-  const isRegionalSecretary =
-    positionLookups.find(
-      (position) =>
-        String(position?.id) === form.positionId,
-    )?.mappedRole === "SECRETARY_REGIONAL";
 
   const updatePosition =
     (event) => {
