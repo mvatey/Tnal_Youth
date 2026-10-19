@@ -1636,6 +1636,10 @@ export default function MembersPage() {
         t("memberPage.position"),
 
       searchable: true,
+
+      // The one filter allowed to shrink when the toolbar runs out of room
+      // (see the status and area filters, which never do).
+      widthClass: "w-full xl:w-[170px] xl:min-w-[130px]",
     },
 
     {
@@ -1653,9 +1657,9 @@ export default function MembersPage() {
       placeholder:
         t("memberPage.status"),
 
-      // The member list's status labels are short, and the toolbar needs the
-      // room for the branch/level filter's longer label.
-      widthClass: "w-full xl:w-[160px]",
+      // Never squeezed below this, so the label isn't clipped; position
+      // is the filter that gives way instead.
+      widthClass: "w-full xl:w-[170px] xl:shrink-0",
     },
 
     {

@@ -233,13 +233,13 @@ export default function DataTable({
                           : filter.type === "daterange"
                           ? "w-full xl:w-[240px]"
                           : filter.type === "date"
-                            ? "w-full xl:w-[280px]"
+                            ? "w-full xl:w-[280px] xl:min-w-[170px]"
                             : filterName === "status"
                               ? "w-full xl:w-[240px]"
                               : filterName === "gender"
-                                ? "w-full xl:w-[160px]"
+                                ? "w-full xl:w-[160px] xl:min-w-[110px]"
                                 : filterName === "area"
-                                  ? "w-full xl:w-[250px]"
+                                  ? "w-full xl:w-[250px] xl:shrink-0"
                                   : "w-full xl:w-[210px]";
 
                       return (

@@ -122,7 +122,7 @@ export default function BranchAreaFilter({
 
       setRect({
         left: box.left,
-        width: Math.max(box.width, 220),
+        width: box.width,
         top: upward ? null : box.bottom,
         bottom: upward ? window.innerHeight - box.top : null,
         maxHeight: Math.max(160, (upward ? above : below) - MARGIN),
