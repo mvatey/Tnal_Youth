@@ -171,25 +171,30 @@ export default function CreateMemberModal({
   const { selectedBranch: sidebarSelectedBranch } =
     useBranch();
 
-  // A secretary only ever manages the one branch currently active in
-  // their sidebar (see BranchContext's isBranchScopedRole) -- letting
-  // them freely pick a different branch here would create members the
-  // rest of their session can't even see. Follow that sidebar branch
-  // the same way the Branch Detail page's fixedBranchId/lockBranch
-  // props already lock the field for that entry point.
-  const isSecretaryCreator =
-    String(user?.role || "").toUpperCase() ===
-    "SECRETARY";
+  // Every role except admin only ever manages the one branch currently
+  // active in their sidebar (see BranchContext's isBranchScopedRole) --
+  // whether a single-branch or multi-branch secretary, a regional
+  // secretary or a branch leader. Letting them freely pick a different
+  // branch here would create members the rest of their session can't even
+  // see. Follow that sidebar branch the same way the Branch Detail page's
+  // fixedBranchId/lockBranch props already lock the field for that entry
+  // point.
+  const isSidebarScopedCreator = [
+    "SECRETARY",
+    "BRANCH_LEADER",
+  ].includes(
+    String(user?.role || "").toUpperCase(),
+  );
 
   const effectiveLockBranch =
     lockBranch ||
-    (isSecretaryCreator &&
+    (isSidebarScopedCreator &&
       sidebarSelectedBranch !== "all");
 
   const effectiveFixedBranchId =
     fixedBranchId != null
       ? fixedBranchId
-      : isSecretaryCreator &&
+      : isSidebarScopedCreator &&
           sidebarSelectedBranch !== "all"
         ? sidebarSelectedBranch
         : null;
@@ -845,8 +850,15 @@ export default function CreateMemberModal({
           // (province/district only) once this position is regional --
           // an old selection valid under the previous filter may no
           // longer even be offered, so it's cleared rather than left
-          // silently stale.
-          branchId: "",
+          // silently stale. Never for a locked branch (everyone but
+          // admin, who follow their sidebar branch): that one isn't a
+          // choice, so clearing it would leave the field empty and
+          // disabled with nothing to pick.
+          branchId:
+            effectiveLockBranch &&
+            effectiveFixedBranchId != null
+              ? String(effectiveFixedBranchId)
+              : "",
         }),
       );
 
