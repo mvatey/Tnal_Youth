@@ -44,6 +44,17 @@ export default function SearchableSelect({
   loading = false,
   error = "",
   searchPlaceholder,
+  // Size the panel to its longest option (never narrower than the trigger,
+  // capped to what fits on screen) instead of clipping long labels to the
+  // trigger's width -- for compact toolbar filters whose options are far
+  // longer than the control itself.
+  autoWidth = false,
+  // Keep the list scrollable but don't draw the scrollbar.
+  hideScrollbar = false,
+  // Render the trigger text in the same tone as FormSelect (always
+  // text-secondary, selected or not) so a searchable filter sits in a
+  // toolbar of plain selects without standing out darker or paler.
+  filterTone = false,
 }) {
   const { locale, t } = useLanguage();
   const wrapperRef = useRef(null);
@@ -180,7 +191,15 @@ export default function SearchableSelect({
           error ? "border-error" : "border-border focus:border-primary"
         } disabled:cursor-not-allowed disabled:bg-bg-page-gray disabled:opacity-60`}
       >
-        <span className={`min-w-0 flex-1 truncate ${selectedOption ? "text-text-primary" : "text-text-mute"}`}>
+        <span
+          className={`min-w-0 flex-1 truncate ${
+            filterTone
+              ? "text-text-secondary"
+              : selectedOption
+                ? "text-text-primary"
+                : "text-text-mute"
+          }`}
+        >
           {loading ? t("common.loading") : selectedOption?.label || placeholder}
         </span>
 
@@ -197,7 +216,16 @@ export default function SearchableSelect({
             top: dropdownRect.top ?? undefined,
             bottom: dropdownRect.bottom ?? undefined,
             left: dropdownRect.left,
-            width: dropdownRect.width,
+            ...(autoWidth
+              ? {
+                  minWidth: dropdownRect.width,
+                  width: "max-content",
+                  maxWidth: Math.min(
+                    480,
+                    window.innerWidth - dropdownRect.left - 12,
+                  ),
+                }
+              : { width: dropdownRect.width }),
             marginTop: dropdownRect.top != null ? 4 : undefined,
             marginBottom: dropdownRect.bottom != null ? 4 : undefined,
           }}
@@ -228,7 +256,7 @@ export default function SearchableSelect({
           </div>
 
           <div
-            className="overflow-y-auto p-1"
+            className={`overflow-y-auto p-1 ${hideScrollbar ? "no-scrollbar" : ""}`}
             style={{ maxHeight: Math.max(dropdownRect.maxHeight - 56, 104) }}
           >
             {filteredOptions.length > 0 ? (

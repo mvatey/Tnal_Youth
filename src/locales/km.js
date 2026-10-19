@@ -595,6 +595,7 @@ const km = {
     areaModeBranch: "សាខា",
     areaModeLevel: "កម្រិតសាខា",
     areaClear: "សម្អាតតម្រង",
+    areaFilterPlaceholder: "សាខា/កម្រិតសាខា",
     areaLevelProvince: "ខេត្ត",
     areaLevelDistrict: "ស្រុក",
     areaLevelCommune: "ឃុំ",

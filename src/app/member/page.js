@@ -1610,7 +1610,7 @@ export default function MembersPage() {
                   branchId: areaBranch,
                 }}
                 onChange={handleAreaChange}
-                placeholder={t("memberPage.branch")}
+                placeholder={t("memberPage.areaFilterPlaceholder")}
               />
             ),
           },

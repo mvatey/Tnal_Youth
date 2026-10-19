@@ -273,6 +273,9 @@ export default function DataTable({
                             />
                           ) : filterName === "branch" || filter.searchable ? (
                             <SearchableSelect
+                              autoWidth
+                              hideScrollbar
+                              filterTone
                               name={
                                 filterName
                               }

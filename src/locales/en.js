@@ -595,6 +595,7 @@ const en = {
     areaModeBranch: "Branch",
     areaModeLevel: "Branch level",
     areaClear: "Clear filter",
+    areaFilterPlaceholder: "Branch/Branch level",
     areaLevelProvince: "Province",
     areaLevelDistrict: "District",
     areaLevelCommune: "Commune",

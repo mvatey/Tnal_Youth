@@ -58,11 +58,7 @@ export default function BranchAreaFilter({
     (area) => String(area.id) === String(value.branchId),
   );
 
-  const triggerText = selectedArea
-    ? `${levelLabels[selectedArea.level] ?? ""}${
-        levelLabels[selectedArea.level] ? " · " : ""
-      }${selectedArea.name}`
-    : placeholder;
+  const triggerText = selectedArea ? selectedArea.name : placeholder;
 
   const hasSelection = Boolean(value.branchId);
 
@@ -204,11 +200,7 @@ export default function BranchAreaFilter({
         aria-expanded={open}
         className="flex h-[34px] w-full items-center justify-between gap-2 rounded-lg border border-border bg-bg-page-white px-3 text-left text-sm outline-none transition focus:border-primary disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <span
-          className={`min-w-0 flex-1 truncate ${
-            hasSelection ? "text-text-primary" : "text-text-mute"
-          }`}
-        >
+        <span className="min-w-0 flex-1 truncate text-text-secondary">
           {triggerText}
         </span>
 
@@ -280,7 +272,7 @@ export default function BranchAreaFilter({
             </div>
           )}
 
-          <div className="overflow-y-auto p-1">
+          <div className="no-scrollbar overflow-y-auto p-1">
             {step === "mode" && (
               <>
                 <button
@@ -342,11 +334,7 @@ export default function BranchAreaFilter({
                           : "text-text-primary"
                       }`}
                     >
-                      <span className="truncate">
-                        {pendingMode === "branch" && levelLabels[area.level]
-                          ? `${levelLabels[area.level]} · ${area.name}`
-                          : area.name}
-                      </span>
+                      <span className="truncate">{area.name}</span>
                     </button>
                   );
                 })
