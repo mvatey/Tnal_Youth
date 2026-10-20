@@ -532,6 +532,13 @@ export default function ActivityPage() {
     [branchScopedActivities, isAdminLike],
   );
 
+  // The tabs also show when the backend scoped this list to a branch
+  // (it only reports invitedActivityCount for branch staff), even if that
+  // branch has no activities yet -- otherwise a branch with an empty list
+  // had no tabs at all until its first activity existed.
+  const showScopeTabs =
+    hasOwnBranchData || (!isAdminLike && invitedActivityCount !== null);
+
   // How many invited activities are still waiting on an Accept/Decline —
   // drives the badge on the "invited" tab below. Counts across the active
   // branch's invited activities regardless of which type/sector/search
@@ -881,7 +888,7 @@ export default function ActivityPage() {
       )}
 
       <section className="rounded-xl border border-border bg-bg-page-white p-4 transition-shadow duration-200 hover:shadow-sm">
-        {hasOwnBranchData && (
+        {showScopeTabs && (
           <div className="mb-4 inline-flex w-fit shrink-0 rounded-lg border border-border bg-bg-page-gray p-1 text-xs font-medium">
             {[
               { key: "all", label: t("activityPage.all") },

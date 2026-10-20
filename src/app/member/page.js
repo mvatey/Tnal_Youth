@@ -566,6 +566,55 @@ export default function MembersPage() {
     };
   }, [query]);
 
+  // Only a "branch level" pick expands to descendants; a plain branch pick
+  // goes to the server as the existing branchId filter instead (so the
+  // summary cards follow it too), see handleAreaBranchChange.
+  const areaCoverageIds = useMemo(() => {
+    if (areaMode !== "level" || !areaBranch) {
+      return null;
+    }
+
+    const selected = branchAreas.find(
+      (area) => String(area.id) === areaBranch,
+    );
+
+    if (!selected) {
+      return null;
+    }
+
+    const level = String(selected.levelCode || "").toUpperCase();
+
+    return new Set(
+      branchAreas
+        .filter((area) => {
+          if (level === "PROVINCE") {
+            return (
+              area.provinceId != null &&
+              area.provinceId === selected.provinceId
+            );
+          }
+
+          if (level === "DISTRICT") {
+            return (
+              area.districtId != null &&
+              area.districtId === selected.districtId
+            );
+          }
+
+          return area.id === selected.id;
+        })
+        .map((area) => String(area.id)),
+    );
+  }, [areaMode, areaBranch, branchAreas]);
+
+  // The branch ids a "branch level" pick covers, comma-joined for the
+  // summary cards (null when no level is picked). Computed ahead of the
+  // summary fetch below so the cards follow a level pick too, not just a
+  // plain branch pick.
+  const areaCoverageParam = areaCoverageIds
+    ? [...areaCoverageIds].sort().join(",")
+    : "";
+
   /*
    * =========================================
    * SUMMARY
@@ -580,12 +629,18 @@ export default function MembersPage() {
         // effectiveBranchFilter above) once the backend supports this
         // param on /members/summary -- until then it's simply ignored
         // server-side, same as any other unrecognized query param.
+        // A branch-level pick (a province/district and everything under it)
+        // counts every branch it covers; otherwise the single branch.
         const summaryPath =
-          effectiveBranchFilter
-            ? `/members/summary?branchId=${encodeURIComponent(
-                effectiveBranchFilter,
+          areaCoverageParam
+            ? `/members/summary?branchIds=${encodeURIComponent(
+                areaCoverageParam,
               )}`
-            : "/members/summary";
+            : effectiveBranchFilter
+              ? `/members/summary?branchId=${encodeURIComponent(
+                  effectiveBranchFilter,
+                )}`
+              : "/members/summary";
 
         const data =
           await fetchJson(
@@ -640,7 +695,7 @@ export default function MembersPage() {
             null,
         });
       },
-      [effectiveBranchFilter],
+      [effectiveBranchFilter, areaCoverageParam],
     );
 
   /*
@@ -1083,47 +1138,6 @@ export default function MembersPage() {
    * or position param).
    * =========================================
    */
-
-  // Only a "branch level" pick expands to descendants; a plain branch pick
-  // goes to the server as the existing branchId filter instead (so the
-  // summary cards follow it too), see handleAreaBranchChange.
-  const areaCoverageIds = useMemo(() => {
-    if (areaMode !== "level" || !areaBranch) {
-      return null;
-    }
-
-    const selected = branchAreas.find(
-      (area) => String(area.id) === areaBranch,
-    );
-
-    if (!selected) {
-      return null;
-    }
-
-    const level = String(selected.levelCode || "").toUpperCase();
-
-    return new Set(
-      branchAreas
-        .filter((area) => {
-          if (level === "PROVINCE") {
-            return (
-              area.provinceId != null &&
-              area.provinceId === selected.provinceId
-            );
-          }
-
-          if (level === "DISTRICT") {
-            return (
-              area.districtId != null &&
-              area.districtId === selected.districtId
-            );
-          }
-
-          return area.id === selected.id;
-        })
-        .map((area) => String(area.id)),
-    );
-  }, [areaMode, areaBranch, branchAreas]);
 
   const filteredMembers = useMemo(
     () =>
