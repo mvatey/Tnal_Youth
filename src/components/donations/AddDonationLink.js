@@ -3,6 +3,7 @@
 import { PlusCircle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import useCurrentMember from "@/hooks/useCurrentMember";
+import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function AddDonationLink() {
@@ -10,13 +11,16 @@ export default function AddDonationLink() {
   const pathname = usePathname();
   const { member, loading } = useCurrentMember();
   const { t } = useLanguage();
+  const { isAllBranchesView = false } = useBranch();
   const effectiveRole = member?.effectiveRole || member?.role;
   const canSeeAddDonation = ["secretary", "branch_leader"].includes(
     effectiveRole,
   );
   const isReadOnlyViewer = Boolean(member?.isViewer);
 
-  if (loading || !canSeeAddDonation) return null;
+  // Donations can only be added inside the country-level staff's own
+  // branch, not while viewing "all branches".
+  if (loading || !canSeeAddDonation || isAllBranchesView) return null;
 
   const addPath = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/add"

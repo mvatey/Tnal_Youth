@@ -29,6 +29,12 @@ export function BranchProvider({ children, branches = [] }) {
   // the real value -- a visible flash of the wrong numbers, worst for a
   // secretary/branch-leader since their real value is never "all".
   const [branchesReady, setBranchesReady] = useState(false);
+  // Set only for staff of the single country-level branch ("semi-admin"):
+  // { branchId, nameKm, nameEn }. They get two sidebar choices -- "all
+  // branches" (reads everything, like an admin) and their own country
+  // branch (an ordinary secretary/leader view) -- instead of the usual
+  // single-branch-only switcher.
+  const [countryScope, setCountryScope] = useState(null);
 
   // The currently-mounted page/form registers itself here (see
   // registerBranchChangeGuard below) to report whether it has unsaved
@@ -55,7 +61,8 @@ export function BranchProvider({ children, branches = [] }) {
   // components/navigation/sidebar.js). ADMIN/VIEWER keep the old
   // behavior: default to the aggregate "all branches" view unless they
   // only have access to exactly one branch.
-  const isBranchScopedRole = role === "secretary" || role === "branch_leader";
+  const isStaffRole = role === "secretary" || role === "branch_leader";
+  const isBranchScopedRole = isStaffRole;
 
   useEffect(() => {
     let cancelled = false;
@@ -75,6 +82,36 @@ export function BranchProvider({ children, branches = [] }) {
         // branch's level, which lets the sidebar list provinces before
         // districts before communes. Falls back to the plain list so a
         // failure there never leaves the switcher empty.
+        // Staff of the country-level branch are told apart from other
+        // secretaries/leaders by the backend; a failure just leaves them
+        // as ordinary single-branch staff.
+        let nextCountryScope = null;
+
+        if (isStaffRole) {
+          try {
+            const scopeResponse = await fetch("/api/lookups/country-scope", {
+              credentials: "include",
+              cache: "no-store",
+            });
+
+            if (scopeResponse.ok) {
+              const scope = await scopeResponse.json();
+
+              if (scope?.country_staff && scope?.branch_id != null) {
+                nextCountryScope = {
+                  branchId: String(scope.branch_id),
+                  nameKm: scope.name_km || "",
+                  nameEn: scope.name_en || "",
+                };
+              }
+            }
+          } catch {
+            nextCountryScope = null;
+          }
+        }
+
+        if (!cancelled) setCountryScope(nextCountryScope);
+
         let response = await fetch("/api/lookups/branch-areas", {
           credentials: "include",
           cache: "no-store",
@@ -104,20 +141,19 @@ export function BranchProvider({ children, branches = [] }) {
         }
 
         setSelectedBranchState((current) => {
-          const savedIsValid =
-            savedBranch != null &&
-            (savedBranch === "all" ||
-              normalized.some(
-                (branch) => String(branch.id) === String(savedBranch),
-              ));
+          // Country-level staff only ever choose between "all" and their
+          // own country branch, whatever else they could technically read.
+          const isSelectable = (value) =>
+            nextCountryScope
+              ? value === "all" || String(value) === nextCountryScope.branchId
+              : value === "all" ||
+                normalized.some((branch) => String(branch.id) === String(value));
 
-          const currentIsValid =
-            current === "all" ||
-            normalized.some(
-              (branch) => String(branch.id) === String(current),
-            );
+          const savedIsValid = savedBranch != null && isSelectable(savedBranch);
 
-          if (isBranchScopedRole) {
+          const currentIsValid = isSelectable(current);
+
+          if (isBranchScopedRole && !nextCountryScope) {
             // A secretary/branch leader must always have one concrete
             // branch selected. Restore the last branch for this user
             // when it is still accessible; otherwise use the first one.
@@ -159,7 +195,7 @@ export function BranchProvider({ children, branches = [] }) {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isLoggedIn, isBranchScopedRole, branchStorageKey]);
+  }, [authLoading, isLoggedIn, isStaffRole, isBranchScopedRole, branchStorageKey]);
 
   // A page/form with in-progress, unsaved edits calls this (typically from
   // a useEffect keyed on whatever "am I dirty" state it already tracks) to
@@ -259,18 +295,66 @@ export function BranchProvider({ children, branches = [] }) {
     }
   }, [pendingBranch, discardAndSwitchBranch, persistAndReloadForBranch]);
 
+  const isCountryStaff = countryScope != null;
+
+  // What the sidebar's switcher lists: for country-level staff just their
+  // own branch, then "all branches"; everyone else the accessible list.
+  const sidebarBranches = useMemo(
+    () =>
+      countryScope
+        ? [
+            {
+              id: countryScope.branchId,
+              levelCode: "COUNTRY",
+              nameKm: countryScope.nameKm || countryScope.nameEn,
+              nameEn: countryScope.nameEn || countryScope.nameKm,
+            },
+            {
+              id: "all",
+              nameKm: "សាខាទាំងអស់",
+              nameEn: "All branches",
+              isAllOption: true,
+            },
+          ]
+        : accessibleBranches,
+    [countryScope, accessibleBranches],
+  );
+
+  // True while the account is working inside one concrete branch --
+  // always for a normal secretary/leader, and for country-level staff only
+  // while their own branch (not "all branches") is selected. Pages use this
+  // instead of deriving it from the role, so the "all branches" view of a
+  // country-level account behaves like an admin's.
+  const isBranchScoped =
+    isStaffRole && !(isCountryStaff && selectedBranch === "all");
+
+  // Country-level staff looking at "all branches": everything is readable,
+  // but activities, donations and documents can only be created in their
+  // own branch, so those pages hide their create actions here.
+  const isAllBranchesView = isCountryStaff && selectedBranch === "all";
+
   const value = useMemo(
     () => ({
       branches: accessibleBranches,
+      sidebarBranches,
       selectedBranch,
       branchesReady,
+      isCountryStaff,
+      countryBranchId: countryScope?.branchId ?? null,
+      isBranchScoped,
+      isAllBranchesView,
       setSelectedBranch: requestBranchChange,
       registerBranchChangeGuard,
     }),
     [
       accessibleBranches,
+      sidebarBranches,
       selectedBranch,
       branchesReady,
+      isCountryStaff,
+      countryScope,
+      isBranchScoped,
+      isAllBranchesView,
       requestBranchChange,
       registerBranchChangeGuard,
     ],
@@ -367,7 +451,7 @@ function normalizeBranches(value) {
 // Provinces first, then districts, then communes; anything without a
 // known level keeps its place after them.
 function branchLevelRank(levelCode) {
-  return { PROVINCE: 0, DISTRICT: 1, COMMUNE: 2 }[levelCode] ?? 3;
+  return { COUNTRY: -1, PROVINCE: 0, DISTRICT: 1, COMMUNE: 2 }[levelCode] ?? 3;
 }
 
 export function useBranch() {
@@ -376,8 +460,13 @@ export function useBranch() {
   if (!context) {
     return {
       branches: [],
+      sidebarBranches: [],
       selectedBranch: "all",
       branchesReady: true,
+      isCountryStaff: false,
+      countryBranchId: null,
+      isBranchScoped: false,
+      isAllBranchesView: false,
       setSelectedBranch: () => {},
       registerBranchChangeGuard: () => () => {},
     };

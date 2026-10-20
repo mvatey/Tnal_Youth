@@ -41,12 +41,13 @@ export default function DonationCards() {
   // doesn't need a second network round trip first.
   const { user: authUser } = useAuth();
   const effectiveRole = getEffectiveRole(authUser);
-  const isBranchScoped = ["secretary", "branch_leader"].includes(effectiveRole);
   const isMemberScoped = effectiveRole === "member";
   const {
     branches: accessibleBranches = [],
     selectedBranch: globalSelectedBranch = "all",
+    isAllBranchesView = false,
   } = useBranch();
+  const isBranchScoped =(["secretary", "branch_leader"].includes(effectiveRole)) && !isAllBranchesView;
 
   // IMPORTANT: for SECRETARY/BRANCH_LEADER the sidebar selection is the
   // single source of truth. currentMember.branchId is only the home branch

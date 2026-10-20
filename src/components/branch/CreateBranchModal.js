@@ -39,6 +39,13 @@ const EMPTY_FORM = {
 
 const LEVEL_OPTIONS = [
   {
+    // The single country-level branch (see V364): covers every province, so
+    // it has no province/district/commune of its own. Listed first since
+    // it is the top of the hierarchy.
+    label: "ថ្នាក់ជាតិ",
+    value: "4",
+  },
+  {
     label: "រាជធានី/ខេត្ត",
     value: "1",
   },
@@ -297,6 +304,8 @@ export default function CreateBranchModal({
   const [modalRoot, setModalRoot] =
     useState(null);
 
+  const isCountryLevel = form.branchLevelId === "4";
+
   const showDistrict =
     form.branchLevelId === "2" ||
     form.branchLevelId === "3";
@@ -314,7 +323,9 @@ export default function CreateBranchModal({
               ? t("branchPage.province")
               : option.value === "2"
                 ? t("branchPage.district")
-                : t("branchPage.commune"),
+                : option.value === "3"
+                  ? t("branchPage.commune")
+                  : t("branchPage.country"),
         })),
       [t],
     );
@@ -657,7 +668,11 @@ export default function CreateBranchModal({
           field ===
           "branchLevelId"
         ) {
-          if (value === "1") {
+          if (value === "4") {
+            next.provinceId = "";
+          }
+
+          if (value === "1" || value === "4") {
             next.districtId = "";
             next.communeId = "";
           }
@@ -706,7 +721,7 @@ export default function CreateBranchModal({
         return;
       }
 
-      if (!form.provinceId) {
+      if (!isCountryLevel && !form.provinceId) {
         setError(
           t("branchPage.requiredProvince"),
         );
@@ -765,7 +780,9 @@ export default function CreateBranchModal({
           ),
 
         province_id:
-          Number(form.provinceId),
+          isCountryLevel
+            ? null
+            : Number(form.provinceId),
 
         district_id:
           showDistrict
@@ -945,6 +962,7 @@ try {
                 required
               />
 
+              {!isCountryLevel && (
               <FormSelect
                 label={t("branchPage.province")}
                 name="provinceId"
@@ -963,6 +981,7 @@ try {
                 }
                 required
               />
+              )}
 
               {showDistrict && (
                 <FormSelect

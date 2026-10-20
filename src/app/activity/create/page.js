@@ -965,11 +965,11 @@ export default function CreateActivityPage() {
   const {
     branches: accessibleBranches = [],
     selectedBranch: globalSelectedBranch = "all",
+    isAllBranchesView = false,
   } = useBranch();
 
-  const isBranchScoped =
-    currentMember?.role === "secretary" ||
-    currentMember?.role === "branch_leader";
+  const isBranchScoped =(currentMember?.role === "secretary" ||
+    currentMember?.role === "branch_leader") && !isAllBranchesView;
 
   const effectiveBranchId = useMemo(() => {
     if (!isBranchScoped) return null;

@@ -79,6 +79,11 @@ export default function MultiSelect({
   error = "",
   selectAllLabel,
   emptyLabel,
+  // Values that can only ever be chosen on their own: once one is selected
+  // every other option is locked, and while anything else is selected they
+  // are locked themselves (e.g. the country-level branch, which a secretary
+  // can hold only as their single branch). "Select all" never includes them.
+  exclusiveValues = [],
 }) {
   const { t } = useLanguage();
 
@@ -101,14 +106,60 @@ export default function MultiSelect({
     setQuery,
   ] = useState("");
 
+  const selectedValues =
+    useMemo(() => {
+      return Array.isArray(value)
+        ? value.map(String)
+        : [];
+    }, [value]);
+
+  const exclusiveSet =
+    useMemo(
+      () => new Set(exclusiveValues.map(String)),
+      [exclusiveValues],
+    );
+
+  const exclusiveSelected =
+    selectedValues.some((item) =>
+      exclusiveSet.has(item),
+    );
+
+  const othersSelected =
+    selectedValues.some(
+      (item) => !exclusiveSet.has(item),
+    );
+
   const normalizedOptions =
     useMemo(() => {
-      return Array.isArray(options)
-        ? options.map(
-            normalizeOption,
-          )
-        : [];
-    }, [options]);
+      if (!Array.isArray(options)) {
+        return [];
+      }
+
+      return options
+        .map(normalizeOption)
+        .map((option) => {
+          const isExclusive =
+            exclusiveSet.has(option.value);
+          const isSelected =
+            selectedValues.includes(option.value);
+          const blocked =
+            isExclusive
+              ? othersSelected
+              : exclusiveSelected;
+
+          // Never lock an option that is already ticked, so it can still
+          // be unticked.
+          return blocked && !isSelected
+            ? { ...option, disabled: true }
+            : option;
+        });
+    }, [
+      options,
+      exclusiveSet,
+      exclusiveSelected,
+      othersSelected,
+      selectedValues,
+    ]);
 
   const visibleOptions =
     useMemo(() => {
@@ -129,17 +180,11 @@ export default function MultiSelect({
       );
     }, [normalizedOptions, query]);
 
-  const selectedValues =
-    useMemo(() => {
-      return Array.isArray(value)
-        ? value.map(String)
-        : [];
-    }, [value]);
-
   const selectableOptions =
     normalizedOptions.filter(
       (option) =>
         !option.disabled &&
+        !exclusiveSet.has(option.value) &&
         option.value !== "",
     );
 
@@ -268,7 +313,7 @@ export default function MultiSelect({
   };
 
   const toggleSelectAll = () => {
-    if (disabled || readOnly) {
+    if (disabled || readOnly || exclusiveSelected) {
       return;
     }
 
@@ -485,13 +530,16 @@ export default function MultiSelect({
             aria-multiselectable="true"
             className="max-h-60 overflow-y-auto py-1"
           >
-          {selectableOptions.length >
-          0 ? (
+          {normalizedOptions.some(
+            (option) => option.value !== "",
+          ) ? (
             <>
               {/* Select all -- always targets the full option list, not
                   just what the search currently filters to. */}
 
-              {!readOnly && (
+              {!readOnly &&
+                !exclusiveSelected &&
+                selectableOptions.length > 0 && (
               <button
                 type="button"
                 onClick={

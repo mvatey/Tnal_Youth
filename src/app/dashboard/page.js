@@ -21,7 +21,6 @@ import PerformanceSummary from "@/components/dashboard/performanceSummary";
 
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
-import useCurrentMember from "@/hooks/useCurrentMember";
 
 function getCurrentMonth() {
   const today = new Date();
@@ -51,23 +50,19 @@ export default function DashboardPage() {
   const { t, label } =
     useLanguage();
 
+  // A secretary/branch_leader is scoped to exactly one branch (see
+  // BranchContext) -- their Performance Summary card has no separate
+  // branch to pick, so it always mirrors the same single branch the rest
+  // of the dashboard is scoped to, with its own dropdown hidden. ADMIN
+  // (and anyone else, including country-level staff looking at "all
+  // branches") keeps the independent picker below, unaffected by the
+  // sidebar's global branch selection.
   const {
     branches,
     selectedBranch,
     branchesReady,
+    isBranchScoped,
   } = useBranch();
-
-  const { member: currentMember } = useCurrentMember();
-
-  // A secretary/branch_leader is always scoped to exactly one branch (see
-  // BranchContext) -- their Performance Summary card has no separate
-  // branch to pick, so it always mirrors the same single branch the rest
-  // of the dashboard is scoped to, with its own dropdown hidden. ADMIN
-  // (and anyone else) keeps the independent picker below, unaffected by
-  // the sidebar's global branch selection.
-  const isBranchScoped =
-    (currentMember?.effectiveRole || currentMember?.role) === "secretary" ||
-    (currentMember?.effectiveRole || currentMember?.role) === "branch_leader";
 
   // The summary cards' branch card shows this branch's own name instead
   // of an org-wide count/percentage for a branch-scoped role (see

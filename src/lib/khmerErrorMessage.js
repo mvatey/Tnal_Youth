@@ -1,6 +1,24 @@
 const KHMER_PATTERN = /[\u1780-\u17ff]/;
 
 const ERROR_TRANSLATIONS = [
+  // The country-level branch rules (see StaffBranchScopeService and
+  // BranchServiceImpl) -- first, ahead of the generic keywords below.
+  [
+    "cannot be combined with other branches",
+    "សាខាថ្នាក់ជាតិអាចជាសាខាតែមួយគត់របស់លេខាធិការ ហើយមិនអាចបញ្ចូលជាមួយសាខាផ្សេងបានទេ។",
+  ],
+  [
+    "cannot have a regional secretary",
+    "សាខាថ្នាក់ជាតិមិនអាចមានលេខាធិការតំបន់បានទេ។",
+  ],
+  [
+    "country-level branch already exists",
+    "មានសាខាថ្នាក់ជាតិរួចហើយ ហើយអាចមានបានតែមួយប៉ុណ្ណោះ។",
+  ],
+  [
+    "country-level branch cannot have a province",
+    "សាខាថ្នាក់ជាតិមិនត្រូវមានរាជធានី/ខេត្ត ក្រុង/ស្រុក ឬឃុំ/សង្កាត់ទេ។",
+  ],
   ["invalid request data", "ទិន្នន័យស្នើសុំមិនត្រឹមត្រូវ។"],
   ["bad credentials", "លេខទូរស័ព្ទ អ៊ីមែល ឬលេខសម្ងាត់មិនត្រឹមត្រូវ។"],
   ["invalid credentials", "លេខទូរស័ព្ទ អ៊ីមែល ឬលេខសម្ងាត់មិនត្រឹមត្រូវ។"],

@@ -156,6 +156,7 @@ export default function AddDonationForm() {
   const {
     branches: accessibleBranches = [],
     selectedBranch: globalSelectedBranch = "all",
+    isAllBranchesView = false,
   } = useBranch();
   const effectiveRole = String(
     currentMember?.effectiveRole || currentMember?.role || "",
@@ -163,7 +164,7 @@ export default function AddDonationForm() {
   const isViewer =
     Boolean(currentMember?.isViewer) ||
     String(currentMember?.role || "").toLowerCase() === "viewer";
-  const isBranchScoped = ["secretary", "branch_leader"].includes(effectiveRole);
+  const isBranchScoped =(["secretary", "branch_leader"].includes(effectiveRole)) && !isAllBranchesView;
   const canManageMonthlyDonation =
     !isViewer && ["secretary", "branch_leader"].includes(effectiveRole);
   // A secretary/branch_leader is always scoped to exactly ONE branch — the

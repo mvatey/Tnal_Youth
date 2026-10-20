@@ -19,6 +19,7 @@ import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import DonationFilterSelect from "@/components/donations/monthlydonation/DonationFilterSelect";
 import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
 import useCurrentMember from "@/hooks/useCurrentMember";
+import { useBranch } from "@/context/BranchContext";
 import { fetchMyAccountCollection } from "@/lib/myAccountCollections";
 import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 import { useLanguage } from "@/context/LanguageContext";
@@ -99,11 +100,17 @@ export default function SponsorPanel({
   const router = useRouter();
   const pathname = usePathname();
   const { member: currentMember } = useCurrentMember();
+  // Country-level staff on "all branches" can read every sponsor donation
+  // but only add them inside their own branch, so nothing here is editable
+  // in that view.
+  const { isAllBranchesView = false } = useBranch();
   // Only entry staff (secretary / branch_leader) may add or edit sponsor
   // donations — admin/viewer are view-only, members see only their own
   // (read-only) sponsor donations. readOnly overrides this outright.
   const canManage =
-    !readOnly && ["secretary", "branch_leader"].includes(currentMember?.role);
+    !readOnly &&
+    !isAllBranchesView &&
+    ["secretary", "branch_leader"].includes(currentMember?.role);
   const isMemberScoped = currentMember?.role === "member";
   const routePrefix = pathname?.startsWith("/admin/donation")
     ? "/admin/donation/sponsor"

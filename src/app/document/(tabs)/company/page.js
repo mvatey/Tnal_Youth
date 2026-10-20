@@ -51,7 +51,7 @@ export default function CompanyDocumentPage() {
   // secretary — only the raw role (checked separately as `role` above)
   // decides whether write actions are allowed, never this.
   const effectiveRole = getEffectiveRole(user);
-  const { selectedBranch, branches } = useBranch();
+  const { selectedBranch, branches, isAllBranchesView = false } = useBranch();
 
   /*
    * SECRETARY and BRANCH_LEADER may add, edit, or delete documents
@@ -59,8 +59,10 @@ export default function CompanyDocumentPage() {
    * VIEWER and MEMBER remain read-only. Gating these controls here is a UX
    * courtesy on top of that real enforcement, not a substitute for it.
    */
+  // Country-level staff on "all branches" can read every document but only
+  // create inside their own branch, so creating is hidden in that view.
   const canManageDocuments =
-    role === "secretary" || role === "branch_leader";
+    (role === "secretary" || role === "branch_leader") && !isAllBranchesView;
 
   // A secretary/branch_leader responsible for only ONE branch (real or
   // viewer-impersonated) is locked to it, same as everywhere else this
@@ -68,8 +70,7 @@ export default function CompanyDocumentPage() {
   // MULTIPLE branches still free-picks among just their own via the
   // sidebar's branch dropdown (see BranchContext) — never every branch in
   // the org, which stays admin/viewer-admin only.
-  const isBranchScoped =
-    effectiveRole === "secretary" || effectiveRole === "branch_leader";
+  const isBranchScoped =(effectiveRole === "secretary" || effectiveRole === "branch_leader") && !isAllBranchesView;
 
   /*
    * A MEMBER never has anything to see on this tab (the organizational

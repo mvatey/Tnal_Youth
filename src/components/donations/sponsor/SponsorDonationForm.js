@@ -479,8 +479,9 @@ export default function SponsorDonationForm({ initialData = null }) {
   const {
     branches: accessibleBranches = [],
     selectedBranch: globalSelectedBranch = "all",
+    isAllBranchesView = false,
   } = useBranch();
-  const isBranchScoped = ["secretary", "branch_leader"].includes(currentMember?.role);
+  const isBranchScoped =(["secretary", "branch_leader"].includes(currentMember?.role)) && !isAllBranchesView;
   const scopedBranchId = useMemo(() => {
     if (!isBranchScoped) return null;
     if (globalSelectedBranch && globalSelectedBranch !== "all") {

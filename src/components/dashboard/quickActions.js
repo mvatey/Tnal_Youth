@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CirclePlus, Eye } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
+import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { normalizeRole } from "@/lib/navigation";
 
@@ -101,11 +102,15 @@ export default function QuickActions() {
     useLanguage();
 
   const role = normalizeRole(user?.role);
+  const { isAllBranchesView = false } = useBranch();
 
+  // Country-level staff on "all branches" get the admin's set (view links
+  // plus create member); activities, donations and documents are created
+  // inside their own branch.
   const actions =
     role === "viewer"
       ? VIEWER_ACTIONS
-      : role === "admin"
+      : role === "admin" || isAllBranchesView
         ? ADMIN_ACTIONS
         : CREATE_ACTIONS;
 

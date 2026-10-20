@@ -11,6 +11,7 @@ import MultiSelect from "@/components/forms/multiselect";
 import FormActionButton from "@/components/forms/FormActionButton";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useBranch } from "@/context/BranchContext";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 import { isPasswordValid } from "@/lib/validatePassword";
 
@@ -111,6 +112,17 @@ async function submitUser(payload, userId) {
 // member-linked accounts intact rather than bypassing it.
 export default function CreateUserModal({ open, onClose, onSave, editingUser = null }) {
   const { t, locale } = useLanguage();
+  // The country-level branch can only be a secretary's single branch, so the
+  // branch picker locks every other branch once it is ticked (and the
+  // reverse).
+  const { branches: accessibleBranches = [] } = useBranch();
+  const countryBranchIds = useMemo(
+    () =>
+      accessibleBranches
+        .filter((branch) => branch.levelCode === "COUNTRY")
+        .map((branch) => String(branch.id)),
+    [accessibleBranches],
+  );
   const { user: actingUser } = useAuth();
   const actingRole = String(actingUser?.role || "").toUpperCase();
   const isEditing = Boolean(editingUser);
@@ -1258,6 +1270,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
               name="branchSelectionIds"
               placeholder={t("usersPage.selectBranch")}
               options={branches}
+              exclusiveValues={countryBranchIds}
               value={branchSelectionIds}
               onChange={(nextValues) => {
                 setBranchSelectionIds(nextValues);

@@ -55,6 +55,7 @@ const en = {
     VIEWER: "Viewer",
   },
   sidebar: {
+    allBranches: "All branches",
     subtitle: "Youth management system",
     logout: "Logout",
   },
@@ -381,6 +382,7 @@ const en = {
     province: "Province",
     district: "District",
     commune: "Commune",
+    country: "Country",
     status: "Status",
     active: "Active",
     inactive: "Inactive",

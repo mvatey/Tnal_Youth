@@ -458,6 +458,14 @@ function computeBranchIds(source) {
 export default function PersonalPage() {
   const { role, isAdmin, canEditMemberDetails, canManageMemberAccount } = useMemberPermissions();
   const { branches: accessibleBranches } = useBranch();
+  // The country-level branch can only be a secretary's single branch.
+  const countryBranchIds = useMemo(
+    () =>
+      (accessibleBranches || [])
+        .filter((branch) => branch.levelCode === "COUNTRY")
+        .map((branch) => String(branch.id)),
+    [accessibleBranches],
+  );
   const { t, label } = useLanguage();
   const isReadOnly = !canEditMemberDetails;
   const refetchMemberProfile = useContext(
@@ -2666,6 +2674,7 @@ export default function PersonalPage() {
                 options={
                   branchOptions
                 }
+                exclusiveValues={countryBranchIds}
                 value={
                   branchMultiValue
                 }
@@ -2838,28 +2847,56 @@ export default function PersonalPage() {
                 Keep one status selector in Member Detail.
                 It is backed by members.status_id and is the same
                 status used by Member list and linked Users rows. */}
-            {/* Status and voter registration always share one row. */}
-            <div className="grid grid-cols-1 gap-5 md:col-span-2 md:grid-cols-2">
-            <FormSelect
-              label={t("memberPage.status")}
-              value={form.member_status_id}
-              onChange={handleChange("member_status_id")}
-              placeholder={t("memberPage.selectStatus")}
-              options={memberStatusOptions}
-              disabled={!canManageMemberAccount}
-              selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
-              adminEditable={isAdmin}
-            />
+            {/* Every row holds two fields; only the voter checkbox (and the
+                life status below the form) may stand alone. The fields above
+                number 15, plus one each for the regional-coverage box and the
+                viewer-scope box when they show. With an even count Status
+                starts a fresh row and shares it with the checkbox; with an
+                odd count Status pairs with the T-shirt size above and the
+                checkbox takes its own row, so no field is left alone. */}
+            {(() => {
+              const fieldsBeforeStatus =
+                15 +
+                (isRegionalSecretary ? 1 : 0) +
+                (form.account_role === "VIEWER" ? 1 : 0);
+              const statusPairsWithAbove = fieldsBeforeStatus % 2 === 1;
 
-            <CheckboxField
-              label={t("memberPage.registeredVoter")}
-              name="registered_voter"
-              checked={form.registered_voter}
-              onChange={handleValueChange("registered_voter")}
-              disabled={isReadOnly}
-              alignWithInput
-            />
-            </div>
+              const statusField = (
+                <FormSelect
+                  label={t("memberPage.status")}
+                  value={form.member_status_id}
+                  onChange={handleChange("member_status_id")}
+                  placeholder={t("memberPage.selectStatus")}
+                  options={memberStatusOptions}
+                  disabled={!canManageMemberAccount}
+                  selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
+                  adminEditable={isAdmin}
+                />
+              );
+
+              const voterField = (
+                <CheckboxField
+                  label={t("memberPage.registeredVoter")}
+                  name="registered_voter"
+                  checked={form.registered_voter}
+                  onChange={handleValueChange("registered_voter")}
+                  disabled={isReadOnly}
+                  alignWithInput={!statusPairsWithAbove}
+                />
+              );
+
+              return statusPairsWithAbove ? (
+                <>
+                  {statusField}
+                  <div className="md:col-span-2">{voterField}</div>
+                </>
+              ) : (
+                <div className="grid grid-cols-1 gap-5 md:col-span-2 md:grid-cols-2">
+                  {statusField}
+                  {voterField}
+                </div>
+              );
+            })()}
 
           </div>
 

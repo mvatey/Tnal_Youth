@@ -215,6 +215,7 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
   const {
     branches: accessibleBranches = [],
     selectedBranch: globalSelectedBranch = "all",
+    isAllBranchesView = false,
   } = useBranch();
   // Keep event-donation permissions aligned with the monthly-donation flow:
   // - real SECRETARY / BRANCH_LEADER accounts may add and edit money;
@@ -229,11 +230,13 @@ export default function EventDonationDetailForm({ initialQuery = {}, onCancel })
     Boolean(currentMember?.isViewer) ||
     String(currentMember?.role || "").toLowerCase() === "viewer";
   const canEdit =
-    !isViewer && ["secretary", "branch_leader"].includes(effectiveRole);
+    !isViewer &&
+    !isAllBranchesView &&
+    ["secretary", "branch_leader"].includes(effectiveRole);
   // Branch scope is based on the EFFECTIVE read role, not canEdit. This is
   // important for VIEWER + SECRETARY / BRANCH_LEADER: they must remain
   // locked to their branch even though the inputs and Save action are disabled.
-  const isBranchScoped = ["secretary", "branch_leader"].includes(effectiveRole);
+  const isBranchScoped =(["secretary", "branch_leader"].includes(effectiveRole)) && !isAllBranchesView;
   // Same role set is always scoped to exactly one branch — the sidebar's
   // global dropdown — same as AddDonationForm.js (monthly/sponsor). This
   // form used to only take its branch from initialQuery/URL once at mount,

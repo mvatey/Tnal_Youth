@@ -75,11 +75,12 @@ export default function DonationTable() {
   const {
     branches: accessibleBranches = [],
     selectedBranch: globalSelectedBranch = "all",
+    isAllBranchesView = false,
   } = useBranch();
   const effectiveRole = getEffectiveRole(authUser);
-  const isBranchScoped = ["secretary", "branch_leader"].includes(
+  const isBranchScoped =(["secretary", "branch_leader"].includes(
     effectiveRole,
-  );
+  )) && !isAllBranchesView;
   const isMemberScoped = effectiveRole === "member";
   const isReadOnlyViewer =
     String(authUser?.role || "").toUpperCase() === "VIEWER";
@@ -118,7 +119,9 @@ export default function DonationTable() {
     t("donationPage.totalAllUsd"),
     t("donationPage.action"),
   ];
-  const isAdmin = effectiveRole === "admin";
+  // Country-level staff on "all branches" get the admin-style read-only
+  // table (detail links only).
+  const isAdmin = effectiveRole === "admin" || isAllBranchesView;
   // Real secretary/branch_leader (never a viewer) get full manage
   // (edit+delete). Everyone else who still sees this column — real admin,
   // and every viewer variant (viewer/admin, viewer/secretary,

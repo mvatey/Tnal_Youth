@@ -86,10 +86,11 @@ export default function AddDonationForm() {
   const {
     branches: accessibleBranches = [],
     selectedBranch: globalSelectedBranch = "all",
+    isAllBranchesView = false,
   } = useBranch();
-  const isBranchScoped = ["secretary", "branch_leader"].includes(
+  const isBranchScoped =(["secretary", "branch_leader"].includes(
     currentMember?.role,
-  );
+  )) && !isAllBranchesView;
   // A secretary/branch_leader is always scoped to exactly ONE branch — the
   // one currently active in the sidebar's global branch dropdown (see
   // BranchContext) — never a branch picked independently in this form.

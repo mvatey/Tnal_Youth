@@ -15,6 +15,7 @@ const ALLOWED_LOOKUPS =
     "branches",
     "regional-anchor-branches",
     "branch-areas",
+    "country-scope",
 
     "branch-statuses",
     "member-statuses",

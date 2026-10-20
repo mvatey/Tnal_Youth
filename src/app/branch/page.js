@@ -1113,7 +1113,9 @@ export default function BranchPage() {
                     ? t("branchPage.district")
                     : String(branchLevelId) === "3"
                       ? t("branchPage.commune")
-                      : BRANCH_LEVEL_LABELS[
+                      : String(branchLevelId) === "4"
+                        ? t("branchPage.country")
+                        : BRANCH_LEVEL_LABELS[
                           branchLevelId
                         ]) ||
                 "-",
@@ -1204,6 +1206,7 @@ export default function BranchPage() {
   const branchLevelOptions =
     useMemo(
       () => [
+        t("branchPage.country"),
         t("branchPage.province"),
         t("branchPage.district"),
         t("branchPage.commune"),

@@ -437,10 +437,10 @@ export default function MembersPage() {
   const {
     branches: accessibleBranches = [],
     selectedBranch: globalSelectedBranch = "all",
+    isAllBranchesView = false,
   } = useBranch();
 
-  const isBranchScoped =
-    effectiveRole === "secretary" || effectiveRole === "branch_leader";
+  const isBranchScoped =(effectiveRole === "secretary" || effectiveRole === "branch_leader") && !isAllBranchesView;
 
   const effectiveBranchId = useMemo(() => {
     if (!isBranchScoped) return null;

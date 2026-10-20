@@ -55,6 +55,7 @@ const km = {
     VIEWER: "អ្នកមើល",
   },
   sidebar: {
+    allBranches: "សាខាទាំងអស់",
     subtitle: "ការគ្រប់គ្រងប្រព័ន្ធយុវជន",
     logout: "ចាកចេញ",
   },
@@ -381,6 +382,7 @@ const km = {
     province: "រាជធានី/ខេត្ត",
     district: "ក្រុង/ស្រុក/ខណ្ឌ",
     commune: "ឃុំ/សង្កាត់",
+    country: "ថ្នាក់ជាតិ",
     status: "ស្ថានភាព",
     active: "សកម្ម",
     inactive: "អសកម្ម",

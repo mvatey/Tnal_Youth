@@ -192,8 +192,8 @@ export default function EventDonationPage() {
   // viewerScope through effectiveRole) is just as locked to one branch as
   // the real role, even though they can't write — so this checks viewRole,
   // not the raw (write-capable-only) role.
-  const isBranchScoped = ["secretary", "branch_leader"].includes(viewRole);
-  const { branches: accessibleBranches = [], selectedBranch: globalSelectedBranch = "all" } = useBranch();
+  const { branches: accessibleBranches = [], selectedBranch: globalSelectedBranch = "all", isAllBranchesView = false } = useBranch();
+  const isBranchScoped =(["secretary", "branch_leader"].includes(viewRole)) && !isAllBranchesView;
   const effectiveBranchId = useMemo(() => {
     if (!isBranchScoped) return null;
     if (globalSelectedBranch && globalSelectedBranch !== "all") return String(globalSelectedBranch);

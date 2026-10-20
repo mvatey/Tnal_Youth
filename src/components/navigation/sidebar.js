@@ -179,8 +179,9 @@ export default function Sidebar() {
   } = useCurrentMember();
 
   const {
-    branches = [],
+    sidebarBranches: branches = [],
     selectedBranch = "all",
+    isAllBranchesView = false,
     setSelectedBranch = () => {},
   } = useBranch();
 
@@ -229,7 +230,7 @@ export default function Sidebar() {
     role === "branch_leader";
 
   const visibleItems =
-    getNavigationForRole(user);
+    getNavigationForRole(user, { countryStaff: isAllBranchesView });
 
   const userName =
     getDisplayName(

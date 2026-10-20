@@ -21,6 +21,10 @@ export const NAV_ITEMS = [
     href: "/branch",
     icon: "building",
     roles: ["admin", "viewer"],
+    // Also shown to staff of the country-level branch, but only while they
+    // are viewing "all branches" (see BranchContext) -- not inside their
+    // own branch.
+    countryStaffAccess: true,
   },
   {
     id: "members",
@@ -148,12 +152,13 @@ export function isReadOnlyViewer(user) {
   return normalizeRole(user?.role) === "viewer";
 }
 
-export function getNavigationForRole(role) {
+export function getNavigationForRole(role, { countryStaff = false } = {}) {
   const normalizedRole = getEffectiveRole(role);
 
   return NAV_ITEMS.filter(
     (item) =>
-      item.roles.includes(normalizedRole) &&
+      (item.roles.includes(normalizedRole) ||
+        (countryStaff && item.countryStaffAccess)) &&
       item.showInSidebar !== false
   );
 }

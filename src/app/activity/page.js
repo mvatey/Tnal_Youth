@@ -213,7 +213,10 @@ export default function ActivityPage() {
   const isAdmin = role === "admin";
   const searchParams = useSearchParams();
 
-  const canCreateActivity =
+  // Country-level staff looking at "all branches" can read every branch's
+  // activities (like an admin) but only create one inside their own branch,
+  // so the create action is hidden there.
+  const canCreateActivityByRole =
   role === "secretary" ||
   role === "branch_leader";
 
@@ -222,7 +225,15 @@ export default function ActivityPage() {
     selectedBranch = "all",
     setSelectedBranch = () => {},
     branchesReady = true,
+    isAllBranchesView = false,
   } = useBranch();
+
+  const canCreateActivity = canCreateActivityByRole && !isAllBranchesView;
+
+  // The admin-style view: an admin, or country-level staff on "all
+  // branches" -- page-local branch filter instead of the sidebar's single
+  // selected branch.
+  const isAdminLike = isAdmin || isAllBranchesView;
 
   // Admin sees every branch's activities regardless of which one is
   // "selected" (there's no own/invited distinction to make for them, since
@@ -233,13 +244,13 @@ export default function ActivityPage() {
   // picker as the member list: a plain branch goes to the server as the
   // branchId filter, a level pick (a branch plus everything under it) is
   // applied to the fetched rows instead -- see areaFilter.coverageIds.
-  const areaFilter = useBranchAreaFilter({ enabled: isAdmin });
+  const areaFilter = useBranchAreaFilter({ enabled: isAdminLike });
 
   const [activityRecords, setActivityRecords] = useState([]);
   const [branchOptions, setBranchOptions] = useState([]);
 
   // What actually scopes every fetch/filter below.
-  const effectiveSelectedBranch = isAdmin
+  const effectiveSelectedBranch = isAdminLike
     ? areaFilter.exactBranchId || "all"
     : selectedBranch;
   // From the backend's ActivityPageResponse.invitedActivityCount — the full
@@ -401,7 +412,7 @@ export default function ActivityPage() {
     // for one tick before resolving to the real branch; waiting here avoids
     // firing once for the placeholder "all" and again for the real branch
     // (see loadActivities' requestIdRef comment above).
-    if (!isAdmin && !branchesReady) return;
+    if (!isAdminLike && !branchesReady) return;
 
     setSelectedScope("all");
     setSelectedSector("all");
@@ -409,7 +420,7 @@ export default function ActivityPage() {
     setSelectedDateRange([null, null]);
     setSearchQuery("");
     loadActivities();
-  }, [loadActivities, isAdmin, branchesReady]);
+  }, [loadActivities, isAdminLike, branchesReady]);
 
   // Which activity's invitation is currently being accepted/declined —
   // disables that row's buttons and nothing else while the request is in
@@ -474,7 +485,7 @@ export default function ActivityPage() {
       activities
         .filter(
           (item) =>
-            !isAdmin ||
+            !isAdminLike ||
             !areaFilter.coverageIds ||
             areaFilter.coverageIds.has(String(item.branchId)),
         )
@@ -490,7 +501,7 @@ export default function ActivityPage() {
               branch === item.branch,
           ),
       ),
-    [activities, effectiveSelectedBranch, contextBranches, isAdmin, areaFilter.coverageIds],
+    [activities, effectiveSelectedBranch, contextBranches, isAdminLike, areaFilter.coverageIds],
   );
 
   const types = useMemo(
@@ -510,15 +521,15 @@ export default function ActivityPage() {
   // isn't enough to keep the tabs off an admin's list once they've picked a
   // branch. Admin isn't a co-host of anything and doesn't need the own/
   // invited distinction at all (they already see every branch's activities
-  // unscoped), so isAdmin is excluded below regardless of what the backend
+  // unscoped), so isAdminLike is excluded below regardless of what the backend
   // returns.
   const hasOwnBranchData = useMemo(
     () =>
-      !isAdmin &&
+      !isAdminLike &&
       branchScopedActivities.some(
         (item) => item.ownBranch === true || item.ownBranch === false,
       ),
-    [branchScopedActivities, isAdmin],
+    [branchScopedActivities, isAdminLike],
   );
 
   // How many invited activities are still waiting on an Accept/Decline —
@@ -765,7 +776,7 @@ export default function ActivityPage() {
     // Admin's own branch filter (see areaFilter above) -- everyone
     // else already has the sidebar's global branch dropdown, so this would
     // just be a confusing second control for them.
-    ...(isAdmin && areaFilter.available
+    ...(isAdminLike && areaFilter.available
       ? [
           {
             key: "area",
@@ -852,7 +863,7 @@ export default function ActivityPage() {
         // always 0. Swap it for an "ongoing" count instead, which is a
         // real, already-computed status (see getEffectiveActivityStatus
         // above) just not previously surfaced as its own card.
-        secondCardMode={isAdmin ? "ongoing" : "otherBranch"}
+        secondCardMode={isAdminLike ? "ongoing" : "otherBranch"}
       />
 
       <TelegramConnectBanner />

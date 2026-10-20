@@ -115,11 +115,11 @@ export default function SponsorPage() {
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
   const { t } = useLanguage();
   const { member: currentMember, loading: currentMemberLoading } = useCurrentMember();
-  const { branches: accessibleBranches = [], selectedBranch: globalSelectedBranch = "all" } = useBranch();
+  const { branches: accessibleBranches = [], selectedBranch: globalSelectedBranch = "all", isAllBranchesView = false } = useBranch();
 
   const viewRole = currentMember?.effectiveRole || currentMember?.role;
   const isActualViewer = currentMember?.role === "viewer";
-  const isBranchScoped = ["secretary", "branch_leader"].includes(viewRole);
+  const isBranchScoped =(["secretary", "branch_leader"].includes(viewRole)) && !isAllBranchesView;
   const isPersonalMember = viewRole === "member" && !isActualViewer;
 
   const effectiveBranchId = useMemo(() => {

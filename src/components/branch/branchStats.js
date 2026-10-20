@@ -52,6 +52,7 @@ export default function BranchStats({ branches = [] }) {
 
     return (
       level === "PROVINCE" ||
+      level === "COUNTRY" ||
       level === "រាជធានី/ខេត្ត"
     );
   };
