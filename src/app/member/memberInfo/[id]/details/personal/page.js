@@ -12,7 +12,7 @@ import { useParams } from "next/navigation";
 import { UploadCloud } from "lucide-react";
 
 import SaveButton from "@/components/forms/SaveButton";
-import CheckboxField from "@/components/forms/CheckboxField";
+import VoterRegistrationField from "@/components/forms/VoterRegistrationField";
 import LifeStatusRadio from "@/components/forms/LifeStatusRadio";
 import BoxFill from "@/components/forms/boxFill.js";
 import SelectArrow from "@/components/forms/SelectArrow";
@@ -55,6 +55,8 @@ const EMPTY_FORM = {
   tshirt_size: "",
 
   registered_voter: false,
+  national_id_number: "",
+  voter_card_number: "",
   life_status: "ALIVE",
 
   current_address: "",
@@ -384,6 +386,12 @@ function normalizePersonalInfo(
 
     registered_voter:
       Boolean(data?.registered_voter),
+
+    national_id_number:
+      data?.national_id_number || "",
+
+    voter_card_number:
+      data?.voter_card_number || "",
 
     life_status:
       data?.life_status || "ALIVE",
@@ -1942,6 +1950,16 @@ export default function PersonalPage() {
           registered_voter:
             Boolean(form.registered_voter),
 
+          // Blank clears the stored value; the voter card number is only
+          // kept while the member is on the voter list.
+          national_id_number:
+            form.national_id_number.trim(),
+
+          voter_card_number:
+            form.registered_voter
+              ? form.voter_card_number.trim()
+              : "",
+
           // Any admin, branch leader or secretary who can edit this member
           // may change it (no sensitive-fields permission needed).
           life_status:
@@ -2609,6 +2627,13 @@ export default function PersonalPage() {
               placeholder={t("memberPage.phonePlaceholder")}
             />
 
+            <BoxFill
+              label={t("memberPage.nationalIdNumber")}
+              value={form.national_id_number}
+              onChange={handleChange("national_id_number")}
+              placeholder={t("memberPage.nationalIdNumberPlaceholder")}
+            />
+
             <FormSelect
               label={t("memberPage.nationality")}
               value={
@@ -2849,14 +2874,14 @@ export default function PersonalPage() {
                 status used by Member list and linked Users rows. */}
             {/* Every row holds two fields; only the voter checkbox (and the
                 life status below the form) may stand alone. The fields above
-                number 15, plus one each for the regional-coverage box and the
+                number 16, plus one each for the regional-coverage box and the
                 viewer-scope box when they show. With an even count Status
                 starts a fresh row and shares it with the checkbox; with an
                 odd count Status pairs with the T-shirt size above and the
                 checkbox takes its own row, so no field is left alone. */}
             {(() => {
               const fieldsBeforeStatus =
-                15 +
+                16 +
                 (isRegionalSecretary ? 1 : 0) +
                 (form.account_role === "VIEWER" ? 1 : 0);
               const statusPairsWithAbove = fieldsBeforeStatus % 2 === 1;
@@ -2874,12 +2899,22 @@ export default function PersonalPage() {
                 />
               );
 
+              // The voter checkbox with its voter card number beside it (the
+              // number only shows while ticked) -- one cell either way.
               const voterField = (
-                <CheckboxField
-                  label={t("memberPage.registeredVoter")}
-                  name="registered_voter"
+                <VoterRegistrationField
+                  checkboxLabel={t("memberPage.registeredVoter")}
+                  numberLabel={t("memberPage.voterCardNumber")}
+                  numberPlaceholder={t("memberPage.voterCardNumberPlaceholder")}
                   checked={form.registered_voter}
-                  onChange={handleValueChange("registered_voter")}
+                  number={form.voter_card_number}
+                  onCheckedChange={(checked) => {
+                    handleValueChange("registered_voter")(checked);
+                    if (!checked) {
+                      handleValueChange("voter_card_number")("");
+                    }
+                  }}
+                  onNumberChange={handleValueChange("voter_card_number")}
                   disabled={isReadOnly}
                   alignWithInput={!statusPairsWithAbove}
                 />

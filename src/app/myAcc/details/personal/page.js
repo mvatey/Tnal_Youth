@@ -14,7 +14,7 @@ import BoxFill from "@/components/forms/boxFill.js";
 import FormSelect from "@/components/forms/FormSelect";
 import FormDate from "@/components/forms/FormDate.js";
 import SaveButton from "@/components/forms/SaveButton";
-import CheckboxField from "@/components/forms/CheckboxField";
+import VoterRegistrationField from "@/components/forms/VoterRegistrationField";
 import LifeStatusRadio from "@/components/forms/LifeStatusRadio";
 import CvFilePreview from "@/components/forms/CvFilePreview";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
@@ -49,6 +49,8 @@ const EMPTY_FORM = {
   tshirt_size: "",
 
   registered_voter: false,
+  national_id_number: "",
+  voter_card_number: "",
   life_status: "ALIVE",
 
   current_address: "",
@@ -227,6 +229,8 @@ function normalizePersonalInfo(data, preserve = {}) {
     tshirt_size: data?.tshirt_size || "",
 
     registered_voter: Boolean(data?.registered_voter),
+    national_id_number: data?.national_id_number || "",
+    voter_card_number: data?.voter_card_number || "",
 
     life_status: data?.life_status || "ALIVE",
 
@@ -513,6 +517,12 @@ export default function MyAccountPersonalPage() {
         current_address: form.current_address.trim() || null,
         permanent_address: form.permanent_address.trim() || null,
         registered_voter: Boolean(form.registered_voter),
+        // Blank clears the stored value; the voter card number is only
+        // kept while the member is on the voter list.
+        national_id_number: form.national_id_number.trim(),
+        voter_card_number: form.registered_voter
+          ? form.voter_card_number.trim()
+          : "",
         life_status: form.life_status,
 
         /*
@@ -705,6 +715,13 @@ export default function MyAccountPersonalPage() {
               placeholder={t("memberPage.phonePlaceholder")}
             />
 
+            <BoxFill
+              label={t("memberPage.nationalIdNumber")}
+              value={form.national_id_number}
+              onChange={handleChange("national_id_number")}
+              placeholder={t("memberPage.nationalIdNumberPlaceholder")}
+            />
+
             <FormSelect
               label={t("memberPage.nationality")}
               value={form.nationality_id}
@@ -780,22 +797,31 @@ export default function MyAccountPersonalPage() {
               options={tshirtSizes}
             />
 
-            {/* ACCOUNT STATUS — read-only; only staff can enable/disable an account */}
-            {/* Status and voter registration always share one row. */}
-            <div className="grid grid-cols-1 gap-5 md:col-span-2 md:grid-cols-2">
+            {/* ACCOUNT STATUS — read-only; only staff can enable/disable an account.
+                The fields above number 15 (odd), so Status pairs with the
+                T-shirt size and the voter checkbox -- with its voter card
+                number beside it once ticked -- takes a row of its own. */}
             <BoxFill
               label={t("memberPage.status")}
               value={form.has_account ? getStatusLabel(form.account_status, t) : "-"}
               readOnly
             />
 
-            <CheckboxField
-              label={t("memberPage.registeredVoter")}
-              name="registered_voter"
-              checked={form.registered_voter}
-              onChange={handleCheckboxChange("registered_voter")}
-              alignWithInput
-            />
+            <div className="md:col-span-2">
+              <VoterRegistrationField
+                checkboxLabel={t("memberPage.registeredVoter")}
+                numberLabel={t("memberPage.voterCardNumber")}
+                numberPlaceholder={t("memberPage.voterCardNumberPlaceholder")}
+                checked={form.registered_voter}
+                number={form.voter_card_number}
+                onCheckedChange={(checked) => {
+                  handleCheckboxChange("registered_voter")(checked);
+                  if (!checked) {
+                    handleCheckboxChange("voter_card_number")("");
+                  }
+                }}
+                onNumberChange={handleCheckboxChange("voter_card_number")}
+              />
             </div>
           </div>
 

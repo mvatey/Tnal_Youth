@@ -854,6 +854,17 @@ const loadBranchDetails =
         item?.googleMapUrl ||
         null,
 
+      // Report flags -- every branch counts as having both until unticked.
+      hasLocation:
+        item?.has_location ??
+        item?.hasLocation ??
+        true,
+
+      legallyRegistered:
+        item?.legally_registered ??
+        item?.legallyRegistered ??
+        true,
+
       phone:
         item?.phone || "-",
 

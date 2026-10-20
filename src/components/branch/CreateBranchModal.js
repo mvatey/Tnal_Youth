@@ -21,6 +21,7 @@ import { HiSaveAs } from "react-icons/hi";
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
+import CheckboxField from "@/components/forms/CheckboxField";
 import { useLanguage } from "@/context/LanguageContext";
 
 const EMPTY_FORM = {
@@ -35,6 +36,10 @@ const EMPTY_FORM = {
   phone: "",
   email: "",
   statusId: "",
+  // Report flags: a new branch starts as having a location and being
+  // registered by law; untick whichever does not apply.
+  hasLocation: true,
+  legallyRegistered: true,
 };
 
 const LEVEL_OPTIONS = [
@@ -251,6 +256,18 @@ function getInitialForm(branch) {
       branch?.statusId ??
         branch?.status_id ??
         "",
+    ),
+
+    hasLocation: Boolean(
+      branch?.hasLocation ??
+        branch?.has_location ??
+        true,
+    ),
+
+    legallyRegistered: Boolean(
+      branch?.legallyRegistered ??
+        branch?.legally_registered ??
+        true,
     ),
   };
 }
@@ -816,6 +833,12 @@ export default function CreateBranchModal({
 
         status_id:
           Number(form.statusId),
+
+        has_location:
+          Boolean(form.hasLocation),
+
+        legally_registered:
+          Boolean(form.legallyRegistered),
       };
 
 
@@ -1137,6 +1160,32 @@ try {
               disabled={isLoadingLookups}
               required
             />
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <CheckboxField
+                label={t("branchPage.hasLocation")}
+                name="hasLocation"
+                checked={form.hasLocation}
+                onChange={(checked) =>
+                  setForm((previous) => ({
+                    ...previous,
+                    hasLocation: checked,
+                  }))
+                }
+              />
+
+              <CheckboxField
+                label={t("branchPage.legallyRegistered")}
+                name="legallyRegistered"
+                checked={form.legallyRegistered}
+                onChange={(checked) =>
+                  setForm((previous) => ({
+                    ...previous,
+                    legallyRegistered: checked,
+                  }))
+                }
+              />
+            </div>
 
             {error && (
               <p className="text-sm text-error">
