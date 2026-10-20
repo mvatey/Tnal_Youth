@@ -33,6 +33,8 @@ export default function DonationFilterSelect({
         placeholder={allLabel}
         required={required}
         disabled={disabled}
+        // The long branch list scrolls without a visible scrollbar.
+        {...(searchable ? { hideScrollbar: true } : {})}
       />
     </div>
   );

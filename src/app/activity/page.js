@@ -20,6 +20,7 @@ import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import { useAuth } from "@/context/AuthContext";
 import { normalizeRole } from "@/lib/navigation";
 import { useLanguage } from "@/context/LanguageContext";
+import { activityTypeBadgeStyle } from "@/lib/activityTypeColors";
 import { activityStatusLabel } from "@/lib/activityStatusLabels";
 
 function getLookupLabel(lookup, locale = "km") {
@@ -157,18 +158,19 @@ function normalizeActivity(item, branchOptions, locale = "km") {
 function TypeBadge({ type, code }) {
   const normalizedType = String(type || "").trim().toLowerCase();
   // By the type's code when known -- the label is editable on the variable
-  // page, so matching its wording would stop colouring a renamed type.
-  const isExternal = code
-    ? String(code).toUpperCase() === "EXTERNAL"
-    : normalizedType === "កម្មវិធីខាងក្រៅ" || normalizedType.includes("external");
-  const style =
-    isExternal
-      ? "bg-success-bg text-success"
-      : "bg-secondary-light text-secondary";
+  // page, so matching its wording would stop colouring a renamed type. A
+  // list that carries no code falls back to spotting an external activity
+  // by its wording, as before.
+  const colorCode =
+    code ||
+    (normalizedType === "កម្មវិធីខាងក្រៅ" || normalizedType.includes("external")
+      ? "EXTERNAL"
+      : "INTERNAL");
 
   return (
     <span
-      className={`inline-flex w-fit min-w-[70px] items-center justify-center whitespace-nowrap rounded-full px-2 py-1 text-[11px] font-normal ${style}`}
+      style={activityTypeBadgeStyle(colorCode)}
+      className="inline-flex w-fit min-w-[70px] items-center justify-center whitespace-nowrap rounded-full px-2 py-1 text-[11px] font-normal"
     >
       {type}
     </span>

@@ -4,19 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useLanguage } from "@/context/LanguageContext";
-
-const TYPE_BADGE = {
-  INTERNAL: {
-    label: "កម្មវិធីខាងក្នុង",
-    color: "var(--color-primary, #6D5BD0)",
-    tint: "var(--color-primary-light, #F1EEFC)",
-  },
-  EXTERNAL: {
-    label: "កម្មវិធីខាងក្រៅ",
-    color: "var(--color-success, #2FA36B)",
-    tint: "var(--color-success-bg, #E9F9F1)",
-  },
-};
+import { activityTypeBadgeStyle } from "@/lib/activityTypeColors";
 
 function normalizeType(type) {
   return String(type ?? "")
@@ -31,13 +19,6 @@ function TypeBadge({ type, label: lookupLabel }) {
   const normalizedType =
     normalizeType(type);
 
-  const config =
-    TYPE_BADGE[normalizedType] ?? {
-      label: type || "-",
-      color: "var(--color-text-secondary, #6B7280)",
-      tint: "var(--color-bg-page-gray, #F1F2F5)",
-    };
-
   // The lookup's current label (from the backend) wins so a rename on the
   // variable page shows here; the built-in wording is only a fallback.
   const displayLabel =
@@ -46,19 +27,19 @@ function TypeBadge({ type, label: lookupLabel }) {
       ? t("dashboard.internalActivity")
       : normalizedType === "EXTERNAL"
         ? t("dashboard.externalActivity")
-        : config.label);
+        : type || "-");
 
   return (
     <span
       style={{
         display: "inline-block",
         borderRadius: 6,
-        background: config.tint,
         padding: "2px 7px",
-        color: config.color,
         fontSize: 10,
         fontWeight: 400,
         whiteSpace: "nowrap",
+        // Each activity type has its own colour (see lib/activityTypeColors).
+        ...activityTypeBadgeStyle(normalizedType),
       }}
     >
       {displayLabel}

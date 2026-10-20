@@ -62,8 +62,11 @@ export default function MemberDocumentPage() {
   // an activity's host branch certifying a co-hosting branch's member.
   // Admin/viewer-admin already see every branch in the main tab, so a
   // second "cross-branch" view would just be an empty duplicate for them.
+  // Country-level staff on "all branches" see every document in one list, so
+  // there is nothing to split into own/received/issued.
   const showCrossBranchTab =
-    effectiveRole === "secretary" || effectiveRole === "branch_leader";
+    (effectiveRole === "secretary" || effectiveRole === "branch_leader") &&
+    !isAllBranchesView;
 
   // A secretary/branch_leader responsible for only ONE branch (real or
   // viewer-impersonated) is locked to it, same as everywhere else this
@@ -74,6 +77,9 @@ export default function MemberDocumentPage() {
   const isBranchScoped =(effectiveRole === "secretary" || effectiveRole === "branch_leader") && !isAllBranchesView;
 
   const [activeSubTab, setActiveSubTab] = useState("own");
+  // What the list actually loads: the picked tab, or everything at once on
+  // "all branches" for country-level staff.
+  const subTab = isAllBranchesView ? "all" : activeSubTab;
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -106,9 +112,9 @@ export default function MemberDocumentPage() {
       // default first page of 10 — loop through every page the same
       // way CertificateForm.js does for activities.
       const endpoint =
-        activeSubTab === "cross-branch"
+        subTab === "cross-branch"
           ? "/api/backend/documents/member-documents/cross-branch-certificates"
-          : activeSubTab === "received"
+          : subTab === "received"
             ? "/api/backend/documents/member-documents/received-from-other-branches"
             : "/api/backend/documents";
 
@@ -119,7 +125,7 @@ export default function MemberDocumentPage() {
       // shows up as cross-branch at all. The "own" tab has no such param
       // (see exclude_cross_branch_issued_certificates below instead).
       const branchParam =
-        (activeSubTab === "cross-branch" || activeSubTab === "received") &&
+        (subTab === "cross-branch" || subTab === "received") &&
         selectedBranch !== "all"
           ? `&branchId=${encodeURIComponent(selectedBranch)}`
           : "";
@@ -128,7 +134,7 @@ export default function MemberDocumentPage() {
       // issued by a different branch's activity — that belongs in the
       // "received" tab instead, regardless of which branch is selected.
       const excludeCrossBranchParam =
-        activeSubTab === "own"
+        subTab === "own"
           ? "&exclude_cross_branch_issued_certificates=true"
           : "";
 
@@ -154,7 +160,7 @@ export default function MemberDocumentPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeSubTab, isBranchScoped, isEnglish, selectedBranch, t]);
+  }, [subTab, isBranchScoped, isEnglish, selectedBranch, t]);
 
   useEffect(() => { loadDocuments(); }, [loadDocuments]);
 
@@ -219,7 +225,7 @@ export default function MemberDocumentPage() {
     // filter would exclude every row on that tab if applied. It only
     // makes sense on the "own branch" tab.
     const matchBranch =
-      activeSubTab === "cross-branch" ||
+      subTab === "cross-branch" ||
       item.branchId == null ||
       (isBranchScoped
         ? !effectiveSelectedBranch ||

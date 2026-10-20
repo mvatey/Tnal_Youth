@@ -13,6 +13,7 @@ import {
   ChevronRight,
   PlusCircle,
   Trash2,
+  Users,
 } from "lucide-react";
 import { RiDownloadCloud2Line } from "react-icons/ri";
 import { HiSaveAs } from "react-icons/hi";
@@ -25,9 +26,12 @@ import { downloadTableAsExcel } from "@/utils/downloadExcel";
 
 const KHR_PER_USD = 4000;
 
-function createEmptyRow(id) {
+function createEmptyRow(id, familyKey = null) {
   return {
     id,
+    // Client-side key of the family this row is recorded on; null for every
+    // activity type except gift distribution.
+    familyKey,
     expenseId: null,
     spentOn: null,
     name: "",
@@ -46,10 +50,8 @@ function createEmptyRow(id) {
   };
 }
 
-const initialRows = Array.from(
-  { length: 3 },
-  (_, index) => createEmptyRow(index + 1)
-);
+// One empty row to start with; the add button below each row makes more.
+const initialRows = [createEmptyRow(1)];
 
 function parseNumber(value) {
   if (
@@ -123,6 +125,13 @@ function todayIsoDate() {
   return `${year}-${month}-${day}`;
 }
 
+// A saved family's client key; unsaved ones get a "new-family-..." key.
+const familyKeyFor = (familyId) => `family-${familyId}`;
+
+function createEmptyFamily(key) {
+  return { key, familyId: null, memberName: "", reason: "" };
+}
+
 function expenseToRow(expense) {
   const quantity = Math.max(parseNumber(expense?.quantity), 1);
   const totalRiel = parseNumber(expense?.amount_khr ?? expense?.amountKhr);
@@ -134,8 +143,11 @@ function expenseToRow(expense) {
       directDollarTotal + totalRiel / KHR_PER_USD,
   );
 
+  const familyId = expense?.family_id ?? expense?.familyId ?? null;
+
   return {
     id: `saved-${expense.id}`,
+    familyKey: familyId != null ? familyKeyFor(familyId) : null,
     expenseId: Number(expense.id),
     spentOn: expense?.spent_on ?? expense?.spentOn ?? null,
     name: expense?.name || "",
@@ -176,6 +188,14 @@ export default function ExpensePage() {
   const [deletedExpenseIds, setDeletedExpenseIds] =
     useState([]);
 
+  // Gift distribution: the families that received gifts, each with the
+  // expense rows (what it received) recorded on it.
+  const [families, setFamilies] = useState([]);
+  const [deletedFamilyIds, setDeletedFamilyIds] = useState([]);
+
+  const isGiftDistribution =
+    String(activity?.type?.code || "").toUpperCase() === "GIFT_DISTRIBUTION";
+
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
@@ -183,8 +203,12 @@ export default function ExpensePage() {
     Promise.all([
       fetchJson(`/api/backend/activities/${encodeURIComponent(id)}`),
       fetchJson(`/api/backend/activities/${encodeURIComponent(id)}/expenses`),
+      // Only a gift-distribution activity has families; for any other type
+      // (or an older backend without the endpoint) this is simply empty.
+      fetchJson(`/api/backend/activities/${encodeURIComponent(id)}/expense-families`)
+        .catch(() => []),
     ])
-      .then(([record, expenseItems]) => {
+      .then(([record, expenseItems, familyItems]) => {
         if (cancelled) return;
 
         setActivity({
@@ -195,6 +219,58 @@ export default function ExpensePage() {
         const savedRows = (Array.isArray(expenseItems) ? expenseItems : [])
           .map(expenseToRow);
 
+        const isGift =
+          String(record?.type?.code || "").toUpperCase() ===
+          "GIFT_DISTRIBUTION";
+
+        if (isGift) {
+          const savedFamilies = (Array.isArray(familyItems) ? familyItems : [])
+            .map((family) => ({
+              key: familyKeyFor(family.id),
+              familyId: Number(family.id),
+              memberName: family.member_name ?? family.memberName ?? "",
+              reason: family.reason ?? "",
+            }));
+
+          // Rows recorded before this activity had families go into a first
+          // family of their own, to be named.
+          const looseRows = savedRows.filter((row) => !row.familyKey);
+          const allFamilies = [...savedFamilies];
+
+          if (looseRows.length > 0) {
+            const looseKey = `new-family-loose-${Date.now()}`;
+            allFamilies.unshift(createEmptyFamily(looseKey));
+            looseRows.forEach((row) => {
+              row.familyKey = looseKey;
+            });
+          }
+
+          if (isReadOnly) {
+            setFamilies(allFamilies);
+            setRows(savedRows);
+            setDeletedExpenseIds([]);
+            setDeletedFamilyIds([]);
+            return;
+          }
+
+          // At least one family to fill in, and every family keeps a blank
+          // row after what it already has.
+          if (allFamilies.length === 0) {
+            allFamilies.push(createEmptyFamily(`new-family-${Date.now()}`));
+          }
+
+          setFamilies(allFamilies);
+          setRows([
+            ...savedRows,
+            ...allFamilies.map((family, index) =>
+              createEmptyRow(`new-${Date.now()}-${index}`, family.key),
+            ),
+          ]);
+          setDeletedExpenseIds([]);
+          setDeletedFamilyIds([]);
+          return;
+        }
+
         if (isReadOnly) {
           // Nothing to add here, so no blank rows to fill in either.
           setRows(savedRows);
@@ -202,15 +278,9 @@ export default function ExpensePage() {
           return;
         }
 
-        // Keep the existing records editable and always leave enough blank
-        // rows for adding more expenses without navigating away.
-        const blankCount = Math.max(1, 3 - savedRows.length);
-        const blankRows = Array.from(
-          { length: blankCount },
-          (_, index) => createEmptyRow(`new-${Date.now()}-${index}`),
-        );
-
-        setRows([...savedRows, ...blankRows]);
+        // Keep the existing records editable and leave a single blank row
+        // after them for adding another expense.
+        setRows([...savedRows, createEmptyRow(`new-${Date.now()}`)]);
         setDeletedExpenseIds([]);
       })
       .catch((loadError) => {
@@ -300,7 +370,8 @@ export default function ExpensePage() {
         );
 
       const newRow = createEmptyRow(
-        `${Date.now()}-${Math.random()}`
+        `${Date.now()}-${Math.random()}`,
+        rowIndex === -1 ? null : currentRows[rowIndex].familyKey,
       );
 
       if (rowIndex === -1) {
@@ -334,10 +405,54 @@ export default function ExpensePage() {
 
       const filteredRows = currentRows.filter((row) => row.id !== rowId);
 
-      return filteredRows.length > 0
-        ? filteredRows
-        : [createEmptyRow(Date.now())];
+      // A family always keeps at least one row to fill in.
+      const stillHasRow = filteredRows.some(
+        (row) => row.familyKey === (target?.familyKey ?? null),
+      );
+
+      if (!stillHasRow && (target?.familyKey != null || filteredRows.length === 0)) {
+        return [
+          ...filteredRows,
+          createEmptyRow(Date.now(), target?.familyKey ?? null),
+        ];
+      }
+
+      return filteredRows;
     });
+  };
+
+  const updateFamily = (familyKey, field, value) => {
+    setFamilies((current) =>
+      current.map((family) =>
+        family.key === familyKey ? { ...family, [field]: value } : family,
+      ),
+    );
+  };
+
+  const addFamily = () => {
+    const key = `new-family-${Date.now()}-${Math.random()}`;
+
+    setFamilies((current) => [...current, createEmptyFamily(key)]);
+    setRows((current) => [...current, createEmptyRow(`new-${key}`, key)]);
+  };
+
+  const removeFamily = (familyKey) => {
+    const family = families.find((item) => item.key === familyKey);
+
+    // Deleting a saved family removes the rows recorded on it as well, so
+    // those rows are not deleted one by one.
+    if (family?.familyId != null) {
+      setDeletedFamilyIds((ids) =>
+        ids.includes(family.familyId) ? ids : [...ids, family.familyId],
+      );
+    }
+
+    setFamilies((current) => {
+      const next = current.filter((item) => item.key !== familyKey);
+      return next;
+    });
+
+    setRows((current) => current.filter((row) => row.familyKey !== familyKey));
   };
 
   const summary = useMemo(() => {
@@ -379,9 +494,25 @@ export default function ExpensePage() {
       { header: t("donationPage.unitPriceUsd"), accessor: "unitPriceDollar" },
       { header: t("donationPage.totalPriceUsd"), exportValue: (row) => formatDollar(row.totalDollar) },
     ];
+    const familyByKey = new Map(families.map((family) => [family.key, family]));
+
+    if (isGiftDistribution) {
+      expenseExportColumns.splice(
+        1,
+        0,
+        { header: t("donationPage.familyMemberName"), accessor: "familyName" },
+        { header: t("donationPage.familyReason"), accessor: "familyReason" },
+      );
+    }
+
     const activeRows = rows
       .filter((row) => row.name.trim())
-      .map((row, index) => ({ ...row, no: index + 1 }));
+      .map((row, index) => ({
+        ...row,
+        no: index + 1,
+        familyName: familyByKey.get(row.familyKey)?.memberName || "",
+        familyReason: familyByKey.get(row.familyKey)?.reason || "",
+      }));
 
     downloadTableAsExcel({
       data: activeRows,
@@ -397,6 +528,19 @@ export default function ExpensePage() {
       return;
     }
 
+    // Every family that received something needs the name of one member.
+    if (
+      isGiftDistribution &&
+      families.some(
+        (family) =>
+          !family.memberName.trim() &&
+          activeRows.some((row) => row.familyKey === family.key),
+      )
+    ) {
+      setError(t("donationPage.familyNameRequired"));
+      return;
+    }
+
     setIsSaving(true);
     setError("");
     try {
@@ -409,6 +553,36 @@ export default function ExpensePage() {
           ),
         ),
       );
+
+      // Gift distribution: save the families first (creating the new ones to
+      // get their ids), then record each row on its family.
+      const familyIdByKey = new Map();
+
+      if (isGiftDistribution) {
+        const namedFamilies = families.filter((family) =>
+          family.memberName.trim(),
+        );
+
+        for (const family of namedFamilies) {
+          const familyBody = JSON.stringify({
+            member_name: family.memberName.trim(),
+            reason: family.reason.trim() || null,
+          });
+
+          const saved = await fetchJson(
+            family.familyId
+              ? `/api/backend/activities/${encodeURIComponent(id)}/expense-families/${encodeURIComponent(family.familyId)}`
+              : `/api/backend/activities/${encodeURIComponent(id)}/expense-families`,
+            {
+              method: family.familyId ? "PUT" : "POST",
+              headers: { "Content-Type": "application/json" },
+              body: familyBody,
+            },
+          );
+
+          familyIdByKey.set(family.key, family.familyId ?? Number(saved?.id));
+        }
+      }
 
       // Existing rows are updated in place; only rows without an expenseId
       // create a new database record. This prevents duplicate expenses every
@@ -430,9 +604,21 @@ export default function ExpensePage() {
               amount_usd: parseNumber(row.directDollarTotal),
               spent_on: row.spentOn || todayIsoDate(),
               receipt_file_id: null,
+              family_id: familyIdByKey.get(row.familyKey) ?? null,
             }),
           });
         }),
+      );
+
+      // Families the user removed (and, with them, what was recorded on
+      // them) go last, after the rows that moved or stayed are saved.
+      await Promise.all(
+        deletedFamilyIds.map((familyId) =>
+          fetchJson(
+            `/api/backend/activities/${encodeURIComponent(id)}/expense-families/${encodeURIComponent(familyId)}`,
+            { method: "DELETE" },
+          ),
+        ),
       );
 
       router.push(`/activity/${id}`);
@@ -442,6 +628,361 @@ export default function ExpensePage() {
       setIsSaving(false);
     }
   };
+
+  // The expense table for one set of rows -- all of them, or the rows of one
+  // family.
+  const renderExpenseTable = (tableRows) => (
+    <div className="overflow-x-auto rounded-lg border border-border">
+      <table className="w-full min-w-[920px] table-fixed border-collapse text-[12px] text-text-secondary">
+        <thead>
+          <tr className="h-11 border-b border-border bg-bg-page-gray font-medium text-text-secondary">
+            <th className="w-[5%] text-center">
+              {t("donationPage.no")}
+            </th>
+
+            <th className="w-[18%] text-center">
+              {t("donationPage.expenseName")}
+            </th>
+
+            <th className="w-[18%] text-center">
+              {t("donationPage.description")}
+            </th>
+
+            <th className="w-[8%] text-center">
+              {t("donationPage.quantity")}
+            </th>
+
+            <th className="w-[15%] text-center">
+              {t("donationPage.unitPriceKhr")}
+            </th>
+
+            <th className="w-[15%] text-center">
+              {t("donationPage.unitPriceUsd")}
+            </th>
+
+            <th className={isReadOnly ? "w-[21%] text-center" : "w-[13%] text-center"}>
+              {t("donationPage.totalPriceUsd")}
+            </th>
+
+            {!isReadOnly && (
+              <th className="w-[8%] text-center">
+                {t("donationPage.action")}
+              </th>
+            )}
+          </tr>
+        </thead>
+
+        <tbody>
+          {tableRows.map(
+            (row, index) => (
+              <tr
+                key={row.id}
+                className="h-[42px] border-b border-border bg-bg-page-white text-[12px] text-text-secondary transition-colors last:border-b-0 hover:bg-bg-page-gray"
+              >
+                <td className="text-center text-text-secondary">
+                  {index + 1}
+                </td>
+
+                {/* Name */}
+                <td className="px-1">
+                  {isReadOnly ? (
+                    <span className="block px-2 text-text-primary">{row.name || "-"}</span>
+                  ) : (
+                    <input
+                      type="text"
+                      value={row.name}
+                      onChange={(event) =>
+                        updateRow(
+                          row.id,
+                          "name",
+                          event.target.value
+                        )
+                      }
+                      placeholder={row.name ? "" : t("donationPage.enterName")}
+                      className="h-10 w-full rounded-md border border-border px-3 text-[12px] text-text-secondary outline-none transition placeholder:text-text-secondary focus:border-secondary"
+                    />
+                  )}
+                </td>
+
+                {/* Description */}
+                <td className="px-1">
+                  {isReadOnly ? (
+                    <span className="block px-2 text-text-primary">{row.category || "-"}</span>
+                  ) : (
+                    <input
+                      type="text"
+                      value={row.category}
+                      onChange={(event) =>
+                        updateRow(
+                          row.id,
+                          "category",
+                          event.target.value
+                        )
+                      }
+                      placeholder={row.category ? "" : t("donationPage.enterDescription")}
+                      className="h-10 w-full rounded-md border border-border px-3 text-[12px] text-text-secondary outline-none transition placeholder:text-text-secondary focus:border-secondary"
+                    />
+                  )}
+                </td>
+
+                {/* Quantity */}
+                <td className="px-1 text-center">
+                  {isReadOnly ? (
+                    <span className="text-text-primary">{row.quantity}</span>
+                  ) : (
+                    <QuantityInput
+                      value={row.quantity}
+                      min={1}
+                      onChange={(value) =>
+                        updateRow(
+                          row.id,
+                          "quantity",
+                          value
+                        )
+                      }
+                    />
+                  )}
+                </td>
+
+                {/* Riel unit price */}
+                <td className="px-3">
+                  <div className={`mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(row.unitPriceRiel)}`}>
+                    {isReadOnly ? (
+                      <span className="min-w-0 flex-1 text-left text-[12px] text-text-secondary">
+                        {row.unitPriceRiel}
+                      </span>
+                    ) : (
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={
+                          row.unitPriceRiel
+                        }
+                        onChange={(event) =>
+                          updateRow(
+                            row.id,
+                            "unitPriceRiel",
+                            sanitizeInteger(event.target.value)
+                          )
+                        }
+                        onFocus={() =>
+                          handleAmountFocus(row.id, "unitPriceRiel", row.unitPriceRiel)
+                        }
+                        onBlur={() =>
+                          handleAmountBlur(row.id, "unitPriceRiel", "0")
+                        }
+                        placeholder={row.unitPriceRiel ? "" : "0"}
+                        className="w-full bg-transparent text-[12px] text-text-secondary outline-none placeholder:text-text-secondary"
+                      />
+                    )}
+
+                    <span className="text-[12px] text-text-secondary">
+                      ៛
+                    </span>
+                  </div>
+                </td>
+
+                {/* Dollar unit price */}
+                <td className="px-3">
+                  <div className={`mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(row.unitPriceDollar)}`}>
+                    {isReadOnly ? (
+                      <span className="min-w-0 flex-1 text-left text-[12px] text-text-secondary">
+                        {row.unitPriceDollar}
+                      </span>
+                    ) : (
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={
+                          row.unitPriceDollar
+                        }
+                        onChange={(
+                          event
+                        ) => {
+                          const value =
+                            sanitizeDollarInput(
+                              event.target
+                                .value
+                            );
+
+                          updateRow(
+                            row.id,
+                            "unitPriceDollar",
+                            value
+                          );
+                        }}
+                        onFocus={() =>
+                          handleAmountFocus(row.id, "unitPriceDollar", row.unitPriceDollar)
+                        }
+                        onBlur={() =>
+                          handleAmountBlur(row.id, "unitPriceDollar", "0.00")
+                        }
+                        placeholder={row.unitPriceDollar ? "" : "0.00"}
+                        className="w-full bg-transparent text-[12px] text-text-secondary outline-none placeholder:text-text-secondary"
+                      />
+                    )}
+
+                    <span className="text-[12px] text-text-secondary">
+                      $
+                    </span>
+                  </div>
+                </td>
+
+                {/* Combined row total */}
+                <td className="px-3">
+                  <div className="mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border border-border bg-bg-page-gray px-2 text-[12px] text-text-secondary">
+                    <span className="min-w-0 flex-1 text-left">
+                      {formatDollar(row.totalDollar)}
+                    </span>
+
+                    <span>
+                      $
+                    </span>
+                  </div>
+                </td>
+
+                {/* Actions */}
+                {!isReadOnly && (
+                <td className="text-center">
+                  <div className="flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        addRowBelow(
+                          row.id
+                        )
+                      }
+                      className="text-success transition hover:scale-110"
+                      aria-label={t("donationPage.addRow")}
+                    >
+                      <PlusCircle
+                        size={17}
+                      />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        deleteRow(
+                          row.id
+                        )
+                      }
+                      className="text-error transition hover:scale-110"
+                      aria-label={t("donationPage.deleteRow")}
+                    >
+                      <Trash2
+                        size={17}
+                      />
+                    </button>
+                  </div>
+                </td>
+                )}
+              </tr>
+            )
+          )}
+
+          {isReadOnly && tableRows.length === 0 && (
+            <tr>
+              <td colSpan={7} className="py-10 text-center text-text-mute">
+                {t("donationPage.noExpenseYet", "មិនទាន់មានចំណាយ")}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  // Gift distribution: one card per family (the name of one member and why
+  // the family was chosen) holding what that family received, plus a button
+  // to add another family.
+  const renderFamilies = () => (
+    <div className="space-y-5">
+      {families.map((family, index) => (
+        <div
+          key={family.key}
+          className="rounded-lg border border-border bg-bg-page-gray/40 p-4"
+        >
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-secondary">
+              <Users size={16} />
+              {`${t("donationPage.family")} ${index + 1}`}
+            </h3>
+
+            {!isReadOnly && families.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeFamily(family.key)}
+                className="flex items-center gap-1 text-xs font-medium text-error transition hover:opacity-80"
+              >
+                <Trash2 size={14} />
+                {t("donationPage.deleteFamily")}
+              </button>
+            )}
+          </div>
+
+          <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-text-primary">
+                {t("donationPage.familyMemberName")}
+              </span>
+              {isReadOnly ? (
+                <span className="block text-sm text-text-primary">
+                  {family.memberName || "-"}
+                </span>
+              ) : (
+                <input
+                  type="text"
+                  value={family.memberName}
+                  onChange={(event) =>
+                    updateFamily(family.key, "memberName", event.target.value)
+                  }
+                  placeholder={t("donationPage.enterFamilyMemberName")}
+                  className="h-10 w-full rounded-md border border-border bg-bg-page-white px-3 text-[12px] text-text-secondary outline-none transition placeholder:text-text-secondary focus:border-secondary"
+                />
+              )}
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-text-primary">
+                {t("donationPage.familyReason")}
+              </span>
+              {isReadOnly ? (
+                <span className="block text-sm text-text-primary">
+                  {family.reason || "-"}
+                </span>
+              ) : (
+                <input
+                  type="text"
+                  value={family.reason}
+                  onChange={(event) =>
+                    updateFamily(family.key, "reason", event.target.value)
+                  }
+                  placeholder={t("donationPage.enterFamilyReason")}
+                  className="h-10 w-full rounded-md border border-border bg-bg-page-white px-3 text-[12px] text-text-secondary outline-none transition placeholder:text-text-secondary focus:border-secondary"
+                />
+              )}
+            </label>
+          </div>
+
+          {renderExpenseTable(
+            rows.filter((row) => row.familyKey === family.key),
+          )}
+        </div>
+      ))}
+
+      {!isReadOnly && (
+        <button
+          type="button"
+          onClick={addFamily}
+          className="flex h-[34px] items-center gap-2 rounded-lg border border-dashed border-secondary px-4 text-sm font-semibold text-secondary transition hover:bg-secondary-light"
+        >
+          <PlusCircle size={16} />
+          {t("donationPage.addFamily")}
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-5">
@@ -501,265 +1042,7 @@ export default function ExpensePage() {
           </button>
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full min-w-[920px] table-fixed border-collapse text-[12px] text-text-secondary">
-            <thead>
-              <tr className="h-11 border-b border-border bg-bg-page-gray font-medium text-text-secondary">
-                <th className="w-[5%] text-center">
-                  {t("donationPage.no")}
-                </th>
-
-                <th className="w-[18%] text-center">
-                  {t("donationPage.expenseName")}
-                </th>
-
-                <th className="w-[18%] text-center">
-                  {t("donationPage.description")}
-                </th>
-
-                <th className="w-[8%] text-center">
-                  {t("donationPage.quantity")}
-                </th>
-
-                <th className="w-[15%] text-center">
-                  {t("donationPage.unitPriceKhr")}
-                </th>
-
-                <th className="w-[15%] text-center">
-                  {t("donationPage.unitPriceUsd")}
-                </th>
-
-                <th className={isReadOnly ? "w-[21%] text-center" : "w-[13%] text-center"}>
-                  {t("donationPage.totalPriceUsd")}
-                </th>
-
-                {!isReadOnly && (
-                  <th className="w-[8%] text-center">
-                    {t("donationPage.action")}
-                  </th>
-                )}
-              </tr>
-            </thead>
-
-            <tbody>
-              {rows.map(
-                (row, index) => (
-                  <tr
-                    key={row.id}
-                    className="h-[42px] border-b border-border bg-bg-page-white text-[12px] text-text-secondary transition-colors last:border-b-0 hover:bg-bg-page-gray"
-                  >
-                    <td className="text-center text-text-secondary">
-                      {index + 1}
-                    </td>
-
-                    {/* Name */}
-                    <td className="px-1">
-                      {isReadOnly ? (
-                        <span className="block px-2 text-text-primary">{row.name || "-"}</span>
-                      ) : (
-                        <input
-                          type="text"
-                          value={row.name}
-                          onChange={(event) =>
-                            updateRow(
-                              row.id,
-                              "name",
-                              event.target.value
-                            )
-                          }
-                          placeholder={row.name ? "" : t("donationPage.enterName")}
-                          className="h-10 w-full rounded-md border border-border px-3 text-[12px] text-text-secondary outline-none transition placeholder:text-text-secondary focus:border-secondary"
-                        />
-                      )}
-                    </td>
-
-                    {/* Description */}
-                    <td className="px-1">
-                      {isReadOnly ? (
-                        <span className="block px-2 text-text-primary">{row.category || "-"}</span>
-                      ) : (
-                        <input
-                          type="text"
-                          value={row.category}
-                          onChange={(event) =>
-                            updateRow(
-                              row.id,
-                              "category",
-                              event.target.value
-                            )
-                          }
-                          placeholder={row.category ? "" : t("donationPage.enterDescription")}
-                          className="h-10 w-full rounded-md border border-border px-3 text-[12px] text-text-secondary outline-none transition placeholder:text-text-secondary focus:border-secondary"
-                        />
-                      )}
-                    </td>
-
-                    {/* Quantity */}
-                    <td className="px-1 text-center">
-                      {isReadOnly ? (
-                        <span className="text-text-primary">{row.quantity}</span>
-                      ) : (
-                        <QuantityInput
-                          value={row.quantity}
-                          min={1}
-                          onChange={(value) =>
-                            updateRow(
-                              row.id,
-                              "quantity",
-                              value
-                            )
-                          }
-                        />
-                      )}
-                    </td>
-
-                    {/* Riel unit price */}
-                    <td className="px-3">
-                      <div className={`mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(row.unitPriceRiel)}`}>
-                        {isReadOnly ? (
-                          <span className="min-w-0 flex-1 text-left text-[12px] text-text-secondary">
-                            {row.unitPriceRiel}
-                          </span>
-                        ) : (
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            value={
-                              row.unitPriceRiel
-                            }
-                            onChange={(event) =>
-                              updateRow(
-                                row.id,
-                                "unitPriceRiel",
-                                sanitizeInteger(event.target.value)
-                              )
-                            }
-                            onFocus={() =>
-                              handleAmountFocus(row.id, "unitPriceRiel", row.unitPriceRiel)
-                            }
-                            onBlur={() =>
-                              handleAmountBlur(row.id, "unitPriceRiel", "0")
-                            }
-                            placeholder={row.unitPriceRiel ? "" : "0"}
-                            className="w-full bg-transparent text-[12px] text-text-secondary outline-none placeholder:text-text-secondary"
-                          />
-                        )}
-
-                        <span className="text-[12px] text-text-secondary">
-                          ៛
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Dollar unit price */}
-                    <td className="px-3">
-                      <div className={`mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border px-2 ${getAmountFieldClass(row.unitPriceDollar)}`}>
-                        {isReadOnly ? (
-                          <span className="min-w-0 flex-1 text-left text-[12px] text-text-secondary">
-                            {row.unitPriceDollar}
-                          </span>
-                        ) : (
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            value={
-                              row.unitPriceDollar
-                            }
-                            onChange={(
-                              event
-                            ) => {
-                              const value =
-                                sanitizeDollarInput(
-                                  event.target
-                                    .value
-                                );
-
-                              updateRow(
-                                row.id,
-                                "unitPriceDollar",
-                                value
-                              );
-                            }}
-                            onFocus={() =>
-                              handleAmountFocus(row.id, "unitPriceDollar", row.unitPriceDollar)
-                            }
-                            onBlur={() =>
-                              handleAmountBlur(row.id, "unitPriceDollar", "0.00")
-                            }
-                            placeholder={row.unitPriceDollar ? "" : "0.00"}
-                            className="w-full bg-transparent text-[12px] text-text-secondary outline-none placeholder:text-text-secondary"
-                          />
-                        )}
-
-                        <span className="text-[12px] text-text-secondary">
-                          $
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Combined row total */}
-                    <td className="px-3">
-                      <div className="mx-auto flex h-7 w-full max-w-[112px] items-center gap-1 rounded-md border border-border bg-bg-page-gray px-2 text-[12px] text-text-secondary">
-                        <span className="min-w-0 flex-1 text-left">
-                          {formatDollar(row.totalDollar)}
-                        </span>
-
-                        <span>
-                          $
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Actions */}
-                    {!isReadOnly && (
-                    <td className="text-center">
-                      <div className="flex items-center justify-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            addRowBelow(
-                              row.id
-                            )
-                          }
-                          className="text-success transition hover:scale-110"
-                          aria-label={t("donationPage.addRow")}
-                        >
-                          <PlusCircle
-                            size={17}
-                          />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            deleteRow(
-                              row.id
-                            )
-                          }
-                          className="text-error transition hover:scale-110"
-                          aria-label={t("donationPage.deleteRow")}
-                        >
-                          <Trash2
-                            size={17}
-                          />
-                        </button>
-                      </div>
-                    </td>
-                    )}
-                  </tr>
-                )
-              )}
-
-              {isReadOnly && rows.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-10 text-center text-text-mute">
-                    {t("donationPage.noExpenseYet", "មិនទាន់មានចំណាយ")}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        {isGiftDistribution ? renderFamilies() : renderExpenseTable(rows)}
 
         {/* Summary */}
         <div className="ml-auto mt-5 w-full max-w-[405px] rounded-lg border border-border p-5">

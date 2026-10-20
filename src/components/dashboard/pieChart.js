@@ -9,6 +9,7 @@ import {
 import { ChevronDown } from "lucide-react";
 
 import { useLanguage } from "@/context/LanguageContext";
+import { activityTypeColor } from "@/lib/activityTypeColors";
 
 const MONTHS_KM = [
   { value: "01", label: "ខែមករា" },
@@ -40,27 +41,14 @@ const MONTHS_EN = [
   { value: "12", label: "December" },
 ];
 
-// Internal and external keep the colours they have always had. Every other
-// activity type -- including ones added later on the variable page -- takes
-// the next colour from this palette, by its position among the other types
-// in the lookup's own order, so a type keeps its colour from month to month.
+// Internal and external keep the colours they have always had (with their
+// gradient); every other type takes its colour from the shared per-type
+// palette (see lib/activityTypeColors), the same one the activity table and
+// the dashboard lists use.
 const FIXED_TYPE_COLORS = {
   INTERNAL: { from: "#3B4FC7", to: "#A5B4E8", solid: "#4B5FD9" },
   EXTERNAL: { from: "#22C55E", to: "#6EE0A0", solid: "#22C55E" },
 };
-
-const EXTRA_TYPE_COLORS = [
-  "#F59E0B",
-  "#8B5CF6",
-  "#EC4899",
-  "#06B6D4",
-  "#EF4444",
-  "#14B8A6",
-  "#F97316",
-  "#84CC16",
-  "#0EA5E9",
-  "#A855F7",
-];
 
 // A lighter shade of the same colour for the bottom of each slice's
 // gradient, matching how the two fixed colours are drawn.
@@ -76,12 +64,12 @@ function lighten(hex, ratio = 0.5) {
   return `#${channel(0)}${channel(2)}${channel(4)}`;
 }
 
-function colorForType(code, extraIndex) {
+function colorForType(code) {
   if (FIXED_TYPE_COLORS[code]) {
     return FIXED_TYPE_COLORS[code];
   }
 
-  const solid = EXTRA_TYPE_COLORS[extraIndex % EXTRA_TYPE_COLORS.length];
+  const solid = activityTypeColor(code);
 
   return { from: solid, to: lighten(solid), solid };
 }
@@ -277,16 +265,10 @@ export default function ActivitySummaryChart({
           { code: "EXTERNAL", count: Number(data?.external) || 0 },
         ];
 
-  let extraIndex = 0;
-
   const types = rawTypes.map((type) => {
     const code = String(type.code || "").toUpperCase();
     const isFixed = Boolean(FIXED_TYPE_COLORS[code]);
-    const colors = colorForType(code, extraIndex);
-
-    if (!isFixed) {
-      extraIndex += 1;
-    }
+    const colors = colorForType(code);
 
     const lookupLabel =
       locale === "en"

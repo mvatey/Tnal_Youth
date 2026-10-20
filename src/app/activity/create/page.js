@@ -24,6 +24,7 @@ import {
 import FormField from "@/components/forms/FormField";
 import FormControl from "@/components/forms/FormControl";
 import FormSelect from "@/components/forms/FormSelect";
+import SearchableSelect from "@/components/forms/SearchableSelect";
 import DatePickerField from "@/components/forms/DatePickerField";
 import FormActionButton from "@/components/ui/actions/FormActionButton";
 import MemberSelectModal from "@/components/activity/MemberSelectModal";
@@ -1999,7 +2000,7 @@ export default function CreateActivityPage() {
             </h2>
 
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <FormSelect
+              <SearchableSelect
                 label={t("activityPage.province")}
                 value={form.province}
                 onChange={(event) => setValue("province", event.target.value)}
