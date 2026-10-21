@@ -15,7 +15,6 @@ import FormSelect from "@/components/forms/FormSelect";
 import FormDate from "@/components/forms/FormDate.js";
 import SaveButton from "@/components/forms/SaveButton";
 import CheckboxRevealField from "@/components/forms/CheckboxRevealField";
-import LifeStatusRadio from "@/components/forms/LifeStatusRadio";
 import CvFilePreview from "@/components/forms/CvFilePreview";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 import TelegramConnectionCard from "@/components/account/TelegramConnectionCard";
@@ -53,7 +52,6 @@ const EMPTY_FORM = {
   voter_card_number: "",
   from_other_party: false,
   former_party: "",
-  life_status: "ALIVE",
 
   current_address: "",
   permanent_address: "",
@@ -236,7 +234,6 @@ function normalizePersonalInfo(data, preserve = {}) {
     from_other_party: Boolean(data?.from_other_party),
     former_party: data?.former_party || "",
 
-    life_status: data?.life_status || "ALIVE",
 
     current_address:
       data?.current_address ?? preserve.currentAddress ?? "",
@@ -533,7 +530,6 @@ export default function MyAccountPersonalPage() {
         former_party: form.from_other_party
           ? form.former_party.trim()
           : "",
-        life_status: form.life_status,
 
         /*
          * Not shown as a field on this tab (the Member module's own
@@ -888,15 +884,6 @@ export default function MyAccountPersonalPage() {
               </p>
             </div>
           </div>
-
-          {/* LIFE STATUS -- bottom of the form. The account owner can
-              change their own, just in case; staff can too, from the
-              member's personal-info page. */}
-          <LifeStatusRadio
-            label={t("memberPage.lifeStatus")}
-            value={form.life_status}
-            onChange={handleCheckboxChange("life_status")}
-          />
         </div>
       </div>
 
