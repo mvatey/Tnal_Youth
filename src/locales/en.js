@@ -3,6 +3,9 @@ const en = {
     title: "Cambodian Youth Nursery Association",
   },
   common: {
+    notAnswered: "Not answered",
+    answerYes: "Yes",
+    answerNo: "No",
     loading: "Loading...",
     save: "Save",
     reset: "Reset",

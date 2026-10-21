@@ -3,6 +3,9 @@ const km = {
     title: "សមាគមថ្នាលយុវជនកម្ពុជា",
   },
   common: {
+    notAnswered: "មិនទាន់ឆ្លើយ",
+    answerYes: "មាន",
+    answerNo: "គ្មាន",
     loading: "កំពុងដំណើរការ...",
     save: "រក្សាទុក",
     reset: "ចាប់ផ្ដើមសារថ្មី",

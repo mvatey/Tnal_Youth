@@ -186,7 +186,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
   // narrow screen. Not used for a member-linked account, which always
   // requires both. Defaults to phone; re-derived from the existing record
   // when editing (see the load effect below).
-  const [contactMethod, setContactMethod] = useState("phone");
+  const [contactMethod, setContactMethod] = useState("none");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [branches, setBranches] = useState([]);
   // Province + district branches only (filtered server-side by
@@ -231,7 +231,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       setBranchSelectionIds([]);
       setPersonalInfoBase(null);
       setConfirmPassword("");
-      setContactMethod("phone");
+      setContactMethod("none");
       setShowValidationError(false);
       setSubmitError("");
       return;

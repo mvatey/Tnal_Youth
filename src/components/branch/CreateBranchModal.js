@@ -23,7 +23,7 @@ import { HiSaveAs } from "react-icons/hi";
 
 import BoxFill from "@/components/forms/boxFill";
 import FormSelect from "@/components/forms/FormSelect";
-import CheckboxField from "@/components/forms/CheckboxField";
+import AnswerRevealField from "@/components/forms/AnswerRevealField";
 import { useLanguage } from "@/context/LanguageContext";
 
 const EMPTY_FORM = {
@@ -40,8 +40,8 @@ const EMPTY_FORM = {
   statusId: "",
   // Report flags: a new branch starts as having a location and being
   // registered by law; untick whichever does not apply.
-  hasLocation: true,
-  legallyRegistered: true,
+  hasLocation: null,
+  legallyRegistered: null,
   // The registration document: an already-saved file's id, and/or a file
   // chosen now that is uploaded on save. Optional.
   legalDocumentFileId: null,
@@ -269,17 +269,15 @@ function getInitialForm(branch) {
         "",
     ),
 
-    hasLocation: Boolean(
+    hasLocation:
       branch?.hasLocation ??
         branch?.has_location ??
-        true,
-    ),
+        null,
 
-    legallyRegistered: Boolean(
+    legallyRegistered:
       branch?.legallyRegistered ??
         branch?.legally_registered ??
-        true,
-    ),
+        null,
 
     legalDocumentFileId:
       branch?.legalDocumentFileId ??
@@ -870,7 +868,7 @@ export default function CreateBranchModal({
 
         // No location means no map link to keep.
         google_map_url:
-          form.hasLocation
+          form.hasLocation === true
             ? form.googleMapUrl.trim() || null
             : null,
 
@@ -886,20 +884,20 @@ export default function CreateBranchModal({
           Number(form.statusId),
 
         has_location:
-          Boolean(form.hasLocation),
+          form.hasLocation ?? null,
 
         legally_registered:
-          Boolean(form.legallyRegistered),
+          form.legallyRegistered ?? null,
 
         // Uploaded below when a new file was chosen; null when not
         // registered by law or the document was removed.
         legal_document_file_id:
-          form.legallyRegistered
+          form.legallyRegistered === true
             ? form.legalDocumentFileId
             : null,
       };
 
-      if (form.legallyRegistered && form.legalDocumentFile) {
+      if (form.legallyRegistered === true && form.legalDocumentFile) {
         try {
           const upload = new FormData();
           upload.append("file", form.legalDocumentFile);
@@ -1167,20 +1165,19 @@ try {
               }
             />
 
-            {/* Has a location: the map link only exists while ticked. */}
-            <CheckboxField
+            {/* Has a location: not answered (default), yes or no; the map link
+                only exists on yes. */}
+            <AnswerRevealField
               label={t("branchPage.hasLocation")}
               name="hasLocation"
-              checked={form.hasLocation}
-              onChange={(checked) =>
+              value={form.hasLocation}
+              onChange={(answer) =>
                 setForm((previous) => ({
                   ...previous,
-                  hasLocation: checked,
+                  hasLocation: answer,
                 }))
               }
-            />
-
-            {form.hasLocation && (
+            >
               <div className="flex items-end gap-3">
                 <div className="min-w-0 flex-1">
                   <BoxFill
@@ -1228,23 +1225,21 @@ try {
                   {t("branchPage.location")}
                 </button>
               </div>
-            )}
+            </AnswerRevealField>
 
-            {/* Registered by law: the optional registration document only
-                exists while ticked. */}
-            <CheckboxField
+            {/* Registered by law: not answered (default), yes or no; the
+                optional registration document only exists on yes. */}
+            <AnswerRevealField
               label={t("branchPage.legallyRegistered")}
               name="legallyRegistered"
-              checked={form.legallyRegistered}
-              onChange={(checked) =>
+              value={form.legallyRegistered}
+              onChange={(answer) =>
                 setForm((previous) => ({
                   ...previous,
-                  legallyRegistered: checked,
+                  legallyRegistered: answer,
                 }))
               }
-            />
-
-            {form.legallyRegistered && (
+            >
               <div>
                 <label className="mb-2 block text-sm font-semibold text-text-primary">
                   {t("branchPage.legalDocument")}
@@ -1309,7 +1304,7 @@ try {
                   {t("branchPage.legalDocumentHint")}
                 </p>
               </div>
-            )}
+            </AnswerRevealField>
 
             <BoxFill
               label={t("branchPage.phone")}

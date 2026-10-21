@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 
-import {
+import { Minus,
   Banknote,
   Building2,
   CalendarDays,
@@ -862,7 +862,7 @@ const loadBranchDetails =
       hasLocation:
         item?.has_location ??
         item?.hasLocation ??
-        true,
+        null,
 
       legalDocumentFileId:
         item?.legal_document_file_id ??
@@ -872,7 +872,7 @@ const loadBranchDetails =
       legallyRegistered:
         item?.legally_registered ??
         item?.legallyRegistered ??
-        true,
+        null,
 
       phone:
         item?.phone || "-",
@@ -1445,7 +1445,7 @@ const loadBranchDetails =
                 </p>
               </div>
 
-              {branch.hasLocation && branch.googleMapUrl && (
+              {branch.hasLocation === true && branch.googleMapUrl && (
                 <button
                   type="button"
                   onClick={() =>
@@ -1486,19 +1486,22 @@ const loadBranchDetails =
                 key={flag.key}
                 className="inline-flex items-center gap-2 font-medium"
               >
-                {flag.value ? (
+                {flag.value === true ? (
                   <CheckCircle2 size={16} className="text-success" />
-                ) : (
+                ) : flag.value === false ? (
                   <XCircle size={16} className="text-white/60" />
+                ) : (
+                  <Minus size={16} className="text-white/60" />
                 )}
 
-                <span className={flag.value ? "" : "text-white/70"}>
+                <span className={flag.value === true ? "" : "text-white/70"}>
                   {flag.label}
+                  {flag.value == null && ` (${t("common.notAnswered")})`}
                 </span>
               </span>
             ))}
 
-            {branch.legallyRegistered && branch.legalDocumentFileId && (
+            {branch.legallyRegistered === true && branch.legalDocumentFileId && (
               <a
                 href={`/api/files/${branch.legalDocumentFileId}/content`}
                 target="_blank"

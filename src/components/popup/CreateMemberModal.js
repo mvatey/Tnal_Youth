@@ -1,6 +1,6 @@
 "use client";
 
-import CheckboxField from "@/components/forms/CheckboxField";
+import AnswerRevealField from "@/components/forms/AnswerRevealField";
 import LifeStatusRadio from "@/components/forms/LifeStatusRadio";
 import {
   useEffect,
@@ -55,7 +55,7 @@ const EMPTY_FORM = {
   joinedOn: "",
   // Checked by default -- most members are on the voter list, so the form
   // only asks for a change when someone is not.
-  registeredVoter: true,
+  registeredVoter: null,
 };
 
 async function createMember(
@@ -225,12 +225,12 @@ export default function CreateMemberModal({
   // Which of phone/email to collect -- a radio choice instead of showing
   // both fields plus a small "at least one is required" hint underneath,
   // which was easy to miss and, on a narrow screen, ended up cramped
-  // right against the field above it. Defaults to phone, the more common
-  // choice for a new member.
+  // right against the field above it. Defaults to none: contact details
+  // are optional, so nothing is asked until one is chosen.
   const [
     contactMethod,
     setContactMethod,
-  ] = useState("phone");
+  ] = useState("none");
 
   const handleContactMethodChange = (method) => {
     setContactMethod(method);
@@ -1187,7 +1187,7 @@ export default function CreateMemberModal({
           form.joinedOn || null,
 
         registered_voter:
-          Boolean(form.registeredVoter),
+          form.registeredVoter ?? null,
 
         // Not user-selectable here anymore -- omitted so the backend
         // always defaults a new member to the seeded ACTIVE status (see
@@ -1642,17 +1642,16 @@ export default function CreateMemberModal({
                   )}
                 />
 
-                <CheckboxField
+                <AnswerRevealField
                   label={t("memberPage.registeredVoter")}
                   name="registeredVoter"
-                  checked={form.registeredVoter}
-                  onChange={(checked) =>
+                  value={form.registeredVoter}
+                  onChange={(answer) =>
                     setForm((previousForm) => ({
                       ...previousForm,
-                      registeredVoter: checked,
+                      registeredVoter: answer,
                     }))
                   }
-                  alignWithInput
                 />
               </div>
 
