@@ -24,9 +24,11 @@ import Table from "@/components/table-items/Table";
 
 import SaveFile from "@/components/forms/savefile";
 import Button from "@/components/ui/Button";
+import FeedbackAlert from "@/components/ui/feedback/FeedbackAlert";
 import { useAuth } from "@/context/AuthContext";
+import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
-import { normalizeRole } from "@/lib/navigation";
+import { getEffectiveRole, normalizeRole } from "@/lib/navigation";
 
 /*
  * =========================================================
@@ -292,6 +294,15 @@ export default function BranchPage() {
     useLanguage();
 
   const isViewer = normalizeRole(user?.role) === "viewer";
+
+  // An admin, and the central branch on "all branches", download the
+  // national summary (the association's own template, filled by the backend)
+  // from the download button; everyone else keeps the plain table export.
+  const { isAllBranchesView = false } = useBranch();
+  const canDownloadSummary =
+    getEffectiveRole(user) === "admin" || isAllBranchesView;
+  const [summaryFeedback, setSummaryFeedback] = useState(null);
+  const [summaryBusy, setSummaryBusy] = useState(false);
   /*
    * =======================================================
    * UI STATE
@@ -1639,7 +1650,66 @@ export default function BranchPage() {
     },
   ];
 
+    const handleDownloadSummary = async () => {
+      if (summaryBusy) return;
+
+      setSummaryBusy(true);
+
+      try {
+        const response = await fetch("/api/backend/reports/national-summary", {
+          credentials: "include",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          throw new Error(body?.message || t("common.downloadFailed"));
+        }
+
+        // The file name the backend chose (Khmer, so sent in
+        // Content-Disposition's UTF-8 form).
+        const header = response.headers.get("content-disposition") || "";
+        const encoded = header.match(/filename\*=UTF-8''([^;]+)/i);
+        let fileName = "national-summary.xlsx";
+
+        if (encoded) {
+          try {
+            fileName = decodeURIComponent(encoded[1]);
+          } catch {
+            // keep the fallback name
+          }
+        }
+
+        const url = URL.createObjectURL(await response.blob());
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+
+        setSummaryFeedback({
+          type: "success",
+          message: t("common.downloadSuccess"),
+        });
+      } catch (error) {
+        setSummaryFeedback({
+          type: "error",
+          message: error.message || t("common.downloadFailed"),
+        });
+      } finally {
+        setSummaryBusy(false);
+      }
+    };
+
     const handleDownload = () => {
+      if (canDownloadSummary) {
+        handleDownloadSummary();
+        return;
+      }
+
       const rows =
         filteredBranches.map(
           (branch, index) => ({
@@ -1778,6 +1848,16 @@ export default function BranchPage() {
 
         {/* Under the pager, right-aligned -- same spot the member list
             puts its download button. */}
+        {summaryFeedback ? (
+          <div className="fixed right-6 top-6 z-[100]">
+            <FeedbackAlert
+              type={summaryFeedback.type}
+              message={summaryFeedback.message}
+              onClose={() => setSummaryFeedback(null)}
+            />
+          </div>
+        ) : null}
+
         {filteredBranches.length > 0 && (
           <div className="mt-3 flex w-full justify-center sm:justify-end">
             <Button
