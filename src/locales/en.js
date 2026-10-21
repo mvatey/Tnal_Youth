@@ -400,6 +400,8 @@ const en = {
     removeLegalDocument: "Remove the document",
     legalDocumentHint: "Optional. JPG, PNG, PDF or DOCX.",
     legalDocumentUploadFailed: "The registration document could not be uploaded.",
+    downloadReport: "Download report",
+    reportYear: "Report year",
     status: "Status",
     active: "Active",
     inactive: "Inactive",

@@ -21,6 +21,7 @@ import { useAuth } from "@/context/AuthContext";
 import { normalizeRole } from "@/lib/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { activityTypeBadgeStyle } from "@/lib/activityTypeColors";
+import BranchReportDownload from "@/components/ui/actions/BranchReportDownload";
 import { activityStatusLabel } from "@/lib/activityStatusLabels";
 
 function getLookupLabel(lookup, locale = "km") {
@@ -830,6 +831,11 @@ export default function ActivityPage() {
     },
   ];
 
+  const reportBranchId =
+    !isAdminLike && selectedBranch && selectedBranch !== "all"
+      ? selectedBranch
+      : null;
+
   const handleDownload = () => {
     const rows = filteredActivities.map((item, index) => ({
       [t("memberPage.no")]: index + 1,
@@ -962,9 +968,15 @@ export default function ActivityPage() {
 
         {/* Under the pager, right-aligned -- same spot the member list
             puts its download button. */}
-        {filteredActivities.length > 0 && (
-          <div className="mt-3 flex w-full justify-center sm:justify-end">
-            <PrimaryActionButton onClick={handleDownload} />
+        {(filteredActivities.length > 0 || reportBranchId) && (
+          <div className="mt-3 flex w-full flex-wrap items-center justify-center gap-2 sm:justify-end">
+            {/* The branch summary report for the branch picked in the
+                sidebar (hidden on "all branches", where none is picked). */}
+            {reportBranchId && <BranchReportDownload branchId={reportBranchId} />}
+
+            {filteredActivities.length > 0 && (
+              <PrimaryActionButton onClick={handleDownload} />
+            )}
           </div>
         )}
       </section>

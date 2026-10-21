@@ -400,6 +400,8 @@ const km = {
     removeLegalDocument: "លុបឯកសារ",
     legalDocumentHint: "ជម្រើស។ JPG, PNG, PDF ឬ DOCX។",
     legalDocumentUploadFailed: "មិនអាចផ្ទុកឡើងឯកសារចុះបញ្ជីបានទេ។",
+    downloadReport: "ទាញយករបាយការណ៍",
+    reportYear: "ឆ្នាំរបាយការណ៍",
     status: "ស្ថានភាព",
     active: "សកម្ម",
     inactive: "អសកម្ម",

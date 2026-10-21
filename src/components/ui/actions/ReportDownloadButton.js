@@ -92,7 +92,7 @@ export default function ReportDownloadButton({
         type="button"
         onClick={handleDownload}
         disabled={busy}
-        className="inline-flex h-[34px] items-center gap-2 rounded-lg bg-success px-4 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex h-[34px] items-center gap-2 rounded-lg bg-secondary px-4 text-xs font-bold text-white shadow-sm transition hover:bg-secondary-hover disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Icon size={15} />
         {label}

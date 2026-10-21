@@ -35,6 +35,7 @@ import Table from "@/components/table-items/Table";
 
 import Button from "@/components/ui/Button";
 import CreateBranchModal from "@/components/branch/CreateBranchModal";
+import BranchReportDownload from "@/components/ui/actions/BranchReportDownload";
 import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -1364,19 +1365,26 @@ const loadBranchDetails =
             {t("branchPage.branchInfo")}
           </h2>
 
-          {!isViewer && <button
-            type="button"
-            onClick={() =>
-              setIsEditModalOpen(
-                true,
-              )
-            }
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-secondary px-4 text-sm font-semibold text-white transition hover:opacity-90"
-          >
-            <Pencil size={15} />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {/* The summary report: province, district and commune branches. */}
+            {[1, 2, 3].includes(Number(branch.branchLevelId)) && (
+              <BranchReportDownload branchId={branch.id} />
+            )}
 
-            {t("branchPage.edit")}
-          </button>}
+            {!isViewer && <button
+              type="button"
+              onClick={() =>
+                setIsEditModalOpen(
+                  true,
+                )
+              }
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-secondary px-4 text-sm font-semibold text-white transition hover:opacity-90"
+            >
+              <Pencil size={15} />
+
+              {t("branchPage.edit")}
+            </button>}
+          </div>
         </div>
 
         <div className="rounded-lg border border-secondary bg-primary-sidebar px-6 py-4 text-white">
