@@ -22,6 +22,7 @@ const ALLOWED_ROOTS = new Set([
   "exchange-rates",
   "admin",
   "telegram",
+  "reports",
 ]);
 
 function isSafeSegment(segment) {

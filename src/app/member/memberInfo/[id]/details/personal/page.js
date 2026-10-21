@@ -63,6 +63,9 @@ const EMPTY_FORM = {
   voter_card_number: "",
   from_other_party: false,
   former_party: "",
+  // When they resigned / were fired, and when they passed away.
+  membership_ended_on: "",
+  deceased_on: "",
   life_status: "ALIVE",
 
   current_address: "",
@@ -406,6 +409,12 @@ function normalizePersonalInfo(
 
     former_party:
       data?.former_party || "",
+
+    membership_ended_on:
+      data?.membership_ended_on || "",
+
+    deceased_on:
+      data?.deceased_on || "",
 
     life_status:
       data?.life_status || "ALIVE",
@@ -1983,6 +1992,25 @@ export default function PersonalPage() {
               ? form.former_party.trim()
               : "",
 
+          // The date they resigned / were fired only goes with that
+          // status, and the date of death only with a deceased member;
+          // blank clears it.
+          membership_ended_on:
+            ["RESIGNED", "FIRED"].includes(
+              String(
+                memberStatusOptions.find(
+                  (option) => option.value === String(form.member_status_id),
+                )?.code || "",
+              ).toUpperCase(),
+            )
+              ? form.membership_ended_on || ""
+              : "",
+
+          deceased_on:
+            form.life_status === "DECEASED"
+              ? form.deceased_on || ""
+              : "",
+
           // Any admin, branch leader or secretary who can edit this member
           // may change it (no sensitive-fields permission needed).
           life_status:
@@ -2909,16 +2937,45 @@ export default function PersonalPage() {
 
               return (
                 <>
-                  <FormSelect
-                    label={t("memberPage.status")}
-                    value={form.member_status_id}
-                    onChange={handleChange("member_status_id")}
-                    placeholder={t("memberPage.selectStatus")}
-                    options={memberStatusOptions}
-                    disabled={!canManageMemberAccount}
-                    selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
-                    adminEditable={isAdmin}
-                  />
+                  <div className="min-w-0 space-y-4">
+                    <FormSelect
+                      label={t("memberPage.status")}
+                      value={form.member_status_id}
+                      onChange={handleChange("member_status_id")}
+                      placeholder={t("memberPage.selectStatus")}
+                      options={memberStatusOptions}
+                      disabled={!canManageMemberAccount}
+                      selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
+                      adminEditable={isAdmin}
+                    />
+
+                    {/* Resigned or fired: ask for the date. */}
+                    {(() => {
+                      const statusCode = String(
+                        memberStatusOptions.find(
+                          (option) =>
+                            option.value === String(form.member_status_id),
+                        )?.code || "",
+                      ).toUpperCase();
+
+                      if (statusCode !== "RESIGNED" && statusCode !== "FIRED") {
+                        return null;
+                      }
+
+                      return (
+                        <FormDate
+                          label={
+                            statusCode === "RESIGNED"
+                              ? t("memberPage.resignedOn")
+                              : t("memberPage.firedOn")
+                          }
+                          name="membership_ended_on"
+                          value={form.membership_ended_on}
+                          onChange={handleChange("membership_ended_on")}
+                        />
+                      );
+                    })()}
+                  </div>
 
                   <CheckboxRevealField
                     label={t("memberPage.registeredVoter")}
@@ -3018,12 +3075,26 @@ export default function PersonalPage() {
 
           {/* LIFE STATUS -- bottom of the form */}
 
-          <LifeStatusRadio
-            label={t("memberPage.lifeStatus")}
-            value={form.life_status}
-            onChange={handleValueChange("life_status")}
-            disabled={isReadOnly}
-          />
+          <div className="space-y-4">
+            <LifeStatusRadio
+              label={t("memberPage.lifeStatus")}
+              value={form.life_status}
+              onChange={handleValueChange("life_status")}
+              disabled={isReadOnly}
+            />
+
+            {/* Deceased: ask for the date of death. */}
+            {form.life_status === "DECEASED" && (
+              <div className="max-w-sm">
+                <FormDate
+                  label={t("memberPage.deceasedOn")}
+                  name="deceased_on"
+                  value={form.deceased_on}
+                  onChange={handleChange("deceased_on")}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

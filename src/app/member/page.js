@@ -23,6 +23,7 @@ import DharmaWheel from "@/components/icons/DharmaWheel";
 import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
 import DataTable from "@/components/table/DataTable.js";
 import BranchAreaFilter from "@/components/forms/BranchAreaFilter.js";
+import ReportDownloadButton from "@/components/ui/actions/ReportDownloadButton";
 import StatCard from "@/components/dashboard/statCard";
 import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail";
 import useCurrentMember from "@/hooks/useCurrentMember";
@@ -1459,6 +1460,11 @@ export default function MembersPage() {
    * =========================================
    */
 
+  // The register covers the picked branch (a branch-level pick brings its
+  // sub-branches along on the server), or the branch a secretary/leader is
+  // working in; with nothing picked, an admin gets every branch.
+  const registerBranchId = areaBranch || effectiveBranchFilter || "";
+
   const handleDownloadMembers = () => {
   if (
     !Array.isArray(filteredMembers) ||
@@ -1842,6 +1848,17 @@ export default function MembersPage() {
           pageSize={20}
           emptyMessage={t("memberPage.noMembersFound")}
           onDownload={handleDownloadMembers}
+          footerActions={
+            <ReportDownloadButton
+              path={`reports/member-register${
+                registerBranchId
+                  ? `?branchId=${encodeURIComponent(registerBranchId)}`
+                  : ""
+              }`}
+              label={t("memberPage.downloadRegister")}
+              fallbackFileName="member-register.xlsx"
+            />
+          }
           actionButton={
             isViewer ? null : (
               <button

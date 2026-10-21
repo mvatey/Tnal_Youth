@@ -24,6 +24,8 @@ export default function DataTable({
   onSearchChange,
   actionButton,
   onDownload,
+  // Extra buttons shown beside the download button (e.g. a report download).
+  footerActions = null,
   emptyMessage = "មិនមានទិន្នន័យត្រូវនឹងលក្ខខណ្ឌស្វែងរកទេ",
   loadingMessage = "កំពុងផ្ទុក...",
   // The caller's own fetch is still in flight -- `data` is legitimately []
@@ -588,10 +590,15 @@ export default function DataTable({
             className="
               flex
               w-full
+              flex-wrap
+              items-center
               justify-center
+              gap-2
               sm:justify-end
             "
           >
+            {footerActions}
+
             {onDownload && (
               <DownloadButton
                 onDownload={onDownload}
