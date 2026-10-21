@@ -739,6 +739,7 @@ const en = {
     familyStatus: "Family status",
     single: "Single",
     married: "Married",
+    familyUnspecified: "Prefer not to say",
     spouseNameKm: "Spouse name (Khmer)",
     spouseNameKmPlaceholder: "Enter spouse Khmer name",
     spouseNameEn: "Spouse name (Latin)",

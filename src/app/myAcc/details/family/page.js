@@ -22,8 +22,10 @@ const EMPTY_PERSON = {
   address: "",
 };
 
+// "UNSPECIFIED" is the "prefer not to say" choice; the backend stores it as
+// no marital status at all.
 const EMPTY_FAMILY = {
-  marital_status: "SINGLE",
+  marital_status: "UNSPECIFIED",
 
   father: {
     ...EMPTY_PERSON,
@@ -146,7 +148,7 @@ function normalizeFamily(
     marital_status:
       data?.marital_status ||
       data?.maritalStatus ||
-      "SINGLE",
+      "UNSPECIFIED",
 
     father:
       normalizePerson(
@@ -364,12 +366,12 @@ export default function FamilyPage() {
 
         /*
          * Backend deletes spouse
-         * automatically when SINGLE.
+         * automatically unless MARRIED.
          *
          * Clear it visually too.
          */
         spouse:
-          value === "SINGLE"
+          value !== "MARRIED"
             ? {
                 ...EMPTY_PERSON,
               }
@@ -410,7 +412,9 @@ export default function FamilyPage() {
 
       const payload = {
         marital_status:
-          family.marital_status,
+          family.marital_status === "UNSPECIFIED"
+            ? null
+            : family.marital_status,
 
         father:
           personPayload(
@@ -423,8 +427,8 @@ export default function FamilyPage() {
           ),
 
         spouse:
-          family.marital_status ===
-          "SINGLE"
+          family.marital_status !==
+          "MARRIED"
             ? null
             : personPayload(
                 family.spouse,
@@ -555,6 +559,12 @@ export default function FamilyPage() {
                 value:
                   "MARRIED",
               },
+              {
+                label:
+                  t("memberPage.familyUnspecified"),
+                value:
+                  "UNSPECIFIED",
+              },
             ]}
             onChange={
               handleMaritalStatusChange
@@ -577,8 +587,8 @@ export default function FamilyPage() {
               SPOUSE
           ================================= */}
 
-          {family.marital_status !==
-            "SINGLE" && (
+          {family.marital_status ===
+            "MARRIED" && (
             <>
               <BoxFill
                 label={t("memberPage.spouseNameKm")}

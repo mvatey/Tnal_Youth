@@ -739,6 +739,7 @@ const km = {
     familyStatus: "ស្ថានភាពគ្រួសារ",
     single: "នៅលីវ",
     married: "មានគ្រួសារ",
+    familyUnspecified: "មិនចង់បញ្ជាក់",
     spouseNameKm: "ឈ្មោះ ប្ដី/ប្រពន្ធ (ខ្មែរ)",
     spouseNameKmPlaceholder: "បញ្ចូលឈ្មោះប្ដីប្រពន្ធជាភាសាខ្មែរ",
     spouseNameEn: "ឈ្មោះ ប្ដី/ប្រពន្ធ (ឡាតាំង)",
