@@ -20,20 +20,17 @@ export default function CheckboxRevealField({
   onCheckedChange,
   onValueChange,
   disabled = false,
-  // Sit level with the input box of a labelled field in the same row (the
-  // checkbox then lines up with that field's box rather than its label).
-  // Leave off when the row holds only checkbox groups.
-  alignWithLabeledField = false,
 }) {
+  // The checkbox sits on the row of its neighbours' labels (the top of the
+  // cell), not level with their input boxes.
   return (
-    <div className={`min-w-0 ${alignWithLabeledField ? "pt-7" : ""}`}>
+    <div className="min-w-0">
       <CheckboxField
         label={label}
         name={name}
         checked={checked}
         onChange={onCheckedChange}
         disabled={disabled}
-        alignWithInput
       />
 
       {checked && (

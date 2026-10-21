@@ -2922,19 +2922,9 @@ export default function PersonalPage() {
                 status used by Member list and linked Users rows. */}
             {/* Status, then the two checkbox groups (voter list, other party).
                 They flow in the two-column grid like any field, so rows stay
-                two wide whatever the count above: with an even count (16
-                fields, plus one each for the regional-coverage and
-                viewer-scope boxes when they show) Status starts a row beside
-                the voter checkbox and the party checkbox follows on the next
-                row; with an odd count Status pairs with the T-shirt size and
-                the two checkboxes share the next row. */}
+                two wide whatever the count above. Each checkbox sits on the
+                row of its neighbours' labels, with its input below it. */}
             {(() => {
-              const fieldsBeforeStatus =
-                16 +
-                (isRegionalSecretary ? 1 : 0) +
-                (form.account_role === "VIEWER" ? 1 : 0);
-              const statusStartsRow = fieldsBeforeStatus % 2 === 0;
-
               return (
                 <>
                   <div className="min-w-0 space-y-4">
@@ -2991,7 +2981,6 @@ export default function PersonalPage() {
                     }}
                     onValueChange={handleValueChange("voter_card_number")}
                     disabled={isReadOnly}
-                    alignWithLabeledField={statusStartsRow}
                   />
 
                   <CheckboxRevealField
