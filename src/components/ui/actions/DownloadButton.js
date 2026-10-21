@@ -44,12 +44,19 @@ export default function DownloadButton({
   onDownload,
 }) {
   const [feedback, setFeedback] = useState("");
+  const [feedbackType, setFeedbackType] = useState("success");
   const { t } = useLanguage();
 
   const handleDownload = async () => {
     if (onDownload) {
-      await onDownload();
-      setFeedback(t("common.downloadSuccess"));
+      try {
+        await onDownload();
+        setFeedbackType("success");
+        setFeedback(t("common.downloadSuccess"));
+      } catch (error) {
+        setFeedbackType("error");
+        setFeedback(error?.message || t("common.downloadFailed"));
+      }
       return;
     }
 
@@ -59,6 +66,7 @@ export default function DownloadButton({
       rows: buildExportRows(data, columns),
       fileName: filename.replace(/\.(csv|xlsx|pdf)$/i, ""),
     });
+    setFeedbackType("success");
     setFeedback(t("common.downloadSuccess"));
   };
 
@@ -66,7 +74,11 @@ export default function DownloadButton({
     <>
       {feedback ? (
         <div className="fixed right-6 top-6 z-[100]">
-          <FeedbackAlert message={feedback} onClose={() => setFeedback("")} />
+          <FeedbackAlert
+            type={feedbackType}
+            message={feedback}
+            onClose={() => setFeedback("")}
+          />
         </div>
       ) : null}
       <div className="flex justify-end">

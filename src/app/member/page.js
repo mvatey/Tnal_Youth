@@ -23,7 +23,6 @@ import DharmaWheel from "@/components/icons/DharmaWheel";
 import CreateMemberModal from "@/components/popup/CreateMemberModal.js";
 import DataTable from "@/components/table/DataTable.js";
 import BranchAreaFilter from "@/components/forms/BranchAreaFilter.js";
-import ReportDownloadButton from "@/components/ui/actions/ReportDownloadButton";
 import StatCard from "@/components/dashboard/statCard";
 import ButtonSeeDetail from "@/components/forms/ButtonSeeDetail";
 import useCurrentMember from "@/hooks/useCurrentMember";
@@ -1465,43 +1464,50 @@ export default function MembersPage() {
   // working in; with nothing picked, an admin gets every branch.
   const registerBranchId = areaBranch || effectiveBranchFilter || "";
 
-  const handleDownloadMembers = () => {
-  if (
-    !Array.isArray(filteredMembers) ||
-    filteredMembers.length === 0
-  ) {
-    return;
-  }
+  // The download button hands out the generated register (the association's
+  // own Excel template, filled by the backend) instead of a plain table
+  // export. It covers the picked branch, or the one a secretary/leader works
+  // in; with no branch picked it is every branch, which only an admin or
+  // central-branch staff on "all branches" can ask for.
+  const handleDownloadMembers = async () => {
+    const response = await fetch(
+      `/api/backend/reports/member-register${
+        registerBranchId
+          ? `?branchId=${encodeURIComponent(registerBranchId)}`
+          : ""
+      }`,
+      { credentials: "include", cache: "no-store" },
+    );
 
-  const rows = filteredMembers.map(
-    (member, index) => ({
-      [t("memberPage.no")]: index + 1,
-      [t("memberPage.member")]:
-        member.nameKh || "-",
-      [t("memberPage.gender")]:
-        member.genderLabel || "-",
-      [t("memberPage.branch")]:
-        (member.branchLabel || "-") +
-        (member.additionalBranches.length > 0
-          ? ` +${member.additionalBranches.length}`
-          : ""),
-      [t("memberPage.status")]:
-        member.statusLabel || "-",
-      [t("memberPage.joinedAt")]:
-        member.joinedAt || "-",
-    }),
-  );
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.message || t("common.downloadFailed"));
+    }
 
-  const branchLabel = effectiveBranchFilter
-    ? branches.find((option) => option.value === effectiveBranchFilter)?.label
-    : null;
+    // The file name the backend chose (Khmer, so sent in Content-Disposition's
+    // UTF-8 form).
+    const header = response.headers.get("content-disposition") || "";
+    const encoded = header.match(/filename\*=UTF-8''([^;]+)/i);
+    let fileName = "member-register.xlsx";
 
-  downloadExcel({
-    rows,
-    fileName: branchLabel ? `${t("memberPage.membersFileName")}-${branchLabel}` : t("memberPage.membersFileName"),
-    sheetName: "Members",
-  });
-};
+    if (encoded) {
+      try {
+        fileName = decodeURIComponent(encoded[1]);
+      } catch {
+        // keep the fallback name
+      }
+    }
+
+    const url = URL.createObjectURL(await response.blob());
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
 
   const tableColumns = [
     {
@@ -1848,17 +1854,6 @@ export default function MembersPage() {
           pageSize={20}
           emptyMessage={t("memberPage.noMembersFound")}
           onDownload={handleDownloadMembers}
-          footerActions={
-            <ReportDownloadButton
-              path={`reports/member-register${
-                registerBranchId
-                  ? `?branchId=${encodeURIComponent(registerBranchId)}`
-                  : ""
-              }`}
-              label={t("memberPage.downloadRegister")}
-              fallbackFileName="member-register.xlsx"
-            />
-          }
           actionButton={
             isViewer ? null : (
               <button
