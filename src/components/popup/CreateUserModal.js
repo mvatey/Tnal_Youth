@@ -14,6 +14,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useBranch } from "@/context/BranchContext";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
 import { isPasswordValid } from "@/lib/validatePassword";
+import { SELECTABLE_STATUS_CODES, accountActionForStatus } from "@/lib/memberStatus";
 
 async function fetchJson(path, options) {
   const response = await fetch(path, { cache: "no-store", credentials: "include", ...options });
@@ -398,7 +399,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
             }))
             .filter(
               (option) =>
-                option.code === "ACTIVE" || option.code === "INACTIVE" || option.value === currentStatusId,
+                SELECTABLE_STATUS_CODES.has(option.code) || option.value === currentStatusId,
             ),
         );
 
@@ -883,12 +884,8 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       });
 
       const selectedStatusOption = memberStatusOptions.find((option) => option.value === memberStatusId);
-      const action =
-        selectedStatusOption?.code === "ACTIVE"
-          ? "enable"
-          : selectedStatusOption?.code === "INACTIVE"
-            ? "disable"
-            : null;
+      // Inactive, resigned and fired all turn the login off.
+      const action = accountActionForStatus(selectedStatusOption?.code);
 
       if (action) {
         await fetchJson(`/api/backend/members/${memberId}/personal-info/account/${action}`, {

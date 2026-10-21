@@ -24,6 +24,9 @@ import {
   Phone,
   PlusCircle,
   Users,
+  CheckCircle2,
+  XCircle,
+  Paperclip,
 } from "lucide-react";
 
 import SearchBar from "@/components/table-items/SearchBar";
@@ -860,6 +863,11 @@ const loadBranchDetails =
         item?.hasLocation ??
         true,
 
+      legalDocumentFileId:
+        item?.legal_document_file_id ??
+        item?.legalDocumentFileId ??
+        null,
+
       legallyRegistered:
         item?.legally_registered ??
         item?.legallyRegistered ??
@@ -1429,7 +1437,7 @@ const loadBranchDetails =
                 </p>
               </div>
 
-              {branch.googleMapUrl && (
+              {branch.hasLocation && branch.googleMapUrl && (
                 <button
                   type="button"
                   onClick={() =>
@@ -1449,6 +1457,51 @@ const loadBranchDetails =
                 </button>
               )}
             </div>
+          </div>
+
+          {/* The two report flags, and the registration document if one was
+              attached. */}
+          <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-white/20 pt-3 text-xs">
+            {[
+              {
+                key: "hasLocation",
+                label: t("branchPage.hasLocation"),
+                value: branch.hasLocation,
+              },
+              {
+                key: "legallyRegistered",
+                label: t("branchPage.legallyRegistered"),
+                value: branch.legallyRegistered,
+              },
+            ].map((flag) => (
+              <span
+                key={flag.key}
+                className="inline-flex items-center gap-2 font-medium"
+              >
+                {flag.value ? (
+                  <CheckCircle2 size={16} className="text-success" />
+                ) : (
+                  <XCircle size={16} className="text-white/60" />
+                )}
+
+                <span className={flag.value ? "" : "text-white/70"}>
+                  {flag.label}
+                </span>
+              </span>
+            ))}
+
+            {branch.legallyRegistered && branch.legalDocumentFileId && (
+              <a
+                href={`/api/files/${branch.legalDocumentFileId}/content`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 font-medium underline decoration-white/40 underline-offset-2 hover:decoration-white"
+              >
+                <Paperclip size={14} />
+
+                {t("branchPage.legalDocument")}
+              </a>
+            )}
           </div>
         </div>
       </section>

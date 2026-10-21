@@ -25,6 +25,10 @@ import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { khmerErrorMessage } from "@/lib/khmerErrorMessage";
+import {
+  SELECTABLE_STATUS_CODES,
+  accountActionForStatus,
+} from "@/lib/memberStatus";
 import { MemberProfileRefreshContext } from "../../layout";
 
 /* =========================================================
@@ -97,6 +101,7 @@ const BASE_ACCOUNT_STATUS_OPTIONS = [
   { label: "អសកម្ម", value: "INACTIVE" },
   { label: "បានផ្អាក", value: "SUSPENDED" },
   { label: "បានលាលែង", value: "RESIGNED" },
+  { label: "ត្រូវបានបញ្ឈប់", value: "FIRED" },
 ];
 
 const ACCOUNT_STATUS_LABELS = {
@@ -104,6 +109,7 @@ ACTIVE: "សកម្ម",
   INACTIVE: "អសកម្ម",
   SUSPENDED: "បានផ្អាក",
   RESIGNED: "បានលាលែង",
+  FIRED: "ត្រូវបានបញ្ឈប់",
 };
 
 /*
@@ -902,8 +908,7 @@ export default function PersonalPage() {
             const code = String(option?.code || "").toUpperCase();
 
             return (
-              code === "ACTIVE" ||
-              code === "INACTIVE" ||
+              SELECTABLE_STATUS_CODES.has(code) ||
               option.value === normalizedId
             );
           }),
@@ -2212,12 +2217,9 @@ export default function PersonalPage() {
               selectedStatusOption?.code || "",
             ).toUpperCase();
 
+            // Inactive, resigned and fired all turn the login off.
             const accountAction =
-              statusCode === "ACTIVE"
-                ? "enable"
-                : statusCode === "INACTIVE"
-                  ? "disable"
-                  : null;
+              accountActionForStatus(statusCode);
 
             if (
               accountAction &&

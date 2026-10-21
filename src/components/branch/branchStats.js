@@ -37,7 +37,7 @@ const STAT_CONFIG = [
   },
 ];
 
-export default function BranchStats({ branches = [] }) {
+export default function BranchStats({ branches = [], summary = null }) {
   const { t } =
     useLanguage();
 
@@ -64,11 +64,18 @@ export default function BranchStats({ branches = [] }) {
       (branch) => !isProvincialLevel(branch),
     ).length,
 
-    totalMembers: branches.reduce(
-      (total, branch) =>
-        total + Number(branch.memberCount || 0),
-      0,
-    ),
+    // The page's unique headcount (/members/summary) when it has one.
+    // Summing the per-branch counts instead counts anyone who staffs more
+    // than one branch (a multi-branch secretary) once per branch, which is
+    // how this card once read 26 for 14 people.
+    totalMembers:
+      summary?.total_members != null
+        ? Number(summary.total_members)
+        : branches.reduce(
+            (total, branch) =>
+              total + Number(branch.memberCount || 0),
+            0,
+          ),
   };
 
 

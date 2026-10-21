@@ -4,6 +4,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
 } from "react";
 
 import { createPortal } from "react-dom";
@@ -15,6 +16,7 @@ import {
   Navigation,
   Phone,
   X,
+  Paperclip,
 } from "lucide-react";
 
 import { HiSaveAs } from "react-icons/hi";
@@ -40,6 +42,10 @@ const EMPTY_FORM = {
   // registered by law; untick whichever does not apply.
   hasLocation: true,
   legallyRegistered: true,
+  // The registration document: an already-saved file's id, and/or a file
+  // chosen now that is uploaded on save. Optional.
+  legalDocumentFileId: null,
+  legalDocumentFile: null,
 };
 
 const LEVEL_OPTIONS = [
@@ -269,6 +275,13 @@ function getInitialForm(branch) {
         branch?.legally_registered ??
         true,
     ),
+
+    legalDocumentFileId:
+      branch?.legalDocumentFileId ??
+      branch?.legal_document_file_id ??
+      null,
+
+    legalDocumentFile: null,
   };
 }
 
@@ -320,6 +333,37 @@ export default function CreateBranchModal({
 
   const [modalRoot, setModalRoot] =
     useState(null);
+
+  // The registration document: picking a file here, and the saved file's
+  // own name (looked up from its id) while editing.
+  const legalDocumentInputRef = useRef(null);
+  const [legalDocumentName, setLegalDocumentName] = useState("");
+
+  useEffect(() => {
+    if (!form.legalDocumentFileId || form.legalDocumentFile) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    fetch(`/api/files/${form.legalDocumentFileId}`, {
+      credentials: "include",
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((file) => {
+        setLegalDocumentName(
+          file?.originalName ||
+            file?.original_name ||
+            file?.fileName ||
+            "",
+        );
+      })
+      .catch(() => {});
+
+    return () => controller.abort();
+  }, [form.legalDocumentFileId, form.legalDocumentFile]);
 
   const isCountryLevel = form.branchLevelId === "4";
 
@@ -819,9 +863,11 @@ export default function CreateBranchModal({
           form.address.trim() ||
           null,
 
+        // No location means no map link to keep.
         google_map_url:
-          form.googleMapUrl.trim() ||
-          null,
+          form.hasLocation
+            ? form.googleMapUrl.trim() || null
+            : null,
 
         phone:
           form.phone.trim() ||
@@ -839,7 +885,51 @@ export default function CreateBranchModal({
 
         legally_registered:
           Boolean(form.legallyRegistered),
+
+        // Uploaded below when a new file was chosen; null when not
+        // registered by law or the document was removed.
+        legal_document_file_id:
+          form.legallyRegistered
+            ? form.legalDocumentFileId
+            : null,
       };
+
+      if (form.legallyRegistered && form.legalDocumentFile) {
+        try {
+          const upload = new FormData();
+          upload.append("file", form.legalDocumentFile);
+
+          const uploadResponse = await fetch(
+            "/api/backend/files/attachments",
+            {
+              method: "POST",
+              body: upload,
+              credentials: "include",
+            },
+          );
+
+          const uploaded = await uploadResponse
+            .json()
+            .catch(() => null);
+
+          if (!uploadResponse.ok || !uploaded?.id) {
+            throw new Error(
+              uploaded?.message ||
+                t("branchPage.legalDocumentUploadFailed"),
+            );
+          }
+
+          payload.legal_document_file_id = uploaded.id;
+        } catch (uploadError) {
+          setError(
+            uploadError.message ||
+              t("branchPage.legalDocumentUploadFailed"),
+          );
+          setIsSubmitting(false);
+
+          return;
+        }
+      }
 
 
 try {
@@ -1072,53 +1162,149 @@ try {
               }
             />
 
-            <div className="flex items-end gap-3">
-              <div className="min-w-0 flex-1">
-                <BoxFill
-                  label={t("branchPage.mapLink")}
-                  name="googleMapUrl"
-                  value={
-                    form.googleMapUrl
-                  }
-                  onChange={updateField(
-                    "googleMapUrl",
-                  )}
-                  placeholder={t("branchPage.mapPlaceholder")}
-                  leadingIcon={
-                    <Navigation
-                      size={16}
-                    />
-                  }
-                />
-              </div>
+            {/* Has a location: the map link only exists while ticked. */}
+            <CheckboxField
+              label={t("branchPage.hasLocation")}
+              name="hasLocation"
+              checked={form.hasLocation}
+              onChange={(checked) =>
+                setForm((previous) => ({
+                  ...previous,
+                  hasLocation: checked,
+                }))
+              }
+            />
 
-              <button
-                type="button"
-                onClick={() => {
-                  const url =
-                    form.googleMapUrl.trim();
+            {form.hasLocation && (
+              <div className="flex items-end gap-3">
+                <div className="min-w-0 flex-1">
+                  <BoxFill
+                    label={t("branchPage.mapLink")}
+                    name="googleMapUrl"
+                    value={
+                      form.googleMapUrl
+                    }
+                    onChange={updateField(
+                      "googleMapUrl",
+                    )}
+                    placeholder={t("branchPage.mapPlaceholder")}
+                    leadingIcon={
+                      <Navigation
+                        size={16}
+                      />
+                    }
+                  />
+                </div>
 
-                  if (!url) {
-                      setError(
-                      t("branchPage.requiredMap"),
+                <button
+                  type="button"
+                  onClick={() => {
+                    const url =
+                      form.googleMapUrl.trim();
+
+                    if (!url) {
+                        setError(
+                        t("branchPage.requiredMap"),
+                      );
+
+                      return;
+                    }
+
+                    window.open(
+                      url,
+                      "_blank",
+                      "noopener,noreferrer",
                     );
+                  }}
+                  className="mb-[1px] flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-success px-5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                >
+                  <Navigation size={15} />
 
-                    return;
-                  }
+                  {t("branchPage.location")}
+                </button>
+              </div>
+            )}
 
-                  window.open(
-                    url,
-                    "_blank",
-                    "noopener,noreferrer",
-                  );
-                }}
-                className="mb-[1px] flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-success px-5 text-sm font-semibold text-white transition hover:bg-emerald-700"
-              >
-                <Navigation size={15} />
+            {/* Registered by law: the optional registration document only
+                exists while ticked. */}
+            <CheckboxField
+              label={t("branchPage.legallyRegistered")}
+              name="legallyRegistered"
+              checked={form.legallyRegistered}
+              onChange={(checked) =>
+                setForm((previous) => ({
+                  ...previous,
+                  legallyRegistered: checked,
+                }))
+              }
+            />
 
-                {t("branchPage.location")}
-              </button>
-            </div>
+            {form.legallyRegistered && (
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-text-primary">
+                  {t("branchPage.legalDocument")}
+                </label>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    ref={legalDocumentInputRef}
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf,.docx"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null;
+
+                      setForm((previous) => ({
+                        ...previous,
+                        legalDocumentFile: file,
+                      }));
+                      event.target.value = "";
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => legalDocumentInputRef.current?.click()}
+                    className="flex h-[34px] items-center justify-center gap-2 rounded-lg border border-border bg-bg-page-white px-4 text-sm font-semibold text-text-secondary transition hover:bg-bg-page-gray"
+                  >
+                    <Paperclip size={15} />
+
+                    {form.legalDocumentFile || form.legalDocumentFileId
+                      ? t("branchPage.replaceLegalDocument")
+                      : t("branchPage.attachLegalDocument")}
+                  </button>
+
+                  {(form.legalDocumentFile || form.legalDocumentFileId) && (
+                    <span className="flex min-w-0 items-center gap-2 text-sm text-text-secondary">
+                      <span className="max-w-[260px] truncate">
+                        {form.legalDocumentFile
+                          ? form.legalDocumentFile.name
+                          : legalDocumentName || t("branchPage.legalDocument")}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setForm((previous) => ({
+                            ...previous,
+                            legalDocumentFile: null,
+                            legalDocumentFileId: null,
+                          }))
+                        }
+                        aria-label={t("branchPage.removeLegalDocument")}
+                        className="text-error transition hover:opacity-80"
+                      >
+                        <X size={15} />
+                      </button>
+                    </span>
+                  )}
+                </div>
+
+                <p className="mt-1 text-xs text-text-mute">
+                  {t("branchPage.legalDocumentHint")}
+                </p>
+              </div>
+            )}
 
             <BoxFill
               label={t("branchPage.phone")}
@@ -1160,32 +1346,6 @@ try {
               disabled={isLoadingLookups}
               required
             />
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <CheckboxField
-                label={t("branchPage.hasLocation")}
-                name="hasLocation"
-                checked={form.hasLocation}
-                onChange={(checked) =>
-                  setForm((previous) => ({
-                    ...previous,
-                    hasLocation: checked,
-                  }))
-                }
-              />
-
-              <CheckboxField
-                label={t("branchPage.legallyRegistered")}
-                name="legallyRegistered"
-                checked={form.legallyRegistered}
-                onChange={(checked) =>
-                  setForm((previous) => ({
-                    ...previous,
-                    legallyRegistered: checked,
-                  }))
-                }
-              />
-            </div>
 
             {error && (
               <p className="text-sm text-error">

@@ -53,6 +53,7 @@ const STATUS_BADGE_STYLES = {
   INACTIVE: "bg-error-bg text-error",
   SUSPENDED: "bg-warning-bg text-warning",
   RESIGNED: "bg-bg-page-gray text-text-secondary",
+  FIRED: "bg-error-bg text-error",
   LOCKED: "bg-warning-bg text-warning",
   PENDING_ACTIVATION: "bg-bg-page-gray text-text-secondary",
 };
@@ -223,6 +224,7 @@ export default function UsersPage() {
     INACTIVE: t("usersPage.inactive"),
     SUSPENDED: t("usersPage.suspended"),
     RESIGNED: t("usersPage.resigned"),
+    FIRED: t("usersPage.fired"),
     LOCKED: t("usersPage.locked"),
     PENDING_ACTIVATION: t("usersPage.pendingActivation"),
   }), [t]);

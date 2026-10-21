@@ -57,6 +57,7 @@ const STATUS_LABELS_KM = {
   INACTIVE: "អសកម្ម",
   SUSPENDED: "បានផ្អាក",
   RESIGNED: "បានលាលែង",
+  FIRED: "ត្រូវបានបញ្ឈប់",
 };
 
 const STATUS_BADGE_STYLES = {
@@ -71,6 +72,9 @@ const STATUS_BADGE_STYLES = {
 
   RESIGNED:
     "bg-bg-page-gray text-text-secondary",
+
+  FIRED:
+    "bg-error-bg text-error",
 };
 
 async function fetchJson(
@@ -211,7 +215,9 @@ function getStatusLabel(
           ? t?.("memberPage.suspended")
           : code === "RESIGNED"
             ? t?.("memberPage.resigned")
-            : STATUS_LABELS_KM[
+            : code === "FIRED"
+              ? t?.("memberPage.fired")
+              : STATUS_LABELS_KM[
                 code
               ]) ||
     "-"
@@ -286,6 +292,26 @@ function mapMember(
       member?.branch?.id ??
       member?.branch_id ??
       "",
+
+    // The other branches a multi-branch secretary also staffs: shown as
+    // "branch +N" in the table, and counted by a branch-level filter.
+    additionalBranches:
+      (Array.isArray(member?.additional_branches)
+        ? member.additional_branches
+        : []
+      ).map((branch) => ({
+        id: branch?.id,
+        label: label(branch, ""),
+      })),
+
+    branchIds: [
+      member?.branch?.id ?? member?.branch_id ?? "",
+      ...(Array.isArray(member?.additional_branches)
+        ? member.additional_branches.map((branch) => branch?.id)
+        : []),
+    ]
+      .filter((id) => id !== "" && id != null)
+      .map(String),
 
     positionId:
       member?.position?.id ??
@@ -1154,7 +1180,7 @@ export default function MembersPage() {
         )
         .filter((member) =>
           areaCoverageIds
-            ? areaCoverageIds.has(String(member.branchId))
+            ? member.branchIds.some((id) => areaCoverageIds.has(id))
             : true,
         ),
     [members, dateFilter, positionFilter, areaCoverageIds],
@@ -1295,7 +1321,9 @@ export default function MembersPage() {
 
               return (
                 code === "ACTIVE" ||
-                code === "INACTIVE"
+                code === "INACTIVE" ||
+                code === "RESIGNED" ||
+                code === "FIRED"
               );
             },
           )
@@ -1447,7 +1475,10 @@ export default function MembersPage() {
       [t("memberPage.gender")]:
         member.genderLabel || "-",
       [t("memberPage.branch")]:
-        member.branchLabel || "-",
+        (member.branchLabel || "-") +
+        (member.additionalBranches.length > 0
+          ? ` +${member.additionalBranches.length}`
+          : ""),
       [t("memberPage.status")]:
         member.statusLabel || "-",
       [t("memberPage.joinedAt")]:
@@ -1510,10 +1541,23 @@ export default function MembersPage() {
       align: "left",
 
       render: (member) => (
-        <span className="block w-full truncate">
-          {
-            member.branchLabel
-          }
+        <span className="flex w-full min-w-0 items-center gap-1.5">
+          <span className="truncate">
+            {
+              member.branchLabel
+            }
+          </span>
+
+          {member.additionalBranches.length > 0 && (
+            <span
+              title={[member.branchLabel, ...member.additionalBranches.map((branch) => branch.label)]
+                .filter(Boolean)
+                .join(", ")}
+              className="shrink-0 rounded-full bg-primary-light px-1.5 py-0.5 text-[10px] font-semibold text-primary"
+            >
+              {`+${member.additionalBranches.length}`}
+            </span>
+          )}
         </span>
       ),
     },

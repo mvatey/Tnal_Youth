@@ -48,6 +48,7 @@ const STATUS_LABELS = {
   INACTIVE: "អសកម្ម",
   SUSPENDED: "បានផ្អាក",
   RESIGNED: "បានលាលែង",
+  FIRED: "ត្រូវបានបញ្ឈប់",
 
   active: "សកម្ម",
   inactive: "អសកម្ម",
@@ -65,6 +66,9 @@ const STATUS_BADGE_STYLES = {
 
   RESIGNED:
     "bg-gray-100 text-text-secondary",
+
+  FIRED:
+    "bg-error-bg text-error",
 
   active:
     "bg-success-bg text-success",
@@ -695,7 +699,9 @@ export default function MemberInfoCard({
           ? t("memberPage.suspended")
           : statusCode === "RESIGNED"
             ? t("memberPage.resigned")
-            : getStatusLabel(status);
+            : statusCode === "FIRED"
+              ? t("memberPage.fired")
+              : getStatusLabel(status);
 
   const statusStyle =
     STATUS_BADGE_STYLES[
