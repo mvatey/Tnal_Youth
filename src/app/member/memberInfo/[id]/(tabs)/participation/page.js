@@ -763,7 +763,7 @@ export default function ParticipationPage() {
         }
         searchPlaceholder={t("memberPage.search")}
         pageSize={10}
-        minTableWidth={0}
+        minTableWidth={900}
         stickyLastColumn
         emptyMessage={t("memberPage.noRecordsFound")}
         onDownload={() =>
