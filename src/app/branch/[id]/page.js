@@ -1366,8 +1366,8 @@ const loadBranchDetails =
           </h2>
 
           <div className="flex flex-wrap items-center justify-end gap-2">
-            {/* The summary report: province, district and commune branches. */}
-            {[1, 2, 3].includes(Number(branch.branchLevelId)) && (
+            {/* The summary report: province, district, commune and central branches. */}
+            {[1, 2, 3, 4].includes(Number(branch.branchLevelId)) && (
               <BranchReportDownload branchId={branch.id} />
             )}
 

@@ -11,12 +11,10 @@ import Table from "@/components/tables/GenericTable";
 import ActivityStats from "@/components/activity/ActivityStats";
 import TelegramConnectBanner from "@/components/activity/TelegramConnectBanner";
 import Button from "@/components/ui/Button";
-import PrimaryActionButton from "@/components/ui/actions/PrimaryActionButton";
 import BranchAreaFilter from "@/components/forms/BranchAreaFilter";
 import useBranchAreaFilter from "@/hooks/useBranchAreaFilter";
 
 import { useBranch } from "@/context/BranchContext";
-import { downloadTableAsExcel } from "@/utils/downloadExcel";
 import { useAuth } from "@/context/AuthContext";
 import { normalizeRole } from "@/lib/navigation";
 import { useLanguage } from "@/context/LanguageContext";
@@ -836,31 +834,6 @@ export default function ActivityPage() {
       ? selectedBranch
       : null;
 
-  const handleDownload = () => {
-    const rows = filteredActivities.map((item, index) => ({
-      [t("memberPage.no")]: index + 1,
-      [t("activityPage.activityName")]: item.name,
-      [t("memberPage.type")]: item.type,
-      [t("activityPage.sector")]: item.sector,
-      [t("memberPage.branch")]: item.branch,
-      [t("memberPage.location")]: item.location,
-      [t("memberPage.date")]: item.date,
-      [t("activityPage.duration")]: item.duration,
-      [t("activityPage.participants")]: item.participants,
-      [t("memberPage.status")]: item.status,
-    }));
-
-    const branchLabel =
-      effectiveSelectedBranch !== "all"
-        ? branchOptions.find((option) => String(option.value) === String(effectiveSelectedBranch))?.label
-        : null;
-
-    downloadTableAsExcel({
-      data: rows,
-      fileName: branchLabel ? `${t("activityPage.fileName")}-${branchLabel}` : t("activityPage.fileName"),
-    });
-  };
-
   return (
     <div className="min-w-0 space-y-5 overflow-x-auto">
       <ActivityStats
@@ -968,15 +941,12 @@ export default function ActivityPage() {
 
         {/* Under the pager, right-aligned -- same spot the member list
             puts its download button. */}
-        {(filteredActivities.length > 0 || reportBranchId) && (
+        {/* The branch summary report for the branch picked in the sidebar
+            (hidden on "all branches", where none is picked). It is this
+            page's download button. */}
+        {reportBranchId && (
           <div className="mt-3 flex w-full flex-wrap items-center justify-center gap-2 sm:justify-end">
-            {/* The branch summary report for the branch picked in the
-                sidebar (hidden on "all branches", where none is picked). */}
-            {reportBranchId && <BranchReportDownload branchId={reportBranchId} />}
-
-            {filteredActivities.length > 0 && (
-              <PrimaryActionButton onClick={handleDownload} />
-            )}
+            <BranchReportDownload branchId={reportBranchId} />
           </div>
         )}
       </section>

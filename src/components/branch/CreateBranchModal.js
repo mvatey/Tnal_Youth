@@ -201,6 +201,13 @@ function toStatusOptions(items, label) {
   }));
 }
 
+// The branch detail page shows "-" for an empty value and hands that same
+// object to this form; "-" is never a real value, so it reads as blank.
+function blankIfDash(value) {
+  const text = String(value ?? "").trim();
+  return text === "-" ? "" : text;
+}
+
 function getInitialForm(branch) {
   if (!branch) {
     return EMPTY_FORM;
@@ -242,21 +249,19 @@ function getInitialForm(branch) {
         "",
     ),
 
-    address:
+    address: blankIfDash(
       branch?.address ||
-      branch?.addressLine ||
-      "",
+        branch?.addressLine,
+    ),
 
     googleMapUrl:
       branch?.googleMapUrl ||
       branch?.google_map_url ||
       "",
 
-    phone:
-      branch?.phone || "",
+    phone: blankIfDash(branch?.phone),
 
-    email:
-      branch?.email || "",
+    email: blankIfDash(branch?.email),
 
     statusId: String(
       branch?.statusId ??

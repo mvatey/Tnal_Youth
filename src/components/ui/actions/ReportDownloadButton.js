@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { RiFileExcel2Line } from "react-icons/ri";
+import { RiDownloadCloud2Line } from "react-icons/ri";
 
 import FeedbackAlert from "@/components/ui/feedback/FeedbackAlert";
 import { useLanguage } from "@/context/LanguageContext";
@@ -32,7 +32,7 @@ export default function ReportDownloadButton({
   path,
   label,
   fallbackFileName = "report.xlsx",
-  Icon = RiFileExcel2Line,
+  Icon = RiDownloadCloud2Line,
 }) {
   const { t } = useLanguage();
   const [busy, setBusy] = useState(false);

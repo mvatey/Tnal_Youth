@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { RiFileWord2Line } from "react-icons/ri";
 
 import ReportDownloadButton from "@/components/ui/actions/ReportDownloadButton";
 import { useAuth } from "@/context/AuthContext";
@@ -14,6 +13,9 @@ import { getEffectiveRole } from "@/lib/navigation";
  * the file holds (the branch's own report, the regional one, or both) is
  * decided by the backend from the branch's level and who is asking.
  */
+// The reports start from the year the system went into use.
+const FIRST_YEAR = 2024;
+
 export default function BranchReportDownload({ branchId }) {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -21,7 +23,11 @@ export default function BranchReportDownload({ branchId }) {
   const [year, setYear] = useState(currentYear);
 
   const years = useMemo(
-    () => Array.from({ length: 7 }, (_, index) => currentYear - index),
+    () =>
+      Array.from(
+        { length: Math.max(currentYear - FIRST_YEAR + 1, 1) },
+        (_, index) => currentYear - index,
+      ),
     [currentYear],
   );
 
@@ -52,7 +58,6 @@ export default function BranchReportDownload({ branchId }) {
         path={`reports/branch-report?branchId=${encodeURIComponent(branchId)}&year=${year}`}
         label={t("branchPage.downloadReport")}
         fallbackFileName="branch-report.docx"
-        Icon={RiFileWord2Line}
       />
     </div>
   );
