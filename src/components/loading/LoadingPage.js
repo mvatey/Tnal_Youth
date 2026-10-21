@@ -6,16 +6,21 @@ import Footer from "./Footer";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen overflow-x-clip bg-white text-[#15194b]">
+    <div className="min-h-screen bg-white text-[#15194b]">
       <Header />
 
-      <main>
-        <Hero />
-        <Gallery />
-        <ActivitySection />
-      </main>
+      {/* The sideways clip is kept off the header's ancestors: any overflow
+          rule on a parent stops a sticky header from sticking in some
+          (mobile) browsers. */}
+      <div className="overflow-x-clip">
+        <main>
+          <Hero />
+          <Gallery />
+          <ActivitySection />
+        </main>
 
-      <Footer />
+        <Footer />
+      </div>
     </div>
   );
 }

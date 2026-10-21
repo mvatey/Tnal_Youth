@@ -144,7 +144,7 @@ export default function DonationRecordsPage() {
         onSearchChange={setQuery}
         searchPlaceholder={t("memberPage.search")}
         pageSize={10}
-        minTableWidth={560}
+        minTableWidth={760}
         emptyMessage={t("memberPage.noRecordsFound")}
         loadingMessage={t("common.loading")}
         onDownload={() =>
