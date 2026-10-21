@@ -14,7 +14,7 @@ import BoxFill from "@/components/forms/boxFill.js";
 import FormSelect from "@/components/forms/FormSelect";
 import FormDate from "@/components/forms/FormDate.js";
 import SaveButton from "@/components/forms/SaveButton";
-import VoterRegistrationField from "@/components/forms/VoterRegistrationField";
+import CheckboxRevealField from "@/components/forms/CheckboxRevealField";
 import LifeStatusRadio from "@/components/forms/LifeStatusRadio";
 import CvFilePreview from "@/components/forms/CvFilePreview";
 import useUnsavedFormGuard from "@/hooks/useUnsavedFormGuard";
@@ -51,6 +51,8 @@ const EMPTY_FORM = {
   registered_voter: false,
   national_id_number: "",
   voter_card_number: "",
+  from_other_party: false,
+  former_party: "",
   life_status: "ALIVE",
 
   current_address: "",
@@ -231,6 +233,8 @@ function normalizePersonalInfo(data, preserve = {}) {
     registered_voter: Boolean(data?.registered_voter),
     national_id_number: data?.national_id_number || "",
     voter_card_number: data?.voter_card_number || "",
+    from_other_party: Boolean(data?.from_other_party),
+    former_party: data?.former_party || "",
 
     life_status: data?.life_status || "ALIVE",
 
@@ -523,6 +527,12 @@ export default function MyAccountPersonalPage() {
         voter_card_number: form.registered_voter
           ? form.voter_card_number.trim()
           : "",
+        // Not from another party means the Cambodian party (the default),
+        // so there is no former party to keep.
+        from_other_party: Boolean(form.from_other_party),
+        former_party: form.from_other_party
+          ? form.former_party.trim()
+          : "",
         life_status: form.life_status,
 
         /*
@@ -807,22 +817,36 @@ export default function MyAccountPersonalPage() {
               readOnly
             />
 
-            <div className="md:col-span-2">
-              <VoterRegistrationField
-                checkboxLabel={t("memberPage.registeredVoter")}
-                numberLabel={t("memberPage.voterCardNumber")}
-                numberPlaceholder={t("memberPage.voterCardNumberPlaceholder")}
-                checked={form.registered_voter}
-                number={form.voter_card_number}
-                onCheckedChange={(checked) => {
-                  handleCheckboxChange("registered_voter")(checked);
-                  if (!checked) {
-                    handleCheckboxChange("voter_card_number")("");
-                  }
-                }}
-                onNumberChange={handleCheckboxChange("voter_card_number")}
-              />
-            </div>
+            {/* The two checkbox groups share the next row. */}
+            <CheckboxRevealField
+              label={t("memberPage.registeredVoter")}
+              name="registered_voter"
+              checked={form.registered_voter}
+              value={form.voter_card_number}
+              placeholder={t("memberPage.voterCardNumberPlaceholder")}
+              onCheckedChange={(checked) => {
+                handleCheckboxChange("registered_voter")(checked);
+                if (!checked) {
+                  handleCheckboxChange("voter_card_number")("");
+                }
+              }}
+              onValueChange={handleCheckboxChange("voter_card_number")}
+            />
+
+            <CheckboxRevealField
+              label={t("memberPage.fromOtherParty")}
+              name="from_other_party"
+              checked={form.from_other_party}
+              value={form.former_party}
+              placeholder={t("memberPage.formerPartyPlaceholder")}
+              onCheckedChange={(checked) => {
+                handleCheckboxChange("from_other_party")(checked);
+                if (!checked) {
+                  handleCheckboxChange("former_party")("");
+                }
+              }}
+              onValueChange={handleCheckboxChange("former_party")}
+            />
           </div>
 
           {/* CV */}

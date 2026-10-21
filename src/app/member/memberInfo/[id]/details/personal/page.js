@@ -12,7 +12,7 @@ import { useParams } from "next/navigation";
 import { UploadCloud } from "lucide-react";
 
 import SaveButton from "@/components/forms/SaveButton";
-import VoterRegistrationField from "@/components/forms/VoterRegistrationField";
+import CheckboxRevealField from "@/components/forms/CheckboxRevealField";
 import LifeStatusRadio from "@/components/forms/LifeStatusRadio";
 import BoxFill from "@/components/forms/boxFill.js";
 import SelectArrow from "@/components/forms/SelectArrow";
@@ -61,6 +61,8 @@ const EMPTY_FORM = {
   registered_voter: false,
   national_id_number: "",
   voter_card_number: "",
+  from_other_party: false,
+  former_party: "",
   life_status: "ALIVE",
 
   current_address: "",
@@ -398,6 +400,12 @@ function normalizePersonalInfo(
 
     voter_card_number:
       data?.voter_card_number || "",
+
+    from_other_party:
+      Boolean(data?.from_other_party),
+
+    former_party:
+      data?.former_party || "",
 
     life_status:
       data?.life_status || "ALIVE",
@@ -1965,6 +1973,16 @@ export default function PersonalPage() {
               ? form.voter_card_number.trim()
               : "",
 
+          // Not from another party means the Cambodian party (the default),
+          // so there is no former party to keep.
+          from_other_party:
+            Boolean(form.from_other_party),
+
+          former_party:
+            form.from_other_party
+              ? form.former_party.trim()
+              : "",
+
           // Any admin, branch leader or secretary who can edit this member
           // may change it (no sensitive-fields permission needed).
           life_status:
@@ -2874,64 +2892,67 @@ export default function PersonalPage() {
                 Keep one status selector in Member Detail.
                 It is backed by members.status_id and is the same
                 status used by Member list and linked Users rows. */}
-            {/* Every row holds two fields; only the voter checkbox (and the
-                life status below the form) may stand alone. The fields above
-                number 16, plus one each for the regional-coverage box and the
-                viewer-scope box when they show. With an even count Status
-                starts a fresh row and shares it with the checkbox; with an
-                odd count Status pairs with the T-shirt size above and the
-                checkbox takes its own row, so no field is left alone. */}
+            {/* Status, then the two checkbox groups (voter list, other party).
+                They flow in the two-column grid like any field, so rows stay
+                two wide whatever the count above: with an even count (16
+                fields, plus one each for the regional-coverage and
+                viewer-scope boxes when they show) Status starts a row beside
+                the voter checkbox and the party checkbox follows on the next
+                row; with an odd count Status pairs with the T-shirt size and
+                the two checkboxes share the next row. */}
             {(() => {
               const fieldsBeforeStatus =
                 16 +
                 (isRegionalSecretary ? 1 : 0) +
                 (form.account_role === "VIEWER" ? 1 : 0);
-              const statusPairsWithAbove = fieldsBeforeStatus % 2 === 1;
+              const statusStartsRow = fieldsBeforeStatus % 2 === 0;
 
-              const statusField = (
-                <FormSelect
-                  label={t("memberPage.status")}
-                  value={form.member_status_id}
-                  onChange={handleChange("member_status_id")}
-                  placeholder={t("memberPage.selectStatus")}
-                  options={memberStatusOptions}
-                  disabled={!canManageMemberAccount}
-                  selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
-                  adminEditable={isAdmin}
-                />
-              );
-
-              // The voter checkbox with its voter card number beside it (the
-              // number only shows while ticked) -- one cell either way.
-              const voterField = (
-                <VoterRegistrationField
-                  checkboxLabel={t("memberPage.registeredVoter")}
-                  numberLabel={t("memberPage.voterCardNumber")}
-                  numberPlaceholder={t("memberPage.voterCardNumberPlaceholder")}
-                  checked={form.registered_voter}
-                  number={form.voter_card_number}
-                  onCheckedChange={(checked) => {
-                    handleValueChange("registered_voter")(checked);
-                    if (!checked) {
-                      handleValueChange("voter_card_number")("");
-                    }
-                  }}
-                  onNumberChange={handleValueChange("voter_card_number")}
-                  disabled={isReadOnly}
-                  alignWithInput={!statusPairsWithAbove}
-                />
-              );
-
-              return statusPairsWithAbove ? (
+              return (
                 <>
-                  {statusField}
-                  <div className="md:col-span-2">{voterField}</div>
+                  <FormSelect
+                    label={t("memberPage.status")}
+                    value={form.member_status_id}
+                    onChange={handleChange("member_status_id")}
+                    placeholder={t("memberPage.selectStatus")}
+                    options={memberStatusOptions}
+                    disabled={!canManageMemberAccount}
+                    selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
+                    adminEditable={isAdmin}
+                  />
+
+                  <CheckboxRevealField
+                    label={t("memberPage.registeredVoter")}
+                    name="registered_voter"
+                    checked={form.registered_voter}
+                    value={form.voter_card_number}
+                    placeholder={t("memberPage.voterCardNumberPlaceholder")}
+                    onCheckedChange={(checked) => {
+                      handleValueChange("registered_voter")(checked);
+                      if (!checked) {
+                        handleValueChange("voter_card_number")("");
+                      }
+                    }}
+                    onValueChange={handleValueChange("voter_card_number")}
+                    disabled={isReadOnly}
+                    alignWithLabeledField={statusStartsRow}
+                  />
+
+                  <CheckboxRevealField
+                    label={t("memberPage.fromOtherParty")}
+                    name="from_other_party"
+                    checked={form.from_other_party}
+                    value={form.former_party}
+                    placeholder={t("memberPage.formerPartyPlaceholder")}
+                    onCheckedChange={(checked) => {
+                      handleValueChange("from_other_party")(checked);
+                      if (!checked) {
+                        handleValueChange("former_party")("");
+                      }
+                    }}
+                    onValueChange={handleValueChange("former_party")}
+                    disabled={isReadOnly}
+                  />
                 </>
-              ) : (
-                <div className="grid grid-cols-1 gap-5 md:col-span-2 md:grid-cols-2">
-                  {statusField}
-                  {voterField}
-                </div>
               );
             })()}
 

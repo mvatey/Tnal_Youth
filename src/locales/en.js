@@ -620,6 +620,8 @@ const en = {
     nationalIdNumberPlaceholder: "Enter the national ID number",
     voterCardNumber: "Voter card number",
     voterCardNumberPlaceholder: "Enter the voter card number",
+    fromOtherParty: "Came from another political party",
+    formerPartyPlaceholder: "Enter the former party",
     lifeStatus: "Life status",
     lifeAlive: "Alive",
     lifeDeceased: "Deceased",

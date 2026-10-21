@@ -620,6 +620,8 @@ const km = {
     nationalIdNumberPlaceholder: "បញ្ចូលលេខអត្តសញ្ញាណប័ណ្ណ",
     voterCardNumber: "លេខបណ្ណបោះឆ្នោត",
     voterCardNumberPlaceholder: "បញ្ចូលលេខបណ្ណបោះឆ្នោត",
+    fromOtherParty: "មកពីគណបក្សនយោបាយផ្សេង",
+    formerPartyPlaceholder: "បញ្ចូលឈ្មោះគណបក្សដើម",
     lifeStatus: "ស្ថានភាពជីវិត",
     lifeAlive: "នៅរស់",
     lifeDeceased: "ស្លាប់",
