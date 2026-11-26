@@ -3327,6 +3327,12 @@ function FormSelect({
                     ? Boolean(option.disabled)
                     : false
                 }
+                // The browser's own disabled look is barely visible, so grey it.
+                style={
+                  typeof option === "object" && option !== null && option.disabled
+                    ? { color: "#9CA3AF" }
+                    : undefined
+                }
               >
                 {
                   getOptionLabel(option)
