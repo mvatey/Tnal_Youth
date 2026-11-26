@@ -582,6 +582,19 @@ export default function PersonalPage() {
       : role === "SECRETARY"
         ? normalizedTargetRole === "MEMBER"
         : false;
+  // Who may delete this member's login. Mirrors the backend rule for managing an
+  // account: nobody deletes an admin's; a branch leader handles member,
+  // secretary and viewer accounts; a secretary handles member accounts only.
+  const canDeleteTargetAccount =
+    normalizedTargetRole === "ADMIN"
+      ? false
+      : isAdmin
+        ? true
+        : role === "BRANCH_LEADER"
+          ? ["MEMBER", "SECRETARY", "VIEWER"].includes(normalizedTargetRole)
+          : role === "SECRETARY"
+            ? normalizedTargetRole === "MEMBER"
+            : false;
   const canSavePersonalInfo = canEditMemberDetails ||
     (canManageMemberAccount && canManageSensitiveFields);
 
@@ -2987,6 +3000,8 @@ export default function PersonalPage() {
                                 value: DELETE_STATUS,
                                 label: t("memberPage.deleteMember"),
                                 code: "DELETE",
+                                // Shown but pale when this role can't delete them.
+                                disabled: !canDeleteTargetAccount,
                               },
                             ]
                           : memberStatusOptions
@@ -3306,6 +3321,11 @@ function FormSelect({
                   typeof option === "object" && option !== null
                     ? option.value
                     : option
+                }
+                disabled={
+                  typeof option === "object" && option !== null
+                    ? Boolean(option.disabled)
+                    : false
                 }
               >
                 {
