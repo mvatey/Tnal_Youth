@@ -8,10 +8,11 @@ import {
   useState,
 } from "react";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { UploadCloud } from "lucide-react";
 
 import SaveButton from "@/components/forms/SaveButton";
+import DeleteConfirmModal from "@/components/popup/Confirmdeletemodal";
 import AnswerRevealField from "@/components/forms/AnswerRevealField";
 import LifeStatusRadio from "@/components/forms/LifeStatusRadio";
 import BoxFill from "@/components/forms/boxFill.js";
@@ -109,12 +110,18 @@ const BASE_ACCOUNT_STATUS_OPTIONS = [
   { label: "ត្រូវបានបញ្ឈប់", value: "FIRED" },
 ];
 
+// An extra choice at the end of the Status list. It is not a member status:
+// picking it and saving deletes the member's login account (after a
+// confirmation), which removes the member from the lists and counts.
+const DELETE_STATUS = "__DELETE__";
+
 const ACCOUNT_STATUS_LABELS = {
 ACTIVE: "សកម្ម",
   INACTIVE: "អសកម្ម",
   SUSPENDED: "បានផ្អាក",
   RESIGNED: "បានលាលែង",
   FIRED: "ត្រូវបានបញ្ឈប់",
+  DELETED: "បានលុប",
 };
 
 /*
@@ -488,6 +495,9 @@ function computeBranchIds(source) {
 
 export default function PersonalPage() {
   const { role, isAdmin, canEditMemberDetails, canManageMemberAccount } = useMemberPermissions();
+  const router = useRouter();
+  const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const { branches: accessibleBranches } = useBranch();
   // The country-level branch can only be a secretary's single branch.
   const countryBranchIds = useMemo(
@@ -1802,6 +1812,12 @@ export default function PersonalPage() {
         return false;
       }
 
+      // "Delete" was picked in the Status list: ask first, nothing else is saved.
+      if (form.member_status_id === DELETE_STATUS) {
+        setShowDeleteAccountConfirm(true);
+        return false;
+      }
+
       if (
         !form.full_name_km.trim()
       ) {
@@ -2262,7 +2278,7 @@ export default function PersonalPage() {
               selectedStatusOption?.code || "",
             ).toUpperCase();
 
-            // Inactive, resigned and fired all turn the login off.
+            // Inactive switches the login off; resigned and fired delete it (the backend decides).
             const accountAction =
               accountActionForStatus(statusCode);
 
@@ -2510,6 +2526,35 @@ export default function PersonalPage() {
         setSaving(false);
       }
     };
+
+  const confirmDeleteAccount = async () => {
+    if (!memberId || deletingAccount) return;
+
+    setDeletingAccount(true);
+    setError("");
+
+    try {
+      await requestJson(
+        `/members/${memberId}/personal-info/account`,
+        { method: "DELETE" },
+      );
+
+      setHasUnsavedChanges(false);
+      setShowDeleteAccountConfirm(false);
+      router.push("/member");
+    } catch (deleteError) {
+      console.error("Cannot delete account:", deleteError);
+      setShowDeleteAccountConfirm(false);
+      setError(
+        khmerErrorMessage(
+          deleteError.message,
+          t("memberPage.deleteMemberFailed"),
+        ),
+      );
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
 
   /*
    * Registers this page's dirty flag + save function with the
@@ -2932,7 +2977,18 @@ export default function PersonalPage() {
                       value={form.member_status_id}
                       onChange={handleChange("member_status_id")}
                       placeholder={t("memberPage.selectStatus")}
-                      options={memberStatusOptions}
+                      options={
+                        form.has_account && canManageMemberAccount
+                          ? [
+                              ...memberStatusOptions,
+                              {
+                                value: DELETE_STATUS,
+                                label: t("memberPage.deleteMember"),
+                                code: "DELETE",
+                              },
+                            ]
+                          : memberStatusOptions
+                      }
                       disabled={!canManageMemberAccount}
                       selectClassName={isAdmin ? "!pointer-events-auto !cursor-pointer !bg-bg-page-white !text-text-secondary" : ""}
                       adminEditable={isAdmin}
@@ -3138,6 +3194,14 @@ export default function PersonalPage() {
             : t("memberPage.save")}
         </SaveButton>
       </div>}
+
+      <DeleteConfirmModal
+        open={showDeleteAccountConfirm}
+        onClose={() => setShowDeleteAccountConfirm(false)}
+        onConfirm={confirmDeleteAccount}
+        title={t("memberPage.deleteMemberTitle")}
+        message={t("memberPage.deleteMemberMessage")}
+      />
     </div>
   );
 }

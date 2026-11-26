@@ -17,6 +17,7 @@ import { getEffectiveRole } from "@/lib/navigation";
 import DonationTotalsCard from "@/components/donations/DonationTotalsCard";
 import useUsdKhrExchangeRate from "@/lib/useUsdKhrExchangeRate";
 import { useLanguage } from "@/context/LanguageContext";
+import DeleteConfirmModal from "@/components/popup/Confirmdeletemodal";
 import { localizedValue } from "@/lib/i18n";
 
 const parseMoney = (value) => Number(String(value || "").replace(/[^\d.-]/g, "")) || 0;
@@ -191,7 +192,44 @@ export default function DonationTable() {
     rows.forEach((row) => unique.set(String(row.branchId), row.branch));
     return [...unique].map(([value, label]) => ({ value, label }));
   }, [rows, isBranchScoped, accessibleBranches, effectiveBranchId, currentMember?.branch, label]);
-  const handleDelete = () => setError(t("donationPage.openMonthlyDetailToDelete"));
+  // The trash icon removes the whole month's list for that branch, after a
+  // confirmation (every monthly donation of the branch for that month).
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = (rowId) => {
+    setError("");
+    setPendingDelete(rows.find((row) => row.id === rowId) ?? null);
+  };
+
+  const confirmDelete = async () => {
+    const row = pendingDelete;
+
+    if (!row || deleting) return;
+
+    setDeleting(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        `/api/backend/donations/monthly/period?branchId=${encodeURIComponent(row.branchId)}&donationPeriod=${encodeURIComponent(row.donationPeriod)}`,
+        { method: "DELETE" },
+      );
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.message || t("donationPage.deleteMonthFailed"));
+      }
+
+      setPendingDelete(null);
+      setRefreshKey((value) => value + 1);
+    } catch (deleteError) {
+      setPendingDelete(null);
+      setError(deleteError?.message || t("donationPage.deleteMonthFailed"));
+    } finally {
+      setDeleting(false);
+    }
+  };
   const filteredRows = useMemo(
     () =>
       rows.filter((row) => {
@@ -479,6 +517,20 @@ export default function DonationTable() {
       <div className="mt-10 flex justify-end">
         <SaveButton onClick={handleDownload} disabled={sortedRows.length === 0} />
       </div>
+
+      <DeleteConfirmModal
+        open={Boolean(pendingDelete)}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={confirmDelete}
+        title={t("donationPage.deleteMonthTitle")}
+        message={
+          pendingDelete
+            ? t("donationPage.deleteMonthMessage")
+                .replace("{branch}", pendingDelete.branch)
+                .replace("{month}", `${pendingDelete.monthLabel} ${pendingDelete.year}`)
+            : ""
+        }
+      />
     </section>
     
 
@@ -490,6 +542,7 @@ function mapMonthlyRow(row, locale = "km") {
   return {
     id: `${row.branchId}-${row.donationPeriod}`,
     branchId: row.branchId,
+    donationPeriod: row.donationPeriod,
     branch: localizedValue({
       nameKm: row.branchNameKm,
       nameEn: row.branchNameEn,

@@ -884,7 +884,7 @@ export default function CreateUserModal({ open, onClose, onSave, editingUser = n
       });
 
       const selectedStatusOption = memberStatusOptions.find((option) => option.value === memberStatusId);
-      // Inactive, resigned and fired all turn the login off.
+      // Inactive switches the login off; resigned and fired delete it (the backend decides).
       const action = accountActionForStatus(selectedStatusOption?.code);
 
       if (action) {

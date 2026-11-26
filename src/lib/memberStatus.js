@@ -1,6 +1,7 @@
-// Member statuses that behave like "inactive": the member leaves the lists
-// and their login is turned off when the status is saved. RESIGNED and FIRED
-// were added beside INACTIVE; they all work the same way.
+// Member statuses whose login is turned off when the status is saved.
+// INACTIVE only switches it off (the member stays listed and counted);
+// RESIGNED and FIRED are gone for good, so the backend deletes the login and
+// the member leaves the lists and counts. The same "disable" call does both.
 export const INACTIVE_LIKE_STATUS_CODES = new Set([
   "INACTIVE",
   "RESIGNED",
