@@ -2534,8 +2534,10 @@ export default function PersonalPage() {
     setError("");
 
     try {
+      // There is no dedicated Next route for DELETE here (only PATCH
+      // enable/disable), so go through the generic backend proxy.
       await requestJson(
-        `/members/${memberId}/personal-info/account`,
+        `/backend/members/${memberId}/personal-info/account`,
         { method: "DELETE" },
       );
 
