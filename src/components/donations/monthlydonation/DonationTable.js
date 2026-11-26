@@ -222,7 +222,8 @@ export default function DonationTable() {
       }
 
       setPendingDelete(null);
-      setRefreshKey((value) => value + 1);
+      // Refreshes this table and the summary cards above it (both listen).
+      window.dispatchEvent(new Event("tnal-youth:donations-updated"));
     } catch (deleteError) {
       setPendingDelete(null);
       setError(deleteError?.message || t("donationPage.deleteMonthFailed"));
