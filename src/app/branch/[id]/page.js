@@ -1588,7 +1588,7 @@ const loadBranchDetails =
 
           <FilterBar
             filters={filters}
-            className="w-full sm:w-auto [&>div]:w-full sm:[&>div]:w-auto [&_select]:w-full sm:[&_select]:w-auto"
+            className="w-full sm:w-auto [&>div]:w-full sm:[&>div]:w-auto"
           />
 
           <div className="sm:col-span-2 lg:ml-auto lg:col-span-1 [&>button]:w-full sm:[&>button]:w-auto">
