@@ -1728,6 +1728,21 @@ export default function BranchPage() {
 
           {/* Actions */}
           <div className="flex shrink-0 flex-col items-stretch gap-3 sm:ml-auto sm:flex-row sm:items-center [&>button]:w-full sm:[&>button]:w-auto">
+            {filteredBranches.length > 0 && (
+              <Button
+                type="button"
+                variant="primary"
+                icon={
+                  <RiDownloadCloud2Line
+                    size={16}
+                  />
+                }
+                onClick={handleDownload}
+              >
+                {t("branchPage.download")}
+              </Button>
+            )}
+
             {!isViewer && (
               <Button
                 type="button"
@@ -1773,8 +1788,6 @@ export default function BranchPage() {
           }
         />
 
-        {/* Under the pager, right-aligned -- same spot the member list
-            puts its download button. */}
         {summaryFeedback ? (
           <div className="fixed right-6 top-6 z-[100]">
             <FeedbackAlert
@@ -1785,22 +1798,6 @@ export default function BranchPage() {
           </div>
         ) : null}
 
-        {filteredBranches.length > 0 && (
-          <div className="mt-3 flex w-full justify-center sm:justify-end">
-            <Button
-              type="button"
-              variant="primary"
-              icon={
-                <RiDownloadCloud2Line
-                  size={16}
-                />
-              }
-              onClick={handleDownload}
-            >
-              {t("branchPage.download")}
-            </Button>
-          </div>
-        )}
       </section>
 
       {!isViewer && <CreateBranchModal

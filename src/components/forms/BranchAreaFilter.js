@@ -111,6 +111,7 @@ export default function BranchAreaFilter({
 
     const PREFERRED_HEIGHT = 300;
     const MARGIN = 8;
+    const PANEL_MIN_WIDTH = 280;
 
     const update = () => {
       const box = triggerRef.current?.getBoundingClientRect();
@@ -120,9 +121,21 @@ export default function BranchAreaFilter({
       const above = box.top;
       const upward = below < PREFERRED_HEIGHT && above > below;
 
+      // The trigger can be narrow (it sits in a crowded toolbar); the list
+      // needs room for its search box and Khmer branch names, so the panel is
+      // at least PANEL_MIN_WIDTH wide and kept inside the screen.
+      const width = Math.min(
+        Math.max(box.width, PANEL_MIN_WIDTH),
+        window.innerWidth - MARGIN * 2,
+      );
+      const left = Math.max(
+        MARGIN,
+        Math.min(box.left, window.innerWidth - width - MARGIN),
+      );
+
       setRect({
-        left: box.left,
-        width: box.width,
+        left,
+        width,
         top: upward ? null : box.bottom,
         bottom: upward ? window.innerHeight - box.top : null,
         maxHeight: Math.max(160, (upward ? above : below) - MARGIN),
