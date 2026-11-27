@@ -39,12 +39,6 @@ import { getEffectiveRole, normalizeRole } from "@/lib/navigation";
  */
 
 
-const ALL_LEVELS_LABEL =
-  "កម្រិតសាខាទាំងអស់";
-
-const ALL_PROVINCES_LABEL =
-  "រាជធានី/ខេត្តទាំងអស់";
-
 const ALL_STATUSES_LABEL =
   "ស្ថានភាពទាំងអស់";
 
@@ -356,16 +350,6 @@ export default function BranchPage() {
   const [
     searchQuery,
     setSearchQuery,
-  ] = useState("");
-
-  const [
-    selectedLevel,
-    setSelectedLevel,
-  ] = useState("");
-
-  const [
-    selectedProvince,
-    setSelectedProvince,
   ] = useState("");
 
   const [
@@ -1221,38 +1205,6 @@ export default function BranchPage() {
    * Each filter explicitly contains an "All" option.
    */
 
-  const branchLevelOptions =
-    useMemo(
-      () => [
-        t("branchPage.country"),
-        t("branchPage.province"),
-        t("branchPage.district"),
-        t("branchPage.commune"),
-      ],
-      [t],
-    );
-
-  const provinceOptions =
-    useMemo(
-      () =>
-        provinceLookups
-          .map(
-            (province) =>
-              getProvinceLabel(
-                province,
-                label,
-              ),
-          )
-          .filter(
-            Boolean,
-          ),
-      [
-        provinceLookups,
-        label,
-        t,
-      ],
-    );
-
   const branchStatusOptions =
     useMemo(
       () =>
@@ -1326,32 +1278,6 @@ export default function BranchPage() {
                 );
 
             /*
-             * Level
-             */
-            const matchesLevel =
-              !selectedLevel ||
-              selectedLevel === "all" ||
-              selectedLevel ===
-                ALL_LEVELS_LABEL ||
-              selectedLevel ===
-                t("branchPage.allLevels") ||
-              branch.level ===
-                selectedLevel;
-
-            /*
-             * Province
-             */
-            const matchesProvince =
-              !selectedProvince ||
-              selectedProvince === "all" ||
-              selectedProvince ===
-                ALL_PROVINCES_LABEL ||
-              selectedProvince ===
-                t("branchPage.allProvinces") ||
-              branch.province ===
-                selectedProvince;
-
-            /*
              * Status
              */
             const matchesStatus =
@@ -1383,8 +1309,6 @@ export default function BranchPage() {
 
             return (
               matchesSearch &&
-              matchesLevel &&
-              matchesProvince &&
               matchesStatus &&
               matchesArea &&
               matchesDate
@@ -1395,8 +1319,6 @@ export default function BranchPage() {
       [
         mappedBranches,
         searchQuery,
-        selectedLevel,
-        selectedProvince,
         selectedStatus,
         selectedDate,
         areaFilter.coverageIds,
@@ -1589,46 +1511,6 @@ export default function BranchPage() {
   const filters = [
     {
       key:
-        "level",
-
-      value:
-        selectedLevel,
-
-      onChange:
-        setSelectedLevel,
-
-      placeholder:
-        t("branchPage.level"),
-
-      options:
-        branchLevelOptions,
-
-      width:
-        "sm:min-w-[110px]",
-    },
-
-    {
-      key:
-        "province",
-
-      value:
-        selectedProvince,
-
-      onChange:
-        setSelectedProvince,
-
-      placeholder:
-        t("branchPage.province"),
-
-      options:
-        provinceOptions,
-
-      width:
-        "sm:min-w-[100px]",
-    },
-
-    {
-      key:
         "status",
 
       value:
@@ -1735,8 +1617,6 @@ export default function BranchPage() {
       Boolean(searchQuery.trim()) ||
       Boolean(selectedDate) ||
       Boolean(areaFilter.coverageIds) ||
-      !isAllValue(selectedLevel, ALL_LEVELS_LABEL, "branchPage.allLevels") ||
-      !isAllValue(selectedProvince, ALL_PROVINCES_LABEL, "branchPage.allProvinces") ||
       !isAllValue(selectedStatus, ALL_STATUSES_LABEL, "branchPage.allStatuses");
 
     const handleDownload = () => {
