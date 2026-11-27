@@ -1469,15 +1469,39 @@ export default function MembersPage() {
   // export. It covers the picked branch, or the one a secretary/leader works
   // in; with no branch picked it is every branch, which only an admin or
   // central-branch staff on "all branches" can ask for.
+  //
+  // A search, status, gender, position or joined-date filter narrows the
+  // register to just the members on screen (their ids go to the server, which
+  // still keeps only rows inside the caller's branch scope). Only the branch
+  // pick -- or no filter at all -- gives the whole branch's register, which
+  // also lists members who resigned or were fired and so never show here.
+  const hasMemberFilters =
+    Boolean(debouncedQuery) ||
+    Boolean(statusFilter) ||
+    Boolean(genderFilter) ||
+    Boolean(dateFilter) ||
+    Boolean(positionFilter);
+
   const handleDownloadMembers = async () => {
-    const response = await fetch(
-      `/api/backend/reports/member-register${
-        registerBranchId
-          ? `?branchId=${encodeURIComponent(registerBranchId)}`
-          : ""
-      }`,
-      { credentials: "include", cache: "no-store" },
-    );
+    const response = hasMemberFilters
+      ? await fetch("/api/backend/reports/member-register", {
+          method: "POST",
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            branchId: registerBranchId ? Number(registerBranchId) : null,
+            memberIds: filteredMembers.map((member) => member.id),
+          }),
+        })
+      : await fetch(
+          `/api/backend/reports/member-register${
+            registerBranchId
+              ? `?branchId=${encodeURIComponent(registerBranchId)}`
+              : ""
+          }`,
+          { credentials: "include", cache: "no-store" },
+        );
 
     if (!response.ok) {
       const body = await response.json().catch(() => null);
