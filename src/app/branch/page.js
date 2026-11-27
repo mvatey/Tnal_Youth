@@ -1722,8 +1722,25 @@ export default function BranchPage() {
       }
     };
 
+    // True once any filter or search narrows the list. The national summary is
+    // the whole country, so it is only handed out for the unfiltered list; a
+    // filtered list downloads exactly the rows on screen instead.
+    const isAllValue = (value, allLabel, allKey) =>
+      !value ||
+      value === "all" ||
+      value === allLabel ||
+      value === t(allKey);
+
+    const isFiltered =
+      Boolean(searchQuery.trim()) ||
+      Boolean(selectedDate) ||
+      Boolean(areaFilter.coverageIds) ||
+      !isAllValue(selectedLevel, ALL_LEVELS_LABEL, "branchPage.allLevels") ||
+      !isAllValue(selectedProvince, ALL_PROVINCES_LABEL, "branchPage.allProvinces") ||
+      !isAllValue(selectedStatus, ALL_STATUSES_LABEL, "branchPage.allStatuses");
+
     const handleDownload = () => {
-      if (canDownloadSummary) {
+      if (canDownloadSummary && !isFiltered) {
         handleDownloadSummary();
         return;
       }
