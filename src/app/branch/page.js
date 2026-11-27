@@ -20,6 +20,8 @@ import BranchStats from "@/components/branch/branchStats";
 
 import SearchBar from "@/components/table-items/SearchBar";
 import FilterBar from "@/components/table-items/FilterBar";
+import BranchAreaFilter from "@/components/forms/BranchAreaFilter";
+import useBranchAreaFilter from "@/hooks/useBranchAreaFilter";
 import Table from "@/components/table-items/Table";
 
 import SaveFile from "@/components/forms/savefile";
@@ -294,6 +296,11 @@ export default function BranchPage() {
     useLanguage();
 
   const isViewer = normalizeRole(user?.role) === "viewer";
+
+  // The same one-box "branch / branch level" picker as the member page: pick a
+  // branch to see just it, or pick a level (province, district, commune) and
+  // a branch to see that branch and every branch under it.
+  const areaFilter = useBranchAreaFilter();
 
   // An admin, and the central branch on "all branches", download the
   // national summary (the association's own template, filled by the backend)
@@ -1358,6 +1365,15 @@ export default function BranchPage() {
                 selectedStatus;
 
             /*
+             * Branch / branch level (and everything under it)
+             */
+            const matchesArea =
+              !areaFilter.coverageIds ||
+              areaFilter.coverageIds.has(
+                String(branch.id),
+              );
+
+            /*
              * Created date
              */
             const matchesDate =
@@ -1370,6 +1386,7 @@ export default function BranchPage() {
               matchesLevel &&
               matchesProvince &&
               matchesStatus &&
+              matchesArea &&
               matchesDate
             );
           },
@@ -1382,6 +1399,7 @@ export default function BranchPage() {
         selectedProvince,
         selectedStatus,
         selectedDate,
+        areaFilter.coverageIds,
         t,
       ],
     );
@@ -1788,6 +1806,18 @@ export default function BranchPage() {
               width="w-full"
             />
           </div>
+
+          {/* Branch / branch level */}
+          {areaFilter.available && (
+            <div className="w-full shrink-0 sm:w-auto">
+              <BranchAreaFilter
+                areas={areaFilter.choices}
+                value={areaFilter.value}
+                onChange={areaFilter.setValue}
+                placeholder={t("memberPage.areaFilterPlaceholder")}
+              />
+            </div>
+          )}
 
           {/* Filters */}
           <div className="w-full shrink-0 sm:w-auto">
