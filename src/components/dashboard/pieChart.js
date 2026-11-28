@@ -128,8 +128,13 @@ function MonthDropdown({
   const { locale } =
     useLanguage();
 
-  const monthOptions =
-    getAvailableMonths(locale);
+  const { t } =
+    useLanguage();
+
+  const monthOptions = [
+    { value: "all", label: t("dashboard.allPeriods") },
+    ...getAvailableMonths(locale),
+  ];
 
   return (
     <div className="relative">

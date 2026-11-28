@@ -359,6 +359,7 @@ const km = {
     count: "ចំនួន",
     noData: "មិនទាន់មានទិន្នន័យ",
     noDataForYear: "មិនទាន់មានទិន្នន័យសម្រាប់ឆ្នាំនេះ",
+    allPeriods: "ទាំងអស់",
     internalActivity: "កម្មវិធីខាងក្នុង",
     externalActivity: "កម្មវិធីខាងក្រៅ",
     viewAll: "មើលទាំងអស់",

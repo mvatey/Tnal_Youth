@@ -22,14 +22,6 @@ import PerformanceSummary from "@/components/dashboard/performanceSummary";
 import { useBranch } from "@/context/BranchContext";
 import { useLanguage } from "@/context/LanguageContext";
 
-function getCurrentMonth() {
-  const today = new Date();
-
-  return `${today.getFullYear()}-${String(
-    today.getMonth() + 1
-  ).padStart(2, "0")}`;
-}
-
 async function parseJsonSafely(response) {
   const text = await response.text();
 
@@ -96,14 +88,12 @@ export default function DashboardPage() {
   const [
     selectedMonth,
     setSelectedMonth,
-  ] = useState(getCurrentMonth);
+  ] = useState("all");
 
   const [
     selectedYear,
     setSelectedYear,
-  ] = useState(
-    () => new Date().getFullYear()
-  );
+  ] = useState("all");
 
   const [
     dashboard,
@@ -246,23 +236,21 @@ export default function DashboardPage() {
     loadDashboard();
   }, [loadDashboard]);
 
+  // The pie chart's month and the line chart's year are independent, and
+  // both start on "all".
   function handleMonthChange(
     month
   ) {
     setSelectedMonth(
       month
     );
+  }
 
-    const yearFromMonth =
-      Number(
-        month.slice(
-          0,
-          4
-        )
-      );
-
+  function handleYearChange(
+    year
+  ) {
     setSelectedYear(
-      yearFromMonth
+      year
     );
   }
 
@@ -375,7 +363,7 @@ export default function DashboardPage() {
             selectedYear
           }
           onYearChange={
-            setSelectedYear
+            handleYearChange
           }
           loading={
             loading

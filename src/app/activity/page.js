@@ -555,7 +555,9 @@ export default function ActivityPage() {
     [branchScopedActivities],
   );
 
-  const filteredActivities = useMemo(() => {
+  // One pass over the filters, used twice: with the search box (the table)
+  // and without it (the summary cards, which follow every other filter).
+  const filterResult = useMemo(() => {
     const query = searchQuery
       .trim()
       .toLowerCase();
@@ -570,7 +572,7 @@ export default function ActivityPage() {
       ? rangeEnd.toISOString().split("T")[0]
       : "";
 
-    return branchScopedActivities.filter((item) => {
+    const passes = (item, forTable) => {
       const name = item.name?.toLowerCase() || "";
       const branch =
         item.branch?.toLowerCase() || "";
@@ -578,6 +580,7 @@ export default function ActivityPage() {
         item.sector?.toLowerCase() || "";
 
       const matchesSearch =
+        !forTable ||
         !query ||
         name.includes(query) ||
         branch.includes(query) ||
@@ -600,8 +603,11 @@ export default function ActivityPage() {
         // (ownBranch === true), or an invited branch's invitation they've
         // ACCEPTED. A still-pending or declined invitation isn't theirs yet
         // and belongs only in the "Invited branches" tab, not mixed in here.
+        // (The cards ignore this on the "All" tab, so the default view
+        // keeps counting every invited activity.)
         (selectedScope === "all" &&
-          !(item.ownBranch === false && item.invitationStatus !== "ACCEPTED")) ||
+          (!forTable ||
+            !(item.ownBranch === false && item.invitationStatus !== "ACCEPTED"))) ||
         (selectedScope === "own" && item.ownBranch === true) ||
         (selectedScope === "invited" && item.ownBranch === false);
 
@@ -617,7 +623,12 @@ export default function ActivityPage() {
         matchesScope &&
         matchesStatus
       );
-    });
+    };
+
+    return {
+      rows: branchScopedActivities.filter((item) => passes(item, true)),
+      cards: branchScopedActivities.filter((item) => passes(item, false)),
+    };
   }, [
     searchQuery,
     selectedSector,
@@ -627,6 +638,13 @@ export default function ActivityPage() {
     selectedStatus,
     branchScopedActivities,
   ]);
+
+  const filteredActivities = filterResult.rows;
+  const cardActivities = filterResult.cards;
+
+  // The backend's invited total only describes the unfiltered list.
+  const cardsFiltered =
+    cardActivities.length !== branchScopedActivities.length;
 
   const columns = [
     {
@@ -837,14 +855,19 @@ export default function ActivityPage() {
   return (
     <div className="min-w-0 space-y-5 overflow-x-auto">
       <ActivityStats
-        activities={branchScopedActivities}
+        // Follows every filter except the search box.
+        activities={cardActivities}
         // The backend's invitedActivityCount is a total across every
         // branch the viewer is staff of, not just the one currently
         // selected — only trust it while genuinely viewing the combined
         // "all branches" scope; otherwise fall back to ActivityStats'
         // own count computed from branchScopedActivities so the card
         // matches whichever single branch is active.
-        invitedActivityCount={effectiveSelectedBranch === "all" ? invitedActivityCount : null}
+        invitedActivityCount={
+          effectiveSelectedBranch === "all" && !cardsFiltered
+            ? invitedActivityCount
+            : null
+        }
         // ADMIN has no "own branch" to compare against, so ownBranch is
         // always null for them (see ActivityListItemResponse) and the
         // "other branch activities" card is structurally meaningless --

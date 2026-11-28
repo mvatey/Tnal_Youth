@@ -147,22 +147,35 @@ export async function GET(
         currentDate.getMonth() + 1
       ).padStart(2, "0")}`;
 
-    const month =
+    // "all" (the default on the pie and line charts) is passed straight to
+    // the backend for those two charts. Everything else on the dashboard
+    // that depends on a month (branch performance) keeps using a real month.
+    const requestedMonth =
       searchParams.get(
         "month"
       ) ??
-      defaultMonth;
+      "all";
+
+    const month =
+      requestedMonth;
+
+    const performanceMonth =
+      requestedMonth === "all"
+        ? defaultMonth
+        : requestedMonth;
+
+    const requestedYear =
+      searchParams.get(
+        "year"
+      ) ??
+      "all";
 
     const year =
-      Number(
-        searchParams.get(
-          "year"
-        ) ??
-        month.slice(
-          0,
-          4
-        )
-      );
+      requestedYear === "all"
+        ? "all"
+        : Number(
+            requestedYear
+          );
 
     /*
      * Main dashboard branch scope.
@@ -287,7 +300,7 @@ export async function GET(
      */
     const branchPerformanceParams =
       new URLSearchParams({
-        month,
+        month: performanceMonth,
       });
 
     if (

@@ -359,6 +359,7 @@ const en = {
     count: "Count",
     noData: "No data yet",
     noDataForYear: "No data for this year yet",
+    allPeriods: "All",
     internalActivity: "Internal activity",
     externalActivity: "External activity",
     viewAll: "View all",

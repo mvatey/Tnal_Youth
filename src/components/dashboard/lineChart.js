@@ -190,7 +190,10 @@ function ChartTooltip({
       "
     >
       <div className="mb-0.5 text-text-mute">
-        {item?.month} {item?.period?.slice(0, 4)}
+        {item?.month}{" "}
+        {/^\d{4}/.test(item?.period ?? "")
+          ? item.period.slice(0, 4)
+          : ""}
       </div>
 
       <div className="font-semibold text-text-primary">
@@ -211,14 +214,18 @@ function YearDropdown({
   const { t, locale } =
     useLanguage();
 
+  const isAll = value === "all";
+
   const normalizedValue =
-    Number(value) || CURRENT_YEAR;
+    isAll
+      ? "all"
+      : Number(value) || CURRENT_YEAR;
 
   const availableYears =
     Array.from(
       new Set([
         ...YEAR_OPTIONS,
-        normalizedValue,
+        ...(isAll ? [] : [normalizedValue]),
       ])
     ).sort((a, b) => a - b);
 
@@ -228,7 +235,9 @@ function YearDropdown({
         value={normalizedValue}
         onChange={(event) =>
           onChange?.(
-            Number(event.target.value)
+            event.target.value === "all"
+              ? "all"
+              : Number(event.target.value)
           )
         }
         disabled={disabled}
@@ -250,6 +259,10 @@ function YearDropdown({
           disabled:opacity-60
         "
       >
+        <option value="all">
+          {t("dashboard.allPeriods")}
+        </option>
+
         {availableYears.map(
           (yearOption) => (
             <option
@@ -320,10 +333,15 @@ export default function ParticipationChart({
    * }
    */
 
+  // "all" adds every year together, month by month.
+  const isAllYears = year === "all";
+
   const selectedYear =
-    Number(year) ||
-    Number(data?.year) ||
-    CURRENT_YEAR;
+    isAllYears
+      ? "all"
+      : Number(year) ||
+        Number(data?.year) ||
+        CURRENT_YEAR;
 
   const chartData =
     normalizeParticipationMonths(
