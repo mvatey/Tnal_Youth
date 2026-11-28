@@ -1523,11 +1523,6 @@ export default function CreateActivityPage() {
       return false;
     }
 
-    if (!form.mapLink.trim()) {
-      setFormError(t("activityPage.mapLinkRequired"));
-      return false;
-    }
-
     const startsAt = combineDateAndTime(form.startDate, form.startTime);
     const endsAt = combineDateAndTime(form.endDate, form.endTime);
 
@@ -2012,7 +2007,6 @@ export default function CreateActivityPage() {
               <div >
                 <label className="mb-2 block text-sm font-semibold text-text-primary">
                   {t("memberPage.location")}
-                  <span className="ml-1 text-error">*</span>
                 </label>
 
                 <div className="relative">
