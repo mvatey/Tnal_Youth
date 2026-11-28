@@ -1550,16 +1550,26 @@ export default function BranchPage() {
     },
   ];
 
-    const handleDownloadSummary = async () => {
+    // branchIds: just those branches (the filtered list), in the same layout as
+    // the whole-country summary; omitted -> the whole country.
+    const handleDownloadSummary = async (branchIds) => {
       if (summaryBusy) return;
 
       setSummaryBusy(true);
 
       try {
-        const response = await fetch("/api/backend/reports/national-summary", {
-          credentials: "include",
-          cache: "no-store",
-        });
+        const response = await fetch(
+          "/api/backend/reports/national-summary",
+          branchIds
+            ? {
+                method: "POST",
+                credentials: "include",
+                cache: "no-store",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ branchIds }),
+              }
+            : { credentials: "include", cache: "no-store" },
+        );
 
         if (!response.ok) {
           const body = await response.json().catch(() => null);
@@ -1620,7 +1630,18 @@ export default function BranchPage() {
       !isAllValue(selectedStatus, ALL_STATUSES_LABEL, "branchPage.allStatuses");
 
     const handleDownload = () => {
-      if (canDownloadSummary && !isFiltered) {
+      // A filtered list downloads just those branches in the summary's own
+      // layout (whoever the user is: each branch is checked on the server).
+      if (isFiltered) {
+        handleDownloadSummary(
+          filteredBranches
+            .map((branch) => Number(branch.id))
+            .filter(Number.isFinite),
+        );
+        return;
+      }
+
+      if (canDownloadSummary) {
         handleDownloadSummary();
         return;
       }
