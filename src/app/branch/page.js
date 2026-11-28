@@ -1566,7 +1566,15 @@ export default function BranchPage() {
                 credentials: "include",
                 cache: "no-store",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ branchIds }),
+                body: JSON.stringify({
+                  branchIds,
+                  // The province / district / commune the list was narrowed to
+                  // (a branch-level pick), named in the sheet's heading.
+                  scopeBranchId:
+                    areaFilter.value.mode === "level" && areaFilter.value.branchId
+                      ? Number(areaFilter.value.branchId)
+                      : null,
+                }),
               }
             : { credentials: "include", cache: "no-store" },
         );
