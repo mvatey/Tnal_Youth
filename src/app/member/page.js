@@ -657,16 +657,25 @@ export default function MembersPage() {
         // server-side, same as any other unrecognized query param.
         // A branch-level pick (a province/district and everything under it)
         // counts every branch it covers; otherwise the single branch.
-        const summaryPath =
-          areaCoverageParam
-            ? `/members/summary?branchIds=${encodeURIComponent(
-                areaCoverageParam,
-              )}`
-            : effectiveBranchFilter
-              ? `/members/summary?branchId=${encodeURIComponent(
-                  effectiveBranchFilter,
-                )}`
-              : "/members/summary";
+        // The cards follow every filter but the search box: the branch (or
+        // branch-level) pick, member status, gender, position and joined date.
+        const summaryParams = new URLSearchParams();
+
+        if (areaCoverageParam) {
+          summaryParams.set("branchIds", areaCoverageParam);
+        } else if (effectiveBranchFilter) {
+          summaryParams.set("branchId", effectiveBranchFilter);
+        }
+
+        if (statusFilter) summaryParams.set("statusId", statusFilter);
+        if (genderFilter) summaryParams.set("gender", genderFilter);
+        if (positionFilter) summaryParams.set("positionId", positionFilter);
+        if (dateFilter) summaryParams.set("joinedOn", dateFilter);
+
+        const summaryQuery = summaryParams.toString();
+        const summaryPath = summaryQuery
+          ? `/members/summary?${summaryQuery}`
+          : "/members/summary";
 
         const data =
           await fetchJson(
@@ -721,7 +730,14 @@ export default function MembersPage() {
             null,
         });
       },
-      [effectiveBranchFilter, areaCoverageParam],
+      [
+        effectiveBranchFilter,
+        areaCoverageParam,
+        statusFilter,
+        genderFilter,
+        positionFilter,
+        dateFilter,
+      ],
     );
 
   /*

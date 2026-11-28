@@ -1232,7 +1232,7 @@ export default function BranchPage() {
    * =======================================================
    */
 
-  const filteredBranches =
+  const filterResult =
     useMemo(
       () => {
         const query =
@@ -1247,14 +1247,15 @@ export default function BranchPage() {
                 .split("T")[0]
             : "";
 
-        return mappedBranches.filter(
-          (
-            branch,
-          ) => {
+        const passes = (
+          branch,
+          withSearch,
+        ) => {
             /*
              * Search
              */
             const matchesSearch =
+              !withSearch ||
               !query ||
               branch.name
                 .toLowerCase()
@@ -1313,8 +1314,18 @@ export default function BranchPage() {
               matchesArea &&
               matchesDate
             );
-          },
-        );
+        };
+
+        return {
+          // The table: every filter, search included.
+          rows: mappedBranches.filter(
+            (branch) => passes(branch, true),
+          ),
+          // The summary cards: every filter but the search box.
+          cards: mappedBranches.filter(
+            (branch) => passes(branch, false),
+          ),
+        };
       },
       [
         mappedBranches,
@@ -1325,6 +1336,51 @@ export default function BranchPage() {
         t,
       ],
     );
+
+  const filteredBranches = filterResult.rows;
+  const cardBranches = filterResult.cards;
+
+  // True when a filter other than the search box narrows the list.
+  const cardsFiltered =
+    cardBranches.length !== mappedBranches.length;
+
+  // The cards' member total for a narrowed list is a unique headcount of
+  // those branches from the server, not the sum of each branch's own count,
+  // which counts anyone staffing several branches once per branch.
+  const cardBranchKey = cardsFiltered
+    ? cardBranches.map((branch) => branch.id).sort().join(",")
+    : "";
+  const [cardMembers, setCardMembers] = useState(null);
+
+  useEffect(() => {
+    if (!cardBranchKey) {
+      setCardMembers(null);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    fetch(
+      `/api/backend/members/summary?branchIds=${encodeURIComponent(cardBranchKey)}`,
+      {
+        credentials: "include",
+        cache: "no-store",
+        signal: controller.signal,
+      },
+    )
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+
+        if (!response.ok) throw new Error(body?.message);
+
+        setCardMembers(Number(body?.total_members) || 0);
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") setCardMembers(null);
+      });
+
+    return () => controller.abort();
+  }, [cardBranchKey]);
 
   /*
    * =======================================================
@@ -1710,10 +1766,14 @@ export default function BranchPage() {
 
       <BranchStats
         branches={
-          mappedBranches
+          cardBranches
         }
         summary={
-          summary
+          cardsFiltered
+            ? cardMembers != null
+              ? { total_members: cardMembers }
+              : null
+            : summary
         }
       />
 

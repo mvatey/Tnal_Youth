@@ -274,15 +274,48 @@ export default function UsersPage() {
    * =========================================
    */
 
-  const loadSummary = useCallback(async (signal) => {
-    const data = await fetchJson("/summary", null, signal);
+  // The cards follow the role, status and created-date filters (not the
+  // search box), so they are counted from the same list the table shows,
+  // fetched without the search. "Active" is the status the table displays
+  // (a member-linked account shows its member's status); everything else
+  // counts as inactive, so total = active + inactive.
+  const loadSummary = useCallback(
+    async (signal) => {
+      const params = {};
 
-    setSummary({
-      totalUsers: Number(data?.totalUsers) || 0,
-      activeUsers: Number(data?.activeUsers) || 0,
-      inactiveUsers: Number(data?.inactiveUsers) || 0,
-    });
-  }, []);
+      if (roleFilter) {
+        params.role = roleFilter;
+      }
+
+      if (statusFilter) {
+        params.status = statusFilter;
+      }
+
+      const data = await fetchJson("", params, signal);
+      const list = (Array.isArray(data) ? data : []).filter((user) =>
+        isWithinDateRange(user?.createdAt || "", {
+          from: createdDateFilter,
+          to: createdDateFilter,
+        }),
+      );
+
+      const active = list.filter(
+        (user) =>
+          String(
+            user?.memberId != null && user?.memberStatusCode
+              ? user.memberStatusCode
+              : user?.status || "",
+          ).toUpperCase() === "ACTIVE",
+      ).length;
+
+      setSummary({
+        totalUsers: list.length,
+        activeUsers: active,
+        inactiveUsers: list.length - active,
+      });
+    },
+    [roleFilter, statusFilter, createdDateFilter],
+  );
 
   /*
    * =========================================
